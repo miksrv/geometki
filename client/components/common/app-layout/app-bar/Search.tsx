@@ -116,7 +116,7 @@ export const Search: React.FC<SearchProps> = () => {
             className={styles.search}
             notFoundCaption={t('nothing-found', { defaultValue: 'Ничего не найдено' })}
             placeholder={t('global-search_placeholder', { defaultValue: 'Поиск по сайту' })}
-            debounceDelay={300}
+            debounceDelay={200}
             leftIcon={'Search'}
             hideArrow={!options?.length || !searchString.length}
             loading={isFetching}
