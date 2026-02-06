@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.29
+
+### Patch Changes
+
+- Fixed Search locations from search in the map page
+- Removed `enableSearch` and SearchControl UI Component for interactive map
+- Implemented location search for global search
+- Decrease global search debounce delay from 300 to 200
+- Fixed 404 page for not found category in filter
+- Upgraded UI Libraries
+
 ## 1.4.28
 
 ### Patch Changes

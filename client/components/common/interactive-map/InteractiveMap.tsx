@@ -25,7 +25,7 @@ import { MarkerPoint } from './marker-point'
 import { MarkerPointCluster } from './marker-point-cluster'
 import { MarkerUser } from './marker-user'
 import { PlaceMark } from './place-mark'
-import { SearchControl } from './search-control'
+// import { SearchControl } from './search-control'
 import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum, MapPositionType } from './types'
 
 import 'leaflet/dist/leaflet.css'
@@ -130,13 +130,13 @@ export const InteractiveMap: React.FC<MapProps> = ({
         onChangeMapType?.(type)
     }
 
-    const handleSelectSearch = async (coordinates: ApiType.Coordinates, zoom?: number, showPosition?: boolean) => {
-        mapRef.current?.setView([coordinates.lat, coordinates.lon], zoom ?? DEFAULT_MAP_ZOOM)
-
-        if (showPosition) {
-            await handleSetPlaceMarker(coordinates)
-        }
-    }
+    // const handleSelectSearch = async (coordinates: ApiType.Coordinates, zoom?: number, showPosition?: boolean) => {
+    //     mapRef.current?.setView([coordinates.lat, coordinates.lon], zoom ?? DEFAULT_MAP_ZOOM)
+    //
+    //     if (showPosition) {
+    //         await handleSetPlaceMarker(coordinates)
+    //     }
+    // }
 
     const handleSetPlaceMarker = async (coords: ApiType.Coordinates | undefined) => {
         setPlaceMark(coords)
