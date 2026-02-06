@@ -218,7 +218,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({ placeId, loading, values, 
                     />
                 )}
                 <InteractiveMap
-                    enableSearch={true}
+                    // enableSearch={true}
                     enableFullScreen={true}
                     enableCoordsControl={true}
                     enableLayersSwitcher={true}

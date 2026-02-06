@@ -14,6 +14,7 @@ interface SearchControlProps {
     onSelectResult?: (coordinates: ApiType.Coordinates, zoom?: number, showPosition?: boolean) => void
 }
 
+// @Deprecated
 export const SearchControl: React.FC<SearchControlProps> = ({ onClear, onSelectResult }) => {
     const { t } = useTranslation('components.interactive-map.search-control')
 

@@ -420,6 +420,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             const { data: categoriesData } = await store.dispatch(API.endpoints.categoriesGetList.initiate())
 
+            if (!!category && !categoriesData?.items?.find(({ name }) => name === category)) {
+                return { notFound: true }
+            }
+
             const { data: placesList } = await store.dispatch(
                 API.endpoints.placesGetList.initiate({
                     category,
