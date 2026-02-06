@@ -24,6 +24,8 @@ export const Search: React.FC<SearchProps> = () => {
     const [foundCoords, setFoundCoords] = useState<Array<AutocompleteOption<ApiType.Coordinates>>>()
     const [searchString, setSearchString] = useState<string>('')
 
+    const [geoSearch, { data: locationAddress, isLoading: loadingAddress }] = API.useLocationGetGeoSearchMutation()
+
     const { data, isFetching } = API.usePlacesGetListQuery(
         {
             limit: 10,
@@ -60,11 +62,52 @@ export const Search: React.FC<SearchProps> = () => {
                     type: AutocompleteOptionType.POINT,
                     value: item.id
                 }
-            }),
+            }) || [],
         [data?.items]
     )
 
-    const handleSearchLocation = (value: string) => {
+    const locationOptions = useMemo(
+        () =>
+            locationAddress?.items
+                ?.filter((item) => !!item.lat && !!item.lon)
+                .map((item) => {
+                    const address: string[] = []
+
+                    if (item.country) {
+                        address.push(item.country)
+                    }
+
+                    if (item.region) {
+                        address.push(item.region)
+                    }
+
+                    if (item.district) {
+                        address.push(item.district)
+                    }
+
+                    if (item.locality) {
+                        address.push(item.locality)
+                    }
+
+                    if (item.street) {
+                        address.push(item.street)
+                    }
+
+                    return {
+                        description: address.join(', '),
+                        key: (item.lat || 0) + (item.lon || 0),
+                        title: item.locality ?? item.region ?? item.district ?? item.country ?? '',
+                        type: AutocompleteOptionType.COORDINATES,
+                        value: {
+                            lat: Number(item.lat),
+                            lon: Number(item.lon)
+                        }
+                    }
+                }) || [],
+        [locationAddress?.items]
+    )
+
+    const handleSearchLocation = async (value: string) => {
         const normalizeCoords = Coordinates.normalizeInput(value)
 
         if (Coordinates.isCoordinates(value)) {
@@ -99,6 +142,7 @@ export const Search: React.FC<SearchProps> = () => {
         } else {
             setFoundCoords(undefined)
             setSearchString(value)
+            await geoSearch(value)
         }
     }
 
@@ -119,8 +163,8 @@ export const Search: React.FC<SearchProps> = () => {
             debounceDelay={200}
             leftIcon={'Search'}
             hideArrow={!options?.length || !searchString.length}
-            loading={isFetching}
-            options={foundCoords ?? options}
+            loading={isFetching || loadingAddress}
+            options={foundCoords ?? [...(options || []), ...(locationOptions || [])]}
             onSearch={handleSearchLocation}
             onSelect={handleSelectLocation}
         />
