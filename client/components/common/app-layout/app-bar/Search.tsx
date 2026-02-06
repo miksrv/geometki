@@ -150,6 +150,10 @@ export const Search: React.FC<SearchProps> = () => {
         if (value?.type === AutocompleteOptionType.COORDINATES) {
             const coords = value?.value as ApiType.Coordinates
             await router.push(`/map#${coords.lat},${coords.lon},17?m=${coords.lat},${coords.lon}`)
+
+            if (router.pathname === '/map') {
+                window.location.reload()
+            }
         } else {
             await router.push(`/places/${value?.value as string}`)
         }
