@@ -188,7 +188,7 @@ const MapPage: NextPage<object> = () => {
                     // layer={initMapLayer}
                     storeMapPosition={true}
                     enableCenterPopup={true}
-                    enableSearch={true}
+                    // enableSearch={true}
                     enableFullScreen={true}
                     enableCoordsControl={true}
                     enableLayersSwitcher={true}

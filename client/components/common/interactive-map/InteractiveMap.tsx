@@ -39,7 +39,7 @@ type MapProps = {
     loading?: boolean
     storeMapPosition?: boolean
     enableCenterPopup?: boolean
-    enableSearch?: boolean
+    // enableSearch?: boolean
     enableFullScreen?: boolean
     enableCoordsControl?: boolean
     enableCategoryControl?: boolean
@@ -70,7 +70,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
     loading,
     storeMapPosition,
     enableCenterPopup,
-    enableSearch,
+    // enableSearch,
     enableFullScreen,
     enableCoordsControl,
     enableCategoryControl,
@@ -332,12 +332,12 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     )
                 )}
 
-                {enableSearch && (
-                    <SearchControl
-                        onSelectResult={handleSelectSearch}
-                        onClear={() => handleSetPlaceMarker(undefined)}
-                    />
-                )}
+                {/*{enableSearch && (*/}
+                {/*    <SearchControl*/}
+                {/*        onSelectResult={handleSelectSearch}*/}
+                {/*        onClear={() => handleSetPlaceMarker(undefined)}*/}
+                {/*    />*/}
+                {/*)}*/}
 
                 {enableContextMenu && <ContextMenu />}
 
