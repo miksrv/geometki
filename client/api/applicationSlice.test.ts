@@ -1,3 +1,5 @@
+import type { Locale } from '@/api/types'
+
 import applicationReducer, {
     closeAuthDialog,
     openAuthDialog,
@@ -22,7 +24,7 @@ jest.mock('../next-i18next.config', () => ({
 
 describe('applicationSlice', () => {
     const initialState = {
-        locale: 'ru',
+        locale: 'ru' as Locale,
         showAuthDialog: false,
         showOverlay: false,
         userLocation: undefined
@@ -49,7 +51,7 @@ describe('applicationSlice', () => {
 
     describe('closeAuthDialog', () => {
         it('sets showAuthDialog and showOverlay to false', () => {
-            const openState = { ...initialState, showAuthDialog: true, showOverlay: true }
+            const openState = { ...initialState, showAuthDialog: true as boolean, showOverlay: true as boolean }
             const state = applicationReducer(openState, closeAuthDialog())
 
             expect(state.showAuthDialog).toBe(false)

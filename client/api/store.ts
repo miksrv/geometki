@@ -27,34 +27,32 @@ const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) 
     action
 ) => {
     if (action.type === HYDRATE) {
+        const payload = action.payload as RootReducerState
+
         return {
             ...state, // old client state
 
             // application can be hydrated
             application:
-                action.payload.application ??
-                state?.application ??
-                combinedReducer(undefined, { type: '' }).application,
+                payload.application ?? state?.application ?? combinedReducer(undefined, { type: '' }).application,
 
             // notification can be hydrated
             notification:
-                action.payload.notification ??
-                state?.notification ??
-                combinedReducer(undefined, { type: '' }).notification,
+                payload.notification ?? state?.notification ?? combinedReducer(undefined, { type: '' }).notification,
 
             // DO NOT touch auth if there is nothing in payload
             auth:
-                action.payload.auth?.token || action.payload.auth?.isAuth
-                    ? action.payload.auth
+                payload.auth?.token || payload.auth?.isAuth
+                    ? payload.auth
                     : (state?.auth ?? combinedReducer(undefined, { type: '' }).auth),
 
             [API.reducerPath]: {
                 ...state?.[API.reducerPath],
-                ...action.payload[API.reducerPath]
+                ...payload[API.reducerPath]
             },
             [APIPastvu.reducerPath]: {
                 ...state?.[APIPastvu.reducerPath],
-                ...action.payload[APIPastvu.reducerPath]
+                ...payload[APIPastvu.reducerPath]
             }
         }
     }
