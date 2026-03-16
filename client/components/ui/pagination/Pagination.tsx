@@ -5,6 +5,8 @@ import Link from 'next/link'
 
 import { encodeQueryData } from '@/functions/helpers'
 
+import { computePageNumbers } from './paginationUtils'
+
 import styles from './styles.module.sass'
 
 const LEFT_PAGE = 'LEFT'
@@ -46,43 +48,10 @@ export const Pagination = <T,>({
 
     const link = `/${linkPart}`
 
-    const fetchPageNumbers: Array<string | number> = useMemo(() => {
-        const totalNumbers = pageNeighbours * 2 + 3
-        const totalBlocks = totalNumbers + 2
-
-        if (totalPages > totalBlocks) {
-            let pages = []
-
-            const leftBound = currentPage - pageNeighbours
-            const rightBound = currentPage + pageNeighbours
-            const beforeLastPage = totalPages - 1
-
-            const startPage = leftBound > 2 ? leftBound : 2
-            const endPage = rightBound < beforeLastPage ? rightBound : beforeLastPage
-
-            pages = range(startPage, endPage)
-
-            const pagesCount = pages.length
-            const singleSpillOffset = totalNumbers - pagesCount - 1
-
-            const leftSpill = startPage > 2
-            const rightSpill = endPage < beforeLastPage
-
-            if (leftSpill && !rightSpill) {
-                const extraPages = range(startPage - singleSpillOffset, startPage - 1)
-                pages = [LEFT_PAGE, ...extraPages, ...pages]
-            } else if (!leftSpill && rightSpill) {
-                const extraPages = range(endPage + 1, endPage + singleSpillOffset)
-                pages = [...pages, ...extraPages, RIGHT_PAGE]
-            } else if (leftSpill && rightSpill) {
-                pages = [LEFT_PAGE, ...pages, RIGHT_PAGE]
-            }
-
-            return [1, ...pages, totalPages]
-        }
-
-        return range(1, totalPages)
-    }, [currentPage, pageNeighbours, totalPages])
+    const fetchPageNumbers: Array<string | number> = useMemo(
+        () => computePageNumbers(currentPage, totalPages, pageNeighbours),
+        [currentPage, pageNeighbours, totalPages]
+    )
 
     return hideIfOnePage && totalPages === 1 ? (
         <></>
@@ -146,20 +115,4 @@ export const Pagination = <T,>({
     )
 }
 
-/**
- * Generates an array of numbers in a certain range and with a given step
- * @param from
- * @param to
- * @param step
- */
-export const range = (from: number, to: number, step = 1) => {
-    let i = from
-    const range: number[] = []
-
-    while (i <= to) {
-        range.push(i)
-        i += step
-    }
-
-    return range
-}
+export { computePageNumbers, range } from './paginationUtils'

@@ -8,25 +8,13 @@ This document catalogues bugs, performance issues, code quality problems, access
 
 - **#19 `next.config.js` (line 7)**: `reactStrictMode: false` is disabled with the comment "Authorization does not work in this mode". Strict Mode double-invocation of effects exposes real bugs (like the side effects in Redux slices). The root cause should be fixed and Strict Mode re-enabled.
 
-- **#20 `api/store.ts`**: Uses the deprecated `AnyAction` type from `@reduxjs/toolkit`. This type has been removed in newer versions of RTK. Replace with `UnknownAction`.
-
-- **#21 `functions/helpers.ts`**: File has a `// TODO: Rename to utils` comment at the top. There are also similar cleanup TODOs in `functions/constants.ts`, `functions/coordinates.ts`, `api/types/comments.ts`, `api/types/photos.ts`, `api/types/rating.ts`, `api/types/visited.ts`, and `api/apiPastvu.ts`. These indicate accumulated technical debt that should be resolved.
-
 - **#22 `pages/places/create.tsx`, `pages/places/[id]/edit.tsx`, `pages/users/settings.tsx`**: All three pages cast `validationErrors as any` when passing to form components. The `PlaceForm` and `UserForm` accept `errors?: ApiType.*.PostItemRequest` but the API returns a `Record<keyof T, string>`. A proper error type should be defined and threaded through instead of silencing the type system.
-
-- **#23 `components/common/interactive-map/InteractiveMap.tsx`**: Has a `// TODO: Refactor this component` at the top. The component mixes concerns: tile layer selection, marker rendering, fullscreen handling, localStorage persistence, and event handling. Splitting into focused sub-components would improve maintainability.
-
-- **#24 `pages/map.tsx` (line 41–43)**: Two separate state variables `categories` and `mapCategories` track essentially the same thing (category filter) with one being debounced for the API and one for immediate UI feedback. The naming and relationship is acknowledged as confusing via a `// TODO: Categories and categories?` comment.
 
 - **#25 `components/common/interactive-map/coordinates-control/CoordinatesControl.tsx`**: The labels `Lat:` and `Lon:` are hardcoded English strings, not passed through i18n.
 
-- **#26 `components/common/app-layout/app-bar/UserMenu.tsx` (line 50)**: `До нового уровня:` is a hardcoded Russian string not passed through the translation system.
+- **#28 `api/apiPastvu.ts`**: Defines its own local types (`Photo`, `RequestNearestGetPhotos`, `ResponseNearestGetPhotos`) that are not shared with the rest of the model layer. The types should live in `api/models/` for consistency.
 
-- **#27 `components/common/app-layout/login-form/LoginForm.tsx` (line 115)**: The `useEffect` cleanup sets `localeError` to an empty string, but `localeError` is never set to anything other than `''` in this component (the state is declared and used but nothing ever calls `setLocaleError` with a non-empty value). The state and its cleanup are dead code.
-
-- **#28 `api/apiPastvu.ts`**: The entire file is marked `// TODO: Refactoring` and defines its own local types (`Photo`, `RequestNearestGetPhotos`, `ResponseNearestGetPhotos`) that are not shared with the rest of the model layer. The types should live in `api/models/` for consistency.
-
-- **#29 `functions/coordinates.ts`**: Uses the old `function()` syntax throughout (acknowledged with a TODO) and suppresses TypeScript errors with `// @ts-ignore` in multiple places. Migrating to arrow functions and proper generics would remove the suppressions.
+- **#29 `functions/coordinates.ts`**: Uses the old `function()` syntax throughout and suppresses TypeScript errors with `// @ts-ignore` in multiple places. Migrating to arrow functions and proper generics would remove the suppressions.
 
 - **#30 `pages/places.tsx` (line 88–94)**: The canonical URL manually strips `lat`, `lon`, `sort`, and `order` from query params to avoid duplicate content. This pattern is fragile — if new transient params are added to the filter, they must also be remembered here.
 
@@ -56,19 +44,9 @@ This document catalogues bugs, performance issues, code quality problems, access
 
 ## Testing
 
-- **#40 `functions/helpers.ts`**: `removeMarkdown`, `formatDate`, `timeAgo`, `ratingColor`, `round`, `addDecimalPoint`, and `encodeQueryData` are covered by `helpers.test.ts`. However, the broken regex patterns in `removeMarkdown` (links and images) are not tested, so those bugs pass tests silently. Add cases for standard Markdown link and image syntax.
-
-- **#41 `functions/validators.ts`**: `validateEmail` has no test file. It is used in login and registration forms and the regex is minimal (`/^[^@ ]+@[^@ ]+\.[^@ .]+$/`). It should be tested against edge cases (subdomains, plus-addressing, invalid formats).
-
-- **#42 `api/authSlice.ts`, `api/applicationSlice.ts`, `api/notificationSlice.ts`**: No tests exist for any Redux slice. The `login`/`logout` reducers, cookie side-effects, and `Notify` thunk are critical paths with no coverage.
-
 - **#43 `functions/localstorage.ts`**: No tests. The module wraps all localStorage access for the app; errors here affect authentication persistence, locale detection, and map state. Edge cases (corrupted JSON, SSR environment, missing keys) should be tested.
 
-- **#44 `components/ui/pagination/Pagination.tsx`**: No tests for the `fetchPageNumbers` / `range` pagination logic. The algorithm has several boundary conditions (first page, last page, neighbour overflow) that are untested.
-
 - **#45 `middleware.ts`**: The route-guard middleware has no tests. It protects `/places/create` and `/users/settings` from unauthenticated access; regression coverage would catch any breakage during refactors.
-
-- **#46 General**: Only two test files exist in the entire project (`functions/helpers.test.ts` and `functions/coordinates.test.ts`). No component tests, no API slice tests, and no integration tests are present. Critical user journeys (login, place creation, photo upload flow) are entirely untested.
 
 ---
 

@@ -21,7 +21,11 @@ Next.js 16 (Pages Router) with React 19. TypeScript throughout.
 - `components/ui/` — generic UI primitives (Autocomplete, Pagination, Carousel, etc.)
 - `components/pages/` — page-specific compound components (place/, user/, categories/, tags/)
 
-**Testing**: Jest + jsdom. Only two test files exist: `functions/helpers.test.ts` and `functions/coordinates.test.ts`. No component or slice tests.
+**Testing**: Jest + jsdom. Test files are co-located with source. Test suites added: `helpers.test.ts`, `coordinates.test.ts`, `validators.test.ts`, `localstorage.test.ts`, `authSlice.test.ts`, `applicationSlice.test.ts`, `notificationSlice.test.ts`, `Pagination.test.ts`. When a component imports UI library deps (e.g. `simple-react-ui-kit`) that are not in `moduleNameMapper`, extract pure logic into a separate utility file (e.g. `paginationUtils.ts`) and import from there in the test.
+
+**i18n scanner**: `yarn locales:build` runs `i18next-scanner` which requires all translation keys to be dot-separated (`group.key`). Pre-existing flat keys in `common.json` cause scanner failures — this is a known pre-existing issue unrelated to new work. New keys should always be dot-separated.
+
+**`AnyAction` deprecated**: `api/store.ts` uses `UnknownAction` (not `AnyAction`) from `@reduxjs/toolkit`.
 
 **Why:** Summarises the entire client codebase structure for quick context in future sessions.
 **How to apply:** Use when suggesting refactors, new features, or bug fixes to stay consistent with existing patterns.

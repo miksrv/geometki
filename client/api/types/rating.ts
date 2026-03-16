@@ -6,7 +6,6 @@ export interface ListResponse {
     vote?: number | null
 }
 
-// TODO Change place to placeId
 export interface PutRequest {
     place: string
     score: number

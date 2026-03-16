@@ -1,7 +1,7 @@
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
 import { createWrapper, HYDRATE } from 'next-redux-wrapper'
-import { AnyAction, combineReducers, configureStore } from '@reduxjs/toolkit'
+import { combineReducers, configureStore, UnknownAction } from '@reduxjs/toolkit'
 
 import applicationSlice from '@/api/applicationSlice'
 import authSlice from '@/api/authSlice'
@@ -22,7 +22,10 @@ const combinedReducer = combineReducers({
 // 2. Process HYDRATE separately
 type RootReducerState = ReturnType<typeof combinedReducer>
 
-const rootReducer: (state: RootReducerState | undefined, action: AnyAction) => RootReducerState = (state, action) => {
+const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) => RootReducerState = (
+    state,
+    action
+) => {
     if (action.type === HYDRATE) {
         return {
             ...state, // old client state

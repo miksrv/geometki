@@ -228,5 +228,6 @@
     "activity-editing": "Редактировал(а) интересное место",
     "activity-new-place": "Добавил(а) новое интересное место",
     "activity-uploading-photo": "Загрузил(а) фотографию к интересному месту",
-    "activity-rating": "Оценил(а) интересное место"
+    "activity-rating": "Оценил(а) интересное место",
+    "userMenu.untilNextLevel": "До нового уровня:"
 }

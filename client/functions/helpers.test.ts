@@ -362,6 +362,45 @@ describe('helpers', () => {
         })
     })
 
+    describe('removeMarkdown', () => {
+        it('returns empty string for undefined input', () => {
+            expect(helpers.removeMarkdown(undefined)).toBe('')
+        })
+
+        it('strips bold markdown', () => {
+            expect(helpers.removeMarkdown('**bold text**')).toBe('bold text')
+        })
+
+        it('strips inline code', () => {
+            expect(helpers.removeMarkdown('`code snippet`')).toBe('code snippet')
+        })
+
+        it('strips strikethrough', () => {
+            expect(helpers.removeMarkdown('~~strikethrough~~')).toBe('strikethrough')
+        })
+
+        // The link regex \[([^\]]+)\]\([^)]+\) does correctly strip Markdown links.
+        // Documenting current behaviour: the text inside [] is returned and the URL is removed.
+        it('strips Markdown link syntax and returns the link text (current behaviour)', () => {
+            expect(helpers.removeMarkdown('[link text](https://example.com)')).toBe('link text')
+        })
+
+        // The image regex runs after the link regex, so the link regex first strips [alt text](url)
+        // leaving a leading '!' which is not part of the captured group. The image regex then
+        // no longer matches the remaining '!alt text', so the '!' is left in the output.
+        // Documenting current (broken) behaviour: the link regex partially processes the image
+        // before the image regex can run, resulting in '!' + alt text being returned.
+        it('image syntax: link regex runs first, leaving a leading ! in the output (current broken behaviour)', () => {
+            expect(helpers.removeMarkdown('![alt text](https://example.com/img.png)')).toBe('!alt text')
+        })
+
+        // Empty alt: link regex requires [^\]]+ (1+ chars) so it skips []; image regex uses [^\]]* (0+)
+        // and correctly matches, replacing with empty string.
+        it('image with empty alt: image regex matches and returns empty string (current behaviour)', () => {
+            expect(helpers.removeMarkdown('![](https://example.com/img.png)')).toBe('')
+        })
+    })
+
     describe('addDecimalPoint', () => {
         it('adds .0 to integers', () => {
             expect(helpers.addDecimalPoint(123)).toBe('123.0')

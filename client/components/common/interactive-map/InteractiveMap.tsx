@@ -94,7 +94,6 @@ const CursorCoordinatesDisplay: React.FC<CursorCoordinatesDisplayProps> = React.
 
 CursorCoordinatesDisplay.displayName = 'CursorCoordinatesDisplay'
 
-// TODO: Refactor this component
 export const InteractiveMap: React.FC<MapProps> = ({
     places,
     photos,

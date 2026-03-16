@@ -229,5 +229,6 @@
     "activity-editing": "Edited an interesting place",
     "activity-new-place": "Added a new interesting place",
     "activity-uploading-photo": "Uploaded a photo to an interesting place",
-    "activity-rating": "Rated an interesting place"
+    "activity-rating": "Rated an interesting place",
+    "userMenu.untilNextLevel": "Until next level:"
 }

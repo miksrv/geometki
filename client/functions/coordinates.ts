@@ -1,5 +1,3 @@
-// TODO: Refactoring this file, change function() to arrow function
-
 import { ApiType } from '@/api'
 
 const reInteger = '\\d+'
