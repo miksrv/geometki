@@ -134,12 +134,7 @@ export interface CoordinateDItem {
 }
 
 export const CoordinatesD = {
-    create(
-        latDeg: number,
-        latIsSouth: boolean,
-        lonDeg: number,
-        lonIsWest: boolean
-    ): CoordinateDItem {
+    create(latDeg: number, latIsSouth: boolean, lonDeg: number, lonIsWest: boolean): CoordinateDItem {
         return {
             equalTo: function (other: CoordinateDItem) {
                 return (

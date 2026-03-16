@@ -14,11 +14,16 @@ final class ValidatorHelpersTest extends CIUnitTestCase
     /** @var string|false Original value of auth.token.secret before the test run */
     private $originalJwtSecret;
 
+    /** @var string|false Original value of auth.token.live before the test run */
+    private $originalJwtLive;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->originalJwtSecret = getenv('auth.token.secret');
+        $this->originalJwtLive   = getenv('auth.token.live');
         putenv('auth.token.secret=test-secret-key');
+        putenv('auth.token.live=3600');
     }
 
     protected function tearDown(): void
@@ -28,6 +33,13 @@ final class ValidatorHelpersTest extends CIUnitTestCase
         } else {
             putenv('auth.token.secret=' . $this->originalJwtSecret);
         }
+
+        if ($this->originalJwtLive === false) {
+            putenv('auth.token.live');
+        } else {
+            putenv('auth.token.live=' . $this->originalJwtLive);
+        }
+
         parent::tearDown();
     }
 
