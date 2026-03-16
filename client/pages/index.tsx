@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Button } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
@@ -27,36 +27,24 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en' : '')
 
     const [lastDate, setLastDate] = useState<string>()
-    const [activityCache, setActivityCache] = useState<ApiModel.Activity[]>([])
 
     const { data, isFetching } = API.useActivityGetInfinityListQuery({ date: lastDate })
 
-    useEffect(() => {
-        const onScroll = () => {
-            const scrolledToBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 20
+    const onScroll = useCallback(() => {
+        const scrolledToBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 20
 
-            if (scrolledToBottom && !isFetching && !!data?.items.length) {
-                setLastDate(data.items[data.items.length - 1].created?.date)
-            }
+        if (scrolledToBottom && !isFetching && !!data?.items.length) {
+            setLastDate(data.items[data.items.length - 1].created?.date)
         }
+    }, [isFetching, data])
 
+    useEffect(() => {
         document.addEventListener('scroll', onScroll)
 
         return () => {
             document.removeEventListener('scroll', onScroll)
         }
-    }, [lastDate, isFetching, data])
-
-    useEffect(() => {
-        if (data?.items) {
-            setActivityCache((prev) => [...(prev || []), ...data.items])
-        }
-    }, [data?.items])
-
-    useEffect(() => {
-        setActivityCache([])
-        setLastDate(undefined)
-    }, [])
+    }, [onScroll])
 
     return (
         <AppLayout>
@@ -131,7 +119,7 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
 
             <ActivityList
                 title={t('news-feed')}
-                activities={activityCache}
+                activities={data?.items}
                 loading={isFetching}
             />
         </AppLayout>

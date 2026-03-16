@@ -4,26 +4,6 @@ This document catalogues bugs, performance issues, code quality problems, access
 
 ---
 
-## Performance
-
-- **#11 `components/common/interactive-map/InteractiveMap.tsx`**: This single component is ~430 lines and manages map layers, markers, fullscreen, position storage, type switching, and category control. The entire component re-renders on any state change (e.g. cursor position updates on every `mousemove`). The cursor position update path (`setCursorPosition`) should be isolated behind `React.memo` or moved to a child component so the parent does not re-render on every pixel of mouse movement.
-
-- **#12 `pages/places/[id]/index.tsx`**: `placeSchema` and `breadCrumbSchema` are recomputed on every render because they are plain object literals, not memoised. Wrap them in `useMemo` to avoid unnecessary object allocations.
-
-- **#13 `pages/places.tsx`**: The `handleChangeFilter` function is recreated on every render and passed to a deep child tree. Wrap it in `useCallback`.
-
-- **#14 `components/common/photo-gallery/PhotoGallery.tsx` (line 51–53)**: The `isEmptyPhotoList` `useMemo` dependency array contains the expression `!uploadingPhotos?.length` (a boolean) rather than `uploadingPhotos?.length` (a number). This means the memo re-runs more than necessary and can return stale values in some update sequences.
-
-- **#15 `pages/index.tsx` and `pages/users/[id]/index.tsx`**: The infinite-scroll handler is added with `document.addEventListener('scroll', …)` and is recreated on every render inside a `useEffect` that depends on `[lastDate, isFetching, data]`. Prefer a `useCallback`-memoised handler and a stable `useEffect` dependency list.
-
-- **#16 `api/api.ts` `activityGetInfinityList`**: The infinite-list merge/forceRefetch logic is commented out. The current implementation falls back to a standard query, meaning each "load more" call replaces the cache entry and the consumer must manually accumulate items in local state (the stale-closure bug above). Implementing the native RTK Query infinite scroll pattern with `serializeQueryArgs` + `merge` would eliminate this local state management entirely.
-
-- **#17 `components/common/app-layout/app-bar/AppAuthChecker.tsx`**: Polls `auth/me` every 60 seconds on every page. The poll continues even when the browser tab is hidden. Add `skipPollingIfUnfocused: true` to the query options to reduce unnecessary network traffic.
-
-- **#18 `functions/schema.ts` `PlaceSchema`**: Passes raw `place.content` (Markdown source) as the schema.org `description` field. The `removeMarkdown` helper exists for this purpose but is not called here, leaving Markdown syntax in structured data.
-
----
-
 ## Code Quality
 
 - **#19 `next.config.js` (line 7)**: `reactStrictMode: false` is disabled with the comment "Authorization does not work in this mode". Strict Mode double-invocation of effects exposes real bugs (like the side effects in Redux slices). The root cause should be fixed and Strict Mode re-enabled.

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import type { BreadcrumbList } from 'schema-dts'
 import { Button, Container, Dialog } from 'simple-react-ui-kit'
 
@@ -93,38 +93,41 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         sort: undefined
     })}`
 
-    const handleChangeFilter = async (key: keyof PlacesFilterType, value: string | number | undefined) => {
-        const filter = { ...initialFilter, [key]: value }
-        const update = {
-            category: filter.category ?? undefined,
-            country: filter.country ?? undefined,
-            district: filter.district ?? undefined,
-            lat: filter.lat ?? undefined,
-            locality: filter.locality ?? undefined,
-            lon: filter.lon ?? undefined,
-            order: filter.order !== DEFAULT_ORDER ? filter.order : undefined,
-            page: filter.page !== 1 ? filter.page : undefined,
-            region: filter.region ?? undefined,
-            sort: filter.sort !== DEFAULT_SORT ? filter.sort : undefined,
-            tag: filter.tag ?? undefined
-        }
+    const handleChangeFilter = useCallback(
+        async (key: keyof PlacesFilterType, value: string | number | undefined) => {
+            const filter = { ...initialFilter, [key]: value }
+            const update = {
+                category: filter.category ?? undefined,
+                country: filter.country ?? undefined,
+                district: filter.district ?? undefined,
+                lat: filter.lat ?? undefined,
+                locality: filter.locality ?? undefined,
+                lon: filter.lon ?? undefined,
+                order: filter.order !== DEFAULT_ORDER ? filter.order : undefined,
+                page: filter.page !== 1 ? filter.page : undefined,
+                region: filter.region ?? undefined,
+                sort: filter.sort !== DEFAULT_SORT ? filter.sort : undefined,
+                tag: filter.tag ?? undefined
+            }
 
-        if (
-            (filter.category !== category ||
-                filter.country !== country ||
-                filter.district !== district ||
-                filter.region !== region ||
-                filter.locality !== locality) &&
-            currentPage !== 1
-        ) {
-            update.page = undefined
-        }
+            if (
+                (filter.category !== category ||
+                    filter.country !== country ||
+                    filter.district !== district ||
+                    filter.region !== region ||
+                    filter.locality !== locality) &&
+                currentPage !== 1
+            ) {
+                update.page = undefined
+            }
 
-        setFiltersOptionsOpen(false)
-        setFilterOpenTitle('')
+            setFiltersOptionsOpen(false)
+            setFilterOpenTitle('')
 
-        return await router.push('/places' + encodeQueryData(update))
-    }
+            return await router.push('/places' + encodeQueryData(update))
+        },
+        [category, country, currentPage, district, initialFilter, locality, order, region, router, sort, tag]
+    )
 
     const handleClearLocationFilter = async () => {
         const filter = {
