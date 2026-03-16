@@ -149,10 +149,12 @@ export const Search: React.FC<SearchProps> = () => {
     const handleSelectLocation = async (value?: AutocompleteOption<string | ApiType.Coordinates>) => {
         if (value?.type === AutocompleteOptionType.COORDINATES) {
             const coords = value?.value as ApiType.Coordinates
-            await router.push(`/map#${coords.lat},${coords.lon},17?m=${coords.lat},${coords.lon}`)
+            const hash = `${coords.lat},${coords.lon},17?m=${coords.lat},${coords.lon}`
 
             if (router.pathname === '/map') {
-                window.location.reload()
+                await router.replace({ hash, pathname: '/map' })
+            } else {
+                await router.push(`/map#${hash}`)
             }
         } else {
             await router.push(`/places/${value?.value as string}`)

@@ -28,7 +28,7 @@ export const MapEvents: React.FC<MapEventsProps> = ({ onMouseMove, onChangeBound
 
     useEffect(() => {
         onChangeBounds?.(mapEvents.getBounds(), mapEvents.getZoom())
-    })
+    }, [mapEvents])
 
     return null
 }

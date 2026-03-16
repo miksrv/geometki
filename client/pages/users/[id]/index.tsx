@@ -54,7 +54,7 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
 
     useEffect(() => {
         if (data?.items) {
-            setActivityCache([...(activityCache ?? []), ...data.items])
+            setActivityCache((prev) => [...(prev ?? []), ...data.items])
         }
     }, [data?.items])
 

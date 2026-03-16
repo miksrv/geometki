@@ -151,9 +151,9 @@ export const removeMarkdown = (text?: string): string => {
     // Remove inline code
     cleanedText = cleanedText.replace(/`([^`]+)`/g, '$1')
     // Remove links
-    cleanedText = cleanedText.replace(/\[([^\]]+)\\]\([^\\)]+\)/g, '$1')
+    cleanedText = cleanedText.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     // Remove images
-    cleanedText = cleanedText.replace(/!\[([^\]]*)\\]\([^\\)]+\)/g, '$1')
+    cleanedText = cleanedText.replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
     // Remove blockquotes
     cleanedText = cleanedText.replace(/^\s*>+\s+/gm, '')
     // Remove unordered lists

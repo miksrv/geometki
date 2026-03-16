@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { ApiModel } from '@/api'
+import type { RootState } from '@/api/store'
 
 type SnackbarStateProps = {
     list: ApiModel.Notification[]
@@ -9,7 +10,7 @@ type SnackbarStateProps = {
 
 export const Notify = createAsyncThunk(
     'snackbar/addNotification',
-    async (notification: ApiModel.Notification, { dispatch }) => {
+    async (notification: ApiModel.Notification, { dispatch, getState }) => {
         if (!notification.type && !notification.message) {
             return
         }
@@ -17,7 +18,12 @@ export const Notify = createAsyncThunk(
         dispatch(notificationSlice.actions.addNotification(notification))
 
         setTimeout(() => {
-            dispatch(deleteNotification(notification.id))
+            const state = getState() as RootState
+            const exists = state.snackbar.list.some(({ id }) => id === notification.id)
+
+            if (exists) {
+                dispatch(deleteNotification(notification.id))
+            }
         }, 10000)
 
         return notification

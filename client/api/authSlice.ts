@@ -33,7 +33,7 @@ const authSlice = createSlice({
             state.isAuth = payload?.auth ?? false
 
             if (payload?.auth && !!payload.token) {
-                void setCookie(LOCAL_STORAGE.AUTH_TOKEN, true)
+                void setCookie(LOCAL_STORAGE.AUTH_TOKEN, payload.token)
 
                 LocalStorage.setItem(LOCAL_STORAGE.AUTH_TOKEN as 'AUTH_TOKEN', payload.token)
             } else {

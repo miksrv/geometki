@@ -91,6 +91,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
     const mapRef = useRef<Map>(null)
 
     const [readyStorage, setReadyStorage] = useState<boolean>(false)
+    const [isFullscreen, setIsFullscreen] = useState<boolean>(false)
     const [coordinatesOpen, setCoordinatesOpen] = useState<boolean>(false)
     const [placeMark, setPlaceMark] = useState<ApiType.Coordinates>()
     const [mapPosition, setMapPosition] = useState<MapPositionType>()
@@ -225,6 +226,18 @@ export const InteractiveMap: React.FC<MapProps> = ({
         onChangeMapType?.(mapType)
     }, [])
 
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement)
+        }
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange)
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange)
+        }
+    }, [])
+
     return (
         <div className={styles.mapContainer}>
             <ReactLeaflet.MapContainer
@@ -353,7 +366,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     {enableFullScreen && (
                         <Button
                             mode={'secondary'}
-                            icon={document.fullscreenElement ? 'FullscreenOut' : 'FullscreenIn'}
+                            icon={isFullscreen ? 'FullscreenOut' : 'FullscreenIn'}
                             onClick={handleToggleFullscreen}
                         />
                     )}

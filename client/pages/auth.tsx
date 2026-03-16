@@ -37,7 +37,7 @@ const AuthPage: NextPage<object> = () => {
         if (isAuth) {
             void router.push('/')
         }
-    })
+    }, [isAuth])
 
     useEffect(() => {
         if (data?.auth === true && !isProcessing) {

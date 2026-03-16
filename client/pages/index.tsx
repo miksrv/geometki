@@ -49,7 +49,7 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
 
     useEffect(() => {
         if (data?.items) {
-            setActivityCache([...(activityCache || []), ...data.items])
+            setActivityCache((prev) => [...(prev || []), ...data.items])
         }
     }, [data?.items])
 

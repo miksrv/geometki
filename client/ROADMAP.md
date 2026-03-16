@@ -4,30 +4,6 @@ This document catalogues bugs, performance issues, code quality problems, access
 
 ---
 
-## Bugs
-
-- **#1 `api/authSlice.ts` (line 36)**: `setCookie(LOCAL_STORAGE.AUTH_TOKEN, true)` stores the boolean `true` as the cookie value instead of the actual token string. The middleware reads this cookie to gate protected routes, so the value stored is semantically wrong and can cause unexpected behaviour if anything ever inspects the cookie value rather than its mere presence.
-
-- **#2 `pages/auth.tsx` (line 37–40)**: The `useEffect` that redirects authenticated users (`router.push('/')`) has **no dependency array**. It runs on every render, including while the login API call is in flight, which can cause a redirect loop or premature navigation before the auth state has settled.
-
-- **#3 `pages/index.tsx` (line 51–54)**: The infinite-scroll `useEffect` that accumulates items into `activityCache` reads the stale closure value of `activityCache` directly: `setActivityCache([...(activityCache || []), ...data.items])`. This can silently drop items under rapid successive renders. The functional updater form (`setActivityCache(prev => [...prev, ...data.items])`) should be used instead.
-
-- **#4 `pages/users/[id]/index.tsx`**: The same stale-closure accumulation bug exists in the user activity feed (`setActivityCache([...(activityCache ?? []), ...data.items])`), copied from the index page.
-
-- **#5 `components/common/interactive-map/MapEvents.tsx` (line 29–31)**: `useEffect(() => { onChangeBounds?.(…) })` has **no dependency array**, so it fires on every render and triggers a debounced API call on each re-render of the map, not only on actual map movement. Add `[mapEvents]` or use the `moveend` event exclusively.
-
-- **#6 `functions/helpers.ts` `removeMarkdown` (lines 153–156)**: The regex patterns for stripping markdown links and images contain escaped backslashes that do not match the intended Markdown syntax. The patterns `\[([^\]]+)\\]\([^\\)]+\)` and `!\[([^\]]*)\\]\([^\\)]+\)` use literal `\]` and `\)` in character class/group positions, so real Markdown links (e.g. `[text](url)`) are **not stripped**. This causes raw link syntax to appear in SEO descriptions and schema.org content.
-
-- **#7 `components/common/interactive-map/InteractiveMap.tsx` (line 356)**: `document.fullscreenElement` is read during render (inside JSX) on every render cycle. In SSR this will throw; in a browser it causes incorrect initial icon state since the value is read synchronously before React commits.
-
-- **#8 `functions/coordinates.ts` `CoordinatesD.create`**: The `// @ts-ignore` on the `create` method suppresses a TypeScript error on a function whose return type cannot be inferred without the annotation, masking potential type mismatches in callers.
-
-- **#9 `components/common/app-layout/app-bar/Search.tsx` (line 155)**: When a coordinate result is selected while already on the `/map` page, the code calls `window.location.reload()`. This causes a full page reload rather than a smooth state update and loses any unsaved user state.
-
-- **#10 `api/notificationSlice.ts` `Notify`**: The 10-second auto-dismiss uses `setTimeout` inside a Redux thunk. If the component unmounts before the timeout fires, the dispatch still executes against a potentially stale store reference, which can cause a state update on an unmounted tree in React 18.
-
----
-
 ## Performance
 
 - **#11 `components/common/interactive-map/InteractiveMap.tsx`**: This single component is ~430 lines and manages map layers, markers, fullscreen, position storage, type switching, and category control. The entire component re-renders on any state change (e.g. cursor position updates on every `mousemove`). The cursor position update path (`setCursorPosition`) should be isolated behind `React.memo` or moved to a child component so the parent does not re-render on every pixel of mouse movement.

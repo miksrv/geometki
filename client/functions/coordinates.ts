@@ -123,9 +123,21 @@ const parseHemispheres = (h1: string, h2: string, h3: string, allowEmpty = false
 }
 
 export const CoordinatesD = {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    create(latDeg: number, latIsSouth: boolean, lonDeg: number, lonIsWest: boolean) {
+    create(
+        latDeg: number,
+        latIsSouth: boolean,
+        lonDeg: number,
+        lonIsWest: boolean
+    ): {
+        equalTo: (other: ReturnType<typeof CoordinatesD.create>) => boolean
+        format: () => { latitude: string; longitude: string }
+        getLatLng: () => ApiType.Coordinates
+        isValid: () => boolean
+        latDeg: number
+        latIsSouth: boolean
+        lonDeg: number
+        lonIsWest: boolean
+    } {
         return {
             equalTo: function (other: ReturnType<typeof CoordinatesD.create>) {
                 return (
