@@ -11,6 +11,26 @@ use CodeIgniter\Test\CIUnitTestCase;
  */
 final class ValidatorHelpersTest extends CIUnitTestCase
 {
+    /** @var string|false Original value of auth.token.secret before the test run */
+    private $originalJwtSecret;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->originalJwtSecret = getenv('auth.token.secret');
+        putenv('auth.token.secret=test-secret-key');
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->originalJwtSecret === false) {
+            putenv('auth.token.secret');
+        } else {
+            putenv('auth.token.secret=' . $this->originalJwtSecret);
+        }
+        parent::tearDown();
+    }
+
     // -------------------------------------------------------------------------
     // rating_helper: transformRating()
     // -------------------------------------------------------------------------
