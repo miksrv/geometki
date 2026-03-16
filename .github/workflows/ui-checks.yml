@@ -1,12 +1,11 @@
-name: Checks
+name: UI Checks
 
 on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
+    paths:
+      - 'client/**/*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -15,7 +14,7 @@ concurrency:
 jobs:
   ui-checks:
     if: github.event.pull_request.draft == false
-    name: UI Client
+    name: Build & Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +23,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'yarn'
           cache-dependency-path: 'client/yarn.lock'
 
@@ -43,8 +42,8 @@ jobs:
 
       - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
         name: Install dependencies
-        working-directory: client
         run: yarn workspaces focus
+        working-directory: client
 
       - name: Linter
         run: yarn eslint:check
@@ -84,27 +83,3 @@ jobs:
           echo "export const update = '$dateNow'" > update.ts
           yarn build
         working-directory: client
-
-  api-checks:
-    if: github.event.pull_request.draft == false
-    name: API Server
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Get composer cache directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-        working-directory: server
-
-      - name: Cache composer dependencies
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('server/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
-
-      - name: Install dependencies
-        run: composer install --no-dev --no-progress --prefer-dist --optimize-autoloader
-        working-directory: server
