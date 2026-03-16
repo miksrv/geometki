@@ -19,7 +19,7 @@ export const Notify = createAsyncThunk(
 
         setTimeout(() => {
             const state = getState() as RootState
-            const exists = state.snackbar.list.some(({ id }) => id === notification.id)
+            const exists = state.notification.list.some(({ id }) => id === notification.id)
 
             if (exists) {
                 dispatch(deleteNotification(notification.id))
