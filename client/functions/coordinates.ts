@@ -122,24 +122,26 @@ const parseHemispheres = (h1: string, h2: string, h3: string, allowEmpty = false
     return { latIsSouth, lonIsWest, swapLatLon }
 }
 
+export interface CoordinateDItem {
+    equalTo: (other: CoordinateDItem) => boolean
+    format: () => { latitude: string; longitude: string }
+    getLatLng: () => ApiType.Coordinates
+    isValid: () => boolean
+    latDeg: number
+    latIsSouth: boolean
+    lonDeg: number
+    lonIsWest: boolean
+}
+
 export const CoordinatesD = {
     create(
         latDeg: number,
         latIsSouth: boolean,
         lonDeg: number,
         lonIsWest: boolean
-    ): {
-        equalTo: (other: ReturnType<typeof CoordinatesD.create>) => boolean
-        format: () => { latitude: string; longitude: string }
-        getLatLng: () => ApiType.Coordinates
-        isValid: () => boolean
-        latDeg: number
-        latIsSouth: boolean
-        lonDeg: number
-        lonIsWest: boolean
-    } {
+    ): CoordinateDItem {
         return {
-            equalTo: function (other: ReturnType<typeof CoordinatesD.create>) {
+            equalTo: function (other: CoordinateDItem) {
                 return (
                     this.latDeg === other.latDeg &&
                     this.latIsSouth === other.latIsSouth &&

@@ -120,7 +120,7 @@ export const Search: React.FC<SearchProps> = () => {
                 const result = parser.fromString(normalizeCoords)
 
                 if (!result.error) {
-                    const resultItems = result.coordinates?.map((it) => {
+                    const resultItems = result.coordinates?.map((it: Coordinates.CoordinateDItem) => {
                         const coordStrings = it.format()
                         const latLng = it.getLatLng()
 
