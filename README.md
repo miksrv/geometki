@@ -113,6 +113,32 @@ Run on every push and non-draft pull request to `main` ([`.github/workflows/chec
 - Next.js production build (client)
 - PHPUnit tests (server)
 
+## API Documentation
+
+The backend exposes a REST JSON API built with CodeIgniter 4 (PHP 8.2). The full endpoint reference is in [`server/API.md`](server/API.md).
+
+Authentication uses JWT Bearer tokens. Error responses follow the shape `{ "messages": { "error": "..." } }`.
+
+### Resource summary
+
+| Resource | Base path | Description |
+|----------|-----------|-------------|
+| Auth | `/auth` | Registration, login, OAuth (Google / Yandex / VK), current user |
+| Places | `/places` | Create, read, update, delete POI records |
+| POI | `/poi` | Lightweight map-marker data and clustering |
+| Photos | `/photos` | Photo upload, rotate, delete (permanent and temporary) |
+| Users | `/users` | User profiles, avatar upload/crop, settings |
+| Rating | `/rating` | Per-place ratings and voting history |
+| Comments | `/comments` | Place comments and replies |
+| Activity | `/activity` | Grouped activity feed (places, photos, edits, ratings) |
+| Bookmarks | `/bookmarks` | Toggle and check bookmarks for a place |
+| Visited | `/visited` | Toggle and list "visited" marks for a place |
+| Notifications | `/notifications` | Per-user notification feed and badge count |
+| Location | `/location` | Location search, geocoder, session coordinates |
+| Categories | `/categories` | Place category list with optional counts |
+| Tags | `/tags` | Tag list and autocomplete search |
+| Levels | `/levels` | Gamification levels, experience thresholds, awards |
+
 ## Tech Stack
 
 | Layer | Technology |
