@@ -28,7 +28,6 @@ export interface RotateResponse {
     preview?: string
 }
 
-// TODO: Rename place to placeId, author to authorId
 export interface ListRequest {
     limit?: number
     offset?: number

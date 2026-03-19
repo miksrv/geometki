@@ -50,7 +50,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
 
     const isEmptyPhotoList = useMemo(
         () => !localPhotos.length && !uploadingPhotos?.length,
-        [localPhotos.length, !uploadingPhotos?.length]
+        [localPhotos.length, uploadingPhotos?.length]
     )
 
     const handleRemoveClick = (photoId: string) => {

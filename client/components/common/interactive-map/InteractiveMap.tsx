@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import * as ReactLeaflet from 'react-leaflet'
 import { LatLngBounds, LatLngExpression, Map, MapOptions } from 'leaflet'
 import isEqual from 'lodash-es/isEqual'
@@ -61,7 +61,39 @@ const DEFAULT_MAP_CENTER: LatLngExpression = [51.765445, 55.099745]
 const DEFAULT_MAP_LAYER = MapLayersEnum.OSM
 const DEFAULT_MAP_TYPE = MapObjectsTypeEnum.PLACES
 
-// TODO: Refactor this component
+interface CursorCoordinatesDisplayProps {
+    mapPosition?: ApiType.Coordinates
+    enableCoordsControl?: boolean
+    coordinatesOpen: boolean
+    onChangeOpen: (open: boolean) => void
+}
+
+const CursorCoordinatesDisplay: React.FC<CursorCoordinatesDisplayProps> = React.memo(
+    ({ mapPosition, enableCoordsControl, coordinatesOpen, onChangeOpen }) => {
+        const [cursorPosition, setCursorPosition] = useState<ApiType.Coordinates>()
+
+        const handleMouseMove = useCallback((coords: ApiType.Coordinates) => {
+            setCursorPosition(coords)
+        }, [])
+
+        return (
+            <>
+                <div className={styles.bottomControls}>
+                    {enableCoordsControl && (
+                        <CoordinatesControl
+                            coordinates={cursorPosition ?? mapPosition}
+                            onChangeOpen={onChangeOpen}
+                        />
+                    )}
+                </div>
+                {enableCoordsControl && coordinatesOpen && <MapEvents onMouseMove={handleMouseMove} />}
+            </>
+        )
+    }
+)
+
+CursorCoordinatesDisplay.displayName = 'CursorCoordinatesDisplay'
+
 export const InteractiveMap: React.FC<MapProps> = ({
     places,
     photos,
@@ -91,13 +123,13 @@ export const InteractiveMap: React.FC<MapProps> = ({
     const mapRef = useRef<Map>(null)
 
     const [readyStorage, setReadyStorage] = useState<boolean>(false)
+    const [isFullscreen, setIsFullscreen] = useState<boolean>(false)
     const [coordinatesOpen, setCoordinatesOpen] = useState<boolean>(false)
     const [placeMark, setPlaceMark] = useState<ApiType.Coordinates>()
     const [mapPosition, setMapPosition] = useState<MapPositionType>()
     const [mapLayer, setMapLayer] = useState<MapLayersEnum>(DEFAULT_MAP_LAYER)
     const [mapType, setMapType] = useState<MapObjectsTypeEnum>(DEFAULT_MAP_TYPE)
     const [additionalLayers, setAdditionalLayers] = useState<MapAdditionalLayersEnum[]>()
-    const [cursorPosition, setCursorPosition] = useState<ApiType.Coordinates>()
 
     const [coordinates, setCoordinates] = useLocalStorage<MapPositionType>(storeMapKey || LOCAL_STORAGE.MAP_CENTER)
 
@@ -223,6 +255,18 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
     useEffect(() => {
         onChangeMapType?.(mapType)
+    }, [])
+
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement)
+        }
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange)
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange)
+        }
     }, [])
 
     return (
@@ -353,7 +397,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     {enableFullScreen && (
                         <Button
                             mode={'secondary'}
-                            icon={document.fullscreenElement ? 'FullscreenOut' : 'FullscreenIn'}
+                            icon={isFullscreen ? 'FullscreenOut' : 'FullscreenIn'}
                             onClick={handleToggleFullscreen}
                         />
                     )}
@@ -397,14 +441,12 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     )}
                 </div>
 
-                <div className={styles.bottomControls}>
-                    {enableCoordsControl && (
-                        <CoordinatesControl
-                            coordinates={cursorPosition ?? mapPosition}
-                            onChangeOpen={setCoordinatesOpen}
-                        />
-                    )}
-                </div>
+                <CursorCoordinatesDisplay
+                    mapPosition={mapPosition}
+                    enableCoordsControl={enableCoordsControl}
+                    coordinatesOpen={coordinatesOpen}
+                    onChangeOpen={setCoordinatesOpen}
+                />
 
                 {userLatLon && <MarkerUser coordinates={userLatLon} />}
                 <div
@@ -413,12 +455,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                 >
                     <Spinner />
                 </div>
-                {onChangeBounds && (
-                    <MapEvents
-                        onChangeBounds={handleChangeBounds}
-                        onMouseMove={enableCoordsControl && coordinatesOpen ? setCursorPosition : undefined}
-                    />
-                )}
+                {onChangeBounds && <MapEvents onChangeBounds={handleChangeBounds} />}
             </ReactLeaflet.MapContainer>
         </div>
     )

@@ -19,7 +19,8 @@ export const AppAuthChecker: React.FC = () => {
         refetch,
         isSuccess
     } = API.useAuthGetMeQuery(undefined, {
-        pollingInterval: 60 * 1000
+        pollingInterval: 60 * 1000,
+        skipPollingIfUnfocused: true
     })
 
     useEffect(() => {

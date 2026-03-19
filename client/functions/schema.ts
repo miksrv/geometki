@@ -1,6 +1,7 @@
 import { LocalBusiness, Person } from 'schema-dts'
 
 import { ApiModel, IMG_HOST } from '@/api'
+import { removeMarkdown } from '@/functions/helpers'
 
 // import { formatDateISO } from '@/functions/helpers'
 
@@ -24,7 +25,7 @@ export const PlaceSchema = (place: ApiModel.Place): unknown | LocalBusiness => (
     // },
     // dateModified: formatDateISO(place?.updated?.date),
     // datePublished: formatDateISO(place?.created?.date),
-    description: place.content,
+    description: removeMarkdown(place.content),
     geo: {
         '@type': 'GeoCoordinates',
         latitude: place.lat,

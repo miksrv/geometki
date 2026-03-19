@@ -1,7 +1,7 @@
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
 import { createWrapper, HYDRATE } from 'next-redux-wrapper'
-import { AnyAction, combineReducers, configureStore } from '@reduxjs/toolkit'
+import { combineReducers, configureStore, UnknownAction } from '@reduxjs/toolkit'
 
 import applicationSlice from '@/api/applicationSlice'
 import authSlice from '@/api/authSlice'
@@ -22,36 +22,37 @@ const combinedReducer = combineReducers({
 // 2. Process HYDRATE separately
 type RootReducerState = ReturnType<typeof combinedReducer>
 
-const rootReducer: (state: RootReducerState | undefined, action: AnyAction) => RootReducerState = (state, action) => {
+const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) => RootReducerState = (
+    state,
+    action
+) => {
     if (action.type === HYDRATE) {
+        const payload = action.payload as RootReducerState
+
         return {
             ...state, // old client state
 
             // application can be hydrated
             application:
-                action.payload.application ??
-                state?.application ??
-                combinedReducer(undefined, { type: '' }).application,
+                payload.application ?? state?.application ?? combinedReducer(undefined, { type: '' }).application,
 
             // notification can be hydrated
             notification:
-                action.payload.notification ??
-                state?.notification ??
-                combinedReducer(undefined, { type: '' }).notification,
+                payload.notification ?? state?.notification ?? combinedReducer(undefined, { type: '' }).notification,
 
             // DO NOT touch auth if there is nothing in payload
             auth:
-                action.payload.auth?.token || action.payload.auth?.isAuth
-                    ? action.payload.auth
+                payload.auth?.token || payload.auth?.isAuth
+                    ? payload.auth
                     : (state?.auth ?? combinedReducer(undefined, { type: '' }).auth),
 
             [API.reducerPath]: {
                 ...state?.[API.reducerPath],
-                ...action.payload[API.reducerPath]
+                ...payload[API.reducerPath]
             },
             [APIPastvu.reducerPath]: {
                 ...state?.[APIPastvu.reducerPath],
-                ...action.payload[APIPastvu.reducerPath]
+                ...payload[APIPastvu.reducerPath]
             }
         }
     }

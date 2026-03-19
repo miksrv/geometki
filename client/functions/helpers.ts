@@ -1,5 +1,3 @@
-// TODO: Rename to utils
-
 import dayjs from 'dayjs'
 
 export const truncateText = (text?: string, maxLength: number = 300) => {
@@ -151,9 +149,9 @@ export const removeMarkdown = (text?: string): string => {
     // Remove inline code
     cleanedText = cleanedText.replace(/`([^`]+)`/g, '$1')
     // Remove links
-    cleanedText = cleanedText.replace(/\[([^\]]+)\\]\([^\\)]+\)/g, '$1')
+    cleanedText = cleanedText.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     // Remove images
-    cleanedText = cleanedText.replace(/!\[([^\]]*)\\]\([^\\)]+\)/g, '$1')
+    cleanedText = cleanedText.replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
     // Remove blockquotes
     cleanedText = cleanedText.replace(/^\s*>+\s+/gm, '')
     // Remove unordered lists

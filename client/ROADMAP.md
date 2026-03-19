@@ -1,0 +1,73 @@
+# Client Roadmap
+
+This document catalogues bugs, performance issues, code quality problems, accessibility gaps, and missing test coverage found during a thorough review of the Next.js client codebase.
+
+---
+
+## Code Quality
+
+- **#19 `next.config.js` (line 7)**: `reactStrictMode: false` is disabled with the comment "Authorization does not work in this mode". Strict Mode double-invocation of effects exposes real bugs (like the side effects in Redux slices). The root cause should be fixed and Strict Mode re-enabled.
+
+- **#22 `pages/places/create.tsx`, `pages/places/[id]/edit.tsx`, `pages/users/settings.tsx`**: All three pages cast `validationErrors as any` when passing to form components. The `PlaceForm` and `UserForm` accept `errors?: ApiType.*.PostItemRequest` but the API returns a `Record<keyof T, string>`. A proper error type should be defined and threaded through instead of silencing the type system.
+
+- **#25 `components/common/interactive-map/coordinates-control/CoordinatesControl.tsx`**: The labels `Lat:` and `Lon:` are hardcoded English strings, not passed through i18n.
+
+- **#28 `api/apiPastvu.ts`**: Defines its own local types (`Photo`, `RequestNearestGetPhotos`, `ResponseNearestGetPhotos`) that are not shared with the rest of the model layer. The types should live in `api/models/` for consistency.
+
+- **#29 `functions/coordinates.ts`**: Uses the old `function()` syntax throughout and suppresses TypeScript errors with `// @ts-ignore` in multiple places. Migrating to arrow functions and proper generics would remove the suppressions.
+
+- **#30 `pages/places.tsx` (line 88–94)**: The canonical URL manually strips `lat`, `lon`, `sort`, and `order` from query params to avoid duplicate content. This pattern is fragile — if new transient params are added to the filter, they must also be remembered here.
+
+---
+
+## Accessibility
+
+- **#31 `components/common/app-layout/AppLayout.tsx` (lines 103–118)**: The "scroll to top" button uses `role="button"` on a `<div>` with an `onKeyDown` handler that does nothing (`() => undefined`). Keyboard users cannot activate it. Either use a `<button>` element or implement proper key handling (Enter/Space).
+
+- **#32 `components/common/app-layout/AppLayout.tsx` (lines 120–129)**: The overlay `<div role="button">` has an `onKeyDown={handleCloseOverlay}` but fires on any key press rather than only Enter/Space as per ARIA specification.
+
+- **#33 `components/common/rating/Rating.tsx`**: The star rating uses radio `<input>` elements visually hidden inside `<label>` elements, but the `<ul>` element wrapping them has no `role` or `aria-label`. Screen readers will announce this as a plain list. Add `role="radiogroup"` and a descriptive `aria-label` to the `<ul>`.
+
+- **#34 `components/common/interactive-map/coordinates-control/CoordinatesControl.tsx`**: The coordinates panel is a `<Container>` (div) with an `onClick` handler but no `role`, `tabIndex`, or keyboard event handler, making it inaccessible to keyboard and screen reader users.
+
+- **#35 `components/pages/place/place-share-buttons/PlaceShareButtons.tsx` (line 100)**: A `<div role="button">` is used for a share action without keyboard support. Use `<button>` instead.
+
+- **#36 `components/common/app-layout/login-form/LoginForm.tsx`**: Social login buttons (`<Button>` for VK, Google, Yandex) render `<Image>` with `alt=""`. Without a visible label or an `aria-label` on the button itself, screen readers will announce these as unlabelled buttons. Add `aria-label` values such as `"Sign in with Google"`.
+
+- **#37 `styles/globals.sass` (line 74)**: Global `a` styles set `outline: none`, removing the default focus indicator for keyboard users on all links across the app. A custom visible `:focus-visible` style should be provided.
+
+- **#38 Multiple pages**: The `<main>` content area inside `AppLayout` has no `id` and there is no skip-navigation link, making it impossible for keyboard/screen reader users to bypass the navigation menu.
+
+- **#39 `components/common/interactive-map/InteractiveMap.tsx`**: `attributionControl={false}` removes the map attribution. While this is a valid styling choice, the map tiles (OSM, Google, Mapbox) legally require attribution; it should be rendered elsewhere in the UI.
+
+---
+
+## Testing
+
+- **#43 `functions/localstorage.ts`**: No tests. The module wraps all localStorage access for the app; errors here affect authentication persistence, locale detection, and map state. Edge cases (corrupted JSON, SSR environment, missing keys) should be tested.
+
+- **#45 `middleware.ts`**: The route-guard middleware has no tests. It protects `/places/create` and `/users/settings` from unauthenticated access; regression coverage would catch any breakage during refactors.
+
+---
+
+## Dependencies
+
+- **#47 `nextjs-progressbar`**: Listed as `^0.0.16`, which is very old and unmaintained. The package has known compatibility issues with React 18 and Next.js 13+. The project now uses Next.js 16 and React 19. Consider replacing with `nprogress` directly or implementing a route-change progress indicator using the App Router's built-in `useRouter` events.
+
+- **#48 `remove` (version `^0.1.5`)**: A tiny package in `dependencies` that provides no clear benefit. It appears unused in the source files reviewed. Verify with a bundle analyser and remove if unused.
+
+- **#49 `@uiw/react-markdown-editor`**: Pulled in as a heavy editor dependency (CodeMirror-based). It is dynamically imported which mitigates the bundle size impact, but the `@uiw/react-md-editor` package name in `transpilePackages` differs from the actual package name `@uiw/react-markdown-editor`, suggesting a stale or incorrect config entry.
+
+- **#50 `next: 16.1.6`**: This is a non-standard version number. The latest stable Next.js 14 series is `14.x`; version `16` does not correspond to any public Next.js release at the time of this analysis. Verify this is intentional (a custom fork or pre-release) and document accordingly.
+
+- **#51 `react-hook-geolocation`**: Last published in 2021 (`^1.1.0`), has no TypeScript types bundled, and has an open issue regarding React 18 Strict Mode double-invocation causing duplicate geolocation requests. Review whether the native `navigator.geolocation` API with a simple custom hook would be sufficient.
+
+---
+
+## Security
+
+- **#52 `pages/_app.tsx` (lines 106–109)**: The Yandex Metrika and Google Analytics scripts are injected via `dangerouslySetInnerHTML` as a raw HTML string. The string contains inline `<script>` tags with hardcoded tracking IDs. While the content is static and not user-controlled, the approach bypasses Next.js's CSP mechanisms and script optimisation. Use `next/script` with `strategy="afterInteractive"` instead, which also defers execution correctly and supports nonce-based CSP policies.
+
+- **#53 `api/authSlice.ts` (line 36)**: The auth token cookie is set with `setCookie(LOCAL_STORAGE.AUTH_TOKEN, true)` — storing the boolean `true` rather than the actual token. The cookie is used by the middleware to determine authentication, meaning any user who can set a cookie named `token` to any truthy value can bypass the client-side route guard. The cookie should store a non-guessable value (or better, rely solely on the HttpOnly session cookie managed server-side).
+
+- **#54 `api/api.ts` (line 29)**: The `Authorization` header is set to the raw token string without a `Bearer` prefix (`headers.set('Authorization', token)`). While this is a server-side API contract choice, it deviates from the standard `Authorization: Bearer <token>` format and should be verified as intentional.

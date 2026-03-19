@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { BreadcrumbList, LocalBusiness } from 'schema-dts'
 import { Button, Container } from 'simple-react-ui-kit'
 
@@ -83,66 +83,72 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
         }
     }
 
-    const breadCrumbSchema: unknown | BreadcrumbList = {
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-            {
-                '@type': 'ListItem',
-                item: `${canonicalUrl}places`,
-                name: t('geotags'),
-                position: 1
-            },
-            {
-                '@type': 'ListItem',
-                name: place?.title,
-                position: 2
-            }
-        ]
-    }
+    const breadCrumbSchema: unknown | BreadcrumbList = useMemo(
+        () => ({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                {
+                    '@type': 'ListItem',
+                    item: `${canonicalUrl}places`,
+                    name: t('geotags'),
+                    position: 1
+                },
+                {
+                    '@type': 'ListItem',
+                    name: place?.title,
+                    position: 2
+                }
+            ]
+        }),
+        [canonicalUrl, place?.title, t]
+    )
 
-    const placeSchema: unknown | LocalBusiness = {
-        '@context': 'https://schema.org',
-        '@type': 'LocalBusiness',
-        address: {
-            '@type': 'PostalAddress',
-            addressCountry: place?.address?.country?.name,
-            addressLocality: place?.address?.locality?.name,
-            addressRegion: place?.address?.region?.name,
-            streetAddress: place?.address?.street
-        },
-        aggregateRating: ratingCount
-            ? {
-                  '@type': 'AggregateRating',
-                  bestRating: '5',
-                  ratingCount: ratingCount ?? 0,
-                  ratingValue: place?.rating,
-                  worstRating: '1'
-              }
-            : undefined,
-        // author: {
-        //     '@type': 'Person',
-        //     image: place?.author?.avatar
-        //         ? `${IMG_HOST}${place?.author?.avatar}`
-        //         : undefined,
-        //     name: place?.author?.name,
-        //     url: `${canonicalUrl}users/${place?.author?.id}`
-        // },
-        // dateModified: formatDateISO(place?.updated?.date),
-        // datePublished: formatDateISO(place?.created?.date),
-        description: removeMarkdown(place?.content),
-        geo: {
-            '@type': 'GeoCoordinates',
-            latitude: place?.lat,
-            longitude: place?.lon
-        },
-        image: photoList?.length ? photoList.map(({ full }) => `${IMG_HOST}${full}`) : undefined,
-        interactionStatistic: {
-            '@type': 'InteractionCounter',
-            userInteractionCount: place?.views
-        },
-        name: place?.title
-    }
+    const placeSchema: unknown | LocalBusiness = useMemo(
+        () => ({
+            '@context': 'https://schema.org',
+            '@type': 'LocalBusiness',
+            address: {
+                '@type': 'PostalAddress',
+                addressCountry: place?.address?.country?.name,
+                addressLocality: place?.address?.locality?.name,
+                addressRegion: place?.address?.region?.name,
+                streetAddress: place?.address?.street
+            },
+            aggregateRating: ratingCount
+                ? {
+                      '@type': 'AggregateRating',
+                      bestRating: '5',
+                      ratingCount: ratingCount ?? 0,
+                      ratingValue: place?.rating,
+                      worstRating: '1'
+                  }
+                : undefined,
+            // author: {
+            //     '@type': 'Person',
+            //     image: place?.author?.avatar
+            //         ? `${IMG_HOST}${place?.author?.avatar}`
+            //         : undefined,
+            //     name: place?.author?.name,
+            //     url: `${canonicalUrl}users/${place?.author?.id}`
+            // },
+            // dateModified: formatDateISO(place?.updated?.date),
+            // datePublished: formatDateISO(place?.created?.date),
+            description: removeMarkdown(place?.content),
+            geo: {
+                '@type': 'GeoCoordinates',
+                latitude: place?.lat,
+                longitude: place?.lon
+            },
+            image: photoList?.length ? photoList.map(({ full }) => `${IMG_HOST}${full}`) : undefined,
+            interactionStatistic: {
+                '@type': 'InteractionCounter',
+                userInteractionCount: place?.views
+            },
+            name: place?.title
+        }),
+        [canonicalUrl, photoList, place, ratingCount, t]
+    )
 
     useEffect(() => {
         setLocalPhotos(photoList ?? [])

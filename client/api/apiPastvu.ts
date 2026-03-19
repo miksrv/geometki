@@ -1,6 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
-// TODO: Refactoring
 export type Photo = {
     s: number
     cid: number

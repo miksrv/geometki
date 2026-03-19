@@ -31,7 +31,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
 
     const [, setReturnPath] = useLocalStorage<string>(LOCAL_STORAGE.RETURN_PATH)
 
-    const [localeError, setLocaleError] = useState<string>('')
     const [formData, setFormData] = useState<ApiType.Auth.PostLoginNativeRequest>()
     const [formErrors, setFormErrors] = useState<ApiType.Auth.PostLoginNativeRequest>()
 
@@ -108,12 +107,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
         }
     }, [serviceData?.redirect])
 
-    useEffect(() => {
-        return () => {
-            setLocaleError('')
-        }
-    }, [])
-
     return (
         <div className={styles.loginForm}>
             <div className={styles.loginServiceButtons}>
@@ -156,13 +149,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
                     />
                 </Button>
             </div>
-
-            {localeError && (
-                <Message
-                    type={'error'}
-                    title={localeError}
-                />
-            )}
 
             {!!Object.values(formErrors || {}).length && (
                 <Message

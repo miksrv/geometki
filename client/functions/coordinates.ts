@@ -1,5 +1,3 @@
-// TODO: Refactoring this file, change function() to arrow function
-
 import { ApiType } from '@/api'
 
 const reInteger = '\\d+'
@@ -122,12 +120,21 @@ const parseHemispheres = (h1: string, h2: string, h3: string, allowEmpty = false
     return { latIsSouth, lonIsWest, swapLatLon }
 }
 
+export interface CoordinateDItem {
+    equalTo: (other: CoordinateDItem) => boolean
+    format: () => { latitude: string; longitude: string }
+    getLatLng: () => ApiType.Coordinates
+    isValid: () => boolean
+    latDeg: number
+    latIsSouth: boolean
+    lonDeg: number
+    lonIsWest: boolean
+}
+
 export const CoordinatesD = {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    create(latDeg: number, latIsSouth: boolean, lonDeg: number, lonIsWest: boolean) {
+    create(latDeg: number, latIsSouth: boolean, lonDeg: number, lonIsWest: boolean): CoordinateDItem {
         return {
-            equalTo: function (other: ReturnType<typeof CoordinatesD.create>) {
+            equalTo: function (other: CoordinateDItem) {
                 return (
                     this.latDeg === other.latDeg &&
                     this.latIsSouth === other.latIsSouth &&

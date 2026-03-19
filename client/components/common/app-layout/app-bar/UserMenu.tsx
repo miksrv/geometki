@@ -47,7 +47,10 @@ export const UserMenu: React.FC<UserMenuProps> = ({ t, user, onLogout }) => (
                         {user?.levelData?.title}
                     </Link>
                 </div>
-                <div>До нового уровня: {(user?.levelData?.nextLevel || 0) - (user?.levelData?.experience || 0)}</div>
+                <div>
+                    {t('userMenu.untilNextLevel', { defaultValue: 'До нового уровня:' })}{' '}
+                    {(user?.levelData?.nextLevel || 0) - (user?.levelData?.experience || 0)}
+                </div>
             </div>
             <ul className={'contextListMenu'}>
                 <li>

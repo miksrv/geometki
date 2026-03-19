@@ -5,7 +5,6 @@ export interface ListResponse {
     count: number
 }
 
-// TODO change place to placeId
 export interface ListRequest {
     place?: string
 }

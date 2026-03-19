@@ -38,7 +38,7 @@ const MapPage: NextPage<object> = () => {
     const [showLightbox, setShowLightbox] = useState<boolean>(false)
     const [photoIndex, setPhotoIndex] = useState<number>()
     const [photoLightbox, setPhotoLightbox] = useState<ApiModel.PhotoMark[]>()
-    // TODO: Categories and categories? Please refactoring this
+    // mapCategories: debounced value sent to the API; categories: immediate UI state
     const [categories, setCategories] = useState<ApiModel.Categories[]>()
     const [mapCategories, setMapCategories] = useState<ApiModel.Categories[]>()
     const [mapType, setMapType] = useState<MapObjectsTypeEnum>()

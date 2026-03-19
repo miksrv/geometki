@@ -18,7 +18,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'yarn'
           cache-dependency-path: 'client/yarn.lock'
 
@@ -88,9 +88,9 @@ jobs:
 
       # If we just use nginx and the application is exported to plain HTML
       #- name: Send files
-      #  run: rsync -avz -e ssh ./client/out/ vps:/var/www/astro.miksoft.pro
+      #  run: rsync -avz -e ssh ./client/out/ vps:/var/www/geometki.com
 
-      # If we run Next.js on a Node server using PM2
+      # If we run NextJS on a Node server using PM2
       - name: Send files
         run: |
           ssh vps "cd /var/www/geometki.com && rm -rf .next"
