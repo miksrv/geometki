@@ -1,6 +1,7 @@
 # Geometki
 
-[![Checks](https://github.com/miksrv/geometki/actions/workflows/checks.yml/badge.svg)](https://github.com/miksrv/geometki/actions/workflows/checks.yml)
+[![API Checks](https://github.com/miksrv/geometki/actions/workflows/api-checks.yml/badge.svg)](https://github.com/miksrv/geometki/actions/workflows/api-checks.yml)
+[![UI Checks](https://github.com/miksrv/geometki/actions/workflows/ui-checks.yml/badge.svg)](https://github.com/miksrv/geometki/actions/workflows/ui-checks.yml)
 [![UI Deploy](https://github.com/miksrv/geometki/actions/workflows/ui-deploy.yml/badge.svg)](https://github.com/miksrv/geometki/actions/workflows/ui-deploy.yml)
 [![API Deploy](https://github.com/miksrv/geometki/actions/workflows/api-deploy.yml/badge.svg)](https://github.com/miksrv/geometki/actions/workflows/api-deploy.yml)
 
