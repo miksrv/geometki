@@ -9,9 +9,9 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
 import { API, ApiType, useAppDispatch, useAppSelector } from '@/api'
-import { setLocale } from '@/api/applicationSlice'
-import { login } from '@/api/authSlice'
-import { wrapper } from '@/api/store'
+import { setLocale } from '@/app/applicationSlice'
+import { login } from '@/app/authSlice'
+import { wrapper } from '@/app/store'
 import { LOCAL_STORAGE } from '@/config/constants'
 import useLocalStorage from '@/hooks/useLocalStorage'
 import * as LocalStorage from '@/utils/localstorage'
@@ -24,8 +24,8 @@ const AuthPage: NextPage<object> = () => {
     const searchParams = useSearchParams()
     const [returnPath] = useLocalStorage<string>(LOCAL_STORAGE.RETURN_PATH)
 
-    const service = searchParams.get('service')
-    const code = searchParams.get('code')
+    const service = searchParams?.get('service')
+    const code = searchParams?.get('code')
 
     const [isProcessing, setIsProcessing] = useState<boolean>(false)
 
@@ -61,8 +61,8 @@ const AuthPage: NextPage<object> = () => {
             void serviceLogin({
                 code,
                 service: service as ApiType.AuthService,
-                state: searchParams.get('state') ?? undefined,
-                device_id: searchParams.get('device_id') ?? undefined
+                state: searchParams?.get('state') ?? undefined,
+                device_id: searchParams?.get('device_id') ?? undefined
             })
         } else {
             void router.push('/')

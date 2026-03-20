@@ -7,8 +7,8 @@ import { useRouter } from 'next/dist/client/router'
 import { useTranslation } from 'next-i18next'
 
 import { API, ApiType, isApiValidationErrors, useAppDispatch } from '@/api'
-import { closeAuthDialog } from '@/api/applicationSlice'
-import { login } from '@/api/authSlice'
+import { closeAuthDialog } from '@/app/applicationSlice'
+import { login } from '@/app/authSlice'
 import { validateEmail } from '@/utils/validators'
 
 import styles from './styles.module.sass'

@@ -4,7 +4,7 @@ import { Button, Dialog, DialogProps } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next'
 
 import { useAppDispatch, useAppSelector } from '@/api'
-import { toggleOverlay } from '@/api/applicationSlice'
+import { toggleOverlay } from '@/app/applicationSlice'
 
 import 'react-image-crop/src/ReactCrop.scss'
 import styles from './styles.module.sass'

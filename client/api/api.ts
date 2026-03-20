@@ -3,7 +3,7 @@ import type { Action, PayloadAction } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
 import { ApiType } from '@/api'
-import { RootState } from '@/api/store'
+import { RootState } from '@/app/store'
 import { encodeQueryData } from '@/utils/url'
 
 type Maybe<T> = T | void

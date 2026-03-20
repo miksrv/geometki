@@ -1,7 +1,7 @@
 import React, { LegacyRef, RefObject, useEffect, useState } from 'react'
 
 import { API, ApiModel, useAppDispatch } from '@/api'
-import { Notify } from '@/api/notificationSlice'
+import { Notify } from '@/app/notificationSlice'
 
 interface PhotoUploaderProps {
     placeId?: string

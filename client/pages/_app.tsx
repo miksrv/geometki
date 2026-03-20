@@ -11,7 +11,7 @@ import Head from 'next/head'
 import { appWithTranslation, useTranslation } from 'next-i18next'
 import { ThemeProvider } from 'next-themes'
 
-import { wrapper } from '@/api/store'
+import { wrapper } from '@/app/store'
 import { LOCAL_STORAGE } from '@/config/constants'
 import * as LocalStorage from '@/utils/localstorage'
 

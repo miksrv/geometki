@@ -8,7 +8,7 @@ import Image from 'next/image'
 import { useTranslation } from 'next-i18next'
 
 import { API, ApiModel, ApiType, useAppDispatch, useAppSelector } from '@/api'
-import { Notify } from '@/api/notificationSlice'
+import { Notify } from '@/app/notificationSlice'
 import { PhotoGallery, PhotoUploader } from '@/components/shared'
 import { ChipsSelect, ContentEditor, ImageUploader, ScreenSpinner } from '@/components/ui'
 import { categoryImage } from '@/functions/categories'

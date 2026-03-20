@@ -4,8 +4,8 @@ import { Button, ButtonProps } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next'
 
 import { API, useAppDispatch, useAppSelector } from '@/api'
-import { openAuthDialog } from '@/api/applicationSlice'
-import { Notify } from '@/api/notificationSlice'
+import { openAuthDialog } from '@/app/applicationSlice'
+import { Notify } from '@/app/notificationSlice'
 
 import styles from './styles.module.sass'
 

@@ -8,8 +8,8 @@ import { NextSeo } from 'next-seo'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { SITE_LINK } from '@/config/env'
-import { setLocale } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
+import { setLocale } from '@/app/applicationSlice'
+import { wrapper } from '@/app/store'
 import { AppLayout, Header, UsersList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 

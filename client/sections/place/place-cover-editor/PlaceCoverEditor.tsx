@@ -7,8 +7,8 @@ import { useTranslation } from 'next-i18next'
 
 import { API, useAppDispatch, useAppSelector } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { openAuthDialog, toggleOverlay } from '@/api/applicationSlice'
-import { Notify } from '@/api/notificationSlice'
+import { openAuthDialog, toggleOverlay } from '@/app/applicationSlice'
+import { Notify } from '@/app/notificationSlice'
 import { Dialog } from '@/components/ui'
 
 import 'react-image-crop/src/ReactCrop.scss'

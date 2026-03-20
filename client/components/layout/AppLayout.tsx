@@ -5,7 +5,7 @@ import { useTranslation } from 'next-i18next'
 import NextNProgress from 'nextjs-progressbar'
 
 import { useAppDispatch, useAppSelector } from '@/api'
-import { closeAuthDialog } from '@/api/applicationSlice'
+import { closeAuthDialog } from '@/app/applicationSlice'
 
 import { AppBar } from './app-bar'
 import { Footer } from './footer'

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next'
 
 import { useAppDispatch } from '@/api'
-import { openAuthDialog } from '@/api/applicationSlice'
+import { openAuthDialog } from '@/app/applicationSlice'
 
 import styles from './styles.module.sass'
 

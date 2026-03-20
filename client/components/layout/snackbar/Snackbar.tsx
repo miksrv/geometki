@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react'
 
 import { API, useAppDispatch, useAppSelector } from '@/api'
-import { deleteNotification, Notify, setReadNotification, setUnreadCounter } from '@/api/notificationSlice'
+import { deleteNotification, Notify, setReadNotification, setUnreadCounter } from '@/app/notificationSlice'
 
 import { Notification } from './Notification'
 

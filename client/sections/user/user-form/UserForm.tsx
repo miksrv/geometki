@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Trans, useTranslation } from 'next-i18next'
 
 import { ApiModel, ApiType } from '@/api'
-import { useAppSelector } from '@/api/store'
+import { useAppSelector } from '@/app/store'
 import { ScreenSpinner } from '@/components/ui'
 import googleLogo from '@/public/images/google-logo.png'
 import vkLogo from '@/public/images/vk-logo.png'

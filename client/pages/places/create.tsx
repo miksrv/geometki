@@ -8,8 +8,8 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
 import { API, ApiType, isApiValidationErrors } from '@/api'
-import { setLocale } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
+import { setLocale } from '@/app/applicationSlice'
+import { wrapper } from '@/app/store'
 import { AppLayout, Header } from '@/components/shared'
 import { PlaceForm } from '@/sections/place'
 

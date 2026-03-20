@@ -20,8 +20,8 @@ import { Container, Dialog, Spinner } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next'
 
 import { API, useAppDispatch, useAppSelector } from '@/api'
-import { toggleOverlay } from '@/api/applicationSlice'
-import { Notify } from '@/api/notificationSlice'
+import { toggleOverlay } from '@/app/applicationSlice'
+import { Notify } from '@/app/notificationSlice'
 import { Rating, UserAvatar } from '@/components/shared'
 import { addDecimalPoint, formatDate } from '@/utils/helpers'
 

@@ -30,6 +30,7 @@ const config: Config.InitialOptions = {
         '^@/components/(.*)$': '<rootDir>/components/$1',
         '^@/functions/(.*)$': '<rootDir>/functions/$1',
         '^@/utils/(.*)$': '<rootDir>/utils/$1',
+        '^@/app/(.*)$': '<rootDir>/app/$1',
         '^@/public/(.*)$': '<rootDir>/public/$1',
         '^@/styles/(.*)$': '<rootDir>/styles/$1'
     },

@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react'
 
 import { API, useAppDispatch, useAppSelector } from '@/api'
-import { login, logout, saveSession } from '@/api/authSlice'
+import { login, logout, saveSession } from '@/app/authSlice'
 import { LOCAL_STORAGE } from '@/config/constants'
 import useLocalStorage from '@/hooks/useLocalStorage'
 

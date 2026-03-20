@@ -9,7 +9,7 @@ import { useTranslation } from 'next-i18next'
 import { useLeafletContext } from '@react-leaflet/core'
 
 import { ApiType, useAppDispatch, useAppSelector } from '@/api'
-import { Notify } from '@/api/notificationSlice'
+import { Notify } from '@/app/notificationSlice'
 import { MapLinks } from '@/components/shared'
 import { LOCAL_STORAGE } from '@/config/constants'
 import { convertDMS } from '@/utils/coordinates'

@@ -9,7 +9,7 @@ import { useTranslation } from 'next-i18next'
 
 import { API, ApiModel, ApiType, useAppDispatch, useAppSelector } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { openAuthDialog } from '@/api/applicationSlice'
+import { openAuthDialog } from '@/app/applicationSlice'
 import { BookmarkButton } from '@/components/shared'
 
 import styles from './styles.module.sass'

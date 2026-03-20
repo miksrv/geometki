@@ -4,7 +4,7 @@ import { GetServerSidePropsResult, NextPage } from 'next'
 
 import { API } from '@/api'
 import { SITE_LINK } from '@/config/env'
-import { wrapper } from '@/api/store'
+import { wrapper } from '@/app/store'
 
 type SitemapDynamicPage = {
     link: string

@@ -8,7 +8,7 @@ import { useTranslation } from 'next-i18next'
 
 import { API, ApiModel, useAppDispatch, useAppSelector } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { Notify } from '@/api/notificationSlice'
+import { Notify } from '@/app/notificationSlice'
 import { PhotoLightbox } from '@/components/shared'
 import { ImageUploader } from '@/components/ui'
 
