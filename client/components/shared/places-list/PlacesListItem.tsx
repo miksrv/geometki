@@ -8,7 +8,7 @@ import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
 import { PlacePlate } from '@/components/shared'
 import { addressToString } from '@/utils/address'
-import { categoryImage } from '@/functions/categories'
+import { categoryImage } from '@/features/categories/categories.utils'
 import { addDecimalPoint, dateToUnixTime, numberFormatter, removeMarkdown } from '@/utils/helpers'
 
 import styles from './styles.module.sass'

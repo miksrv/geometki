@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next'
 
 import { ApiModel } from '@/api'
-import { categoryImage } from '@/functions/categories'
+import { categoryImage } from '@/features/categories/categories.utils'
 
 import styles from './styles.module.sass'
 

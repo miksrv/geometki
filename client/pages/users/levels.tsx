@@ -12,7 +12,7 @@ import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, Header, UserAvatarGroup } from '@/components/shared'
-import { levelImage } from '@/functions/userLevels'
+import { levelImage } from '@/features/levels/levels.utils'
 
 interface LevelsPageProps {
     levels: ApiType.Levels.Response | null

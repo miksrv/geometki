@@ -11,7 +11,7 @@ import { API, ApiModel, ApiType, useAppDispatch, useAppSelector } from '@/api'
 import { Notify } from '@/app/notificationSlice'
 import { PhotoGallery, PhotoUploader } from '@/components/shared'
 import { ChipsSelect, ContentEditor, ImageUploader, ScreenSpinner } from '@/components/ui'
-import { categoryImage } from '@/functions/categories'
+import { categoryImage } from '@/features/categories/categories.utils'
 
 import styles from './styles.module.sass'
 

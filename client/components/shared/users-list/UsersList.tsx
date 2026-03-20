@@ -6,7 +6,7 @@ import { useTranslation } from 'next-i18next'
 
 import { ApiModel } from '@/api'
 import { Reputation } from '@/components/ui'
-import { levelImage, nextLevelPercentage } from '@/functions/userLevels'
+import { levelImage, nextLevelPercentage } from '@/features/levels/levels.utils'
 
 import { UserAvatar } from '../user-avatar'
 

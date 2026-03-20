@@ -10,7 +10,7 @@ import { IMG_HOST } from '@/config/env'
 import { Header } from '@/components/shared'
 import { Reputation } from '@/components/ui'
 import { formatDate, makeActiveLink, minutesAgo, removeProtocolFromUrl, timeAgo } from '@/utils/helpers'
-import { levelImage, nextLevelPercentage } from '@/functions/userLevels'
+import { levelImage, nextLevelPercentage } from '@/features/levels/levels.utils'
 import defaultAvatar from '@/public/images/no-avatar.png'
 
 import { UserAvatarEditor } from '../user-avatar-editor'
