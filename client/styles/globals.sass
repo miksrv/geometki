@@ -316,3 +316,36 @@ a
 .errorMessageList
     list-style: disc
     padding-left: 20px
+
+/* Context list dropdown menu */
+.contextListMenu
+    li
+        &:first-of-type
+            border-radius: var(--border-radius) var(--border-radius) 0 0
+
+        &:last-of-type
+            border-radius: 0 0 var(--border-radius) var(--border-radius)
+
+        a
+            text-decoration: none
+            height: 100%
+            width: 100%
+            padding: 10px 20px
+            white-space: nowrap
+            font-size: variables.$fontSizeHeadline
+            color: var(--text-color-primary)
+            cursor: pointer
+            background: transparent
+            border: none
+            text-align: left
+            display: flex
+            align-items: center
+
+            svg
+                fill: var(--link-color) !important
+                margin: -10px 10px -10px 0 !important
+                width: 22px
+                height: 22px
+
+        &:hover, &.active
+            background-color: var(--input-background-color)
