@@ -1,0 +1,1 @@
+export { TagsTrending } from './TagsTrending'

@@ -1,0 +1,26 @@
+@use '../../../styles/variables' as variables
+
+.tagsStats
+    display: flex
+    flex-direction: row
+    gap: 12px
+
+    .chip
+        display: flex
+        flex-direction: column
+        align-items: center
+        background: var(--color-main-background)
+        border-radius: var(--border-radius)
+        padding: 10px 20px
+        min-width: 100px
+
+        .chipNumber
+            font-size: 1.4em
+            font-weight: 700
+            color: var(--color-main)
+            line-height: 1.2
+
+        .chipLabel
+            font-size: variables.$fontSizeCaption
+            color: var(--text-color-secondary)
+            margin-top: 2px
