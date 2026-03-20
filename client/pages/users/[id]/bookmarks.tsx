@@ -42,7 +42,16 @@ const UserBookmarksPage: React.FC<UserBookmarksPageProps> = ({ id, user, current
             <NextSeo
                 title={`${user?.name} - ${title}${pageTitle}`}
                 description={`${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`}
-                canonical={`${canonicalUrl}users/${id}/bookmarks`}
+                canonical={`${canonicalUrl}users/${id}/bookmarks${currentPage > 1 ? `?page=${currentPage}` : ''}`}
+                openGraph={{
+                    description: `${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`,
+                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                    siteName: t('geotags'),
+                    title: `${user?.name} - ${title}${pageTitle}`,
+                    type: 'website',
+                    url: `${canonicalUrl}users/${id}/bookmarks`
+                }}
+                twitter={{ cardType: 'summary_large_image' }}
             />
 
             <Header

@@ -19,6 +19,7 @@ import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { PlaceFilterPanel, PlacesFilterType } from '@/sections/place'
 import { encodeQueryData } from '@/utils/helpers'
 import { PlaceSchema } from '@/utils/schema'
+import { buildHreflangTags } from '@/utils/seo'
 
 const DEFAULT_SORT = ApiType.SortFields.Updated
 const DEFAULT_ORDER = ApiType.SortOrders.DESC
@@ -243,12 +244,13 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         itemListElement: [
             ...(breadcrumbsLinks?.map((link, i) => ({
                 '@type': 'ListItem',
-                item: canonicalUrl + link.link,
+                item: `${canonicalUrl}${link.link.replace(/^\//, '')}`,
                 name: link.text,
                 position: i + 1
             })) || []),
             {
                 '@type': 'ListItem',
+                item: canonicalPage,
                 name: breadCrumbCurrent,
                 position: breadcrumbsLinks.length + 1
             }
@@ -289,8 +291,10 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                             width: 280
                         })),
                     locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    type: 'http://ogp.me/ns/article#'
+                    type: 'website'
                 }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags('places')}
             />
 
             <Header

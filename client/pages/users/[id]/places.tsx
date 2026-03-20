@@ -42,7 +42,16 @@ const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage }
             <NextSeo
                 title={`${user?.name} - ${title}${pageTitle}`}
                 description={`${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`}
-                canonical={`${canonicalUrl}users/${id}/places`}
+                canonical={`${canonicalUrl}users/${id}/places${currentPage > 1 ? `?page=${currentPage}` : ''}`}
+                openGraph={{
+                    description: `${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`,
+                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                    siteName: t('geotags'),
+                    title: `${user?.name} - ${title}${pageTitle}`,
+                    type: 'website',
+                    url: `${canonicalUrl}users/${id}/places`
+                }}
+                twitter={{ cardType: 'summary_large_image' }}
             />
 
             <Header

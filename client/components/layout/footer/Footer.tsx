@@ -15,7 +15,7 @@ export const Footer: React.FC = () => (
             <a
                 href={'https://miksoft.pro'}
                 className={styles.link}
-                title={''}
+                title={'MikSoft'}
             >
                 <Image
                     className={styles.copyrightImage}

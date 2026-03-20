@@ -16,6 +16,7 @@ import { ActivityList, AppLayout, PhotoGallery } from '@/components/shared'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
 import { formatDateISO } from '@/utils/helpers'
+import { buildHreflangTags } from '@/utils/seo'
 
 interface UserPageProps {
     id: string
@@ -68,6 +69,7 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
             },
             {
                 '@type': 'ListItem',
+                item: `${canonicalUrl}users/${user?.id}`,
                 name: user?.name,
                 position: 2
             }
@@ -124,6 +126,8 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
                     type: 'http://ogp.me/ns/profile#',
                     url: `${canonicalUrl}users/${user?.id}`
                 }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags(`users/${user?.id}`)}
             />
 
             <UserHeader user={user} />

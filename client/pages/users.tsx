@@ -12,6 +12,7 @@ import { wrapper } from '@/app/store'
 import { AppLayout, Header, UsersList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
+import { buildHreflangTags } from '@/utils/seo'
 
 const USERS_PER_PAGE = 30
 
@@ -40,6 +41,19 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
                     ?.join(', ')
                     ?.substring(0, 220)}`}
                 canonical={`${canonicalUrl}users${currentPage && currentPage > 1 ? '?page=' + currentPage : ''}`}
+                openGraph={{
+                    description: `${title} - ${usersList
+                        ?.map(({ name }) => name)
+                        ?.join(', ')
+                        ?.substring(0, 220)}`,
+                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                    siteName: t('geotags'),
+                    title,
+                    type: 'website',
+                    url: `${canonicalUrl}users`
+                }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags('users')}
             />
 
             <Header

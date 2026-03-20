@@ -12,6 +12,7 @@ import { AppLayout, Header } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { TagList } from '@/sections/tags'
 import { dateToUnixTime } from '@/utils/helpers'
+import { buildHreflangTags } from '@/utils/seo'
 
 interface TagsPageProps {
     tags: ApiModel.Tag[]
@@ -55,10 +56,23 @@ const CategoriesPage: NextPage<TagsPageProps> = ({ tags }) => {
             <NextSeo
                 title={t('features-of-places')}
                 canonical={`${canonicalUrl}tags`}
-                description={tagsList
+                description={`${t('features-of-places')}: ${tagsList
                     ?.map(({ title }) => title)
-                    ?.join(',')
-                    ?.substring(0, 220)}
+                    ?.join(', ')
+                    ?.substring(0, 180)}`}
+                openGraph={{
+                    description: `${t('features-of-places')}: ${tagsList
+                        ?.map(({ title }) => title)
+                        ?.join(', ')
+                        ?.substring(0, 180)}`,
+                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                    siteName: t('geotags'),
+                    title: t('features-of-places'),
+                    type: 'website',
+                    url: `${canonicalUrl}tags`
+                }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags('tags')}
             />
 
             <Header

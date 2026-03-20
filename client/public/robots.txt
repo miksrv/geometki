@@ -1,5 +1,10 @@
 # Allow all crawlers
 User-agent: *
 Allow: /
+Disallow: /auth
+Disallow: /unsubscribe
+Disallow: /places/create
+Disallow: /places/*/edit
+Disallow: /users/settings
 
 Sitemap: https://geometki.com/sitemap.xml

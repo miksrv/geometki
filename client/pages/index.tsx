@@ -16,6 +16,7 @@ import { Carousel } from '@/components/ui'
 import { LOCAL_STORAGE } from '@/config/constants'
 import { SITE_LINK } from '@/config/env'
 import { PlaceSchema, UserSchema } from '@/utils/schema'
+import { buildHreflangTags } from '@/utils/seo'
 
 interface IndexPageProps {
     placesList: ApiModel.Place[]
@@ -53,6 +54,18 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
                 <script
                     type={'application/ld+json'}
                     dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            '@context': 'https://schema.org',
+                            '@type': 'Organization',
+                            logo: `${SITE_LINK}android-chrome-512x512.png`,
+                            name: 'Geometki',
+                            url: SITE_LINK
+                        })
+                    }}
+                />
+                <script
+                    type={'application/ld+json'}
+                    dangerouslySetInnerHTML={{
                         __html: JSON.stringify([
                             ...placesList.map((place) => PlaceSchema(place)),
                             ...usersList.map((user) => UserSchema(user))
@@ -70,7 +83,7 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
                     images: [
                         {
                             height: 1538,
-                            url: '/images/pages/main.jpg',
+                            url: `${SITE_LINK}images/pages/main.jpg`,
                             width: 1768
                         }
                     ],
@@ -80,6 +93,8 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
                     type: 'website',
                     url: canonicalUrl
                 }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags('')}
             />
 
             <Header

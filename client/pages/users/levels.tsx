@@ -13,6 +13,7 @@ import { wrapper } from '@/app/store'
 import { AppLayout, Header, UserAvatarGroup } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { levelImage } from '@/features/levels/levels.utils'
+import { buildHreflangTags } from '@/utils/seo'
 
 interface LevelsPageProps {
     levels: ApiType.Levels.Response | null
@@ -29,6 +30,16 @@ const LevelsPage: NextPage<LevelsPageProps> = ({ levels }) => {
                 title={t('user-levels')}
                 canonical={`${canonicalUrl}users/levels`}
                 description={t('user-levels-description-1')}
+                openGraph={{
+                    description: t('user-levels-description-1'),
+                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                    siteName: t('geotags'),
+                    title: t('user-levels'),
+                    type: 'website',
+                    url: `${canonicalUrl}users/levels`
+                }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags('users/levels')}
             />
             <Header
                 title={t('user-levels')}

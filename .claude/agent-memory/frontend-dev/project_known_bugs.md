@@ -32,5 +32,9 @@ Additional hooks & i18n issues found in the 2026-03-19 React Hooks & i18n Audit 
 - Multiple components (`AppBar`, `AppLayout`, `LoginForm`, `NotificationList`, `SearchControl`): reference non-existent namespace files — rely entirely on `defaultValue` fallbacks (#104)
 - `public/locales/en/common.json` vs `ru/common.json`: key `input_description` and `notification-list-cleared` missing from RU; `notification-list-has-been-cleared` missing from EN (#102)
 
+**SEO audit completed 2026-03-20** — 15 issues fixed across 16 commits on `develop` (commits e2355677..2f9d7aa4). Outstanding items not implemented:
+- SEO-22: Migrate web fonts to `next/font` (no external font imports found — may already be non-issue)
+- SEO-25: Homepage activity feed infinite scroll (low priority)
+
 **Why:** Tracking these to avoid re-introducing them or wasting time re-diagnosing.
 **How to apply:** When editing any of these files, check whether the bug has been fixed first before building on top of the broken logic.

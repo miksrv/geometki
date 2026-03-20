@@ -11,7 +11,7 @@ import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, Header, PhotoGallery } from '@/components/shared'
 import { Pagination } from '@/components/ui'
-import { SITE_LINK } from '@/config/env'
+import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
 
 export const PHOTOS_PER_PAGE = 32
@@ -35,7 +35,22 @@ const UserPhotosPage: React.FC<UserPhotosPageProps> = ({ id, user, photosList, p
             <NextSeo
                 title={`${user?.name} - ${t('photos')}${pageTitle}`}
                 description={`${user?.name} - ${t('all-traveler-photos')}${pageTitle}`}
-                canonical={`${canonicalUrl}users/${id}/photos`}
+                canonical={`${canonicalUrl}users/${id}/photos${currentPage > 1 ? `?page=${currentPage}` : ''}`}
+                openGraph={{
+                    description: `${user?.name} - ${t('all-traveler-photos')}${pageTitle}`,
+                    images: photosList?.slice(0, 3).map((photo, index) => ({
+                        alt: `${photo.title} (${index + 1})`,
+                        height: photo.height,
+                        url: `${IMG_HOST}${photo.full}`,
+                        width: photo.width
+                    })),
+                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                    siteName: t('geotags'),
+                    title: `${user?.name} - ${t('photos')}${pageTitle}`,
+                    type: 'website',
+                    url: `${canonicalUrl}users/${id}/photos`
+                }}
+                twitter={{ cardType: 'summary_large_image' }}
             />
 
             <Header

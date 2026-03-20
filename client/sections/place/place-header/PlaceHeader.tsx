@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import { Button, Icon, Popout, Spinner } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next'
@@ -99,21 +100,14 @@ export const PlaceHeader: React.FC<PlaceHeaderProps> = ({
 
             <div className={styles.image}>
                 {place?.cover && (
-                    <>
-                        <div
-                            className={styles.desktop}
-                            style={{
-                                backgroundImage: `url(${IMG_HOST}${place.cover.full}?d=${coverHashString})`
-                            }}
-                        />
-
-                        <div
-                            className={styles.mobile}
-                            style={{
-                                backgroundImage: `url(${IMG_HOST}${place.cover.preview}?d=${coverHashString})`
-                            }}
-                        />
-                    </>
+                    <Image
+                        src={`${IMG_HOST}${place.cover.full}?d=${coverHashString}`}
+                        alt={place.title || ''}
+                        fill={true}
+                        priority={true}
+                        style={{ objectFit: 'cover' }}
+                        sizes={'(max-width: 768px) 100vw, 100vw'}
+                    />
                 )}
             </div>
 

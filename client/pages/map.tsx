@@ -15,6 +15,7 @@ import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, MapObjectsTypeEnum, PhotoLightbox } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { round } from '@/utils/helpers'
+import { buildHreflangTags } from '@/utils/seo'
 
 const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), {
     ssr: false
@@ -162,7 +163,7 @@ const MapPage: NextPage<object> = () => {
                     images: [
                         {
                             height: 1305,
-                            url: '/images/pages/map.jpg',
+                            url: `${SITE_LINK}images/pages/map.jpg`,
                             width: 1730
                         }
                     ],
@@ -172,6 +173,8 @@ const MapPage: NextPage<object> = () => {
                     type: 'website',
                     url: `${canonicalUrl}map`
                 }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags('map')}
             />
 
             <PhotoLightbox

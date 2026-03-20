@@ -154,7 +154,7 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
                             <li key={`tag${i}`}>
                                 <Link
                                     href={`/places?tag=${tag}`}
-                                    title={''}
+                                    title={`#${tag}`}
                                 >
                                     {`#${tag}`}
                                 </Link>

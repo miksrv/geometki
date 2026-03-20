@@ -24,7 +24,8 @@ import {
     PlaceInformation,
     PlaceShareButtons
 } from '@/sections/place'
-import { formatDateUTC, removeMarkdown, truncateText } from '@/utils/helpers'
+import { formatDateISO, formatDateUTC, removeMarkdown, truncateText } from '@/utils/helpers'
+import { buildHreflangTags } from '@/utils/seo'
 
 const NEAR_PLACES_COUNT = 10
 
@@ -97,6 +98,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                 },
                 {
                     '@type': 'ListItem',
+                    item: pagePlaceUrl,
                     name: place?.title,
                     position: 2
                 }
@@ -125,16 +127,14 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                       worstRating: '1'
                   }
                 : undefined,
-            // author: {
-            //     '@type': 'Person',
-            //     image: place?.author?.avatar
-            //         ? `${IMG_HOST}${place?.author?.avatar}`
-            //         : undefined,
-            //     name: place?.author?.name,
-            //     url: `${canonicalUrl}users/${place?.author?.id}`
-            // },
-            // dateModified: formatDateISO(place?.updated?.date),
-            // datePublished: formatDateISO(place?.created?.date),
+            author: {
+                '@type': 'Person',
+                image: place?.author?.avatar ? `${IMG_HOST}${place?.author?.avatar}` : undefined,
+                name: place?.author?.name,
+                url: `${canonicalUrl}users/${place?.author?.id}`
+            },
+            dateModified: formatDateISO(place?.updated?.date),
+            datePublished: formatDateISO(place?.created?.date),
             description: removeMarkdown(place?.content),
             geo: {
                 '@type': 'GeoCoordinates',
@@ -144,11 +144,13 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             image: photoList?.length ? photoList.map(({ full }) => `${IMG_HOST}${full}`) : undefined,
             interactionStatistic: {
                 '@type': 'InteractionCounter',
+                interactionType: 'https://schema.org/ViewAction',
                 userInteractionCount: place?.views
             },
-            name: place?.title
+            name: place?.title,
+            url: pagePlaceUrl
         }),
-        [canonicalUrl, photoList, place, ratingCount, t]
+        [canonicalUrl, pagePlaceUrl, photoList, place, ratingCount, t]
     )
 
     useEffect(() => {
@@ -161,13 +163,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                 <script
                     type={'application/ld+json'}
                     dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(breadCrumbSchema)
-                    }}
-                />
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(placeSchema)
+                        __html: JSON.stringify([breadCrumbSchema, placeSchema])
                     }}
                 />
             </Head>
@@ -194,9 +190,11 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                     locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
                     siteName: t('geotags'),
                     title: place?.title,
-                    type: 'http://ogp.me/ns/article#',
+                    type: 'article',
                     url: pagePlaceUrl
                 }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags(`places/${place?.id}`)}
             />
 
             <PlaceHeader

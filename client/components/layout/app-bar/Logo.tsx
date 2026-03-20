@@ -14,7 +14,7 @@ export const Logo: React.FC = () => {
     return (
         <Link
             href={'/'}
-            title={''}
+            title={'Geometki'}
             className={cn(styles.logo, theme === 'dark' && styles.dark)}
         />
     )

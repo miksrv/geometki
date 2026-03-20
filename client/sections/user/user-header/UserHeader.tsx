@@ -75,7 +75,7 @@ export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
                             />{' '}
                             <Link
                                 href={'/users/levels'}
-                                title={''}
+                                title={user?.levelData?.title || ''}
                             >
                                 {user?.levelData?.title}
                             </Link>
@@ -116,7 +116,7 @@ export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
                                     href={makeActiveLink(user.website)}
                                     className={'external'}
                                     target={'_blank'}
-                                    title={''}
+                                    title={removeProtocolFromUrl(user.website)}
                                 >
                                     {removeProtocolFromUrl(user.website)}
                                 </Link>
