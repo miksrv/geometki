@@ -23,7 +23,7 @@ import { API, useAppDispatch, useAppSelector } from '@/api'
 import { toggleOverlay } from '@/api/applicationSlice'
 import { Notify } from '@/api/notificationSlice'
 import { Rating, UserAvatar } from '@/components/common'
-import { addDecimalPoint, formatDate } from '@/functions/helpers'
+import { addDecimalPoint, formatDate } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 

@@ -7,9 +7,9 @@ import Link from 'next/link'
 import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
 import { PlacePlate } from '@/components/common'
-import { addressToString } from '@/functions/address'
+import { addressToString } from '@/utils/address'
 import { categoryImage } from '@/functions/categories'
-import { addDecimalPoint, dateToUnixTime, numberFormatter, removeMarkdown } from '@/functions/helpers'
+import { addDecimalPoint, dateToUnixTime, numberFormatter, removeMarkdown } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 

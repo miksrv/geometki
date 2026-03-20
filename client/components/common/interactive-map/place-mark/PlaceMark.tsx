@@ -5,7 +5,7 @@ import { Marker } from 'react-leaflet'
 import Leaflet from 'leaflet'
 
 import { ApiType } from '@/api'
-import { convertDMS } from '@/functions/coordinates'
+import { convertDMS } from '@/utils/coordinates'
 
 import styles from './styles.module.sass'
 

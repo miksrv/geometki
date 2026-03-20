@@ -3,7 +3,7 @@ import * as ReactLeaflet from 'react-leaflet'
 import { LatLngBounds } from 'leaflet'
 
 import { ApiType } from '@/api'
-import { round } from '@/functions/helpers'
+import { round } from '@/utils/helpers'
 
 interface MapEventsProps {
     onMouseMove?: (coordinates: ApiType.Coordinates) => void

@@ -3,7 +3,7 @@ import React from 'react'
 import Image from 'next/image'
 
 import { IMG_HOST } from '@/config/env'
-import { minutesAgo } from '@/functions/helpers'
+import { minutesAgo } from '@/utils/helpers'
 import defaultAvatar from '@/public/images/no-avatar.png'
 
 import { UserAvatarProps } from './types'

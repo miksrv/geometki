@@ -9,8 +9,8 @@ import { useTranslation } from 'next-i18next'
 import { ApiModel } from '@/api'
 import { MapLinks, UserAvatar, UserAvatarGroup } from '@/components/common'
 import { categoryImage } from '@/functions/categories'
-import { convertDMS } from '@/functions/coordinates'
-import { formatDate } from '@/functions/helpers'
+import { convertDMS } from '@/utils/coordinates'
+import { formatDate } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 

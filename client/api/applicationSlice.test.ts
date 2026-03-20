@@ -12,7 +12,7 @@ jest.mock('cookies-next', () => ({
     setCookie: jest.fn()
 }))
 
-jest.mock('@/functions/localstorage', () => ({
+jest.mock('@/utils/localstorage', () => ({
     getItem: jest.fn(() => undefined),
     removeItem: jest.fn(),
     setItem: jest.fn()

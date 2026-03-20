@@ -24,7 +24,7 @@ import {
 } from '@/components/pages/place'
 import { Carousel } from '@/components/ui'
 import { LOCAL_STORAGE } from '@/config/constants'
-import { formatDateUTC, removeMarkdown, truncateText } from '@/functions/helpers'
+import { formatDateUTC, removeMarkdown, truncateText } from '@/utils/helpers'
 
 const NEAR_PLACES_COUNT = 10
 

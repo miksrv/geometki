@@ -15,7 +15,7 @@ import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
 import { ActivityList, AppLayout, PhotoGallery } from '@/components/common'
 import { UserHeader, UserPagesEnum, UserTabs } from '@/components/pages/user'
-import { formatDateISO } from '@/functions/helpers'
+import { formatDateISO } from '@/utils/helpers'
 
 interface UserPageProps {
     id: string

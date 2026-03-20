@@ -9,7 +9,7 @@ import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
 import { PhotoLightbox, Rating, UserAvatar } from '@/components/common'
 import { ReadMore } from '@/components/ui'
-import { formatDate } from '@/functions/helpers'
+import { formatDate } from '@/utils/helpers'
 
 import 'react-photo-album/rows.css'
 import styles from './styles.module.sass'

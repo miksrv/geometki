@@ -4,7 +4,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
 import { ApiType } from '@/api'
 import { RootState } from '@/api/store'
-import { encodeQueryData } from '@/functions/helpers'
+import { encodeQueryData } from '@/utils/url'
 
 type Maybe<T> = T | void
 

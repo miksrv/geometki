@@ -13,7 +13,7 @@ import { API, ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
 import { BookmarkButton, PlacePlate } from '@/components/common'
 import { categoryImage } from '@/functions/categories'
-import { addDecimalPoint, numberFormatter } from '@/functions/helpers'
+import { addDecimalPoint, numberFormatter } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 

@@ -9,7 +9,7 @@ import { API, useAppDispatch, useAppSelector } from '@/api'
 import { openAuthDialog } from '@/api/applicationSlice'
 import { Notify } from '@/api/notificationSlice'
 import { ChipsSelect, ContentEditor, ScreenSpinner } from '@/components/ui'
-import { equalsArrays } from '@/functions/helpers'
+import { equalsArrays } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 

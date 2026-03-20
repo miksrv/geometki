@@ -2,9 +2,9 @@ import { LocalBusiness, Person } from 'schema-dts'
 
 import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { removeMarkdown } from '@/functions/helpers'
+import { removeMarkdown } from '@/utils/text'
 
-// import { formatDateISO } from '@/functions/helpers'
+// import { formatDateISO } from '@/utils/date'
 
 export const PlaceSchema = (place: ApiModel.Place): unknown | LocalBusiness => ({
     '@context': 'https://schema.org',

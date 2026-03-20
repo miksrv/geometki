@@ -15,7 +15,7 @@ import { wrapper } from '@/api/store'
 import { ActivityList, AppLayout, Header, PlacesListItem, UsersList } from '@/components/common'
 import { Carousel } from '@/components/ui'
 import { LOCAL_STORAGE } from '@/config/constants'
-import { PlaceSchema, UserSchema } from '@/functions/schema'
+import { PlaceSchema, UserSchema } from '@/utils/schema'
 
 interface IndexPageProps {
     placesList: ApiModel.Place[]

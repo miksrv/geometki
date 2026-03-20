@@ -1,5 +1,5 @@
 import { LOCAL_STORAGE, LOCAL_STORAGE_KEY } from '@/config/constants'
-import { isValidJSON } from '@/functions/helpers'
+import { isValidJSON } from '@/utils/text'
 
 const _getLocalStorage = (): undefined | typeof LOCAL_STORAGE => {
     if (typeof window === 'undefined') {

@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 import { ApiModel } from '@/api'
 import { UserAvatar } from '@/components/common'
-import { timeAgo } from '@/functions/helpers'
+import { timeAgo } from '@/utils/helpers'
 
 import { CommentForm } from './CommentForm'
 

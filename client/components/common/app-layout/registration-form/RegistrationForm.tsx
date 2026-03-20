@@ -9,7 +9,7 @@ import { useTranslation } from 'next-i18next'
 import { API, ApiType, isApiValidationErrors, useAppDispatch } from '@/api'
 import { closeAuthDialog } from '@/api/applicationSlice'
 import { login } from '@/api/authSlice'
-import { validateEmail } from '@/functions/validators'
+import { validateEmail } from '@/utils/validators'
 
 import styles from './styles.module.sass'
 

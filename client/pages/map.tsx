@@ -14,7 +14,7 @@ import { SITE_LINK } from '@/config/env'
 import { openAuthDialog, setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
 import { AppLayout, MapObjectsTypeEnum, PhotoLightbox } from '@/components/common'
-import { round } from '@/functions/helpers'
+import { round } from '@/utils/helpers'
 
 const InteractiveMap = dynamic(() => import('@/components/common/interactive-map/InteractiveMap'), {
     ssr: false

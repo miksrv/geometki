@@ -2,7 +2,7 @@ import React from 'react'
 
 import Image from 'next/image'
 
-import { formatDate } from '@/functions/helpers'
+import { formatDate } from '@/utils/helpers'
 import packageInfo from '@/package.json'
 import { update } from '@/update'
 

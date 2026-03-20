@@ -7,7 +7,7 @@ import { useTranslation } from 'next-i18next'
 import { API, ApiType, useAppDispatch, useAppSelector } from '@/api'
 import { openAuthDialog, setUserLocation } from '@/api/applicationSlice'
 import { logout } from '@/api/authSlice'
-import { round } from '@/functions/helpers'
+import { round } from '@/utils/helpers'
 
 import { AppAuthChecker } from './AppAuthChecker'
 import { Logo } from './Logo'

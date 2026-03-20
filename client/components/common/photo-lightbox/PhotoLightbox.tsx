@@ -9,7 +9,7 @@ import { useTranslation } from 'next-i18next'
 
 import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { formatDate } from '@/functions/helpers'
+import { formatDate } from '@/utils/helpers'
 
 import { UserAvatar } from '../user-avatar'
 

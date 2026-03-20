@@ -11,7 +11,7 @@ import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
 import { AppLayout, Header } from '@/components/common'
 import { TagList } from '@/components/pages/tags'
-import { dateToUnixTime } from '@/functions/helpers'
+import { dateToUnixTime } from '@/utils/helpers'
 
 interface TagsPageProps {
     tags: ApiModel.Tag[]

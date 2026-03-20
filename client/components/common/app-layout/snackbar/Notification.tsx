@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next'
 
 import { ApiModel } from '@/api'
-import { formatDate } from '@/functions/helpers'
+import { formatDate } from '@/utils/helpers'
 
 import { NotificationIcon } from './NotificationIcon'
 

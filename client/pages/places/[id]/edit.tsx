@@ -14,7 +14,7 @@ import { wrapper } from '@/api/store'
 import { AppLayout, Header } from '@/components/common'
 import { PlaceForm } from '@/components/pages/place'
 import { LOCAL_STORAGE } from '@/config/constants'
-import { equalsArrays } from '@/functions/helpers'
+import { equalsArrays } from '@/utils/helpers'
 
 interface PlaceEditPageProps {
     place?: ApiModel.Place
