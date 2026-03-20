@@ -11,7 +11,7 @@ import { API, ApiType, isApiValidationErrors, useAppDispatch, useAppSelector } f
 import { setLocale } from '@/api/applicationSlice'
 import { Notify } from '@/api/notificationSlice'
 import { wrapper } from '@/api/store'
-import { AppLayout, Header } from '@/components/common'
+import { AppLayout, Header } from '@/components/shared'
 import { UserForm } from '@/components/pages/user'
 import { ScreenSpinner } from '@/components/ui'
 

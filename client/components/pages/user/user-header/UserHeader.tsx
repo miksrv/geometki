@@ -7,7 +7,7 @@ import { useTranslation } from 'next-i18next'
 
 import { ApiModel, useAppSelector } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { Header } from '@/components/common'
+import { Header } from '@/components/shared'
 import { Reputation } from '@/components/ui'
 import { formatDate, makeActiveLink, minutesAgo, removeProtocolFromUrl, timeAgo } from '@/utils/helpers'
 import { levelImage, nextLevelPercentage } from '@/functions/userLevels'

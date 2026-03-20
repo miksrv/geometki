@@ -10,11 +10,11 @@ import { useTranslation } from 'next-i18next'
 import { API, ApiModel, ApiType, useAppDispatch, useAppSelector } from '@/api'
 import { IMG_HOST } from '@/config/env'
 import { openAuthDialog } from '@/api/applicationSlice'
-import { BookmarkButton } from '@/components/common'
+import { BookmarkButton } from '@/components/shared'
 
 import styles from './styles.module.sass'
 
-const ConfirmationDialog = dynamic(() => import('@/components/common/confirmation-dialog/ConfirmationDialog'), {
+const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
     ssr: false
 })
 

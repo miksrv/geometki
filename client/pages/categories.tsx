@@ -9,7 +9,7 @@ import { API, ApiModel, ApiType } from '@/api'
 import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
-import { AppLayout, Header } from '@/components/common'
+import { AppLayout, Header } from '@/components/shared'
 import { CategoriesList } from '@/components/pages/categories'
 
 interface CategoriesPageProps {

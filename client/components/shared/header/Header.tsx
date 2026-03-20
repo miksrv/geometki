@@ -4,7 +4,7 @@ import { Button, cn, Container } from 'simple-react-ui-kit'
 import { ApiModel } from '@/api'
 import { Breadcrumbs, BreadcrumbsProps } from '@/components/ui'
 
-import { UserAvatar } from '../../common/user-avatar'
+import { UserAvatar } from '../user-avatar'
 
 import styles from './styles.module.sass'
 

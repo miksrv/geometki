@@ -10,7 +10,7 @@ import { useLeafletContext } from '@react-leaflet/core'
 
 import { ApiType, useAppDispatch, useAppSelector } from '@/api'
 import { Notify } from '@/api/notificationSlice'
-import { MapLinks } from '@/components/common'
+import { MapLinks } from '@/components/shared'
 import { LOCAL_STORAGE } from '@/config/constants'
 import { convertDMS } from '@/utils/coordinates'
 import { round } from '@/utils/helpers'

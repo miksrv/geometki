@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { ApiModel } from '@/api'
-import { UserAvatar } from '@/components/common'
+import { UserAvatar } from '@/components/shared'
 import { levelImage } from '@/functions/userLevels'
 
 import styles from './styles.module.sass'

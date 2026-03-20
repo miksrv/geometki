@@ -11,7 +11,7 @@ import { API, ApiType } from '@/api'
 import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
-import { AppLayout, Header, UserAvatarGroup } from '@/components/common'
+import { AppLayout, Header, UserAvatarGroup } from '@/components/shared'
 import { levelImage } from '@/functions/userLevels'
 
 interface LevelsPageProps {

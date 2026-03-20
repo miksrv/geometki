@@ -6,7 +6,7 @@ import { Button, cn } from 'simple-react-ui-kit'
 import Link from 'next/link'
 
 import { ApiModel } from '@/api'
-import { UserAvatar } from '@/components/common'
+import { UserAvatar } from '@/components/shared'
 import { timeAgo } from '@/utils/helpers'
 
 import { CommentForm } from './CommentForm'

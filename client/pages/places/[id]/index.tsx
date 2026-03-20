@@ -12,7 +12,7 @@ import { API, ApiModel, ApiType, useAppDispatch, useAppSelector } from '@/api'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { openAuthDialog, setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
-import { AppLayout, PhotoGallery, PhotoUploader, PlacesListItem } from '@/components/common'
+import { AppLayout, PhotoGallery, PhotoUploader, PlacesListItem } from '@/components/shared'
 import {
     ForwardedPlaceCoverEditor,
     PlaceCommentList,

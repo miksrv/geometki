@@ -7,7 +7,7 @@ import { useTranslation } from 'next-i18next'
 
 import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { PhotoLightbox, Rating, UserAvatar } from '@/components/common'
+import { PhotoLightbox, Rating, UserAvatar } from '@/components/shared'
 import { ReadMore } from '@/components/ui'
 import { formatDate } from '@/utils/helpers'
 

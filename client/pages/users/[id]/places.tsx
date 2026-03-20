@@ -10,7 +10,7 @@ import { API, ApiModel, ApiType } from '@/api'
 import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
-import { AppLayout, Header, PlacesList } from '@/components/common'
+import { AppLayout, Header, PlacesList } from '@/components/shared'
 import { UserPagesEnum, UserTabs } from '@/components/pages/user'
 import { Pagination } from '@/components/ui'
 

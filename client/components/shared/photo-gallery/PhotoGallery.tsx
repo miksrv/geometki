@@ -9,12 +9,12 @@ import { useTranslation } from 'next-i18next'
 import { API, ApiModel, useAppDispatch, useAppSelector } from '@/api'
 import { IMG_HOST } from '@/config/env'
 import { Notify } from '@/api/notificationSlice'
-import { PhotoLightbox } from '@/components/common'
+import { PhotoLightbox } from '@/components/shared'
 import { ImageUploader } from '@/components/ui'
 
 import styles from './styles.module.sass'
 
-const ConfirmationDialog = dynamic(() => import('@/components/common/confirmation-dialog/ConfirmationDialog'), {
+const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
     ssr: false
 })
 

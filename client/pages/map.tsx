@@ -13,7 +13,7 @@ import { API, ApiModel, ApiType, useAppDispatch, useAppSelector } from '@/api'
 import { SITE_LINK } from '@/config/env'
 import { openAuthDialog, setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
-import { AppLayout, MapObjectsTypeEnum, PhotoLightbox } from '@/components/common'
+import { AppLayout, MapObjectsTypeEnum, PhotoLightbox } from '@/components/shared'
 import { round } from '@/utils/helpers'
 
 const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), {

@@ -4,7 +4,7 @@ import { Button } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next'
 
 import { API, ApiModel } from '@/api'
-import { UserAvatar } from '@/components/common'
+import { UserAvatar } from '@/components/shared'
 import { Textarea } from '@/components/ui'
 
 import styles from './styles.module.sass'

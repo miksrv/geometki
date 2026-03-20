@@ -6,7 +6,7 @@ import Link from 'next/link'
 
 import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { PlacePlate } from '@/components/common'
+import { PlacePlate } from '@/components/shared'
 import { addressToString } from '@/utils/address'
 import { categoryImage } from '@/functions/categories'
 import { addDecimalPoint, dateToUnixTime, numberFormatter, removeMarkdown } from '@/utils/helpers'

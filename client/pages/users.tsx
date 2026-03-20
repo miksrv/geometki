@@ -10,7 +10,7 @@ import { API, ApiModel, ApiType } from '@/api'
 import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
-import { AppLayout, Header, UsersList } from '@/components/common'
+import { AppLayout, Header, UsersList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 
 const USERS_PER_PAGE = 30

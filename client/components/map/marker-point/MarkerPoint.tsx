@@ -11,7 +11,7 @@ import { useTranslation } from 'next-i18next'
 
 import { API, ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { BookmarkButton, PlacePlate } from '@/components/common'
+import { BookmarkButton, PlacePlate } from '@/components/shared'
 import { categoryImage } from '@/functions/categories'
 import { addDecimalPoint, numberFormatter } from '@/utils/helpers'
 
