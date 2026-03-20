@@ -4,7 +4,8 @@ import React from 'react'
 import { Marker } from 'react-leaflet'
 import Leaflet from 'leaflet'
 
-import { ApiModel, ApiType, IMG_HOST } from '@/api'
+import { ApiModel, ApiType } from '@/api'
+import { IMG_HOST } from '@/config/env'
 
 import styles from './styles.module.sass'
 

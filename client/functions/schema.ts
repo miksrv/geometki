@@ -1,6 +1,7 @@
 import { LocalBusiness, Person } from 'schema-dts'
 
-import { ApiModel, IMG_HOST } from '@/api'
+import { ApiModel } from '@/api'
+import { IMG_HOST } from '@/config/env'
 import { removeMarkdown } from '@/functions/helpers'
 
 // import { formatDateISO } from '@/functions/helpers'

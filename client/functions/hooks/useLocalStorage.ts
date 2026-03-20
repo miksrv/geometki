@@ -1,6 +1,6 @@
 import React, { useDebugValue, useEffect, useState } from 'react'
 
-import type { LOCAL_STORAGE } from '@/functions/constants'
+import type { LOCAL_STORAGE } from '@/config/constants'
 import * as LocalStorage from '@/functions/localstorage'
 
 export const useLocalStorage = <S>(

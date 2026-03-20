@@ -3,7 +3,8 @@ import { Icon } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 
-import { ApiModel, IMG_HOST } from '@/api'
+import { ApiModel } from '@/api'
+import { IMG_HOST } from '@/config/env'
 import { levelImage } from '@/functions/userLevels'
 
 import styles from './styles.module.sass'

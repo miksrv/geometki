@@ -1,4 +1,4 @@
-import { LOCAL_STORAGE_KEY } from '@/functions/constants'
+import { LOCAL_STORAGE_KEY } from '@/config/constants'
 
 import { getItem, removeItem, setItem } from './localstorage'
 

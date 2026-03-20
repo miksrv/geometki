@@ -8,12 +8,13 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiModel, ApiType, SITE_LINK } from '@/api'
+import { API, ApiModel, ApiType } from '@/api'
+import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
 import { ActivityList, AppLayout, Header, PlacesListItem, UsersList } from '@/components/common'
 import { Carousel } from '@/components/ui'
-import { LOCAL_STORAGE } from '@/functions/constants'
+import { LOCAL_STORAGE } from '@/config/constants'
 import { PlaceSchema, UserSchema } from '@/functions/schema'
 
 interface IndexPageProps {

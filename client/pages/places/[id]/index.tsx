@@ -8,7 +8,8 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiModel, ApiType, IMG_HOST, SITE_LINK, useAppDispatch, useAppSelector } from '@/api'
+import { API, ApiModel, ApiType, useAppDispatch, useAppSelector } from '@/api'
+import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { openAuthDialog, setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
 import { AppLayout, PhotoGallery, PhotoUploader, PlacesListItem } from '@/components/common'
@@ -22,7 +23,7 @@ import {
     PlaceShareButtons
 } from '@/components/pages/place'
 import { Carousel } from '@/components/ui'
-import { LOCAL_STORAGE } from '@/functions/constants'
+import { LOCAL_STORAGE } from '@/config/constants'
 import { formatDateUTC, removeMarkdown, truncateText } from '@/functions/helpers'
 
 const NEAR_PLACES_COUNT = 10

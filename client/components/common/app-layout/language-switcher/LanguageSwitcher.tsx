@@ -6,7 +6,7 @@ import { useTranslation } from 'next-i18next'
 
 import { ApiType, useAppDispatch } from '@/api'
 import { setLocale } from '@/api/applicationSlice'
-import { LOCAL_STORAGE } from '@/functions/constants'
+import { LOCAL_STORAGE } from '@/config/constants'
 import useLocalStorage from '@/functions/hooks/useLocalStorage'
 
 import styles from './styles.module.sass'

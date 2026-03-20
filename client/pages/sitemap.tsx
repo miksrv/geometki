@@ -2,7 +2,8 @@ import React from 'react'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 
-import { API, SITE_LINK } from '@/api'
+import { API } from '@/api'
+import { SITE_LINK } from '@/config/env'
 import { wrapper } from '@/api/store'
 
 type SitemapDynamicPage = {

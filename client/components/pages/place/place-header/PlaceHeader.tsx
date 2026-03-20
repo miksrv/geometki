@@ -7,7 +7,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next'
 
-import { API, ApiModel, ApiType, IMG_HOST, useAppDispatch, useAppSelector } from '@/api'
+import { API, ApiModel, ApiType, useAppDispatch, useAppSelector } from '@/api'
+import { IMG_HOST } from '@/config/env'
 import { openAuthDialog } from '@/api/applicationSlice'
 import { BookmarkButton } from '@/components/common'
 

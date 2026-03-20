@@ -12,7 +12,7 @@ import { appWithTranslation, useTranslation } from 'next-i18next'
 import { ThemeProvider } from 'next-themes'
 
 import { wrapper } from '@/api/store'
-import { LOCAL_STORAGE } from '@/functions/constants'
+import { LOCAL_STORAGE } from '@/config/constants'
 import * as LocalStorage from '@/functions/localstorage'
 
 import i18Config from '../next-i18next.config'

@@ -9,7 +9,7 @@ import { Button, Spinner } from 'simple-react-ui-kit'
 import { useRouter } from 'next/dist/client/router'
 
 import { ApiModel, ApiType } from '@/api'
-import { LOCAL_STORAGE } from '@/functions/constants'
+import { LOCAL_STORAGE } from '@/config/constants'
 import useLocalStorage from '@/functions/hooks/useLocalStorage'
 
 import { CategoryControl } from './category-control'

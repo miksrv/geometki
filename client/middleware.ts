@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server'
 
-import { LOCAL_STORAGE } from '@/functions/constants'
+import { LOCAL_STORAGE } from '@/config/constants'
 
 export const middleware = (request: NextRequest) => {
     const currentUser = request.cookies.get(LOCAL_STORAGE.AUTH_TOKEN)?.value

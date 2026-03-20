@@ -3,7 +3,7 @@ import { setCookie } from 'cookies-next'
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { ApiType } from '@/api'
-import { LOCAL_STORAGE } from '@/functions/constants'
+import { LOCAL_STORAGE } from '@/config/constants'
 import * as LocalStorage from '@/functions/localstorage'
 
 import i18Config from '../next-i18next.config'

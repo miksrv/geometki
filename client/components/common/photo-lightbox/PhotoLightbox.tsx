@@ -7,7 +7,8 @@ import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next'
 
-import { ApiModel, IMG_HOST } from '@/api'
+import { ApiModel } from '@/api'
+import { IMG_HOST } from '@/config/env'
 import { formatDate } from '@/functions/helpers'
 
 import { UserAvatar } from '../user-avatar'

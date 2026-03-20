@@ -4,7 +4,8 @@ import { Button, Spinner } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next'
 
-import { API, ApiType, IMG_HOST, useAppDispatch } from '@/api'
+import { API, ApiType, useAppDispatch } from '@/api'
+import { IMG_HOST } from '@/config/env'
 import { toggleOverlay } from '@/api/applicationSlice'
 import { Dialog, ImageUploader } from '@/components/ui'
 
