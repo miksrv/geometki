@@ -54,7 +54,7 @@ export const API = createApi({
                     currentCache.items = newItems.items
                 }
             },
-            providesTags: (result, error, arg) => [{ id: arg?.author ?? arg?.place, type: 'Activity' }],
+            providesTags: (result, error, arg) => [{ id: arg?.author ?? arg?.place ?? 'LIST', type: 'Activity' }],
             query: (params) => `activity${encodeQueryData(params)}`,
             serializeQueryArgs: ({ endpointName, queryArgs }) => queryArgs?.author ?? queryArgs?.place ?? endpointName
         }),

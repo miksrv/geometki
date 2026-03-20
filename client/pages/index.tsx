@@ -163,6 +163,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 })
             )
 
+            await store.dispatch(API.endpoints.activityGetInfinityList.initiate({}))
+
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
             return {

@@ -191,6 +191,12 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 })
             )
 
+            await store.dispatch(
+                API.endpoints.activityGetInfinityList.initiate({
+                    author: id
+                })
+            )
+
             if (isError) {
                 return { notFound: true }
             }

@@ -73,9 +73,9 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize, onMenuClick }) => {
                 <Search />
 
                 <div className={styles.rightSection}>
-                    {appAuth.isAuth && <NotificationList />}
+                    {appAuth.isAuth === true && <NotificationList />}
 
-                    {appAuth.user && (
+                    {appAuth.isAuth === true && appAuth.user && (
                         <UserMenu
                             t={t}
                             user={appAuth.user}
@@ -83,7 +83,7 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize, onMenuClick }) => {
                         />
                     )}
 
-                    {appAuth.isAuth === false && (
+                    {appAuth.isAuth !== true && (
                         <Button
                             mode={'secondary'}
                             title={t('authorization-on-site_title', {
