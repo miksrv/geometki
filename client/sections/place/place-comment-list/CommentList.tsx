@@ -3,7 +3,8 @@ import { Button, cn } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next'
 
-import { ApiModel, useAppDispatch, useAppSelector } from '@/api'
+import { ApiModel } from '@/api'
+import { useAppDispatch, useAppSelector } from '@/app/store'
 import { openAuthDialog } from '@/app/applicationSlice'
 
 import { CommentForm } from './CommentForm'

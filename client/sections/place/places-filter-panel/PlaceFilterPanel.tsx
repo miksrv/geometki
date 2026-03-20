@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { useTranslation } from 'next-i18next'
 
-import { API, ApiModel, ApiType, useAppSelector } from '@/api'
+import { API, ApiModel, ApiType } from '@/api'
+import { useAppSelector } from '@/app/store'
 import { Autocomplete, Dropdown, DropdownOption, DropdownOptionsList } from '@/components/ui'
 import { categoryImage } from '@/features/categories/categories.utils'
 

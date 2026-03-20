@@ -3,7 +3,8 @@ import { Button, Popout, Spinner } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next'
 
-import { API, useAppDispatch, useAppSelector } from '@/api'
+import { API } from '@/api'
+import { useAppDispatch, useAppSelector } from '@/app/store'
 import { deleteAllNotifications, Notify, setUnreadCounter } from '@/app/notificationSlice'
 import { Counter } from '@/components/ui'
 

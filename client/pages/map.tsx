@@ -9,10 +9,10 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiModel, ApiType, useAppDispatch, useAppSelector } from '@/api'
+import { API, ApiModel, ApiType } from '@/api'
 import { SITE_LINK } from '@/config/env'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
-import { wrapper } from '@/app/store'
+import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, MapObjectsTypeEnum, PhotoLightbox } from '@/components/shared'
 import { round } from '@/utils/helpers'
 
