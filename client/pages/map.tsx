@@ -10,10 +10,10 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { SITE_LINK } from '@/config/env'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, MapObjectsTypeEnum, PhotoLightbox } from '@/components/shared'
+import { SITE_LINK } from '@/config/env'
 import { round } from '@/utils/helpers'
 
 const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), {

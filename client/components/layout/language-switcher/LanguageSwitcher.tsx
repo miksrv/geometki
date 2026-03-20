@@ -5,8 +5,8 @@ import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next'
 
 import { ApiType } from '@/api'
-import { useAppDispatch } from '@/app/store'
 import { setLocale } from '@/app/applicationSlice'
+import { useAppDispatch } from '@/app/store'
 import { LOCAL_STORAGE } from '@/config/constants'
 import useLocalStorage from '@/hooks/useLocalStorage'
 

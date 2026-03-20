@@ -5,10 +5,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { ApiModel } from '@/api'
-import { IMG_HOST } from '@/config/env'
 import { PlacePlate } from '@/components/shared'
-import { addressToString } from '@/utils/address'
+import { IMG_HOST } from '@/config/env'
 import { categoryImage } from '@/features/categories/categories.utils'
+import { addressToString } from '@/utils/address'
 import { addDecimalPoint, dateToUnixTime, numberFormatter, removeMarkdown } from '@/utils/helpers'
 
 import styles from './styles.module.sass'

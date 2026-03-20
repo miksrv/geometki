@@ -5,9 +5,9 @@ import { Button, cn, Icon } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next'
 
 import { API, ApiType } from '@/api'
-import { useAppDispatch, useAppSelector } from '@/app/store'
 import { openAuthDialog, setUserLocation } from '@/app/applicationSlice'
 import { logout } from '@/app/authSlice'
+import { useAppDispatch, useAppSelector } from '@/app/store'
 import { round } from '@/utils/helpers'
 
 import { AppAuthChecker } from './AppAuthChecker'

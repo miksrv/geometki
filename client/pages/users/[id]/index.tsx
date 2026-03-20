@@ -10,10 +10,10 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { ActivityList, AppLayout, PhotoGallery } from '@/components/shared'
+import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
 import { formatDateISO } from '@/utils/helpers'
 

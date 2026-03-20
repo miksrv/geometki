@@ -7,10 +7,10 @@ import { useRouter } from 'next/dist/client/router'
 import { useTranslation } from 'next-i18next'
 
 import { API, ApiType } from '@/api'
-import { useAppDispatch } from '@/app/store'
-import { isApiValidationErrors } from '@/utils/api'
 import { closeAuthDialog } from '@/app/applicationSlice'
 import { login } from '@/app/authSlice'
+import { useAppDispatch } from '@/app/store'
+import { isApiValidationErrors } from '@/utils/api'
 import { validateEmail } from '@/utils/validators'
 
 import styles from './styles.module.sass'

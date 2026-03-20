@@ -9,10 +9,12 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, PhotoGallery, PhotoUploader, PlacesListItem } from '@/components/shared'
+import { Carousel } from '@/components/ui'
+import { LOCAL_STORAGE } from '@/config/constants'
+import { IMG_HOST, SITE_LINK } from '@/config/env'
 import {
     ForwardedPlaceCoverEditor,
     PlaceCommentList,
@@ -22,8 +24,6 @@ import {
     PlaceInformation,
     PlaceShareButtons
 } from '@/sections/place'
-import { Carousel } from '@/components/ui'
-import { LOCAL_STORAGE } from '@/config/constants'
 import { formatDateUTC, removeMarkdown, truncateText } from '@/utils/helpers'
 
 const NEAR_PLACES_COUNT = 10

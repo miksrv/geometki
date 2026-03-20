@@ -4,7 +4,6 @@ import { cn, Icon } from 'simple-react-ui-kit'
 import Link from 'next/link'
 
 import { encodeQueryData } from '@/utils/helpers'
-
 import { computePageNumbers } from '@/utils/pagination'
 
 import styles from './styles.module.sass'

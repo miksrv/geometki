@@ -7,11 +7,11 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next'
 
 import { API, ApiModel } from '@/api'
-import { useAppDispatch, useAppSelector } from '@/app/store'
-import { IMG_HOST } from '@/config/env'
 import { Notify } from '@/app/notificationSlice'
+import { useAppDispatch, useAppSelector } from '@/app/store'
 import { PhotoLightbox } from '@/components/shared'
 import { ImageUploader } from '@/components/ui'
+import { IMG_HOST } from '@/config/env'
 
 import styles from './styles.module.sass'
 

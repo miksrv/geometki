@@ -1,4 +1,4 @@
-import { computePageNumbers, range } from './paginationUtils'
+import { computePageNumbers, range } from '@/utils/pagination'
 
 const LEFT = 'LEFT'
 const RIGHT = 'RIGHT'

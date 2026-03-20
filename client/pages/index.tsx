@@ -9,12 +9,12 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { ActivityList, AppLayout, Header, PlacesListItem, UsersList } from '@/components/shared'
 import { Carousel } from '@/components/ui'
 import { LOCAL_STORAGE } from '@/config/constants'
+import { SITE_LINK } from '@/config/env'
 import { PlaceSchema, UserSchema } from '@/utils/schema'
 
 interface IndexPageProps {

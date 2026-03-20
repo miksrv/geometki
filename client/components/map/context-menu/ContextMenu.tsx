@@ -9,13 +9,13 @@ import { useTranslation } from 'next-i18next'
 import { useLeafletContext } from '@react-leaflet/core'
 
 import { ApiType } from '@/api'
-import { useAppDispatch, useAppSelector } from '@/app/store'
 import { Notify } from '@/app/notificationSlice'
+import { useAppDispatch, useAppSelector } from '@/app/store'
 import { MapLinks } from '@/components/shared'
 import { LOCAL_STORAGE } from '@/config/constants'
+import useLocalStorage from '@/hooks/useLocalStorage'
 import { convertDMS } from '@/utils/coordinates'
 import { round } from '@/utils/helpers'
-import useLocalStorage from '@/hooks/useLocalStorage'
 
 import { MapPositionType } from '../types'
 

@@ -5,10 +5,10 @@ import { Button, Spinner } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next'
 
 import { API, ApiType } from '@/api'
-import { useAppDispatch } from '@/app/store'
-import { IMG_HOST } from '@/config/env'
 import { toggleOverlay } from '@/app/applicationSlice'
+import { useAppDispatch } from '@/app/store'
 import { Dialog, ImageUploader } from '@/components/ui'
+import { IMG_HOST } from '@/config/env'
 
 import 'react-image-crop/src/ReactCrop.scss'
 import styles from './styles.module.sass'

@@ -6,9 +6,9 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next'
 
 import { API } from '@/api'
-import { useAppDispatch, useAppSelector } from '@/app/store'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
+import { useAppDispatch, useAppSelector } from '@/app/store'
 import { ChipsSelect, ContentEditor, ScreenSpinner } from '@/components/ui'
 import { equalsArrays } from '@/utils/helpers'
 

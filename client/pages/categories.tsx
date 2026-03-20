@@ -6,10 +6,10 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, Header } from '@/components/shared'
+import { SITE_LINK } from '@/config/env'
 import { CategoriesList } from '@/sections/categories'
 
 interface CategoriesPageProps {

@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 import { ApiModel } from '@/api'
+
 import type { RootState } from './store'
 
 type SnackbarStateProps = {

@@ -6,9 +6,9 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next'
 
 import { ApiModel } from '@/api'
-import { IMG_HOST } from '@/config/env'
 import { PhotoLightbox, Rating, UserAvatar } from '@/components/shared'
 import { ReadMore } from '@/components/ui'
+import { IMG_HOST } from '@/config/env'
 import { formatDate } from '@/utils/helpers'
 
 import 'react-photo-album/rows.css'

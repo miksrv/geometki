@@ -4,8 +4,8 @@ import { Button, cn } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next'
 
 import { ApiModel } from '@/api'
-import { useAppDispatch, useAppSelector } from '@/app/store'
 import { openAuthDialog } from '@/app/applicationSlice'
+import { useAppDispatch, useAppSelector } from '@/app/store'
 
 import { CommentForm } from './CommentForm'
 import { CommentListItem } from './CommentListItem'

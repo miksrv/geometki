@@ -7,12 +7,12 @@ import { useTranslation } from 'next-i18next'
 
 import { ApiModel } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { IMG_HOST } from '@/config/env'
 import { Header } from '@/components/shared'
 import { Reputation } from '@/components/ui'
-import { formatDate, makeActiveLink, minutesAgo, removeProtocolFromUrl, timeAgo } from '@/utils/helpers'
+import { IMG_HOST } from '@/config/env'
 import { levelImage, nextLevelPercentage } from '@/features/levels/levels.utils'
 import defaultAvatar from '@/public/images/no-avatar.png'
+import { formatDate, makeActiveLink, minutesAgo, removeProtocolFromUrl, timeAgo } from '@/utils/helpers'
 
 import { UserAvatarEditor } from '../user-avatar-editor'
 

@@ -8,10 +8,10 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
 import { API, ApiType } from '@/api'
-import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, Header, UserAvatarGroup } from '@/components/shared'
+import { SITE_LINK } from '@/config/env'
 import { levelImage } from '@/features/levels/levels.utils'
 
 interface LevelsPageProps {

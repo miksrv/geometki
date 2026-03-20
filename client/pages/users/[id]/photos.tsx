@@ -7,12 +7,12 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, Header, PhotoGallery } from '@/components/shared'
-import { UserPagesEnum, UserTabs } from '@/sections/user'
 import { Pagination } from '@/components/ui'
+import { SITE_LINK } from '@/config/env'
+import { UserPagesEnum, UserTabs } from '@/sections/user'
 
 export const PHOTOS_PER_PAGE = 32
 

@@ -2,9 +2,9 @@ import React from 'react'
 
 import Image from 'next/image'
 
-import { formatDate } from '@/utils/helpers'
 import packageInfo from '@/package.json'
 import { update } from '@/update'
+import { formatDate } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 

@@ -6,11 +6,11 @@ import Image from 'next/image'
 import { useTranslation } from 'next-i18next'
 
 import { API } from '@/api'
-import { useAppDispatch, useAppSelector } from '@/app/store'
-import { IMG_HOST } from '@/config/env'
 import { openAuthDialog, toggleOverlay } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
+import { useAppDispatch, useAppSelector } from '@/app/store'
 import { Dialog } from '@/components/ui'
+import { IMG_HOST } from '@/config/env'
 
 import 'react-image-crop/src/ReactCrop.scss'
 import styles from './styles.module.sass'

@@ -1,4 +1,3 @@
-import { useAppDispatch } from '@/app/store'
 import React from 'react'
 import { Icon, IconTypes } from 'simple-react-ui-kit'
 
@@ -6,6 +5,7 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next'
 
 import { openAuthDialog } from '@/app/applicationSlice'
+import { useAppDispatch } from '@/app/store'
 
 import styles from './styles.module.sass'
 

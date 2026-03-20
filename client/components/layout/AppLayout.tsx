@@ -1,4 +1,3 @@
-import { useAppDispatch, useAppSelector } from '@/app/store'
 import React, { useEffect, useRef, useState } from 'react'
 import { cn, Dialog, Icon } from 'simple-react-ui-kit'
 
@@ -6,6 +5,7 @@ import { useTranslation } from 'next-i18next'
 import NextNProgress from 'nextjs-progressbar'
 
 import { closeAuthDialog } from '@/app/applicationSlice'
+import { useAppDispatch, useAppSelector } from '@/app/store'
 
 import { AppBar } from './app-bar'
 import { Footer } from './footer'

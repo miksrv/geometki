@@ -1,6 +1,6 @@
 // Re-exports from semantic utility modules for convenience
-export { formatDate, dateToUnixTime, formatDateISO, timeAgo, minutesAgo, formatDateUTC } from './date'
-export { truncateText, removeMarkdown, isValidJSON } from './text'
-export { numberFormatter, round, ratingColor, addDecimalPoint } from './number'
-export { encodeQueryData, makeActiveLink, removeProtocolFromUrl } from './url'
 export { equalsArrays } from './array'
+export { dateToUnixTime, formatDate, formatDateISO, formatDateUTC, minutesAgo, timeAgo } from './date'
+export { addDecimalPoint, numberFormatter, ratingColor, round } from './number'
+export { isValidJSON, removeMarkdown, truncateText } from './text'
+export { encodeQueryData, makeActiveLink, removeProtocolFromUrl } from './url'

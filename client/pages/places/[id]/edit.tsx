@@ -8,13 +8,13 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { isApiValidationErrors } from '@/utils/api'
-import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, Header } from '@/components/shared'
-import { PlaceForm } from '@/sections/place'
 import { LOCAL_STORAGE } from '@/config/constants'
+import { SITE_LINK } from '@/config/env'
+import { PlaceForm } from '@/sections/place'
+import { isApiValidationErrors } from '@/utils/api'
 import { equalsArrays } from '@/utils/helpers'
 
 interface PlaceEditPageProps {

@@ -8,10 +8,10 @@ import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { useAppDispatch, useAppSelector } from '@/app/store'
-import { IMG_HOST } from '@/config/env'
 import { openAuthDialog } from '@/app/applicationSlice'
+import { useAppDispatch, useAppSelector } from '@/app/store'
 import { BookmarkButton } from '@/components/shared'
+import { IMG_HOST } from '@/config/env'
 
 import styles from './styles.module.sass'
 
