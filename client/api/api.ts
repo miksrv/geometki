@@ -54,9 +54,9 @@ export const API = createApi({
                     currentCache.items = newItems.items
                 }
             },
-            providesTags: (result, error, arg) => [{ id: arg?.author ?? arg?.place ?? 'LIST', type: 'Activity' }],
+            providesTags: (result, error, arg) => [{ id: arg?.author || arg?.place || 'LIST', type: 'Activity' }],
             query: (params) => `activity${encodeQueryData(params)}`,
-            serializeQueryArgs: ({ endpointName, queryArgs }) => queryArgs?.author ?? queryArgs?.place ?? endpointName
+            serializeQueryArgs: ({ endpointName, queryArgs }) => queryArgs?.author || queryArgs?.place || endpointName
         }),
         activityGetList: builder.query<ApiType.Activity.GetListResponse, Maybe<ApiType.Activity.GetListRequest>>({
             providesTags: (result, error, arg) => [{ id: arg?.place || arg?.author, type: 'Activity' }],

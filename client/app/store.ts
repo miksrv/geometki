@@ -5,6 +5,7 @@ import { combineReducers, configureStore, UnknownAction } from '@reduxjs/toolkit
 
 import { API } from '@/api/api'
 import { APIPastvu } from '@/api/apiPastvu'
+import { sanitizeForSerialization } from '@/utils/sanitizeState'
 
 import applicationSlice from './applicationSlice'
 import authSlice from './authSlice'
@@ -48,11 +49,27 @@ const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) 
 
             [API.reducerPath]: {
                 ...state?.[API.reducerPath],
-                ...payload[API.reducerPath]
+                ...payload[API.reducerPath],
+                queries: {
+                    ...state?.[API.reducerPath]?.queries,
+                    ...payload[API.reducerPath]?.queries
+                },
+                provided: {
+                    ...state?.[API.reducerPath]?.provided,
+                    ...payload[API.reducerPath]?.provided
+                }
             },
             [APIPastvu.reducerPath]: {
                 ...state?.[APIPastvu.reducerPath],
-                ...payload[APIPastvu.reducerPath]
+                ...payload[APIPastvu.reducerPath],
+                queries: {
+                    ...state?.[APIPastvu.reducerPath]?.queries,
+                    ...payload[APIPastvu.reducerPath]?.queries
+                },
+                provided: {
+                    ...state?.[APIPastvu.reducerPath]?.provided,
+                    ...payload[APIPastvu.reducerPath]?.provided
+                }
             }
         }
     }
@@ -75,4 +92,7 @@ export type AppDispatch = AppStore['dispatch']
 export const useAppDispatch = () => useDispatch<AppDispatch>()
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
 
-export const wrapper = createWrapper<AppStore>(makeStore, { debug: false })
+export const wrapper = createWrapper<AppStore>(makeStore, {
+    debug: false,
+    serializeState: (state) => sanitizeForSerialization(state)
+})

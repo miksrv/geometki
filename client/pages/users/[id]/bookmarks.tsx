@@ -115,6 +115,14 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return { notFound: true }
             }
 
+            await store.dispatch(
+                API.endpoints.placesGetList.initiate({
+                    bookmarkUser: id,
+                    limit: PLACES_PER_PAGE,
+                    offset: (currentPage - 1) * PLACES_PER_PAGE
+                })
+            )
+
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
             return {

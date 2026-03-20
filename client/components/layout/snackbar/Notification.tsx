@@ -18,7 +18,7 @@ interface NotificationProps extends ApiModel.Notification {
 }
 
 export const Notification: React.FC<NotificationProps> = ({ showDate, onClose, onLoad, ...props }) => {
-    const { t } = useTranslation('components.app-layout.snackbar')
+    const { t } = useTranslation()
 
     React.useEffect(() => {
         onLoad?.(props.id)
@@ -45,7 +45,7 @@ export const Notification: React.FC<NotificationProps> = ({ showDate, onClose, o
                               ? t(`notification_${props.activity}`)
                               : ''
                           : props.type
-                            ? t(props.type)
+                            ? t(`notification_${props.type}`)
                             : ''}
                 </span>
                 <span className={styles.content}>
@@ -68,9 +68,7 @@ export const Notification: React.FC<NotificationProps> = ({ showDate, onClose, o
                     )}
                 </span>
                 {showDate && (
-                    <div className={styles.datetime}>
-                        {formatDate(props.created?.date, t('date_time_format', { defaultValue: 'D MMMM YYYY, HH:mm' }))}
-                    </div>
+                    <div className={styles.datetime}>{formatDate(props.created?.date, t('date-time-format'))}</div>
                 )}
             </div>
             {onClose && (
