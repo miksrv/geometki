@@ -1,5 +1,5 @@
 export { ActivityList } from './activity-list'
-export { AppLayout } from './app-layout'
+export { AppLayout } from '../layout'
 export { BookmarkButton } from './bookmark-button'
 export { ConfirmationDialog } from './confirmation-dialog'
 export { Header } from './header'
