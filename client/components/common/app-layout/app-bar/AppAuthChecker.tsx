@@ -5,7 +5,7 @@ import React, { useEffect } from 'react'
 import { API, useAppDispatch, useAppSelector } from '@/api'
 import { login, logout, saveSession } from '@/api/authSlice'
 import { LOCAL_STORAGE } from '@/config/constants'
-import useLocalStorage from '@/functions/hooks/useLocalStorage'
+import useLocalStorage from '@/hooks/useLocalStorage'
 
 export const AppAuthChecker: React.FC = () => {
     const dispatch = useAppDispatch()

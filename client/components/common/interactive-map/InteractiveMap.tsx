@@ -10,7 +10,7 @@ import { useRouter } from 'next/dist/client/router'
 
 import { ApiModel, ApiType } from '@/api'
 import { LOCAL_STORAGE } from '@/config/constants'
-import useLocalStorage from '@/functions/hooks/useLocalStorage'
+import useLocalStorage from '@/hooks/useLocalStorage'
 
 import { CategoryControl } from './category-control'
 import { ContextMenu } from './context-menu'

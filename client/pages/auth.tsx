@@ -13,7 +13,7 @@ import { setLocale } from '@/api/applicationSlice'
 import { login } from '@/api/authSlice'
 import { wrapper } from '@/api/store'
 import { LOCAL_STORAGE } from '@/config/constants'
-import useLocalStorage from '@/functions/hooks/useLocalStorage'
+import useLocalStorage from '@/hooks/useLocalStorage'
 import * as LocalStorage from '@/utils/localstorage'
 
 const AuthPage: NextPage<object> = () => {

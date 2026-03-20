@@ -3,7 +3,7 @@ import { Button } from 'simple-react-ui-kit'
 
 import { useTheme } from 'next-themes'
 
-import useClientOnly from '@/functions/hooks/useClientOnly'
+import useClientOnly from '@/hooks/useClientOnly'
 
 import styles from './styles.module.sass'
 

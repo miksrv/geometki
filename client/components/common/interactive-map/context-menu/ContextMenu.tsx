@@ -14,7 +14,7 @@ import { MapLinks } from '@/components/common'
 import { LOCAL_STORAGE } from '@/config/constants'
 import { convertDMS } from '@/utils/coordinates'
 import { round } from '@/utils/helpers'
-import useLocalStorage from '@/functions/hooks/useLocalStorage'
+import useLocalStorage from '@/hooks/useLocalStorage'
 
 import { MapPositionType } from '../types'
 
