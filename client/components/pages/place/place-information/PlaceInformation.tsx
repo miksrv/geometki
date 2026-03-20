@@ -14,7 +14,7 @@ import { formatDate } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
-const InteractiveMap = dynamic(() => import('@/components/common/interactive-map/InteractiveMap'), {
+const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), {
     ssr: false
 })
 

@@ -16,7 +16,7 @@ import { wrapper } from '@/api/store'
 import { AppLayout, MapObjectsTypeEnum, PhotoLightbox } from '@/components/common'
 import { round } from '@/utils/helpers'
 
-const InteractiveMap = dynamic(() => import('@/components/common/interactive-map/InteractiveMap'), {
+const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), {
     ssr: false
 })
 
