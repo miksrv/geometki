@@ -12,7 +12,7 @@ import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
 import { AppLayout, Header } from '@/components/shared'
-import { PlaceForm } from '@/components/pages/place'
+import { PlaceForm } from '@/sections/place'
 import { LOCAL_STORAGE } from '@/config/constants'
 import { equalsArrays } from '@/utils/helpers'
 

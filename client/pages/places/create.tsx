@@ -11,7 +11,7 @@ import { API, ApiType, isApiValidationErrors } from '@/api'
 import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
 import { AppLayout, Header } from '@/components/shared'
-import { PlaceForm } from '@/components/pages/place'
+import { PlaceForm } from '@/sections/place'
 
 const CreatePlacePage: NextPage<object> = () => {
     const { t } = useTranslation()

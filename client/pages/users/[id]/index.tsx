@@ -14,7 +14,7 @@ import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
 import { ActivityList, AppLayout, PhotoGallery } from '@/components/shared'
-import { UserHeader, UserPagesEnum, UserTabs } from '@/components/pages/user'
+import { UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
 import { formatDateISO } from '@/utils/helpers'
 
 interface UserPageProps {

@@ -21,7 +21,7 @@ import {
     PlaceHeader,
     PlaceInformation,
     PlaceShareButtons
-} from '@/components/pages/place'
+} from '@/sections/place'
 import { Carousel } from '@/components/ui'
 import { LOCAL_STORAGE } from '@/config/constants'
 import { formatDateUTC, removeMarkdown, truncateText } from '@/utils/helpers'

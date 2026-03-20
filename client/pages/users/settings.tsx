@@ -12,7 +12,7 @@ import { setLocale } from '@/api/applicationSlice'
 import { Notify } from '@/api/notificationSlice'
 import { wrapper } from '@/api/store'
 import { AppLayout, Header } from '@/components/shared'
-import { UserForm } from '@/components/pages/user'
+import { UserForm } from '@/sections/user'
 import { ScreenSpinner } from '@/components/ui'
 
 const SettingsUserPage: NextPage<object> = () => {

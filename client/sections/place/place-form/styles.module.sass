@@ -1,24 +1,11 @@
-@use '../../../../styles/variables' as variables
+@use '../../../styles/variables' as variables
 
 .component
     position: relative
 
-    .section
-        margin-top: 20px
-
-        .notifySetting
-            margin-top: 5px
-
-        .header
-            margin-bottom: 5px
-
-    .actions
-        margin-top: 20px
-        display: flex
-        flex-direction: row-reverse
-
-        button
-            margin-left: 15px
+    .gallery
+        box-shadow: none
+        padding: 5px
 
     .formElement
         margin-bottom: 10px
@@ -38,12 +25,19 @@
         margin: 25px 0 10px
         position: relative
 
+        & > div
+            border: var(--input-border)
+
         .categoryImage
-            left: 48.6%
-            top: 45%
+            left: 49.017%
+            top: 43.8%
             position: absolute
             z-index: 401
 
-    .authService
-        text-align: center
-        padding: 30px
+    .actions
+        margin-top: 20px
+        display: flex
+        flex-direction: row-reverse
+
+        button
+            margin-left: 15px

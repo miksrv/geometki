@@ -10,7 +10,7 @@ import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
 import { AppLayout, Header } from '@/components/shared'
-import { TagList } from '@/components/pages/tags'
+import { TagList } from '@/sections/tags'
 import { dateToUnixTime } from '@/utils/helpers'
 
 interface TagsPageProps {

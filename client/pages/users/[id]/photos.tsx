@@ -11,7 +11,7 @@ import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
 import { AppLayout, Header, PhotoGallery } from '@/components/shared'
-import { UserPagesEnum, UserTabs } from '@/components/pages/user'
+import { UserPagesEnum, UserTabs } from '@/sections/user'
 import { Pagination } from '@/components/ui'
 
 export const PHOTOS_PER_PAGE = 32

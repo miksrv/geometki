@@ -11,10 +11,10 @@ import { SITE_LINK } from '@/config/env'
 import { setLocale } from '@/api/applicationSlice'
 import { wrapper } from '@/api/store'
 import { AppLayout, Header, PlacesList } from '@/components/shared'
-import { UserPagesEnum, UserTabs } from '@/components/pages/user'
+import { UserPagesEnum, UserTabs } from '@/sections/user'
 import { Pagination } from '@/components/ui'
 
-import styles from '@/components/pages/user/styles.module.sass'
+import styles from '@/sections/user/styles.module.sass'
 
 export const PLACES_PER_PAGE = 21
 
