@@ -1,0 +1,71 @@
+@use '../../../styles/variables' as variables
+
+.component
+    display: flex
+    justify-content: space-between
+    border-top-left-radius: 0 !important
+    border-top-right-radius: 0 !important
+    margin-top: 0
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-direction: column
+
+    .information
+        width: 55%
+
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            width: 100%
+
+        li
+            display: flex
+            align-items: center
+            margin-bottom: 10px
+            font-size: variables.$fontSizeHeadline
+
+            &:last-of-type
+                margin-bottom: 0
+
+            svg
+                width: 19px
+                height: 19px
+                fill: var(--icon-color-secondary)
+                margin-right: 5px
+
+            .key
+                color: var(--text-color-secondary)
+                margin-right: 5px
+
+            .value
+                max-width: 80%
+                min-width: 200px
+                display: flex
+                align-items: center
+
+                & > div
+                    height: 19px
+
+    .coordinatesLink
+        margin-right: 10px
+
+    .map
+        width: 40%
+        flex-grow: 1
+        min-width: 300px
+
+        & > div
+            border: var(--input-border)
+            border-radius: var(--border-radius)
+
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            width: 100%
+            margin-top: 20px
+
+            & > div
+                height: 200px
+
+    .openMapButton
+        display: none
+
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            margin-top: 10px
+            display: block

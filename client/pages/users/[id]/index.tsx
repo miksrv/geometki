@@ -9,12 +9,14 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiModel, ApiType, IMG_HOST, SITE_LINK } from '@/api'
-import { setLocale } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
-import { ActivityList, AppLayout, PhotoGallery } from '@/components/common'
-import { UserHeader, UserPagesEnum, UserTabs } from '@/components/pages/user'
-import { formatDateISO } from '@/functions/helpers'
+import { API, ApiModel, ApiType } from '@/api'
+import { setLocale } from '@/app/applicationSlice'
+import { wrapper } from '@/app/store'
+import { ActivityList, AppLayout, PhotoGallery } from '@/components/shared'
+import { IMG_HOST, SITE_LINK } from '@/config/env'
+import { UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
+import { formatDateISO } from '@/utils/helpers'
+import { buildHreflangTags } from '@/utils/seo'
 
 interface UserPageProps {
     id: string
@@ -67,6 +69,7 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
             },
             {
                 '@type': 'ListItem',
+                item: `${canonicalUrl}users/${user?.id}`,
                 name: user?.name,
                 position: 2
             }
@@ -123,6 +126,8 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
                     type: 'http://ogp.me/ns/profile#',
                     url: `${canonicalUrl}users/${user?.id}`
                 }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags(`users/${user?.id}`)}
             />
 
             <UserHeader user={user} />
@@ -188,6 +193,12 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     author: id,
                     limit: 8,
                     offset: 0
+                })
+            )
+
+            await store.dispatch(
+                API.endpoints.activityGetInfinityList.initiate({
+                    author: id
                 })
             )
 

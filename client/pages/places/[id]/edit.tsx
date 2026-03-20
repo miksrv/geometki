@@ -7,13 +7,15 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiModel, ApiType, isApiValidationErrors, SITE_LINK } from '@/api'
-import { setLocale } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
-import { AppLayout, Header } from '@/components/common'
-import { PlaceForm } from '@/components/pages/place'
-import { LOCAL_STORAGE } from '@/functions/constants'
-import { equalsArrays } from '@/functions/helpers'
+import { API, ApiModel, ApiType } from '@/api'
+import { setLocale } from '@/app/applicationSlice'
+import { wrapper } from '@/app/store'
+import { AppLayout, Header } from '@/components/shared'
+import { LOCAL_STORAGE } from '@/config/constants'
+import { SITE_LINK } from '@/config/env'
+import { PlaceForm } from '@/sections/place'
+import { isApiValidationErrors } from '@/utils/api'
+import { equalsArrays } from '@/utils/helpers'
 
 interface PlaceEditPageProps {
     place?: ApiModel.Place

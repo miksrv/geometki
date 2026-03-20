@@ -1,0 +1,43 @@
+@use '../../../styles/variables' as variables
+
+.component
+    position: relative
+
+    .gallery
+        box-shadow: none
+        padding: 5px
+
+    .formElement
+        margin-bottom: 10px
+
+        label
+            display: block
+            color: var(--input-label-color)
+            overflow: hidden
+            padding-bottom: 6px
+            padding-top: 2px
+            text-overflow: ellipsis
+            white-space: nowrap
+            font-size: variables.$fontSizeHeadline
+
+    .mapContainer
+        height: 300px
+        margin: 25px 0 10px
+        position: relative
+
+        & > div
+            border: var(--input-border)
+
+        .categoryImage
+            left: 49.017%
+            top: 43.8%
+            position: absolute
+            z-index: 401
+
+    .actions
+        margin-top: 20px
+        display: flex
+        flex-direction: row-reverse
+
+        button
+            margin-left: 15px

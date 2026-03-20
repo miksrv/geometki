@@ -1,0 +1,115 @@
+@use '../../../styles/variables' as variables
+
+.snackbar
+    position: fixed
+    left: 10px
+    bottom: 0
+    display: flex
+    flex-direction: column
+    user-select: none
+    max-width: 280px
+    width: 100%
+    z-index: 505
+
+    .notification
+        border-radius: var(--border-radius)
+        box-shadow: variables.$boxShadow4
+        padding: 8px 12px
+
+        &.unread
+            transition: transform .32s cubic-bezier(0.4,0,0.2,1)
+            animation: snackbar-horizontal .34s cubic-bezier(0.4,0,0.2,1)
+
+.notification
+    background-color: var(--container-background)
+    display: flex
+    align-items: center
+    position: relative
+    width: 100%
+    margin-bottom: 10px
+
+    &.unread
+        background-color: var(--input-background-color)
+
+    &.noTitle
+        min-height: 60px
+
+    .before
+        margin-right: 9px
+        display: flex
+        align-items: center
+
+        .placeImage
+            border-radius: var(--border-radius)
+
+        svg
+            fill: var(--link-color)
+            width: 26px
+            height: 26px
+
+    .body
+        display: flex
+        flex: 1
+        overflow: hidden
+        align-items: flex-start
+        flex-direction: column
+
+        .title
+            color: var(--text-color-primary)
+            display: -webkit-box
+            flex: 1
+            width: 100%
+            -webkit-line-clamp: 3
+            -webkit-box-orient: vertical
+            overflow: hidden
+
+        .content
+            color: var(--text-color-secondary)
+
+            a
+                display: block
+                white-space: pre
+                text-overflow: ellipsis
+                overflow: hidden
+                max-width: 175px
+
+        .datetime
+            font-size: variables.$fontSizeCaption
+            color: var(--text-color-secondary)
+
+    &.success
+        svg
+            fill: var(--color-green)
+
+    &.warning
+        svg
+            fill: var(--color-orange)
+
+    &.error
+        svg
+            fill: var(--color-red)
+
+    .closeButton
+        position: absolute
+        border: none
+        background: none
+        margin: 0
+        padding: 0
+        right: 2px
+        top: 2px
+        cursor: pointer
+
+        &:hover
+            opacity: .6
+
+        svg
+            width: 12px
+            height: 12px
+            fill: var(--icon-color-secondary)
+
+@keyframes snackbar-horizontal
+    0%
+        transform: translate3d(-140%,0,0)
+
+    100%
+        transform: translateZ(0)

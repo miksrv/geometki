@@ -1,31 +1,43 @@
 ---
 name: geometki-client-architecture
-description: Core architecture, stack, and patterns used in the geometki Next.js client
+description: Core architecture, stack, and patterns used in the geometki Next.js client (post March 2026 refactor)
 type: project
 ---
 
 Next.js 16 (Pages Router) with React 19. TypeScript throughout.
 
-**State management**: Redux Toolkit + RTK Query. Store is in `api/store.ts`, API definitions in `api/api.ts`. SSR hydration uses `next-redux-wrapper`. There are two API instances: `API` (main backend) and `APIPastvu` (pastvu.com historical photos).
+**State management**: Redux Toolkit + RTK Query. Store is in `app/store.ts` (moved from `api/store.ts`). Redux slices in `app/applicationSlice.ts`, `app/authSlice.ts`, `app/notificationSlice.ts`. API definitions in `api/api.ts` (monolithic — all endpoints in one file; the injectEndpoints split is not viable without updating all ~40 consumers). SSR hydration uses `next-redux-wrapper`. Two API instances: `API` (main backend) and `APIPastvu` (pastvu.com historical photos).
 
-**Styling**: SASS modules per component (`styles.module.sass`). Global styles in `styles/globals.sass`. Theme variables via CSS custom properties. Two theme files: `styles/dark.css` and `styles/light.css`. Theme switching via `next-themes`.
-
-**i18n**: `next-i18next` with two locales: `ru` (default) and `en`. Translation keys are namespaced by component path (e.g. `components.app-layout`). Scanner config in `i18next-scanner.config.js`.
-
-**Map**: Leaflet + react-leaflet v5, loaded client-side only via `next/dynamic` with `ssr: false`. `InteractiveMap` is the monolithic map component in `components/common/interactive-map/`.
-
-**Authentication**: JWT token stored in localStorage via a custom `localstorage.ts` wrapper. Cookie `token` is also set (to boolean `true` — a known bug) for middleware route-guarding. Auth state lives in `api/authSlice.ts`. A polling `AppAuthChecker` component refreshes auth state every 60s.
-
-**Component layout**:
-- `components/common/` — shared layout components (AppLayout, PhotoGallery, Rating, etc.)
+**Directory structure** (post refactor, as of commit 786dbd4e on develop):
+- `app/` — Redux store + slices
+- `api/` — RTK Query API slice (`api.ts`), types (`types/`), models (`models/`), `apiPastvu.ts`
+- `config/` — `constants.ts` (LOCAL_STORAGE), `env.ts` (IMG_HOST, SITE_LINK, API_HOST)
+- `hooks/` — custom React hooks (`useLocalStorage.ts`, `useClientOnly.ts`)
+- `utils/` — pure utility functions split by domain: `date.ts`, `text.ts`, `number.ts`, `url.ts`, `array.ts`, `api.ts` (isApiValidationErrors), `pagination.ts`, `localstorage.ts`, `schema.ts`, `address.ts`, `coordinates.ts`, `validators.ts`; barrel re-export in `helpers.ts`
+- `features/` — domain co-location: `features/<domain>/` contains `<domain>.types.ts` (re-exports from `api/types/`) and `<domain>.utils.ts` (domain utilities). NOT used for API splitting.
+- `components/layout/` — app-level layout (AppLayout, AppBar, Snackbar, etc.)
+- `components/map/` — Leaflet map components (InteractiveMap, MarkerPoint, etc.)
+- `components/shared/` — shared UI components (PhotoGallery, BookmarkButton, UserAvatar, etc.)
 - `components/ui/` — generic UI primitives (Autocomplete, Pagination, Carousel, etc.)
-- `components/pages/` — page-specific compound components (place/, user/, categories/, tags/)
+- `sections/` — page-specific compound components (place/, user/, categories/, tags/) — formerly `components/pages/`
+- `pages/` — Next.js route entry points
+- `styles/` — `globals.sass` (global classes + contextListMenu), `variables.sass` (SASS vars + %placeBottomPanel placeholder), `dark.css`, `light.css`
 
-**Testing**: Jest + jsdom. Test files are co-located with source. Test suites added: `helpers.test.ts`, `coordinates.test.ts`, `validators.test.ts`, `localstorage.test.ts`, `authSlice.test.ts`, `applicationSlice.test.ts`, `notificationSlice.test.ts`, `Pagination.test.ts`. When a component imports UI library deps (e.g. `simple-react-ui-kit`) that are not in `moduleNameMapper`, extract pure logic into a separate utility file (e.g. `paginationUtils.ts`) and import from there in the test.
+**Styling**: SASS modules per component (`styles.module.sass`). Theme via CSS custom properties. SASS placeholder `%placeBottomPanel` in `variables.sass` (use `@extend %placeBottomPanel` after `@use`-ing variables). Global utility classes (`.contextListMenu`, `.emptyList`, etc.) in `globals.sass`.
 
-**i18n scanner**: `yarn locales:build` runs `i18next-scanner` which requires all translation keys to be dot-separated (`group.key`). Pre-existing flat keys in `common.json` cause scanner failures — this is a known pre-existing issue unrelated to new work. New keys should always be dot-separated.
+**Import paths for common things**:
+- Store hooks: `import { useAppDispatch, useAppSelector } from '@/app/store'`
+- API: `import { API, ApiModel, ApiType } from '@/api'`
+- Env constants: `import { IMG_HOST, SITE_LINK } from '@/config/env'`
+- Validation helper: `import { isApiValidationErrors } from '@/utils/api'`
 
-**`AnyAction` deprecated**: `api/store.ts` uses `UnknownAction` (not `AnyAction`) from `@reduxjs/toolkit`.
+**i18n**: `next-i18next` with two locales: `ru` (default) and `en`. Run `yarn locales:build` after adding translation keys (always dot-separated).
+
+**Map**: Leaflet + react-leaflet v5, loaded client-side only via `next/dynamic` with `ssr: false`.
+
+**Authentication**: JWT token in localStorage. Auth state in `app/authSlice.ts`. `AppAuthChecker` polls every 60s.
+
+**Testing**: Jest + jsdom. Test files co-located with source. All 8 suites, 211 tests pass as of the March 2026 refactor.
 
 **Why:** Summarises the entire client codebase structure for quick context in future sessions.
 **How to apply:** Use when suggesting refactors, new features, or bug fixes to stay consistent with existing patterns.

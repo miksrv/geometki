@@ -9,15 +9,17 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiModel, ApiType, IMG_HOST, SITE_LINK, useAppDispatch } from '@/api'
-import { setLocale, toggleOverlay } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
-import { AppLayout, Header, PlacesList } from '@/components/common'
-import { PlaceFilterPanel, PlacesFilterType } from '@/components/pages/place'
+import { API, ApiModel, ApiType } from '@/api'
+import { setLocale, toggleOverlay } from '@/app/applicationSlice'
+import { useAppDispatch, wrapper } from '@/app/store'
+import { AppLayout, Header, PlacesList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
-import { LOCAL_STORAGE } from '@/functions/constants'
-import { encodeQueryData } from '@/functions/helpers'
-import { PlaceSchema } from '@/functions/schema'
+import { LOCAL_STORAGE } from '@/config/constants'
+import { IMG_HOST, SITE_LINK } from '@/config/env'
+import { PlaceFilterPanel, PlacesFilterType } from '@/sections/place'
+import { encodeQueryData } from '@/utils/helpers'
+import { PlaceSchema } from '@/utils/schema'
+import { buildHreflangTags } from '@/utils/seo'
 
 const DEFAULT_SORT = ApiType.SortFields.Updated
 const DEFAULT_ORDER = ApiType.SortOrders.DESC
@@ -242,12 +244,13 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         itemListElement: [
             ...(breadcrumbsLinks?.map((link, i) => ({
                 '@type': 'ListItem',
-                item: canonicalUrl + link.link,
+                item: `${canonicalUrl}${link.link.replace(/^\//, '')}`,
                 name: link.text,
                 position: i + 1
             })) || []),
             {
                 '@type': 'ListItem',
+                item: canonicalPage,
                 name: breadCrumbCurrent,
                 position: breadcrumbsLinks.length + 1
             }
@@ -288,8 +291,10 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                             width: 280
                         })),
                     locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    type: 'http://ogp.me/ns/article#'
+                    type: 'website'
                 }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags('places')}
             />
 
             <Header

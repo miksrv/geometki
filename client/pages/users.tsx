@@ -6,11 +6,13 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiModel, ApiType, SITE_LINK } from '@/api'
-import { setLocale } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
-import { AppLayout, Header, UsersList } from '@/components/common'
+import { API, ApiModel, ApiType } from '@/api'
+import { setLocale } from '@/app/applicationSlice'
+import { wrapper } from '@/app/store'
+import { AppLayout, Header, UsersList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
+import { SITE_LINK } from '@/config/env'
+import { buildHreflangTags } from '@/utils/seo'
 
 const USERS_PER_PAGE = 30
 
@@ -39,6 +41,19 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
                     ?.join(', ')
                     ?.substring(0, 220)}`}
                 canonical={`${canonicalUrl}users${currentPage && currentPage > 1 ? '?page=' + currentPage : ''}`}
+                openGraph={{
+                    description: `${title} - ${usersList
+                        ?.map(({ name }) => name)
+                        ?.join(', ')
+                        ?.substring(0, 220)}`,
+                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                    siteName: t('geotags'),
+                    title,
+                    type: 'website',
+                    url: `${canonicalUrl}users`
+                }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags('users')}
             />
 
             <Header

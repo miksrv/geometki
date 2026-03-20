@@ -5,12 +5,14 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiModel, ApiType, SITE_LINK } from '@/api'
-import { setLocale } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
-import { AppLayout, Header } from '@/components/common'
-import { TagList } from '@/components/pages/tags'
-import { dateToUnixTime } from '@/functions/helpers'
+import { API, ApiModel, ApiType } from '@/api'
+import { setLocale } from '@/app/applicationSlice'
+import { wrapper } from '@/app/store'
+import { AppLayout, Header } from '@/components/shared'
+import { SITE_LINK } from '@/config/env'
+import { TagList } from '@/sections/tags'
+import { dateToUnixTime } from '@/utils/helpers'
+import { buildHreflangTags } from '@/utils/seo'
 
 interface TagsPageProps {
     tags: ApiModel.Tag[]
@@ -54,10 +56,23 @@ const CategoriesPage: NextPage<TagsPageProps> = ({ tags }) => {
             <NextSeo
                 title={t('features-of-places')}
                 canonical={`${canonicalUrl}tags`}
-                description={tagsList
+                description={`${t('features-of-places')}: ${tagsList
                     ?.map(({ title }) => title)
-                    ?.join(',')
-                    ?.substring(0, 220)}
+                    ?.join(', ')
+                    ?.substring(0, 180)}`}
+                openGraph={{
+                    description: `${t('features-of-places')}: ${tagsList
+                        ?.map(({ title }) => title)
+                        ?.join(', ')
+                        ?.substring(0, 180)}`,
+                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                    siteName: t('geotags'),
+                    title: t('features-of-places'),
+                    type: 'website',
+                    url: `${canonicalUrl}tags`
+                }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags('tags')}
             />
 
             <Header

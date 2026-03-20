@@ -7,13 +7,14 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiType, isApiValidationErrors, useAppDispatch, useAppSelector } from '@/api'
-import { setLocale } from '@/api/applicationSlice'
-import { Notify } from '@/api/notificationSlice'
-import { wrapper } from '@/api/store'
-import { AppLayout, Header } from '@/components/common'
-import { UserForm } from '@/components/pages/user'
+import { API, ApiType } from '@/api'
+import { setLocale } from '@/app/applicationSlice'
+import { Notify } from '@/app/notificationSlice'
+import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
+import { AppLayout, Header } from '@/components/shared'
 import { ScreenSpinner } from '@/components/ui'
+import { UserForm } from '@/sections/user'
+import { isApiValidationErrors } from '@/utils/api'
 
 const SettingsUserPage: NextPage<object> = () => {
     const { t } = useTranslation()

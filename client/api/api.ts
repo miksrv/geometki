@@ -3,8 +3,8 @@ import type { Action, PayloadAction } from '@reduxjs/toolkit'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
 import { ApiType } from '@/api'
-import { RootState } from '@/api/store'
-import { encodeQueryData } from '@/functions/helpers'
+import { RootState } from '@/app/store'
+import { encodeQueryData } from '@/utils/url'
 
 type Maybe<T> = T | void
 
@@ -54,9 +54,9 @@ export const API = createApi({
                     currentCache.items = newItems.items
                 }
             },
-            providesTags: (result, error, arg) => [{ id: arg?.author ?? arg?.place, type: 'Activity' }],
+            providesTags: (result, error, arg) => [{ id: arg?.author || arg?.place || 'LIST', type: 'Activity' }],
             query: (params) => `activity${encodeQueryData(params)}`,
-            serializeQueryArgs: ({ endpointName, queryArgs }) => queryArgs?.author ?? queryArgs?.place ?? endpointName
+            serializeQueryArgs: ({ endpointName, queryArgs }) => queryArgs?.author || queryArgs?.place || endpointName
         }),
         activityGetList: builder.query<ApiType.Activity.GetListResponse, Maybe<ApiType.Activity.GetListRequest>>({
             providesTags: (result, error, arg) => [{ id: arg?.place || arg?.author, type: 'Activity' }],

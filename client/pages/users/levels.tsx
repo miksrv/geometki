@@ -7,11 +7,13 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiType, SITE_LINK } from '@/api'
-import { setLocale } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
-import { AppLayout, Header, UserAvatarGroup } from '@/components/common'
-import { levelImage } from '@/functions/userLevels'
+import { API, ApiType } from '@/api'
+import { setLocale } from '@/app/applicationSlice'
+import { wrapper } from '@/app/store'
+import { AppLayout, Header, UserAvatarGroup } from '@/components/shared'
+import { SITE_LINK } from '@/config/env'
+import { levelImage } from '@/features/levels/levels.utils'
+import { buildHreflangTags } from '@/utils/seo'
 
 interface LevelsPageProps {
     levels: ApiType.Levels.Response | null
@@ -28,6 +30,16 @@ const LevelsPage: NextPage<LevelsPageProps> = ({ levels }) => {
                 title={t('user-levels')}
                 canonical={`${canonicalUrl}users/levels`}
                 description={t('user-levels-description-1')}
+                openGraph={{
+                    description: t('user-levels-description-1'),
+                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                    siteName: t('geotags'),
+                    title: t('user-levels'),
+                    type: 'website',
+                    url: `${canonicalUrl}users/levels`
+                }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags('users/levels')}
             />
             <Header
                 title={t('user-levels')}

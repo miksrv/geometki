@@ -6,14 +6,15 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiModel, ApiType, SITE_LINK } from '@/api'
-import { setLocale } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
-import { AppLayout, Header, PlacesList } from '@/components/common'
-import { UserPagesEnum, UserTabs } from '@/components/pages/user'
+import { API, ApiModel, ApiType } from '@/api'
+import { setLocale } from '@/app/applicationSlice'
+import { wrapper } from '@/app/store'
+import { AppLayout, Header, PlacesList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
+import { SITE_LINK } from '@/config/env'
+import { UserPagesEnum, UserTabs } from '@/sections/user'
 
-import styles from '@/components/pages/user/styles.module.sass'
+import styles from '@/sections/user/styles.module.sass'
 
 export const PLACES_PER_PAGE = 21
 
@@ -41,7 +42,16 @@ const UserBookmarksPage: React.FC<UserBookmarksPageProps> = ({ id, user, current
             <NextSeo
                 title={`${user?.name} - ${title}${pageTitle}`}
                 description={`${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`}
-                canonical={`${canonicalUrl}users/${id}/bookmarks`}
+                canonical={`${canonicalUrl}users/${id}/bookmarks${currentPage > 1 ? `?page=${currentPage}` : ''}`}
+                openGraph={{
+                    description: `${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`,
+                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                    siteName: t('geotags'),
+                    title: `${user?.name} - ${title}${pageTitle}`,
+                    type: 'website',
+                    url: `${canonicalUrl}users/${id}/bookmarks`
+                }}
+                twitter={{ cardType: 'summary_large_image' }}
             />
 
             <Header
@@ -113,6 +123,14 @@ export const getServerSideProps = wrapper.getServerSideProps(
             if (isError) {
                 return { notFound: true }
             }
+
+            await store.dispatch(
+                API.endpoints.placesGetList.initiate({
+                    bookmarkUser: id,
+                    limit: PLACES_PER_PAGE,
+                    offset: (currentPage - 1) * PLACES_PER_PAGE
+                })
+            )
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 

@@ -9,13 +9,15 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiModel, ApiType, SITE_LINK, useAppDispatch, useAppSelector } from '@/api'
-import { openAuthDialog, setLocale } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
-import { AppLayout, MapObjectsTypeEnum, PhotoLightbox } from '@/components/common'
-import { round } from '@/functions/helpers'
+import { API, ApiModel, ApiType } from '@/api'
+import { openAuthDialog, setLocale } from '@/app/applicationSlice'
+import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
+import { AppLayout, MapObjectsTypeEnum, PhotoLightbox } from '@/components/shared'
+import { SITE_LINK } from '@/config/env'
+import { round } from '@/utils/helpers'
+import { buildHreflangTags } from '@/utils/seo'
 
-const InteractiveMap = dynamic(() => import('@/components/common/interactive-map/InteractiveMap'), {
+const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), {
     ssr: false
 })
 
@@ -161,7 +163,7 @@ const MapPage: NextPage<object> = () => {
                     images: [
                         {
                             height: 1305,
-                            url: '/images/pages/map.jpg',
+                            url: `${SITE_LINK}images/pages/map.jpg`,
                             width: 1730
                         }
                     ],
@@ -171,6 +173,8 @@ const MapPage: NextPage<object> = () => {
                     type: 'website',
                     url: `${canonicalUrl}map`
                 }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags('map')}
             />
 
             <PhotoLightbox

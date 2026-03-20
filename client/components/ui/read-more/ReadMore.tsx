@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import Markdown from 'react-markdown'
 import { cn } from 'simple-react-ui-kit'
 
-import { removeMarkdown, truncateText } from '@/functions/helpers'
+import { removeMarkdown, truncateText } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 

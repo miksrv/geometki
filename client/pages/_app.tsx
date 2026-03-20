@@ -11,9 +11,9 @@ import Head from 'next/head'
 import { appWithTranslation, useTranslation } from 'next-i18next'
 import { ThemeProvider } from 'next-themes'
 
-import { wrapper } from '@/api/store'
-import { LOCAL_STORAGE } from '@/functions/constants'
-import * as LocalStorage from '@/functions/localstorage'
+import { wrapper } from '@/app/store'
+import { LOCAL_STORAGE } from '@/config/constants'
+import * as LocalStorage from '@/utils/localstorage'
 
 import i18Config from '../next-i18next.config'
 
@@ -47,6 +47,7 @@ const App = ({ Component, pageProps }: AppProps) => {
     return (
         <ThemeProvider defaultTheme={'light'}>
             <Head>
+                <meta charSet={'utf-8'} />
                 <meta
                     name={'mobile-web-app-capable'}
                     content={'yes'}

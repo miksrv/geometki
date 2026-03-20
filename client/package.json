@@ -1,6 +1,6 @@
 {
     "name": "geometki",
-    "version": "1.4.29",
+    "version": "1.4.30",
     "private": true,
     "engines": {
         "node": ">=20.11.0"
@@ -11,6 +11,7 @@
         "export": "next build && next export",
         "start": "next start",
         "test": "jest",
+        "test:coverage": "jest --coverage",
         "eslint:check": "eslint",
         "eslint:fix": "eslint --fix",
         "prettier:check": "prettier --check .",

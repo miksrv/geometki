@@ -97,3 +97,15 @@ NEXT_PUBLIC_CYCLEMAP_TOKEN   # Optional
 - **Server:** PHP 8.2+ / CodeIgniter 4 / MySQL / JWT / Guzzle / Geocoder-PHP (Nominatim + Yandex)
 - **Mobile:** Expo ~47 / React Native 0.70 / Redux Toolkit
 - **CI:** GitHub Actions (lint + test + build checks on PR; separate deploy workflows)
+
+## MCP Tools
+
+Always use context7 MCP to get up-to-date documentation when:
+- Writing or generating code that uses any library or framework
+- Setting up configuration or dependencies
+- Asking about any API or library usage
+
+Use context7 tools automatically without waiting for explicit instruction:
+1. First call `resolve-library-id` to get the correct library ID
+2. Then call `get-library-docs` to fetch the actual documentation
+3. Use that documentation to generate accurate, version-specific code

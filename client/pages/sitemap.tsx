@@ -2,8 +2,9 @@ import React from 'react'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 
-import { API, SITE_LINK } from '@/api'
-import { wrapper } from '@/api/store'
+import { API } from '@/api'
+import { wrapper } from '@/app/store'
+import { SITE_LINK } from '@/config/env'
 
 type SitemapDynamicPage = {
     link: string
@@ -28,7 +29,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 })) || []
 
             const usersPages: SitemapDynamicPage[] =
-                data?.places?.map((user) => ({
+                data?.users?.map((user) => ({
                     link: `users/${user.id}`,
                     update: new Date(user.updated.date).toISOString()
                 })) || []
@@ -44,6 +45,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
               <priority>${priority}</priority>
             </url>
           `
+
+            // Homepage (RU and EN)
+            sitemap += makeUrlNode('', new Date().toISOString(), 'daily', '1.0')
+            sitemap += makeUrlNode('en', new Date().toISOString(), 'daily', '1.0')
 
             // Static RU Locale
             sitemap += staticPages.map((url) => makeUrlNode(url, new Date().toISOString(), 'monthly', '0.8')).join('')
@@ -65,7 +70,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             sitemap += '</urlset>'
 
-            context.res.setHeader('Content-Type', 'text/xml')
+            context.res.setHeader('Content-Type', 'application/xml; charset=UTF-8')
             context.res.write(sitemap)
             context.res.end()
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.4.30
+
+### Patch Changes
+
+- Major client refactoring: restructured project layout into feature-based architecture (`config/`, `utils/`, `hooks/`, `sections/`, `features/`, `app/`)
+- Migrated Redux slices and store to `app/`, API types to `features/<domain>/`, and domain utilities to `features/`
+- Extracted `components/layout/` and `components/map/` directories; renamed `components/common/` to `components/shared/`
+- Cleaned up global SASS and extracted styles from `variables.sass`
+- Cleaned up `api/index.ts` and extracted `isApiValidationErrors` helper
+- Preserved RTK Query cache across navigation and added prefetching for user places
+- Added performance optimisations: memoisation, RTK Query infinite scroll, and render improvements
+- Added gamification features and completed roadmap audit
+- Preloaded activities feed; fixed auth tag invalidation in RTK Query
+- Fixed bugs: auth cookie handling, stale closures, regex issues, and SSR hydration
+- Fixed `HYDRATE` payload cast to `RootReducerState` in Redux store
+- Fixed `RootState` key in `notificationSlice`
+- Fixed implicit `any` TypeScript error in coordinates map callbacks
+- SEO: fixed user URLs in sitemap, added homepage entry, updated `Content-Type` header
+- Added PHPUnit unit tests for server and fixed JWT/auth env vars in test setUp
+- Updated CI/CD pipelines and added full API reference documentation
+
 ## 1.4.29
 
 ### Patch Changes

@@ -9,8 +9,8 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
 import { API, ApiType } from '@/api'
-import { setLocale } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
+import { setLocale } from '@/app/applicationSlice'
+import { wrapper } from '@/app/store'
 
 const UnsubscribePage: NextPage<object> = () => {
     const { t } = useTranslation()
@@ -18,7 +18,7 @@ const UnsubscribePage: NextPage<object> = () => {
     const router = useRouter()
     const searchParams = useSearchParams()
 
-    const mailId = searchParams.get('mail')
+    const mailId = searchParams?.get('mail')
 
     const { data, error, isLoading, isSuccess, isError } = API.useMailGetUnsubscribeQuery(mailId || '', {
         skip: !mailId

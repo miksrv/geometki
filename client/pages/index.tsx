@@ -8,13 +8,15 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiModel, ApiType, SITE_LINK } from '@/api'
-import { setLocale } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
-import { ActivityList, AppLayout, Header, PlacesListItem, UsersList } from '@/components/common'
+import { API, ApiModel, ApiType } from '@/api'
+import { setLocale } from '@/app/applicationSlice'
+import { wrapper } from '@/app/store'
+import { ActivityList, AppLayout, Header, PlacesListItem, UsersList } from '@/components/shared'
 import { Carousel } from '@/components/ui'
-import { LOCAL_STORAGE } from '@/functions/constants'
-import { PlaceSchema, UserSchema } from '@/functions/schema'
+import { LOCAL_STORAGE } from '@/config/constants'
+import { SITE_LINK } from '@/config/env'
+import { PlaceSchema, UserSchema } from '@/utils/schema'
+import { buildHreflangTags } from '@/utils/seo'
 
 interface IndexPageProps {
     placesList: ApiModel.Place[]
@@ -52,6 +54,18 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
                 <script
                     type={'application/ld+json'}
                     dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            '@context': 'https://schema.org',
+                            '@type': 'Organization',
+                            logo: `${SITE_LINK}android-chrome-512x512.png`,
+                            name: 'Geometki',
+                            url: SITE_LINK
+                        })
+                    }}
+                />
+                <script
+                    type={'application/ld+json'}
+                    dangerouslySetInnerHTML={{
                         __html: JSON.stringify([
                             ...placesList.map((place) => PlaceSchema(place)),
                             ...usersList.map((user) => UserSchema(user))
@@ -69,7 +83,7 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
                     images: [
                         {
                             height: 1538,
-                            url: '/images/pages/main.jpg',
+                            url: `${SITE_LINK}images/pages/main.jpg`,
                             width: 1768
                         }
                     ],
@@ -79,6 +93,8 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
                     type: 'website',
                     url: canonicalUrl
                 }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags('')}
             />
 
             <Header
@@ -162,6 +178,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     limit: 4
                 })
             )
+
+            await store.dispatch(API.endpoints.activityGetInfinityList.initiate({}))
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 

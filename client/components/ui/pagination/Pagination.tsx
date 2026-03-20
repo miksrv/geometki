@@ -3,9 +3,8 @@ import { cn, Icon } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
 
-import { encodeQueryData } from '@/functions/helpers'
-
-import { computePageNumbers } from './paginationUtils'
+import { encodeQueryData } from '@/utils/helpers'
+import { computePageNumbers } from '@/utils/pagination'
 
 import styles from './styles.module.sass'
 
@@ -115,4 +114,4 @@ export const Pagination = <T,>({
     )
 }
 
-export { computePageNumbers, range } from './paginationUtils'
+export { computePageNumbers, range } from '@/utils/pagination'

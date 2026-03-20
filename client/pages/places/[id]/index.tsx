@@ -8,10 +8,13 @@ import { useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
-import { API, ApiModel, ApiType, IMG_HOST, SITE_LINK, useAppDispatch, useAppSelector } from '@/api'
-import { openAuthDialog, setLocale } from '@/api/applicationSlice'
-import { wrapper } from '@/api/store'
-import { AppLayout, PhotoGallery, PhotoUploader, PlacesListItem } from '@/components/common'
+import { API, ApiModel, ApiType } from '@/api'
+import { openAuthDialog, setLocale } from '@/app/applicationSlice'
+import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
+import { AppLayout, PhotoGallery, PhotoUploader, PlacesListItem } from '@/components/shared'
+import { Carousel } from '@/components/ui'
+import { LOCAL_STORAGE } from '@/config/constants'
+import { IMG_HOST, SITE_LINK } from '@/config/env'
 import {
     ForwardedPlaceCoverEditor,
     PlaceCommentList,
@@ -20,10 +23,9 @@ import {
     PlaceHeader,
     PlaceInformation,
     PlaceShareButtons
-} from '@/components/pages/place'
-import { Carousel } from '@/components/ui'
-import { LOCAL_STORAGE } from '@/functions/constants'
-import { formatDateUTC, removeMarkdown, truncateText } from '@/functions/helpers'
+} from '@/sections/place'
+import { formatDateISO, formatDateUTC, removeMarkdown, truncateText } from '@/utils/helpers'
+import { buildHreflangTags } from '@/utils/seo'
 
 const NEAR_PLACES_COUNT = 10
 
@@ -96,6 +98,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                 },
                 {
                     '@type': 'ListItem',
+                    item: pagePlaceUrl,
                     name: place?.title,
                     position: 2
                 }
@@ -124,16 +127,14 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                       worstRating: '1'
                   }
                 : undefined,
-            // author: {
-            //     '@type': 'Person',
-            //     image: place?.author?.avatar
-            //         ? `${IMG_HOST}${place?.author?.avatar}`
-            //         : undefined,
-            //     name: place?.author?.name,
-            //     url: `${canonicalUrl}users/${place?.author?.id}`
-            // },
-            // dateModified: formatDateISO(place?.updated?.date),
-            // datePublished: formatDateISO(place?.created?.date),
+            author: {
+                '@type': 'Person',
+                image: place?.author?.avatar ? `${IMG_HOST}${place?.author?.avatar}` : undefined,
+                name: place?.author?.name,
+                url: `${canonicalUrl}users/${place?.author?.id}`
+            },
+            dateModified: formatDateISO(place?.updated?.date),
+            datePublished: formatDateISO(place?.created?.date),
             description: removeMarkdown(place?.content),
             geo: {
                 '@type': 'GeoCoordinates',
@@ -143,11 +144,13 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             image: photoList?.length ? photoList.map(({ full }) => `${IMG_HOST}${full}`) : undefined,
             interactionStatistic: {
                 '@type': 'InteractionCounter',
+                interactionType: 'https://schema.org/ViewAction',
                 userInteractionCount: place?.views
             },
-            name: place?.title
+            name: place?.title,
+            url: pagePlaceUrl
         }),
-        [canonicalUrl, photoList, place, ratingCount, t]
+        [canonicalUrl, pagePlaceUrl, photoList, place, ratingCount, t]
     )
 
     useEffect(() => {
@@ -160,13 +163,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                 <script
                     type={'application/ld+json'}
                     dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(breadCrumbSchema)
-                    }}
-                />
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(placeSchema)
+                        __html: JSON.stringify([breadCrumbSchema, placeSchema])
                     }}
                 />
             </Head>
@@ -193,9 +190,11 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                     locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
                     siteName: t('geotags'),
                     title: place?.title,
-                    type: 'http://ogp.me/ns/article#',
+                    type: 'article',
                     url: pagePlaceUrl
                 }}
+                twitter={{ cardType: 'summary_large_image' }}
+                additionalLinkTags={buildHreflangTags(`places/${place?.id}`)}
             />
 
             <PlaceHeader

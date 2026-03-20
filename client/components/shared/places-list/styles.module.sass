@@ -1,0 +1,123 @@
+@use '../../../styles/variables' as variables
+
+.component
+    display: flex
+    flex-wrap: wrap
+    margin: 10px -5px -5px
+
+.placesListItem
+    position: relative
+    background: var(--container-background)
+    border-radius: var(--border-radius)
+    box-shadow: var(--container-shadow)
+    height: 340px
+    max-width: 300px
+    overflow: hidden
+    flex-basis: calc(33.3333% - 10px)
+    margin: 5px
+
+    &:before
+        border-radius: inherit
+        box-shadow: var(--container-shadow)
+        content: ""
+        height: 100%
+        left: 0
+        pointer-events: none
+        position: absolute
+        top: 0
+        width: 100%
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-basis: 100%
+        max-width: 100%
+
+    .photoSection
+        position: relative
+        height: 200px
+        background-image: url('/images/no-image.svg')
+        background-position: center
+        background-size: cover
+
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            height: 220px
+
+        & > a
+            display: block
+            width: 100%
+            height: 100%
+
+        &:before
+            border-top-left-radius: var(--border-radius)
+            border-top-right-radius: var(--border-radius)
+            box-shadow: var(--container-shadow)
+            content: ""
+            height: 100%
+            left: 0
+            pointer-events: none
+            position: absolute
+            top: 0
+            width: 100%
+
+        .categoryIcon
+            position: absolute
+            left: 8px
+            top: 8px
+
+        .photo
+            width: 100%
+            border-top-left-radius: var(--border-radius)
+            border-top-right-radius: var(--border-radius)
+            object-fit: cover
+            margin-bottom: -5px
+
+            @media only screen and (max-width: variables.$mobileMaxWidth)
+                height: 220px
+
+        .bottomPanel
+            @extend %placeBottomPanel
+
+            .iconsPanel
+                margin-bottom: 5px
+                opacity: .8
+                display: flex
+
+            .title
+                white-space: pre
+                text-overflow: ellipsis
+                overflow: hidden
+                max-width: 100%
+                color: #FFF
+
+                a
+                    color: #FFF
+                    text-decoration: none
+                    font-weight: 500
+
+            .address
+                white-space: nowrap
+                text-overflow: ellipsis
+                overflow: hidden
+                font-size: variables.$fontSizeHeadline
+                color: var(--text-color-secondary)
+                opacity: .8
+
+                a
+                    color: #FFF
+
+    p
+        margin: 0
+        line-height: 20px
+        height: 130px
+        padding: 10px 10px 0
+        overflow: hidden
+        text-overflow: ellipsis
+
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            height: 110px
+
+    .emptyContent
+        color: var(--text-color-secondary)
+        height: 100%
+        display: flex
+        align-items: center
+        justify-content: space-around
