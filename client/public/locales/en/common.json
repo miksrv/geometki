@@ -230,5 +230,13 @@
     "activity-new-place": "Added a new interesting place",
     "activity-uploading-photo": "Uploaded a photo to an interesting place",
     "activity-rating": "Rated an interesting place",
-    "userMenu.untilNextLevel": "Until next level:"
+    "userMenu.untilNextLevel": "Until next level:",
+    "tags-search-placeholder": "Search features…",
+    "tags-sort-popular": "Most places",
+    "tags-sort-recent": "Recently added",
+    "tags-sort-alpha": "A → Z",
+    "tags-stat-total": "features",
+    "tags-stat-places": "tagged",
+    "tags-trending": "Trending",
+    "tags-no-results": "No features found"
 }

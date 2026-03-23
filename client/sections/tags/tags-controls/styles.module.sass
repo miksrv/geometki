@@ -1,0 +1,53 @@
+@use '../../../styles/variables' as variables
+
+.tagsControls
+    padding: 0
+
+.controlsRow
+    display: flex
+    flex-direction: row
+    align-items: center
+    gap: 8px
+
+    .searchWrapper
+        display: flex
+        align-items: center
+        flex: 1
+        gap: 6px
+
+        .searchIcon
+            flex-shrink: 0
+            color: var(--text-color-secondary)
+            width: 16px
+            height: 16px
+
+        .searchInput
+            flex: 1
+
+.sortList
+    list-style: none
+    margin: 0
+    padding: 4px 0
+
+    li
+        margin: 0
+        padding: 0
+
+    .sortOption
+        display: block
+        width: 100%
+        padding: 8px 16px
+        background: none
+        border: none
+        cursor: pointer
+        text-align: left
+        font-size: variables.$fontSizeParagraph
+        color: var(--text-color-primary)
+        white-space: nowrap
+
+        &:hover
+            background: var(--body-background)
+
+        &.sortOptionActive
+            color: var(--color-main)
+            font-weight: 600

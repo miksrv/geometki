@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useState } from 'react'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useTranslation } from 'next-i18next'
@@ -10,45 +10,24 @@ import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, Header } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
-import { TagList } from '@/sections/tags'
-import { dateToUnixTime } from '@/utils/helpers'
+import { SortMode, TagsAlphabetBar, TagsControls, TagsGrid, TagsStats, TagsTrending } from '@/sections/tags'
 import { buildHreflangTags } from '@/utils/seo'
 
 interface TagsPageProps {
     tags: ApiModel.Tag[]
 }
 
-const CategoriesPage: NextPage<TagsPageProps> = ({ tags }) => {
+const TagsPage: NextPage<TagsPageProps> = ({ tags }) => {
     const { t, i18n } = useTranslation()
-
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
 
-    const tagsList = [...tags]
+    const [searchQuery, setSearchQuery] = useState<string>('')
+    const [sortMode, setSortMode] = useState<SortMode>('alpha')
 
-    const topUpdatedTags = useMemo(
-        () => tagsList.sort((a, b) => dateToUnixTime(b.updated?.date) - dateToUnixTime(a.updated?.date)).slice(0, 20),
-        [tagsList]
-    )
+    const tagsList = tags ?? []
 
-    const topPopularTags = useMemo(
-        () =>
-            tagsList
-                .sort((a, b) => b.count! - a.count!)
-                .filter(({ title }) => title !== topUpdatedTags.find((search) => search.title === title)?.title)
-                .slice(0, 20),
-        [tagsList, topUpdatedTags]
-    )
-
-    const otherTags = useMemo(
-        () =>
-            tagsList
-                .sort((a, b) => b.count! - a.count!)
-                .filter(
-                    ({ title }) =>
-                        title !== topUpdatedTags.find((search) => search.title === title)?.title &&
-                        title !== topPopularTags.find((search) => search.title === title)?.title
-                ),
-        [tagsList, topUpdatedTags, topPopularTags]
+    const filteredTagsForAlphabet = tagsList.filter((tag) =>
+        tag.title.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
     return (
@@ -57,14 +36,14 @@ const CategoriesPage: NextPage<TagsPageProps> = ({ tags }) => {
                 title={t('features-of-places')}
                 canonical={`${canonicalUrl}tags`}
                 description={`${t('features-of-places')}: ${tagsList
-                    ?.map(({ title }) => title)
-                    ?.join(', ')
-                    ?.substring(0, 180)}`}
+                    .map(({ title }) => title)
+                    .join(', ')
+                    .substring(0, 180)}`}
                 openGraph={{
                     description: `${t('features-of-places')}: ${tagsList
-                        ?.map(({ title }) => title)
-                        ?.join(', ')
-                        ?.substring(0, 180)}`,
+                        .map(({ title }) => title)
+                        .join(', ')
+                        .substring(0, 180)}`,
                     locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
                     siteName: t('geotags'),
                     title: t('features-of-places'),
@@ -75,26 +54,36 @@ const CategoriesPage: NextPage<TagsPageProps> = ({ tags }) => {
                 additionalLinkTags={buildHreflangTags('tags')}
             />
 
-            <Header
-                title={t('features-of-places')}
-                homePageTitle={t('geotags')}
-                currentPage={t('features-of-places')}
-            />
+            <div className={'pageContainer'}>
+                <Header
+                    title={t('features-of-places')}
+                    homePageTitle={t('geotags')}
+                    currentPage={t('features-of-places')}
+                />
 
-            <TagList
-                title={t('last-used')}
-                tags={topUpdatedTags}
-            />
+                <TagsStats tags={tagsList} />
 
-            <TagList
-                title={t('most-popular')}
-                tags={topPopularTags}
-            />
+                <TagsTrending tags={tagsList} />
 
-            <TagList
-                title={t('other')}
-                tags={otherTags}
-            />
+                <TagsControls
+                    searchQuery={searchQuery}
+                    sortMode={sortMode}
+                    onSearchChange={setSearchQuery}
+                    onSortChange={setSortMode}
+                />
+
+                <TagsAlphabetBar
+                    tags={filteredTagsForAlphabet}
+                    sortMode={sortMode}
+                />
+
+                <TagsGrid
+                    tags={tagsList}
+                    searchQuery={searchQuery}
+                    sortMode={sortMode}
+                    onClearSearch={() => setSearchQuery('')}
+                />
+            </div>
         </AppLayout>
     )
 }
@@ -120,4 +109,4 @@ export const getServerSideProps = wrapper.getServerSideProps(
         }
 )
 
-export default CategoriesPage
+export default TagsPage

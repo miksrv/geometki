@@ -1,0 +1,68 @@
+@use '../../../styles/variables' as variables
+
+.tagsGrid
+    padding: 0
+
+.anchor
+    position: absolute
+    top: -70px
+    left: 0
+    visibility: hidden
+    pointer-events: none
+
+.grid
+    display: grid
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr))
+    gap: 8px
+
+    .tagCard
+        position: relative
+        display: flex
+        flex-direction: row
+        align-items: center
+        justify-content: space-between
+        padding: 8px 10px
+        border-radius: var(--border-radius)
+        text-decoration: none
+        border: var(--container-border-separator)
+        transition: opacity 0.15s
+
+        &:hover
+            opacity: 0.8
+
+        &.low
+            background: var(--container-background)
+            color: var(--text-color-primary)
+
+        &.mid
+            background: var(--color-orange-background)
+            color: var(--text-color-primary)
+
+        &.high
+            background: var(--color-main-background)
+            color: var(--color-main)
+
+        .tagTitle
+            font-size: variables.$fontSizeParagraph
+            font-weight: 500
+            overflow: hidden
+            text-overflow: ellipsis
+            white-space: nowrap
+
+        .tagCount
+            font-size: variables.$fontSizeCaption
+            color: var(--text-color-secondary)
+            flex-shrink: 0
+            margin-left: 6px
+
+.clearBtn
+    background: none
+    border: none
+    cursor: pointer
+    color: var(--link-color)
+    font-size: inherit
+    padding: 0
+    text-decoration: underline
+
+    &:hover
+        opacity: 0.8

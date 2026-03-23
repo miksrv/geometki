@@ -13,6 +13,8 @@ This directory documents proposed gamification features for Geometki. The existi
 | [05](./05-place-quality-curator-rank.md) | **Place Quality Score & Curator Rank** | Medium | Medium | Place model, existing photo/rating flow |
 | [06](./06-seasonal-events.md) | **Seasonal Events & Campaigns** | Medium | Medium | `ActivityLibrary::push()` hook |
 | [07](./07-social-kudos-endorsements.md) | **Social Kudos & Peer Endorsements** | Low | Medium | Reputation field, notifications |
+| [08](./08-tags-page-redesign.md) | **Tags Page Redesign** | Low–Medium | High | Existing tag list API + unused search endpoint |
+| [09](./09-categories-page-redesign.md) | **Categories Page Redesign** | Low–Medium | High | Existing category list API + category images |
 
 ## Recommended Implementation Order
 

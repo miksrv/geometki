@@ -1,0 +1,49 @@
+@use '../../../styles/variables' as variables
+
+.alphabetBar
+    position: sticky
+    top: 0
+    z-index: 10
+    display: flex
+    flex-direction: row
+    flex-wrap: nowrap
+    overflow-x: auto
+    gap: 2px
+    padding: 8px 12px
+    background: var(--container-background)
+    border-bottom: var(--container-border-separator)
+
+    &.alphabetBarDisabled
+        opacity: 0.5
+
+    &::-webkit-scrollbar
+        height: 3px
+
+    .letterBtn
+        display: inline-flex
+        align-items: center
+        justify-content: center
+        min-width: 26px
+        height: 26px
+        padding: 0 4px
+        background: none
+        border: none
+        border-radius: var(--border-radius)
+        cursor: pointer
+        font-size: variables.$fontSizeHeadline
+        font-weight: 600
+        color: var(--color-main)
+        transition: background 0.1s
+
+        &:hover
+            background: var(--color-main-background)
+
+        &:focus-visible
+            outline: 2px solid var(--color-main)
+            outline-offset: 1px
+
+        &.letterBtnDisabled
+            color: var(--text-color-secondary)
+            opacity: 0.35
+            cursor: default
+            pointer-events: none

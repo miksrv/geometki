@@ -229,5 +229,13 @@
     "activity-new-place": "Добавил(а) новое интересное место",
     "activity-uploading-photo": "Загрузил(а) фотографию к интересному месту",
     "activity-rating": "Оценил(а) интересное место",
-    "userMenu.untilNextLevel": "До нового уровня:"
+    "userMenu.untilNextLevel": "До нового уровня:",
+    "tags-search-placeholder": "Поиск особенностей…",
+    "tags-sort-popular": "Сначала популярные",
+    "tags-sort-recent": "Недавно добавленные",
+    "tags-sort-alpha": "По алфавиту",
+    "tags-stat-total": "особенностей",
+    "tags-stat-places": "отметок",
+    "tags-trending": "В тренде",
+    "tags-no-results": "Ничего не найдено"
 }

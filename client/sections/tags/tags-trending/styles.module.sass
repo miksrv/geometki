@@ -1,0 +1,58 @@
+@use '../../../styles/variables' as variables
+
+.strip
+    display: flex
+    flex-direction: row
+    flex-wrap: nowrap
+    overflow-x: auto
+    gap: 10px
+    padding-bottom: 4px
+
+    &::-webkit-scrollbar
+        height: 4px
+
+    &::-webkit-scrollbar-thumb
+        background: var(--container-background)
+        border-radius: 2px
+
+    .card
+        display: flex
+        flex-direction: column
+        flex-shrink: 0
+        min-width: 120px
+        max-width: 160px
+        padding: 10px 12px
+        border-radius: var(--border-radius)
+        background: var(--color-main-background)
+        border: var(--container-border-separator)
+        text-decoration: none
+        color: var(--text-color-primary)
+        transition: background 0.15s
+
+        &:hover
+            background: var(--color-main-background)
+            opacity: 0.85
+
+        .cardTitle
+            font-weight: 600
+            font-size: variables.$fontSizeParagraph
+            overflow: hidden
+            text-overflow: ellipsis
+            white-space: nowrap
+
+        .cardCount
+            font-size: variables.$fontSizeCaption
+            color: var(--text-color-secondary)
+            margin-top: 2px
+
+        .heatBar
+            margin-top: 6px
+            font-size: 0.7em
+            letter-spacing: 2px
+
+            .dotFilled
+                color: var(--color-main)
+
+            .dotEmpty
+                color: var(--text-color-secondary)
+                opacity: 0.4
