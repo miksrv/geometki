@@ -1,6 +1,6 @@
-# Gamification Feature Proposals
+# Feature Proposals
 
-This directory documents proposed gamification features for Geometki. The existing system already provides XP earning (6 action types), 30 levels, reputation from place ratings, and a partial achievements schema.
+This directory documents proposed features for Geometki. The existing system already provides XP earning (6 action types), 30 levels, reputation from place ratings, and a partial achievements schema.
 
 ## Proposals
 
@@ -15,6 +15,7 @@ This directory documents proposed gamification features for Geometki. The existi
 | [07](./07-social-kudos-endorsements.md) | **Social Kudos & Peer Endorsements** | Low | Medium | Reputation field, notifications |
 | [08](./08-tags-page-redesign.md) | **Tags Page Redesign** | Low–Medium | High | Existing tag list API + unused search endpoint |
 | [09](./09-categories-page-redesign.md) | **Categories Page Redesign** | Low–Medium | High | Existing category list API + category images |
+| [10](./10-trending-and-recommendations.md) | **Trending Places & Personalized Recommendations** ✅ | Low–Medium | High | `views` counter, `rating`/`bookmarks`/`comments` fields |
 
 ## Recommended Implementation Order
 
