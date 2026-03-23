@@ -14,7 +14,7 @@ interface TagsControlsProps {
     onSortChange: (mode: SortMode) => void
 }
 
-const SORT_OPTIONS: { key: SortMode; labelKey: string }[] = [
+const SORT_OPTIONS: Array<{ key: SortMode; labelKey: string }> = [
     { key: 'popular', labelKey: 'tags-sort-popular' },
     { key: 'recent', labelKey: 'tags-sort-recent' },
     { key: 'alpha', labelKey: 'tags-sort-alpha' }

@@ -1,6 +1,6 @@
 export { TagsAlphabetBar } from './tags-alphabet-bar'
-export { TagsControls } from './tags-controls'
 export type { SortMode } from './tags-controls'
+export { TagsControls } from './tags-controls'
 export { TagsGrid } from './tags-grid'
 export { TagsStats } from './tags-stats'
 export { TagsTrending } from './tags-trending'
