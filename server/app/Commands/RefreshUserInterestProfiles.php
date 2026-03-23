@@ -6,6 +6,7 @@ use App\Models\UserInterestProfilesModel;
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
 
+// php spark interests:refresh
 class RefreshUserInterestProfiles extends BaseCommand
 {
     protected $group       = 'interests';
