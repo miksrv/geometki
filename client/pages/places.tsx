@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import type { BreadcrumbList } from 'schema-dts'
 import { Button, Container, Dialog } from 'simple-react-ui-kit'
 
@@ -11,7 +11,7 @@ import { NextSeo } from 'next-seo'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale, toggleOverlay } from '@/app/applicationSlice'
-import { useAppDispatch, wrapper } from '@/app/store'
+import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, Header, PlacesList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { LOCAL_STORAGE } from '@/config/constants'
@@ -21,7 +21,7 @@ import { encodeQueryData } from '@/utils/helpers'
 import { PlaceSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
 
-const DEFAULT_SORT = ApiType.SortFields.Updated
+const DEFAULT_SORT = ApiType.SortFields.Trending
 const DEFAULT_ORDER = ApiType.SortOrders.DESC
 const POST_PER_PAGE = 21
 
@@ -68,6 +68,8 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
     const router = useRouter()
     const dispatch = useAppDispatch()
 
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
+
     const [filterOpenTitle, setFilterOpenTitle] = useState<string>('')
     const [filtersOptionsOpen, setFiltersOptionsOpen] = useState<boolean>(false)
     const [filtersDialogOpen, setFiltersDialogOpen] = useState<boolean>(false)
@@ -85,6 +87,18 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         sort: sort !== DEFAULT_SORT ? sort : undefined,
         tag: tag ?? undefined
     }
+
+    useEffect(() => {
+        if (isAuth && !router.query.sort) {
+            // Use router.query directly so we preserve any filters the user may have
+            // already applied before Redux hydrated. Only add the recommended sort.
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            router.replace({
+                pathname: '/places',
+                query: { ...router.query, sort: ApiType.SortFields.Recommended }
+            })
+        }
+    }, [isAuth])
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     const canonicalPage = `${canonicalUrl}places${encodeQueryData({

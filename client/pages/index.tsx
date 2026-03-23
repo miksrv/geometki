@@ -169,7 +169,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     limit: 6,
                     lon,
                     order: ApiType.SortOrders.DESC,
-                    sort: ApiType.SortFields.Updated
+                    sort: ApiType.SortFields.ViewsWeek
                 })
             )
 
