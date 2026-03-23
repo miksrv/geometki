@@ -36,21 +36,8 @@ class Notifications extends ResourceController
      */
     public function updates(): ResponseInterface
     {
-        $notifyData  = $this->model
-            ->select('users_notifications.*, activity.type as activity_type, activity.place_id')
-            ->join('activity', 'activity.id = users_notifications.activity_id', 'left')
-            ->where('read', false)
-            ->where('users_notifications.user_id', $this->session->user->id)
-            ->where('users_notifications.created_at >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)')
-            ->orderBy('read, created_at', 'DESC')
-            ->findAll(10);
-
-        $notifyCount = $this->model
-            ->select('id')
-            ->where('read', false)
-            ->where('users_notifications.user_id', $this->session->user->id)
-            ->where('users_notifications.created_at < DATE_SUB(NOW(), INTERVAL 15 MINUTE)')
-            ->countAllResults();
+        $notifyData  = $this->model->getRecentUnread($this->session->user->id, 10);
+        $notifyCount = $this->model->countOlderUnread($this->session->user->id);
 
         if (!$notifyData) {
             return $this->respond([
@@ -75,17 +62,8 @@ class Notifications extends ResourceController
         $limit  = $this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 10;
         $offset = $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0;
 
-        $notifyData = $this->model
-            ->select('users_notifications.*, activity.type as activity_type, activity.place_id')
-            ->join('activity', 'activity.id = users_notifications.activity_id', 'left')
-            ->where('users_notifications.user_id', $this->session->user->id)
-            ->orderBy('created_at', 'DESC')
-            ->findAll(abs($limit), abs($offset));
-
-        $notifyCount = $this->model
-            ->select('id')
-            ->where('users_notifications.user_id', $this->session->user->id)
-            ->countAllResults();
+        $notifyData  = $this->model->getPaginatedByUser($this->session->user->id, (int) $limit, (int) $offset);
+        $notifyCount = $this->model->countByUser($this->session->user->id);
 
         if (!$notifyData) {
             return $this->respond([
@@ -188,12 +166,7 @@ class Notifications extends ResourceController
 
         // If our array of unread notifications is not empty, then we will mark all such notifications as read
         if (!empty($unread)) {
-            $this->model
-                ->set('read', true)
-                ->where('read', false)
-                ->where('users_notifications.user_id', $this->session->user->id)
-                ->whereIn('id', $unread)
-                ->update();
+            $this->model->markRead($this->session->user->id, $unread);
         }
 
         return $result;

@@ -3,9 +3,9 @@
 namespace App\Controllers;
 
 use App\Entities\UserEntity;
+use App\Libraries\AvatarLibrary;
 use App\Libraries\GoogleClient;
 use App\Libraries\LevelsLibrary;
-use App\Libraries\LocaleLibrary;
 use App\Libraries\SessionLibrary;
 use App\Libraries\VkClient;
 use App\Libraries\YandexClient;
@@ -25,8 +25,6 @@ class Auth extends ResourceController
 
     public function __construct()
     {
-        new LocaleLibrary();
-
         $this->session = new SessionLibrary();
     }
 
@@ -339,29 +337,19 @@ class Auth extends ResourceController
 
             // If a Google user has an avatar, copy it
             if ($serviceProfile->avatar) {
-                $avatarDirectory = UPLOAD_AVATARS . '/' . $newUserId . '/';
-                $avatar = $newUserId . '.jpg';
-
-                if (!is_dir($avatarDirectory)) {
-                    mkdir($avatarDirectory,0777, TRUE);
+                if (!is_dir(UPLOAD_TEMPORARY)) {
+                    mkdir(UPLOAD_TEMPORARY, 0777, true);
                 }
 
-                file_put_contents($avatarDirectory . $avatar, file_get_contents($serviceProfile->avatar));
+                $tempFilename = $newUserId . '.jpg';
+                $tempPath     = UPLOAD_TEMPORARY . $tempFilename;
 
-                $file = new File($avatarDirectory . $avatar);
-                $name = pathinfo($file, PATHINFO_FILENAME);
-                $ext  = $file->getExtension();
+                file_put_contents($tempPath, file_get_contents($serviceProfile->avatar));
 
-                $image = Services::image('gd'); // imagick
-                $image->withFile($file->getRealPath())
-                    ->fit(AVATAR_SMALL_WIDTH, AVATAR_SMALL_HEIGHT)
-                    ->save($avatarDirectory  . $name . '_small.' . $ext);
+                $avatarLibrary = new AvatarLibrary();
+                $newFilename   = $avatarLibrary->processUpload($newUserId, $tempPath);
 
-                $image->withFile($file->getRealPath())
-                    ->fit(AVATAR_MEDIUM_WIDTH, AVATAR_MEDIUM_HEIGHT)
-                    ->save($avatarDirectory  . $name . '_medium.' . $ext);
-
-                $userModel->update($newUserId, ['avatar' => $avatar]);
+                $userModel->update($newUserId, ['avatar' => $newFilename]);
             }
 
             $userData     = $createUser;

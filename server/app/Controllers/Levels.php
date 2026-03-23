@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-use App\Libraries\LocaleLibrary;
+use App\Libraries\AvatarLibrary;
 use App\Models\UsersLevelsModel;
 use App\Models\UsersModel;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -12,7 +12,6 @@ class Levels extends ResourceController
 {
     public function __construct()
     {
-        new LocaleLibrary();
     }
 
     /**
@@ -58,16 +57,14 @@ class Levels extends ResourceController
                 ->findAll(10);
 
             if ($data->users) {
-                $usersData = [];
+                $usersData     = [];
+                $avatarLibrary = new AvatarLibrary();
 
                 foreach ($data->users as $user) {
-                    $avatar      = $user->avatar ? explode('.', $user->avatar) : null;
                     $usersData[] = (object) [
                         'id'     => $user->id,
                         'name'   => $user->name,
-                        'avatar' => $avatar
-                            ? PATH_AVATARS . $user->id . '/' . $avatar[0] . '_small.' . $avatar[1]
-                            : null,
+                        'avatar' => $avatarLibrary->buildPath($user->id, $user->avatar, 'small'),
                     ];
                 }
 

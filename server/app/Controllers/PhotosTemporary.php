@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Entities\PhotoEntity;
-use App\Libraries\LocaleLibrary;
 use App\Libraries\SessionLibrary;
 use CodeIgniter\Files\File;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -25,8 +24,6 @@ class PhotosTemporary extends ResourceController
 
     public function __construct()
     {
-        new LocaleLibrary();
-
         $this->session = new SessionLibrary();
     }
 

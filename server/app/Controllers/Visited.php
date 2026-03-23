@@ -11,6 +11,13 @@ use ReflectionException;
 
 class Visited extends ResourceController
 {
+    protected SessionLibrary $session;
+
+    public function __construct()
+    {
+        $this->session = new SessionLibrary();
+    }
+
     /**
      * @param $id
      * @return ResponseInterface
@@ -33,10 +40,9 @@ class Visited extends ResourceController
      */
     public function set(): ResponseInterface
     {
-        $input   = $this->request->getJSON();
-        $session = new SessionLibrary();
+        $input = $this->request->getJSON();
 
-        if (!$session->isAuth) {
+        if (!$this->session->isAuth) {
             return $this->failUnauthorized();
         }
 
@@ -45,7 +51,7 @@ class Visited extends ResourceController
         }
 
         try {
-            $insertData   = ['user_id' => $session->user?->id, 'place_id' => $input->place];
+            $insertData   = ['user_id' => $this->session->user?->id, 'place_id' => $input->place];
             $visitedModel = new UsersVisitedPlacesModel();
             $visitedData  = $visitedModel->where($insertData)->first();
             $placesModel  = new PlacesModel();

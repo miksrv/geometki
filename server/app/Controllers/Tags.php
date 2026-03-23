@@ -2,7 +2,6 @@
 
 namespace App\Controllers;
 
-use App\Libraries\LocaleLibrary;
 use App\Models\TagsModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -14,8 +13,6 @@ class Tags extends ResourceController
 
     public function __construct()
     {
-        new LocaleLibrary();
-
         $this->model = new TagsModel();
     }
 
@@ -69,7 +66,7 @@ class Tags extends ResourceController
         $response = [];
 
         foreach ($result as $tag) {
-            $response[] = $locale === 'en' && !empty($item->title_en)
+            $response[] = $locale === 'en' && !empty($tag->title_en)
                 ? $tag->title_en
                 : (!empty($tag->title_ru) ? $tag->title_ru : $tag->title_en);
         }

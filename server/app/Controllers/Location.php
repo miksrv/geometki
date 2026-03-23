@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Libraries\Geocoder;
-use App\Libraries\LocaleLibrary;
 use App\Libraries\SessionLibrary;
 use App\Models\LocationLocalitiesModel;
 use App\Models\LocationCountriesModel;
@@ -18,7 +17,6 @@ class Location extends ResourceController
 {
     public function __construct()
     {
-        new LocaleLibrary();
     }
 
     /**

@@ -3,8 +3,8 @@
 namespace App\Controllers;
 
 use App\Entities\PhotoEntity;
+use App\Libraries\AvatarLibrary;
 use App\Libraries\LevelsLibrary;
-use App\Libraries\LocaleLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
@@ -31,8 +31,6 @@ class Photos extends ResourceController
 
     public function __construct()
     {
-        new LocaleLibrary();
-
         $this->session = new SessionLibrary();
     }
 
@@ -72,13 +70,11 @@ class Photos extends ResourceController
             $photo->preview = $path . '_preview.' . $photo->extension;
 
             if ($photo->user_id) {
-                $userAvatar    = $photo->user_avatar ? explode('.', $photo->user_avatar) : null;
+                $avatarLibrary = new AvatarLibrary();
                 $photo->author = [
                     'id'     => $photo->user_id,
                     'name'   => $photo->user_name,
-                    'avatar' => $userAvatar
-                        ? PATH_AVATARS . $photo->user_id . '/' . $userAvatar[0] . '_small.' . $userAvatar[1]
-                        : null
+                    'avatar' => $avatarLibrary->buildPath($photo->user_id, $photo->user_avatar, 'small'),
                 ];
             }
 
