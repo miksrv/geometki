@@ -16,6 +16,10 @@ const _getLocalStorage = (): undefined | typeof LOCAL_STORAGE => {
 export const getItem = (key: keyof typeof LOCAL_STORAGE): string => _getLocalStorage()?.[key] ?? ''
 
 export const setItem = (key: keyof typeof LOCAL_STORAGE, value: string | number | undefined) => {
+    if (typeof window === 'undefined') {
+        return
+    }
+
     const data = _getLocalStorage()
     const updateData = {
         ...data,

@@ -13,6 +13,7 @@ import { AppLayout, Header, UsersList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
 import { buildHreflangTags } from '@/utils/seo'
+import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 const USERS_PER_PAGE = 30
 
@@ -85,10 +86,12 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<UsersPageProps>> => {
+            const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const currentPage = parseInt(context.query.page as string, 10) || 1
             const translations = await serverSideTranslations(locale)
 
+            hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
             const { data: usersList } = await store.dispatch(

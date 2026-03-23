@@ -1,17 +1,17 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
+import { getCookie } from 'cookies-next'
 
 import { API } from '@/api'
 import { login, logout, saveSession } from '@/app/authSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
-import { LOCAL_STORAGE } from '@/config/constants'
-import useLocalStorage from '@/hooks/useLocalStorage'
+import { AUTH_COOKIES } from '@/config/constants'
 
 export const AppAuthChecker: React.FC = () => {
     const dispatch = useAppDispatch()
 
-    const [session, setSession] = useLocalStorage<string>(LOCAL_STORAGE.AUTH_SESSION)
+    const [session, setSession] = useState<string>(() => (getCookie(AUTH_COOKIES.SESSION) as string) ?? '')
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 

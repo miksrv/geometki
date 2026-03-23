@@ -13,6 +13,7 @@ import { wrapper } from '@/app/store'
 import { AppLayout, Header } from '@/components/shared'
 import { PlaceForm } from '@/sections/place'
 import { isApiValidationErrors } from '@/utils/api'
+import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 const CreatePlacePage: NextPage<object> = () => {
     const { t } = useTranslation()
@@ -79,9 +80,11 @@ const CreatePlacePage: NextPage<object> = () => {
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<object>> => {
+            const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const translations = await serverSideTranslations(locale)
 
+            hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
             return {
