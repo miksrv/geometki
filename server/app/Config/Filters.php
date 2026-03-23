@@ -3,6 +3,7 @@
 namespace Config;
 
 use App\Filters\CorsFilter;
+use App\Filters\LocaleFilter;
 use CodeIgniter\Config\Filters as BaseFilters;
 // use CodeIgniter\Filters\Cors;
 use CodeIgniter\Filters\CSRF;
@@ -36,6 +37,7 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
+        'locale'        => LocaleFilter::class,
     ];
 
     /**
@@ -74,7 +76,8 @@ class Filters extends BaseFilters
             // 'honeypot',
             // 'csrf',
             'invalidchars',
-            'cors'
+            'cors',
+            'locale',
         ],
         'after' => [
             // 'honeypot',
