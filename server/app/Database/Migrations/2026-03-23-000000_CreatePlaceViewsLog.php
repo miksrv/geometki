@@ -27,11 +27,11 @@ class CreatePlaceViewsLog extends Migration {
 
         $this->forge->addPrimaryKey(['place_id', 'view_date']);
         $this->forge->addForeignKey('place_id', 'places', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('place_views_log');
+        $this->forge->createTable('places_views_log');
     }
 
     public function down()
     {
-        $this->forge->dropTable('place_views_log');
+        $this->forge->dropTable('places_views_log');
     }
 }

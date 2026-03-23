@@ -164,7 +164,7 @@ class PlacesModel extends ApplicationBaseModel {
     }
 
     /**
-     * Record a place view: increments the views counter, logs to place_views_log (in a transaction),
+     * Record a place view: increments the views counter, logs to places_views_log (in a transaction),
      * and optionally records per-user view tracking.
      *
      * @param string $placeId
@@ -182,7 +182,7 @@ class PlacesModel extends ApplicationBaseModel {
             ->update();
 
         $db->query(
-            'INSERT INTO place_views_log (place_id, view_date, count)
+            'INSERT INTO places_views_log (place_id, view_date, count)
              VALUES (?, CURDATE(), 1)
              ON DUPLICATE KEY UPDATE count = count + 1',
             [$placeId]
@@ -193,11 +193,47 @@ class PlacesModel extends ApplicationBaseModel {
         // Best-effort per-user tracking — outside the transaction
         if ($userId !== null) {
             $db->query(
-                'INSERT INTO user_place_views (user_id, place_id, last_at)
+                'INSERT INTO users_place_views (user_id, place_id, last_at)
                  VALUES (?, ?, NOW())
                  ON DUPLICATE KEY UPDATE last_at = NOW()',
                 [$userId, $placeId]
             );
+
+            // Refresh user interest profile (throttled to once per hour)
+            $this->maybeRefreshUserInterests($userId);
+        }
+    }
+
+    /**
+     * Refresh user interest profile if not updated recently (within 1 hour).
+     * This ensures recommendations stay fresh without overloading the system.
+     *
+     * @param string $userId
+     */
+    protected function maybeRefreshUserInterests(string $userId): void
+    {
+        $db = \Config\Database::connect();
+
+        // Check when the user's interest profile was last updated
+        $result = $db->query(
+            'SELECT MAX(updated_at) AS last_update FROM users_interest_profiles WHERE user_id = ?',
+            [$userId]
+        )->getRow();
+
+        $shouldRefresh = true;
+
+        if ($result && $result->last_update) {
+            $lastUpdate = strtotime($result->last_update);
+            $oneHourAgo = strtotime('-1 hour');
+
+            if ($lastUpdate > $oneHourAgo) {
+                $shouldRefresh = false;
+            }
+        }
+
+        if ($shouldRefresh) {
+            $interestModel = new UserInterestProfilesModel();
+            $interestModel->refreshForUser($userId);
         }
     }
 
@@ -211,7 +247,7 @@ class PlacesModel extends ApplicationBaseModel {
     {
         $this->join(
             '(SELECT place_id, SUM(count) AS weekly_views
-              FROM place_views_log
+              FROM places_views_log
               WHERE view_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
               GROUP BY place_id) AS pvw',
             'pvw.place_id = places.id',
@@ -224,6 +260,8 @@ class PlacesModel extends ApplicationBaseModel {
 
     /**
      * Apply the personalized recommendation sort join for a given user.
+     * Takes into account both category and tag interests.
+     * Tags have higher weight (0.5) than categories (0.3) as they are more specific.
      * Returns $this for chaining.
      *
      * @param string $userId
@@ -233,16 +271,39 @@ class PlacesModel extends ApplicationBaseModel {
         $db            = \Config\Database::connect();
         $escapedUserId = $db->escape($userId);
 
+        // Subquery calculates recommendation score based on:
+        // - Category affinity (weight 0.3) - only if not ignored
+        // - Best matching tag affinity (weight 0.5) - only if not ignored
+        // - Trending score (weight 0.2)
         $this->join(
-            "(SELECT p2.id,
-                     COALESCE(uip.affinity, 0) * 0.6
-                   + (p2.trending_score / NULLIF((SELECT MAX(trending_score) FROM places WHERE deleted_at IS NULL), 0)) * 0.4
-                   AS rec_score
-               FROM places p2
-               LEFT JOIN user_interest_profiles uip
-                    ON uip.user_id = {$escapedUserId} AND uip.category = p2.category
-               WHERE p2.deleted_at IS NULL
-             ) AS rec",
+            "(SELECT 
+                p2.id,
+                (
+                    COALESCE(uip_cat.affinity, 0) * 0.3
+                    + COALESCE(tag_scores.max_tag_affinity, 0) * 0.5
+                    + (p2.trending_score / NULLIF((SELECT MAX(trending_score) FROM places WHERE deleted_at IS NULL), 0)) * 0.2
+                ) AS rec_score
+            FROM places p2
+            LEFT JOIN users_interest_profiles uip_cat
+                ON uip_cat.user_id = {$escapedUserId} 
+                AND uip_cat.interest_type = 'category' 
+                AND uip_cat.interest_value = p2.category
+                AND uip_cat.ignored = 0
+            LEFT JOIN (
+                SELECT 
+                    pt.place_id,
+                    MAX(uip_tag.affinity) AS max_tag_affinity
+                FROM places_tags pt
+                JOIN users_interest_profiles uip_tag
+                    ON uip_tag.user_id = {$escapedUserId}
+                    AND uip_tag.interest_type = 'tag'
+                    AND uip_tag.interest_value = pt.tag_id
+                    AND uip_tag.ignored = 0
+                WHERE pt.deleted_at IS NULL
+                GROUP BY pt.place_id
+            ) AS tag_scores ON tag_scores.place_id = p2.id
+            WHERE p2.deleted_at IS NULL
+            ) AS rec",
             'rec.id = places.id',
             'inner'
         );
@@ -337,7 +398,7 @@ class PlacesModel extends ApplicationBaseModel {
                 SELECT place_id,
                        SUM(CASE WHEN view_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN count ELSE 0 END)  AS v7,
                        SUM(CASE WHEN view_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN count ELSE 0 END) AS v30
-                FROM place_views_log
+                FROM places_views_log
                 GROUP BY place_id
             ) pvw ON pvw.place_id = p.id
             SET p.trending_score = ROUND(

@@ -36,7 +36,7 @@ CodeIgniter 4 PHP REST API serving the geometki geolocation/POI platform.
 **SessionLibrary:** Must be assigned to `$this->session` in the controller constructor, not instantiated per-method.
 
 **Notable model methods added 2026-03-23:**
-- `PlacesModel::recordView(placeId, ?userId, updatedAt)` — transactional view+log; best-effort user_place_views.
+- `PlacesModel::recordView(placeId, ?userId, updatedAt)` — transactional view+log; best-effort users_place_views.
 - `PlacesModel::applyWeeklyViewsSort(order)` / `applyRecommendationSort(userId)` — query-builder sort helpers.
 - `PlacesModel::incrementBookmarks/decrementBookmarks/incrementComments/incrementPhotos/decrementPhotos/syncPhotosCount/refreshTrendingScores`.
 - `ActivityModel::incrementViews(ids)`.

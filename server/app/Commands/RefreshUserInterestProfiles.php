@@ -11,7 +11,7 @@ class RefreshUserInterestProfiles extends BaseCommand
 {
     protected $group       = 'interests';
     protected $name        = 'interests:refresh';
-    protected $description = 'Refresh user interest profiles based on activity';
+    protected $description = 'Refresh user interest profiles (categories and tags) based on activity';
 
     protected $arguments = [];
 
@@ -52,11 +52,30 @@ class RefreshUserInterestProfiles extends BaseCommand
         }
 
         $model = new UserInterestProfilesModel();
+        $processed = 0;
 
         foreach ($users as $user) {
             $model->refreshForUser((string) $user['id']);
+            $processed++;
+            
+            if ($processed % 100 === 0) {
+                CLI::write("Processed {$processed} users...");
+            }
         }
 
+        // Show summary statistics
+        $stats = $db->query(
+            'SELECT interest_type, COUNT(*) as count 
+             FROM users_interest_profiles 
+             GROUP BY interest_type'
+        )->getResultArray();
+
+        CLI::write('');
         CLI::write('User interest profiles refreshed successfully.');
+        CLI::write("Total users processed: {$processed}");
+        
+        foreach ($stats as $stat) {
+            CLI::write("  - {$stat['interest_type']} interests: {$stat['count']}");
+        }
     }
 }

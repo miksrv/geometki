@@ -27,11 +27,11 @@ class CreateUserPlaceViews extends Migration {
         $this->forge->addPrimaryKey(['user_id', 'place_id']);
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('place_id', 'places', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('user_place_views');
+        $this->forge->createTable('users_place_views');
     }
 
     public function down()
     {
-        $this->forge->dropTable('user_place_views');
+        $this->forge->dropTable('users_place_views');
     }
 }
