@@ -17,6 +17,7 @@ class PlacesModel extends ApplicationBaseModel {
         'lon',
         'rating',
         'views',
+        'trending_score',
         'photos',
         'comments',
         'bookmarks',
@@ -101,13 +102,13 @@ class PlacesModel extends ApplicationBaseModel {
     public function getPlaceDataByID(string $id, string $distanceSQL): array|object|null
     {
         return $this
-            ->select('places.id, places.lat, places.lon, places.views, places.photos, places.rating, places.comments, 
+            ->select('places.id, places.lat, places.lon, places.views, places.photos, places.rating, places.comments,
                 places.bookmarks, places.updated_at as updated, places.created_at as created, places.category,
                 places.country_id, places.region_id, places.district_id, places.locality_id, places.address_ru, places.address_en,
                 users.id as user_id, users.name as user_name, users.avatar as user_avatar, users.activity_at,
-                location_countries.title_en as country_en, location_countries.title_ru as country_ru, 
-                location_regions.title_en as region_en, location_regions.title_ru as region_ru, 
-                location_districts.title_en as district_en, location_districts.title_ru as district_ru, 
+                location_countries.title_en as country_en, location_countries.title_ru as country_ru,
+                location_regions.title_en as region_en, location_regions.title_ru as region_ru,
+                location_districts.title_en as district_en, location_districts.title_ru as district_ru,
                 location_localities.title_en as city_en, location_localities.title_ru as city_ru,
                 category.title_ru as category_ru, category.title_en as category_en, ' . $distanceSQL)
             ->join('users', 'places.user_id = users.id', 'left')
@@ -117,5 +118,238 @@ class PlacesModel extends ApplicationBaseModel {
             ->join('location_districts', 'location_districts.id = places.district_id', 'left')
             ->join('location_localities', 'location_localities.id = places.locality_id', 'left')
             ->find($id);
+    }
+
+    /**
+     * Apply the standard list select columns and joins (with optional distance expression).
+     *
+     * @param string $distanceSQL  Extra SELECT expression for distance, e.g. ", 6378 * 2 * ASIN(...) AS distance". Pass '' to omit.
+     * @return static
+     */
+    public function applyListSelect(string $distanceSQL = ''): static
+    {
+        $this->select(
+            'places.*, users.id as user_id, users.name as user_name, users.avatar as user_avatar,
+            location_countries.title_en as country_en, location_countries.title_ru as country_ru,
+            location_regions.title_en as region_en, location_regions.title_ru as region_ru,
+            location_districts.title_en as district_en, location_districts.title_ru as district_ru,
+            location_localities.title_en as city_en, location_localities.title_ru as city_ru,
+            category.title_en as category_en, category.title_ru as category_ru' . $distanceSQL
+        )
+        ->join('users', 'places.user_id = users.id', 'left')
+        ->join('location_countries', 'location_countries.id = places.country_id', 'left')
+        ->join('location_regions', 'location_regions.id = places.region_id', 'left')
+        ->join('location_districts', 'location_districts.id = places.district_id', 'left')
+        ->join('location_localities', 'location_localities.id = places.locality_id', 'left')
+        ->join('category', 'places.category = category.name', 'left');
+
+        return $this;
+    }
+
+    /**
+     * Find an existing place by owner and exact coordinates.
+     * Used to prevent duplicate submissions.
+     *
+     * @param string $userId
+     * @param float  $lat
+     * @param float  $lon
+     * @return object|null
+     */
+    public function findDuplicate(string $userId, float $lat, float $lon): object|null
+    {
+        return $this
+            ->select('id')
+            ->where(['user_id' => $userId, 'lat' => $lat, 'lon' => $lon])
+            ->first();
+    }
+
+    /**
+     * Record a place view: increments the views counter, logs to place_views_log (in a transaction),
+     * and optionally records per-user view tracking.
+     *
+     * @param string $placeId
+     * @param string|null $userId
+     * @param string $updatedAt  The current updated_at value to preserve (avoid touching the timestamp)
+     */
+    public function recordView(string $placeId, ?string $userId, string $updatedAt): void
+    {
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        $this->set('views', 'views + 1', false)
+            ->set('updated_at', $updatedAt)
+            ->where('id', $placeId)
+            ->update();
+
+        $db->query(
+            'INSERT INTO place_views_log (place_id, view_date, count)
+             VALUES (?, CURDATE(), 1)
+             ON DUPLICATE KEY UPDATE count = count + 1',
+            [$placeId]
+        );
+
+        $db->transComplete();
+
+        // Best-effort per-user tracking — outside the transaction
+        if ($userId !== null) {
+            $db->query(
+                'INSERT INTO user_place_views (user_id, place_id, last_at)
+                 VALUES (?, ?, NOW())
+                 ON DUPLICATE KEY UPDATE last_at = NOW()',
+                [$userId, $placeId]
+            );
+        }
+    }
+
+    /**
+     * Apply a sub-join that exposes weekly view sums for ordering by views_week.
+     * Returns $this for chaining.
+     *
+     * @param string $order  'ASC' or 'DESC'
+     */
+    public function applyWeeklyViewsSort(string $order = 'DESC'): static
+    {
+        $this->join(
+            '(SELECT place_id, SUM(count) AS weekly_views
+              FROM place_views_log
+              WHERE view_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+              GROUP BY place_id) AS pvw',
+            'pvw.place_id = places.id',
+            'left'
+        );
+        $this->orderBy('COALESCE(pvw.weekly_views, 0) ' . $order, '', false);
+
+        return $this;
+    }
+
+    /**
+     * Apply the personalized recommendation sort join for a given user.
+     * Returns $this for chaining.
+     *
+     * @param string $userId
+     */
+    public function applyRecommendationSort(string $userId): static
+    {
+        $db            = \Config\Database::connect();
+        $escapedUserId = $db->escape($userId);
+
+        $this->join(
+            "(SELECT p2.id,
+                     COALESCE(uip.affinity, 0) * 0.6
+                   + (p2.trending_score / NULLIF((SELECT MAX(trending_score) FROM places WHERE deleted_at IS NULL), 0)) * 0.4
+                   AS rec_score
+               FROM places p2
+               LEFT JOIN user_interest_profiles uip
+                    ON uip.user_id = {$escapedUserId} AND uip.category = p2.category
+               WHERE p2.deleted_at IS NULL
+             ) AS rec",
+            'rec.id = places.id',
+            'inner'
+        );
+        $this->orderBy('rec.rec_score', 'DESC');
+
+        return $this;
+    }
+
+    /**
+     * Increment the photos counter for a place.
+     */
+    public function incrementPhotos(string $id): void
+    {
+        $db = \Config\Database::connect();
+        $db->query(
+            'UPDATE places SET photos = photos + 1 WHERE id = ?',
+            [$id]
+        );
+    }
+
+    /**
+     * Decrement the photos counter for a place (floor at 0).
+     */
+    public function decrementPhotos(string $id): void
+    {
+        $db = \Config\Database::connect();
+        $db->query(
+            'UPDATE places SET photos = GREATEST(0, photos - 1) WHERE id = ?',
+            [$id]
+        );
+    }
+
+    /**
+     * Re-query and sync the actual photo count for a place.
+     */
+    public function syncPhotosCount(string $id): void
+    {
+        $db = \Config\Database::connect();
+        $db->query(
+            'UPDATE places p
+             SET p.photos = (SELECT COUNT(*) FROM photos ph WHERE ph.place_id = p.id AND ph.deleted_at IS NULL)
+             WHERE p.id = ?',
+            [$id]
+        );
+    }
+
+    /**
+     * Increment the comments counter for a place.
+     */
+    public function incrementComments(string $id): void
+    {
+        $db = \Config\Database::connect();
+        $db->query(
+            'UPDATE places SET comments = comments + 1 WHERE id = ?',
+            [$id]
+        );
+    }
+
+    /**
+     * Increment the bookmarks counter for a place.
+     */
+    public function incrementBookmarks(string $id): void
+    {
+        $db = \Config\Database::connect();
+        $db->query(
+            'UPDATE places SET bookmarks = bookmarks + 1 WHERE id = ?',
+            [$id]
+        );
+    }
+
+    /**
+     * Decrement the bookmarks counter for a place (floor at 0).
+     */
+    public function decrementBookmarks(string $id): void
+    {
+        $db = \Config\Database::connect();
+        $db->query(
+            'UPDATE places SET bookmarks = GREATEST(0, bookmarks - 1) WHERE id = ?',
+            [$id]
+        );
+    }
+
+    /**
+     * Refresh trending scores for all non-deleted places using weighted view/engagement signals.
+     */
+    public function refreshTrendingScores(): void
+    {
+        $db = \Config\Database::connect();
+        $db->query(
+            'UPDATE places p
+            LEFT JOIN (
+                SELECT place_id,
+                       SUM(CASE WHEN view_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN count ELSE 0 END)  AS v7,
+                       SUM(CASE WHEN view_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN count ELSE 0 END) AS v30
+                FROM place_views_log
+                GROUP BY place_id
+            ) pvw ON pvw.place_id = p.id
+            SET p.trending_score = ROUND(
+                COALESCE(pvw.v7,  0) * 1.0
+              + COALESCE(pvw.v30, 0) * 0.2
+              + p.rating    * 20
+              + p.bookmarks * 5
+              + p.comments  * 3
+              + p.photos    * 2,
+                0
+            )
+            WHERE p.deleted_at IS NULL'
+        );
     }
 }
