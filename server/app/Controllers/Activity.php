@@ -137,6 +137,7 @@ class Activity extends ResourceController
             return $groupData;
         }
 
+        $avatarLibrary  = new AvatarLibrary();
         $lastGroupIndex = -1;
         foreach ($activityData as $item) {
             // $itemCreatedAt = strtotime($item->created_at);
@@ -203,7 +204,6 @@ class Activity extends ResourceController
             }
 
             if ($item->user_id) {
-                $avatarLibrary = new AvatarLibrary();
                 $currentGroup->author = (object) [
                     'id'     => $item->user_id,
                     'name'   => $item->user_name,

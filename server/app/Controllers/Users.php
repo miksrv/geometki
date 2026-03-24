@@ -4,7 +4,6 @@ namespace App\Controllers;
 
 use App\Libraries\AvatarLibrary;
 use App\Libraries\LevelsLibrary;
-use App\Libraries\ReputationLibrary;
 use App\Libraries\SessionLibrary;
 use App\Models\UsersModel;
 use CodeIgniter\Files\File;
@@ -70,7 +69,7 @@ class Users extends ResourceController
 
         return $this->respond([
             'items' => $result,
-            'count' => $usersModel->select('id')->countAllResults()
+            'count' => count($result)
         ]);
     }
 
@@ -88,14 +87,6 @@ class Users extends ResourceController
 
         if (!$usersData) {
             return $this->failNotFound();
-        }
-
-        // Calculate new user reputation value
-        $reputationLibrary     = new ReputationLibrary();
-        $newReputation         = $reputationLibrary->recalculate($id);
-
-        if ($newReputation !== $usersData->reputation) {
-            $usersData->reputation = $newReputation;
         }
 
         $userLevels->calculate($usersData);
@@ -191,6 +182,12 @@ class Users extends ResourceController
 
         if (!$photo = $this->request->getFile('avatar')) {
             return $this->failValidationErrors(lang('Users.noPhotoForUpload'));
+        }
+
+        if (!$this->validate([
+            'avatar' => 'uploaded[avatar]|mime_in[avatar,image/jpeg,image/png,image/webp]|max_size[avatar,5120]'
+        ])) {
+            return $this->failValidationErrors($this->validator->getErrors());
         }
 
         if (!$photo->hasMoved()) {

@@ -145,6 +145,10 @@ class Places extends ResourceController
         // Find all places
         // If a search was enabled, the second argument to the _makeListFilters function will contain the
         // IDs of the places found using the search criteria
+        $countModel = new PlacesModel();
+        $countModel->applyListSelect($coordinates);
+        $placesCount = $this->_makeListFilters($countModel, $searchPlacesIds)->countAllResults();
+
         $placesList = $this->_makeListFilters($this->model, $searchPlacesIds)->get()->getResult();
         $placesIds  = array_column($placesList, 'id');
 
@@ -182,7 +186,7 @@ class Places extends ResourceController
 
         return $this->respond([
             'items'  => $placesList,
-            'count'  => $this->_makeListFilters($this->model, $searchPlacesIds)->countAllResults(),
+            'count'  => $placesCount,
         ]);
     }
 
@@ -276,8 +280,6 @@ class Places extends ResourceController
         $userId = ($this->session->isAuth && $this->session->user) ? $this->session->user->id : null;
         $this->model->recordView($id, $userId, $placeData->updated);
 
-        $placeData->session = $this->session;
-
         return $this->respond($placeData);
     }
 
@@ -338,7 +340,15 @@ class Places extends ResourceController
         $place->district_id = $geocoder->districtId;
         $place->locality_id = $geocoder->localityId;
 
-        $this->model->insert($place);
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        $insertResult = $this->model->insert($place);
+
+        if ($insertResult === false) {
+            log_message('error', 'Failed to insert place: ' . json_encode($this->model->errors()));
+            return $this->failValidationErrors($this->model->errors());
+        }
 
         $newPlaceId = $this->model->getInsertID();
 
@@ -362,6 +372,12 @@ class Places extends ResourceController
 
         if (!empty($input->photos)) {
             $this->savePhotos($input->photos, $newPlaceId, $place, $content);
+        }
+
+        $db->transComplete();
+
+        if (!$db->transStatus()) {
+            return $this->failServerError('Failed to create place');
         }
 
         return $this->respondCreated(['id' => $newPlaceId]);
@@ -488,7 +504,7 @@ class Places extends ResourceController
      */
     public function delete($id = null): ResponseInterface
     {
-        if (!$this->session->isAuth && $this->session->user->role !== 'admin') {
+        if (!$this->session->isAuth || $this->session->user->role !== 'admin') {
             return $this->failUnauthorized();
         }
 

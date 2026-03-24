@@ -42,32 +42,54 @@ class Levels extends ResourceController
 
         $result = [];
 
+        // Bulk query 1: get user counts per level
+        $db         = \Config\Database::connect();
+        $countRows  = $db->query('SELECT level, COUNT(*) as user_count FROM users GROUP BY level')->getResultObject();
+        $countByLevel = [];
+        foreach ($countRows as $row) {
+            $countByLevel[$row->level] = (int) $row->user_count;
+        }
+
+        // Bulk query 2: get top 10 users for all levels at once
+        $levelNumbers = array_column($levelsData, 'level');
+        $topUsersRaw  = $usersModel
+            ->select('id, name, avatar, level')
+            ->whereIn('level', $levelNumbers)
+            ->orderBy('activity_at, updated_at', 'DESC')
+            ->findAll();
+
+        // Group top users by level in PHP (keep only first 10 per level)
+        $usersByLevel = [];
+        foreach ($topUsersRaw as $user) {
+            $lvl = $user->level;
+            if (!isset($usersByLevel[$lvl])) {
+                $usersByLevel[$lvl] = [];
+            }
+            if (count($usersByLevel[$lvl]) < 10) {
+                $usersByLevel[$lvl][] = $user;
+            }
+        }
+
+        $avatarLibrary = new AvatarLibrary();
+
         foreach ($levelsData as $level) {
             $data = (object) [];
 
             $data->experience = $level->experience;
-
             $data->level = $level->level;
             $data->title = $level->{"title_$locale"};
-            $data->count = $usersModel->select('id')->where('level', $level->level)->countAllResults();
-            $data->users = $usersModel
-                ->select('id, name, avatar')
-                ->where('level', $level->level)
-                ->orderBy('activity_at, updated_at', 'DESC')
-                ->findAll(10);
+            $data->count = $countByLevel[$level->level] ?? 0;
 
-            if ($data->users) {
-                $usersData     = [];
-                $avatarLibrary = new AvatarLibrary();
-
-                foreach ($data->users as $user) {
+            $levelUsers = $usersByLevel[$level->level] ?? [];
+            if ($levelUsers) {
+                $usersData = [];
+                foreach ($levelUsers as $user) {
                     $usersData[] = (object) [
                         'id'     => $user->id,
                         'name'   => $user->name,
                         'avatar' => $avatarLibrary->buildPath($user->id, $user->avatar, 'small'),
                     ];
                 }
-
                 $data->users = $usersData;
             }
 

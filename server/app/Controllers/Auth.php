@@ -12,6 +12,7 @@ use App\Libraries\YandexClient;
 use App\Models\UsersModel;
 use CodeIgniter\Files\File;
 use CodeIgniter\HTTP\IncomingRequest;
+use GuzzleHttp\Client as GuzzleClient;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use CodeIgniter\Validation\Exceptions\ValidationException;
@@ -56,6 +57,7 @@ class Auth extends ResourceController
 
         $userModel = new UsersModel();
         $user      = new UserEntity();
+        $user->id        = $userModel->createId();
         $user->name      = $input['name'];
         $user->email     = $input['email'];
         $user->password  = hashUserPassword($input['password']);
@@ -64,7 +66,6 @@ class Auth extends ResourceController
 
         $userModel->save($user);
 
-        $user->id = $userModel->getInsertID();
 
         unset($user->password);
 
@@ -240,8 +241,24 @@ class Auth extends ResourceController
                 'nextLevel'  => $userLevel->nextLevel,
             ];
 
-            $response->user  = $this->session->user;
-            $response->token = generateAuthToken($this->session->user->email);
+            $response->user = $this->session->user;
+
+            // Only regenerate token if within 5 minutes of expiry (SEC-02)
+            $existingToken = $this->request->getHeaderLine('Authorization');
+            $existingToken = str_replace('Bearer ', '', $existingToken);
+            $shouldRefresh = true;
+
+            if ($existingToken) {
+                $parts = explode('.', $existingToken);
+                if (count($parts) === 3) {
+                    $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
+                    if (isset($payload['exp']) && ($payload['exp'] - time()) > 300) {
+                        $shouldRefresh = false;
+                    }
+                }
+            }
+
+            $response->token = $shouldRefresh ? generateAuthToken($this->session->user->email) : $existingToken;
 
             unset(
                 $response->user->password, $response->user->auth_type,
@@ -335,21 +352,31 @@ class Auth extends ResourceController
 
             $newUserId = $userModel->getInsertID();
 
-            // If a Google user has an avatar, copy it
-            if ($serviceProfile->avatar) {
-                if (!is_dir(UPLOAD_TEMPORARY)) {
-                    mkdir(UPLOAD_TEMPORARY, 0777, true);
+            // If a service user has an avatar, download it securely via Guzzle (SEC-19)
+            if ($serviceProfile->avatar && str_starts_with($serviceProfile->avatar, 'https://')) {
+                try {
+                    if (!is_dir(UPLOAD_TEMPORARY)) {
+                        mkdir(UPLOAD_TEMPORARY, 0777, true);
+                    }
+
+                    $tempFilename = $newUserId . '.jpg';
+                    $tempPath     = UPLOAD_TEMPORARY . $tempFilename;
+
+                    $guzzle = new GuzzleClient([
+                        'timeout'         => 10,
+                        'connect_timeout' => 5,
+                        'allow_redirects' => ['max' => 3],
+                    ]);
+                    $guzzle->get($serviceProfile->avatar, ['sink' => $tempPath]);
+
+                    $avatarLibrary = new AvatarLibrary();
+                    $newFilename   = $avatarLibrary->processUpload($newUserId, $tempPath);
+
+                    $userModel->update($newUserId, ['avatar' => $newFilename]);
+                } catch (\Throwable $e) {
+                    // Avatar download failure is non-fatal — user is still logged in without avatar
+                    log_message('warning', 'Failed to download OAuth avatar: {message}', ['message' => $e->getMessage()]);
                 }
-
-                $tempFilename = $newUserId . '.jpg';
-                $tempPath     = UPLOAD_TEMPORARY . $tempFilename;
-
-                file_put_contents($tempPath, file_get_contents($serviceProfile->avatar));
-
-                $avatarLibrary = new AvatarLibrary();
-                $newFilename   = $avatarLibrary->processUpload($newUserId, $tempPath);
-
-                $userModel->update($newUserId, ['avatar' => $newFilename]);
             }
 
             $userData     = $createUser;

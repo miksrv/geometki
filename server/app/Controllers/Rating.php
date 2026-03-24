@@ -128,6 +128,11 @@ class Rating extends ResourceController
             $ratingData  = $ratingModel->where('place_id', $placesData->id)->findAll();
 
             $inputRating  = (int) $input->score;
+
+            if ($inputRating < 1 || $inputRating > 5) {
+                return $this->failValidationErrors('Score must be between 1 and 5');
+            }
+
             $alreadyVoted = null; // User changes their rating? We will store the rating record ID here
             $ratingValue  = abs($inputRating);
 

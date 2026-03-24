@@ -58,6 +58,7 @@ class Photos extends ResourceController
             ]);
         }
 
+        $avatarLibrary = new AvatarLibrary();
         foreach ($photosData as $photo) {
             $path  = PATH_PHOTOS . $photo->place_id . '/' . $photo->filename;
             $title = $locale === 'ru' ?
@@ -70,7 +71,6 @@ class Photos extends ResourceController
             $photo->preview = $path . '_preview.' . $photo->extension;
 
             if ($photo->user_id) {
-                $avatarLibrary = new AvatarLibrary();
                 $photo->author = [
                     'id'     => $photo->user_id,
                     'name'   => $photo->user_name,
@@ -113,6 +113,12 @@ class Photos extends ResourceController
 
         if (!$placesData || !$placesData->id) {
             return $this->failValidationErrors(lang('Photo.placeNotFound'));
+        }
+
+        if (!$this->validate([
+            'photo' => 'uploaded[photo]|mime_in[photo,image/jpeg,image/png,image/webp,image/gif]|max_size[photo,10240]'
+        ])) {
+            return $this->failValidationErrors($this->validator->getErrors());
         }
 
         if ($photo->hasMoved()) {
