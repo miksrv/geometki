@@ -32,7 +32,7 @@ export const TagsTrending: React.FC<TagsTrendingProps> = ({ tags }) => {
                     const filledDots = Math.round(((tag.count ?? 0) / maxCount) * HEAT_DOTS)
                     return (
                         <Link
-                            key={tag.title}
+                            key={tag.id ?? tag.title}
                             href={`/places?tag=${tag.title}`}
                             title={tag.title}
                             className={styles.card}

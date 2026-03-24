@@ -98,7 +98,7 @@ export const TagsGrid: React.FC<TagsGridProps> = ({ tags, searchQuery, sortMode,
                     <React.Fragment key={letter || 'all'}>
                         {groupTags.map((tag, index) => (
                             <Link
-                                key={tag.title}
+                                key={`${tag.id}-${index}`}
                                 href={`/places?tag=${tag.title}`}
                                 title={tag.title}
                                 className={cn(styles.tagCard, styles[popularityClass(tag.count, maxCount)])}
