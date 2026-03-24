@@ -148,24 +148,32 @@ export const PlaceHeader: React.FC<PlaceHeaderProps> = ({
                                 </Link>
                             </li>
                             <li>
-                                <Button
+                                <Link
+                                    href={'#'}
                                     title={t('upload-photo')}
-                                    onClick={onPhotoUploadClick}
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        onPhotoUploadClick?.(e)
+                                    }}
                                 >
                                     {/* eslint-disable-next-line react/jsx-max-depth */}
                                     <Icon name={'Camera'} />
                                     {t('upload-photo')}
-                                </Button>
+                                </Link>
                             </li>
                             <li>
-                                <Button
+                                <Link
+                                    href={'#'}
                                     title={t('change-cover')}
-                                    onClick={onChangePlaceCoverClick}
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        onChangePlaceCoverClick?.(e)
+                                    }}
                                 >
                                     {/* eslint-disable-next-line react/jsx-max-depth */}
                                     <Icon name={'Photo'} />
                                     {t('change-cover')}
-                                </Button>
+                                </Link>
                             </li>
                             <li>
                                 <Link
