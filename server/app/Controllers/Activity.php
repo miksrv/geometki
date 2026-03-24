@@ -78,6 +78,10 @@ class Activity extends ResourceController
      */
     protected function addNextActivityItems(array &$activityData): void
     {
+        if (empty($activityData)) {
+            return;
+        }
+
         $lastItem  = end($activityData);
         $nextItems = $this->model->getNextActivityItems(
             array_column($activityData, 'id'),

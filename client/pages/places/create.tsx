@@ -29,10 +29,7 @@ const CreatePlacePage: NextPage<object> = () => {
         [error]
     )
 
-    const serverError = useMemo(
-        () => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined),
-        [error]
-    )
+    const serverError = useMemo(() => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined), [error])
 
     const handleCancel = () => router.back()
 

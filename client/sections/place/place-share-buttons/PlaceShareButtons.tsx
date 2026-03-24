@@ -55,8 +55,7 @@ export const PlaceShareButtons: React.FC<SocialRatingProps> = ({ placeId, placeU
         }
     )
 
-    const [changeRating, { isLoading: ratingLoading, isSuccess, error: ratingError }] =
-        API.useRatingPutScoreMutation()
+    const [changeRating, { isLoading: ratingLoading, isSuccess, error: ratingError }] = API.useRatingPutScoreMutation()
 
     const handleRatingChange = async (value?: number) => {
         if (value && placeId) {

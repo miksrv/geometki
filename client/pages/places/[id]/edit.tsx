@@ -47,10 +47,7 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
         [error]
     )
 
-    const serverError = useMemo(
-        () => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined),
-        [error]
-    )
+    const serverError = useMemo(() => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined), [error])
 
     const handleCancel = () => router.back()
 
