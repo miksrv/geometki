@@ -47,10 +47,18 @@ class SendEmail extends BaseCommand
         /**
          * If you have exceeded the hoster's limits for sending emails, then we will not send anything.
          */
-        if (empty($sendingEmailData)
-            || $monthEmailCount >= self::MONTH_EMAIL_LIMIT
-            || count($sendingEmailData) >= self::DAY_EMAIL_LIMIT)
-        {
+        if (empty($sendingEmailData)) {
+            CLI::write('No emails to process.', 'yellow');
+            return;
+        }
+
+        if ($monthEmailCount >= self::MONTH_EMAIL_LIMIT) {
+            CLI::write('Monthly email limit reached (' . self::MONTH_EMAIL_LIMIT . '). Skipping.', 'red');
+            return;
+        }
+
+        if (count($sendingEmailData) >= self::DAY_EMAIL_LIMIT) {
+            CLI::write('Daily email limit reached (' . self::DAY_EMAIL_LIMIT . '). Skipping.', 'red');
             return;
         }
 
@@ -58,6 +66,11 @@ class SendEmail extends BaseCommand
         $emailLibrary = new EmailLibrary();
         $placesIds    = [];
         $placesData   = [];
+
+        // Email statistics counters
+        $sentCount     = 0;
+        $rejectedCount = 0;
+        $errorCount    = 0;
 
         // Collect all places IDs
         foreach ($sendingEmailData as $item) {
@@ -81,6 +94,7 @@ class SendEmail extends BaseCommand
              */
             if (empty($item->email) || (empty($item->type) && !$item->message)) {
                 $sendingEmailModel->update($item->id, ['status' => 'rejected']);
+                $rejectedCount++;
 
                 continue ;
             }
@@ -129,12 +143,17 @@ class SendEmail extends BaseCommand
             try {
                 $emailLibrary->send($item->email, $subject, $message);
                 $sendingEmailModel->update($item->id, ['status' => 'completed']);
+                $sentCount++;
             } catch (Exception $e) {
                 log_message('error', '{exception}', ['exception' => $e]);
                 $sendingEmailModel->update($item->id, ['status' => 'error']);
+                $errorCount++;
             }
         }
 
-        CLI::write('Email processing complete.');
+        CLI::write('Email processing complete.', 'green');
+        CLI::write('  Sent: ' . $sentCount, 'green');
+        CLI::write('  Rejected: ' . $rejectedCount, 'yellow');
+        CLI::write('  Errors: ' . $errorCount, $errorCount > 0 ? 'red' : 'green');
     }
 }

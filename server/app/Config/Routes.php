@@ -37,7 +37,6 @@ $routes->group('photos', static function ($routes) {
     $routes->post('/', 'Photos::create');
     $routes->post('upload/temporary', 'PhotosTemporary::upload');
     $routes->post('upload/(:alphanum)', 'Photos::upload/$1');
-    $routes->post('upload/(:alphanum)', 'Photos::upload/$1');
     $routes->patch('rotate/temporary/(:any)', 'PhotosTemporary::rotate/$1');
     $routes->patch('rotate/(:alphanum)', 'Photos::rotate/$1');
     $routes->delete('temporary/(:any)', 'PhotosTemporary::delete/$1');
@@ -68,7 +67,7 @@ $routes->group('comments', static function ($routes) {
 });
 
 /** Mail Controller **/
-$routes->group('comments', static function ($routes) {
+$routes->group('mail', static function ($routes) {
     $routes->get('unsubscribe', 'Mail::unsubscribe');
 
     $routes->options('(:alphanum)', static function () {});
