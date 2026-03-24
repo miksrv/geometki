@@ -83,9 +83,11 @@ class PlacesContent {
         // #TODO
         $this->keepVersions = $keepVersions === true;
 
-        // Here we get all edition versions for all places by their ID
+        // Fetch only the latest content record per (place_id, locale) pair to avoid
+        // loading all historical versions for every place.
         $data = $this->model
             ->whereIn('place_id', $this->placeIds)
+            ->where('created_at = (SELECT MAX(pc2.created_at) FROM places_content pc2 WHERE pc2.place_id = places_content.place_id AND pc2.locale = places_content.locale)')
             ->orderBy('created_at', 'DESC')
             ->findAll();
 

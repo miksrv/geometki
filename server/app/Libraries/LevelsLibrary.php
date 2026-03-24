@@ -33,8 +33,9 @@ class LevelsLibrary {
     public function calculate(UserEntity $user): static {
         $activityModel = new ActivityModel();
         $activityData  = $activityModel
-            ->select('type')
+            ->select('type, COUNT(*) as cnt')
             ->where('user_id', $user->id)
+            ->groupBy('type')
             ->findAll();
 
         $statistic = (object) [
@@ -48,7 +49,9 @@ class LevelsLibrary {
 
         if ($activityData) {
             foreach ($activityData as $activity) {
-                $statistic->{$activity->type}++;
+                if (isset($statistic->{$activity->type})) {
+                    $statistic->{$activity->type} = (int) $activity->cnt;
+                }
             }
         }
 

@@ -47,12 +47,9 @@ class SessionLibrary {
             unset($this->user->password, $this->user->settings);
         } else {
             if ($session) {
-                $this->model
-                    ->where('id', str_replace('"', '', $session))
-                    ->orWhere('user_ip', $this->ip);
-            } else {
-                $this->model->where('user_ip', $this->ip);
+                $this->model->where('id', str_replace('"', '', $session));
             }
+            // No session token present: skip lookup — a new session will be created on update()
         }
 
         $sessionData = $this->model->orderBy('updated_at', 'DESC')->first();
@@ -107,7 +104,7 @@ class SessionLibrary {
         }
 
         $session = new \App\Entities\SessionEntity();
-        $session->id      = uniqid('s', true);
+        $session->id      = bin2hex(random_bytes(16));
         $session->user_ip = $this->ip;
         $session->user_id = $this->user ? $this->user->id : null;
 

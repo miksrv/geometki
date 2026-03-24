@@ -28,7 +28,7 @@ class VkClient {
 
     private string $theme;
 
-    private string $secretState = 'VkontakteAPIClientAuth';
+    private string $secretState;
     private string $codeVerifier;
 
     private \CodeIgniter\HTTP\CURLRequest $client;
@@ -46,7 +46,11 @@ class VkClient {
         $this->redirectUri = $redirectUri;
         $this->theme       = $theme === 'light' ? 'light' : 'dark';
 
-        $this->codeVerifier = rtrim(strtr(base64_encode('mySecretCode'), "+/", "-_"), "=");
+        // Generate a cryptographically random PKCE code_verifier per request (SEC-06)
+        $this->codeVerifier = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+
+        // Generate a cryptographically random OAuth state per request (SEC-12)
+        $this->secretState = bin2hex(random_bytes(16));
     }
 
 
