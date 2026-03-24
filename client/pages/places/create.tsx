@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Container } from 'simple-react-ui-kit'
+import { Container, Message } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
@@ -12,7 +12,7 @@ import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, Header } from '@/components/shared'
 import { PlaceForm } from '@/sections/place'
-import { isApiValidationErrors } from '@/utils/api'
+import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 const CreatePlacePage: NextPage<object> = () => {
@@ -28,6 +28,8 @@ const CreatePlacePage: NextPage<object> = () => {
         () => (isApiValidationErrors<ApiType.Places.PostItemRequest>(error) ? error.messages : undefined),
         [error]
     )
+
+    const serverError = useMemo(() => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined), [error])
 
     const handleCancel = () => router.back()
 
@@ -65,6 +67,14 @@ const CreatePlacePage: NextPage<object> = () => {
                 ]}
             />
             <Container style={{ marginTop: 15 }}>
+                {serverError && (
+                    <Message
+                        type={'error'}
+                        style={{ marginBottom: 15 }}
+                    >
+                        {serverError}
+                    </Message>
+                )}
                 <PlaceForm
                     loading={isLoading || isSuccess || clickedButton}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any

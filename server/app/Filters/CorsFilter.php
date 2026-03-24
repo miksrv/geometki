@@ -23,7 +23,22 @@ class CorsFilter implements FilterInterface {
      * @return void
      */
     public function before(RequestInterface $request, $arguments = null): void {
-        header("Access-Control-Allow-Origin: *");
+        $allowedOriginsEnv = getenv('cors.allowedOrigins') ?: '';
+        $allowed = array_filter(array_map('trim', explode(',', $allowedOriginsEnv)));
+
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+        if (!empty($allowed)) {
+            // Allowlist mode: only send Access-Control-Allow-Origin for known origins
+            if ($origin && in_array($origin, $allowed, true)) {
+                header("Access-Control-Allow-Origin: {$origin}");
+                header("Vary: Origin");
+            }
+        } else {
+            // Dev/test fallback: env not configured, allow all
+            header("Access-Control-Allow-Origin: *");
+        }
+
         header("Access-Control-Allow-Headers: X-API-KEY, Origin,X-Requested-With, Content-Type, Accept, Access-Control-Requested-Method, Authorization, Locale, Session");
         header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PATCH, PUT, DELETE");
 

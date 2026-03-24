@@ -188,14 +188,29 @@ class Poi extends ResourceController {
         // left (lon), top (lat), right (lon), bottom (lat)
         $bounds = $this->request->getGet('bounds', FILTER_SANITIZE_SPECIAL_CHARS);
 
-        if (empty($bounds) || !$bounds = explode(',', $bounds)) {
+        if (empty($bounds)) {
             return null;
         }
 
-        if (count($bounds) !== 4) {
+        $parts = array_map('floatval', explode(',', $bounds));
+
+        if (count($parts) !== 4) {
             return null;
         }
 
-        return $bounds;
+        // Validate geographic ranges: lon in [-180,180], lat in [-90,90]
+        // Order: left lon, top lat, right lon, bottom lat
+        [$lonMin, $latMax, $lonMax, $latMin] = $parts;
+
+        if (
+            $lonMin < -180 || $lonMin > 180 ||
+            $lonMax < -180 || $lonMax > 180 ||
+            $latMin < -90  || $latMin > 90  ||
+            $latMax < -90  || $latMax > 90
+        ) {
+            return null;
+        }
+
+        return $parts;
     }
 }

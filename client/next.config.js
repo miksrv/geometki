@@ -10,7 +10,6 @@ const nextConfig = {
         remotePatterns: [
             {
                 hostname: 'api.geometki.com',
-                pathname: '/uploads/**',
                 port: '',
                 protocol: 'https'
             },

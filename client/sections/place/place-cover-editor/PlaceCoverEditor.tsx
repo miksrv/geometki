@@ -11,6 +11,7 @@ import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import { Dialog } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
+import { getErrorMessage } from '@/utils/api'
 
 import 'react-image-crop/src/ReactCrop.scss'
 import styles from './styles.module.sass'
@@ -118,7 +119,7 @@ const PlaceCoverEditor: React.ForwardRefRenderFunction<PlaceCoverEditorRefProps,
             void dispatch(
                 Notify({
                     id: 'placeCoverEditor',
-                    message: error as string,
+                    message: getErrorMessage(error),
                     type: 'error'
                 })
             )

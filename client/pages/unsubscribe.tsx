@@ -11,6 +11,7 @@ import { NextSeo } from 'next-seo'
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
+import { getErrorMessage } from '@/utils/api'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 const UnsubscribePage: NextPage<object> = () => {
@@ -47,7 +48,7 @@ const UnsubscribePage: NextPage<object> = () => {
                                 type={'error'}
                                 title={t('error')}
                             >
-                                {error as string}
+                                {getErrorMessage(error)}
                             </Message>
                         )}
                         {data && (

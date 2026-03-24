@@ -7,7 +7,7 @@ use App\Models\PlacesModel;
 use App\Models\UsersBookmarksModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
-use Exception;
+use Throwable;
 
 class Bookmarks extends ResourceController
 {
@@ -32,7 +32,7 @@ class Bookmarks extends ResourceController
         }
 
         if (!$placeId) {
-            return $this->failValidationErrors('Point of Interest ID missing');
+            return $this->failValidationErrors(lang('Bookmarks.missingPlaceId'));
         }
 
         $bookmarksModel = new UsersBookmarksModel();
@@ -57,7 +57,7 @@ class Bookmarks extends ResourceController
         }
 
         if (empty($input) || !$input->placeId) {
-            return $this->failValidationErrors('Point of Interest ID missing');
+            return $this->failValidationErrors(lang('Bookmarks.missingPlaceId'));
         }
 
         try {
@@ -68,7 +68,7 @@ class Bookmarks extends ResourceController
             $placesData     = $placesModel->select('id')->find($input->placeId);
 
             if (!$placesData) {
-                return $this->failNotFound();
+                return $this->failNotFound(lang('Bookmarks.placeNotFound'));
             }
 
             if ($bookmarksData) {
@@ -84,10 +84,10 @@ class Bookmarks extends ResourceController
             $placesModel->incrementBookmarks($input->placeId);
 
             return $this->respondCreated();
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             log_message('error', '{exception}', ['exception' => $e]);
 
-            return $this->failNotFound();
+            return $this->failServerError(lang('Bookmarks.setError'));
         }
     }
 }

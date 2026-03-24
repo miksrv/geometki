@@ -12,6 +12,7 @@ import { useAppDispatch, useAppSelector } from '@/app/store'
 import { PhotoLightbox } from '@/components/shared'
 import { ImageUploader } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
+import { getErrorMessage } from '@/utils/api'
 
 import styles from './styles.module.sass'
 
@@ -95,7 +96,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 Notify({
                     id: 'actionPhotoError',
                     title: '',
-                    message: (deleteError as string) || (rotateError as string),
+                    message: getErrorMessage(deleteError) || getErrorMessage(rotateError),
                     type: 'error'
                 })
             )
@@ -184,6 +185,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                             {!hideActions && isAuth && (
                                 <Popout
                                     className={styles.actions}
+                                    closeOnChildrenClick={true}
                                     trigger={
                                         <Button
                                             className={styles.actionButton}

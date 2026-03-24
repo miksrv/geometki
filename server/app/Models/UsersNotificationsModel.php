@@ -9,7 +9,7 @@ class UsersNotificationsModel extends ApplicationBaseModel {
     protected $useAutoIncrement = false;
     protected $useSoftDeletes   = false;
 
-    protected array $hiddenFields = ['user_id, activity_id, created_at'];
+    protected array $hiddenFields = ['user_id', 'activity_id', 'created_at'];
 
     protected $allowedFields = [
         'type',

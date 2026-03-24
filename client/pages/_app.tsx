@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Provider } from 'react-redux'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -23,8 +23,6 @@ import '@/styles/dark.css'
 import '@/styles/light.css'
 import '@/styles/globals.sass'
 
-const locale = LocalStorage.getItem(LOCAL_STORAGE.LOCALE as 'LOCALE')
-
 dayjs.extend(utc)
 dayjs.extend(relativeTime)
 
@@ -32,20 +30,58 @@ const App = ({ Component, pageProps }: AppProps) => {
     const router = useRouter()
     const { i18n } = useTranslation()
     const { store } = wrapper.useWrappedStore(pageProps)
+    const [isLocaleReady, setIsLocaleReady] = useState(false)
 
     useEffect(() => {
         dayjs.locale(i18n.language ?? i18Config.i18n.defaultLocale)
     }, [i18n.language])
 
     useEffect(() => {
-        if (i18n.language !== locale && i18Config.i18n.locales.includes(locale) && router.pathname !== '/404') {
-            void router.replace(router.asPath, router.asPath, { locale })
+        const savedLocale = LocalStorage.getItem(LOCAL_STORAGE.LOCALE as 'LOCALE')
+
+        // If the saved language differs from the current one and is valid — redirect
+        if (
+            savedLocale &&
+            i18n.language !== savedLocale &&
+            i18Config.i18n.locales.includes(savedLocale) &&
+            router.pathname !== '/404'
+        ) {
+            void router.replace(router.asPath, router.asPath, { locale: savedLocale })
+        } else {
+            // Language matches or no saved locale — can show UI
+            setIsLocaleReady(true)
         }
     }, [])
+
+    // Listen for language changes after redirect
+    useEffect(() => {
+        if (!isLocaleReady && router.locale) {
+            const savedLocale = LocalStorage.getItem(LOCAL_STORAGE.LOCALE as 'LOCALE')
+            if (!savedLocale || router.locale === savedLocale) {
+                setIsLocaleReady(true)
+            }
+        }
+    }, [router.locale, isLocaleReady])
 
     // useReportWebVitals((metric) => {
     //     console.log(metric)
     // })
+
+    // Показываем минимальный лоадер пока определяем язык
+    if (!isLocaleReady) {
+        return (
+            <ThemeProvider defaultTheme={'light'}>
+                <Head>
+                    <meta charSet={'utf-8'} />
+                    <meta
+                        name={'viewport'}
+                        content={'width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no'}
+                    />
+                </Head>
+                <div style={{ minHeight: '100vh' }} />
+            </ThemeProvider>
+        )
+    }
 
     return (
         <ThemeProvider defaultTheme={'light'}>

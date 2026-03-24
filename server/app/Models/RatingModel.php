@@ -9,8 +9,6 @@ class RatingModel extends ApplicationBaseModel {
     protected $useAutoIncrement = false;
     protected $useSoftDeletes   = true;
 
-    // protected array $hiddenFields = [];
-
     protected $allowedFields = [
         'place_id',
         'user_id',

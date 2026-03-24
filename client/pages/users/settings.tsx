@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
-import { Container } from 'simple-react-ui-kit'
+import { Container, Message } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
@@ -14,7 +14,7 @@ import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, Header } from '@/components/shared'
 import { ScreenSpinner } from '@/components/ui'
 import { UserForm } from '@/sections/user'
-import { isApiValidationErrors } from '@/utils/api'
+import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
 
 const SettingsUserPage: NextPage<object> = () => {
     const { t } = useTranslation()
@@ -35,6 +35,8 @@ const SettingsUserPage: NextPage<object> = () => {
         () => (isApiValidationErrors<ApiType.Users.PatchRequest>(error) ? error.messages : undefined),
         [error]
     )
+
+    const serverError = useMemo(() => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined), [error])
 
     const handleCancel = () => {
         router.back()
@@ -103,6 +105,15 @@ const SettingsUserPage: NextPage<object> = () => {
             />
             <Container style={{ marginTop: 15 }}>
                 {!authSlice.isAuth && <ScreenSpinner />}
+
+                {serverError && (
+                    <Message
+                        type={'error'}
+                        style={{ marginBottom: 15 }}
+                    >
+                        {serverError}
+                    </Message>
+                )}
 
                 <UserForm
                     loading={isLoading || isSuccess || isFetching}

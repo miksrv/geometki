@@ -71,6 +71,16 @@ export const MarkerPoint: React.FC<MarkerPointProps> = ({ place, keepInView }) =
                                     height={220}
                                 />
                             )}
+
+                            {!isLoading && poiData && !poiData?.cover && (
+                                <Image
+                                    className={styles.image}
+                                    src={'/images/no-image.svg'}
+                                    alt={poiData.title || ''}
+                                    width={300}
+                                    height={220}
+                                />
+                            )}
                         </Link>
 
                         <div className={styles.bookmarkButton}>

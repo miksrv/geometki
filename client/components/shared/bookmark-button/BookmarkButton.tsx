@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Button, ButtonProps } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next'
+import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 
 import { API } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
+import { getErrorMessage } from '@/utils/api'
 
 import styles from './styles.module.sass'
 
@@ -18,11 +20,9 @@ export const BookmarkButton: React.FC<BookmarkButtonProps> = ({ placeId, ...prop
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
 
-    const [buttonPushed, setButtonPushed] = useState<boolean>(false)
-
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
-    const [setBookmark, { isLoading: bookmarkPutLoading, data: result }] = API.useBookmarksPutPlaceMutation()
+    const [setBookmark, { isLoading: bookmarkPutLoading }] = API.useBookmarksPutPlaceMutation()
 
     const {
         data: bookmarkData,
@@ -38,25 +38,29 @@ export const BookmarkButton: React.FC<BookmarkButtonProps> = ({ placeId, ...prop
         if (!isAuth) {
             dispatch(openAuthDialog())
         } else if (isAuth && placeId) {
-            await setBookmark({ placeId })
-            setButtonPushed(true)
+            const wasBookmarked = bookmarkData?.result
+            const result = await setBookmark({ placeId })
+
+            if ('error' in result) {
+                void dispatch(
+                    Notify({
+                        id: 'bookmarkError',
+                        message: getErrorMessage(result.error as FetchBaseQueryError),
+                        type: 'error'
+                    })
+                )
+            } else {
+                void dispatch(
+                    Notify({
+                        id: 'bookmarkButton',
+                        title: '',
+                        message: wasBookmarked ? t('geotag-removed-bookmarks') : t('geotag-added-bookmarks'),
+                        type: 'success'
+                    })
+                )
+            }
         }
     }
-
-    useEffect(() => {
-        if (!buttonPushed) {
-            return
-        }
-
-        void dispatch(
-            Notify({
-                id: 'bookmarkButton',
-                title: '',
-                message: bookmarkData?.result ? t('geotag-removed-bookmarks') : t('geotag-added-bookmarks'),
-                type: 'success'
-            })
-        )
-    }, [result])
 
     return (
         <Button

@@ -10,8 +10,8 @@ use App\Models\CommentsModel;
 use App\Models\PlacesModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
-use Exception;
 use ReflectionException;
+use Throwable;
 
 class Comments extends ResourceController
 {
@@ -78,7 +78,7 @@ class Comments extends ResourceController
         $rules = [
             'placeId'  => 'required|min_length[13]|max_length[13]',
             'answerId' => 'if_exist|required|min_length[13]|max_length[13]',
-            'comment'  => 'required|string'
+            'comment'  => 'required|string|max_length[2000]'
         ];
 
         if (!$this->validateData((array) $input, $rules)) {
@@ -89,27 +89,37 @@ class Comments extends ResourceController
         $placesData  = $placesModel->select('id, user_id, comments, updated_at')->find($input->placeId);
 
         if (!$placesData) {
-            return $this->failValidationErrors('Place with this ID does not exist');
+            return $this->failValidationErrors(lang('Comments.placeNotFound'));
         }
 
-        $comment = new CommentEntity();
-        $comment->place_id  = $placesData->id;
-        $comment->user_id   = $this->session->user->id;
-        $comment->answer_id = $input?->answerId ?? null;
-        $comment->content   = strip_tags(html_entity_decode($input->comment));
+        try {
+            $comment = new CommentEntity();
+            $comment->place_id  = $placesData->id;
+            $comment->user_id   = $this->session->user->id;
+            $comment->answer_id = $input?->answerId ?? null;
+            $comment->content   = strip_tags(html_entity_decode($input->comment));
 
-        $newCommentId = $this->model->insert($comment);
+            $db = \Config\Database::connect();
+            $db->transStart();
 
-        $activity = new ActivityLibrary();
-        $activity->owner($placesData->user_id);
-        $activity->comment($comment->place_id, $newCommentId);
+            $newCommentId = $this->model->insert($comment);
 
-        // Update the comments count
-        $placesModel->update($placesData->id, [
-            'comments'   => $placesData->comments + 1,
-            'updated_at' => $placesData->updated_at
-        ]);
+            // Update the comments count
+            $placesModel->update($placesData->id, [
+                'comments'   => $placesData->comments + 1,
+                'updated_at' => $placesData->updated_at
+            ]);
 
-        return $this->respondCreated();
+            $db->transComplete();
+
+            $activity = new ActivityLibrary();
+            $activity->owner($placesData->user_id);
+            $activity->comment($comment->place_id, $newCommentId);
+
+            return $this->respondCreated();
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+            return $this->failServerError(lang('Comments.createError'));
+        }
     }
 }

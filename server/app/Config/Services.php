@@ -30,7 +30,51 @@ class Services extends BaseService
      * }
      */
 
+    public static function sessionLibrary(bool $getShared = true): \App\Libraries\SessionLibrary
+    {
+        if ($getShared) {
+            return static::getSharedInstance('sessionLibrary');
+        }
+        return new \App\Libraries\SessionLibrary();
+    }
+
+    public static function avatarLibrary(bool $getShared = true): \App\Libraries\AvatarLibrary
+    {
+        if ($getShared) {
+            return static::getSharedInstance('avatarLibrary');
+        }
+        return new \App\Libraries\AvatarLibrary();
+    }
+
+    public static function activityLibrary(bool $getShared = true): \App\Libraries\ActivityLibrary
+    {
+        if ($getShared) {
+            return static::getSharedInstance('activityLibrary');
+        }
+        return new \App\Libraries\ActivityLibrary();
+    }
+
+    public static function levelsLibrary(bool $getShared = true): \App\Libraries\LevelsLibrary
+    {
+        if ($getShared) {
+            return static::getSharedInstance('levelsLibrary');
+        }
+        return new \App\Libraries\LevelsLibrary();
+    }
+
     public static function getSecretKey(): bool|array|string {
-        return getenv('auth.token.secret');
+        $secret = getenv('auth.token.secret');
+
+        if (empty($secret) || strlen($secret) < 16) {
+            log_message('critical', 'JWT secret is not configured or is too short');
+
+            if (ENVIRONMENT === 'production') {
+                throw new \RuntimeException('JWT secret must be configured and at least 16 characters');
+            }
+
+            $secret = $secret ?: 'dev-only-insecure-secret-key-change-me';
+        }
+
+        return $secret;
     }
 }

@@ -20,12 +20,6 @@ class Notifications extends ResourceController
     {
         $this->session = new SessionLibrary();
         $this->model   = new UsersNotificationsModel();
-
-        // The list of notifications is available only for the current user.
-        // The user will not be able to view the list of notifications for another user.
-        if (!$this->session->isAuth || !$this->session->user?->id) {
-            exit();
-        }
     }
 
     /**
@@ -36,6 +30,9 @@ class Notifications extends ResourceController
      */
     public function updates(): ResponseInterface
     {
+        if (!$this->session->isAuth || !$this->session->user?->id) {
+            return $this->failUnauthorized();
+        }
         $notifyData  = $this->model->getRecentUnread($this->session->user->id, 10);
         $notifyCount = $this->model->countOlderUnread($this->session->user->id);
 
@@ -59,6 +56,10 @@ class Notifications extends ResourceController
      */
     public function list(): ResponseInterface
     {
+        if (!$this->session->isAuth || !$this->session->user?->id) {
+            return $this->failUnauthorized();
+        }
+
         $limit  = $this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 10;
         $offset = $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0;
 
@@ -84,6 +85,10 @@ class Notifications extends ResourceController
      */
     public function clear(): ResponseInterface
     {
+        if (!$this->session->isAuth || !$this->session->user?->id) {
+            return $this->failUnauthorized();
+        }
+
         $this->model
             ->where('users_notifications.user_id', $this->session->user->id)
             ->delete();

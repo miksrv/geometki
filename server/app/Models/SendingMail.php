@@ -49,7 +49,8 @@ class SendingMail extends ApplicationBaseModel {
     {
         return $this
             ->select('created_at')
-            ->where("email = '{$email}' AND activity_id " . ($activity ? 'IS NOT NULL' : 'IS NULL'))
+            ->where('email', $email)
+            ->where($activity ? 'activity_id IS NOT NULL' : 'activity_id IS NULL')
             ->orderBy('created_at', 'DESC')
             ->first();
     }

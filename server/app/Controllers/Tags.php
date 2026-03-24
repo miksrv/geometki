@@ -47,7 +47,7 @@ class Tags extends ResourceController
      */
     public function search(): ResponseInterface
     {
-        $search = trim($this->request->getGet('text', FILTER_SANITIZE_STRING));
+        $search = trim($this->request->getGet('text', FILTER_DEFAULT));
         $locale = $this->request->getLocale();
 
         if (strlen($search) === 0 || strlen($search) >= 30) {

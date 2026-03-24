@@ -25,6 +25,7 @@ use CodeIgniter\RESTful\ResourceController;
 use Config\Services;
 use Geocoder\Exception\Exception;
 use ReflectionException;
+use Throwable;
 
 class Places extends ResourceController
 {
@@ -145,6 +146,10 @@ class Places extends ResourceController
         // Find all places
         // If a search was enabled, the second argument to the _makeListFilters function will contain the
         // IDs of the places found using the search criteria
+        $countModel = new PlacesModel();
+        $countModel->applyListSelect($coordinates);
+        $placesCount = $this->_makeListFilters($countModel, $searchPlacesIds)->countAllResults();
+
         $placesList = $this->_makeListFilters($this->model, $searchPlacesIds)->get()->getResult();
         $placesIds  = array_column($placesList, 'id');
 
@@ -182,7 +187,7 @@ class Places extends ResourceController
 
         return $this->respond([
             'items'  => $placesList,
-            'count'  => $this->_makeListFilters($this->model, $searchPlacesIds)->countAllResults(),
+            'count'  => $placesCount,
         ]);
     }
 
@@ -276,8 +281,6 @@ class Places extends ResourceController
         $userId = ($this->session->isAuth && $this->session->user) ? $this->session->user->id : null;
         $this->model->recordView($id, $userId, $placeData->updated);
 
-        $placeData->session = $this->session;
-
         return $this->respond($placeData);
     }
 
@@ -306,65 +309,84 @@ class Places extends ResourceController
             return $this->failValidationErrors($this->validator->getErrors());
         }
 
-        $placeTitle   = isset($input->title) ? strip_tags(html_entity_decode($input->title)) : null;
-        $placeContent = isset($input->content) ? strip_tags(html_entity_decode($input->content)) : null;
+        try {
+            $placeTitle   = isset($input->title) ? strip_tags(html_entity_decode($input->title)) : null;
+            $placeContent = isset($input->content) ? strip_tags(html_entity_decode($input->content)) : null;
 
-        $existingPlace = $this->model->findDuplicate(
-            $this->session->user?->id,
-            $input->lat,
-            $input->lon
-        );
+            $existingPlace = $this->model->findDuplicate(
+                $this->session->user?->id,
+                $input->lat,
+                $input->lon
+            );
 
-        if ($existingPlace) {
-            return $this->respondCreated(['id' => $existingPlace->id]);
+            if ($existingPlace) {
+                return $this->respondCreated(['id' => $existingPlace->id]);
+            }
+
+            $placeTags = new PlaceTags();
+            $geocoder  = new Geocoder();
+            $place     = new \App\Entities\PlaceEntity();
+
+            if (!$geocoder->coordinates($input->lat, $input->lon)) {
+                return $this->failValidationErrors(lang('Places.createFailError'));
+            }
+
+            $place->lat         = $input->lat;
+            $place->lon         = $input->lon;
+            $place->user_id     = $this->session->user?->id;
+            $place->category    = $input->category;
+            $place->address_en  = $geocoder->addressEn;
+            $place->address_ru  = $geocoder->addressRu;
+            $place->country_id  = $geocoder->countryId;
+            $place->region_id   = $geocoder->regionId;
+            $place->district_id = $geocoder->districtId;
+            $place->locality_id = $geocoder->localityId;
+
+            $db = \Config\Database::connect();
+            $db->transStart();
+
+            $insertResult = $this->model->insert($place);
+
+            if ($insertResult === false) {
+                log_message('error', 'Failed to insert place: ' . json_encode($this->model->errors()));
+                return $this->failValidationErrors($this->model->errors());
+            }
+
+            $newPlaceId = $this->model->getInsertID();
+
+            if (!empty($input->tags)) {
+                $placeTags->saveTags($input->tags, $newPlaceId);
+            }
+
+            $placesContentModel = new PlacesContentModel();
+
+            $content = new \App\Entities\PlaceContentEntity();
+            $content->place_id = $newPlaceId;
+            $content->locale   = $locale;
+            $content->user_id  = $this->session->user?->id;
+            $content->title    = $placeTitle;
+            $content->content  = $placeContent;
+
+            $placesContentModel->insert($content);
+
+            $activity = new ActivityLibrary();
+            $activity->place($newPlaceId);
+
+            if (!empty($input->photos)) {
+                $this->savePhotos($input->photos, $newPlaceId, $place, $content);
+            }
+
+            $db->transComplete();
+
+            if (!$db->transStatus()) {
+                return $this->failServerError(lang('Places.createTransactionError'));
+            }
+
+            return $this->respondCreated(['id' => $newPlaceId]);
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+            return $this->failServerError(lang('Places.createTransactionError'));
         }
-
-        $placeTags = new PlaceTags();
-        $geocoder  = new Geocoder();
-        $place     = new \App\Entities\PlaceEntity();
-
-        if (!$geocoder->coordinates($input->lat, $input->lon)) {
-            return $this->failValidationErrors(lang('Places.createFailError'));
-        }
-
-        $place->lat         = $input->lat;
-        $place->lon         = $input->lon;
-        $place->user_id     = $this->session->user?->id;
-        $place->category    = $input->category;
-        $place->address_en  = $geocoder->addressEn;
-        $place->address_ru  = $geocoder->addressRu;
-        $place->country_id  = $geocoder->countryId;
-        $place->region_id   = $geocoder->regionId;
-        $place->district_id = $geocoder->districtId;
-        $place->locality_id = $geocoder->localityId;
-
-        $this->model->insert($place);
-
-        $newPlaceId = $this->model->getInsertID();
-
-        if (!empty($input->tags)) {
-            $placeTags->saveTags($input->tags, $newPlaceId);
-        }
-
-        $placesContentModel = new PlacesContentModel();
-
-        $content = new \App\Entities\PlaceContentEntity();
-        $content->place_id = $newPlaceId;
-        $content->locale   = $locale;
-        $content->user_id  = $this->session->user?->id;
-        $content->title    = $placeTitle;
-        $content->content  = $placeContent;
-
-        $placesContentModel->insert($content);
-
-        $activity = new ActivityLibrary();
-        $activity->place($newPlaceId);
-
-        if (!empty($input->photos)) {
-            $this->savePhotos($input->photos, $newPlaceId, $place, $content);
-        }
-
-        return $this->respondCreated(['id' => $newPlaceId]);
     }
 
     /**
@@ -393,92 +415,97 @@ class Places extends ResourceController
             return $this->failValidationErrors($this->validator->getErrors());
         }
 
-        $placeTags    = new PlaceTags();
-        $placeContent = new PlacesContent();
-        $activity     = new ActivityLibrary();
-        $placeData    = $this->model->find($id);
+        try {
+            $placeTags    = new PlaceTags();
+            $placeContent = new PlacesContent();
+            $activity     = new ActivityLibrary();
+            $placeData    = $this->model->find($id);
 
-        $placeContent->translate([$id]);
+            $placeContent->translate([$id]);
 
-        if (!$placeContent->title($id) || !$placeData) {
-            return $this->failValidationErrors('There is no point with this ID');
-        }
-
-        // Save place tags
-        $updatedTags    = isset($input->tags) ? $placeTags->saveTags($input->tags, $id) : null;
-        $updatedContent = isset($input->content) ? strip_tags(html_entity_decode($input->content)) : null;
-        $updatedTitle   = isset($input->title) ? strip_tags(html_entity_decode($input->title)) : null;
-
-        // Save place content
-        if ($updatedContent || $updatedTitle) {
-            $contentModel = new PlacesContentModel();
-            $placeEntity  = new \App\Entities\PlaceContentEntity();
-            $placeEntity->locale   = $locale;
-            $placeEntity->place_id = $id;
-            $placeEntity->user_id  = $this->session->user?->id;
-            $placeEntity->title    = !empty($updatedTitle) ? $updatedTitle : $placeContent->title($id);
-            $placeEntity->content  = !empty($updatedContent) ? $updatedContent : $placeContent->content($id);
-
-            if ($updatedContent) {
-                $placeEntity->delta = strlen($updatedContent) - strlen($placeContent->content($id));
+            if (!$placeContent->title($id) || !$placeData) {
+                return $this->failValidationErrors(lang('Places.updatePointNotExist'));
             }
 
-            // If the author of the last edit is the same as the current one,
-            // then you need to check when the content was last edited
-            if ($placeContent->author($id) === $this->session->user?->id && $placeContent->locale($id) === $locale) {
-                $time = new Time('now');
-                $diff = $time->difference($placeContent->updated($id));
+            // Save place tags
+            $updatedTags    = isset($input->tags) ? $placeTags->saveTags($input->tags, $id) : null;
+            $updatedContent = isset($input->content) ? strip_tags(html_entity_decode($input->content)) : null;
+            $updatedTitle   = isset($input->title) ? strip_tags(html_entity_decode($input->title)) : null;
 
-                // If the last time a user edited this content was less than or equal to 3 months,
-                // then we will simply update the data and will not add a new version
-                if (abs($diff->getMonths()) <= 3) {
-                    $contentModel->update($placeContent->id($id), $placeEntity);
+            // Save place content
+            if ($updatedContent || $updatedTitle) {
+                $contentModel = new PlacesContentModel();
+                $placeEntity  = new \App\Entities\PlaceContentEntity();
+                $placeEntity->locale   = $locale;
+                $placeEntity->place_id = $id;
+                $placeEntity->user_id  = $this->session->user?->id;
+                $placeEntity->title    = !empty($updatedTitle) ? $updatedTitle : $placeContent->title($id);
+                $placeEntity->content  = !empty($updatedContent) ? $updatedContent : $placeContent->content($id);
+
+                if ($updatedContent) {
+                    $placeEntity->delta = strlen($updatedContent) - strlen($placeContent->content($id));
+                }
+
+                // If the author of the last edit is the same as the current one,
+                // then you need to check when the content was last edited
+                if ($placeContent->author($id) === $this->session->user?->id && $placeContent->locale($id) === $locale) {
+                    $time = new Time('now');
+                    $diff = $time->difference($placeContent->updated($id));
+
+                    // If the last time a user edited this content was less than or equal to 3 months,
+                    // then we will simply update the data and will not add a new version
+                    if (abs($diff->getMonths()) <= 3) {
+                        $contentModel->update($placeContent->id($id), $placeEntity);
+                    } else {
+                        $contentModel->insert($placeEntity);
+                        $activity->owner($placeData->user_id)->edit($id);
+                    }
                 } else {
                     $contentModel->insert($placeEntity);
                     $activity->owner($placeData->user_id)->edit($id);
                 }
-            } else {
-                $contentModel->insert($placeEntity);
-                $activity->owner($placeData->user_id)->edit($id);
             }
+
+            // In any case, we update the time when the post was last edited
+            $place = new PlaceEntity();
+            $place->updated_at = time();
+
+            $lat = isset($input->lat) ? round($input->lat, 6) : $placeData->lat;
+            $lon = isset($input->lon) ? round($input->lon, 6) : $placeData->lon;
+
+            // Check and update coordinates, address and location
+            if ($lat !== $placeData->lat || $lon !== $placeData->lon) {
+                $geocoder = new Geocoder();
+                $geocoder->coordinates($lat, $lon);
+
+                $place->lat = $lat;
+                $place->lon = $lon;
+                $place->address_ru  = $geocoder->addressRu;
+                $place->address_en  = $geocoder->addressEn;
+                $place->country_id  = $geocoder->countryId;
+                $place->region_id   = $geocoder->regionId;
+                $place->district_id = $geocoder->districtId;
+                $place->locality_id = $geocoder->localityId;
+            }
+
+            // Change category
+            if (isset($input->category)) {
+                $place->category = $input->category;
+            }
+
+            $this->model->update($id, $place);
+
+            $return = ['content' => !empty($updatedContent) ? $updatedContent : $placeContent->content($id)];
+
+            if (isset($input->tags)) {
+                $return['tags'] = $updatedTags;
+            }
+
+            return $this->respond($return);
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+            return $this->failServerError(lang('Places.createTransactionError'));
         }
-
-        // In any case, we update the time when the post was last edited
-        $place = new PlaceEntity();
-        $place->updated_at = time();
-
-        $lat = isset($input->lat) ? round($input->lat, 6) : $placeData->lat;
-        $lon = isset($input->lon) ? round($input->lon, 6) : $placeData->lon;
-
-        // Check and update coordinates, address and location
-        if ($lat !== $placeData->lat || $lon !== $placeData->lon) {
-            $geocoder = new Geocoder();
-            $geocoder->coordinates($lat, $lon);
-
-            $place->lat = $lat;
-            $place->lon = $lon;
-            $place->address_ru  = $geocoder->addressRu;
-            $place->address_en  = $geocoder->addressEn;
-            $place->country_id  = $geocoder->countryId;
-            $place->region_id   = $geocoder->regionId;
-            $place->district_id = $geocoder->districtId;
-            $place->locality_id = $geocoder->localityId;
-        }
-
-        // Change category
-        if (isset($input->category)) {
-            $place->category = $input->category;
-        }
-
-        $this->model->update($id, $place);
-
-        $return = ['content' => !empty($updatedContent) ? $updatedContent : $placeContent->content($id)];
-
-        if (isset($input->tags)) {
-            $return['tags'] = $updatedTags;
-        }
-
-        return $this->respond($return);
     }
 
     /**
@@ -488,7 +515,7 @@ class Places extends ResourceController
      */
     public function delete($id = null): ResponseInterface
     {
-        if (!$this->session->isAuth && $this->session->user->role !== 'admin') {
+        if (!$this->session->isAuth || $this->session->user->role !== 'admin') {
             return $this->failUnauthorized();
         }
 
@@ -547,22 +574,27 @@ class Places extends ResourceController
             return $this->failValidationErrors(lang('Places.coverExceedDimensions'));
         }
 
-        $image = Services::image('gd'); // imagick
-        $image->withFile($imageFile->getRealPath())
-            ->crop($input->width, $input->height, $input->x, $input->y)
-            ->fit(PLACE_COVER_WIDTH, PLACE_COVER_HEIGHT)
-            ->save($photoDir . 'cover.jpg');
+        try {
+            $image = Services::image('gd'); // imagick
+            $image->withFile($imageFile->getRealPath())
+                ->crop($input->width, $input->height, $input->x, $input->y)
+                ->fit(PLACE_COVER_WIDTH, PLACE_COVER_HEIGHT)
+                ->save($photoDir . 'cover.jpg');
 
-        $image->withFile($imageFile->getRealPath())
-            ->fit(PLACE_COVER_PREVIEW_WIDTH, PLACE_COVER_PREVIEW_HEIGHT)
-            ->save($photoDir . '/cover_preview.jpg');
+            $image->withFile($imageFile->getRealPath())
+                ->fit(PLACE_COVER_PREVIEW_WIDTH, PLACE_COVER_PREVIEW_HEIGHT)
+                ->save($photoDir . '/cover_preview.jpg');
 
-        $this->model->update($id, ['updated_at' => new Time('now')]);
+            $this->model->update($id, ['updated_at' => new Time('now')]);
 
-        $userActivity = new ActivityLibrary();
-        $userActivity->owner($placeData->user_id)->cover($id);
+            $userActivity = new ActivityLibrary();
+            $userActivity->owner($placeData->user_id)->cover($id);
 
-        return $this->respondUpdated();
+            return $this->respondUpdated();
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+            return $this->failServerError(lang('Places.createTransactionError'));
+        }
     }
 
     /**

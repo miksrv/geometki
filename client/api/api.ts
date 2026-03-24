@@ -1,6 +1,6 @@
 import { HYDRATE } from 'next-redux-wrapper'
 import type { Action, PayloadAction } from '@reduxjs/toolkit'
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi, fetchBaseQuery, FetchBaseQueryError } from '@reduxjs/toolkit/query/react'
 
 import { ApiType } from '@/api'
 import { RootState } from '@/app/store'
@@ -12,6 +12,22 @@ type APIErrorType = {
     messages: {
         error?: string
     }
+}
+
+/**
+ * Safely extracts error message from API response.
+ * Returns the error string or undefined if not available.
+ */
+const extractErrorMessage = (response: FetchBaseQueryError): string | undefined => {
+    const data = response.data as APIErrorType | undefined
+    return data?.messages?.error
+}
+
+/**
+ * Returns the full error response data for form validation errors.
+ */
+const extractErrorData = (response: FetchBaseQueryError): unknown => {
+    return response.data
 }
 
 const isHydrateAction = (action: Action): action is PayloadAction<RootState> => action.type === HYDRATE
@@ -70,7 +86,7 @@ export const API = createApi({
         }),
         authLoginService: builder.mutation<ApiType.Auth.LoginResponse, ApiType.Auth.PostLoginServiceRequest>({
             query: ({ service, ...params }) => `auth/${service}${params?.code ? encodeQueryData(params) : ''}`,
-            transformErrorResponse: (response) => (response.data as APIErrorType).messages.error
+            transformErrorResponse: extractErrorMessage
         }),
         authPostLogin: builder.mutation<ApiType.Auth.LoginResponse, ApiType.Auth.PostLoginNativeRequest>({
             query: (credentials) => ({
@@ -78,7 +94,7 @@ export const API = createApi({
                 method: 'POST',
                 url: 'auth/login'
             }),
-            transformErrorResponse: (response) => response.data
+            transformErrorResponse: extractErrorData
         }),
         authPostRegistration: builder.mutation<ApiType.Auth.LoginResponse, ApiType.Auth.PostRegistrationRequest>({
             query: (credentials) => ({
@@ -86,7 +102,7 @@ export const API = createApi({
                 method: 'POST',
                 url: 'auth/registration'
             }),
-            transformErrorResponse: (response) => response.data
+            transformErrorResponse: extractErrorData
         }),
 
         /** Controller: Bookmarks **/
@@ -101,7 +117,7 @@ export const API = createApi({
                 method: 'PUT',
                 url: 'bookmarks'
             }),
-            transformErrorResponse: (response) => response.data
+            transformErrorResponse: extractErrorData
         }),
 
         /** Controller: Categories v*/
@@ -121,7 +137,7 @@ export const API = createApi({
                 method: 'POST',
                 url: 'comments'
             }),
-            transformErrorResponse: (response) => response.data
+            transformErrorResponse: extractErrorData
         }),
 
         /** Controller: Levels **/
@@ -132,7 +148,7 @@ export const API = createApi({
         /** Controller: Mail **/
         mailGetUnsubscribe: builder.query<string, Maybe<string>>({
             query: (mailId) => `mail/unsubscribe?mail=${mailId || ''}`,
-            transformErrorResponse: (response) => (response.data as APIErrorType).messages.error
+            transformErrorResponse: extractErrorMessage
         }),
 
         /** Controller: Location **/
@@ -188,7 +204,7 @@ export const API = createApi({
                 method: 'DELETE',
                 url: `photos/${params?.temporary ? 'temporary/' : ''}${params?.id}`
             }),
-            transformErrorResponse: (response) => (response.data as APIErrorType).messages.error
+            transformErrorResponse: extractErrorMessage
         }),
         photoPostUpload: builder.mutation<ApiType.Photos.UploadResponse, ApiType.Photos.UploadRequest>({
             invalidatesTags: (res, err, arg) => [
@@ -201,14 +217,14 @@ export const API = createApi({
                 method: 'POST',
                 url: `photos/upload/${data.place}`
             }),
-            transformErrorResponse: (response) => (response.data as APIErrorType).messages.error
+            transformErrorResponse: extractErrorMessage
         }),
         photoRotateItem: builder.mutation<ApiType.Photos.RotateResponse, ApiType.Photos.RotateRequest>({
             query: (params) => ({
                 method: 'PATCH',
                 url: `photos/rotate/${params?.temporary ? 'temporary/' : ''}${params?.id}`
             }),
-            transformErrorResponse: (response) => (response.data as APIErrorType).messages.error
+            transformErrorResponse: extractErrorMessage
         }),
         photosGetList: builder.query<ApiType.Photos.ListResponse, Maybe<ApiType.Photos.ListRequest>>({
             providesTags: (result, error, arg) => [{ id: arg?.place || arg?.author, type: 'Photos' }],
@@ -235,7 +251,7 @@ export const API = createApi({
                 method: 'PATCH',
                 url: `places/cover/${data.placeId}`
             }),
-            transformErrorResponse: (response) => (response.data as APIErrorType).messages.error
+            transformErrorResponse: extractErrorMessage
         }),
         placeDelete: builder.mutation<void, string>({
             query: (id) => ({
@@ -254,7 +270,7 @@ export const API = createApi({
                 method: 'PATCH',
                 url: `places/${data.id}`
             }),
-            transformErrorResponse: (response) => response.data
+            transformErrorResponse: extractErrorData
         }),
         placesPostItem: builder.mutation<ApiType.Places.PostItemResponse, Omit<ApiType.Places.PostItemRequest, 'id'>>({
             invalidatesTags: [{ type: 'Places' }, { type: 'Activity' }, { type: 'Notifications' }],
@@ -263,7 +279,7 @@ export const API = createApi({
                 method: 'POST',
                 url: 'places'
             }),
-            transformErrorResponse: (response) => response.data
+            transformErrorResponse: extractErrorData
         }),
 
         /** Controller: POI **/
@@ -299,7 +315,7 @@ export const API = createApi({
                 method: 'PUT',
                 url: 'rating'
             }),
-            transformErrorResponse: (response) => response.data
+            transformErrorResponse: extractErrorData
         }),
 
         /** Controller: Sitemap **/
@@ -331,7 +347,7 @@ export const API = createApi({
                 method: 'PATCH',
                 url: 'users/crop'
             }),
-            transformErrorResponse: (response) => response.data
+            transformErrorResponse: extractErrorData
         }),
         usersPatchProfile: builder.mutation<void, ApiType.Users.PatchRequest>({
             invalidatesTags: (res, err, arg) => [{ id: arg.id, type: 'Users' }, { type: 'Users' }],
@@ -340,7 +356,7 @@ export const API = createApi({
                 method: 'PATCH',
                 url: `users/${data.id}`
             }),
-            transformErrorResponse: (response) => response.data
+            transformErrorResponse: extractErrorData
         }),
         usersPostUploadAvatar: builder.mutation<ApiType.Users.UploadAvatarResponse, { formData: FormData }>({
             query: (data) => ({
@@ -348,7 +364,7 @@ export const API = createApi({
                 method: 'POST',
                 url: 'users/avatar'
             }),
-            transformErrorResponse: (response) => response.data
+            transformErrorResponse: extractErrorData
         }),
 
         /** Controller: Visited **/
@@ -363,7 +379,7 @@ export const API = createApi({
                 method: 'PUT',
                 url: 'visited'
             }),
-            transformErrorResponse: (response) => response.data
+            transformErrorResponse: extractErrorData
         })
     }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -58,6 +58,7 @@ class Photos extends ResourceController
             ]);
         }
 
+        $avatarLibrary = new AvatarLibrary();
         foreach ($photosData as $photo) {
             $path  = PATH_PHOTOS . $photo->place_id . '/' . $photo->filename;
             $title = $locale === 'ru' ?
@@ -70,7 +71,6 @@ class Photos extends ResourceController
             $photo->preview = $path . '_preview.' . $photo->extension;
 
             if ($photo->user_id) {
-                $avatarLibrary = new AvatarLibrary();
                 $photo->author = [
                     'id'     => $photo->user_id,
                     'name'   => $photo->user_name,
@@ -102,7 +102,7 @@ class Photos extends ResourceController
         }
 
         if (!$photo = $this->request->getFile('photo')) {
-            return $this->failValidationErrors(lang('Photos.'));
+            return $this->failValidationErrors(lang('Photos.noPhotoForUpload'));
         }
 
         $placesModel = new PlacesModel();
@@ -112,7 +112,13 @@ class Photos extends ResourceController
         $placeContent->translate([$id]);
 
         if (!$placesData || !$placesData->id) {
-            return $this->failValidationErrors(lang('Photo.placeNotFound'));
+            return $this->failValidationErrors(lang('Photos.placeNotFound'));
+        }
+
+        if (!$this->validate([
+            'photo' => 'uploaded[photo]|mime_in[photo,image/jpeg,image/png,image/webp,image/gif]|max_size[photo,10240]'
+        ])) {
+            return $this->failValidationErrors($this->validator->getErrors());
         }
 
         if ($photo->hasMoved()) {
@@ -232,7 +238,7 @@ class Photos extends ResourceController
         $placesData  = $placesModel->select('id, photos')->find($photoData->place_id);
 
         if (!$photosModel->delete($id, true)) {
-            return $this->failServerError('Photos.deleteError');
+            return $this->failServerError(lang('Photos.deleteError'));
         }
 
         unlink(UPLOAD_PHOTOS . $photoData->place_id . '/' . $photoData->filename . '.' . $photoData->extension);

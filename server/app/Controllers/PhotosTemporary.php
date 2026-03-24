@@ -41,6 +41,12 @@ class PhotosTemporary extends ResourceController
             return $this->failValidationErrors('No photo for upload');
         }
 
+        if (!$this->validate([
+            'photo' => 'uploaded[photo]|mime_in[photo,image/jpeg,image/png,image/webp,image/gif]|max_size[photo,10240]'
+        ])) {
+            return $this->failValidationErrors($this->validator->getErrors());
+        }
+
         if ($photo->hasMoved()) {
             return $this->failValidationErrors($photo->getErrorString());
         }
@@ -111,8 +117,13 @@ class PhotosTemporary extends ResourceController
             return $this->failUnauthorized();
         }
 
+        $realPath = realpath(UPLOAD_TEMPORARY . $id);
+        if (!$realPath || strpos($realPath, realpath(UPLOAD_TEMPORARY)) !== 0) {
+            return $this->failValidationErrors(lang('Photos.temporaryInvalidReference'));
+        }
+
         if (!file_exists(UPLOAD_TEMPORARY . $id)) {
-            return $this->failValidationErrors('Photo not found');
+            return $this->failValidationErrors(lang('Photos.temporaryPhotoNotFound'));
         }
 
         $originalFile = explode('.', $id);
@@ -133,8 +144,13 @@ class PhotosTemporary extends ResourceController
             return $this->failUnauthorized();
         }
 
+        $realPath = realpath(UPLOAD_TEMPORARY . $id);
+        if (!$realPath || strpos($realPath, realpath(UPLOAD_TEMPORARY)) !== 0) {
+            return $this->failValidationErrors(lang('Photos.temporaryInvalidReference'));
+        }
+
         if (!file_exists(UPLOAD_TEMPORARY . $id)) {
-            return $this->failValidationErrors('Photo not found');
+            return $this->failValidationErrors(lang('Photos.temporaryPhotoNotFound'));
         }
 
         $originalFile = explode('.', $id);

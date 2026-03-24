@@ -10,7 +10,7 @@ use App\Models\RatingModel;
 use App\Models\UsersModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
-use Exception;
+use Throwable;
 
 class Rating extends ResourceController
 {
@@ -33,11 +33,11 @@ class Rating extends ResourceController
         $paramPlace = $this->request->getGet('placeId', FILTER_SANITIZE_SPECIAL_CHARS);
 
         if ($paramPlace && $paramUser) {
-            return $this->failValidationErrors('Only one parameter is allowed (userId or placeId)');
+            return $this->failValidationErrors(lang('Rating.onlyOneParam'));
         }
 
         if (!$paramPlace && !$paramUser) {
-            return $this->failValidationErrors('Not enough data to get the rating history');
+            return $this->failValidationErrors(lang('Rating.missingParams'));
         }
 
         $ratingModel = new RatingModel();
@@ -117,7 +117,7 @@ class Rating extends ResourceController
             $input = $this->request->getJSON();
 
             if (empty($input) || !$input->place || !(int) $input->score) {
-                return $this->failValidationErrors('Not enough data to change the rating');
+                return $this->failValidationErrors(lang('Rating.missingSetData'));
             }
 
             $ratingModel = new RatingModel();
@@ -128,11 +128,16 @@ class Rating extends ResourceController
             $ratingData  = $ratingModel->where('place_id', $placesData->id)->findAll();
 
             $inputRating  = (int) $input->score;
+
+            if ($inputRating < 1 || $inputRating > 5) {
+                return $this->failValidationErrors(lang('Rating.scoreOutOfRange'));
+            }
+
             $alreadyVoted = null; // User changes their rating? We will store the rating record ID here
             $ratingValue  = abs($inputRating);
 
             if (!$placesData) {
-                return $this->failNotFound();
+                return $this->failNotFound(lang('Rating.placeNotFound'));
             }
 
             helper('rating');
@@ -180,10 +185,10 @@ class Rating extends ResourceController
             $activity->owner($placesData->user_id)->rating($placesData->id, $ratingModel->getInsertID());
 
             return $this->respondCreated();
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             log_message('error', '{exception}', ['exception' => $e]);
 
-            return $this->failNotFound();
+            return $this->failServerError(lang('Rating.setError'));
         }
     }
 }

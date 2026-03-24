@@ -2,8 +2,10 @@
 
 namespace Config;
 
+use App\Filters\CacheHeadersFilter;
 use App\Filters\CorsFilter;
 use App\Filters\LocaleFilter;
+use App\Filters\ThrottleFilter;
 use CodeIgniter\Config\Filters as BaseFilters;
 // use CodeIgniter\Filters\Cors;
 use CodeIgniter\Filters\CSRF;
@@ -38,6 +40,8 @@ class Filters extends BaseFilters
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
         'locale'        => LocaleFilter::class,
+        'throttle'      => ThrottleFilter::class,
+        'cache'         => CacheHeadersFilter::class,
     ];
 
     /**
@@ -81,7 +85,7 @@ class Filters extends BaseFilters
         ],
         'after' => [
             // 'honeypot',
-            // 'secureheaders',
+            'secureheaders',
         ],
     ];
 
@@ -109,5 +113,23 @@ class Filters extends BaseFilters
      *
      * @var array<string, array<string, list<string>>>
      */
-    public array $filters = [];
+    public array $filters = [
+        'throttle' => [
+            'before' => [
+                'auth/login',
+                'auth/registration',
+            ],
+        ],
+        'cache:300' => [
+            'after' => [
+                'GET:categories/*',
+                'GET:categories',
+                'GET:tags/*',
+                'GET:tags',
+                'GET:levels/*',
+                'GET:levels',
+                'GET:location/*',
+            ],
+        ],
+    ];
 }

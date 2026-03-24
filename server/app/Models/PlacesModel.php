@@ -40,22 +40,22 @@ class PlacesModel extends ApplicationBaseModel {
 
     protected $validationRules = [
         'category'    => 'required|string|max_length[50]',
-        'lat'         => 'decimal',
-        'lon'         => 'decimal',
-        'rating'      => 'integer|max_length[1]|greater_than[0]',
-        'views'       => 'integer|max_length[10]|greater_than[0]',
-        'photos'      => 'integer|max_length[5]',
-        'address_en'  => 'string|max_length[250]',
-        'address_ru'  => 'string|max_length[250]',
-        'country_id'  => 'integer|max_length[5]',
-        'region_id'   => 'integer|max_length[5]',
-        'district_id' => 'integer|max_length[5]',
-        'locality_id' => 'integer|max_length[5]',
+        'lat'         => 'permit_empty|decimal',
+        'lon'         => 'permit_empty|decimal',
+        'rating'      => 'permit_empty|numeric',
+        'views'       => 'permit_empty|integer',
+        'photos'      => 'permit_empty|integer',
+        'address_en'  => 'permit_empty|string|max_length[250]',
+        'address_ru'  => 'permit_empty|string|max_length[250]',
+        'country_id'  => 'permit_empty|integer',
+        'region_id'   => 'permit_empty|integer',
+        'district_id' => 'permit_empty|integer',
+        'locality_id' => 'permit_empty|integer',
         'user_id'     => 'required|string|min_length[3]|max_length[40]',
     ];
 
     protected $validationMessages   = [];
-    protected $skipValidation       = true;
+    protected $skipValidation       = false;
     protected $cleanValidationRules = true;
 
     protected $allowCallbacks = true;
@@ -176,7 +176,9 @@ class PlacesModel extends ApplicationBaseModel {
         $db = \Config\Database::connect();
         $db->transStart();
 
-        $this->set('views', 'views + 1', false)
+        // Use builder() to bypass model validation for atomic increment
+        $this->builder()
+            ->set('views', 'views + 1', false)
             ->set('updated_at', $updatedAt)
             ->where('id', $placeId)
             ->update();

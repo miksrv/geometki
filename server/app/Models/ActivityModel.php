@@ -9,8 +9,6 @@ class ActivityModel extends ApplicationBaseModel {
     protected $useAutoIncrement = false;
     protected $useSoftDeletes   = true;
 
-    // protected array $hiddenFields = ['id'];
-
     protected $allowedFields = [
         'type',
         'views',
