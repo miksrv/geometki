@@ -102,7 +102,7 @@ class Photos extends ResourceController
         }
 
         if (!$photo = $this->request->getFile('photo')) {
-            return $this->failValidationErrors(lang('Photos.'));
+            return $this->failValidationErrors(lang('Photos.noPhotoForUpload'));
         }
 
         $placesModel = new PlacesModel();
@@ -112,7 +112,7 @@ class Photos extends ResourceController
         $placeContent->translate([$id]);
 
         if (!$placesData || !$placesData->id) {
-            return $this->failValidationErrors(lang('Photo.placeNotFound'));
+            return $this->failValidationErrors(lang('Photos.placeNotFound'));
         }
 
         if (!$this->validate([
@@ -238,7 +238,7 @@ class Photos extends ResourceController
         $placesData  = $placesModel->select('id, photos')->find($photoData->place_id);
 
         if (!$photosModel->delete($id, true)) {
-            return $this->failServerError('Photos.deleteError');
+            return $this->failServerError(lang('Photos.deleteError'));
         }
 
         unlink(UPLOAD_PHOTOS . $photoData->place_id . '/' . $photoData->filename . '.' . $photoData->extension);

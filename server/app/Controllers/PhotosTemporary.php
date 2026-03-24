@@ -119,11 +119,11 @@ class PhotosTemporary extends ResourceController
 
         $realPath = realpath(UPLOAD_TEMPORARY . $id);
         if (!$realPath || strpos($realPath, realpath(UPLOAD_TEMPORARY)) !== 0) {
-            return $this->failValidationErrors('Invalid file reference');
+            return $this->failValidationErrors(lang('Photos.temporaryInvalidReference'));
         }
 
         if (!file_exists(UPLOAD_TEMPORARY . $id)) {
-            return $this->failValidationErrors('Photo not found');
+            return $this->failValidationErrors(lang('Photos.temporaryPhotoNotFound'));
         }
 
         $originalFile = explode('.', $id);
@@ -146,11 +146,11 @@ class PhotosTemporary extends ResourceController
 
         $realPath = realpath(UPLOAD_TEMPORARY . $id);
         if (!$realPath || strpos($realPath, realpath(UPLOAD_TEMPORARY)) !== 0) {
-            return $this->failValidationErrors('Invalid file reference');
+            return $this->failValidationErrors(lang('Photos.temporaryInvalidReference'));
         }
 
         if (!file_exists(UPLOAD_TEMPORARY . $id)) {
-            return $this->failValidationErrors('Photo not found');
+            return $this->failValidationErrors(lang('Photos.temporaryPhotoNotFound'));
         }
 
         $originalFile = explode('.', $id);

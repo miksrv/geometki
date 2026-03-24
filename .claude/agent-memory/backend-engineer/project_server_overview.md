@@ -46,3 +46,12 @@ CodeIgniter 4 PHP REST API serving the geometki geolocation/POI platform.
 **Spark commands:** `trending:refresh`, `interests:refresh`, `migrate:fix-cover-sizes`.
 
 **How to apply:** When suggesting changes, consider the CI4 model/entity/controller pattern, the custom ID generation, dual-language content architecture, and the library/model boundaries established above.
+
+**Error handling convention (Stage 1, 2026-03-24):**
+- All user-visible strings must go through `lang('File.key')` — no hardcoded English in controllers
+- Key naming: `ControllerName.camelCaseKey`
+- All I/O and external-service calls wrapped in `try/catch (Throwable $e)` with `log_message('error', '{exception}', ['exception' => $e])` returning `$this->failServerError(lang('...'))`
+- Language files in `app/Language/en/` and `app/Language/ru/` — always keep in sync
+- Reference impl: `Photos.php` + `Language/{en,ru}/Photos.php`
+- New language files created: Comments, Rating, Bookmarks, Visited (en + ru each)
+- Extended: Photos, Places, Users, Auth (en + ru each)

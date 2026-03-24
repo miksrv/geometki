@@ -19,6 +19,7 @@ use CodeIgniter\Validation\Exceptions\ValidationException;
 use Config\Services;
 use Exception;
 use ReflectionException;
+use Throwable;
 
 class Auth extends ResourceController
 {
@@ -64,12 +65,16 @@ class Auth extends ResourceController
         $user->auth_type = AUTH_TYPE_NATIVE;
         $user->level     = 1;
 
-        $userModel->save($user);
+        try {
+            $userModel->save($user);
 
+            unset($user->password);
 
-        unset($user->password);
-
-        $this->session->authorization($user);
+            $this->session->authorization($user);
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+            return $this->failServerError(lang('Auth.registrationError'));
+        }
 
         return $this->responseAuth();
     }
@@ -102,10 +107,14 @@ class Auth extends ResourceController
             ]);
         }
 
-        return $this->_serviceAuth(
-            AUTH_TYPE_GOOGLE,
-            $serviceClient->authUser($code)
-        );
+        try {
+            $serviceProfile = $serviceClient->authUser($code);
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+            return $this->failServerError(lang('Auth.serviceAuthError'));
+        }
+
+        return $this->_serviceAuth(AUTH_TYPE_GOOGLE, $serviceProfile);
     }
 
 
@@ -138,10 +147,14 @@ class Auth extends ResourceController
             ]);
         }
 
-        return $this->_serviceAuth(
-            AUTH_TYPE_VK,
-            $serviceClient->authUser($code, $state, $device)
-        );
+        try {
+            $serviceProfile = $serviceClient->authUser($code, $state, $device);
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+            return $this->failServerError(lang('Auth.serviceAuthError'));
+        }
+
+        return $this->_serviceAuth(AUTH_TYPE_VK, $serviceProfile);
     }
 
 
@@ -173,10 +186,14 @@ class Auth extends ResourceController
             ]);
         }
 
-        return $this->_serviceAuth(
-            AUTH_TYPE_YANDEX,
-            $serviceClient->authUser($code)
-        );
+        try {
+            $serviceProfile = $serviceClient->authUser($code);
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+            return $this->failServerError(lang('Auth.serviceAuthError'));
+        }
+
+        return $this->_serviceAuth(AUTH_TYPE_YANDEX, $serviceProfile);
     }
 
 
@@ -211,7 +228,12 @@ class Auth extends ResourceController
         $userModel = new UsersModel();
         $userData  = $userModel->findUserByEmailAddress($input['email']);
 
-        $this->session->authorization($userData);
+        try {
+            $this->session->authorization($userData);
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+            return $this->failServerError(lang('Auth.registrationError'));
+        }
 
         return $this->responseAuth();
     }

@@ -8,6 +8,7 @@ use App\Models\UsersVisitedPlacesModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use ReflectionException;
+use Throwable;
 
 class Visited extends ResourceController
 {
@@ -47,7 +48,7 @@ class Visited extends ResourceController
         }
 
         if (empty($input) || !$input->place) {
-            return $this->failValidationErrors('Point of Interest ID missing');
+            return $this->failValidationErrors(lang('Visited.missingPlaceId'));
         }
 
         try {
@@ -64,16 +65,16 @@ class Visited extends ResourceController
             }
 
             if (!$placesData) {
-                return $this->failNotFound();
+                return $this->failNotFound(lang('Visited.placeNotFound'));
             }
 
             $visitedModel->insert($insertData);
 
             return $this->respondCreated();
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             log_message('error', '{exception}', ['exception' => $e]);
 
-            return $this->failNotFound();
+            return $this->failServerError(lang('Visited.setError'));
         }
     }
 }

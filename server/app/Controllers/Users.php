@@ -12,6 +12,7 @@ use CodeIgniter\RESTful\ResourceController;
 use Config\Services;
 use Exception;
 use ReflectionException;
+use Throwable;
 
 class Users extends ResourceController
 {
@@ -191,37 +192,42 @@ class Users extends ResourceController
         }
 
         if (!$photo->hasMoved()) {
-            if (!is_dir(UPLOAD_TEMPORARY)) {
-                mkdir(UPLOAD_TEMPORARY, 0777, true);
-            }
+            try {
+                if (!is_dir(UPLOAD_TEMPORARY)) {
+                    mkdir(UPLOAD_TEMPORARY, 0777, true);
+                }
 
-            $filename = $this->session->user->id . '.' . $photo->getExtension();
-            $photo->move(UPLOAD_TEMPORARY, $filename, true);
-
-            list($width, $height) = getimagesize(UPLOAD_TEMPORARY . $filename);
-
-            // Calculating Aspect Ratio
-            $orientation = $width > $height ? 'h' : 'v';
-            $width  = $orientation === 'h' ? $width : $height;
-            $height = $orientation === 'h' ? $height : $width;
-
-            // If the uploaded image dimensions exceed the maximum
-            if ($width > AVATAR_MAX_WIDTH || $height > AVATAR_MAX_HEIGHT) {
-                $image = Services::image('gd');
-                $image->withFile(UPLOAD_TEMPORARY . $filename)
-                    ->fit(AVATAR_MAX_WIDTH, AVATAR_MAX_HEIGHT)
-                    ->reorient(true)
-                    ->save(UPLOAD_TEMPORARY . $filename);
+                $filename = $this->session->user->id . '.' . $photo->getExtension();
+                $photo->move(UPLOAD_TEMPORARY, $filename, true);
 
                 list($width, $height) = getimagesize(UPLOAD_TEMPORARY . $filename);
-            }
 
-            return $this->respondCreated([
-                'filename' => $filename,
-                'filepath' => PATH_TEMPORARY . $filename,
-                'width'    => $width,
-                'height'   => $height
-            ]);
+                // Calculating Aspect Ratio
+                $orientation = $width > $height ? 'h' : 'v';
+                $width  = $orientation === 'h' ? $width : $height;
+                $height = $orientation === 'h' ? $height : $width;
+
+                // If the uploaded image dimensions exceed the maximum
+                if ($width > AVATAR_MAX_WIDTH || $height > AVATAR_MAX_HEIGHT) {
+                    $image = Services::image('gd');
+                    $image->withFile(UPLOAD_TEMPORARY . $filename)
+                        ->fit(AVATAR_MAX_WIDTH, AVATAR_MAX_HEIGHT)
+                        ->reorient(true)
+                        ->save(UPLOAD_TEMPORARY . $filename);
+
+                    list($width, $height) = getimagesize(UPLOAD_TEMPORARY . $filename);
+                }
+
+                return $this->respondCreated([
+                    'filename' => $filename,
+                    'filepath' => PATH_TEMPORARY . $filename,
+                    'width'    => $width,
+                    'height'   => $height
+                ]);
+            } catch (Throwable $e) {
+                log_message('error', '{exception}', ['exception' => $e]);
+                return $this->failServerError(lang('Users.avatarProcessingError'));
+            }
         }
 
         return $this->failValidationErrors($photo->getErrorString());
@@ -267,28 +273,33 @@ class Users extends ResourceController
             $avatarLibrary->deleteOld($user->id, $user->avatar);
         }
 
-        if (!is_dir($userAvatarDir)) {
-            mkdir($userAvatarDir, 0777, true);
+        try {
+            if (!is_dir($userAvatarDir)) {
+                mkdir($userAvatarDir, 0777, true);
+            }
+
+            $file = new File(UPLOAD_TEMPORARY . $input->filename);
+            $rand = $file->getRandomName();
+            $file->move(UPLOAD_AVATARS . $user->id, $rand, true);
+
+            $name  = explode('.', $rand);
+            $image = Services::image('gd'); // imagick
+            $image->withFile($userAvatarDir . $rand)
+                ->crop($input->width, $input->height, $input->x, $input->y)
+                ->resize(AVATAR_SMALL_WIDTH, AVATAR_SMALL_HEIGHT)
+                ->save($userAvatarDir . $name[0] . '_small.' . $name[1]);
+
+            $image->withFile($userAvatarDir . $rand)
+                ->crop($input->width, $input->height, $input->x, $input->y)
+                ->resize(AVATAR_MEDIUM_WIDTH, AVATAR_MEDIUM_HEIGHT)
+                ->save($userAvatarDir . $name[0] . '_medium.' . $name[1]);
+
+            $usersModel->update($user->id, ['avatar' => $rand]);
+
+            return $this->respondUpdated(['filepath' => PATH_AVATARS . $user->id . '/' . $name[0] . '_medium.' . $name[1]]);
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+            return $this->failServerError(lang('Users.avatarProcessingError'));
         }
-
-        $file = new File(UPLOAD_TEMPORARY . $input->filename);
-        $rand = $file->getRandomName();
-        $file->move(UPLOAD_AVATARS . $user->id, $rand, true);
-
-        $name  = explode('.', $rand);
-        $image = Services::image('gd'); // imagick
-        $image->withFile($userAvatarDir . $rand)
-            ->crop($input->width, $input->height, $input->x, $input->y)
-            ->resize(AVATAR_SMALL_WIDTH, AVATAR_SMALL_HEIGHT)
-            ->save($userAvatarDir . $name[0] . '_small.' . $name[1]);
-
-        $image->withFile($userAvatarDir . $rand)
-            ->crop($input->width, $input->height, $input->x, $input->y)
-            ->resize(AVATAR_MEDIUM_WIDTH, AVATAR_MEDIUM_HEIGHT)
-            ->save($userAvatarDir . $name[0] . '_medium.' . $name[1]);
-
-        $usersModel->update($user->id, ['avatar' => $rand]);
-
-        return $this->respondUpdated(['filepath' => PATH_AVATARS . $user->id . '/' . $name[0] . '_medium.' . $name[1]]);
     }
 }
