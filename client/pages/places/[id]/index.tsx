@@ -299,9 +299,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
-            const { data: placeData, isError } = await store.dispatch(
-                API.endpoints.placesGetItem.initiate({ id })
-            )
+            const { data: placeData, isError } = await store.dispatch(API.endpoints.placesGetItem.initiate({ id }))
 
             if (isError) {
                 return { notFound: true }

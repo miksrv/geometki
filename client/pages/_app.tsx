@@ -25,20 +25,23 @@ import '@/styles/globals.sass'
 
 const locale = LocalStorage.getItem(LOCAL_STORAGE.LOCALE as 'LOCALE')
 
+dayjs.extend(utc)
+dayjs.extend(relativeTime)
+
 const App = ({ Component, pageProps }: AppProps) => {
     const router = useRouter()
     const { i18n } = useTranslation()
     const { store } = wrapper.useWrappedStore(pageProps)
 
     useEffect(() => {
+        dayjs.locale(i18n.language ?? i18Config.i18n.defaultLocale)
+    }, [i18n.language])
+
+    useEffect(() => {
         if (i18n.language !== locale && i18Config.i18n.locales.includes(locale) && router.pathname !== '/404') {
             void router.replace(router.asPath, router.asPath, { locale })
         }
     }, [])
-
-    dayjs.extend(utc)
-    dayjs.extend(relativeTime)
-    dayjs.locale(i18n.language ?? i18Config.i18n.defaultLocale)
 
     // useReportWebVitals((metric) => {
     //     console.log(metric)
