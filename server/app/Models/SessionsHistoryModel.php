@@ -6,7 +6,7 @@ class SessionsHistoryModel extends ApplicationBaseModel {
     protected $table            = 'sessions_history';
     protected $primaryKey       = 'id';
     protected $returnType       = 'array';
-    protected $useAutoIncrement = true;
+    protected $useAutoIncrement = false;
     protected $useSoftDeletes   = false;
 
     protected $allowedFields = [

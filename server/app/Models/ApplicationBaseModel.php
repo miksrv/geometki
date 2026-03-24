@@ -60,7 +60,7 @@ class ApplicationBaseModel extends Model {
      */
     protected function generateId(array $data): array
     {
-        $data['data']['id'] = uniqid();
+        $data['data']['id'] = substr(bin2hex(random_bytes(7)), 0, 13);
 
         return $data;
     }
