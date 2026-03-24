@@ -45,11 +45,13 @@ class Location extends ResourceController
     public function search(): ResponseInterface
     {
         $result = [];
-        $text   = $this->request->getGet('text', FILTER_SANITIZE_STRING);
+        $text   = $this->request->getGet('text');
 
-        if (!$text) {
+        if (!$text || !is_string($text)) {
             return $this->failValidationErrors('Please enter search string');
         }
+
+        $text = trim($text);
 
         $countriesData = $this->_searchResult(new LocationCountriesModel(), $text);
         $regionsData   = $this->_searchResult(new LocationRegionsModel(), $text);
@@ -69,12 +71,13 @@ class Location extends ResourceController
      */
     public function geoSearch(): ResponseInterface
     {
-        $text = $this->request->getGet('text', FILTER_SANITIZE_STRING);
+        $text = $this->request->getGet('text');
 
-        if (!$text) {
+        if (!$text || !is_string($text)) {
             return $this->failValidationErrors('Please enter search string');
         }
 
+        $text = trim($text);
         $geocoder = new Geocoder();
 
         return $this->respond(['items' => $geocoder->search($text)]);
