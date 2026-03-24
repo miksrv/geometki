@@ -184,6 +184,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                             {!hideActions && isAuth && (
                                 <Popout
                                     className={styles.actions}
+                                    closeOnChildrenClick={true}
                                     trigger={
                                         <Button
                                             className={styles.actionButton}

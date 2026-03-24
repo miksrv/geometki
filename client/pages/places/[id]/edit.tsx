@@ -114,7 +114,7 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<PlaceEditPageProps>> => {
-            const id = context.params?.slug?.[0]
+            const id = context.params?.id
             const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const translations = await serverSideTranslations(locale)

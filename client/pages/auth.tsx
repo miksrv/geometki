@@ -14,6 +14,7 @@ import { login } from '@/app/authSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { LOCAL_STORAGE } from '@/config/constants'
 import useLocalStorage from '@/hooks/useLocalStorage'
+import { getErrorMessage } from '@/utils/api'
 import * as LocalStorage from '@/utils/localstorage'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
@@ -86,7 +87,7 @@ const AuthPage: NextPage<object> = () => {
                                 type={'error'}
                                 title={t('notification_error')}
                             >
-                                {error as string}
+                                {getErrorMessage(error)}
                             </Message>
                         )}
                         {(isLoading || isSuccess) && (

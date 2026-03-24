@@ -127,6 +127,7 @@ export const PlaceHeader: React.FC<PlaceHeaderProps> = ({
 
                     <Popout
                         className={styles.contextMenu}
+                        closeOnChildrenClick={true}
                         trigger={
                             <Button
                                 icon={'VerticalDots'}
@@ -147,26 +148,24 @@ export const PlaceHeader: React.FC<PlaceHeaderProps> = ({
                                 </Link>
                             </li>
                             <li>
-                                <Link
-                                    href={'#'}
+                                <Button
                                     title={t('upload-photo')}
                                     onClick={onPhotoUploadClick}
                                 >
                                     {/* eslint-disable-next-line react/jsx-max-depth */}
                                     <Icon name={'Camera'} />
                                     {t('upload-photo')}
-                                </Link>
+                                </Button>
                             </li>
                             <li>
-                                <Link
-                                    href={'#'}
+                                <Button
                                     title={t('change-cover')}
                                     onClick={onChangePlaceCoverClick}
                                 >
                                     {/* eslint-disable-next-line react/jsx-max-depth */}
                                     <Icon name={'Photo'} />
                                     {t('change-cover')}
-                                </Link>
+                                </Button>
                             </li>
                             <li>
                                 <Link

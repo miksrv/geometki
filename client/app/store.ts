@@ -9,6 +9,7 @@ import { sanitizeForSerialization } from '@/utils/sanitizeState'
 
 import applicationSlice from './applicationSlice'
 import authSlice from './authSlice'
+import { errorMiddleware } from './errorMiddleware'
 import notificationSlice from './notificationSlice'
 
 // 1. Combine all reducers
@@ -98,7 +99,8 @@ export const makeStore = () =>
     configureStore({
         reducer: rootReducer,
         devTools: process.env.NODE_ENV !== 'production',
-        middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(API.middleware, APIPastvu.middleware)
+        middleware: (getDefaultMiddleware) =>
+            getDefaultMiddleware().concat(API.middleware, APIPastvu.middleware, errorMiddleware)
     })
 
 export type AppStore = ReturnType<typeof makeStore>

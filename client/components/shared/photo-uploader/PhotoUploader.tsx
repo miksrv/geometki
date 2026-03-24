@@ -3,6 +3,7 @@ import React, { LegacyRef, RefObject, useEffect, useState } from 'react'
 import { API, ApiModel } from '@/api'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch } from '@/app/store'
+import { getErrorMessage } from '@/utils/api'
 
 interface PhotoUploaderProps {
     placeId?: string
@@ -46,7 +47,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                 Notify({
                     id: 'uploadPhotoError',
                     title: '',
-                    message: uploadErrorText as string,
+                    message: getErrorMessage(uploadErrorText),
                     type: 'error'
                 })
             )
