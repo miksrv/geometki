@@ -189,36 +189,28 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                                     trigger={
                                         <Button
                                             className={styles.actionButton}
-                                            mode={'outline'}
+                                            mode={'secondary'}
                                             size={'small'}
                                             icon={'VerticalDots'}
                                         />
                                     }
                                 >
-                                    <ul className={styles.actionMenu}>
-                                        <li>
-                                            <Button
-                                                stretched={true}
-                                                icon={'Rotate'}
-                                                mode={'outline'}
-                                                label={t('to-turn', { defaultValue: 'Повернуть' })}
-                                                disabled={!!photoLoadingID}
-                                                onClick={() =>
-                                                    handleRotateClick(photo.id, photo?.placeId === 'temporary')
-                                                }
-                                            />
-                                        </li>
-                                        <li>
-                                            <Button
-                                                stretched={true}
-                                                icon={'Close'}
-                                                mode={'outline'}
-                                                label={t('delete', { defaultValue: 'Удалить' })}
-                                                disabled={!!photoLoadingID}
-                                                onClick={() => handleRemoveClick(photo.id)}
-                                            />
-                                        </li>
-                                    </ul>
+                                    <Button
+                                        icon={'Rotate'}
+                                        mode={'outline'}
+                                        style={{ width: '100%', justifyContent: 'left' }}
+                                        label={t('to-turn', { defaultValue: 'Повернуть' })}
+                                        disabled={!!photoLoadingID}
+                                        onClick={() => handleRotateClick(photo.id, photo?.placeId === 'temporary')}
+                                    />
+                                    <Button
+                                        icon={'Close'}
+                                        mode={'outline'}
+                                        style={{ width: '100%', justifyContent: 'left' }}
+                                        label={t('delete', { defaultValue: 'Удалить' })}
+                                        disabled={!!photoLoadingID}
+                                        onClick={() => handleRemoveClick(photo.id)}
+                                    />
                                 </Popout>
                             )}
                         </li>
