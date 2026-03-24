@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-use App\Libraries\LocaleLibrary;
+use App\Libraries\AvatarLibrary;
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
 use App\Models\PlacesModel;
@@ -19,8 +19,6 @@ class Rating extends ResourceController
 
     public function __construct()
     {
-        new LocaleLibrary();
-
         $this->session = new SessionLibrary();
     }
 
@@ -60,15 +58,13 @@ class Rating extends ResourceController
             ->orderBy('rating.created_at', 'DESC')
             ->findAll();
 
+        $avatarLibrary = new AvatarLibrary();
         foreach ($data as $item) {
             if (!empty($item->user_id)) {
-                $userAvatar   = $item->avatar ? explode('.', $item->avatar) : null;
                 $item->author = [
                     'id'     => $item->user_id,
                     'name'   => $item->name,
-                    'avatar' => $userAvatar
-                        ? PATH_AVATARS . $item->user_id . '/' . $userAvatar[0] . '_small.' . $userAvatar[1]
-                        : null,
+                    'avatar' => $avatarLibrary->buildPath($item->user_id, $item->avatar, 'small'),
                 ];
             }
 

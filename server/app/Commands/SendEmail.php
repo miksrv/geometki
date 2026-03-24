@@ -1,83 +1,33 @@
 <?php
 
-namespace App\Controllers;
+/**
+ * Run from CLI:
+ *   php spark system:send-email
+ *
+ * Add to cron:
+ *   * * * * * cd /path/to/server && php spark system:send-email >> /dev/null 2>&1
+ */
+
+namespace App\Commands;
 
 use App\Libraries\EmailLibrary;
 use App\Libraries\PlacesContent;
 use App\Models\PlacesModel;
-use App\Models\PlacesTagsModel;
 use App\Models\SendingMail;
-use App\Models\TagsModel;
-use App\Models\UsersModel;
-use CodeIgniter\I18n\Time;
-use CodeIgniter\RESTful\ResourceController;
-use ReflectionException;
+use CodeIgniter\CLI\BaseCommand;
+use CodeIgniter\CLI\CLI;
 use Exception;
 
-set_time_limit(0);
-
-const MONTH_EMAIL_LIMIT = 2000;
-const DAY_EMAIL_LIMIT = 500;
-
-class System extends ResourceController
+class SendEmail extends BaseCommand
 {
-    /**
-     * We recalculate and update the geotag tag usage counter
-     * @return void
-     * @throws ReflectionException
-     */
-    public function calculateTagsCount(): void
-    {
-        $tagsModel      = new TagsModel();
-        $placeTagsModel = new PlacesTagsModel();
-        $updatedRows    = 0;
+    protected $group       = 'system';
+    protected $name        = 'system:send-email';
+    protected $description = 'Process and send queued notification emails';
 
-        if ($tagsData = $tagsModel->select('id, count')->findAll()) {
-            foreach ($tagsData as $tag) {
-                $count = $placeTagsModel->where('tag_id', $tag->id)->countAllResults();
+    private const MONTH_EMAIL_LIMIT = 2000;
+    private const DAY_EMAIL_LIMIT   = 500;
 
-                if ($tag->count !== $count) {
-                    $tagsModel->update($tag->id, ['count' => $count]);
-                    $updatedRows++;
-                }
-            }
-        }
-
-        echo $updatedRows;
-    }
-
-    /**
-     * We update the activity time of some users to simulate that they are active on the site
-     * @return void
-     * @throws ReflectionException
-     */
-    public function generateUsersOnline(): void
-    {
-        $usersModel = new UsersModel();
-        $usersData  = $usersModel->select('id, updated_at')->like('email', '%@geometki.com')->findAll();
-
-        if (!$usersData) {
-            return ;
-        }
-
-        $numItems   = ceil(count($usersData) * 0.3);
-        $randomKeys = array_rand($usersData, $numItems);
-
-        foreach ($randomKeys as $key) {
-            $randomSeconds = rand(0, 5 * 60);
-            $currentTime   = new Time("now -{$randomSeconds} seconds");
-
-            $usersModel->update($usersData[$key]->id, [
-                'updated_at'  => $usersData[$key]->updated_at,
-                'activity_at' => $currentTime,
-            ]);
-        }
-    }
-
-    /**
-     * @throws ReflectionException
-     */
-    public function sendEmail(): void
+    public function run(array $params)
     {
         $sendingEmailModel = new SendingMail();
         $sendingEmailData  = $sendingEmailModel
@@ -98,8 +48,8 @@ class System extends ResourceController
          * If you have exceeded the hoster's limits for sending emails, then we will not send anything.
          */
         if (empty($sendingEmailData)
-            || $monthEmailCount >= MONTH_EMAIL_LIMIT
-            || count($sendingEmailData) >= DAY_EMAIL_LIMIT)
+            || $monthEmailCount >= self::MONTH_EMAIL_LIMIT
+            || count($sendingEmailData) >= self::DAY_EMAIL_LIMIT)
         {
             return;
         }
@@ -184,5 +134,7 @@ class System extends ResourceController
                 $sendingEmailModel->update($item->id, ['status' => 'error']);
             }
         }
+
+        CLI::write('Email processing complete.');
     }
 }

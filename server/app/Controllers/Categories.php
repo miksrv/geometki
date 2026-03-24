@@ -2,7 +2,6 @@
 
 namespace App\Controllers;
 
-use App\Libraries\LocaleLibrary;
 use App\Models\CategoryModel;
 use App\Models\PlacesModel;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -18,8 +17,6 @@ class Categories extends ResourceController
 
     public function __construct()
     {
-        new LocaleLibrary();
-
         $this->model = new CategoryModel();
     }
 

@@ -12,6 +12,7 @@ import { AppLayout, Header } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { CategoriesList } from '@/sections/categories'
 import { buildHreflangTags } from '@/utils/seo'
+import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 interface CategoriesPageProps {
     categories: ApiModel.Category[]
@@ -62,9 +63,11 @@ const CategoriesPage: NextPage<CategoriesPageProps> = ({ categories }) => {
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<CategoriesPageProps>> => {
+            const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const translations = await serverSideTranslations(locale)
 
+            hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
             const { data: categoriesList } = await store.dispatch(

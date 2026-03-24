@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Libraries\AvatarLibrary;
 use App\Libraries\PlacesContent;
 use App\Models\CategoryModel;
 use App\Models\ActivityModel;
@@ -27,7 +28,6 @@ class Activity extends ResourceController
      * List user activities
      * We group similar activities together
      * @return ResponseInterface
-     * @throws ReflectionException
      */
     public function list(): ResponseInterface
     {
@@ -66,10 +66,7 @@ class Activity extends ResourceController
 
         // Increasing the view counter
         if (!empty($activityIds)) {
-            $this->model
-                ->set('views', 'views + 1', false)
-                ->whereIn('id', $activityIds)
-                ->update();
+            $this->model->incrementViews($activityIds);
         }
 
         return $this->respond(['items' => $groupedData]);
@@ -206,15 +203,11 @@ class Activity extends ResourceController
             }
 
             if ($item->user_id) {
-                $avatar = $item->user_avatar ? explode('.', $item->user_avatar) : null;
-                $item->user_avatar = $avatar
-                    ? PATH_AVATARS . $item->user_id . '/' . $avatar[0] . '_small.' . $avatar[1]
-                    : null;
-
+                $avatarLibrary = new AvatarLibrary();
                 $currentGroup->author = (object) [
                     'id'     => $item->user_id,
                     'name'   => $item->user_name,
-                    'avatar' => $item->user_avatar
+                    'avatar' => $avatarLibrary->buildPath($item->user_id, $item->user_avatar, 'small'),
                 ];
             }
 

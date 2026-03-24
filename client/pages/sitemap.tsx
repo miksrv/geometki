@@ -5,6 +5,7 @@ import { GetServerSidePropsResult, NextPage } from 'next'
 import { API } from '@/api'
 import { wrapper } from '@/app/store'
 import { SITE_LINK } from '@/config/env'
+import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 type SitemapDynamicPage = {
     link: string
@@ -16,6 +17,9 @@ const SiteMap: NextPage<object> = () => <></>
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<object>> => {
+            const cookies = context.req.cookies
+            hydrateAuthFromCookies(store, cookies)
+
             const { data } = await store.dispatch(API.endpoints.sitemapGetList.initiate())
 
             const staticPages = ['map', 'places', 'users', 'users/levels', 'categories']

@@ -4,8 +4,9 @@ namespace App\Controllers;
 
 use App\Entities\PhotoEntity;
 use App\Entities\PlaceEntity;
+use App\Libraries\AvatarLibrary;
 use App\Libraries\Geocoder;
-use App\Libraries\LocaleLibrary;
+use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlaceTags;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
@@ -35,8 +36,6 @@ class Places extends ResourceController
 
     public function __construct()
     {
-        new LocaleLibrary();
-
         $this->model   = new PlacesModel();
         $this->session = new SessionLibrary();
     }
@@ -136,19 +135,7 @@ class Places extends ResourceController
             $this->coordinatesAvailable = true;
         }
 
-        $this->model
-            ->select('places.*, users.id as user_id, users.name as user_name, users.avatar as user_avatar,
-                location_countries.title_en as country_en, location_countries.title_ru as country_ru,
-                location_regions.title_en as region_en, location_regions.title_ru as region_ru,
-                location_districts.title_en as district_en, location_districts.title_ru as district_ru,
-                location_localities.title_en as city_en, location_localities.title_ru as city_ru,
-                category.title_en as category_en, category.title_ru as category_ru' . $coordinates)
-            ->join('users', 'places.user_id = users.id', 'left')
-            ->join('location_countries', 'location_countries.id = places.country_id', 'left')
-            ->join('location_regions', 'location_regions.id = places.region_id', 'left')
-            ->join('location_districts', 'location_districts.id = places.district_id', 'left')
-            ->join('location_localities', 'location_localities.id = places.locality_id', 'left')
-            ->join('category', 'places.category = category.name', 'left');
+        $this->model->applyListSelect($coordinates);
 
         // If search or any other filter is not used, then we always use an empty array
         $searchPlacesIds = !$search && !$bookmarksUser && !$tag
@@ -168,10 +155,9 @@ class Places extends ResourceController
         }
 
         // Mapping places to array list
+        $formatter = new PlaceFormatterLibrary();
         foreach ($placesList as $place) {
-            $avatar = $place->user_avatar ? explode('.', $place->user_avatar) : null;
-
-            $place->address   = (object) [];
+            $place->address   = $formatter->formatAddress($place, $locale);
             $place->rating    = (int) $place->rating;
             $place->views     = (int) $place->views;
             $place->photos    = (int) $place->photos;
@@ -179,67 +165,19 @@ class Places extends ResourceController
             $place->bookmarks = (int) $place->bookmarks;
             $place->title     = $placeContent->title($place->id);
             $place->content   = $placeContent->content($place->id);
-            $place->category  = [
-                'name'  => $place->category,
-                'title' => $place->{"category_$locale"},
-            ];
-
-            $place->author = [
-                'id'     => $place->user_id,
-                'name'   => $place->user_name,
-                'avatar' => $avatar
-                    ? PATH_AVATARS . $place->user_id . '/' . $avatar[0] . '_small.' . $avatar[1]
-                    : null
-            ];
-
-            if ($place->country_id) {
-                $place->address->country = [
-                    'id'   => (int) $place->country_id,
-                    'name' => $place->{"country_$locale"}
-                ];
-            }
-
-            if ($place->region_id) {
-                $place->address->region = [
-                    'id'   => (int) $place->region_id,
-                    'name' => $place->{"region_$locale"}
-                ];
-            }
-
-            if ($place->district_id) {
-                $place->address->district = [
-                    'id'   => (int) $place->district_id,
-                    'name' => $place->{"district_$locale"}
-                ];
-            }
-
-            if ($place->locality_id) {
-                $place->address->locality = [
-                    'id'   => (int) $place->locality_id,
-                    'name' => $place->{"city_$locale"}
-                ];
-            }
+            $place->category  = $formatter->formatCategory($place, $locale);
+            $place->author    = $formatter->formatAuthor($place);
 
             if ($coordinates && $place->distance) {
-                $place->distance = round((float) $place->distance, 1);
+                $place->distance = $formatter->formatDistance($place->distance);
             }
 
-            if ($place->photos && file_exists(UPLOAD_PHOTOS . $place->id . '/cover.jpg')) {
-                $place->cover = [
-                    'full'    => PATH_PHOTOS . $place->id . '/cover.jpg',
-                    'preview' => PATH_PHOTOS . $place->id . '/cover_preview.jpg',
-                ];
+            $cover = $formatter->formatCover($place->id, (int) $place->photos);
+            if ($cover) {
+                $place->cover = $cover;
             }
 
-            unset(
-                $place->address_en, $place->address_ru, $place->category_en, $place->category_ru,
-                $place->user_id, $place->user_name, $place->user_avatar,
-                $place->country_id, $place->country_en, $place->country_ru,
-                $place->region_id, $place->region_en, $place->region_ru,
-                $place->district_id, $place->district_en, $place->district_ru,
-                $place->locality_id, $place->city_en, $place->city_ru,
-                $place->created_at, $place->updated_at, $place->deleted_at,
-            );
+            $formatter->cleanupFields($place);
         }
 
         return $this->respond([
@@ -282,49 +220,27 @@ class Places extends ResourceController
         $placesTagsModel = new PlacesTagsModel();
         $placeData->tags = $placesTagsModel->getAllByPlaceId($id);
 
-        $avatar = $placeData->user_avatar ? explode('.', $placeData->user_avatar) : null;
+        $formatter = new PlaceFormatterLibrary();
+        $avatarLibrary = new AvatarLibrary();
         $placeData->editors = $this->_editors($id, $placeData->user_id);
         $placeData->author  = [
             'id'       => $placeData->user_id,
             'name'     => $placeData->user_name,
             'activity' => $placeData->activity_at ? new \DateTime($placeData->activity_at) : null,
-            'avatar'   => $avatar
-                ? PATH_AVATARS . $placeData->user_id . '/' . $avatar[0] . '_small.' . $avatar[1]
-                : null
+            'avatar'   => $avatarLibrary->buildPath($placeData->user_id, $placeData->user_avatar, 'small'),
         ];
 
-        $placeData->category = [
-            'name'  => $placeData->category,
-            'title' => $placeData->{"category_$locale"},
-        ];
+        $placeData->category = $formatter->formatCategory($placeData, $locale);
 
-        if ($placeData->photos && file_exists(UPLOAD_PHOTOS . $id . '/cover.jpg')) {
-            $placeData->cover = [
-                'full'    => PATH_PHOTOS . $id . '/cover.jpg',
-                'preview' => PATH_PHOTOS . $id . '/cover_preview.jpg',
-            ];
+        $cover = $formatter->formatCover($id, (int) $placeData->photos);
+        if ($cover) {
+            $placeData->cover = $cover;
         }
 
-        $placeData->address = (object) [];
+        $placeData->address = $formatter->formatAddress($placeData, $locale);
 
         if ($coordinates && $placeData->distance) {
-            $placeData->distance = round((float) $placeData->distance, 1);
-        }
-
-        $locations = [
-            'country'   => ['country_id', 'country'],
-            'region'    => ['region_id', 'region'],
-            'district'  => ['district_id', 'district'],
-            'locality'  => ['locality_id', 'city']
-        ];
-
-        foreach ($locations as $field => $ids) {
-            if ($placeData->{$ids[0]}) {
-                $placeData->address->{$field} = [
-                    'id'   => $placeData->{$ids[0]},
-                    'name' => $placeData->{$ids[1] . "_$locale"}
-                ];
-            }
+            $placeData->distance = $formatter->formatDistance($placeData->distance);
         }
 
         if ($placeData->{"address_$locale"}) {
@@ -356,12 +272,11 @@ class Places extends ResourceController
             $placeData->category_en, $placeData->category_ru,
         );
 
-        // Incrementing view counter
-        $this->model
-            ->set('views', 'views + 1', false)
-            ->set('updated_at', $placeData->updated)
-            ->where('id', $placeData->id)
-            ->update();
+        // Incrementing view counter + daily log (atomic) + optional per-user tracking
+        $userId = ($this->session->isAuth && $this->session->user) ? $this->session->user->id : null;
+        $this->model->recordView($id, $userId, $placeData->updated);
+
+        $placeData->session = $this->session;
 
         return $this->respond($placeData);
     }
@@ -394,10 +309,11 @@ class Places extends ResourceController
         $placeTitle   = isset($input->title) ? strip_tags(html_entity_decode($input->title)) : null;
         $placeContent = isset($input->content) ? strip_tags(html_entity_decode($input->content)) : null;
 
-        $existingPlace = $this->model
-            ->select('id')
-            ->where(['user_id' => $this->session->user?->id, 'lat' => $input->lat, 'lon' => $input->lon])
-            ->first();
+        $existingPlace = $this->model->findDuplicate(
+            $this->session->user?->id,
+            $input->lat,
+            $input->lon
+        );
 
         if ($existingPlace) {
             return $this->respondCreated(['id' => $existingPlace->id]);
@@ -736,7 +652,7 @@ class Places extends ResourceController
     protected function _makeListFilters(PlacesModel $placesModel, array $placeIds = []): PlacesModel
     {
         $orderDefault  = 'DESC';
-        $sortingFields = ['views', 'rating', 'comments', 'bookmarks', 'category', 'distance', 'created_at', 'updated_at'];
+        $sortingFields = ['views', 'views_week', 'trending', 'recommended', 'rating', 'comments', 'bookmarks', 'category', 'distance', 'created_at', 'updated_at'];
         $orderFields   = ['ASC', 'DESC'];
 
         $sort     = $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -789,9 +705,24 @@ class Places extends ResourceController
         }
 
         if (in_array($sort, $sortingFields)) {
-            $sort = $sort === 'updated_at' ? 'places.updated_at' : $sort;
-            $sort = $sort === 'created_at' ? 'places.created_at' : $sort;
-            $placesModel->orderBy($sort, in_array($order, $orderFields) ? $order : $orderDefault);
+            $order = in_array($order, $orderFields) ? $order : $orderDefault;
+
+            if ($sort === 'views_week') {
+                $placesModel->applyWeeklyViewsSort($order);
+            } elseif ($sort === 'trending') {
+                $placesModel->orderBy('places.trending_score', $order);
+            } elseif ($sort === 'recommended') {
+                if ($this->session->isAuth && $this->session->user) {
+                    $placesModel->applyRecommendationSort((string) $this->session->user->id);
+                } else {
+                    // Unauthenticated fallback: use trending score
+                    $placesModel->orderBy('places.trending_score', 'DESC');
+                }
+            } else {
+                $sort = $sort === 'updated_at' ? 'places.updated_at' : $sort;
+                $sort = $sort === 'created_at' ? 'places.created_at' : $sort;
+                $placesModel->orderBy($sort, $order);
+            }
         }
 
         return $placesModel->limit(min($limit, 40), $offset);
@@ -811,11 +742,9 @@ class Places extends ResourceController
             return [];
         }
 
+        $avatarLibrary = new AvatarLibrary();
         foreach ($data as $user) {
-            $avatarPath   = $user->avatar ? explode('.', $user->avatar) : null;
-            $user->avatar = $avatarPath
-                ? PATH_AVATARS . $user->id . '/' . $avatarPath[0] . '_small.' . $avatarPath[1]
-                : null;
+            $user->avatar = $avatarLibrary->buildPath($user->id, $user->avatar, 'small');
         }
 
         return $data;

@@ -12,6 +12,7 @@ import { AppLayout, Header } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { SortMode, TagsAlphabetBar, TagsControls, TagsGrid, TagsStats, TagsTrending } from '@/sections/tags'
 import { buildHreflangTags } from '@/utils/seo'
+import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 interface TagsPageProps {
     tags: ApiModel.Tag[]
@@ -91,9 +92,11 @@ const TagsPage: NextPage<TagsPageProps> = ({ tags }) => {
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<TagsPageProps>> => {
+            const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const translations = await serverSideTranslations(locale)
 
+            hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
             const { data: tagsList } = await store.dispatch(API.endpoints.tagsGetList.initiate())

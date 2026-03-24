@@ -62,7 +62,10 @@ export const SortFields = {
     Distance: 'distance',
     Rating: 'rating',
     Updated: 'updated_at',
-    Views: 'views'
+    Views: 'views',
+    ViewsWeek: 'views_week',
+    Trending: 'trending',
+    Recommended: 'recommended'
 } as const
 
 export type SortFieldsType = (typeof SortFields)[keyof typeof SortFields]

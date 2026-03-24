@@ -32,12 +32,12 @@ class SessionLibrary {
         $this->ip   = $this->request->getIPAddress();
         $this->user = validateAuthToken($token);
 
-        if (
-            $this->request->getUserAgent()->getAgentString() === 'node' &&
-            $this->ip === $this->request->getServer('REMOTE_ADDR')
-        ) {
-            return ;
-        }
+//        if (
+//            $this->request->getUserAgent()->getAgentString() === 'node' &&
+//            $this->ip === $this->request->getServer('REMOTE_ADDR')
+//        ) {
+//            return ;
+//        }
 
         if ($this->user) {
             $this->isAuth = true;
@@ -62,6 +62,12 @@ class SessionLibrary {
             $this->lat = $sessionData->lat ?? null;
             $this->lon = $sessionData->lon ?? null;
         }
+
+        // Debug logging
+//        log_message('debug', 'SessionLibrary: Request = ' . $this->request->getMethod() . ' ' . $this->request->getUri()->getPath());
+//        log_message('debug', 'SessionLibrary: Authorization header = ' . ($token ?? 'null'));
+//        log_message('debug', 'SessionLibrary: Session header = ' . ($session ?? 'null'));
+//        log_message('debug', 'SessionLibrary: User = ' . ($this->user ? json_encode(['id' => $this->user->id, 'name' => $this->user->name ?? null]) : 'null'));
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Entities\CommentEntity;
 use App\Libraries\ActivityLibrary;
+use App\Libraries\AvatarLibrary;
 use App\Libraries\SessionLibrary;
 use App\Models\CommentsModel;
 use App\Models\PlacesModel;
@@ -43,18 +44,15 @@ class Comments extends ResourceController
             return $this->respond(['items' => [], 'count' => 0]);
         }
 
+        $avatarLibrary = new AvatarLibrary();
         foreach ($data as $comment) {
-            $avatar = $comment->user_avatar ? explode('.', $comment->user_avatar) : null;
-
             $comment->placeId  = $comment->place_id;
             $comment->answerId = $comment->answer_id;
-            $comment->created = $comment->created_at;
-            $comment->author  = [
+            $comment->created  = $comment->created_at;
+            $comment->author   = [
                 'id'     => $comment->user_id,
                 'name'   => $comment->user_name,
-                'avatar' => $avatar
-                    ? PATH_AVATARS . $comment->user_id . '/' . $avatar[0] . '_small.' . $avatar[1]
-                    : null
+                'avatar' => $avatarLibrary->buildPath($comment->user_id, $comment->user_avatar, 'small'),
             ];
 
             unset(

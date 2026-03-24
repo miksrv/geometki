@@ -16,6 +16,7 @@ import { AppLayout, MapObjectsTypeEnum, PhotoLightbox } from '@/components/share
 import { SITE_LINK } from '@/config/env'
 import { round } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
+import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), {
     ssr: false
@@ -216,9 +217,11 @@ const MapPage: NextPage<object> = () => {
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<object>> => {
+            const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const translations = await serverSideTranslations(locale)
 
+            hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))

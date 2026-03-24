@@ -4,13 +4,8 @@ import authReducer, { login, logout, saveSession } from './authSlice'
 
 jest.mock('cookies-next', () => ({
     deleteCookie: jest.fn(),
+    getCookie: jest.fn(() => ''),
     setCookie: jest.fn()
-}))
-
-jest.mock('@/utils/localstorage', () => ({
-    getItem: jest.fn(() => ''),
-    removeItem: jest.fn(),
-    setItem: jest.fn()
 }))
 
 const mockUser: ApiModel.User = { id: '1', name: 'Alice' }

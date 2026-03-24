@@ -11,11 +11,11 @@ import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, Header } from '@/components/shared'
-import { LOCAL_STORAGE } from '@/config/constants'
 import { SITE_LINK } from '@/config/env'
 import { PlaceForm } from '@/sections/place'
 import { isApiValidationErrors } from '@/utils/api'
 import { equalsArrays } from '@/utils/helpers'
+import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 interface PlaceEditPageProps {
     place?: ApiModel.Place
@@ -123,27 +123,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return { notFound: true }
             }
 
-            let lat
-            let lon
-
-            if (cookies[LOCAL_STORAGE.LOCATION]) {
-                const userLocation = cookies[LOCAL_STORAGE.LOCATION]?.split(';')
-
-                if (userLocation?.[0] && userLocation[1]) {
-                    lat = parseFloat(userLocation[0])
-                    lon = parseFloat(userLocation[1])
-                }
-            }
-
+            hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
-            const { data: placeData, isError } = await store.dispatch(
-                API.endpoints.placesGetItem.initiate({
-                    id,
-                    lat: lat ?? null,
-                    lon: lon ?? null
-                })
-            )
+            const { data: placeData, isError } = await store.dispatch(API.endpoints.placesGetItem.initiate({ id }))
 
             if (isError) {
                 return { notFound: true }

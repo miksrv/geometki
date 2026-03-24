@@ -11,6 +11,7 @@ import { NextSeo } from 'next-seo'
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
+import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 const UnsubscribePage: NextPage<object> = () => {
     const { t } = useTranslation()
@@ -81,9 +82,11 @@ const UnsubscribePage: NextPage<object> = () => {
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<object>> => {
+            const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const translations = await serverSideTranslations(locale)
 
+            hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
             return {

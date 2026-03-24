@@ -73,6 +73,11 @@ class Geocoder{
     private Nominatim|Yandex $provider;
 
     /**
+     * @var string User-Agent string for Nominatim API requests
+     */
+    private const USER_AGENT = 'Geometki/1.0 (https://geometki.com)';
+
+    /**
      * Geocoder constructor.
      * Initializes the HTTP client and request API, and sets the geocoding provider.
      */
@@ -83,11 +88,11 @@ class Geocoder{
 
         // Yandex clien was blocked :(
         // $this->provider   = new Yandex($this->httpClient, null, getenv('app.geocoder.yandexKey'));
-        $this->provider   = Nominatim::withOpenStreetMapServer($this->httpClient, 'node');
+        $this->provider   = Nominatim::withOpenStreetMapServer($this->httpClient, self::USER_AGENT);
 
        // $this->provider   = $this->requestApi->getLocale() === 'ru'
        //     ? new Yandex($this->httpClient, null, getenv('app.geocoder.yandexKey'))
-       //     : Nominatim::withOpenStreetMapServer($this->httpClient, 'node');
+       //     : Nominatim::withOpenStreetMapServer($this->httpClient, self::USER_AGENT);
     }
 
     /**
@@ -162,7 +167,7 @@ class Geocoder{
 
         // If the first geocoder cannot find the address, then connect the second one and try again
         if (!$countryTitleEn || !$countryTitleRu) {
-            $this->provider = Nominatim::withOpenStreetMapServer($this->httpClient, 'node');
+            $this->provider = Nominatim::withOpenStreetMapServer($this->httpClient, self::USER_AGENT);
 
             // In order not to go into recursion, if we still cannot determine the address, we exit the function
             if ($changeProvider) {

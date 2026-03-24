@@ -6,13 +6,6 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
-/** System Controller **/
-$routes->group('system', static function ($routes) {
-    $routes->cli('recalculate_tags_count', 'System::calculateTagsCount'); // php index.php system recalculate_tags_count
-    $routes->cli('generate_users_online', 'System::generateUsersOnline'); // php index.php system generate_users_online
-    $routes->cli('send_email', 'System::sendEmail'); // php index.php system send_email
-});
-
 /** POI Controller **/
 $routes->group('poi', static function ($routes) {
     $routes->get('/', 'Poi::list');

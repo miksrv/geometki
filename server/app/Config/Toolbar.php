@@ -63,7 +63,7 @@ class Toolbar extends BaseConfig
      * helping to conserve file space used to store them. You can set it to
      * 0 (zero) to not have any history stored, or -1 for unlimited history.
      */
-    public int $maxHistory = 20;
+    public int $maxHistory = 0;
 
     /**
      * --------------------------------------------------------------------------

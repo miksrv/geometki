@@ -14,14 +14,15 @@ import { setLocale, toggleOverlay } from '@/app/applicationSlice'
 import { useAppDispatch, wrapper } from '@/app/store'
 import { AppLayout, Header, PlacesList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
-import { LOCAL_STORAGE } from '@/config/constants'
+import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { PlaceFilterPanel, PlacesFilterType } from '@/sections/place'
 import { encodeQueryData } from '@/utils/helpers'
 import { PlaceSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
+import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
-const DEFAULT_SORT = ApiType.SortFields.Updated
+const DEFAULT_SORT = ApiType.SortFields.Trending
 const DEFAULT_ORDER = ApiType.SortOrders.DESC
 const POST_PER_PAGE = 21
 
@@ -379,24 +380,16 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const currentPage = parseInt(context.query.page as string, 10) || 1
             const category = (context.query.category as string) || null
 
-            let lat = parseFloat(context.query.lat as string) || null
-            let lon = parseFloat(context.query.lon as string) || null
-            let isUserLocation = false
+            const lat = parseFloat(context.query.lat as string) || null
+            const lon = parseFloat(context.query.lon as string) || null
 
             const tag = (context.query.tag as string) || null
-            const sort = (context.query.sort as ApiType.SortFieldsType) || DEFAULT_SORT
+            const sort =
+                (context.query.sort as ApiType.SortFieldsType) ||
+                (cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT)
             const order = (context.query.order as ApiType.SortOrdersType) || DEFAULT_ORDER
 
-            if (!lat && !lon && cookies[LOCAL_STORAGE.LOCATION]) {
-                const userLocation = cookies[LOCAL_STORAGE.LOCATION]?.split(';')
-
-                if (userLocation?.[0] && userLocation[1]) {
-                    isUserLocation = true
-
-                    lat = parseFloat(userLocation[0])
-                    lon = parseFloat(userLocation[1])
-                }
-            }
+            hydrateAuthFromCookies(store, cookies)
 
             const translations = await serverSideTranslations(locale)
 
@@ -459,11 +452,11 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     country,
                     currentPage,
                     district,
-                    lat: !isUserLocation ? lat : null,
+                    lat,
                     locality,
                     locationData: locationData?.data || null,
                     locationType,
-                    lon: !isUserLocation ? lon : null,
+                    lon,
                     order,
                     placesCount: placesList?.count ?? 0,
                     placesList: placesList?.items ?? [],

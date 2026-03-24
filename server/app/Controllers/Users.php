@@ -2,11 +2,10 @@
 
 namespace App\Controllers;
 
-use App\Libraries\LocaleLibrary;
+use App\Libraries\AvatarLibrary;
 use App\Libraries\LevelsLibrary;
+use App\Libraries\ReputationLibrary;
 use App\Libraries\SessionLibrary;
-use App\Models\PlacesModel;
-use App\Models\RatingModel;
 use App\Models\UsersModel;
 use CodeIgniter\Files\File;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -17,9 +16,11 @@ use ReflectionException;
 
 class Users extends ResourceController
 {
+    protected SessionLibrary $session;
+
     public function __construct()
     {
-        new LocaleLibrary();
+        $this->session = new SessionLibrary();
     }
 
     /**
@@ -48,15 +49,13 @@ class Users extends ResourceController
             ]);
         }
 
+        $avatarLibrary = new AvatarLibrary();
         foreach ($usersData as $item) {
             $level    = $userLevels->getLevelData($item);
-            $avatar   = $item->avatar ? explode('.', $item->avatar) : null;
             $result[] = (object) [
                 'id'     => $item->id,
                 'name'   => $item->name,
-                'avatar' => $avatar
-                    ? PATH_AVATARS . $item->id . '/' . $avatar[0] . '_small.' . $avatar[1]
-                    : null,
+                'avatar' => $avatarLibrary->buildPath($item->id, $item->avatar, 'small'),
                 'levelData'  => [
                     'level'      => $level->level,
                     'title'      => $level->title,
@@ -83,53 +82,29 @@ class Users extends ResourceController
      */
     public function show($id = null): ResponseInterface
     {
-        $session     = new SessionLibrary();
-        $userLevels  = new LevelsLibrary();
-        $usersModel  = new UsersModel();
-        $placesModel = new PlacesModel();
-        $usersData   = $usersModel->getUserById($id, $id === $session->user?->id);
+        $userLevels = new LevelsLibrary();
+        $usersModel = new UsersModel();
+        $usersData  = $usersModel->getUserById($id, $id === $this->session->user?->id);
 
         if (!$usersData) {
             return $this->failNotFound();
         }
 
         // Calculate new user reputation value
-        // TODO Separate this function to other library
-        if ($placesData  = $placesModel->select('id')->where('user_id', $id)->findAll()) {
-            $ratingModel = new RatingModel();
-            $placesIds   = [];
+        $reputationLibrary     = new ReputationLibrary();
+        $newReputation         = $reputationLibrary->recalculate($id);
 
-            foreach ($placesData as $place) {
-                $placesIds[] = $place->id;
-            }
-
-            $ratingData  = $ratingModel->select('value')->whereIn('place_id', $placesIds)->findAll();
-            $ratingValue = 0;
-
-            if ($ratingData) {
-                helper('rating');
-
-                foreach ($ratingData as $ratingItem) {
-                    $ratingValue = $ratingValue + transformRating($ratingItem->value);
-                }
-            }
-
-            if ($ratingValue !== $usersData->reputation) {
-                $usersModel->update($usersData->id, ['reputation' => $ratingValue]);
-
-                $usersData->reputation = $ratingValue;
-            }
+        if ($newReputation !== $usersData->reputation) {
+            $usersData->reputation = $newReputation;
         }
 
         $userLevels->calculate($usersData);
 
-        $avatar = $usersData->avatar ? explode('.', $usersData->avatar) : null;
+        $avatarLibrary = new AvatarLibrary();
 
         $usersData->levelData = $userLevels->getLevelData($usersData);
         $usersData->statistic = $userLevels->statistic;
-        $usersData->avatar    = $usersData->avatar
-            ? PATH_AVATARS . $usersData->id . '/' . $avatar[0] . '_medium.' . $avatar[1]
-            : null;
+        $usersData->avatar    = $avatarLibrary->buildPath($usersData->id, $usersData->avatar, 'medium');
 
         unset($usersData->experience, $usersData->level);
 
@@ -143,9 +118,7 @@ class Users extends ResourceController
      */
     public function update($id = null): ResponseInterface
     {
-        $session = new SessionLibrary();
-
-        if (!$session->isAuth || $session->user?->id !== $id) {
+        if (!$this->session->isAuth || $this->session->user?->id !== $id) {
             return $this->failUnauthorized();
         }
 
@@ -169,7 +142,7 @@ class Users extends ResourceController
 
             $validatePassword = $userModel
                 ->select('password')
-                ->where(['email' => $session->user?->email, 'auth_type' => AUTH_TYPE_NATIVE])
+                ->where(['email' => $this->session->user?->email, 'auth_type' => AUTH_TYPE_NATIVE])
                 ->first();
 
             if (!password_verify($input->oldPassword, $validatePassword->password)) {
@@ -190,9 +163,9 @@ class Users extends ResourceController
         if (isset($input->settings)) {
             $defaultSettings = ['emailComment', 'emailEdit', 'emailPhoto', 'emailRating', 'emailCover'];
 
-            $updateData['settings'] = json_encode((object) array_combine($defaultSettings, array_map(function($setting) use ($input, $session) {
+            $updateData['settings'] = json_encode((object) array_combine($defaultSettings, array_map(function($setting) use ($input) {
                 $inputValue   = isset($input->settings->$setting) && is_bool($input->settings->$setting) ? $input->settings->$setting : null;
-                $sessionValue = $session->settings->$setting ?? true;
+                $sessionValue = $this->session->settings->$setting ?? true;
 
                 return $inputValue !== null ? $inputValue : $sessionValue;
             }, $defaultSettings)));
@@ -212,9 +185,7 @@ class Users extends ResourceController
      */
     public function avatar(): ResponseInterface
     {
-        $session = new SessionLibrary();
-
-        if (!$session->isAuth || !$session->user?->id) {
+        if (!$this->session->isAuth || !$this->session->user?->id) {
             return $this->failUnauthorized();
         }
 
@@ -224,10 +195,10 @@ class Users extends ResourceController
 
         if (!$photo->hasMoved()) {
             if (!is_dir(UPLOAD_TEMPORARY)) {
-                mkdir(UPLOAD_TEMPORARY,0777, TRUE);
+                mkdir(UPLOAD_TEMPORARY, 0777, true);
             }
 
-            $filename = $session->user->id . '.' . $photo->getExtension();
+            $filename = $this->session->user->id . '.' . $photo->getExtension();
             $photo->move(UPLOAD_TEMPORARY, $filename, true);
 
             list($width, $height) = getimagesize(UPLOAD_TEMPORARY . $filename);
@@ -265,14 +236,13 @@ class Users extends ResourceController
      */
     public function crop(): ResponseInterface
     {
-        $session    = new SessionLibrary();
         $usersModel = new UsersModel();
 
-        if (!$session->isAuth || !$session->user?->id) {
+        if (!$this->session->isAuth || !$this->session->user?->id) {
             return $this->failUnauthorized();
         }
 
-        if (!$user = $usersModel->find($session->user?->id)) {
+        if (!$user = $usersModel->find($this->session->user?->id)) {
             return $this->failValidationErrors(lang('Users.userNotFound'));
         }
 
@@ -293,18 +263,15 @@ class Users extends ResourceController
         }
 
         $userAvatarDir = UPLOAD_AVATARS . $user->id . '/';
+        $avatarLibrary = new AvatarLibrary();
 
         // Remove old avatar
         if ($user->avatar) {
-            $avatar = explode('.', $user->avatar);
-
-            @unlink($userAvatarDir . $user->avatar);
-            @unlink($userAvatarDir . $avatar[0] . '_small.' . $avatar[1]);
-            @unlink($userAvatarDir . $avatar[0] . '_medium.' . $avatar[1]);
+            $avatarLibrary->deleteOld($user->id, $user->avatar);
         }
 
         if (!is_dir($userAvatarDir)) {
-            mkdir($userAvatarDir,0777, TRUE);
+            mkdir($userAvatarDir, 0777, true);
         }
 
         $file = new File(UPLOAD_TEMPORARY . $input->filename);

@@ -30,6 +30,25 @@ const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) 
     if (action.type === HYDRATE) {
         const payload = action.payload as RootReducerState
 
+        // Merge auth state: prefer client-side user data, but update token/session from server if present
+        const mergedAuth = (() => {
+            const clientAuth = state?.auth
+            const serverAuth = payload.auth
+
+            // If server has auth data (token or isAuth), merge it with client state
+            if (serverAuth?.token || serverAuth?.isAuth) {
+                return {
+                    ...clientAuth,
+                    ...serverAuth,
+                    // Preserve user from client state if server doesn't have it
+                    user: serverAuth?.user ?? clientAuth?.user
+                }
+            }
+
+            // Otherwise keep client auth state
+            return clientAuth ?? combinedReducer(undefined, { type: '' }).auth
+        })()
+
         return {
             ...state, // old client state
 
@@ -41,11 +60,8 @@ const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) 
             notification:
                 payload.notification ?? state?.notification ?? combinedReducer(undefined, { type: '' }).notification,
 
-            // DO NOT touch auth if there is nothing in payload
-            auth:
-                payload.auth?.token || payload.auth?.isAuth
-                    ? payload.auth
-                    : (state?.auth ?? combinedReducer(undefined, { type: '' }).auth),
+            // Merged auth state preserving user data
+            auth: mergedAuth,
 
             [API.reducerPath]: {
                 ...state?.[API.reducerPath],

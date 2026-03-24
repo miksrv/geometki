@@ -13,10 +13,10 @@ import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { ActivityList, AppLayout, Header, PlacesListItem, UsersList } from '@/components/shared'
 import { Carousel } from '@/components/ui'
-import { LOCAL_STORAGE } from '@/config/constants'
 import { SITE_LINK } from '@/config/env'
 import { PlaceSchema, UserSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
+import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 interface IndexPageProps {
     placesList: ApiModel.Place[]
@@ -149,27 +149,14 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const translations = await serverSideTranslations(locale)
 
-            let lat = null
-            let lon = null
-
-            if (cookies[LOCAL_STORAGE.LOCATION]) {
-                const userLocation = cookies[LOCAL_STORAGE.LOCATION]?.split(';')
-
-                if (userLocation?.[0] && userLocation[1]) {
-                    lat = parseFloat(userLocation[0])
-                    lon = parseFloat(userLocation[1])
-                }
-            }
-
+            hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
             const { data: placesList } = await store.dispatch(
                 API.endpoints.placesGetList.initiate({
-                    lat,
                     limit: 6,
-                    lon,
                     order: ApiType.SortOrders.DESC,
-                    sort: ApiType.SortFields.Updated
+                    sort: ApiType.SortFields.ViewsWeek
                 })
             )
 

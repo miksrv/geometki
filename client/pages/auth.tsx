@@ -15,6 +15,7 @@ import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { LOCAL_STORAGE } from '@/config/constants'
 import useLocalStorage from '@/hooks/useLocalStorage'
 import * as LocalStorage from '@/utils/localstorage'
+import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 const AuthPage: NextPage<object> = () => {
     const { t } = useTranslation()
@@ -113,9 +114,11 @@ const AuthPage: NextPage<object> = () => {
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<object>> => {
+            const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const translations = await serverSideTranslations(locale)
 
+            hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
             return {

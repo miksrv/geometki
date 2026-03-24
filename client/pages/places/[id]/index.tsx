@@ -13,7 +13,6 @@ import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, PhotoGallery, PhotoUploader, PlacesListItem } from '@/components/shared'
 import { Carousel } from '@/components/ui'
-import { LOCAL_STORAGE } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import {
     ForwardedPlaceCoverEditor,
@@ -26,6 +25,7 @@ import {
 } from '@/sections/place'
 import { formatDateISO, formatDateUTC, removeMarkdown, truncateText } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
+import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 const NEAR_PLACES_COUNT = 10
 
@@ -296,27 +296,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return { notFound: true }
             }
 
-            let lat
-            let lon
-
-            if (cookies[LOCAL_STORAGE.LOCATION]) {
-                const userLocation = cookies[LOCAL_STORAGE.LOCATION]?.split(';')
-
-                if (userLocation?.[0] && userLocation[1]) {
-                    lat = parseFloat(userLocation[0])
-                    lon = parseFloat(userLocation[1])
-                }
-            }
-
+            hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
-            const { data: placeData, isError } = await store.dispatch(
-                API.endpoints.placesGetItem.initiate({
-                    id,
-                    lat: lat ?? null,
-                    lon: lon ?? null
-                })
-            )
+            const { data: placeData, isError } = await store.dispatch(API.endpoints.placesGetItem.initiate({ id }))
 
             if (isError) {
                 return { notFound: true }

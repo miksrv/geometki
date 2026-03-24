@@ -65,8 +65,7 @@ class Bookmarks extends ResourceController
             $bookmarksModel = new UsersBookmarksModel();
             $placesModel    = new PlacesModel();
             $bookmarksData  = $bookmarksModel->where($bookmarkData)->first();
-            $placesData     = $placesModel->select('bookmarks, updated_at')->find($input->placeId);
-            $bookmarksCount = $placesData->bookmarks;
+            $placesData     = $placesModel->select('id')->find($input->placeId);
 
             if (!$placesData) {
                 return $this->failNotFound();
@@ -74,10 +73,7 @@ class Bookmarks extends ResourceController
 
             if ($bookmarksData) {
                 $bookmarksModel->delete($bookmarksData->id);
-                $placesModel->update($input->placeId, [
-                    'bookmarks'  => ($bookmarksCount - 1 <= 0) ? 0 : $bookmarksCount - 1,
-                    'updated_at' => $placesData->updated_at
-                ]);
+                $placesModel->decrementBookmarks($input->placeId);
 
                 return $this->respondDeleted();
             }
@@ -85,10 +81,7 @@ class Bookmarks extends ResourceController
             $bookmarksModel->insert($bookmarkData);
 
             // Update the bookmarks count
-            $placesModel->update($input->placeId, [
-                'bookmarks'  => $bookmarksCount = 1,
-                'updated_at' => $placesData->updated_at
-            ]);
+            $placesModel->incrementBookmarks($input->placeId);
 
             return $this->respondCreated();
         } catch (Exception $e) {

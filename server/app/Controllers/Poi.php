@@ -3,7 +3,7 @@
 namespace App\Controllers;
 
 use App\Libraries\Cluster;
-use App\Libraries\LocaleLibrary;
+use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Models\PhotosModel;
@@ -15,7 +15,6 @@ use CodeIgniter\RESTful\ResourceController;
 class Poi extends ResourceController {
     public function __construct()
     {
-        new LocaleLibrary();
     }
 
     /**
@@ -148,11 +147,10 @@ class Poi extends ResourceController {
             $placeData->distance = round((float) $placeData->distance, 1);
         }
 
-        if ($placeData->photos && file_exists(UPLOAD_PHOTOS . $id . '/cover.jpg')) {
-            $placeData->cover = [
-                'full'    => PATH_PHOTOS . $id . '/cover.jpg',
-                'preview' => PATH_PHOTOS . $id . '/cover_preview.jpg',
-            ];
+        $formatter = new PlaceFormatterLibrary();
+        $cover     = $formatter->formatCover($id, (int) $placeData->photos);
+        if ($cover) {
+            $placeData->cover = $cover;
         }
 
         return $this->respond($placeData);

@@ -23,6 +23,26 @@ CodeIgniter 4 PHP REST API serving the geometki geolocation/POI platform.
 
 **Key models:** PlacesModel, UsersModel, ActivityModel, PhotosModel, CommentsModel, RatingModel, SessionsModel, PlacesContentModel.
 
-**Key libraries:** SessionLibrary (auth + session resolution), PlacesContent (multi-locale content fetching), LevelsLibrary (XP/level system), ActivityLibrary (event logging + notifications), Geocoder (Nominatim integration), NotifyLibrary (in-app notifications), EmailLibrary (outbound email queue via SendingMail model).
+**Key libraries (original):** SessionLibrary (auth + session resolution), PlacesContent (multi-locale content fetching), LevelsLibrary (XP/level system), ActivityLibrary (event logging + notifications), Geocoder (Nominatim integration), NotifyLibrary (in-app notifications), EmailLibrary (outbound email queue via SendingMail model).
 
-**How to apply:** When suggesting changes, consider the CI4 model/entity/controller pattern, the custom ID generation, and the dual-language content architecture.
+**New libraries added 2026-03-23:**
+- `AvatarLibrary` — `buildPath(?userId, ?filename, size)` constructs avatar URL; `processUpload(userId, sourcePath)` moves file and generates _small/_medium; `deleteOld(userId, filename)` removes all variants.
+- `PlaceFormatterLibrary` — `formatAuthor`, `formatAddress(row, locale)`, `formatCategory(row, locale)`, `formatCover(placeId, photosCount)`, `formatDistance(raw)`, `cleanupFields(row)` for place response shaping.
+- `ReputationLibrary` — `recalculate(userId)` computes/persists user reputation from all place ratings.
+- `PhotoLibrary` — `processFile(sourcePath, targetDir, createCover)` normalises dimensions/generates preview; `generateCover(sourcePath, targetDir)`.
+
+**Locale:** `LocaleLibrary` is now a global before-filter (`LocaleFilter` registered in `Config/Filters.php`). Do NOT call `new LocaleLibrary()` in controller constructors — it's already applied globally.
+
+**SessionLibrary:** Must be assigned to `$this->session` in the controller constructor, not instantiated per-method.
+
+**Notable model methods added 2026-03-23:**
+- `PlacesModel::recordView(placeId, ?userId, updatedAt)` — transactional view+log; best-effort users_place_views.
+- `PlacesModel::applyWeeklyViewsSort(order)` / `applyRecommendationSort(userId)` — query-builder sort helpers.
+- `PlacesModel::incrementBookmarks/decrementBookmarks/incrementComments/incrementPhotos/decrementPhotos/syncPhotosCount/refreshTrendingScores`.
+- `ActivityModel::incrementViews(ids)`.
+- `UsersNotificationsModel::getRecentUnread/countOlderUnread/getPaginatedByUser/countByUser/markRead`.
+- `UserInterestProfilesModel::refreshForUser(userId)`.
+
+**Spark commands:** `trending:refresh`, `interests:refresh`, `migrate:fix-cover-sizes`.
+
+**How to apply:** When suggesting changes, consider the CI4 model/entity/controller pattern, the custom ID generation, dual-language content architecture, and the library/model boundaries established above.

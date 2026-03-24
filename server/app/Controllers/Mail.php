@@ -2,7 +2,6 @@
 
 namespace App\Controllers;
 
-use App\Libraries\LocaleLibrary;
 use App\Models\PlacesModel;
 use App\Models\SendingMail;
 use App\Models\UsersModel;
@@ -12,8 +11,8 @@ use ReflectionException;
 
 class Mail extends ResourceController
 {
-    public function __construct() {
-        new LocaleLibrary();
+    public function __construct()
+    {
     }
 
     /**

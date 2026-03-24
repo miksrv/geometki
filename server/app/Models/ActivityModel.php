@@ -106,6 +106,22 @@ class ActivityModel extends ApplicationBaseModel {
     }
 
     /**
+     * Increment view counter for a set of activity IDs.
+     *
+     * @param array $ids List of activity IDs to increment views for.
+     */
+    public function incrementViews(array $ids): void
+    {
+        if (empty($ids)) {
+            return;
+        }
+
+        $this->set('views', 'views + 1', false)
+            ->whereIn('id', $ids)
+            ->update();
+    }
+
+    /**
      * Get next activity items for a specific user and place after a given date.
      *
      * @param array $activityIds List of activity IDs to exclude.

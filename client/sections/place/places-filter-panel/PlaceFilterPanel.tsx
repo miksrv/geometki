@@ -37,6 +37,7 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
     const { t } = useTranslation()
 
     const userLocation = useAppSelector((state) => state.application.userLocation)
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const { data: categoryData } = API.useCategoriesGetListQuery()
 
@@ -48,12 +49,13 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
         () =>
             Object.values(ApiType.SortFields)
                 .filter((sort) => sort !== ApiType.SortFields.Category)
+                .filter((sort) => sort !== ApiType.SortFields.Recommended || isAuth)
                 .map((sort) => ({
                     disabled: sort === ApiType.SortFields.Distance && (!userLocation?.lat || !userLocation.lon),
                     key: sort,
                     value: t(`sort_${sort}`)
                 })),
-        [ApiType.SortFields]
+        [ApiType.SortFields, isAuth]
     )
 
     const orderOptions: DropdownOption[] = useMemo(
@@ -214,14 +216,16 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                         onOpen={handleOpenSort}
                     />
 
-                    <Dropdown
-                        label={t('sorting-order')}
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore
-                        value={selectedOrder}
-                        onSelect={handleChangeOrder}
-                        onOpen={handleOpenOrder}
-                    />
+                    {sort !== ApiType.SortFields.Recommended && (
+                        <Dropdown
+                            label={t('sorting-order')}
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            value={selectedOrder}
+                            onSelect={handleChangeOrder}
+                            onOpen={handleOpenOrder}
+                        />
+                    )}
 
                     <Dropdown
                         clearable={true}
