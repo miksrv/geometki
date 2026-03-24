@@ -24,6 +24,7 @@ import { toggleOverlay } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import { Rating, UserAvatar } from '@/components/shared'
+import { getErrorMessage } from '@/utils/api'
 import { addDecimalPoint, formatDate } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
@@ -54,7 +55,8 @@ export const PlaceShareButtons: React.FC<SocialRatingProps> = ({ placeId, placeU
         }
     )
 
-    const [changeRating, { isLoading: ratingLoading, isSuccess }] = API.useRatingPutScoreMutation()
+    const [changeRating, { isLoading: ratingLoading, isSuccess, error: ratingError }] =
+        API.useRatingPutScoreMutation()
 
     const handleRatingChange = async (value?: number) => {
         if (value && placeId) {
@@ -82,6 +84,18 @@ export const PlaceShareButtons: React.FC<SocialRatingProps> = ({ placeId, placeU
             )
         }
     }, [isSuccess])
+
+    useEffect(() => {
+        if (ratingError) {
+            void dispatch(
+                Notify({
+                    id: 'ratingError',
+                    message: getErrorMessage(ratingError),
+                    type: 'error'
+                })
+            )
+        }
+    }, [ratingError])
 
     return (
         <Container className={styles.shareSocial}>

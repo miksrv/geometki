@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import { Button } from 'simple-react-ui-kit'
+import { Button, Message } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next'
 
 import { API, ApiModel } from '@/api'
 import { UserAvatar } from '@/components/shared'
 import { Textarea } from '@/components/ui'
+import { getErrorMessage } from '@/utils/api'
 
 import styles from './styles.module.sass'
 
@@ -22,7 +23,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({ placeId, answerId, isA
 
     const [comment, setComment] = useState<string | undefined>()
 
-    const [submit, { isLoading }] = API.useCommentsPostMutation()
+    const [submit, { isLoading, error }] = API.useCommentsPostMutation()
 
     const handleKeyPress = async (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (event.key === 'Enter' && comment && comment.length > 1) {
@@ -42,8 +43,19 @@ export const CommentForm: React.FC<CommentFormProps> = ({ placeId, answerId, isA
         onCommentAdded?.()
     }
 
+    const errorMessage = getErrorMessage(error)
+
     return isAuth ? (
         <div className={styles.commentForm}>
+            {errorMessage && (
+                <Message
+                    type={'error'}
+                    style={{ marginBottom: 8 }}
+                >
+                    {errorMessage}
+                </Message>
+            )}
+
             {user && (
                 <UserAvatar
                     className={styles.userAvatar}

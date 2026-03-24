@@ -3,10 +3,13 @@ import { Button, ButtonProps } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next'
 
+import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
+
 import { API } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
+import { getErrorMessage } from '@/utils/api'
 
 import styles from './styles.module.sass'
 
@@ -37,16 +40,26 @@ export const BookmarkButton: React.FC<BookmarkButtonProps> = ({ placeId, ...prop
             dispatch(openAuthDialog())
         } else if (isAuth && placeId) {
             const wasBookmarked = bookmarkData?.result
-            await setBookmark({ placeId })
+            const result = await setBookmark({ placeId })
 
-            await dispatch(
-                Notify({
-                    id: 'bookmarkButton',
-                    title: '',
-                    message: wasBookmarked ? t('geotag-removed-bookmarks') : t('geotag-added-bookmarks'),
-                    type: 'success'
-                })
-            )
+            if ('error' in result) {
+                void dispatch(
+                    Notify({
+                        id: 'bookmarkError',
+                        message: getErrorMessage(result.error as FetchBaseQueryError),
+                        type: 'error'
+                    })
+                )
+            } else {
+                void dispatch(
+                    Notify({
+                        id: 'bookmarkButton',
+                        title: '',
+                        message: wasBookmarked ? t('geotag-removed-bookmarks') : t('geotag-added-bookmarks'),
+                        type: 'success'
+                    })
+                )
+            }
         }
     }
 

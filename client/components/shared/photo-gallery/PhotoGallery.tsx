@@ -9,6 +9,7 @@ import { useTranslation } from 'next-i18next'
 import { API, ApiModel } from '@/api'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
+import { getErrorMessage } from '@/utils/api'
 import { PhotoLightbox } from '@/components/shared'
 import { ImageUploader } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
@@ -95,7 +96,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 Notify({
                     id: 'actionPhotoError',
                     title: '',
-                    message: (deleteError as string) || (rotateError as string),
+                    message: getErrorMessage(deleteError) || getErrorMessage(rotateError),
                     type: 'error'
                 })
             )

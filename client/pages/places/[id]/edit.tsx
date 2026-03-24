@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
-import { Container } from 'simple-react-ui-kit'
+import { Container, Message } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
@@ -13,7 +13,7 @@ import { wrapper } from '@/app/store'
 import { AppLayout, Header } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { PlaceForm } from '@/sections/place'
-import { isApiValidationErrors } from '@/utils/api'
+import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
 import { equalsArrays } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
@@ -44,6 +44,11 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
 
     const validationErrors = useMemo(
         () => (isApiValidationErrors<ApiType.Places.PostItemRequest>(error) ? error.messages : undefined),
+        [error]
+    )
+
+    const serverError = useMemo(
+        () => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined),
         [error]
     )
 
@@ -97,6 +102,14 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
             />
 
             <Container style={{ marginTop: 15 }}>
+                {serverError && (
+                    <Message
+                        type={'error'}
+                        style={{ marginBottom: 15 }}
+                    >
+                        {serverError}
+                    </Message>
+                )}
                 <PlaceForm
                     placeId={place?.id}
                     values={placeValuesData}
