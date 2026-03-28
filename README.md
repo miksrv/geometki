@@ -5,6 +5,13 @@
 [![UI Deploy](https://github.com/miksrv/geometki/actions/workflows/ui-deploy.yml/badge.svg)](https://github.com/miksrv/geometki/actions/workflows/ui-deploy.yml)
 [![API Deploy](https://github.com/miksrv/geometki/actions/workflows/api-deploy.yml/badge.svg)](https://github.com/miksrv/geometki/actions/workflows/api-deploy.yml)
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=miksrv_geometki&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=miksrv_geometki)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=miksrv_geometki&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=miksrv_geometki)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=miksrv_geometki&metric=bugs)](https://sonarcloud.io/summary/new_code?id=miksrv_geometki)
+
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=miksrv_geometki&metric=coverage)](https://sonarcloud.io/summary/new_code?id=miksrv_geometki)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=miksrv_geometki&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=miksrv_geometki)
+
 **Geometki** is a crowdsourced platform for discovering and documenting interesting places across Russia. Users can add locations to an interactive map, upload photos, leave ratings and comments, and follow other travelers' activity. The platform has 1,100+ documented POIs spanning museums, waterfalls, abandoned structures, camping spots, and other landmarks.
 
 **Live site:** [geometki.com](https://geometki.com)

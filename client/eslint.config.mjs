@@ -276,9 +276,11 @@ export default defineConfig([
                     devDependencies: [
                         '**/*.test.{ts,tsx}',
                         '**/*.spec.{ts,tsx}',
+                        '**/*.component.test.{ts,tsx}',
                         '**/stories/*.stories.{ts,tsx}',
                         '**/storybook/**/*.stories.{ts,tsx}',
                         '**/setupTests.ts',
+                        '**/__mocks__/**',
                     ],
                 },
             ],
