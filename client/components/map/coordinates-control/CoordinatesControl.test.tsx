@@ -1,16 +1,26 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { CoordinatesControl } from './CoordinatesControl'
 
 jest.mock('simple-react-ui-kit', () => ({
     Button: ({ icon, onClick, mode }: any) => (
-        <button data-icon={icon} data-mode={mode} onClick={onClick} />
+        <button
+            data-icon={icon}
+            data-mode={mode}
+            onClick={onClick}
+        />
     ),
     Container: ({ children, onClick, className }: any) => (
-        <div className={className} onClick={onClick}>{children}</div>
+        <div
+            className={className}
+            onClick={onClick}
+        >
+            {children}
+        </div>
     )
 }))
-
-import { CoordinatesControl } from './CoordinatesControl'
 
 describe('CoordinatesControl', () => {
     describe('closed state (default)', () => {

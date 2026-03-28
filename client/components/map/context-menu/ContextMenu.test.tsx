@@ -1,7 +1,14 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { render, screen } from '@testing-library/react'
+
+import applicationReducer from '@/app/applicationSlice'
+import authReducer from '@/app/authSlice'
+import notificationReducer from '@/app/notificationSlice'
+
+import { ContextMenu } from './ContextMenu'
 
 jest.mock('@react-leaflet/core', () => ({
     useLeafletContext: jest.fn().mockReturnValue({
@@ -14,15 +21,27 @@ jest.mock('@react-leaflet/core', () => ({
 }))
 
 jest.mock('simple-react-ui-kit', () => ({
-    Button: ({ children, onClick, mode, size, title }: any) => (
-        <button onClick={onClick} data-mode={mode} title={title}>{children}</button>
+    Button: ({ children, onClick, mode, _size, title }: any) => (
+        <button
+            onClick={onClick}
+            data-mode={mode}
+            title={title}
+        >
+            {children}
+        </button>
     ),
     Container: ({ children, className }: any) => <div className={className}>{children}</div>
 }))
 
 jest.mock('next/link', () => {
     const Link = ({ href, children, title, onClick }: any) => (
-        <a href={href} title={title} onClick={onClick}>{children}</a>
+        <a
+            href={href}
+            title={title}
+            onClick={onClick}
+        >
+            {children}
+        </a>
     )
     Link.displayName = 'Link'
     return Link
@@ -65,15 +84,15 @@ jest.mock('@/components/shared', () => ({
 }))
 
 jest.mock('@/config/constants', () => ({
-    LOCAL_STORAGE: { RETURN_PATH: 'returnPath', LOCALE: 'locale', THEME: 'theme', LOCATION: 'location', MAP_CENTER: 'mapCenter' },
+    LOCAL_STORAGE: {
+        RETURN_PATH: 'returnPath',
+        LOCALE: 'locale',
+        THEME: 'theme',
+        LOCATION: 'location',
+        MAP_CENTER: 'mapCenter'
+    },
     AUTH_COOKIES: { SESSION: 'session', TOKEN: 'token' }
 }))
-
-import applicationReducer from '@/app/applicationSlice'
-import authReducer from '@/app/authSlice'
-import notificationReducer from '@/app/notificationSlice'
-
-import { ContextMenu } from './ContextMenu'
 
 const makeStore = (preloadedState?: Record<string, unknown>) =>
     configureStore({

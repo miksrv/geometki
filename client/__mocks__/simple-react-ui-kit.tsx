@@ -6,10 +6,13 @@
  */
 import React from 'react'
 
-export const cn = (...args: (string | undefined | false | null)[]) => args.filter(Boolean).join(' ')
+export const cn = (...args: Array<string | undefined | false | null>) => args.filter(Boolean).join(' ')
 
 export const Icon = ({ name }: { name: string }) => (
-    <span data-testid={`icon-${name}`} aria-label={name} />
+    <span
+        data-testid={`icon-${name}`}
+        aria-label={name}
+    />
 )
 
 export const Button = ({ label, icon, onClick, disabled, loading, mode, variant, className, children }: any) => (
@@ -26,7 +29,10 @@ export const Button = ({ label, icon, onClick, disabled, loading, mode, variant,
 )
 
 export const Spinner = ({ className }: { className?: string }) => (
-    <div className={className} data-testid={'spinner'} />
+    <div
+        className={className}
+        data-testid={'spinner'}
+    />
 )
 
 export const Container = ({ header, children, className }: any) => (
@@ -45,7 +51,10 @@ export const Dialog = ({ open, header, children, onCloseDialog, maxWidth }: any)
         >
             {header && <h2>{header}</h2>}
             {children}
-            <button onClick={onCloseDialog} aria-label={'close'} />
+            <button
+                onClick={onCloseDialog}
+                aria-label={'close'}
+            />
         </div>
     ) : null
 

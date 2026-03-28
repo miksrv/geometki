@@ -1,5 +1,8 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { Notification } from './Notification'
 
 jest.mock('next/link', () => {
     const Link = ({ href, children }: any) => <a href={href}>{children}</a>
@@ -26,10 +29,13 @@ jest.mock('@/utils/helpers', () => ({
 
 // Mock NotificationIcon
 jest.mock('./NotificationIcon', () => ({
-    NotificationIcon: ({ type }: any) => <div data-testid={'notification-icon'} data-type={type} />
+    NotificationIcon: ({ type }: any) => (
+        <div
+            data-testid={'notification-icon'}
+            data-type={type}
+        />
+    )
 }))
-
-import { Notification } from './Notification'
 
 const baseNotification = {
     id: 'notif-1',
@@ -51,12 +57,22 @@ describe('Notification', () => {
         })
 
         it('renders with a custom title', () => {
-            render(<Notification {...baseNotification} title={'Custom Title'} />)
+            render(
+                <Notification
+                    {...baseNotification}
+                    title={'Custom Title'}
+                />
+            )
             expect(screen.getByText('Custom Title')).toBeInTheDocument()
         })
 
         it('renders a close button when onClose is provided', () => {
-            render(<Notification {...baseNotification} onClose={jest.fn()} />)
+            render(
+                <Notification
+                    {...baseNotification}
+                    onClose={jest.fn()}
+                />
+            )
             expect(screen.getByTestId('icon-Close')).toBeInTheDocument()
         })
 
@@ -66,12 +82,22 @@ describe('Notification', () => {
         })
 
         it('applies unread class when read is false', () => {
-            const { container } = render(<Notification {...baseNotification} read={false} />)
+            const { container } = render(
+                <Notification
+                    {...baseNotification}
+                    read={false}
+                />
+            )
             expect(container.firstChild).toHaveClass('unread')
         })
 
         it('does not apply unread class when read is true', () => {
-            const { container } = render(<Notification {...baseNotification} read={true} />)
+            const { container } = render(
+                <Notification
+                    {...baseNotification}
+                    read={true}
+                />
+            )
             expect(container.firstChild).not.toHaveClass('unread')
         })
     })
@@ -106,7 +132,12 @@ describe('Notification', () => {
                 ...baseNotification,
                 created: { date: '2024-01-15T10:00:00Z', timezone_type: 1, timezone: 'UTC' }
             }
-            render(<Notification {...notification} showDate />)
+            render(
+                <Notification
+                    {...notification}
+                    showDate
+                />
+            )
             // The mock formatDate returns '15 January 2024, 10:00'
             expect(screen.getByText('15 January 2024, 10:00')).toBeInTheDocument()
         })
@@ -115,7 +146,12 @@ describe('Notification', () => {
     describe('onLoad callback', () => {
         it('calls onLoad with the notification id on mount', () => {
             const onLoad = jest.fn()
-            render(<Notification {...baseNotification} onLoad={onLoad} />)
+            render(
+                <Notification
+                    {...baseNotification}
+                    onLoad={onLoad}
+                />
+            )
             expect(onLoad).toHaveBeenCalledWith('notif-1')
         })
     })
@@ -123,7 +159,12 @@ describe('Notification', () => {
     describe('close interaction', () => {
         it('calls onClose with the notification id when close button is clicked', () => {
             const onClose = jest.fn()
-            render(<Notification {...baseNotification} onClose={onClose} />)
+            render(
+                <Notification
+                    {...baseNotification}
+                    onClose={onClose}
+                />
+            )
             fireEvent.click(screen.getByRole('button'))
             expect(onClose).toHaveBeenCalledWith('notif-1')
         })

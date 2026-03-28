@@ -1,21 +1,39 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { CategoryControl } from './CategoryControl'
 
 jest.mock('simple-react-ui-kit', () => ({
     Button: ({ icon, onClick, mode }: any) => (
-        <button data-icon={icon} data-mode={mode} onClick={onClick} />
+        <button
+            data-icon={icon}
+            data-mode={mode}
+            onClick={onClick}
+        />
     ),
     Container: ({ children, className }: any) => <div className={className}>{children}</div>,
-    Checkbox: ({ id, label, checked, indeterminate, onChange }: any) => (
+    Checkbox: ({ id, _label, checked, _indeterminate, onChange }: any) => (
         <label htmlFor={id}>
-            <input type={'checkbox'} id={id} name={id} checked={!!checked} onChange={onChange} />
+            <input
+                type={'checkbox'}
+                id={id}
+                name={id}
+                checked={!!checked}
+                onChange={onChange}
+            />
             {id}
         </label>
     )
 }))
 
 jest.mock('next/image', () => {
-    const Image = ({ src, alt }: any) => <img src={src} alt={alt} />
+    const Image = ({ src, alt }: any) => (
+        <img
+            src={src}
+            alt={alt}
+        />
+    )
     Image.displayName = 'Image'
     return Image
 })
@@ -45,8 +63,6 @@ jest.mock('@/api', () => ({
 jest.mock('@/features/categories/categories.utils', () => ({
     categoryImage: jest.fn().mockReturnValue({ src: '/icons/category.png' })
 }))
-
-import { CategoryControl } from './CategoryControl'
 
 describe('CategoryControl', () => {
     describe('closed state', () => {
@@ -81,7 +97,12 @@ describe('CategoryControl', () => {
     describe('callbacks', () => {
         it('calls onChangeCategories when a category checkbox changes', () => {
             const onChangeCategories = jest.fn()
-            render(<CategoryControl categories={['abandoned']} onChangeCategories={onChangeCategories} />)
+            render(
+                <CategoryControl
+                    categories={['abandoned']}
+                    onChangeCategories={onChangeCategories}
+                />
+            )
             fireEvent.click(screen.getByRole('button'))
             const checkbox = document.querySelector('input#nature') as HTMLInputElement
             // The handler reads event.target.id, which is already set on the element

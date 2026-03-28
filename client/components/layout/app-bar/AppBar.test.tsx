@@ -1,5 +1,10 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, screen } from '@testing-library/react'
+
+import { makeTestStore, renderWithStore } from '@/__mocks__/commonMocks'
+
+import { AppBar } from './AppBar'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
@@ -59,12 +64,13 @@ jest.mock('./Search', () => ({
 }))
 
 jest.mock('./UserMenu', () => ({
-    UserMenu: ({ onLogout }: any) => <div data-testid={'user-menu'} onClick={onLogout} />
+    UserMenu: ({ onLogout }: any) => (
+        <div
+            data-testid={'user-menu'}
+            onClick={onLogout}
+        />
+    )
 }))
-
-import { makeTestStore, renderWithStore } from '@/__mocks__/commonMocks'
-
-import { AppBar } from './AppBar'
 
 describe('AppBar', () => {
     describe('rendering', () => {

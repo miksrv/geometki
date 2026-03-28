@@ -1,14 +1,23 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { InteractiveMap } from './InteractiveMap'
 
 jest.mock('react-leaflet', () => ({
-    MapContainer: ({ children, center, zoom, style, ref }: any) => (
-        <div data-testid={'map-container'} data-zoom={zoom}>
+    MapContainer: ({ children, _center, zoom, _style, _ref }: any) => (
+        <div
+            data-testid={'map-container'}
+            data-zoom={zoom}
+        >
             {children}
         </div>
     ),
-    TileLayer: ({ attribution, url }: any) => (
-        <div data-testid={'tile-layer'} data-attribution={attribution} />
+    TileLayer: ({ attribution, _url }: any) => (
+        <div
+            data-testid={'tile-layer'}
+            data-attribution={attribution}
+        />
     ),
     useMapEvents: jest.fn().mockReturnValue({
         closePopup: jest.fn(),
@@ -25,8 +34,12 @@ jest.mock('leaflet', () => ({
 jest.mock('leaflet/dist/leaflet.css', () => ({}))
 
 jest.mock('simple-react-ui-kit', () => ({
-    Button: ({ icon, onClick, mode, loading, link, noIndex }: any) => (
-        <button data-icon={icon} data-mode={mode} onClick={onClick} />
+    Button: ({ icon, onClick, mode, _loading, _link, _noIndex }: any) => (
+        <button
+            data-icon={icon}
+            data-mode={mode}
+            onClick={onClick}
+        />
     ),
     Spinner: () => <div data-testid={'spinner'} />
 }))
@@ -42,7 +55,13 @@ jest.mock('@/hooks/useLocalStorage', () => jest.fn().mockReturnValue([undefined,
 jest.mock('lodash-es/isEqual', () => jest.fn().mockReturnValue(false))
 
 jest.mock('@/config/constants', () => ({
-    LOCAL_STORAGE: { MAP_CENTER: 'mapCenter', LOCALE: 'locale', THEME: 'theme', RETURN_PATH: 'returnPath', LOCATION: 'location' }
+    LOCAL_STORAGE: {
+        MAP_CENTER: 'mapCenter',
+        LOCALE: 'locale',
+        THEME: 'theme',
+        RETURN_PATH: 'returnPath',
+        LOCATION: 'location'
+    }
 }))
 
 jest.mock('./category-control', () => ({
@@ -96,9 +115,6 @@ jest.mock('./marker-user', () => ({
 jest.mock('./place-mark', () => ({
     PlaceMark: () => <div data-testid={'place-mark'} />
 }))
-
-import { InteractiveMap } from './InteractiveMap'
-import { MapLayersEnum, MapObjectsTypeEnum } from './types'
 
 describe('InteractiveMap', () => {
     describe('rendering', () => {
@@ -167,9 +183,13 @@ describe('InteractiveMap', () => {
 
         it('renders the fullscreen button when enableFullScreen is true', () => {
             render(<InteractiveMap enableFullScreen />)
-            const btn = screen.getAllByRole('button').find(
-                (b) => b.getAttribute('data-icon') === 'FullscreenIn' || b.getAttribute('data-icon') === 'FullscreenOut'
-            )
+            const btn = screen
+                .getAllByRole('button')
+                .find(
+                    (b) =>
+                        b.getAttribute('data-icon') === 'FullscreenIn' ||
+                        b.getAttribute('data-icon') === 'FullscreenOut'
+                )
             expect(btn).toBeInTheDocument()
         })
 
@@ -184,16 +204,14 @@ describe('InteractiveMap', () => {
         it('renders MarkerPoint for each place', () => {
             const places = [
                 { id: 'p1', lat: 51.765, lon: 55.099, type: 'place', category: 'abandoned', count: 1 },
-                { id: 'p2', lat: 51.800, lon: 55.200, type: 'place', category: 'nature', count: 1 }
+                { id: 'p2', lat: 51.8, lon: 55.2, type: 'place', category: 'nature', count: 1 }
             ]
             render(<InteractiveMap places={places as any} />)
             expect(screen.getAllByTestId('marker-point')).toHaveLength(2)
         })
 
         it('renders MarkerPointCluster for cluster type places', () => {
-            const places = [
-                { id: 'c1', lat: 51.765, lon: 55.099, type: 'cluster', count: 5 }
-            ]
+            const places = [{ id: 'c1', lat: 51.765, lon: 55.099, type: 'cluster', count: 5 }]
             render(<InteractiveMap places={places as any} />)
             expect(screen.getByTestId('marker-point-cluster')).toBeInTheDocument()
         })
@@ -206,7 +224,7 @@ describe('InteractiveMap', () => {
         it('renders MarkerPhoto for each photo', () => {
             const photos = [
                 { id: 'ph1', lat: 51.765, lon: 55.099, type: 'photo', preview: '/p1.jpg', count: 1 },
-                { id: 'ph2', lat: 51.800, lon: 55.200, type: 'photo', preview: '/p2.jpg', count: 1 }
+                { id: 'ph2', lat: 51.8, lon: 55.2, type: 'photo', preview: '/p2.jpg', count: 1 }
             ]
             render(<InteractiveMap photos={photos as any} />)
             expect(screen.getAllByTestId('marker-photo')).toHaveLength(2)

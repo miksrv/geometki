@@ -1,5 +1,8 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { Search } from './Search'
 
 jest.mock('next/router', () => ({
     useRouter: () => ({
@@ -48,8 +51,6 @@ jest.mock('@/utils/coordinates', () => ({
     CoordinatesDMS: { fromString: jest.fn().mockReturnValue({ error: true }) },
     CoordinatesDSigned: { fromString: jest.fn().mockReturnValue({ error: true }) }
 }))
-
-import { Search } from './Search'
 
 describe('Search', () => {
     describe('rendering', () => {

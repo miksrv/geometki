@@ -1,7 +1,14 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { render, screen } from '@testing-library/react'
+
+import applicationReducer from '@/app/applicationSlice'
+import authReducer from '@/app/authSlice'
+import notificationReducer from '@/app/notificationSlice'
+
+import { Snackbar } from './Snackbar'
 
 jest.mock('@/utils/localstorage', () => ({
     getItem: jest.fn().mockReturnValue(null),
@@ -26,21 +33,19 @@ jest.mock('@/api', () => ({
 }))
 
 jest.mock('./Notification', () => ({
-    Notification: ({ message }: any) => (
-        <div data-testid={'snackbar-notification'}>{message}</div>
-    )
+    Notification: ({ message }: any) => <div data-testid={'snackbar-notification'}>{message}</div>
 }))
 
 jest.mock('@/config/constants', () => ({
-    LOCAL_STORAGE: { RETURN_PATH: 'returnPath', LOCALE: 'locale', THEME: 'theme', LOCATION: 'location', MAP_CENTER: 'mapCenter' },
+    LOCAL_STORAGE: {
+        RETURN_PATH: 'returnPath',
+        LOCALE: 'locale',
+        THEME: 'theme',
+        LOCATION: 'location',
+        MAP_CENTER: 'mapCenter'
+    },
     AUTH_COOKIES: { SESSION: 'session', TOKEN: 'token' }
 }))
-
-import applicationReducer from '@/app/applicationSlice'
-import authReducer from '@/app/authSlice'
-import notificationReducer from '@/app/notificationSlice'
-
-import { Snackbar } from './Snackbar'
 
 const makeStore = (preloadedState?: Record<string, unknown>) =>
     configureStore({

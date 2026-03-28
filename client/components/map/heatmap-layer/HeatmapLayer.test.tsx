@@ -1,5 +1,11 @@
 import React from 'react'
+import { useMap } from 'react-leaflet'
+
 import { render } from '@testing-library/react'
+
+import { API } from '@/api'
+
+import { HeatmapLayer } from './HeatmapLayer'
 
 jest.mock('react-leaflet', () => ({
     useMap: jest.fn().mockReturnValue({
@@ -18,8 +24,6 @@ jest.mock('@/api', () => ({
     }
 }))
 
-import { HeatmapLayer } from './HeatmapLayer'
-
 describe('HeatmapLayer', () => {
     beforeEach(() => {
         jest.clearAllMocks()
@@ -31,17 +35,14 @@ describe('HeatmapLayer', () => {
     })
 
     it('does not add a heatmap layer when no user data', () => {
-        const { useMap } = require('react-leaflet')
-        const mockMap = useMap()
+        const mockMap = jest.mocked(useMap)()
         render(<HeatmapLayer />)
         expect(mockMap.addLayer).not.toHaveBeenCalled()
     })
 
     it('does not add a heatmap layer when users list is empty', () => {
-        const { API } = require('@/api')
-        const { useMap } = require('react-leaflet')
-        const mockMap = useMap()
-        API.usePoiGetUsersQuery.mockReturnValue({ data: { items: [] } })
+        const mockMap = jest.mocked(useMap)()
+        jest.mocked(API.usePoiGetUsersQuery).mockReturnValue({ data: { items: [] } })
         render(<HeatmapLayer />)
         expect(mockMap.addLayer).not.toHaveBeenCalled()
     })

@@ -1,11 +1,14 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { fireEvent, render, screen } from '@testing-library/react'
 
 import applicationReducer from '@/app/applicationSlice'
 import authReducer from '@/app/authSlice'
 import notificationReducer from '@/app/notificationSlice'
+
+import { LanguageSwitcher } from './LanguageSwitcher'
 
 jest.mock('cookies-next', () => ({
     getCookie: jest.fn(() => ''),
@@ -58,8 +61,6 @@ const renderWithStore = (ui: React.ReactElement) => {
     const store = makeStore()
     return render(<Provider store={store}>{ui}</Provider>)
 }
-
-import { LanguageSwitcher } from './LanguageSwitcher'
 
 describe('LanguageSwitcher', () => {
     beforeEach(() => {

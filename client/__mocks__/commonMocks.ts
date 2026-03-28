@@ -4,14 +4,14 @@
  * Import from this file instead of duplicating mock setup across test files.
  */
 import React from 'react'
-import { render, RenderOptions } from '@testing-library/react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { render, RenderOptions } from '@testing-library/react'
 
 // ---------------------------------------------------------------------------
 // Redux store factory
 // ---------------------------------------------------------------------------
-
 import applicationReducer from '../app/applicationSlice'
 import authReducer from '../app/authSlice'
 import notificationReducer from '../app/notificationSlice'
@@ -46,10 +46,7 @@ export const TestWrapper: React.FC<WrapperProps> = ({ store = defaultStore, chil
 /** RTL render helper that automatically wraps children in a Redux Provider. */
 export const renderWithStore = (
     ui: React.ReactElement,
-    {
-        store = makeTestStore(),
-        ...options
-    }: RenderOptions & { store?: ReturnType<typeof makeTestStore> } = {}
+    { store = makeTestStore(), ...options }: RenderOptions & { store?: ReturnType<typeof makeTestStore> } = {}
 ) => {
     const Wrapper: React.FC<{ children?: React.ReactNode }> = ({ children }) =>
         React.createElement(Provider, { store }, children)
@@ -88,7 +85,7 @@ export const mockRouter = {
 // ---------------------------------------------------------------------------
 
 /** Minimal useTranslation mock: returns the key as the translated value. */
-export const mockUseTranslation = (namespace?: string) => ({
+export const mockUseTranslation = (_namespace?: string) => ({
     t: (key: string, opts?: Record<string, unknown>) => opts?.defaultValue ?? key,
     i18n: {
         language: 'ru',

@@ -1,15 +1,28 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import applicationReducer from '@/app/applicationSlice'
+import authReducer from '@/app/authSlice'
+import notificationReducer from '@/app/notificationSlice'
+
+import { AppLayout } from './AppLayout'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
     Dialog: ({ open, children, onCloseDialog }: any) =>
         open ? (
-            <div role={'dialog'} data-testid={'auth-dialog'}>
+            <div
+                role={'dialog'}
+                data-testid={'auth-dialog'}
+            >
                 {children}
-                <button aria-label={'close-dialog'} onClick={onCloseDialog} />
+                <button
+                    aria-label={'close-dialog'}
+                    onClick={onCloseDialog}
+                />
             </div>
         ) : null,
     Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
@@ -42,7 +55,12 @@ jest.mock('cookies-next', () => ({
 jest.mock('./app-bar', () => ({
     AppBar: ({ onMenuClick }: any) => (
         <div data-testid={'app-bar'}>
-            <button data-testid={'menu-button'} onClick={onMenuClick}>Menu</button>
+            <button
+                data-testid={'menu-button'}
+                onClick={onMenuClick}
+            >
+                Menu
+            </button>
         </div>
     )
 }))
@@ -83,12 +101,6 @@ jest.mock('./theme-switcher', () => ({
     ThemeSwitcher: () => <div data-testid={'theme-switcher'} />
 }))
 
-import applicationReducer from '@/app/applicationSlice'
-import authReducer from '@/app/authSlice'
-import notificationReducer from '@/app/notificationSlice'
-
-import { AppLayout } from './AppLayout'
-
 const makeStore = (preloadedState?: Record<string, unknown>) =>
     configureStore({
         reducer: {
@@ -122,7 +134,11 @@ describe('AppLayout', () => {
         })
 
         it('renders children in the main content area', () => {
-            renderWithStore(<AppLayout><div data-testid={'page-content'}>Page</div></AppLayout>)
+            renderWithStore(
+                <AppLayout>
+                    <div data-testid={'page-content'}>Page</div>
+                </AppLayout>
+            )
             expect(screen.getByTestId('page-content')).toBeInTheDocument()
         })
 

@@ -1,7 +1,15 @@
 import React from 'react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
 import { render } from '@testing-library/react'
+
+import { API } from '@/api'
+import applicationReducer from '@/app/applicationSlice'
+import authReducer from '@/app/authSlice'
+import notificationReducer from '@/app/notificationSlice'
+
+import { AppAuthChecker } from './AppAuthChecker'
 
 jest.mock('cookies-next', () => ({
     getCookie: jest.fn().mockReturnValue(''),
@@ -31,14 +39,14 @@ jest.mock('../../../next-i18next.config', () => ({
 
 jest.mock('@/config/constants', () => ({
     AUTH_COOKIES: { SESSION: 'session_cookie' },
-    LOCAL_STORAGE: { LOCALE: 'locale', THEME: 'theme', RETURN_PATH: 'returnPath', LOCATION: 'location', MAP_CENTER: 'mapCenter' }
+    LOCAL_STORAGE: {
+        LOCALE: 'locale',
+        THEME: 'theme',
+        RETURN_PATH: 'returnPath',
+        LOCATION: 'location',
+        MAP_CENTER: 'mapCenter'
+    }
 }))
-
-import applicationReducer from '@/app/applicationSlice'
-import authReducer from '@/app/authSlice'
-import notificationReducer from '@/app/notificationSlice'
-
-import { AppAuthChecker } from './AppAuthChecker'
 
 const makeStore = () =>
     configureStore({
@@ -68,9 +76,7 @@ describe('AppAuthChecker', () => {
 
     describe('auth state changes', () => {
         it('dispatches login action when auth data returns auth=true', () => {
-            const { API } = require('@/api')
-
-            API.useAuthGetMeQuery.mockReturnValue({
+            jest.mocked(API.useAuthGetMeQuery).mockReturnValue({
                 data: { auth: true, user: { id: 'u1', name: 'Alice' } },
                 refetch: jest.fn(),
                 isSuccess: true
@@ -82,9 +88,7 @@ describe('AppAuthChecker', () => {
         })
 
         it('does not crash when auth data returns auth=false', () => {
-            const { API } = require('@/api')
-
-            API.useAuthGetMeQuery.mockReturnValue({
+            jest.mocked(API.useAuthGetMeQuery).mockReturnValue({
                 data: { auth: false },
                 refetch: jest.fn(),
                 isSuccess: true

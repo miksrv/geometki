@@ -1,8 +1,13 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
 
+import { APIPastvu } from '@/api/apiPastvu'
+
+import { HistoricalPhotos } from './HistoricalPhotos'
+
 jest.mock('react-leaflet', () => ({
-    Marker: ({ position, title, alt, eventHandlers }: any) => (
+    Marker: ({ position, title, _alt, eventHandlers }: any) => (
         <div
             data-testid={'historical-marker'}
             data-lat={position[0]}
@@ -23,13 +28,11 @@ jest.mock('@/api/apiPastvu', () => ({
     }
 }))
 
-import { HistoricalPhotos } from './HistoricalPhotos'
-
 const mockPhotosData = {
     result: {
         photos: [
             { cid: 1, geo: [51.765, 55.099], file: 'photo1.jpg', title: 'Old Photo 1', year: 1900 },
-            { cid: 2, geo: [51.800, 55.200], file: 'photo2.jpg', title: 'Old Photo 2', year: 1920 }
+            { cid: 2, geo: [51.8, 55.2], file: 'photo2.jpg', title: 'Old Photo 2', year: 1920 }
         ]
     }
 }
@@ -46,8 +49,7 @@ describe('HistoricalPhotos', () => {
         })
 
         it('renders nothing when data has no photos', () => {
-            const { APIPastvu } = require('@/api/apiPastvu')
-            APIPastvu.useNearestGetPhotosQuery.mockReturnValue({
+            jest.mocked(APIPastvu.useNearestGetPhotosQuery).mockReturnValue({
                 data: { result: { photos: [] } }
             })
 
@@ -58,8 +60,7 @@ describe('HistoricalPhotos', () => {
 
     describe('with photos', () => {
         beforeEach(() => {
-            const { APIPastvu } = require('@/api/apiPastvu')
-            APIPastvu.useNearestGetPhotosQuery.mockReturnValue({ data: mockPhotosData })
+            jest.mocked(APIPastvu.useNearestGetPhotosQuery).mockReturnValue({ data: mockPhotosData })
         })
 
         it('renders a Marker for each photo', () => {
@@ -82,9 +83,7 @@ describe('HistoricalPhotos', () => {
             )
             screen.getAllByTestId('historical-marker')[0].click()
             expect(onPhotoClick).toHaveBeenCalledWith(
-                expect.arrayContaining([
-                    expect.objectContaining({ title: expect.stringContaining('Old Photo 1') })
-                ]),
+                expect.arrayContaining([expect.objectContaining({ title: expect.stringContaining('Old Photo 1') })]),
                 0
             )
         })

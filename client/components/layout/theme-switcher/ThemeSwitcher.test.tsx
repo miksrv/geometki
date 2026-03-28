@@ -1,5 +1,10 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import useClientOnly from '@/hooks/useClientOnly'
+
+import { ThemeSwitcher } from './ThemeSwitcher'
 
 // Mock next-themes
 const mockSetTheme = jest.fn()
@@ -17,13 +22,15 @@ jest.mock('@/hooks/useClientOnly', () => jest.fn().mockReturnValue(true))
 // Mock simple-react-ui-kit Button
 jest.mock('simple-react-ui-kit', () => ({
     Button: ({ icon, onClick }: any) => (
-        <button data-testid={'theme-button'} data-icon={icon} onClick={onClick}>
+        <button
+            data-testid={'theme-button'}
+            data-icon={icon}
+            onClick={onClick}
+        >
             toggle
         </button>
     )
 }))
-
-import { ThemeSwitcher } from './ThemeSwitcher'
 
 describe('ThemeSwitcher', () => {
     beforeEach(() => {
@@ -68,8 +75,7 @@ describe('ThemeSwitcher', () => {
     describe('SSR guard', () => {
         it('renders null when not on client', () => {
             // Override the useClientOnly mock to return false for this test
-            const useClientOnly = require('@/hooks/useClientOnly')
-            useClientOnly.mockReturnValueOnce(false)
+            jest.mocked(useClientOnly).mockReturnValueOnce(false)
             const { container } = render(<ThemeSwitcher />)
             expect(container.firstChild).toBeNull()
         })

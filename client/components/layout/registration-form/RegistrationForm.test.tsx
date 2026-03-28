@@ -1,7 +1,14 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import applicationReducer from '@/app/applicationSlice'
+import authReducer from '@/app/authSlice'
+import notificationReducer from '@/app/notificationSlice'
+
+import { RegistrationForm } from './RegistrationForm'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
@@ -14,24 +21,52 @@ jest.mock('simple-react-ui-kit', () => ({
             {label ?? children}
         </button>
     ),
-    Input: ({ label, name, type, error, disabled, onChange, onKeyDown, value }: any) => (
+    Input: ({
+        label,
+        name,
+        type,
+        error,
+        disabled,
+        onChange,
+        onKeyDown,
+        value
+    }: {
+        label?: string
+        name: string
+        type?: string
+        error?: string
+        disabled?: boolean
+        value?: string
+        onChange?: React.ChangeEventHandler
+        onKeyDown?: React.KeyboardEventHandler
+    }) => (
         <div>
             <label htmlFor={name}>{label}</label>
             <input
                 id={name}
                 name={name}
-                type={type || 'text'}
+                type={type ?? 'text'}
                 disabled={disabled}
                 value={value ?? ''}
                 aria-describedby={error ? `${name}-error` : undefined}
                 onChange={onChange}
                 onKeyDown={onKeyDown}
             />
-            {error && <span id={`${name}-error`} role={'alert'}>{error}</span>}
+            {error && (
+                <span
+                    id={`${name}-error`}
+                    role={'alert'}
+                >
+                    {error}
+                </span>
+            )}
         </div>
     ),
     Message: ({ type, title, children }: any) => (
-        <div role={'alert'} data-type={type}>
+        <div
+            role={'alert'}
+            data-type={type}
+        >
             <strong>{title}</strong>
             {children}
         </div>
@@ -68,10 +103,12 @@ jest.mock('cookies-next', () => ({
 
 jest.mock('@/api', () => ({
     API: {
-        useAuthPostRegistrationMutation: jest.fn().mockReturnValue([
-            jest.fn().mockResolvedValue({ data: { auth: false } }),
-            { data: undefined, error: undefined, isLoading: false }
-        ])
+        useAuthPostRegistrationMutation: jest
+            .fn()
+            .mockReturnValue([
+                jest.fn().mockResolvedValue({ data: { auth: false } }),
+                { data: undefined, error: undefined, isLoading: false }
+            ])
     },
     ApiType: {}
 }))
@@ -85,15 +122,15 @@ jest.mock('@/utils/validators', () => ({
 }))
 
 jest.mock('@/config/constants', () => ({
-    LOCAL_STORAGE: { RETURN_PATH: 'returnPath', LOCALE: 'locale', THEME: 'theme', LOCATION: 'location', MAP_CENTER: 'mapCenter' },
+    LOCAL_STORAGE: {
+        RETURN_PATH: 'returnPath',
+        LOCALE: 'locale',
+        THEME: 'theme',
+        LOCATION: 'location',
+        MAP_CENTER: 'mapCenter'
+    },
     AUTH_COOKIES: { SESSION: 'session', TOKEN: 'token' }
 }))
-
-import applicationReducer from '@/app/applicationSlice'
-import authReducer from '@/app/authSlice'
-import notificationReducer from '@/app/notificationSlice'
-
-import { RegistrationForm } from './RegistrationForm'
 
 const makeStore = () =>
     configureStore({

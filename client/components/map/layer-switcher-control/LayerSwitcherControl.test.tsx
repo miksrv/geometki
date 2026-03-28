@@ -1,14 +1,28 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { MapLayersEnum } from '../types'
+
+import { LayerSwitcherControl } from './LayerSwitcherControl'
 
 jest.mock('simple-react-ui-kit', () => ({
     Button: ({ icon, onClick, mode }: any) => (
-        <button data-icon={icon} data-mode={mode} onClick={onClick} />
+        <button
+            data-icon={icon}
+            data-mode={mode}
+            onClick={onClick}
+        />
     ),
     Container: ({ children, className }: any) => <div className={className}>{children}</div>,
     Checkbox: ({ id, label, checked, onChange }: any) => (
         <label>
-            <input type={'checkbox'} id={id} checked={!!checked} onChange={onChange} />
+            <input
+                type={'checkbox'}
+                id={id}
+                checked={!!checked}
+                onChange={onChange}
+            />
             {label}
         </label>
     ),
@@ -24,14 +38,16 @@ jest.mock('next-i18next', () => ({
 jest.mock('@/components/ui', () => ({
     RadioButton: ({ id, label, checked, onChange }: any) => (
         <label>
-            <input type={'radio'} id={id} checked={!!checked} onChange={onChange} />
+            <input
+                type={'radio'}
+                id={id}
+                checked={!!checked}
+                onChange={onChange}
+            />
             {label}
         </label>
     )
 }))
-
-import { LayerSwitcherControl } from './LayerSwitcherControl'
-import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum } from '../types'
 
 describe('LayerSwitcherControl', () => {
     describe('closed state', () => {

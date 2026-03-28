@@ -1,5 +1,8 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { Logo } from './Logo'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' ')
@@ -7,7 +10,11 @@ jest.mock('simple-react-ui-kit', () => ({
 
 jest.mock('next/link', () => {
     const Link = ({ href, title, className, children }: any) => (
-        <a href={href} title={title} className={className}>
+        <a
+            href={href}
+            title={title}
+            className={className}
+        >
             {children}
         </a>
     )
@@ -20,8 +27,6 @@ const mockUseTheme = jest.fn()
 jest.mock('next-themes', () => ({
     useTheme: () => mockUseTheme()
 }))
-
-import { Logo } from './Logo'
 
 describe('Logo', () => {
     beforeEach(() => {

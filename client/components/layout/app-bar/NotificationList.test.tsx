@@ -1,11 +1,19 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { render, screen } from '@testing-library/react'
+
+import { API } from '@/api'
+import applicationReducer from '@/app/applicationSlice'
+import authReducer from '@/app/authSlice'
+import notificationReducer from '@/app/notificationSlice'
+
+import { NotificationList } from './NotificationList'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
-    Button: ({ label, icon, onClick, disabled, loading, size, style, children }: any) => (
+    Button: ({ label, icon, onClick, disabled, loading, _size, style, children }: any) => (
         <button
             data-icon={icon}
             disabled={disabled || loading}
@@ -49,7 +57,9 @@ jest.mock('cookies-next', () => ({
 jest.mock('@/api', () => ({
     API: {
         useNotificationsDeleteMutation: jest.fn().mockReturnValue([jest.fn(), { isLoading: false, isSuccess: false }]),
-        useNotificationsGetListQuery: jest.fn().mockReturnValue({ data: undefined, isLoading: false, isFetching: false })
+        useNotificationsGetListQuery: jest
+            .fn()
+            .mockReturnValue({ data: undefined, isLoading: false, isFetching: false })
     }
 }))
 
@@ -62,15 +72,15 @@ jest.mock('../snackbar', () => ({
 }))
 
 jest.mock('@/config/constants', () => ({
-    LOCAL_STORAGE: { RETURN_PATH: 'returnPath', LOCALE: 'locale', THEME: 'theme', LOCATION: 'location', MAP_CENTER: 'mapCenter' },
+    LOCAL_STORAGE: {
+        RETURN_PATH: 'returnPath',
+        LOCALE: 'locale',
+        THEME: 'theme',
+        LOCATION: 'location',
+        MAP_CENTER: 'mapCenter'
+    },
     AUTH_COOKIES: { SESSION: 'session', TOKEN: 'token' }
 }))
-
-import applicationReducer from '@/app/applicationSlice'
-import authReducer from '@/app/authSlice'
-import notificationReducer from '@/app/notificationSlice'
-
-import { NotificationList } from './NotificationList'
 
 const makeStore = (preloadedState?: Record<string, unknown>) =>
     configureStore({
@@ -90,8 +100,11 @@ const renderWithStore = (ui: React.ReactElement, preloadedState?: Record<string,
 describe('NotificationList', () => {
     beforeEach(() => {
         jest.clearAllMocks()
-        const { API } = require('@/api')
-        API.useNotificationsGetListQuery.mockReturnValue({ data: undefined, isLoading: false, isFetching: false })
+        jest.mocked(API.useNotificationsGetListQuery).mockReturnValue({
+            data: undefined,
+            isLoading: false,
+            isFetching: false
+        })
     })
 
     describe('rendering', () => {
@@ -129,8 +142,7 @@ describe('NotificationList', () => {
 
     describe('notifications list', () => {
         it('renders notification items when data is available', () => {
-            const { API } = require('@/api')
-            API.useNotificationsGetListQuery.mockReturnValue({
+            jest.mocked(API.useNotificationsGetListQuery).mockReturnValue({
                 data: {
                     items: [
                         { id: 'n1', type: 'success', message: 'First notification', read: false },
@@ -147,8 +159,7 @@ describe('NotificationList', () => {
         })
 
         it('renders spinner when loading', () => {
-            const { API } = require('@/api')
-            API.useNotificationsGetListQuery.mockReturnValue({
+            jest.mocked(API.useNotificationsGetListQuery).mockReturnValue({
                 data: undefined,
                 isLoading: true,
                 isFetching: false

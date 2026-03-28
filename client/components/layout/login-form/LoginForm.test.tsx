@@ -1,7 +1,14 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import applicationReducer from '@/app/applicationSlice'
+import authReducer from '@/app/authSlice'
+import notificationReducer from '@/app/notificationSlice'
+
+import { LoginForm } from './LoginForm'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
@@ -14,23 +21,49 @@ jest.mock('simple-react-ui-kit', () => ({
             {label ?? children}
         </button>
     ),
-    Input: ({ label, name, type, error, disabled, onChange, onKeyDown }: any) => (
+    Input: ({
+        label,
+        name,
+        type,
+        error,
+        disabled,
+        onChange,
+        onKeyDown
+    }: {
+        label?: string
+        name: string
+        type?: string
+        error?: string
+        disabled?: boolean
+        onChange?: React.ChangeEventHandler
+        onKeyDown?: React.KeyboardEventHandler
+    }) => (
         <div>
             <label htmlFor={name}>{label}</label>
             <input
                 id={name}
                 name={name}
-                type={type || 'text'}
+                type={type ?? 'text'}
                 disabled={disabled}
                 aria-describedby={error ? `${name}-error` : undefined}
                 onChange={onChange}
                 onKeyDown={onKeyDown}
             />
-            {error && <span id={`${name}-error`} role={'alert'}>{error}</span>}
+            {error && (
+                <span
+                    id={`${name}-error`}
+                    role={'alert'}
+                >
+                    {error}
+                </span>
+            )}
         </div>
     ),
     Message: ({ type, title, children }: any) => (
-        <div role={'alert'} data-type={type}>
+        <div
+            role={'alert'}
+            data-type={type}
+        >
             <strong>{title}</strong>
             {children}
         </div>
@@ -39,7 +72,12 @@ jest.mock('simple-react-ui-kit', () => ({
 
 jest.mock('next/image', () => {
     const Image = ({ src, alt, width, height }: any) => (
-        <img src={src} alt={alt} width={width} height={height} />
+        <img
+            src={src}
+            alt={alt}
+            width={width}
+            height={height}
+        />
     )
     Image.displayName = 'Image'
     return Image
@@ -76,14 +114,18 @@ jest.mock('cookies-next', () => ({
 
 jest.mock('@/api', () => ({
     API: {
-        useAuthPostLoginMutation: jest.fn().mockReturnValue([
-            jest.fn().mockResolvedValue({ data: { auth: false } }),
-            { data: undefined, isLoading: false, isSuccess: false, error: undefined }
-        ]),
-        useAuthLoginServiceMutation: jest.fn().mockReturnValue([
-            jest.fn().mockResolvedValue({ data: {} }),
-            { data: undefined, isLoading: false, isSuccess: false }
-        ])
+        useAuthPostLoginMutation: jest
+            .fn()
+            .mockReturnValue([
+                jest.fn().mockResolvedValue({ data: { auth: false } }),
+                { data: undefined, isLoading: false, isSuccess: false, error: undefined }
+            ]),
+        useAuthLoginServiceMutation: jest
+            .fn()
+            .mockReturnValue([
+                jest.fn().mockResolvedValue({ data: {} }),
+                { data: undefined, isLoading: false, isSuccess: false }
+            ])
     },
     ApiType: {}
 }))
@@ -103,15 +145,15 @@ jest.mock('@/public/images/vk-logo.png', () => ({ src: '/vk-logo.png' }), { virt
 jest.mock('@/public/images/yandex-logo.png', () => ({ src: '/yandex-logo.png' }), { virtual: true })
 
 jest.mock('@/config/constants', () => ({
-    LOCAL_STORAGE: { RETURN_PATH: 'returnPath', LOCALE: 'locale', THEME: 'theme', LOCATION: 'location', MAP_CENTER: 'mapCenter' },
+    LOCAL_STORAGE: {
+        RETURN_PATH: 'returnPath',
+        LOCALE: 'locale',
+        THEME: 'theme',
+        LOCATION: 'location',
+        MAP_CENTER: 'mapCenter'
+    },
     AUTH_COOKIES: { SESSION: 'session', TOKEN: 'token' }
 }))
-
-import applicationReducer from '@/app/applicationSlice'
-import authReducer from '@/app/authSlice'
-import notificationReducer from '@/app/notificationSlice'
-
-import { LoginForm } from './LoginForm'
 
 const makeStore = () =>
     configureStore({
