@@ -37,7 +37,11 @@ Next.js 16 (Pages Router) with React 19. TypeScript throughout.
 
 **Authentication**: JWT token in localStorage. Auth state in `app/authSlice.ts`. `AppAuthChecker` polls every 60s.
 
-**Testing**: Jest + jsdom. Test files co-located with source. All 8 suites, 211 tests pass as of the March 2026 refactor.
+**Testing**: Jest + jsdom. Test files co-located with source. As of March 2026: 887 tests across 93 suites all pass. `identity-obj-proxy` and `@testing-library/dom` must be installed as devDeps. `simple-react-ui-kit` (pure ESM) is mapped via `moduleNameMapper` to `client/__mocks__/simple-react-ui-kit.tsx`. Shared test utilities live in `client/__mocks__/commonMocks.ts`.
+
+**Test pattern for components that import applicationSlice/authSlice/notificationSlice**: Use inline store (NOT `commonMocks.ts`) and mock `@/utils/localstorage`, `next-i18next.config`, `cookies-next`, and `@/config/constants` before importing those slices. This prevents `getStorageLocale()` initialization failures. See `LoginForm.test.tsx`, `AppLayout.test.tsx`, `AppBar.test.tsx` for the canonical pattern.
+
+**Test pattern for map components**: Mock `react-leaflet`, `leaflet`, and any Leaflet context hooks (`useLeafletContext`, `useMapEvents`, `useMap`). Never use the real Leaflet in tests — it requires a browser DOM that jsdom cannot provide. Temporal dead zone: never reference variables defined outside mock factories *inside* the factory (jest hoists mock calls above variable declarations). Solution: define mock data inside the factory, or use `jest.fn()` and override in `beforeEach`.
 
 **Why:** Summarises the entire client codebase structure for quick context in future sessions.
 **How to apply:** Use when suggesting refactors, new features, or bug fixes to stay consistent with existing patterns.
