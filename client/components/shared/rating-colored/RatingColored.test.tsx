@@ -1,16 +1,21 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { RatingColored } from './RatingColored'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' ')
 }))
 
-import { RatingColored } from './RatingColored'
-
 describe('RatingColored', () => {
     describe('rendering', () => {
         it('renders children when a value is provided', () => {
-            render(<RatingColored value={3.5}><span>3.5</span></RatingColored>)
+            render(
+                <RatingColored value={3.5}>
+                    <span>3.5</span>
+                </RatingColored>
+            )
             expect(screen.getByText('3.5')).toBeInTheDocument()
         })
 
@@ -28,20 +33,32 @@ describe('RatingColored', () => {
 
     describe('background color', () => {
         it('applies a background-color style when value is positive', () => {
-            const { container } = render(<RatingColored value={3}><span>score</span></RatingColored>)
+            const { container } = render(
+                <RatingColored value={3}>
+                    <span>score</span>
+                </RatingColored>
+            )
             const div = container.firstChild as HTMLElement
             expect(div.style.backgroundColor).not.toBe('')
         })
 
         it('applies a reddish color for value <= 2', () => {
-            const { container } = render(<RatingColored value={1}><span>low</span></RatingColored>)
+            const { container } = render(
+                <RatingColored value={1}>
+                    <span>low</span>
+                </RatingColored>
+            )
             const div = container.firstChild as HTMLElement
             // The color should be rgb with high red component
             expect(div.style.backgroundColor).toMatch(/rgb\(/)
         })
 
         it('applies a greenish color for value near 5', () => {
-            const { container } = render(<RatingColored value={5}><span>high</span></RatingColored>)
+            const { container } = render(
+                <RatingColored value={5}>
+                    <span>high</span>
+                </RatingColored>
+            )
             const div = container.firstChild as HTMLElement
             expect(div.style.backgroundColor).toMatch(/rgb\(/)
         })
@@ -49,7 +66,12 @@ describe('RatingColored', () => {
 
     describe('className prop', () => {
         it('applies custom className', () => {
-            const { container } = render(<RatingColored value={3} className={'my-class'} />)
+            const { container } = render(
+                <RatingColored
+                    value={3}
+                    className={'my-class'}
+                />
+            )
             expect(container.firstChild).toHaveClass('my-class')
         })
     })

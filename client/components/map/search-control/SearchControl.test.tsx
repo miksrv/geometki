@@ -1,5 +1,8 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { SearchControl } from './SearchControl'
 
 jest.mock('next-i18next', () => ({
     useTranslation: () => ({
@@ -9,16 +12,17 @@ jest.mock('next-i18next', () => ({
 
 jest.mock('@/api', () => ({
     API: {
-        useLocationGetGeoSearchMutation: jest.fn().mockReturnValue([
-            jest.fn(),
-            { data: undefined, isLoading: false }
-        ])
+        useLocationGetGeoSearchMutation: jest.fn().mockReturnValue([jest.fn(), { data: undefined, isLoading: false }])
     }
 }))
 
 jest.mock('@/components/ui', () => ({
     Autocomplete: ({ placeholder, className }: any) => (
-        <input data-testid={'autocomplete'} placeholder={placeholder} className={className} />
+        <input
+            data-testid={'autocomplete'}
+            placeholder={placeholder}
+            className={className}
+        />
     )
 }))
 
@@ -31,9 +35,7 @@ jest.mock('@/utils/coordinates', () => ({
     CoordinatesDSigned: { fromString: jest.fn().mockReturnValue({ error: true }) }
 }))
 
-jest.mock('lodash-es/debounce', () => (fn: Function) => fn)
-
-import { SearchControl } from './SearchControl'
+jest.mock('lodash-es/debounce', () => (fn: (...args: unknown[]) => unknown) => fn)
 
 describe('SearchControl', () => {
     it('renders the Autocomplete with the correct placeholder', () => {

@@ -1,9 +1,20 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { minutesAgo } from '@/utils/helpers'
+
+import { AvatarImage } from './AvatarImage'
 
 jest.mock('next/image', () => {
     const Image = ({ src, alt, width, height, className }: any) => (
-        <img src={src} alt={alt} width={width} height={height} className={className} />
+        <img
+            src={src}
+            alt={alt}
+            width={width}
+            height={height}
+            className={className}
+        />
     )
     Image.displayName = 'Image'
     return Image
@@ -19,9 +30,7 @@ jest.mock('@/utils/helpers', () => ({
     minutesAgo: jest.fn()
 }))
 
-import { AvatarImage } from './AvatarImage'
-
-const mockMinutesAgo = require('@/utils/helpers').minutesAgo
+const mockMinutesAgo = jest.mocked(minutesAgo)
 
 describe('AvatarImage', () => {
     beforeEach(() => {
@@ -54,9 +63,7 @@ describe('AvatarImage', () => {
         it('renders the online indicator for recently active user', () => {
             mockMinutesAgo.mockReturnValue(5)
             const { container } = render(
-                <AvatarImage
-                    user={{ id: 'u1', name: 'Alice', activity: { date: '2026-03-27T10:00:00Z' } } as any}
-                />
+                <AvatarImage user={{ id: 'u1', name: 'Alice', activity: { date: '2026-03-27T10:00:00Z' } } as any} />
             )
             expect(container.querySelector('.online')).toBeInTheDocument()
         })
@@ -64,9 +71,7 @@ describe('AvatarImage', () => {
         it('does not render online indicator when last activity is more than 15 min ago', () => {
             mockMinutesAgo.mockReturnValue(20)
             const { container } = render(
-                <AvatarImage
-                    user={{ id: 'u1', name: 'Alice', activity: { date: '2026-03-27T10:00:00Z' } } as any}
-                />
+                <AvatarImage user={{ id: 'u1', name: 'Alice', activity: { date: '2026-03-27T10:00:00Z' } } as any} />
             )
             expect(container.querySelector('.online')).not.toBeInTheDocument()
         })

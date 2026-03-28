@@ -1,5 +1,9 @@
 import React from 'react'
+import * as Leaflet from 'leaflet'
+
 import { render, screen } from '@testing-library/react'
+
+import { MarkerPointCluster } from './MarkerPointCluster'
 
 jest.mock('react-leaflet', () => ({
     Marker: ({ position, eventHandlers }: any) => (
@@ -15,8 +19,6 @@ jest.mock('react-leaflet', () => ({
 jest.mock('leaflet', () => ({
     DivIcon: jest.fn().mockImplementation(() => ({}))
 }))
-
-import { MarkerPointCluster } from './MarkerPointCluster'
 
 const mockMarker = {
     lat: 51.765,
@@ -34,7 +36,6 @@ describe('MarkerPointCluster', () => {
     })
 
     it('creates a DivIcon containing the count', () => {
-        const Leaflet = require('leaflet')
         render(<MarkerPointCluster marker={mockMarker as any} />)
         expect(Leaflet.DivIcon).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -45,7 +46,12 @@ describe('MarkerPointCluster', () => {
 
     it('calls onClick with coordinates when marker is clicked', () => {
         const onClick = jest.fn()
-        render(<MarkerPointCluster marker={mockMarker as any} onClick={onClick} />)
+        render(
+            <MarkerPointCluster
+                marker={mockMarker as any}
+                onClick={onClick}
+            />
+        )
         screen.getByTestId('point-cluster-marker').click()
         expect(onClick).toHaveBeenCalledWith({ lat: 51.765, lon: 55.099 })
     })

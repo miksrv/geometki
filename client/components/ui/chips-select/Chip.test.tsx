@@ -1,11 +1,12 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { Chip } from './Chip'
 
 jest.mock('simple-react-ui-kit', () => ({
     Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
 }))
-
-import { Chip } from './Chip'
 
 describe('Chip', () => {
     describe('rendering', () => {
@@ -28,7 +29,12 @@ describe('Chip', () => {
     describe('interaction', () => {
         it('calls onClickRemove with the chip text when the close button is clicked', () => {
             const onRemove = jest.fn()
-            render(<Chip text={'React'} onClickRemove={onRemove} />)
+            render(
+                <Chip
+                    text={'React'}
+                    onClickRemove={onRemove}
+                />
+            )
             fireEvent.click(screen.getByRole('button'))
             expect(onRemove).toHaveBeenCalledWith('React')
         })

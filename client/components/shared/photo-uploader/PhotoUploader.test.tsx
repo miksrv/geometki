@@ -1,7 +1,14 @@
 import React, { createRef } from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { fireEvent, render } from '@testing-library/react'
+
+import applicationReducer from '@/app/applicationSlice'
+import authReducer from '@/app/authSlice'
+import notificationReducer from '@/app/notificationSlice'
+
+import { PhotoUploader } from './PhotoUploader'
 
 jest.mock('@/utils/localstorage', () => ({
     getItem: jest.fn().mockReturnValue(null),
@@ -21,10 +28,9 @@ jest.mock('cookies-next', () => ({
 
 jest.mock('@/api', () => ({
     API: {
-        usePhotoPostUploadMutation: jest.fn().mockReturnValue([
-            jest.fn(),
-            { data: undefined, isLoading: false, isError: false, error: undefined }
-        ])
+        usePhotoPostUploadMutation: jest
+            .fn()
+            .mockReturnValue([jest.fn(), { data: undefined, isLoading: false, isError: false, error: undefined }])
     },
     ApiModel: {}
 }))
@@ -34,17 +40,17 @@ jest.mock('@/utils/api', () => ({
 }))
 
 jest.mock('@/config/constants', () => ({
-    LOCAL_STORAGE: { RETURN_PATH: 'returnPath', LOCALE: 'locale', THEME: 'theme', LOCATION: 'location', MAP_CENTER: 'mapCenter' },
+    LOCAL_STORAGE: {
+        RETURN_PATH: 'returnPath',
+        LOCALE: 'locale',
+        THEME: 'theme',
+        LOCATION: 'location',
+        MAP_CENTER: 'mapCenter'
+    },
     AUTH_COOKIES: { SESSION: 'session', TOKEN: 'token' }
 }))
 
 global.URL.createObjectURL = jest.fn((file: File) => `blob:${file.name}`)
-
-import applicationReducer from '@/app/applicationSlice'
-import authReducer from '@/app/authSlice'
-import notificationReducer from '@/app/notificationSlice'
-
-import { PhotoUploader } from './PhotoUploader'
 
 const makeStore = () =>
     configureStore({
@@ -85,7 +91,12 @@ describe('PhotoUploader', () => {
     describe('file selection', () => {
         it('calls onSelectFiles when files are selected with a placeId', () => {
             const onSelectFiles = jest.fn()
-            renderWithStore(<PhotoUploader placeId={'place-1'} onSelectFiles={onSelectFiles} />)
+            renderWithStore(
+                <PhotoUploader
+                    placeId={'place-1'}
+                    onSelectFiles={onSelectFiles}
+                />
+            )
 
             const input = document.querySelector('input[type="file"]') as HTMLInputElement
             const file = new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })

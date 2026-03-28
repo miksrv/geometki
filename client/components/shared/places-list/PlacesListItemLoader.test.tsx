@@ -1,11 +1,17 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
 
-jest.mock('simple-react-ui-kit', () => ({
-    Skeleton: ({ style }: any) => <div data-testid={'skeleton'} style={style} />
-}))
-
 import { PlacesListItemLoader } from './PlacesListItemLoader'
+
+jest.mock('simple-react-ui-kit', () => ({
+    Skeleton: ({ style }: any) => (
+        <div
+            data-testid={'skeleton'}
+            style={style}
+        />
+    )
+}))
 
 describe('PlacesListItemLoader', () => {
     describe('rendering', () => {

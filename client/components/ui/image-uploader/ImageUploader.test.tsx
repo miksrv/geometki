@@ -1,5 +1,8 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { ImageUploader } from './ImageUploader'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' ')
@@ -10,8 +13,6 @@ jest.mock('next-i18next', () => ({
         t: (key: string, opts?: Record<string, unknown>) => opts?.defaultValue ?? key
     })
 }))
-
-import { ImageUploader } from './ImageUploader'
 
 describe('ImageUploader', () => {
     describe('rendering', () => {

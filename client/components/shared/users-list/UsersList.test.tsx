@@ -1,18 +1,38 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
 
+import { ApiModel } from '@/api'
+
+import { UsersList } from './UsersList'
+
 jest.mock('simple-react-ui-kit', () => ({
-    Container: ({ children, className, title, footer, action }: any) => (
-        <div className={className} data-title={title}>{children}</div>
+    Container: ({ children, className, title, _footer, _action }: any) => (
+        <div
+            className={className}
+            data-title={title}
+        >
+            {children}
+        </div>
     ),
-    Progress: ({ value, height, className }: any) => (
-        <div data-testid={'progress'} data-value={value} className={className} />
+    Progress: ({ value, _height, className }: any) => (
+        <div
+            data-testid={'progress'}
+            data-value={value}
+            className={className}
+        />
     )
 }))
 
 jest.mock('next/image', () => {
     const Image = ({ src, alt, width, height, className }: any) => (
-        <img src={src} alt={alt} width={width} height={height} className={className} />
+        <img
+            src={src}
+            alt={alt}
+            width={width}
+            height={height}
+            className={className}
+        />
     )
     Image.displayName = 'Image'
     return Image
@@ -42,9 +62,6 @@ jest.mock('../user-avatar', () => ({
         </div>
     )
 }))
-
-import { UsersList } from './UsersList'
-import { ApiModel } from '@/api'
 
 const mockUsers: ApiModel.User[] = [
     {

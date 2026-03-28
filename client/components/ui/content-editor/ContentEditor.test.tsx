@@ -1,20 +1,22 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { ContentEditor } from './ContentEditor'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
     Spinner: () => <div data-testid={'spinner'} />
 }))
 
-jest.mock('next/dynamic', () => (fn: () => Promise<{ default: React.ComponentType }>, options?: { loading?: () => React.ReactElement }) => {
-    const MockMarkdownEditor = ({ value }: { value?: string }) => (
-        <div data-testid={'markdown-editor'}>{value}</div>
-    )
-    MockMarkdownEditor.displayName = 'MockMarkdownEditor'
-    return MockMarkdownEditor
-})
-
-import { ContentEditor } from './ContentEditor'
+jest.mock(
+    'next/dynamic',
+    () => (_fn: () => Promise<{ default: React.ComponentType }>, _options?: { loading?: () => React.ReactElement }) => {
+        const MockMarkdownEditor = ({ value }: { value?: string }) => <div data-testid={'markdown-editor'}>{value}</div>
+        MockMarkdownEditor.displayName = 'MockMarkdownEditor'
+        return MockMarkdownEditor
+    }
+)
 
 describe('ContentEditor', () => {
     describe('rendering', () => {

@@ -1,5 +1,9 @@
 import React from 'react'
+import * as Leaflet from 'leaflet'
+
 import { render, screen } from '@testing-library/react'
+
+import { MarkerPhotoCluster } from './MarkerPhotoCluster'
 
 jest.mock('react-leaflet', () => ({
     Marker: ({ position, eventHandlers }: any) => (
@@ -20,8 +24,6 @@ jest.mock('@/config/env', () => ({
     IMG_HOST: 'https://img.example.com'
 }))
 
-import { MarkerPhotoCluster } from './MarkerPhotoCluster'
-
 const mockMarker = {
     lat: 51.765,
     lon: 55.099,
@@ -39,7 +41,6 @@ describe('MarkerPhotoCluster', () => {
     })
 
     it('creates a DivIcon with preview image and count', () => {
-        const Leaflet = require('leaflet')
         render(<MarkerPhotoCluster marker={mockMarker as any} />)
         expect(Leaflet.DivIcon).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -55,7 +56,12 @@ describe('MarkerPhotoCluster', () => {
 
     it('calls onClick with coordinates when marker is clicked', () => {
         const onClick = jest.fn()
-        render(<MarkerPhotoCluster marker={mockMarker as any} onClick={onClick} />)
+        render(
+            <MarkerPhotoCluster
+                marker={mockMarker as any}
+                onClick={onClick}
+            />
+        )
         screen.getByTestId('photo-cluster-marker').click()
         expect(onClick).toHaveBeenCalledWith({ lat: 51.765, lon: 55.099 })
     })

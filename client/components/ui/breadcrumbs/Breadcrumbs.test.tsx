@@ -1,18 +1,22 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { Breadcrumbs } from './Breadcrumbs'
 
 // Mock next/link to render a simple anchor
 jest.mock('next/link', () => {
     const Link = ({ href, children, title }: any) => (
-        <a href={href} title={title}>
+        <a
+            href={href}
+            title={title}
+        >
             {children}
         </a>
     )
     Link.displayName = 'Link'
     return Link
 })
-
-import { Breadcrumbs } from './Breadcrumbs'
 
 describe('Breadcrumbs', () => {
     describe('rendering', () => {

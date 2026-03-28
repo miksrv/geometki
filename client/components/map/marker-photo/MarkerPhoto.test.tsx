@@ -1,5 +1,9 @@
 import React from 'react'
+import * as Leaflet from 'leaflet'
+
 import { render, screen } from '@testing-library/react'
+
+import { MarkerPhoto } from './MarkerPhoto'
 
 jest.mock('react-leaflet', () => ({
     Marker: ({ position, title, alt, eventHandlers, children }: any) => (
@@ -23,8 +27,6 @@ jest.mock('leaflet', () => ({
 jest.mock('@/config/env', () => ({
     IMG_HOST: 'https://img.example.com'
 }))
-
-import { MarkerPhoto } from './MarkerPhoto'
 
 const mockPhoto = {
     id: 'ph1',
@@ -50,7 +52,6 @@ describe('MarkerPhoto', () => {
     })
 
     it('creates an Icon with the full preview URL', () => {
-        const Leaflet = require('leaflet')
         render(<MarkerPhoto photo={mockPhoto as any} />)
         expect(Leaflet.Icon).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -61,7 +62,12 @@ describe('MarkerPhoto', () => {
 
     it('calls onPhotoClick when marker is clicked', () => {
         const onPhotoClick = jest.fn()
-        render(<MarkerPhoto photo={mockPhoto as any} onPhotoClick={onPhotoClick} />)
+        render(
+            <MarkerPhoto
+                photo={mockPhoto as any}
+                onPhotoClick={onPhotoClick}
+            />
+        )
         screen.getByTestId('photo-marker').click()
         expect(onPhotoClick).toHaveBeenCalledWith([])
     })

@@ -1,12 +1,13 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { NextButton, PrevButton } from './CarouselButtons'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
     Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
 }))
-
-import { PrevButton, NextButton } from './CarouselButtons'
 
 describe('PrevButton', () => {
     describe('rendering', () => {
@@ -42,7 +43,12 @@ describe('PrevButton', () => {
 
         it('does not call onClick when disabled', () => {
             const onClick = jest.fn()
-            render(<PrevButton onClick={onClick} disabled />)
+            render(
+                <PrevButton
+                    onClick={onClick}
+                    disabled
+                />
+            )
             fireEvent.click(screen.getByRole('button'))
             expect(onClick).not.toHaveBeenCalled()
         })

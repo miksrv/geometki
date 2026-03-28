@@ -1,9 +1,15 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { UserAvatar } from './UserAvatar'
 
 jest.mock('next/link', () => {
     const Link = ({ href, children, title }: any) => (
-        <a href={href} title={title}>
+        <a
+            href={href}
+            title={title}
+        >
             {children}
         </a>
     )
@@ -13,7 +19,12 @@ jest.mock('next/link', () => {
 
 jest.mock('next/image', () => {
     const Image = ({ src, alt, width, height }: any) => (
-        <img src={src} alt={alt} width={width} height={height} />
+        <img
+            src={src}
+            alt={alt}
+            width={width}
+            height={height}
+        />
     )
     Image.displayName = 'Image'
     return Image
@@ -31,8 +42,6 @@ jest.mock('./AvatarImage', () => ({
 }))
 
 jest.mock('@/public/images/no-avatar.png', () => ({ src: '/no-avatar.png' }), { virtual: true })
-
-import { UserAvatar } from './UserAvatar'
 
 const user = { id: 'user-1', name: 'Alice', avatar: '/avatars/alice.jpg' }
 
@@ -65,18 +74,30 @@ describe('UserAvatar', () => {
 
     describe('disableLink prop', () => {
         it('does not render a link when disableLink is true', () => {
-            render(<UserAvatar user={user as any} disableLink />)
+            render(
+                <UserAvatar
+                    user={user as any}
+                    disableLink
+                />
+            )
             expect(screen.queryByRole('link')).not.toBeInTheDocument()
         })
     })
 
     describe('showName prop', () => {
         it('shows the user name when showName is true', () => {
-            render(<UserAvatar user={user as any} showName />)
+            render(
+                <UserAvatar
+                    user={user as any}
+                    showName
+                />
+            )
             // The name link in the info section — there may be multiple "Alice" elements
             // (AvatarImage mock also renders user.name), so check for the link
             const links = screen.getAllByRole('link')
-            const nameLink = links.find((l) => l.textContent === 'Alice' && (l as HTMLAnchorElement).href.includes('/users/user-1'))
+            const nameLink = links.find(
+                (l) => l.textContent === 'Alice' && (l as HTMLAnchorElement).href.includes('/users/user-1')
+            )
             expect(nameLink).toBeInTheDocument()
         })
 
@@ -87,7 +108,13 @@ describe('UserAvatar', () => {
         })
 
         it('shows a caption when provided', () => {
-            render(<UserAvatar user={user as any} showName caption={'Admin'} />)
+            render(
+                <UserAvatar
+                    user={user as any}
+                    showName
+                    caption={'Admin'}
+                />
+            )
             expect(screen.getByText('Admin')).toBeInTheDocument()
         })
     })

@@ -1,5 +1,10 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { ApiModel } from '@/api'
+
+import { PlacesList } from './PlacesList'
 
 jest.mock('simple-react-ui-kit', () => ({
     Container: ({ children, className }: any) => <div className={className}>{children}</div>
@@ -18,9 +23,6 @@ jest.mock('./PlacesListItem', () => ({
 jest.mock('./PlacesListItemLoader', () => ({
     PlacesListItemLoader: () => <div data-testid={'places-loader'} />
 }))
-
-import { PlacesList } from './PlacesList'
-import { ApiModel } from '@/api'
 
 const mockPlaces: ApiModel.Place[] = [
     { id: 'place-1', title: 'Cool Cave', lat: 55.0, lon: 37.0 },

@@ -1,5 +1,10 @@
 import React from 'react'
+
 import { render } from '@testing-library/react'
+
+import { ApiModel } from '@/api'
+
+import { PhotoLightbox } from './PhotoLightbox'
 
 jest.mock('next/link', () => {
     const Link = ({ href, children }: any) => <a href={href}>{children}</a>
@@ -17,8 +22,18 @@ jest.mock('yet-another-react-lightbox', () => ({
     __esModule: true,
     default: ({ open, slides, close }: any) =>
         open ? (
-            <div data-testid={'lightbox'} onClick={close}>
-                {slides?.map((s: any, i: number) => <div key={i} data-testid={'lightbox-slide'}>{s.alt}</div>)}
+            <div
+                data-testid={'lightbox'}
+                onClick={close}
+            >
+                {slides?.map((s: any, i: number) => (
+                    <div
+                        key={i}
+                        data-testid={'lightbox-slide'}
+                    >
+                        {s.alt}
+                    </div>
+                ))}
             </div>
         ) : null
 }))
@@ -44,9 +59,6 @@ jest.mock('./ImageSlide', () => ({
     ImageSlide: () => <div data-testid={'image-slide'} />
 }))
 
-import { PhotoLightbox } from './PhotoLightbox'
-import { ApiModel } from '@/api'
-
 const mockPhotos: ApiModel.Photo[] = [
     { id: 'ph1', full: '/photos/full-1.jpg', preview: '/photos/prev-1.jpg', title: 'Photo 1', width: 800, height: 600 },
     { id: 'ph2', full: '/photos/full-2.jpg', preview: '/photos/prev-2.jpg', title: 'Photo 2', width: 800, height: 600 }
@@ -55,17 +67,32 @@ const mockPhotos: ApiModel.Photo[] = [
 describe('PhotoLightbox', () => {
     describe('rendering', () => {
         it('does not render the lightbox when showLightbox is false', () => {
-            const { queryByTestId } = render(<PhotoLightbox photos={mockPhotos} showLightbox={false} />)
+            const { queryByTestId } = render(
+                <PhotoLightbox
+                    photos={mockPhotos}
+                    showLightbox={false}
+                />
+            )
             expect(queryByTestId('lightbox')).not.toBeInTheDocument()
         })
 
         it('renders the lightbox when showLightbox is true', () => {
-            const { getByTestId } = render(<PhotoLightbox photos={mockPhotos} showLightbox={true} />)
+            const { getByTestId } = render(
+                <PhotoLightbox
+                    photos={mockPhotos}
+                    showLightbox={true}
+                />
+            )
             expect(getByTestId('lightbox')).toBeInTheDocument()
         })
 
         it('renders slides for each photo', () => {
-            const { getAllByTestId } = render(<PhotoLightbox photos={mockPhotos} showLightbox={true} />)
+            const { getAllByTestId } = render(
+                <PhotoLightbox
+                    photos={mockPhotos}
+                    showLightbox={true}
+                />
+            )
             expect(getAllByTestId('lightbox-slide')).toHaveLength(2)
         })
 

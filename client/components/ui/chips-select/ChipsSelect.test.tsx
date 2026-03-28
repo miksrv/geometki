@@ -1,5 +1,8 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { ChipsSelect } from './ChipsSelect'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
@@ -9,8 +12,6 @@ jest.mock('simple-react-ui-kit', () => ({
 
 // Suppress lodash debounce to run callbacks immediately in tests
 jest.mock('lodash-es/debounce', () => (fn: (...args: unknown[]) => unknown) => fn)
-
-import { ChipsSelect } from './ChipsSelect'
 
 const options = ['React', 'Vue', 'Angular']
 
@@ -22,12 +23,22 @@ describe('ChipsSelect', () => {
         })
 
         it('renders the label when provided', () => {
-            render(<ChipsSelect options={options} label={'Tags'} />)
+            render(
+                <ChipsSelect
+                    options={options}
+                    label={'Tags'}
+                />
+            )
             expect(screen.getByText('Tags')).toBeInTheDocument()
         })
 
         it('renders existing selected values as chips', () => {
-            render(<ChipsSelect options={options} value={['React', 'Vue']} />)
+            render(
+                <ChipsSelect
+                    options={options}
+                    value={['React', 'Vue']}
+                />
+            )
             expect(screen.getByText('React')).toBeInTheDocument()
             expect(screen.getByText('Vue')).toBeInTheDocument()
         })
@@ -46,23 +57,42 @@ describe('ChipsSelect', () => {
 
         it('calls onSearch when input changes', () => {
             const onSearch = jest.fn()
-            render(<ChipsSelect options={options} onSearch={onSearch} />)
+            render(
+                <ChipsSelect
+                    options={options}
+                    onSearch={onSearch}
+                />
+            )
             fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Rea' } })
             expect(onSearch).toHaveBeenCalledWith('Rea')
         })
 
         it('removes a chip when the close button is clicked', () => {
             const onSelect = jest.fn()
-            render(<ChipsSelect options={options} value={['React', 'Vue']} onSelect={onSelect} />)
+            render(
+                <ChipsSelect
+                    options={options}
+                    value={['React', 'Vue']}
+                    onSelect={onSelect}
+                />
+            )
             // Click the first chip's remove button
-            const removeButtons = screen.getAllByRole('button').filter((b) => b.querySelector('[data-testid="icon-Close"]'))
+            const removeButtons = screen
+                .getAllByRole('button')
+                .filter((b) => b.querySelector('[data-testid="icon-Close"]'))
             fireEvent.click(removeButtons[0])
             expect(onSelect).toHaveBeenCalledWith(['Vue'])
         })
 
         it('adds a new chip on Enter key press', () => {
             const onSelect = jest.fn()
-            render(<ChipsSelect options={options} value={[]} onSelect={onSelect} />)
+            render(
+                <ChipsSelect
+                    options={options}
+                    value={[]}
+                    onSelect={onSelect}
+                />
+            )
             const input = screen.getByRole('textbox')
             fireEvent.change(input, { target: { value: 'React' } })
             fireEvent.keyDown(input, { key: 'Enter' })
@@ -71,7 +101,13 @@ describe('ChipsSelect', () => {
 
         it('does not add a duplicate chip on Enter key press', () => {
             const onSelect = jest.fn()
-            render(<ChipsSelect options={options} value={['React']} onSelect={onSelect} />)
+            render(
+                <ChipsSelect
+                    options={options}
+                    value={['React']}
+                    onSelect={onSelect}
+                />
+            )
             const input = screen.getByRole('textbox')
             fireEvent.change(input, { target: { value: 'react' } }) // case-insensitive
             fireEvent.keyDown(input, { key: 'Enter' })
@@ -80,7 +116,13 @@ describe('ChipsSelect', () => {
 
         it('removes the last chip on Backspace when input is empty', () => {
             const onSelect = jest.fn()
-            render(<ChipsSelect options={options} value={['React', 'Vue']} onSelect={onSelect} />)
+            render(
+                <ChipsSelect
+                    options={options}
+                    value={['React', 'Vue']}
+                    onSelect={onSelect}
+                />
+            )
             fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Backspace' })
             expect(onSelect).toHaveBeenCalledWith(['React'])
         })

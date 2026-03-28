@@ -1,7 +1,16 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
 import { Provider } from 'react-redux'
+import * as Leaflet from 'leaflet'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { render, screen } from '@testing-library/react'
+
+import { API } from '@/api'
+import applicationReducer from '@/app/applicationSlice'
+import authReducer from '@/app/authSlice'
+import notificationReducer from '@/app/notificationSlice'
+
+import { MarkerPoint } from './MarkerPoint'
 
 jest.mock('react-leaflet', () => ({
     Marker: ({ position, eventHandlers, children }: any) => (
@@ -22,13 +31,26 @@ jest.mock('leaflet', () => ({
 }))
 
 jest.mock('next/image', () => {
-    const Image = ({ src, alt, className }: any) => <img src={src} alt={alt} className={className} />
+    const Image = ({ src, alt, className }: any) => (
+        <img
+            src={src}
+            alt={alt}
+            className={className}
+        />
+    )
     Image.displayName = 'Image'
     return Image
 })
 
 jest.mock('next/link', () => {
-    const Link = ({ href, children, title }: any) => <a href={href} title={title}>{children}</a>
+    const Link = ({ href, children, title }: any) => (
+        <a
+            href={href}
+            title={title}
+        >
+            {children}
+        </a>
+    )
     Link.displayName = 'Link'
     return Link
 })
@@ -66,7 +88,7 @@ jest.mock('@/api', () => ({
 
 jest.mock('@/components/shared', () => ({
     BookmarkButton: () => <div data-testid={'bookmark-button'} />,
-    PlacePlate: ({ icon, content }: any) => <div data-testid={'place-plate'}>{content}</div>
+    PlacePlate: ({ _icon, content }: any) => <div data-testid={'place-plate'}>{content}</div>
 }))
 
 jest.mock('@/config/env', () => ({
@@ -87,15 +109,15 @@ jest.mock('simple-react-ui-kit', () => ({
 }))
 
 jest.mock('@/config/constants', () => ({
-    LOCAL_STORAGE: { RETURN_PATH: 'returnPath', LOCALE: 'locale', THEME: 'theme', LOCATION: 'location', MAP_CENTER: 'mapCenter' },
+    LOCAL_STORAGE: {
+        RETURN_PATH: 'returnPath',
+        LOCALE: 'locale',
+        THEME: 'theme',
+        LOCATION: 'location',
+        MAP_CENTER: 'mapCenter'
+    },
     AUTH_COOKIES: { SESSION: 'session', TOKEN: 'token' }
 }))
-
-import applicationReducer from '@/app/applicationSlice'
-import authReducer from '@/app/authSlice'
-import notificationReducer from '@/app/notificationSlice'
-
-import { MarkerPoint } from './MarkerPoint'
 
 const makeStore = () =>
     configureStore({
@@ -138,17 +160,13 @@ describe('MarkerPoint', () => {
     })
 
     it('renders skeleton when loading', () => {
-        const { API } = require('@/api')
-        API.usePoiGetItemMutation.mockReturnValue([jest.fn(), { isLoading: true, data: undefined }])
+        jest.mocked(API.usePoiGetItemMutation).mockReturnValue([jest.fn(), { isLoading: true, data: undefined }])
         renderWithStore(<MarkerPoint place={mockPlace as any} />)
         expect(screen.getByTestId('skeleton')).toBeInTheDocument()
     })
 
     it('creates an Icon from the category image', () => {
-        const Leaflet = require('leaflet')
         renderWithStore(<MarkerPoint place={mockPlace as any} />)
-        expect(Leaflet.Icon).toHaveBeenCalledWith(
-            expect.objectContaining({ iconUrl: '/icons/category.png' })
-        )
+        expect(Leaflet.Icon).toHaveBeenCalledWith(expect.objectContaining({ iconUrl: '/icons/category.png' }))
     })
 })

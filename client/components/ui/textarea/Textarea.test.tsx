@@ -1,5 +1,6 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
 
 import { Textarea } from './Textarea'
 
@@ -21,7 +22,13 @@ describe('Textarea', () => {
         })
 
         it('passes through standard HTML textarea attributes', () => {
-            render(<Textarea placeholder={'Enter text...'} value={''} onChange={() => {}} />)
+            render(
+                <Textarea
+                    placeholder={'Enter text...'}
+                    value={''}
+                    onChange={() => {}}
+                />
+            )
             expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Enter text...')
         })
     })
@@ -36,9 +43,7 @@ describe('Textarea', () => {
 
         it('does not throw when onChange is not provided', () => {
             render(<Textarea />)
-            expect(() =>
-                fireEvent.change(screen.getByRole('textbox'), { target: { value: 'test' } })
-            ).not.toThrow()
+            expect(() => fireEvent.change(screen.getByRole('textbox'), { target: { value: 'test' } })).not.toThrow()
         })
     })
 

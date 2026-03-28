@@ -1,16 +1,15 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { Carousel } from './Carousel'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
     Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
 }))
 
-jest.mock('embla-carousel-react', () =>
-    jest.fn().mockReturnValue([jest.fn(), undefined])
-)
-
-import { Carousel } from './Carousel'
+jest.mock('embla-carousel-react', () => jest.fn().mockReturnValue([jest.fn(), undefined]))
 
 describe('Carousel', () => {
     describe('rendering', () => {

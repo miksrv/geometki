@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
 
 import { Counter } from './Counter'
@@ -29,7 +30,12 @@ describe('Counter', () => {
 
     describe('className prop', () => {
         it('applies custom className when provided', () => {
-            const { container } = render(<Counter value={5} className={'my-custom'} />)
+            const { container } = render(
+                <Counter
+                    value={5}
+                    className={'my-custom'}
+                />
+            )
             expect(container.firstChild).toHaveClass('my-custom')
         })
     })

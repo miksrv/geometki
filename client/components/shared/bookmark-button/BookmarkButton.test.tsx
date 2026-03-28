@@ -1,7 +1,15 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { API } from '@/api'
+import applicationReducer from '@/app/applicationSlice'
+import authReducer from '@/app/authSlice'
+import notificationReducer from '@/app/notificationSlice'
+
+import { BookmarkButton } from './BookmarkButton'
 
 jest.mock('simple-react-ui-kit', () => ({
     Button: ({ icon, disabled, loading, onClick, mode, className, children }: any) => (
@@ -42,7 +50,9 @@ jest.mock('cookies-next', () => ({
 jest.mock('@/api', () => ({
     API: {
         useBookmarksPutPlaceMutation: jest.fn().mockReturnValue([jest.fn(), { isLoading: false }]),
-        useBookmarksGetPlaceQuery: jest.fn().mockReturnValue({ data: { result: false }, isLoading: false, isFetching: false })
+        useBookmarksGetPlaceQuery: jest
+            .fn()
+            .mockReturnValue({ data: { result: false }, isLoading: false, isFetching: false })
     }
 }))
 
@@ -51,15 +61,15 @@ jest.mock('@/utils/api', () => ({
 }))
 
 jest.mock('@/config/constants', () => ({
-    LOCAL_STORAGE: { RETURN_PATH: 'returnPath', LOCALE: 'locale', THEME: 'theme', LOCATION: 'location', MAP_CENTER: 'mapCenter' },
+    LOCAL_STORAGE: {
+        RETURN_PATH: 'returnPath',
+        LOCALE: 'locale',
+        THEME: 'theme',
+        LOCATION: 'location',
+        MAP_CENTER: 'mapCenter'
+    },
     AUTH_COOKIES: { SESSION: 'session', TOKEN: 'token' }
 }))
-
-import applicationReducer from '@/app/applicationSlice'
-import authReducer from '@/app/authSlice'
-import notificationReducer from '@/app/notificationSlice'
-
-import { BookmarkButton } from './BookmarkButton'
 
 const makeStore = (preloadedState?: Record<string, unknown>) =>
     configureStore({
@@ -79,9 +89,12 @@ const renderWithStore = (ui: React.ReactElement, preloadedState?: Record<string,
 describe('BookmarkButton', () => {
     beforeEach(() => {
         jest.clearAllMocks()
-        const { API } = require('@/api')
-        API.useBookmarksGetPlaceQuery.mockReturnValue({ data: { result: false }, isLoading: false, isFetching: false })
-        API.useBookmarksPutPlaceMutation.mockReturnValue([jest.fn(), { isLoading: false }])
+        jest.mocked(API.useBookmarksGetPlaceQuery).mockReturnValue({
+            data: { result: false },
+            isLoading: false,
+            isFetching: false
+        })
+        jest.mocked(API.useBookmarksPutPlaceMutation).mockReturnValue([jest.fn(), { isLoading: false }])
     })
 
     describe('rendering', () => {
@@ -96,8 +109,7 @@ describe('BookmarkButton', () => {
         })
 
         it('renders with HeartFilled icon when bookmarked', () => {
-            const { API } = require('@/api')
-            API.useBookmarksGetPlaceQuery.mockReturnValue({
+            jest.mocked(API.useBookmarksGetPlaceQuery).mockReturnValue({
                 data: { result: true },
                 isLoading: false,
                 isFetching: false
@@ -120,7 +132,11 @@ describe('BookmarkButton', () => {
             })
             const dispatchSpy = jest.spyOn(store, 'dispatch')
 
-            render(<Provider store={store}><BookmarkButton placeId={'place-1'} /></Provider>)
+            render(
+                <Provider store={store}>
+                    <BookmarkButton placeId={'place-1'} />
+                </Provider>
+            )
             fireEvent.click(screen.getByRole('button'))
 
             expect(dispatchSpy).toHaveBeenCalled()
@@ -129,10 +145,9 @@ describe('BookmarkButton', () => {
 
     describe('authenticated user', () => {
         it('calls setBookmark when clicked while authenticated', async () => {
-            const { API } = require('@/api')
             const mockSetBookmark = jest.fn().mockResolvedValue({ data: {} })
-            API.useBookmarksPutPlaceMutation.mockReturnValue([mockSetBookmark, { isLoading: false }])
-            API.useBookmarksGetPlaceQuery.mockReturnValue({
+            jest.mocked(API.useBookmarksPutPlaceMutation).mockReturnValue([mockSetBookmark, { isLoading: false }])
+            jest.mocked(API.useBookmarksGetPlaceQuery).mockReturnValue({
                 data: { result: false },
                 isLoading: false,
                 isFetching: false

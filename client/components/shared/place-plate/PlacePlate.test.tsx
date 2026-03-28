@@ -1,11 +1,12 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { PlacePlate } from './PlacePlate'
 
 jest.mock('simple-react-ui-kit', () => ({
     Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
 }))
-
-import { PlacePlate } from './PlacePlate'
 
 describe('PlacePlate', () => {
     describe('rendering', () => {
@@ -41,7 +42,12 @@ describe('PlacePlate', () => {
         })
 
         it('renders icon alongside content', () => {
-            render(<PlacePlate icon={'Ruler'} content={'500 m'} />)
+            render(
+                <PlacePlate
+                    icon={'Ruler'}
+                    content={'500 m'}
+                />
+            )
             expect(screen.getByTestId('icon-Ruler')).toBeInTheDocument()
             expect(screen.getByText('500 m')).toBeInTheDocument()
         })

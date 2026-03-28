@@ -1,12 +1,25 @@
 import React from 'react'
+import * as Leaflet from 'leaflet'
+
 import { render, screen } from '@testing-library/react'
+
+import { MarkerUser } from './MarkerUser'
 
 jest.mock('react-leaflet', () => ({
     Marker: ({ position }: any) => (
-        <div data-testid={'user-marker'} data-lat={position[0]} data-lon={position[1]} />
+        <div
+            data-testid={'user-marker'}
+            data-lat={position[0]}
+            data-lon={position[1]}
+        />
     ),
     Circle: ({ center, radius }: any) => (
-        <div data-testid={'user-circle'} data-lat={center[0]} data-lon={center[1]} data-radius={radius} />
+        <div
+            data-testid={'user-circle'}
+            data-lat={center[0]}
+            data-lon={center[1]}
+            data-radius={radius}
+        />
     )
 }))
 
@@ -15,8 +28,6 @@ jest.mock('leaflet', () => ({
 }))
 
 jest.mock('@/public/images/no-avatar.png', () => ({ src: '/images/no-avatar.png' }), { virtual: true })
-
-import { MarkerUser } from './MarkerUser'
 
 describe('MarkerUser', () => {
     const coordinates = { lat: 51.765, lon: 55.099 }
@@ -41,10 +52,7 @@ describe('MarkerUser', () => {
     })
 
     it('creates an Icon with the avatar url', () => {
-        const Leaflet = require('leaflet')
         render(<MarkerUser coordinates={coordinates} />)
-        expect(Leaflet.Icon).toHaveBeenCalledWith(
-            expect.objectContaining({ iconUrl: '/images/no-avatar.png' })
-        )
+        expect(Leaflet.Icon).toHaveBeenCalledWith(expect.objectContaining({ iconUrl: '/images/no-avatar.png' }))
     })
 })

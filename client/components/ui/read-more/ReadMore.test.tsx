@@ -1,5 +1,8 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { ReadMore } from './ReadMore'
 
 // Mock react-markdown to render plain text
 jest.mock('react-markdown', () => {
@@ -7,8 +10,6 @@ jest.mock('react-markdown', () => {
     ReactMarkdown.displayName = 'ReactMarkdown'
     return ReactMarkdown
 })
-
-import { ReadMore } from './ReadMore'
 
 const SHORT_TEXT = 'Hello world'
 const LONG_TEXT =

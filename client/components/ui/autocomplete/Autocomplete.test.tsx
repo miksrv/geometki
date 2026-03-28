@@ -1,16 +1,22 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { Autocomplete } from './Autocomplete'
 
 jest.mock('next/image', () => {
-    const Image = ({ src, alt }: any) => <img src={src} alt={alt} />
+    const Image = ({ src, alt }: any) => (
+        <img
+            src={src}
+            alt={alt}
+        />
+    )
     Image.displayName = 'Image'
     return Image
 })
 
 // Suppress lodash debounce – run callbacks immediately
 jest.mock('lodash-es/debounce', () => (fn: (...args: unknown[]) => unknown) => fn)
-
-import { Autocomplete } from './Autocomplete'
 
 type TestOption = { title: string; value: string; description?: string }
 
@@ -48,7 +54,12 @@ describe('Autocomplete', () => {
 
         it('does not call onSearch when debouncing=false and input changes (non-debounced)', () => {
             const onSearch = jest.fn()
-            render(<Autocomplete<string> onSearch={onSearch} debouncing={false} />)
+            render(
+                <Autocomplete<string>
+                    onSearch={onSearch}
+                    debouncing={false}
+                />
+            )
             fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Ka' } })
             expect(onSearch).toHaveBeenCalledWith('Ka')
         })
@@ -131,7 +142,12 @@ describe('Autocomplete', () => {
                 />
             )
             fireEvent.change(screen.getByRole('textbox'), { target: { value: 'M' } })
-            rerender(<Autocomplete<string> options={options} debouncing={false} />)
+            rerender(
+                <Autocomplete<string>
+                    options={options}
+                    debouncing={false}
+                />
+            )
             fireEvent.click(screen.getByText('Moscow').closest('button')!)
             expect(screen.getByRole('textbox')).toHaveValue('Moscow')
         })
@@ -200,7 +216,12 @@ describe('Autocomplete', () => {
                 />
             )
             fireEvent.change(screen.getByRole('textbox'), { target: { value: 'K' } })
-            rerender(<Autocomplete<string> options={options} debouncing={false} />)
+            rerender(
+                <Autocomplete<string>
+                    options={options}
+                    debouncing={false}
+                />
+            )
             expect(screen.getByText('Tatarstan capital')).toBeInTheDocument()
         })
     })

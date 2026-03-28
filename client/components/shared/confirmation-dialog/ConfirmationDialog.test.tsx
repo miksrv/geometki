@@ -1,11 +1,14 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { fireEvent, render, screen } from '@testing-library/react'
 
 import applicationReducer from '@/app/applicationSlice'
 import authReducer from '@/app/authSlice'
 import notificationReducer from '@/app/notificationSlice'
+
+import { ConfirmationDialog } from './ConfirmationDialog'
 
 jest.mock('cookies-next', () => ({
     getCookie: jest.fn(() => ''),
@@ -31,13 +34,20 @@ jest.mock('next-i18next', () => ({
 // Mock simple-react-ui-kit Dialog and Button
 jest.mock('simple-react-ui-kit', () => ({
     Button: ({ label, onClick, variant, mode }: any) => (
-        <button data-variant={variant} data-mode={mode} onClick={onClick}>
+        <button
+            data-variant={variant}
+            data-mode={mode}
+            onClick={onClick}
+        >
             {label}
         </button>
     ),
     Dialog: ({ open, children, onCloseDialog }: any) =>
         open ? (
-            <div data-testid={'dialog'} onClick={(e) => e.target === e.currentTarget && onCloseDialog?.()}>
+            <div
+                data-testid={'dialog'}
+                onClick={(e) => e.target === e.currentTarget && onCloseDialog?.()}
+            >
                 {children}
             </div>
         ) : null
@@ -45,8 +55,6 @@ jest.mock('simple-react-ui-kit', () => ({
 
 // Suppress react-image-crop scss import
 jest.mock('react-image-crop/src/ReactCrop.scss', () => {}, { virtual: true })
-
-import { ConfirmationDialog } from './ConfirmationDialog'
 
 const makeStore = () =>
     configureStore({
@@ -77,7 +85,12 @@ describe('ConfirmationDialog', () => {
         })
 
         it('renders custom message when provided', () => {
-            renderWithStore(<ConfirmationDialog open message={'Are you sure?'} />)
+            renderWithStore(
+                <ConfirmationDialog
+                    open
+                    message={'Are you sure?'}
+                />
+            )
             expect(screen.getByText('Are you sure?')).toBeInTheDocument()
         })
 
@@ -95,7 +108,13 @@ describe('ConfirmationDialog', () => {
         })
 
         it('renders custom button texts when provided', () => {
-            renderWithStore(<ConfirmationDialog open acceptText={'Yes, delete'} rejectText={'Cancel'} />)
+            renderWithStore(
+                <ConfirmationDialog
+                    open
+                    acceptText={'Yes, delete'}
+                    rejectText={'Cancel'}
+                />
+            )
             expect(screen.getByText('Yes, delete')).toBeInTheDocument()
             expect(screen.getByText('Cancel')).toBeInTheDocument()
         })
@@ -104,14 +123,24 @@ describe('ConfirmationDialog', () => {
     describe('interaction', () => {
         it('calls onAccept when the accept button is clicked', () => {
             const onAccept = jest.fn()
-            renderWithStore(<ConfirmationDialog open onAccept={onAccept} />)
+            renderWithStore(
+                <ConfirmationDialog
+                    open
+                    onAccept={onAccept}
+                />
+            )
             fireEvent.click(screen.getByText('confirmation-dialog-accept'))
             expect(onAccept).toHaveBeenCalledTimes(1)
         })
 
         it('calls onReject when the reject button is clicked', () => {
             const onReject = jest.fn()
-            renderWithStore(<ConfirmationDialog open onReject={onReject} />)
+            renderWithStore(
+                <ConfirmationDialog
+                    open
+                    onReject={onReject}
+                />
+            )
             fireEvent.click(screen.getByText('confirmation-dialog-reject'))
             expect(onReject).toHaveBeenCalledTimes(1)
         })

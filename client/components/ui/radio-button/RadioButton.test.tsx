@@ -1,12 +1,13 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { RadioButton } from './RadioButton'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
     Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
 }))
-
-import { RadioButton } from './RadioButton'
 
 describe('RadioButton', () => {
     describe('rendering', () => {

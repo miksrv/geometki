@@ -1,5 +1,6 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
 
 import TabHeader from './TabHeader'
 
@@ -23,12 +24,22 @@ describe('TabHeader', () => {
 
     describe('active state', () => {
         it('applies active class when isActive is true', () => {
-            render(<TabHeader label={'Active Tab'} isActive />)
+            render(
+                <TabHeader
+                    label={'Active Tab'}
+                    isActive
+                />
+            )
             expect(screen.getByRole('button')).toHaveClass('active')
         })
 
         it('does not apply active class when isActive is false', () => {
-            render(<TabHeader label={'Inactive Tab'} isActive={false} />)
+            render(
+                <TabHeader
+                    label={'Inactive Tab'}
+                    isActive={false}
+                />
+            )
             expect(screen.getByRole('button')).not.toHaveClass('active')
         })
     })
@@ -36,7 +47,12 @@ describe('TabHeader', () => {
     describe('interaction', () => {
         it('calls onClick handler when clicked', () => {
             const handleClick = jest.fn()
-            render(<TabHeader label={'Clickable'} onClick={handleClick} />)
+            render(
+                <TabHeader
+                    label={'Clickable'}
+                    onClick={handleClick}
+                />
+            )
             fireEvent.click(screen.getByRole('button'))
             expect(handleClick).toHaveBeenCalledTimes(1)
         })

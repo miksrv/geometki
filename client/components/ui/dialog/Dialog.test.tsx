@@ -1,12 +1,13 @@
 import React from 'react'
-import { render, screen, fireEvent, act } from '@testing-library/react'
+
+import { act, fireEvent, render, screen } from '@testing-library/react'
+
+import { Dialog } from './Dialog'
 
 // Mock simple-react-ui-kit Icon
 jest.mock('simple-react-ui-kit', () => ({
     Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
 }))
-
-import { Dialog } from './Dialog'
 
 describe('Dialog', () => {
     describe('when closed', () => {
@@ -28,22 +29,43 @@ describe('Dialog', () => {
         })
 
         it('renders the header text', () => {
-            render(<Dialog open header={'My Dialog'} />)
+            render(
+                <Dialog
+                    open
+                    header={'My Dialog'}
+                />
+            )
             expect(screen.getByText('My Dialog')).toBeInTheDocument()
         })
 
         it('renders children inside the content area', () => {
-            render(<Dialog open><p>Dialog body</p></Dialog>)
+            render(
+                <Dialog open>
+                    <p>Dialog body</p>
+                </Dialog>
+            )
             expect(screen.getByText('Dialog body')).toBeInTheDocument()
         })
 
         it('renders actions when provided', () => {
-            render(<Dialog open header={'Title'} actions={<button>Save</button>} />)
+            render(
+                <Dialog
+                    open
+                    header={'Title'}
+                    actions={<button>Save</button>}
+                />
+            )
             expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
         })
 
         it('renders the back link button when showBackLink is true', () => {
-            render(<Dialog open showBackLink backLinkCaption={'Back'} />)
+            render(
+                <Dialog
+                    open
+                    showBackLink
+                    backLinkCaption={'Back'}
+                />
+            )
             expect(screen.getByText('Back')).toBeInTheDocument()
         })
     })
@@ -51,7 +73,12 @@ describe('Dialog', () => {
     describe('keyboard interaction', () => {
         it('calls onCloseDialog when Escape key is pressed', () => {
             const onClose = jest.fn()
-            render(<Dialog open onCloseDialog={onClose} />)
+            render(
+                <Dialog
+                    open
+                    onCloseDialog={onClose}
+                />
+            )
             act(() => {
                 fireEvent.keyDown(document, { key: 'Escape' })
             })
@@ -60,7 +87,12 @@ describe('Dialog', () => {
 
         it('does not call onCloseDialog for other keys', () => {
             const onClose = jest.fn()
-            render(<Dialog open onCloseDialog={onClose} />)
+            render(
+                <Dialog
+                    open
+                    onCloseDialog={onClose}
+                />
+            )
             act(() => {
                 fireEvent.keyDown(document, { key: 'Enter' })
             })
@@ -73,7 +105,10 @@ describe('Dialog', () => {
             const onClose = jest.fn()
             render(
                 <div>
-                    <Dialog open onCloseDialog={onClose} />
+                    <Dialog
+                        open
+                        onCloseDialog={onClose}
+                    />
                     <div data-testid={'outside'} />
                 </div>
             )
@@ -87,7 +122,14 @@ describe('Dialog', () => {
     describe('back link interaction', () => {
         it('calls onBackClick when the back button is clicked', () => {
             const onBack = jest.fn()
-            render(<Dialog open showBackLink backLinkCaption={'Go back'} onBackClick={onBack} />)
+            render(
+                <Dialog
+                    open
+                    showBackLink
+                    backLinkCaption={'Go back'}
+                    onBackClick={onBack}
+                />
+            )
             fireEvent.click(screen.getByText('Go back'))
             expect(onBack).toHaveBeenCalledTimes(1)
         })

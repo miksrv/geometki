@@ -1,12 +1,18 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { ActivityListItemLoader } from './ActivityListItemLoader'
 
 jest.mock('simple-react-ui-kit', () => ({
     Container: ({ children, className }: any) => <div className={className}>{children}</div>,
-    Skeleton: ({ style }: any) => <div data-testid={'skeleton'} style={style} />
+    Skeleton: ({ style }: any) => (
+        <div
+            data-testid={'skeleton'}
+            style={style}
+        />
+    )
 }))
-
-import { ActivityListItemLoader } from './ActivityListItemLoader'
 
 describe('ActivityListItemLoader', () => {
     describe('rendering', () => {

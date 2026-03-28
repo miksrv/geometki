@@ -1,9 +1,19 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { ApiModel } from '@/api'
+
+import { ActivityList } from './ActivityList'
 
 jest.mock('simple-react-ui-kit', () => ({
     Container: ({ children, className }: any) => <div className={className}>{children}</div>,
-    Skeleton: ({ style }: any) => <div data-testid={'skeleton'} style={style} />
+    Skeleton: ({ style }: any) => (
+        <div
+            data-testid={'skeleton'}
+            style={style}
+        />
+    )
 }))
 
 jest.mock('next-i18next', () => ({
@@ -14,16 +24,18 @@ jest.mock('next-i18next', () => ({
 
 jest.mock('./ActivityListItem', () => ({
     ActivityListItem: ({ item, title }: any) => (
-        <div data-testid={'activity-list-item'} data-title={title}>{item.type}</div>
+        <div
+            data-testid={'activity-list-item'}
+            data-title={title}
+        >
+            {item.type}
+        </div>
     )
 }))
 
 jest.mock('./ActivityListItemLoader', () => ({
     ActivityListItemLoader: () => <div data-testid={'activity-loader'} />
 }))
-
-import { ActivityList } from './ActivityList'
-import { ApiModel } from '@/api'
 
 const mockActivities: ApiModel.Activity[] = [
     { type: 'place', place: { id: 'p1', title: 'Place 1', lat: 0, lon: 0 } },
@@ -38,7 +50,12 @@ describe('ActivityList', () => {
         })
 
         it('renders first item with title when title prop is provided', () => {
-            render(<ActivityList activities={mockActivities} title={'Latest Activity'} />)
+            render(
+                <ActivityList
+                    activities={mockActivities}
+                    title={'Latest Activity'}
+                />
+            )
             const items = screen.getAllByTestId('activity-list-item')
             expect(items[0]).toHaveAttribute('data-title', 'Latest Activity')
             // Second item should not have the title
@@ -61,7 +78,12 @@ describe('ActivityList', () => {
         })
 
         it('does not render the loader when loading is false', () => {
-            render(<ActivityList loading={false} activities={mockActivities} />)
+            render(
+                <ActivityList
+                    loading={false}
+                    activities={mockActivities}
+                />
+            )
             expect(screen.queryByTestId('activity-loader')).not.toBeInTheDocument()
         })
 

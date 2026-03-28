@@ -1,11 +1,12 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { ScreenSpinner } from './ScreenSpinner'
 
 jest.mock('simple-react-ui-kit', () => ({
     Spinner: () => <div data-testid={'spinner'} />
 }))
-
-import { ScreenSpinner } from './ScreenSpinner'
 
 describe('ScreenSpinner', () => {
     describe('rendering', () => {

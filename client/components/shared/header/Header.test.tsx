@@ -1,10 +1,17 @@
 import React from 'react'
+
 import { render, screen } from '@testing-library/react'
+
+import { Header } from './Header'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
     Button: ({ icon, link, className }: any) => (
-        <a href={link} className={className} data-icon={icon}>
+        <a
+            href={link}
+            className={className}
+            data-icon={icon}
+        >
             button
         </a>
     ),
@@ -14,7 +21,9 @@ jest.mock('simple-react-ui-kit', () => ({
 jest.mock('@/components/ui', () => ({
     Breadcrumbs: ({ links }: any) => (
         <nav aria-label={'breadcrumb'}>
-            {links?.map((l: any) => <span key={l.link}>{l.label}</span>)}
+            {links?.map((l: any) => (
+                <span key={l.link}>{l.label}</span>
+            ))}
         </nav>
     )
 }))
@@ -22,8 +31,6 @@ jest.mock('@/components/ui', () => ({
 jest.mock('../user-avatar', () => ({
     UserAvatar: ({ user }: any) => <div data-testid={'user-avatar'}>{user?.name}</div>
 }))
-
-import { Header } from './Header'
 
 const mockUser = { id: 'user-1', name: 'Alice' }
 

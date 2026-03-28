@@ -1,5 +1,8 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { Tabs } from './Tabs'
 
 // Mock simple-react-ui-kit Container (it's not under test here)
 jest.mock('simple-react-ui-kit', () => ({
@@ -11,8 +14,6 @@ jest.mock('simple-react-ui-kit', () => ({
         </div>
     )
 }))
-
-import { Tabs } from './Tabs'
 
 const tabs = [
     { key: 'info', label: 'Info' },
@@ -28,7 +29,11 @@ describe('Tabs', () => {
         })
 
         it('renders children content', () => {
-            render(<Tabs tabs={tabs}><div>Tab Content</div></Tabs>)
+            render(
+                <Tabs tabs={tabs}>
+                    <div>Tab Content</div>
+                </Tabs>
+            )
             expect(screen.getByText('Tab Content')).toBeInTheDocument()
         })
 
@@ -40,13 +45,23 @@ describe('Tabs', () => {
 
     describe('active tab', () => {
         it('marks the active tab button with active class', () => {
-            render(<Tabs tabs={tabs} activeTab={'info'} />)
+            render(
+                <Tabs
+                    tabs={tabs}
+                    activeTab={'info'}
+                />
+            )
             const infoBtn = screen.getByRole('button', { name: 'Info' })
             expect(infoBtn).toHaveClass('active')
         })
 
         it('does not mark other tabs as active', () => {
-            render(<Tabs tabs={tabs} activeTab={'info'} />)
+            render(
+                <Tabs
+                    tabs={tabs}
+                    activeTab={'info'}
+                />
+            )
             const photosBtn = screen.getByRole('button', { name: 'Photos' })
             expect(photosBtn).not.toHaveClass('active')
         })
@@ -55,7 +70,12 @@ describe('Tabs', () => {
     describe('interaction', () => {
         it('calls onChangeTab with the correct key when a tab is clicked', () => {
             const handleChange = jest.fn()
-            render(<Tabs tabs={tabs} onChangeTab={handleChange} />)
+            render(
+                <Tabs
+                    tabs={tabs}
+                    onChangeTab={handleChange}
+                />
+            )
             fireEvent.click(screen.getByRole('button', { name: 'Photos' }))
             expect(handleChange).toHaveBeenCalledWith('photos')
         })

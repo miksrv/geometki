@@ -1,11 +1,19 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
 import { Provider } from 'react-redux'
+
 import { configureStore } from '@reduxjs/toolkit'
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { ApiModel } from '@/api'
+import applicationReducer from '@/app/applicationSlice'
+import authReducer from '@/app/authSlice'
+import notificationReducer from '@/app/notificationSlice'
+
+import { PhotoGallery } from './PhotoGallery'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
-    Button: ({ label, icon, onClick, disabled, mode, size, className, style }: any) => (
+    Button: ({ label, icon, onClick, disabled, mode, _size, className, style }: any) => (
         <button
             data-icon={icon}
             data-mode={mode}
@@ -17,10 +25,15 @@ jest.mock('simple-react-ui-kit', () => ({
             {label}
         </button>
     ),
-    Container: ({ children, className, title, action, footer }: any) => (
-        <div className={className} data-title={title}>{children}</div>
+    Container: ({ children, className, title, _action, _footer }: any) => (
+        <div
+            className={className}
+            data-title={title}
+        >
+            {children}
+        </div>
     ),
-    Popout: ({ trigger, children, closeOnChildrenClick, className }: any) => (
+    Popout: ({ trigger, children, _closeOnChildrenClick, className }: any) => (
         <div className={className}>
             <div data-testid={'popout-trigger'}>{trigger}</div>
             <div data-testid={'popout-content'}>{children}</div>
@@ -29,7 +42,7 @@ jest.mock('simple-react-ui-kit', () => ({
     Spinner: () => <div data-testid={'spinner'} />
 }))
 
-jest.mock('next/dynamic', () => (fn: () => Promise<{ default: React.ComponentType }>) => {
+jest.mock('next/dynamic', () => (_fn: () => Promise<{ default: React.ComponentType }>) => {
     const MockDialog = ({ open, onAccept, onReject, message, acceptText }: any) =>
         open ? (
             <div data-testid={'confirmation-dialog'}>
@@ -44,7 +57,13 @@ jest.mock('next/dynamic', () => (fn: () => Promise<{ default: React.ComponentTyp
 
 jest.mock('next/image', () => {
     const Image = ({ src, alt, width, height, className }: any) => (
-        <img src={src} alt={alt} width={width} height={height} className={className} />
+        <img
+            src={src}
+            alt={alt}
+            width={width}
+            height={height}
+            className={className}
+        />
     )
     Image.displayName = 'Image'
     return Image
@@ -52,7 +71,13 @@ jest.mock('next/image', () => {
 
 jest.mock('next/link', () => {
     const Link = ({ href, className, onClick, children }: any) => (
-        <a href={href} className={className} onClick={onClick}>{children}</a>
+        <a
+            href={href}
+            className={className}
+            onClick={onClick}
+        >
+            {children}
+        </a>
     )
     Link.displayName = 'Link'
     return Link
@@ -82,8 +107,12 @@ jest.mock('cookies-next', () => ({
 
 jest.mock('@/api', () => ({
     API: {
-        usePhotoDeleteItemMutation: jest.fn().mockReturnValue([jest.fn(), { data: undefined, isLoading: false, error: undefined }]),
-        usePhotoRotateItemMutation: jest.fn().mockReturnValue([jest.fn(), { data: undefined, isLoading: false, error: undefined }])
+        usePhotoDeleteItemMutation: jest
+            .fn()
+            .mockReturnValue([jest.fn(), { data: undefined, isLoading: false, error: undefined }]),
+        usePhotoRotateItemMutation: jest
+            .fn()
+            .mockReturnValue([jest.fn(), { data: undefined, isLoading: false, error: undefined }])
     },
     ApiModel: {}
 }))
@@ -97,27 +126,30 @@ jest.mock('@/config/env', () => ({
 }))
 
 jest.mock('@/components/shared', () => ({
-    PhotoLightbox: ({ showLightbox }: any) =>
-        showLightbox ? <div data-testid={'photo-lightbox'} /> : null
+    PhotoLightbox: ({ showLightbox }: any) => (showLightbox ? <div data-testid={'photo-lightbox'} /> : null)
 }))
 
 jest.mock('@/components/ui', () => ({
     ImageUploader: ({ onClick }: any) => (
-        <button data-testid={'image-uploader'} onClick={onClick}>Upload</button>
+        <button
+            data-testid={'image-uploader'}
+            onClick={onClick}
+        >
+            Upload
+        </button>
     )
 }))
 
 jest.mock('@/config/constants', () => ({
-    LOCAL_STORAGE: { RETURN_PATH: 'returnPath', LOCALE: 'locale', THEME: 'theme', LOCATION: 'location', MAP_CENTER: 'mapCenter' },
+    LOCAL_STORAGE: {
+        RETURN_PATH: 'returnPath',
+        LOCALE: 'locale',
+        THEME: 'theme',
+        LOCATION: 'location',
+        MAP_CENTER: 'mapCenter'
+    },
     AUTH_COOKIES: { SESSION: 'session', TOKEN: 'token' }
 }))
-
-import applicationReducer from '@/app/applicationSlice'
-import authReducer from '@/app/authSlice'
-import notificationReducer from '@/app/notificationSlice'
-import { ApiModel } from '@/api'
-
-import { PhotoGallery } from './PhotoGallery'
 
 const makeStore = (preloadedState?: Record<string, unknown>) =>
     configureStore({
@@ -167,7 +199,12 @@ describe('PhotoGallery', () => {
 
     describe('upload actions', () => {
         it('renders ImageUploader when onPhotoUploadClick is provided', () => {
-            renderWithStore(<PhotoGallery photos={mockPhotos} onPhotoUploadClick={jest.fn()} />)
+            renderWithStore(
+                <PhotoGallery
+                    photos={mockPhotos}
+                    onPhotoUploadClick={jest.fn()}
+                />
+            )
             expect(screen.getByTestId('image-uploader')).toBeInTheDocument()
         })
 
@@ -178,7 +215,12 @@ describe('PhotoGallery', () => {
 
         it('calls onPhotoUploadClick when ImageUploader is clicked', () => {
             const onPhotoUploadClick = jest.fn()
-            renderWithStore(<PhotoGallery photos={mockPhotos} onPhotoUploadClick={onPhotoUploadClick} />)
+            renderWithStore(
+                <PhotoGallery
+                    photos={mockPhotos}
+                    onPhotoUploadClick={onPhotoUploadClick}
+                />
+            )
             fireEvent.click(screen.getByTestId('image-uploader'))
             expect(onPhotoUploadClick).toHaveBeenCalledTimes(1)
         })
@@ -206,12 +248,16 @@ describe('PhotoGallery', () => {
         })
 
         it('does not render action buttons when hideActions is true', () => {
-            renderWithStore(<PhotoGallery photos={mockPhotos} hideActions={true} />, {
-                auth: { isAuth: true, user: { id: 'u1', name: 'Alice' } }
-            })
-            const dots = screen.queryAllByRole('button').filter((b) =>
-                b.getAttribute('data-icon') === 'VerticalDots'
+            renderWithStore(
+                <PhotoGallery
+                    photos={mockPhotos}
+                    hideActions={true}
+                />,
+                {
+                    auth: { isAuth: true, user: { id: 'u1', name: 'Alice' } }
+                }
             )
+            const dots = screen.queryAllByRole('button').filter((b) => b.getAttribute('data-icon') === 'VerticalDots')
             expect(dots).toHaveLength(0)
         })
     })

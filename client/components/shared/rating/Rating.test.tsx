@@ -1,12 +1,13 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { Rating } from './Rating'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
     Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
 }))
-
-import { Rating } from './Rating'
 
 describe('Rating', () => {
     describe('rendering', () => {
@@ -18,18 +19,18 @@ describe('Rating', () => {
         it('renders filled stars up to the current value', () => {
             render(<Rating value={3} />)
             const filledStars = screen.getAllByTestId('icon-StarFilled')
-            expect(filledStars.length).toBe(3)
+            expect(filledStars).toHaveLength(3)
         })
 
         it('renders empty stars for stars above the current value', () => {
             render(<Rating value={3} />)
             const emptyStars = screen.getAllByTestId('icon-StarEmpty')
-            expect(emptyStars.length).toBe(2)
+            expect(emptyStars).toHaveLength(2)
         })
 
         it('renders all empty stars when no value is provided', () => {
             render(<Rating />)
-            expect(screen.getAllByTestId('icon-StarEmpty').length).toBe(5)
+            expect(screen.getAllByTestId('icon-StarEmpty')).toHaveLength(5)
         })
     })
 
@@ -45,7 +46,12 @@ describe('Rating', () => {
 
         it('does not call onChange when disabled', () => {
             const onChange = jest.fn()
-            render(<Rating onChange={onChange} disabled />)
+            render(
+                <Rating
+                    onChange={onChange}
+                    disabled
+                />
+            )
             const radios = screen.getAllByRole('radio')
             fireEvent.change(radios[0], { target: { value: 1 } })
             expect(onChange).not.toHaveBeenCalled()
@@ -75,7 +81,7 @@ describe('Rating', () => {
             // Hover the 4th star
             fireEvent.mouseEnter(listItems[3])
             // Should now show 4 filled stars
-            expect(screen.getAllByTestId('icon-StarFilled').length).toBe(4)
+            expect(screen.getAllByTestId('icon-StarFilled')).toHaveLength(4)
         })
 
         it('resets to original value on mouse leave', () => {
@@ -84,21 +90,31 @@ describe('Rating', () => {
             fireEvent.mouseEnter(listItems[3])
             fireEvent.mouseLeave(listItems[3])
             // Back to original 1 filled star
-            expect(screen.getAllByTestId('icon-StarFilled').length).toBe(1)
+            expect(screen.getAllByTestId('icon-StarFilled')).toHaveLength(1)
         })
 
         it('does not change on hover when disabled', () => {
-            render(<Rating value={1} disabled />)
+            render(
+                <Rating
+                    value={1}
+                    disabled
+                />
+            )
             const listItems = screen.getAllByRole('listitem')
             fireEvent.mouseEnter(listItems[4])
             // Still only 1 filled star because disabled prevents hover change
-            expect(screen.getAllByTestId('icon-StarFilled').length).toBe(1)
+            expect(screen.getAllByTestId('icon-StarFilled')).toHaveLength(1)
         })
     })
 
     describe('voted state', () => {
         it('applies voted class to list items when voted is true', () => {
-            render(<Rating value={3} voted />)
+            render(
+                <Rating
+                    value={3}
+                    voted
+                />
+            )
             const listItems = screen.getAllByRole('listitem')
             listItems.forEach((item) => expect(item).toHaveClass('voted'))
         })

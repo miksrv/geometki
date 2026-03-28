@@ -1,17 +1,33 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+
+import { fireEvent, render, screen } from '@testing-library/react'
+
+import { ApiModel } from '@/api'
+
+import { ActivityListItem } from './ActivityListItem'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
     Container: ({ children, title, className }: any) => (
-        <div className={className} data-title={title}>{children}</div>
+        <div
+            className={className}
+            data-title={title}
+        >
+            {children}
+        </div>
     ),
     Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
 }))
 
 jest.mock('next/link', () => {
     const Link = ({ href, title, className, children }: any) => (
-        <a href={href} title={title} className={className}>{children}</a>
+        <a
+            href={href}
+            title={title}
+            className={className}
+        >
+            {children}
+        </a>
     )
     Link.displayName = 'Link'
     return Link
@@ -43,9 +59,13 @@ jest.mock('react-photo-album', () => ({
 jest.mock('react-photo-album/rows.css', () => ({}), { virtual: true })
 
 jest.mock('@/components/shared', () => ({
-    PhotoLightbox: ({ showLightbox }: any) =>
-        showLightbox ? <div data-testid={'photo-lightbox'} /> : null,
-    Rating: ({ value }: { value: number }) => <div data-testid={'rating'} data-value={value} />,
+    PhotoLightbox: ({ showLightbox }: any) => (showLightbox ? <div data-testid={'photo-lightbox'} /> : null),
+    Rating: ({ value }: { value: number }) => (
+        <div
+            data-testid={'rating'}
+            data-value={value}
+        />
+    ),
     UserAvatar: ({ showName, caption }: any) => (
         <div data-testid={'user-avatar'}>
             {showName && <span data-testid={'name-shown'} />}
@@ -56,7 +76,12 @@ jest.mock('@/components/shared', () => ({
 
 jest.mock('@/components/ui', () => ({
     ReadMore: ({ children, showMoreText }: any) => (
-        <div data-testid={'read-more'} data-show-more={showMoreText}>{children}</div>
+        <div
+            data-testid={'read-more'}
+            data-show-more={showMoreText}
+        >
+            {children}
+        </div>
     )
 }))
 
@@ -67,9 +92,6 @@ jest.mock('@/config/env', () => ({
 jest.mock('@/utils/helpers', () => ({
     formatDate: jest.fn().mockReturnValue('01.01.2026')
 }))
-
-import { ActivityListItem } from './ActivityListItem'
-import { ApiModel } from '@/api'
 
 const baseActivity: ApiModel.Activity = {
     type: 'place',
@@ -111,7 +133,12 @@ describe('ActivityListItem', () => {
         })
 
         it('renders the title when title prop is provided', () => {
-            render(<ActivityListItem item={baseActivity} title={'Activity Title'} />)
+            render(
+                <ActivityListItem
+                    item={baseActivity}
+                    title={'Activity Title'}
+                />
+            )
             // Title is passed to the Container component
             const container = document.querySelector('[data-title="Activity Title"]')
             expect(container).toBeInTheDocument()
