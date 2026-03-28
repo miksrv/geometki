@@ -5,10 +5,18 @@ const config: Config.InitialOptions = {
     collectCoverageFrom: [
         '**/*.{js,jsx,ts,tsx}',
         '!**/*.d.ts',
+        '!**/index.ts',
+        '!**/types.ts',
+        '!**/*.types.ts',
+        '!**/middleware.ts',
+        '!**/update.ts',
+        '!**/store.ts',
+        '!**/env.ts',
         '!**/node_modules/**',
         '!<rootDir>/out/**',
         '!<rootDir>/.next/**',
         '!<rootDir>/*.config.js',
+        '!<rootDir>/*.config.ts',
         '!<rootDir>/coverage/**'
     ],
     coverageProvider: 'v8',
@@ -23,6 +31,9 @@ const config: Config.InitialOptions = {
         // Handle CSS imports (with CSS modules)
         // https://jestjs.io/docs/webpack#mocking-css-modules
         '^.+\\.module\\.(css|sass|scss)$': 'identity-obj-proxy',
+
+        // Map ESM-only packages to their manual CJS mocks
+        '^simple-react-ui-kit$': '<rootDir>/__mocks__/simple-react-ui-kit.tsx',
 
         // Handle module aliases
         '^@/(.*)$': '<rootDir>/$1',
