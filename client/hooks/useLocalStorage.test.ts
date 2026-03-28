@@ -1,6 +1,7 @@
-import { renderHook, act } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
 
 import { LOCAL_STORAGE_KEY } from '@/config/constants'
+
 import useLocalStorage from './useLocalStorage'
 
 describe('useLocalStorage', () => {

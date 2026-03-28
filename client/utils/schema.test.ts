@@ -1,9 +1,10 @@
+import { ApiModel } from '@/api'
+
+import { PlaceSchema, UserSchema } from './schema'
+
 jest.mock('@/config/env', () => ({
     IMG_HOST: 'https://cdn.example.com/'
 }))
-
-import { ApiModel } from '@/api'
-import { PlaceSchema, UserSchema } from './schema'
 
 const mockPlace: Partial<ApiModel.Place> = {
     id: 'place-1',

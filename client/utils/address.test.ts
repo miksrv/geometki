@@ -2,11 +2,11 @@ import { addressToString } from './address'
 
 describe('addressToString', () => {
     it('returns an empty array when location is undefined', () => {
-        expect(addressToString(undefined)).toEqual([])
+        expect(addressToString(undefined)).toStrictEqual([])
     })
 
     it('returns an empty array when location has no known ids', () => {
-        expect(addressToString({})).toEqual([])
+        expect(addressToString({})).toStrictEqual([])
     })
 
     it('includes country when country.id is set', () => {

@@ -2,10 +2,10 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import utc from 'dayjs/plugin/utc'
 
+import { dateToUnixTime, formatDate, formatDateISO, formatDateUTC, minutesAgo, timeAgo } from './date'
+
 dayjs.extend(utc)
 dayjs.extend(relativeTime)
-
-import { dateToUnixTime, formatDate, formatDateISO, formatDateUTC, minutesAgo, timeAgo } from './date'
 
 describe('date utilities', () => {
     describe('formatDate', () => {

@@ -1,9 +1,9 @@
 // Mock env before importing seo to control SITE_LINK value
+import { buildHreflangTags } from './seo'
+
 jest.mock('@/config/env', () => ({
     SITE_LINK: 'https://geometki.com/'
 }))
-
-import { buildHreflangTags } from './seo'
 
 describe('buildHreflangTags', () => {
     it('returns three alternate link objects', () => {

@@ -1,3 +1,7 @@
+import { makeStore } from '@/app/store'
+
+import { hydrateAuthFromCookies } from './serverSideAuth'
+
 jest.mock('cookies-next', () => ({
     getCookie: jest.fn(() => ''),
     setCookie: jest.fn(),
@@ -13,9 +17,6 @@ jest.mock('@/utils/localstorage', () => ({
 jest.mock('../next-i18next.config', () => ({
     i18n: { defaultLocale: 'ru' }
 }))
-
-import { makeStore } from '@/app/store'
-import { hydrateAuthFromCookies } from './serverSideAuth'
 
 describe('hydrateAuthFromCookies', () => {
     it('dispatches login when a token cookie is present', () => {
