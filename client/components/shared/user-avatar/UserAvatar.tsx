@@ -1,21 +1,19 @@
 import React from 'react'
 import { cn } from 'simple-react-ui-kit'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next'
 
-import defaultAvatar from '@/public/images/no-avatar.png'
-
 import { AvatarImage } from './AvatarImage'
 import { UserAvatarProps } from './types'
-import { getDimension } from './utils'
+import { getDimension, getInitials } from './utils'
 
 import styles from './styles.module.sass'
 
 export const UserAvatar: React.FC<UserAvatarProps> = (props) => {
     const { t } = useTranslation('components.user-avatar')
     const { className, user, size, caption, showName, disableLink } = props
+    const dimension = getDimension(size)
 
     return (
         <div className={cn(styles.userAvatar, className)}>
@@ -24,8 +22,8 @@ export const UserAvatar: React.FC<UserAvatarProps> = (props) => {
                     <span
                         className={styles.avatarLink}
                         style={{
-                            height: getDimension(size),
-                            width: getDimension(size)
+                            height: dimension,
+                            width: dimension
                         }}
                     >
                         <AvatarImage {...props} />
@@ -36,21 +34,24 @@ export const UserAvatar: React.FC<UserAvatarProps> = (props) => {
                         href={`/users/${user.id}`}
                         title={`${t('user-profile', { defaultValue: 'Профиль путешественника' })} ${user.name}`}
                         style={{
-                            height: getDimension(size),
-                            width: getDimension(size)
+                            height: dimension,
+                            width: dimension
                         }}
                     >
                         <AvatarImage {...props} />
                     </Link>
                 )
             ) : (
-                <Image
-                    alt={''}
-                    className={styles.avatarImage}
-                    src={defaultAvatar.src}
-                    width={getDimension(size)}
-                    height={getDimension(size)}
-                />
+                <div
+                    className={styles.initialsAvatar}
+                    style={{
+                        width: dimension,
+                        height: dimension,
+                        fontSize: dimension * 0.4
+                    }}
+                >
+                    {getInitials(user?.name)}
+                </div>
             )}
 
             {showName && (

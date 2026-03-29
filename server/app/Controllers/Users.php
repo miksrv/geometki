@@ -35,6 +35,10 @@ class Users extends ResourceController
 
         $userLevels = new LevelsLibrary();
         $usersModel = new UsersModel();
+        
+        // Get total count of users
+        $totalCount = $usersModel->countAllResults(false);
+        
         $usersData  = $usersModel
             ->select('id, name, avatar, created_at, activity_at, updated_at, level, experience, reputation')
             ->orderBy('activity_at, updated_at', 'DESC')
@@ -45,7 +49,7 @@ class Users extends ResourceController
         if (empty($usersData)) {
             return $this->respond([
                 'items' => $result,
-                'count' => 0
+                'count' => $totalCount
             ]);
         }
 
@@ -70,7 +74,7 @@ class Users extends ResourceController
 
         return $this->respond([
             'items' => $result,
-            'count' => count($result)
+            'count' => $totalCount
         ]);
     }
 

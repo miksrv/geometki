@@ -47,15 +47,18 @@ const user = { id: 'user-1', name: 'Alice', avatar: '/avatars/alice.jpg' }
 
 describe('UserAvatar', () => {
     describe('without user', () => {
-        it('renders a fallback image when user is undefined', () => {
+        it('renders initials placeholder when user is undefined', () => {
             const { container } = render(<UserAvatar />)
-            // alt="" makes it a presentation role (decorative image)
-            expect(container.querySelector('img')).toBeInTheDocument()
+            const initialsDiv = container.querySelector('.initialsAvatar')
+            expect(initialsDiv).toBeInTheDocument()
+            expect(initialsDiv).toHaveTextContent('?')
         })
 
-        it('renders a fallback image when user has no id', () => {
+        it('renders initials when user has no id', () => {
             const { container } = render(<UserAvatar user={{ id: '', name: 'No ID' } as any} />)
-            expect(container.querySelector('img')).toBeInTheDocument()
+            const initialsDiv = container.querySelector('.initialsAvatar')
+            expect(initialsDiv).toBeInTheDocument()
+            expect(initialsDiv).toHaveTextContent('NI')
         })
     })
 
