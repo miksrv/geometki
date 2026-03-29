@@ -6,6 +6,15 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
+/** Root - API info endpoint **/
+$routes->get('/', static function () {
+    return response()->setJSON([
+        'name'    => 'Geometki API',
+        'version' => '1.0.0',
+        'status'  => 'ok'
+    ]);
+});
+
 /** POI Controller **/
 $routes->group('poi', static function ($routes) {
     $routes->get('/', 'Poi::list');
