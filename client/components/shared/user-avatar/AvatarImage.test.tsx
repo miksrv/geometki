@@ -24,8 +24,6 @@ jest.mock('@/config/env', () => ({
     IMG_HOST: 'https://img.example.com'
 }))
 
-jest.mock('@/public/images/no-avatar.png', () => ({ src: '/no-avatar.png' }), { virtual: true })
-
 jest.mock('@/utils/helpers', () => ({
     minutesAgo: jest.fn()
 }))
@@ -38,22 +36,28 @@ describe('AvatarImage', () => {
     })
 
     describe('rendering', () => {
-        it('renders an image element', () => {
-            render(<AvatarImage />)
-            expect(screen.getByRole('presentation')).toBeInTheDocument()
+        it('renders initials when no user is provided', () => {
+            const { container } = render(<AvatarImage />)
+            const initialsDiv = container.querySelector('.initialsAvatar')
+            expect(initialsDiv).toBeInTheDocument()
+            expect(initialsDiv).toHaveTextContent('?')
         })
 
-        it('renders the default avatar when no user is provided', () => {
-            render(<AvatarImage />)
-            expect(screen.getByRole('presentation')).toHaveAttribute('src', '/no-avatar.png')
+        it('renders initials when user has no avatar', () => {
+            const { container } = render(<AvatarImage user={{ id: 'u1', name: 'Alice' } as any} />)
+            const initialsDiv = container.querySelector('.initialsAvatar')
+            expect(initialsDiv).toBeInTheDocument()
+            expect(initialsDiv).toHaveTextContent('A')
         })
 
-        it('renders the default avatar when user has no avatar', () => {
-            render(<AvatarImage user={{ id: 'u1', name: 'Alice' } as any} />)
-            expect(screen.getByRole('presentation')).toHaveAttribute('src', '/no-avatar.png')
+        it('renders initials from first two words of name', () => {
+            const { container } = render(<AvatarImage user={{ id: 'u1', name: 'John Doe' } as any} />)
+            const initialsDiv = container.querySelector('.initialsAvatar')
+            expect(initialsDiv).toBeInTheDocument()
+            expect(initialsDiv).toHaveTextContent('JD')
         })
 
-        it('renders the user avatar when avatar is provided', () => {
+        it('renders the user avatar image when avatar is provided', () => {
             render(<AvatarImage user={{ id: 'u1', name: 'Alice', avatar: '/avatars/alice.jpg' } as any} />)
             expect(screen.getByRole('presentation')).toHaveAttribute('src', 'https://img.example.com/avatars/alice.jpg')
         })

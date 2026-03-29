@@ -3,31 +3,48 @@ import React from 'react'
 import Image from 'next/image'
 
 import { IMG_HOST } from '@/config/env'
-import defaultAvatar from '@/public/images/no-avatar.png'
 import { minutesAgo } from '@/utils/helpers'
 
 import { UserAvatarProps } from './types'
-import { getDimension } from './utils'
+import { getDimension, getInitials } from './utils'
 
 import styles from './styles.module.sass'
 
-export const AvatarImage: React.FC<UserAvatarProps> = ({ user, size, hideOnlineIcon }) => (
-    <>
-        <Image
-            alt={''}
-            className={styles.avatarImage}
-            src={user?.avatar ? `${IMG_HOST}${user.avatar}` : defaultAvatar.src}
-            width={getDimension(size)}
-            height={getDimension(size)}
-        />
+export const AvatarImage: React.FC<UserAvatarProps> = ({ user, size, hideOnlineIcon }) => {
+    const dimension = getDimension(size)
+    const hasAvatar = !!user?.avatar
 
-        <div
-            aria-hidden={true}
-            className={styles.avatarBorder}
-        />
+    return (
+        <>
+            {hasAvatar ? (
+                <Image
+                    alt={''}
+                    className={styles.avatarImage}
+                    src={`${IMG_HOST}${user.avatar}`}
+                    width={dimension}
+                    height={dimension}
+                />
+            ) : (
+                <div
+                    className={styles.initialsAvatar}
+                    style={{
+                        width: dimension,
+                        height: dimension,
+                        fontSize: dimension * 0.4
+                    }}
+                >
+                    {getInitials(user?.name)}
+                </div>
+            )}
 
-        {!hideOnlineIcon && user?.activity?.date && minutesAgo(user.activity.date) <= 15 && (
-            <div className={styles.online} />
-        )}
-    </>
-)
+            <div
+                aria-hidden={true}
+                className={styles.avatarBorder}
+            />
+
+            {!hideOnlineIcon && user?.activity?.date && minutesAgo(user.activity.date) <= 15 && (
+                <div className={styles.online} />
+            )}
+        </>
+    )
+}
