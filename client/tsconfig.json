@@ -14,7 +14,7 @@
     "esModuleInterop": true,
     "strictNullChecks": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
