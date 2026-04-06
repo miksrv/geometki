@@ -1,6 +1,5 @@
 import React from 'react'
-import Lightbox, { Slide } from 'yet-another-react-lightbox'
-import { RenderFunction, RenderSlideProps } from 'yet-another-react-lightbox/dist/types'
+import Lightbox, { RenderFunction, RenderSlideProps, Slide } from 'yet-another-react-lightbox'
 import Captions from 'yet-another-react-lightbox/plugins/captions'
 import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 
