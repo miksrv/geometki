@@ -1,14 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>Simple Transactional Email</title>
+    <title>Geometki</title>
     <style media="all" type="text/css">
-        /* -------------------------------------
-        GLOBAL RESETS
-    ------------------------------------- */
-
+        /* BASE STYLES */
         body {
             font-family: Helvetica, sans-serif;
             -webkit-font-smoothing: antialiased;
@@ -16,6 +13,9 @@
             line-height: 1.3;
             -ms-text-size-adjust: 100%;
             -webkit-text-size-adjust: 100%;
+            background-color: #f4f5f6;
+            margin: 0;
+            padding: 0;
         }
 
         table {
@@ -30,16 +30,20 @@
             font-size: 16px;
             vertical-align: top;
         }
-        /* -------------------------------------
-        BODY & CONTAINER
-    ------------------------------------- */
 
-        body {
-            background-color: #f4f5f6;
-            margin: 0;
-            padding: 0;
+        p {
+            font-family: Helvetica, sans-serif;
+            font-size: 16px;
+            font-weight: normal;
+            margin: 0 0 16px;
         }
 
+        a {
+            color: #0867ec;
+            text-decoration: underline;
+        }
+
+        /* LAYOUT */
         .body {
             background-color: #f4f5f6;
             width: 100%;
@@ -48,8 +52,7 @@
         .container {
             margin: 0 auto !important;
             max-width: 600px;
-            padding: 0;
-            padding-top: 24px;
+            padding: 24px 0 0;
             width: 600px;
         }
 
@@ -60,9 +63,6 @@
             max-width: 600px;
             padding: 0;
         }
-        /* -------------------------------------
-        HEADER, FOOTER, MAIN
-    ------------------------------------- */
 
         .main {
             background: #ffffff;
@@ -76,6 +76,7 @@
             padding: 24px;
         }
 
+        /* FOOTER */
         .footer {
             clear: both;
             padding-top: 24px;
@@ -91,26 +92,12 @@
             font-size: 13px;
             text-align: center;
         }
-        /* -------------------------------------
-        TYPOGRAPHY
-    ------------------------------------- */
 
-        p {
-            font-family: Helvetica, sans-serif;
-            font-size: 16px;
-            font-weight: normal;
-            margin: 0;
-            margin-bottom: 16px;
+        .powered-by a {
+            text-decoration: none;
         }
 
-        a {
-            color: #0867ec;
-            text-decoration: underline;
-        }
-        /* -------------------------------------
-        BUTTONS
-    ------------------------------------- */
-
+        /* BUTTON */
         .btn {
             box-sizing: border-box;
             min-width: 100% !important;
@@ -144,7 +131,6 @@
             margin: 0;
             padding: 12px 24px;
             text-decoration: none;
-            text-transform: capitalize;
         }
 
         .btn-primary table td {
@@ -157,57 +143,7 @@
             color: #ffffff;
         }
 
-        @media all {
-            .btn-primary table td:hover {
-                background-color: #ec0867 !important;
-            }
-            .btn-primary a:hover {
-                background-color: #ec0867 !important;
-                border-color: #ec0867 !important;
-            }
-        }
-
-        /* -------------------------------------
-        OTHER STYLES THAT MIGHT BE USEFUL
-    ------------------------------------- */
-
-        .last {
-            margin-bottom: 0;
-        }
-
-        .first {
-            margin-top: 0;
-        }
-
-        .align-center {
-            text-align: center;
-        }
-
-        .align-right {
-            text-align: right;
-        }
-
-        .align-left {
-            text-align: left;
-        }
-
-        .text-link {
-            color: #0867ec !important;
-            text-decoration: underline !important;
-        }
-
-        .clear {
-            clear: both;
-        }
-
-        .mt0 {
-            margin-top: 0;
-        }
-
-        .mb0 {
-            margin-bottom: 0;
-        }
-
+        /* PREHEADER */
         .preheader {
             color: transparent;
             display: none;
@@ -221,14 +157,18 @@
             width: 0;
         }
 
-        .powered-by a {
-            text-decoration: none;
+        /* HOVER STATES */
+        @media all {
+            .btn-primary table td:hover {
+                background-color: #ec0867 !important;
+            }
+            .btn-primary a:hover {
+                background-color: #ec0867 !important;
+                border-color: #ec0867 !important;
+            }
         }
 
-        /* -------------------------------------
-        RESPONSIVE AND MOBILE FRIENDLY STYLES
-    ------------------------------------- */
-
+        /* MOBILE */
         @media only screen and (max-width: 640px) {
             .main p,
             .main td,
@@ -242,8 +182,7 @@
                 padding: 0 !important;
             }
             .container {
-                padding: 0 !important;
-                padding-top: 8px !important;
+                padding: 8px 0 0 !important;
                 width: 100% !important;
             }
             .main {
@@ -261,10 +200,8 @@
                 width: 100% !important;
             }
         }
-        /* -------------------------------------
-        PRESERVE THESE STYLES IN THE HEAD
-    ------------------------------------- */
 
+        /* EMAIL CLIENT FIXES */
         @media all {
             .ExternalClass {
                 width: 100%;
@@ -313,7 +250,7 @@
                     <!-- START MAIN CONTENT AREA -->
                     <tr>
                         <td class="wrapper">
-                            <?= $message ?>
+                            <?= $message ?? '' ?>
                             <?php if (!empty($actionText) && !empty($actionLink)): ?>
                             <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
                                 <tbody>
@@ -357,7 +294,8 @@
 
                 <!-- END FOOTER -->
 
-                <!-- END CENTERED WHITE CONTAINER --></div>
+                <!-- END CENTERED WHITE CONTAINER -->
+            </div>
         </td>
         <td>&nbsp;</td>
     </tr>

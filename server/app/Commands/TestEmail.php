@@ -53,6 +53,12 @@ class TestEmail extends BaseCommand
             $message = view('email', [
                 'message' => '<p>Simple paragraph test</p>',
             ]);
+
+            // Debug: show rendered template info
+            CLI::write('  Rendered template length: ' . strlen($message) . ' chars', 'white');
+            $hasContent = strpos($message, 'Simple paragraph test') !== false;
+            CLI::write('  Message content present: ' . ($hasContent ? 'YES' : 'NO'), $hasContent ? 'green' : 'red');
+
             $emailLib->send($email, 'Test 2: Template with simple text', $message);
             CLI::write('Test 2: SUCCESS', 'green');
         } catch (Exception $e) {

@@ -17,6 +17,8 @@ class EmailLibrary extends \Config\Services {
             'SMTPCrypto' => 'ssl',
             'charset'    => 'UTF-8',
             'wordWrap'   => false,
+            'wrapChars'  => 0,
+            'validate'   => false,
             'CRLF'       => "\r\n",
             'newline'    => "\r\n",
         ];
