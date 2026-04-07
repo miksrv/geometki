@@ -44,13 +44,33 @@ class Mail extends ResourceController
        $placeModel = new PlacesModel();
        $userModel  = new UsersModel();
        $placeData  = $placeModel->select('user_id')->find($sendingEmailData->place_id);
+
+       if (!$placeData) {
+           return $this->failValidationErrors(lang('Mail.mailWithIdNotFound'));
+       }
+
        $userData   = $userModel->select('settings, updated_at')->find($placeData->user_id);
+
+       if (!$userData) {
+           return $this->failValidationErrors(lang('Mail.mailWithIdNotFound'));
+       }
+
        $configItem = $this->_mapActivityType($sendingEmailData->type);
 
-       $settings = $userData->settings;
-       $settings->{$configItem} = false;
+       // If settings is null, create default settings object
+       $settings = $userData->settings ?? (object) [
+           'emailComment' => true,
+           'emailEdit'    => true,
+           'emailPhoto'   => true,
+           'emailRating'  => true,
+           'emailCover'   => true,
+       ];
 
-       $userModel->update($placeData->user_id, ['settings' => json_encode((object) $settings), 'updated_at' => $userData->updated_at]);
+       if ($configItem) {
+           $settings->{$configItem} = false;
+       }
+
+       $userModel->update($placeData->user_id, ['settings' => json_encode($settings), 'updated_at' => $userData->updated_at]);
 
        return $this->respond(lang('Mail.successMessage'));
    }
