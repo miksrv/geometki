@@ -107,6 +107,8 @@ class SendEmail extends BaseCommand
 
             $findPlace = array_search($item->place_id, array_column($placesData, 'id'));
 
+            $placeCover = null;
+
             /**
              * If the letter is a notification, then we look for an interesting place by its ID in a previously prepared
              * We will need the name of the geotag and the cover image
@@ -121,11 +123,9 @@ class SendEmail extends BaseCommand
                 $message .= "<h2>{$placeTitle}</h2>";
                 $message .= "<p>{$subject}</p>";
 
+                // Placeholder for cover image - will be replaced with actual CID after email init
                 if ($placeCover) {
-                    $emailLibrary->email->attach($placeCover);
-                    $cid = $emailLibrary->email->setAttachmentCID($placeCover);
-
-                    $message .= "<p><img src='cid:{$cid}' alt='{$placeTitle}' style='width: 100%'>";
+                    $message .= "<p><img src='cid:COVER_IMAGE_CID' alt='{$placeTitle}' style='width: 100%'>";
                 }
                 $message .= '<p>' . lang('SendingMail.placeModified' , [], $locale) . '</p>';
                 $message  = view('email', [
@@ -141,7 +141,7 @@ class SendEmail extends BaseCommand
             }
 
             try {
-                $emailLibrary->send($item->email, $subject, $message);
+                $emailLibrary->sendWithAttachment($item->email, $subject, $message, $placeCover);
                 $sendingEmailModel->update($item->id, ['status' => 'completed']);
                 $sentCount++;
             } catch (Exception $e) {
