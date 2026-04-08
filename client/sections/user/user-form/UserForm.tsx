@@ -162,7 +162,7 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
 
             <div className={styles.section}>
                 <h3 className={styles.header}>{t('sending-notifications-by-email')}</h3>
-                {['emailPhoto', 'emailRating', 'emailComment', 'emailEdit', 'emailCover'].map((setting) => (
+                {['emailPhoto', 'emailRating', 'emailComment', 'emailEdit', 'emailCover', 'emailDigest'].map((setting) => (
                     <Checkbox
                         className={styles.settings}
                         key={setting}
@@ -275,11 +275,12 @@ const mapFormValues = (values?: FormDataType): FormDataType => ({
     oldPassword: '',
     settings: {
         emailComment: values?.settings?.emailComment ?? true,
-        emailCover: values?.settings?.emailCover ?? true,
-        emailEdit: values?.settings?.emailEdit ?? true,
-        emailPhoto: values?.settings?.emailPhoto ?? true,
-        emailPlace: values?.settings?.emailPlace ?? true,
-        emailRating: values?.settings?.emailRating ?? true
+        emailCover:   values?.settings?.emailCover   ?? true,
+        emailDigest:  values?.settings?.emailDigest  ?? true,
+        emailEdit:    values?.settings?.emailEdit    ?? true,
+        emailPhoto:   values?.settings?.emailPhoto   ?? true,
+        emailPlace:   values?.settings?.emailPlace   ?? true,
+        emailRating:  values?.settings?.emailRating  ?? true
     },
     website: values?.website
 })
