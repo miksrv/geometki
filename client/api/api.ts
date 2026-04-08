@@ -150,6 +150,10 @@ export const API = createApi({
             query: (mailId) => `mail/unsubscribe?mail=${mailId || ''}`,
             transformErrorResponse: extractErrorMessage
         }),
+        mailGetUnsubscribeDigest: builder.query<string, Maybe<string>>({
+            query: (userId) => `mail/unsubscribe?digest=${userId || ''}`,
+            transformErrorResponse: extractErrorMessage
+        }),
 
         /** Controller: Location **/
         locationGetByType: builder.query<ApiType.Location.GetByTypeResponse, ApiType.Location.GetByTypeRequest>({

@@ -1,5 +1,15 @@
 # Feature: Weekly Personal Digest & Smart Push Notifications
 
+## Status
+
+| Part | Status | Notes |
+|------|--------|-------|
+| Part 1: Weekly Email Digest (core) | `🚧 IN PROGRESS` | QW3 sprint — sections on available data |
+| Part 1: Streak / Rank / Freshness / Followers sections | `⏳ PENDING` | Blocked on Features 1.1, 13, 15, follow system |
+| Part 2: Smart Push Notifications | `⏳ PENDING` | Blocked on mobile push token infra + web push |
+
+---
+
 ## Overview
 
 Two complementary re-engagement systems: (1) a weekly Monday email digest that summarizes "what happened in your world" — XP earned, places viewed, rank changes, followers gained, and personalized action prompts; (2) a smart push notification layer (mobile + web) that sends timely, contextually relevant triggers — streak expiry warnings, challenge reminders, rank overtake alerts, and ghost place spawn notifications.
@@ -33,7 +43,9 @@ The digest is fully personalized — every section is conditional and only rende
 
 ---
 
-#### Section 1: Your week at a glance
+#### Section 1: Your week at a glance `[✅ IMPLEMENT NOW]`
+
+> Data source: `activity` table (types: place, photo, rating, edit) + `users.experience` delta via `users_levels`.
 
 Always shown if user was active this week:
 
@@ -49,7 +61,7 @@ If user was inactive this week, this section is replaced by a gentle return prom
 
 ---
 
-#### Section 2: Your streak
+#### Section 2: Your streak `[⏳ PENDING — blocked on Feature 1.1 (activity streaks)]`
 
 Shown if user has an active streak of 3+ days:
 
@@ -68,7 +80,9 @@ Start a new one today — streaks begin with one action.
 
 ---
 
-#### Section 3: Your places this week
+#### Section 3: Your places this week `[✅ IMPLEMENT NOW]`
+
+> Data source: JOIN `activity → places` (ratings/comments/photos/edits by others) + `places_views_log` (weekly view counts). Top 10 places per user sorted by engagement score (ratings×5 + comments×4 + photos×3 + edits×2 + min(views,50)×1).
 
 Shown if any of the user's places received activity:
 
@@ -86,7 +100,7 @@ If a place received 20+ views: highlighted with a "trending" label.
 
 ---
 
-#### Section 4: Freshness alerts
+#### Section 4: Freshness alerts `[⏳ PENDING — blocked on Feature 15 (freshness tiers)]`
 
 Shown if any of the user's places degraded in freshness tier (Feature 15):
 
@@ -103,7 +117,7 @@ One update each is enough to restore their badge.
 
 ---
 
-#### Section 5: Your rank changes
+#### Section 5: Your rank changes `[⏳ PENDING — blocked on Feature 13 (territory/leaderboard)]`
 
 Shown if user's leaderboard rank changed by ±3 or more this week (Feature 13):
 
@@ -116,7 +130,7 @@ Anna (#11) has 1,420 points — you're at 1,240.
 
 ---
 
-#### Section 6: New followers
+#### Section 6: New followers `[⏳ PENDING — blocked on follow system (no followers table yet)]`
 
 Shown if user gained followers this week:
 
@@ -131,7 +145,9 @@ Shown if user gained followers this week:
 
 ---
 
-#### Section 7: What to do this week
+#### Section 7: What to do this week `[⚠️ PARTIAL — only generic prompts available now]`
+
+> Currently implementable: prompt to rate more places (activity data available). All other prompts blocked on missing features (streaks, ghost places, challenges, rank system).
 
 Always shown — 2–3 personalized action prompts based on user's current state:
 
@@ -153,7 +169,9 @@ Prompts are selected from a priority list:
 
 ---
 
-#### Section 8: Community highlights
+#### Section 8: Community highlights `[✅ IMPLEMENT NOW]`
+
+> Data source: `activity` table (new places count this week) + `users_levels` (who levelled up). Ghost place captures and seasonal events omitted until those systems exist.
 
 Always shown — keeps the digest interesting even for inactive users:
 
@@ -191,41 +209,43 @@ The goal of the re-engagement version is a single click, not information density
 
 ---
 
-### Email Infrastructure
+### Email Infrastructure `[✅ IMPLEMENT NOW]`
 
 **Template engine:** Use the existing email infrastructure (CodeIgniter 4 email service + existing HTML templates).
 
-**New service class: `DigestService.php`**
+**New service class: `DigestService.php`** `[✅ IMPLEMENT NOW]`
+
+**Algorithm — activity-driven (not user-driven):**
+
+Instead of iterating all users and querying their places, the pipeline reads from the data side:
+
+1. **`buildPlaceActivitySection`** — JOINs `activity → places` to find all place_id entries with activity this week, groups by owner (`places.user_id`). Merges with weekly views from `places_views_log`. Returns top 10 places per user sorted by engagement score.
+2. **`WeeklyDigestCommand`** — pre-fetches the set of `user_id`s that actually have data this week (via one UNION query on activity + places_views_log), then loads only those users for digest generation. Never iterates inactive users with no data.
 
 ```php
+// places_views_log schema: (place_id, view_date DATE, count INT)
+// Used for weekly view totals per place
+
 class DigestService
 {
-    public function generateForUser(int $userId, string $weekStart, string $weekEnd): array
-    {
-        // Returns associative array of digest sections — only populated sections
-        // Each section has: type, data, rendered_html
-        return [
-            'week_summary'      => $this->buildWeekSummary($userId, $weekStart, $weekEnd),
-            'streak'            => $this->buildStreakSection($userId),
-            'place_activity'    => $this->buildPlaceActivitySection($userId, $weekStart, $weekEnd),
-            'freshness_alerts'  => $this->buildFreshnessAlerts($userId),
-            'rank_changes'      => $this->buildRankChanges($userId),
-            'new_followers'     => $this->buildNewFollowers($userId, $weekStart, $weekEnd),
-            'action_prompts'    => $this->buildActionPrompts($userId),
-            'community_updates' => $this->buildCommunityHighlights($userId),
-        ];
-    }
+    // Section data structure for place_activity:
+    // [
+    //   ['place_id' => '...', 'ratings' => N, 'comments' => N,
+    //    'photos' => N, 'edits' => N, 'views' => N],
+    //   ... up to 10 entries, sorted by engagement score
+    // ]
 }
 ```
 
-**Cron job: `WeeklyDigestCommand.php`**
+**Cron job: `WeeklyDigestCommand.php`** `[✅ IMPLEMENT NOW]`
 
-Runs every Monday at 01:00 UTC. Processes users in batches of 200:
-```php
-// 1. Query users with email_digest_enabled = 1 (default: true)
-// 2. For each user: generate digest, render template, queue email
-// 3. Rate-limit: 500 emails/hour to avoid SMTP throttling
-// 4. Log: digest_sent_at on users table
+Runs every Monday at 01:00 UTC.
+```
+1. UNION query on (activity JOIN places) + (places_views_log JOIN places)
+   → get distinct user_ids that have data this week
+2. Load only those users where email_digest_enabled = 1
+3. For each user: DigestService::generateForUser() → render → insert into sending_mail
+4. Update users.digest_sent_at
 ```
 
 ### Unsubscribe
@@ -234,7 +254,7 @@ Every digest email has a one-click unsubscribe link. Clicking it sets `users.ema
 
 ---
 
-## Part 2: Smart Push Notifications
+## Part 2: Smart Push Notifications `[⏳ PENDING — entire part blocked]`
 
 ### Notification Types and Triggers
 

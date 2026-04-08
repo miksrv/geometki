@@ -21,6 +21,36 @@ class Mail extends ResourceController
      */
    public function unsubscribe(): ResponseInterface
    {
+       // --- Scenario 1: unsubscribe from digest by user_id ---
+       $digestUserId = $this->request->getGet('digest', FILTER_SANITIZE_SPECIAL_CHARS);
+       if ($digestUserId) {
+           $userModel = new UsersModel();
+           $userData  = $userModel->select('id, settings, updated_at')->find($digestUserId);
+
+           if (!$userData) {
+               return $this->failValidationErrors(lang('Mail.mailWithIdNotFound'));
+           }
+
+           $settings = $userData->settings ?? (object) [
+               'emailComment' => true,
+               'emailEdit'    => true,
+               'emailPhoto'   => true,
+               'emailRating'  => true,
+               'emailCover'   => true,
+               'emailDigest'  => true,
+           ];
+
+           $settings->emailDigest = false;
+
+           $userModel->update($digestUserId, [
+               'settings'   => json_encode($settings),
+               'updated_at' => $userData->updated_at,
+           ]);
+
+           return $this->respond(lang('Mail.successMessage'));
+       }
+
+       // --- Scenario 2: unsubscribe from a specific notification type by sending_mail_id ---
        $mail = $this->request->getGet('mail', FILTER_SANITIZE_SPECIAL_CHARS);
 
        if (!$mail) {

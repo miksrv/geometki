@@ -5,6 +5,7 @@ export type UserSettings = {
     emailPlace?: boolean
     emailRating?: boolean
     emailCover?: boolean
+    emailDigest?: boolean
 }
 
 export const UserSettingTypes = {

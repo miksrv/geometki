@@ -157,7 +157,7 @@ class Users extends ResourceController
         }
 
         if (isset($input->settings)) {
-            $defaultSettings = ['emailComment', 'emailEdit', 'emailPhoto', 'emailRating', 'emailCover'];
+            $defaultSettings = ['emailComment', 'emailEdit', 'emailPhoto', 'emailRating', 'emailCover', 'emailDigest'];
 
             $updateData['settings'] = json_encode((object) array_combine($defaultSettings, array_map(function($setting) use ($input) {
                 $inputValue   = isset($input->settings->$setting) && is_bool($input->settings->$setting) ? $input->settings->$setting : null;

@@ -21,13 +21,32 @@ const UnsubscribePage: NextPage<object> = () => {
     const searchParams = useSearchParams()
 
     const mailId = searchParams?.get('mail')
+    const digestId = searchParams?.get('digest')
 
-    const { data, error, isLoading, isSuccess, isError } = API.useMailGetUnsubscribeQuery(mailId || '', {
-        skip: !mailId
-    })
+    const {
+        data: mailData,
+        error: mailError,
+        isLoading: mailLoading,
+        isSuccess: mailSuccess,
+        isError: mailIsError
+    } = API.useMailGetUnsubscribeQuery(mailId || '', { skip: !mailId })
+
+    const {
+        data: digestData,
+        error: digestError,
+        isLoading: digestLoading,
+        isSuccess: digestSuccess,
+        isError: digestIsError
+    } = API.useMailGetUnsubscribeDigestQuery(digestId || '', { skip: !digestId })
+
+    const data = mailData ?? digestData
+    const error = mailError ?? digestError
+    const isLoading = mailLoading || digestLoading
+    const isSuccess = mailSuccess || digestSuccess
+    const isError = mailIsError || digestIsError
 
     useEffect(() => {
-        if (!mailId) {
+        if (!mailId && !digestId) {
             void router.push('/')
         }
     }, [])

@@ -481,9 +481,20 @@ On the home page for logged-in users, show 3–5 nearby places the user has neve
 
 ---
 
-### QW3 — Weekly email digest (2–3 days backend)
+### QW3 — Weekly email digest (2–3 days backend) `[🚧 IN PROGRESS]`
 
 Every Monday morning, send a personalized email: "Your week on Geometki" — how many XP you earned, how many places you visited, how your places performed (views, bookmarks, ratings received), and a tease about what happened in your city. The email requires no new features, only a query against existing data and a scheduled email job. This re-engages users who have gone cold and who would otherwise never think to re-open the app.
+
+**Implementation scope (current sprint):**
+- `[✅ IMPLEMENT NOW]` Migration: `users.email_digest_enabled` (default 1) + `users.digest_sent_at`
+- `[✅ IMPLEMENT NOW]` `DigestService.php` — collects week summary, place activity, community highlights
+- `[✅ IMPLEMENT NOW]` `WeeklyDigestCommand.php` (`php spark digest:weekly [--user <id>]`) — cron entry point
+- `[✅ IMPLEMENT NOW]` Digest email template (view)
+- `[⏳ PENDING]` Streak section — blocked on Feature 1.1 (activity streaks)
+- `[⏳ PENDING]` Freshness alerts section — blocked on Feature 15
+- `[⏳ PENDING]` Rank changes section — blocked on Feature 13
+- `[⏳ PENDING]` New followers section — blocked on follow system
+- `[⏳ PENDING]` Ghost places action prompt — blocked on Feature 11
 
 ---
 
