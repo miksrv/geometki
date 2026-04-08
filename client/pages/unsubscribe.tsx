@@ -20,20 +20,30 @@ const UnsubscribePage: NextPage<object> = () => {
     const router = useRouter()
     const searchParams = useSearchParams()
 
-    const mailId   = searchParams?.get('mail')
+    const mailId = searchParams?.get('mail')
     const digestId = searchParams?.get('digest')
 
-    const { data: mailData, error: mailError, isLoading: mailLoading, isSuccess: mailSuccess, isError: mailIsError } =
-        API.useMailGetUnsubscribeQuery(mailId || '', { skip: !mailId })
+    const {
+        data: mailData,
+        error: mailError,
+        isLoading: mailLoading,
+        isSuccess: mailSuccess,
+        isError: mailIsError
+    } = API.useMailGetUnsubscribeQuery(mailId || '', { skip: !mailId })
 
-    const { data: digestData, error: digestError, isLoading: digestLoading, isSuccess: digestSuccess, isError: digestIsError } =
-        API.useMailGetUnsubscribeDigestQuery(digestId || '', { skip: !digestId })
+    const {
+        data: digestData,
+        error: digestError,
+        isLoading: digestLoading,
+        isSuccess: digestSuccess,
+        isError: digestIsError
+    } = API.useMailGetUnsubscribeDigestQuery(digestId || '', { skip: !digestId })
 
-    const data      = mailData    ?? digestData
-    const error     = mailError   ?? digestError
+    const data = mailData ?? digestData
+    const error = mailError ?? digestError
     const isLoading = mailLoading || digestLoading
     const isSuccess = mailSuccess || digestSuccess
-    const isError   = mailIsError || digestIsError
+    const isError = mailIsError || digestIsError
 
     useEffect(() => {
         if (!mailId && !digestId) {
