@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.5.1
+
+### Patch Changes
+
+- Added weekly email digest feature: `WeeklyDigestService` generates personalised summaries of new places and activity; new `system:weekly-digest` CLI command sends digests to opted-in users; digest send history tracked in `user_digest_logs` to prevent duplicates
+- Added `emailDigest` notification preference setting; users can opt in/out via settings and unsubscribe via a dedicated endpoint (`POST /users/unsubscribe-digest`); unsubscribe link and i18n keys added to the digest email template
+- Improved email infrastructure: refactored `EmailLibrary` and email view templates, added mail config debug helpers, and introduced a `system:test-email` CLI command for verifying mail delivery
+- Added BIMI logo SVG for email brand identity support
+- Added root `GET /` API info endpoint returning service name, version, and environment
+- Fixed user listing responses to use total user count instead of filtered count, correcting pagination metadata
+- Added initials-based avatar fallback for users without an uploaded avatar photo
+- Refactored photo actions UI and header upload links for improved layout and consistency
+- Switched analytics scripts to `next/script` for better performance and loading control
+- Bumped client dependencies and set `bundler` module resolution in TypeScript config
+- Expanded client unit test coverage: added test mocks and unit tests for app-bar, layout, map, shared, UI kit components, `useClientOnly`, `useLocalStorage`, and client utility functions
+- Refactored test mocks and imports across the client test suite; standardised formatting and updated Jest config with new testing dependencies
+- Improved ESLint config and added SonarCloud coverage badges; updated Sonar exclusion rules
+- Added product ROADMAP documentation and expanded feature docs
+
 ## 1.5.0
 
 ### Minor Changes
