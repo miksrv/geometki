@@ -3,6 +3,7 @@
 namespace App\Libraries;
 
 use App\Models\ActivityModel;
+use App\Models\PlacesModel;
 use App\Models\UsersModel;
 use Config\Database;
 
@@ -173,11 +174,35 @@ class DigestService
             array_keys($viewsMap)
         ));
 
+        // Step 4: Fetch place titles and check for cover images
+        $placeContent = new PlacesContent();
+        $placeContent->translate($allPlaceIds);
+
+        $placesModel = new PlacesModel();
+        $placesData  = $placesModel
+            ->select('id, photos')
+            ->whereIn('id', $allPlaceIds)
+            ->findAll();
+
+        $photosMap = [];
+        foreach ($placesData as $place) {
+            $photosMap[$place->id] = (int) ($place->photos ?? 0);
+        }
+
         $result = [];
         foreach ($allPlaceIds as $placeId) {
-            $a        = $activityMap[$placeId] ?? null;
+            $a = $activityMap[$placeId] ?? null;
+
+            // Build cover URL if place has photos
+            $coverUrl = null;
+            if (($photosMap[$placeId] ?? 0) > 0) {
+                $coverUrl = 'https://api.geometki.com/' . PATH_PHOTOS . $placeId . '/cover.jpg';
+            }
+
             $result[] = [
                 'place_id' => $placeId,
+                'title'    => $placeContent->title($placeId) ?: "Place #{$placeId}",
+                'cover'    => $coverUrl,
                 'ratings'  => (int) ($a['ratings']  ?? 0),
                 'comments' => (int) ($a['comments'] ?? 0),
                 'photos'   => (int) ($a['photos']   ?? 0),
@@ -186,7 +211,7 @@ class DigestService
             ];
         }
 
-        // Step 4: Sort by engagement score, keep top 10.
+        // Step 5: Sort by engagement score, keep top 10.
         usort($result, function (array $a, array $b): int {
             $scoreA = $a['ratings'] * 5 + $a['comments'] * 4 + $a['photos'] * 3 + $a['edits'] * 2 + min($a['views'], 50);
             $scoreB = $b['ratings'] * 5 + $b['comments'] * 4 + $b['photos'] * 3 + $b['edits'] * 2 + min($b['views'], 50);

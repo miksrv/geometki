@@ -168,27 +168,32 @@ class WeeklyDigestCommand extends BaseCommand
 
             $locale = $user->locale ?? 'ru';
 
-            // Render the digest body
+            // Render the digest body (inner content only, NOT wrapped in email.php)
+            // SendEmail.php will wrap it in the email template when processing the queue.
             $digestHtml = view('email_digest', [
                 'userName' => $user->name,
                 'sections' => $sections,
                 'locale'   => $locale,
             ]);
 
-            // Wrap in the outer email template
-            $preheader = $locale === 'en'
-                ? 'Your week on Geometki'
-                : 'Ваша неделя на Geometki';
-
             $subject = $locale === 'en'
                 ? 'Your week on Geometki'
-                : 'Ваша неделя на Geometki';
+                : 'Ваша неделя на геометках';
 
-            $fullMessage = view('email', [
-                'message'     => $digestHtml,
-                'preheader'   => $preheader,
-                'unsubscribe' => 'https://geometki.com/unsubscribe?digest=' . $user->id,
-            ]);
+            // In debug mode, save the full HTML email to a file for visual inspection
+            // FOR DEBUG ONLY - this is not a real email preview, just a quick way to see the rendered content.
+//            if ($isDebug) {
+//                $fullHtml = view('email', [
+//                    'message'     => $digestHtml,
+//                    'preheader'   => $subject,
+//                    'unsubscribe' => 'https://geometki.com/unsubscribe?mail=0'
+//                ]);
+//
+//                $previewPath = WRITEPATH . 'digest_preview_' . $user->id . '.html';
+//                file_put_contents($previewPath, $fullHtml);
+//                CLI::write("  HTML preview saved: {$previewPath}", 'green');
+//                CLI::write('');
+//            }
 
             if ($isDryRun) {
                 CLI::write("--- Dry run for: {$user->name} ({$user->email}) ---", 'cyan');
@@ -199,14 +204,14 @@ class WeeklyDigestCommand extends BaseCommand
                 continue; // dry-run does not count as queued
             }
 
-            // Insert into the email queue
+            // Insert into the email queue (inner HTML only - SendEmail will wrap in email.php)
             $sendingMail->insert([
                 'activity_id' => null,
                 'status'      => 'created',
                 'email'       => $user->email,
                 'locale'      => $locale,
                 'subject'     => $subject,
-                'message'     => $fullMessage,
+                'message'     => $digestHtml,
             ]);
 
             // Mark the user as having received a digest

@@ -137,7 +137,17 @@ class SendEmail extends BaseCommand
                 ]);
 
             } else {
-                $message = view('email', ['message' => $item->message]);
+                // Check if this is a digest email (no activity_id and has subject)
+                $isDigest = empty($item->activity_id) && !empty($item->subject);
+                
+                $emailParams = ['message' => $item->message];
+                
+                if ($isDigest) {
+                    $emailParams['preheader']   = $item->subject;
+                    $emailParams['unsubscribe'] = 'https://geometki.com/unsubscribe?mail=' . $item->id;
+                }
+                
+                $message = view('email', $emailParams);
             }
 
             try {

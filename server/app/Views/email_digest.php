@@ -14,14 +14,14 @@
 $isRu = ($locale ?? 'ru') === 'ru';
 
 $t = [
-    'greeting'           => $isRu ? "Привет, {$userName}! Вот что произошло за эту неделю." : "Hi, {$userName}! Here's what happened this week.",
+    'greeting'           => $isRu ? "Привет, {$userName}! Вот что произошло за эту неделю на геометках:" : "Hi, {$userName}! Here's what happened this week.",
     'your_week'          => $isRu ? 'Ваша неделя' : 'Your week',
     'places_created'     => $isRu ? 'Новых геометок добавлено' : 'New places added',
     'photos_uploaded'    => $isRu ? 'Фотографий загружено' : 'Photos uploaded',
     'ratings_given'      => $isRu ? 'Оценок поставлено' : 'Ratings given',
     'edits_made'         => $isRu ? 'Правок внесено' : 'Edits made',
     'inactive'           => $isRu ? 'Мы скучаем по вам — загляните на Geometki!' : "We miss you — come back to Geometki!",
-    'place_activity'     => $isRu ? 'Активность на ваших местах' : 'Activity on your places',
+    'place_activity'     => $isRu ? 'Активность на ваших геометках' : 'Activity on your places',
     'pa_ratings'         => $isRu ? 'оценок' : 'ratings',
     'pa_comments'        => $isRu ? 'комментариев' : 'comments',
     'pa_photos'          => $isRu ? 'фото' : 'photos',
@@ -82,23 +82,30 @@ $hr = '<hr style="border:none;border-top:1px solid #eaebed;margin:16px 0">';
     <h3 style="font-size:16px;font-weight:bold;margin:0 0 12px"><?= esc($t['place_activity']) ?></h3>
 
     <?php foreach ($sections['place_activity'] as $place): ?>
-        <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:8px">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:16px">
             <tr>
-                <td style="color:#0867ec">
-                    <a href="https://geometki.com/places/<?= esc($place['place_id']) ?>" style="color:#0867ec;text-decoration:none">
-                        geometki.com/places/<?= esc($place['place_id']) ?>
+                <?php if (!empty($place['cover'])): ?>
+                <td style="width:120px;vertical-align:top;padding-right:12px">
+                    <a href="https://geometki.com/places/<?= esc($place['place_id']) ?>" style="text-decoration:none">
+                        <img src="<?= esc($place['cover']) ?>" alt="" style="width:120px;height:45px;object-fit:cover;border-radius:6px;display:block">
                     </a>
                 </td>
-                <td style="text-align:right;white-space:nowrap;font-size:13px;color:#9a9ea6">
-                    <?php
-                    $parts = [];
-                    if ($place['ratings']  > 0) $parts[] = $place['ratings']  . ' ' . $t['pa_ratings'];
-                    if ($place['comments'] > 0) $parts[] = $place['comments'] . ' ' . $t['pa_comments'];
-                    if ($place['photos']   > 0) $parts[] = $place['photos']   . ' ' . $t['pa_photos'];
-                    if ($place['edits']    > 0) $parts[] = $place['edits']    . ' ' . $t['pa_edits'];
-                    if (($place['views'] ?? 0) > 0) $parts[] = $place['views'] . ' ' . $t['pa_views'];
-                    echo esc(implode(' · ', $parts));
-                    ?>
+                <?php endif; ?>
+                <td style="vertical-align:top">
+                    <a href="https://geometki.com/places/<?= esc($place['place_id']) ?>" style="color:#0867ec;text-decoration:none;font-weight:bold;font-size:15px;display:block;margin-bottom:4px;white-space: nowrap;overflow: hidden;max-width: 416px;text-overflow: ellipsis;">
+                        <?= esc($place['title']) ?>
+                    </a>
+                    <span style="font-size:13px;color:#9a9ea6">
+                        <?php
+                        $parts = [];
+                        if (($place['views'] ?? 0) > 0) $parts[] = $place['views'] . ' ' . $t['pa_views'];
+                        if ($place['ratings']  > 0) $parts[] = $place['ratings']  . ' ' . $t['pa_ratings'];
+                        if ($place['comments'] > 0) $parts[] = $place['comments'] . ' ' . $t['pa_comments'];
+                        if ($place['photos']   > 0) $parts[] = $place['photos']   . ' ' . $t['pa_photos'];
+                        if ($place['edits']    > 0) $parts[] = $place['edits']    . ' ' . $t['pa_edits'];
+                        echo esc(implode(' · ', $parts));
+                        ?>
+                    </span>
                 </td>
             </tr>
         </table>
@@ -106,8 +113,10 @@ $hr = '<hr style="border:none;border-top:1px solid #eaebed;margin:16px 0">';
 <?php endif; ?>
 
 <?php if (!empty($sections['community'])): ?>
-    <?= $hr ?>
     <?php $community = $sections['community']; ?>
+    <?php $hasContent = ($community['new_places_count'] ?? 0) > 0 || !empty($community['top_user']); ?>
+    <?php if ($hasContent): ?>
+    <?= $hr ?>
     <h3 style="font-size:16px;font-weight:bold;margin:0 0 12px"><?= esc($t['community']) ?></h3>
 
     <?php if ($community['new_places_count'] > 0): ?>
@@ -126,5 +135,6 @@ $hr = '<hr style="border:none;border-top:1px solid #eaebed;margin:16px 0">';
                 <?= (int) $topUser['activity_count'] ?> <?= esc($t['top_user_actions']) ?>)
             </span>
         </p>
+    <?php endif; ?>
     <?php endif; ?>
 <?php endif; ?>
