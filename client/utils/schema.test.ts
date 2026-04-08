@@ -35,12 +35,12 @@ const mockUser: ApiModel.User = {
 describe('PlaceSchema', () => {
     it('returns an object with @context schema.org', () => {
         const schema = PlaceSchema(mockPlace as ApiModel.Place)
-        expect((schema as any)['@context']).toBe('https://schema.org')
+        expect((schema as Record<string, unknown>)['@context']).toBe('https://schema.org')
     })
 
     it('uses LocalBusiness type for museum category', () => {
         const schema = PlaceSchema(mockPlace as ApiModel.Place)
-        expect((schema as any)['@type']).toBe('LocalBusiness')
+        expect((schema as Record<string, unknown>)['@type']).toBe('LocalBusiness')
     })
 
     it('uses TouristAttraction type for non-commercial categories', () => {
@@ -49,94 +49,94 @@ describe('PlaceSchema', () => {
             category: { name: ApiModel.Categories.monument, title: 'Monument' }
         }
         const schema = PlaceSchema(nonCommercialPlace as ApiModel.Place)
-        expect((schema as any)['@type']).toBe('TouristAttraction')
+        expect((schema as Record<string, unknown>)['@type']).toBe('TouristAttraction')
     })
 
     it('uses TouristAttraction type when category is undefined', () => {
         const noCategory = { ...mockPlace, category: undefined }
         const schema = PlaceSchema(noCategory as ApiModel.Place)
         // getPlaceSchemaType(undefined) returns 'LocalBusiness'
-        expect((schema as any)['@type']).toBe('LocalBusiness')
+        expect((schema as Record<string, unknown>)['@type']).toBe('LocalBusiness')
     })
 
     it('includes the place title as name', () => {
-        const schema = PlaceSchema(mockPlace as ApiModel.Place) as any
+        const schema = PlaceSchema(mockPlace as ApiModel.Place) as Record<string, unknown>
         expect(schema.name).toBe('Test Place')
     })
 
     it('includes geo coordinates', () => {
-        const schema = PlaceSchema(mockPlace as ApiModel.Place) as any
-        expect(schema.geo.latitude).toBe(55.75)
-        expect(schema.geo.longitude).toBe(37.62)
+        const schema = PlaceSchema(mockPlace as ApiModel.Place) as Record<string, unknown>
+        expect((schema.geo as Record<string, unknown>).latitude).toBe(55.75)
+        expect((schema.geo as Record<string, unknown>).longitude).toBe(37.62)
     })
 
     it('strips markdown from description', () => {
-        const schema = PlaceSchema(mockPlace as ApiModel.Place) as any
+        const schema = PlaceSchema(mockPlace as ApiModel.Place) as Record<string, unknown>
         // 'removeMarkdown' strips **Bold** → 'Bold content'
         expect(schema.description).toBe('Bold content')
     })
 
     it('includes the canonical URL when provided', () => {
-        const schema = PlaceSchema(mockPlace as ApiModel.Place, 'https://geometki.com/') as any
+        const schema = PlaceSchema(mockPlace as ApiModel.Place, 'https://geometki.com/') as Record<string, unknown>
         expect(schema.url).toBe('https://geometki.com/places/place-1')
     })
 
     it('constructs the cover image URL from IMG_HOST', () => {
-        const schema = PlaceSchema(mockPlace as ApiModel.Place) as any
+        const schema = PlaceSchema(mockPlace as ApiModel.Place) as Record<string, unknown>
         expect(schema.image).toBe('https://cdn.example.com//covers/place-1.jpg')
     })
 
     it('returns undefined for image when cover is not set', () => {
         const noCoverPlace = { ...mockPlace, cover: undefined }
-        const schema = PlaceSchema(noCoverPlace as ApiModel.Place) as any
+        const schema = PlaceSchema(noCoverPlace as ApiModel.Place) as Record<string, unknown>
         expect(schema.image).toBeUndefined()
     })
 
     it('includes view count in interactionStatistic', () => {
-        const schema = PlaceSchema(mockPlace as ApiModel.Place) as any
-        expect(schema.interactionStatistic.userInteractionCount).toBe(50)
+        const schema = PlaceSchema(mockPlace as ApiModel.Place) as Record<string, unknown>
+        expect((schema.interactionStatistic as Record<string, unknown>).userInteractionCount).toBe(50)
     })
 })
 
 describe('UserSchema', () => {
     it('returns an object with @context schema.org', () => {
-        const schema = UserSchema(mockUser) as any
+        const schema = UserSchema(mockUser) as Record<string, unknown>
         expect(schema['@context']).toBe('https://schema.org')
     })
 
     it('returns @type Person', () => {
-        const schema = UserSchema(mockUser) as any
+        const schema = UserSchema(mockUser) as Record<string, unknown>
         expect(schema['@type']).toBe('Person')
     })
 
     it('includes the user id as identifier', () => {
-        const schema = UserSchema(mockUser) as any
+        const schema = UserSchema(mockUser) as Record<string, unknown>
         expect(schema.identifier).toBe('user-1')
     })
 
     it('includes the user name', () => {
-        const schema = UserSchema(mockUser) as any
+        const schema = UserSchema(mockUser) as Record<string, unknown>
         expect(schema.name).toBe('Alice')
     })
 
     it('constructs the avatar image URL from IMG_HOST', () => {
-        const schema = UserSchema(mockUser) as any
+        const schema = UserSchema(mockUser) as Record<string, unknown>
         expect(schema.image).toBe('https://cdn.example.com//avatars/alice.jpg')
     })
 
     it('returns undefined for image when avatar is not set', () => {
         const noAvatarUser = { ...mockUser, avatar: undefined }
-        const schema = UserSchema(noAvatarUser) as any
+        const schema = UserSchema(noAvatarUser) as Record<string, unknown>
         expect(schema.image).toBeUndefined()
     })
 
     it('includes the canonical URL when provided', () => {
-        const schema = UserSchema(mockUser, 'https://geometki.com/') as any
+        const schema = UserSchema(mockUser, 'https://geometki.com/') as Record<string, unknown>
         expect(schema.url).toBe('https://geometki.com/users/user-1')
     })
 
     it('returns undefined for url when canonicalUrl is not provided', () => {
-        const schema = UserSchema(mockUser) as any
+        const schema = UserSchema(mockUser) as Record<string, unknown>
         expect(schema.url).toBeUndefined()
     })
 })

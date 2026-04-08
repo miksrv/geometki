@@ -2,10 +2,12 @@ import React from 'react'
 
 import { render, screen } from '@testing-library/react'
 
+import { ApiModel } from '@/api'
+
 import { UserAvatar } from './UserAvatar'
 
 jest.mock('next/link', () => {
-    const Link = ({ href, children, title }: any) => (
+    const Link = ({ href, children, title }: { href: string; children: React.ReactNode; title?: string }) => (
         <a
             href={href}
             title={title}
@@ -18,7 +20,8 @@ jest.mock('next/link', () => {
 })
 
 jest.mock('next/image', () => {
-    const Image = ({ src, alt, width, height }: any) => (
+    const Image = ({ src, alt, width, height }: { src: string; alt: string; width: number; height: number }) => (
+        // eslint-disable-next-line next/no-img-element
         <img
             src={src}
             alt={alt}
@@ -32,18 +35,18 @@ jest.mock('next/image', () => {
 
 jest.mock('next-i18next', () => ({
     useTranslation: () => ({
-        t: (key: string, opts?: any) => opts?.defaultValue ?? key
+        t: (key: string, opts?: { defaultValue?: string }) => opts?.defaultValue ?? key
     })
 }))
 
 // Mock sub-components and utilities
 jest.mock('./AvatarImage', () => ({
-    AvatarImage: ({ user }: any) => <div data-testid={'avatar-image'}>{user?.name}</div>
+    AvatarImage: ({ user }: { user?: ApiModel.User }) => <div data-testid={'avatar-image'}>{user?.name}</div>
 }))
 
 jest.mock('@/public/images/no-avatar.png', () => ({ src: '/no-avatar.png' }), { virtual: true })
 
-const user = { id: 'user-1', name: 'Alice', avatar: '/avatars/alice.jpg' }
+const user: ApiModel.User = { id: 'user-1', name: 'Alice', avatar: '/avatars/alice.jpg' }
 
 describe('UserAvatar', () => {
     describe('without user', () => {
@@ -55,7 +58,7 @@ describe('UserAvatar', () => {
         })
 
         it('renders initials when user has no id', () => {
-            const { container } = render(<UserAvatar user={{ id: '', name: 'No ID' } as any} />)
+            const { container } = render(<UserAvatar user={{ id: '', name: 'No ID' } as ApiModel.User} />)
             const initialsDiv = container.querySelector('.initialsAvatar')
             expect(initialsDiv).toBeInTheDocument()
             expect(initialsDiv).toHaveTextContent('NI')
@@ -64,13 +67,13 @@ describe('UserAvatar', () => {
 
     describe('with user', () => {
         it('renders a link to the user profile', () => {
-            render(<UserAvatar user={user as any} />)
+            render(<UserAvatar user={user} />)
             const link = screen.getByRole('link')
             expect(link).toHaveAttribute('href', '/users/user-1')
         })
 
         it('renders the AvatarImage component', () => {
-            render(<UserAvatar user={user as any} />)
+            render(<UserAvatar user={user} />)
             expect(screen.getByTestId('avatar-image')).toBeInTheDocument()
         })
     })
@@ -79,7 +82,7 @@ describe('UserAvatar', () => {
         it('does not render a link when disableLink is true', () => {
             render(
                 <UserAvatar
-                    user={user as any}
+                    user={user}
                     disableLink
                 />
             )
@@ -91,7 +94,7 @@ describe('UserAvatar', () => {
         it('shows the user name when showName is true', () => {
             render(
                 <UserAvatar
-                    user={user as any}
+                    user={user}
                     showName
                 />
             )
@@ -113,7 +116,7 @@ describe('UserAvatar', () => {
         it('shows a caption when provided', () => {
             render(
                 <UserAvatar
-                    user={user as any}
+                    user={user}
                     showName
                     caption={'Admin'}
                 />

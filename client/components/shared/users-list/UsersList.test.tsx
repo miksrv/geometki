@@ -7,7 +7,17 @@ import { ApiModel } from '@/api'
 import { UsersList } from './UsersList'
 
 jest.mock('simple-react-ui-kit', () => ({
-    Container: ({ children, className, title, _footer, _action }: any) => (
+    Container: ({
+        children,
+        className,
+        title
+    }: {
+        children?: React.ReactNode
+        className?: string
+        title?: string
+        _footer?: React.ReactNode
+        _action?: React.ReactNode
+    }) => (
         <div
             className={className}
             data-title={title}
@@ -15,7 +25,7 @@ jest.mock('simple-react-ui-kit', () => ({
             {children}
         </div>
     ),
-    Progress: ({ value, _height, className }: any) => (
+    Progress: ({ value, className }: { value?: number; _height?: number; className?: string }) => (
         <div
             data-testid={'progress'}
             data-value={value}
@@ -25,7 +35,20 @@ jest.mock('simple-react-ui-kit', () => ({
 }))
 
 jest.mock('next/image', () => {
-    const Image = ({ src, alt, width, height, className }: any) => (
+    const Image = ({
+        src,
+        alt,
+        width,
+        height,
+        className
+    }: {
+        src?: string
+        alt?: string
+        width?: number
+        height?: number
+        className?: string
+    }) => (
+        // eslint-disable-next-line next/no-img-element
         <img
             src={src}
             alt={alt}
@@ -54,7 +77,7 @@ jest.mock('@/features/levels/levels.utils', () => ({
 }))
 
 jest.mock('../user-avatar', () => ({
-    UserAvatar: ({ user, showName, caption }: any) => (
+    UserAvatar: ({ user, showName, caption }: { user?: ApiModel.User; showName?: boolean; caption?: string }) => (
         <div data-testid={'user-avatar'}>
             {user?.name}
             {showName && <span data-testid={'user-name-shown'}>{user?.name}</span>}
