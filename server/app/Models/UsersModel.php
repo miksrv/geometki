@@ -29,6 +29,7 @@ class UsersModel extends ApplicationBaseModel {
         'website',
         'reputation',
         'settings',
+        'digest_sent_at',
         'created_at',
         'updated_at',
         'activity_at',
@@ -109,6 +110,7 @@ class UsersModel extends ApplicationBaseModel {
             'emailPhoto'   => $data->settings->emailPhoto ?? true,
             'emailRating'  => $data->settings->emailRating ?? true,
             'emailCover'   => $data->settings->emailCover ?? true,
+            'emailDigest'  => $data->settings->emailDigest ?? true,
         ];
 
         return $data;
