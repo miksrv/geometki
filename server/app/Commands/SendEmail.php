@@ -24,8 +24,8 @@ class SendEmail extends BaseCommand
     protected $name        = 'system:send-email';
     protected $description = 'Process and send queued notification emails';
 
-    private const MONTH_EMAIL_LIMIT = 2000;
-    private const DAY_EMAIL_LIMIT   = 500;
+    private const DAY_EMAIL_LIMIT  = 2000;
+    private const HOUR_EMAIL_LIMIT = 500;
 
     public function run(array $params)
     {
@@ -38,10 +38,16 @@ class SendEmail extends BaseCommand
             ->orderBy('created_at', 'DESC')
             ->findAll();
 
-        $monthEmailCount = $sendingEmailModel
+        $dayEmailCount = $sendingEmailModel
             ->select('id')
             ->where('status = "completed"')
-            ->where('created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)')
+            ->where('created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)')
+            ->countAllResults();
+
+        $hourEmailCount = $sendingEmailModel
+            ->select('id')
+            ->where('status = "completed"')
+            ->where('created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)')
             ->countAllResults();
 
         /**
@@ -52,13 +58,13 @@ class SendEmail extends BaseCommand
             return;
         }
 
-        if ($monthEmailCount >= self::MONTH_EMAIL_LIMIT) {
-            CLI::write('Monthly email limit reached (' . self::MONTH_EMAIL_LIMIT . '). Skipping.', 'red');
+        if ($dayEmailCount >= self::DAY_EMAIL_LIMIT) {
+            CLI::write('Daily email limit reached (' . self::DAY_EMAIL_LIMIT . '). Skipping.', 'red');
             return;
         }
 
-        if (count($sendingEmailData) >= self::DAY_EMAIL_LIMIT) {
-            CLI::write('Daily email limit reached (' . self::DAY_EMAIL_LIMIT . '). Skipping.', 'red');
+        if ($hourEmailCount >= self::HOUR_EMAIL_LIMIT) {
+            CLI::write('Hourly email limit reached (' . self::HOUR_EMAIL_LIMIT . '). Skipping.', 'red');
             return;
         }
 
