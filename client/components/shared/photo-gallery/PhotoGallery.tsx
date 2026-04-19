@@ -106,7 +106,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     /**
      *  After deleting a photo, remove it from the local photo list
      */
-    React.useEffect(() => {
+    useEffect(() => {
         const updatedLocalPhotos = localPhotos.filter(({ id }) => id !== deleteData?.id)
 
         setLocalPhotos(updatedLocalPhotos)
@@ -120,7 +120,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     return (
         <Container
             {...props}
-            className={cn(props.className, styles.galleryContainer)}
+            className={cn(styles.galleryContainer, props.className)}
         >
             {isEmptyPhotoList && (
                 <div className={'emptyList'}>

@@ -94,7 +94,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, child
     }, [application.showOverlay, sidebarOpen])
 
     return (
-        <div className={cn(className, styles.appLayout, fullSize && styles.fullSize)}>
+        <div className={cn(styles.appLayout, fullSize && styles.fullSize, className)}>
             <NextNProgress
                 color={'#2688eb'}
                 options={{ showSpinner: false }}

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { cn, Icon } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
@@ -22,7 +22,7 @@ export const Notification: React.FC<NotificationProps> = ({ showDate, onClose, o
     const { t } = useTranslation()
     const { locale } = useRouter()
 
-    React.useEffect(() => {
+    useEffect(() => {
         onLoad?.(props.id)
     }, [])
 

@@ -26,7 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
     actions,
     ...props
 }) => (
-    <Container className={cn(className, styles.header, attachedBottom && styles.attachedBottom)}>
+    <Container className={cn(styles.header, attachedBottom && styles.attachedBottom, className)}>
         {backLink && (
             <Button
                 mode={'outline'}

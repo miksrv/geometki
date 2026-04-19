@@ -20,10 +20,7 @@ export const UsersList: React.FC<UsersListProps> = ({ users, ...props }) => {
     const { t } = useTranslation('components.users-list')
 
     return users?.length ? (
-        <Container
-            {...props}
-            style={{ marginTop: 15 }}
-        >
+        <Container {...props}>
             {users.map((user) => (
                 <div
                     key={user.id}
