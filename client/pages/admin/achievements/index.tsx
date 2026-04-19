@@ -1,5 +1,5 @@
 import React, { CSSProperties } from 'react'
-import { Button, Container, Dialog, Icon, Table, TableColumnProps } from 'simple-react-ui-kit'
+import { Badge, Button, Container, Dialog, Icon, Table, TableColumnProps } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
 import Link from 'next/link'
@@ -27,7 +27,6 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
 
     const { data, isLoading } = API.useGetAchievementsManageQuery(undefined, { skip: !isAuth })
     const [deleteAchievement] = API.useDeleteAchievementMutation()
-    const [activateAchievement] = API.useActivateAchievementMutation()
 
     const achievements = data?.data ?? []
 
@@ -41,12 +40,6 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
             .unwrap()
             .catch(() => undefined)
         setDeleteTarget(null)
-    }
-
-    const handleActivate = async (id: string) => {
-        await activateAchievement(id)
-            .unwrap()
-            .catch(() => undefined)
     }
 
     const pageTitle = t('achievements-admin-title')
@@ -95,15 +88,14 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
                 const achievement = sortedData[rowIndex]
                 const tierColor = TIER_COLORS[achievement.tier]
                 return (
-                    <span
-                        className={styles.tierBadge}
+                    <Badge
+                        size={'small'}
+                        label={t(`achievements-tier-${String(achievement.tier)}`)}
                         style={{
                             background: `color-mix(in srgb, ${String(tierColor)} 15%, transparent)`,
                             color: tierColor
                         }}
-                    >
-                        {t(`achievements-tier-${String(achievement.tier)}`)}
-                    </span>
+                    />
                 )
             }
         },
@@ -112,7 +104,13 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
             header: t('achievements-admin-type'),
             formatter: (_, sortedData, rowIndex) => {
                 const achievement = sortedData[rowIndex]
-                return <span className={styles.typeBadge}>{t(`achievements-${String(achievement.type)}`)}</span>
+                return (
+                    <Badge
+                        size={'small'}
+                        label={t(`achievements-${String(achievement.type)}`)}
+                        className={styles.typeBadge}
+                    />
+                )
             }
         },
         {
@@ -138,20 +136,6 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
             }
         },
         {
-            accessor: 'is_active',
-            header: t('achievements-admin-active'),
-            formatter: (_, sortedData, rowIndex) => {
-                const achievement = sortedData[rowIndex]
-                return (
-                    <span
-                        className={`${styles.statusBadge} ${achievement.is_active ? styles.active : styles.inactive}`}
-                    >
-                        {achievement.is_active ? t('achievements-admin-active') : t('achievements-admin-inactive')}
-                    </span>
-                )
-            }
-        },
-        {
             accessor: 'id',
             header: '',
             formatter: (_, sortedData, rowIndex) => {
@@ -165,15 +149,6 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
                         >
                             <Icon name={'Pencil'} />
                         </Link>
-                        {!achievement.is_active && (
-                            <button
-                                className={styles.actionBtn}
-                                onClick={() => handleActivate(achievement.id)}
-                                title={t('achievements-admin-activate')}
-                            >
-                                <Icon name={'CheckCircle'} />
-                            </button>
-                        )}
                         <button
                             className={`${styles.actionBtn} ${styles.danger}`}
                             onClick={() => setDeleteTarget(achievement)}

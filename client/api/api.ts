@@ -98,10 +98,6 @@ export const API = createApi({
             invalidatesTags: ['Achievements', 'AchievementsManage'],
             query: (id) => ({ method: 'DELETE', url: `achievements/${id}` })
         }),
-        activateAchievement: builder.mutation<void, string>({
-            invalidatesTags: ['Achievements', 'AchievementsManage'],
-            query: (id) => ({ method: 'POST', url: `achievements/${id}/activate` })
-        }),
         uploadAchievementImage: builder.mutation<{ id: string; image: string }, { id: string; file: File }>({
             invalidatesTags: ['Achievements', 'AchievementsManage'],
             query: ({ id, file }) => {
