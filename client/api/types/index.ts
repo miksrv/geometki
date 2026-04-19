@@ -1,3 +1,4 @@
+export * as Achievements from './achievements'
 export * as Activity from './activity'
 export * as Auth from './auth'
 export * as Bookmarks from './bookmarks'
