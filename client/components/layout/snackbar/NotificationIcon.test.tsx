@@ -99,16 +99,28 @@ describe('NotificationIcon', () => {
         })
     })
 
-    describe('type without icon', () => {
-        it('renders nothing when no matching type and no place', () => {
-            const { container } = render(
+    describe('achievements type without image', () => {
+        it('renders Award icon when achievements type has no meta image', () => {
+            render(
                 <NotificationIcon
                     type={'achievements' as any}
                     id={'n1'}
                     read={false}
                 />
             )
-            // <></> returns null in DOM — container has an empty div
+            expect(screen.getByTestId('icon-Award')).toBeInTheDocument()
+        })
+    })
+
+    describe('type without icon', () => {
+        it('renders nothing when no matching type and no place', () => {
+            const { container } = render(
+                <NotificationIcon
+                    type={'unknown' as any}
+                    id={'n1'}
+                    read={false}
+                />
+            )
             expect(container.innerHTML).toBe('')
         })
     })

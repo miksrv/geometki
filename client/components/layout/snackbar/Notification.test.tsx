@@ -4,6 +4,15 @@ import { fireEvent, render, screen } from '@testing-library/react'
 
 import { Notification } from './Notification'
 
+jest.mock('next/router', () => ({
+    useRouter: () => ({
+        pathname: '/',
+        asPath: '/',
+        query: {},
+        locale: 'ru'
+    })
+}))
+
 jest.mock('next/link', () => {
     const Link = ({ href, children }: any) => <a href={href}>{children}</a>
     Link.displayName = 'Link'
