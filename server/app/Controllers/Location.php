@@ -48,7 +48,7 @@ class Location extends ResourceController
         $text   = $this->request->getGet('text');
 
         if (!$text || !is_string($text)) {
-            return $this->failValidationErrors('Please enter search string');
+            $this->respond([]);
         }
 
         $text = trim($text);
@@ -74,7 +74,7 @@ class Location extends ResourceController
         $text = $this->request->getGet('text');
 
         if (!$text || !is_string($text)) {
-            return $this->failValidationErrors('Please enter search string');
+            $this->respond([]);
         }
 
         $text = trim($text);
