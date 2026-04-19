@@ -78,6 +78,7 @@ const AuthPage: NextPage<object> = () => {
                 noindex={true}
                 title={t('authorization-on-site')}
             />
+
             <div className={'centerPageContainer'}>
                 <div className={'wrapper'}>
                     <Container>

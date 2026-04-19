@@ -55,36 +55,34 @@ const TagsPage: NextPage<TagsPageProps> = ({ tags }) => {
                 additionalLinkTags={buildHreflangTags('tags')}
             />
 
-            <div className={'pageContainer'}>
-                <Header
-                    title={t('features-of-places')}
-                    homePageTitle={t('geotags')}
-                    currentPage={t('features-of-places')}
-                />
+            <Header
+                title={t('features-of-places')}
+                homePageTitle={t('geotags')}
+                currentPage={t('features-of-places')}
+            />
 
-                <TagsStats tags={tagsList} />
+            <TagsStats tags={tagsList} />
 
-                <TagsTrending tags={tagsList} />
+            <TagsTrending tags={tagsList} />
 
-                <TagsControls
-                    searchQuery={searchQuery}
-                    sortMode={sortMode}
-                    onSearchChange={setSearchQuery}
-                    onSortChange={setSortMode}
-                />
+            <TagsControls
+                searchQuery={searchQuery}
+                sortMode={sortMode}
+                onSearchChange={setSearchQuery}
+                onSortChange={setSortMode}
+            />
 
-                <TagsAlphabetBar
-                    tags={filteredTagsForAlphabet}
-                    sortMode={sortMode}
-                />
+            <TagsAlphabetBar
+                tags={filteredTagsForAlphabet}
+                sortMode={sortMode}
+            />
 
-                <TagsGrid
-                    tags={tagsList}
-                    searchQuery={searchQuery}
-                    sortMode={sortMode}
-                    onClearSearch={() => setSearchQuery('')}
-                />
-            </div>
+            <TagsGrid
+                tags={tagsList}
+                searchQuery={searchQuery}
+                sortMode={sortMode}
+                onClearSearch={() => setSearchQuery('')}
+            />
         </AppLayout>
     )
 }

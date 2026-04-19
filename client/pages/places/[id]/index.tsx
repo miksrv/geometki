@@ -231,10 +231,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                 tags={place?.tags}
             />
 
-            <Container
-                style={{ marginTop: 15 }}
-                title={t('comments-title')}
-            >
+            <Container title={t('comments-title')}>
                 <PlaceCommentList
                     placeId={place?.id}
                     comments={commentListData?.items}
@@ -258,8 +255,8 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                         size={'medium'}
                         mode={'secondary'}
                         noIndex={true}
+                        stretched={true}
                         link={`/places?lat=${place?.lat}&lon=${place?.lon}&sort=distance&order=ASC`}
-                        style={{ marginTop: '5px', width: '100%' }}
                     >
                         {t('all-places-nearby')}
                     </Button>
