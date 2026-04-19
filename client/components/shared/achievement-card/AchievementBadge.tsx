@@ -1,11 +1,9 @@
 import React, { CSSProperties, useState } from 'react'
-import { Icon, IconTypes } from 'simple-react-ui-kit'
 
-import Image from 'next/image'
 import { useTranslation } from 'next-i18next'
 
 import { ApiType } from '@/api'
-import { IMG_HOST } from '@/config/env'
+import { AchievementIcon } from '@/components/shared/achievement-icon'
 import { TIER_COLORS } from '@/utils/achievements'
 import { formatDate } from '@/utils/helpers'
 
@@ -40,17 +38,13 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({ achievement 
                 aria-label={achievement.title}
             >
                 <div className={styles.badgeIcon}>
-                    {achievement.image ? (
-                        <Image
-                            src={`${IMG_HOST}${achievement.image}`}
-                            alt={achievement.title}
-                            width={36}
-                            height={36}
-                            style={{ borderRadius: '50%', objectFit: 'contain' }}
-                        />
-                    ) : (
-                        <Icon name={achievement.icon as IconTypes} />
-                    )}
+                    <AchievementIcon
+                        image={achievement.image}
+                        icon={achievement.icon}
+                        alt={achievement.title}
+                        size={36}
+                        style={{ borderRadius: '50%' }}
+                    />
                 </div>
                 {hovered && (
                     <div

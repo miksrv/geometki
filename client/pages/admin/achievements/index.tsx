@@ -11,6 +11,7 @@ import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, Header } from '@/components/shared'
+import { AchievementIcon } from '@/components/shared/achievement-icon'
 import { TIER_COLORS } from '@/utils/achievements'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
@@ -58,17 +59,13 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
                         className={styles.iconCell}
                         style={cssVars}
                     >
-                        {achievement.image ? (
-                            <img
-                                src={achievement.image}
-                                alt={achievement.title}
-                                width={18}
-                                height={18}
-                                style={{ borderRadius: '50%', objectFit: 'cover' }}
-                            />
-                        ) : (
-                            <Icon name={achievement.icon as any} />
-                        )}
+                        <AchievementIcon
+                            image={achievement.image}
+                            icon={achievement.icon}
+                            alt={achievement.title}
+                            size={18}
+                            style={{ borderRadius: '50%' }}
+                        />
                     </div>
                 )
             }

@@ -1,6 +1,7 @@
 export { AppLayout } from '../layout'
 export { MapObjectsTypeEnum } from '../map'
 export { AchievementBadge, AchievementCard } from './achievement-card'
+export { AchievementIcon } from './achievement-icon'
 export { ActivityList } from './activity-list'
 export { BookmarkButton } from './bookmark-button'
 export { ConfirmationDialog } from './confirmation-dialog'

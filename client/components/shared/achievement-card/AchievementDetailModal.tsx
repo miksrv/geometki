@@ -1,11 +1,9 @@
 import React, { CSSProperties } from 'react'
 import { TFunction } from 'i18next'
-import { Icon, IconTypes } from 'simple-react-ui-kit'
-
-import Image from 'next/image'
+import { Icon } from 'simple-react-ui-kit'
 
 import { ApiType } from '@/api'
-import { IMG_HOST } from '@/config/env'
+import { AchievementIcon } from '@/components/shared/achievement-icon'
 import { TIER_COLORS } from '@/utils/achievements'
 import { formatDate } from '@/utils/helpers'
 
@@ -50,17 +48,12 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({ 
 
                 <div className={styles.modalHeader}>
                     <div className={styles.iconWrapper}>
-                        {achievement.image ? (
-                            <Image
-                                src={`${IMG_HOST}${achievement.image}`}
-                                alt={achievement.title}
-                                width={36}
-                                height={36}
-                                style={{ objectFit: 'contain' }}
-                            />
-                        ) : (
-                            <Icon name={achievement.icon as IconTypes} />
-                        )}
+                        <AchievementIcon
+                            image={achievement.image}
+                            icon={achievement.icon}
+                            alt={achievement.title}
+                            size={36}
+                        />
                     </div>
                     <div>
                         <h2 className={styles.modalTitle}>{achievement.title}</h2>
