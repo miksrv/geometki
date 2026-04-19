@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react'
-import { Button, Icon, Input, Select, TextArea } from 'simple-react-ui-kit'
+import { Button, Input, Select, TextArea } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next'
 
 import { API, ApiType } from '@/api'
+import { AchievementIcon } from '@/components/shared'
 
 import styles from './styles.module.sass'
 
@@ -208,7 +209,10 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                         style={{ flex: 1 }}
                     />
                     <div className={styles.iconPreview}>
-                        <Icon name={(form.icon || 'Award') as any} />
+                        <AchievementIcon
+                            icon={form.icon || 'Award'}
+                            size={36}
+                        />
                     </div>
                 </div>
             </div>
@@ -228,10 +232,9 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                             style={{ flex: 1 }}
                         />
                         {imageUrl && (
-                            <img
-                                src={imageUrl}
-                                alt={''}
-                                style={{ height: '36px', objectFit: 'contain', width: '36px' }}
+                            <AchievementIcon
+                                image={imageUrl}
+                                size={36}
                             />
                         )}
                     </div>

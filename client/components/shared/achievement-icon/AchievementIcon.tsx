@@ -23,9 +23,10 @@ export const AchievementIcon: React.FC<AchievementIconProps> = ({
     style
 }) => {
     if (image) {
+        const src = image.startsWith('http://') || image.startsWith('https://') ? image : `${IMG_HOST}${image}`
         return (
             <Image
-                src={`${IMG_HOST}${image}`}
+                src={src}
                 alt={alt}
                 width={size}
                 height={size}
