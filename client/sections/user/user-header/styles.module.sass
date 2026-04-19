@@ -10,13 +10,10 @@
     .content
         padding: 15px
         display: flex
-        justify-content: space-between
+        gap: 15px
 
         @media only screen and (max-width: variables.$mobileMaxWidth)
             flex-direction: column
-
-            ul
-                margin-top: 20px
 
         &:before
             border-radius: var(--border-radius)
@@ -28,6 +25,9 @@
             position: absolute
             top: 0
             width: 100%
+
+        .avatarColumn
+            flex-shrink: 0
 
         .avatar
             display: block
@@ -44,11 +44,28 @@
                 width: 100%
                 height: 100% !important
 
+        .infoColumn
+            flex: 1
+            display: flex
+            flex-direction: column
+            gap: 15px
+
+        .infoRow
+            display: flex
+            justify-content: space-between
+            gap: 15px
+
+            @media only screen and (max-width: variables.$mobileMaxWidth)
+                flex-direction: column
+
         .levelImage
             margin: 0 2px
 
         .information
             min-width: 260px
+
+            @media only screen and (max-width: variables.$mobileMaxWidth)
+                min-width: auto
 
             li
                 display: flex
@@ -96,6 +113,19 @@
                     margin-right: 5px
                     border-radius: 50%
                     background-color: var(--color-green)
+
+    .rightColumn
+        display: flex
+        flex-direction: column
+        gap: 12px
+
+    .achievementsBadges
+        display: flex
+        flex-wrap: wrap
+        gap: 8px
+        padding-top: 15px
+        border-top: 1px solid var(--border-color)
+        width: 100%
 
     .header
         padding: 8px 15px
