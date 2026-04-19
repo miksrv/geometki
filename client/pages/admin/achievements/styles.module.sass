@@ -42,38 +42,9 @@
         height: 18px
         color: var(--tier-color, var(--text-color-secondary))
 
-.tierBadge
-    display: inline-flex
-    align-items: center
-    padding: 2px 8px
-    border-radius: 10px
-    font-size: variables.$fontSizeCaption
-    font-weight: 500
-
 .typeBadge
-    display: inline-flex
-    align-items: center
-    padding: 2px 8px
-    border-radius: 10px
-    font-size: variables.$fontSizeCaption
-    background: var(--input-background-color)
-    color: var(--text-color-secondary)
-
-.statusBadge
-    display: inline-flex
-    align-items: center
-    gap: 4px
-    padding: 2px 8px
-    border-radius: 10px
-    font-size: variables.$fontSizeCaption
-
-    &.active
-        background: var(--container-background-color-success)
-        color: var(--color-green)
-
-    &.inactive
-        background: var(--input-background-color)
-        color: var(--text-color-secondary)
+    background: var(--input-background-color) !important
+    color: var(--text-color-secondary) !important
 
 .actionsCell
     display: flex
