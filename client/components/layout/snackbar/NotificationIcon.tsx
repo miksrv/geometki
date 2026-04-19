@@ -23,6 +23,18 @@ export const NotificationIcon: React.FC<ApiModel.Notification> = ({ ...props }):
             width={26}
             height={26}
         />
+    ) : props.type === 'achievements' ? (
+        props.meta?.image ? (
+            <Image
+                src={`${IMG_HOST}${props.meta.image}`}
+                alt={''}
+                width={36}
+                height={36}
+                style={{ borderRadius: '50%', objectFit: 'contain' }}
+            />
+        ) : (
+            <Icon name={'Award'} />
+        )
     ) : props.place ? (
         <Image
             className={styles.placeImage}
