@@ -57,6 +57,60 @@ export const API = createApi({
         }
     }),
     endpoints: (builder) => ({
+        /** Controller: Achievements **/
+        getAchievements: builder.query<
+            { data: ApiType.Achievements.Achievement[] },
+            ApiType.Achievements.GetAchievementsParams | void
+        >({
+            providesTags: ['Achievements'],
+            query: (params) => ({ params: params ?? undefined, url: 'achievements' })
+        }),
+        getUserAchievements: builder.query<{ data: ApiType.Achievements.Achievement[] }, string>({
+            providesTags: ['UserAchievements'],
+            query: (userId) => `users/${userId}/achievements`
+        }),
+        getAchievementsProgress: builder.query<
+            { data: Record<string, ApiType.Achievements.AchievementProgress> },
+            void
+        >({
+            providesTags: ['AchievementsProgress'],
+            query: () => 'achievements/progress'
+        }),
+        getAchievementsManage: builder.query<{ data: ApiType.Achievements.AchievementAdmin[] }, void>({
+            providesTags: ['AchievementsManage'],
+            query: () => 'achievements/manage'
+        }),
+        createAchievement: builder.mutation<
+            { data: ApiType.Achievements.Achievement },
+            ApiType.Achievements.AchievementInput
+        >({
+            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            query: (body) => ({ body, method: 'POST', url: 'achievements' })
+        }),
+        updateAchievement: builder.mutation<
+            { data: ApiType.Achievements.Achievement },
+            { id: string; body: ApiType.Achievements.AchievementInput }
+        >({
+            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            query: ({ id, body }) => ({ body, method: 'PUT', url: `achievements/${id}` })
+        }),
+        deleteAchievement: builder.mutation<void, string>({
+            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            query: (id) => ({ method: 'DELETE', url: `achievements/${id}` })
+        }),
+        activateAchievement: builder.mutation<void, string>({
+            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            query: (id) => ({ method: 'POST', url: `achievements/${id}/activate` })
+        }),
+        uploadAchievementImage: builder.mutation<{ id: string; image: string }, { id: string; file: File }>({
+            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            query: ({ id, file }) => {
+                const formData = new FormData()
+                formData.append('image', file)
+                return { body: formData, method: 'POST', url: `achievements/${id}/image` }
+            }
+        }),
+
         /** Controller: Activity **/
         activityGetInfinityList: builder.query<
             ApiType.Activity.GetListResponse,
@@ -394,15 +448,19 @@ export const API = createApi({
     },
     reducerPath: 'api',
     tagTypes: [
+        'Achievements',
+        'AchievementsManage',
+        'AchievementsProgress',
         'Activity',
         'Bookmarks',
-        'Places',
-        'Photos',
-        'Rating',
-        'Visited',
-        'Users',
-        'Profile',
         'Comments',
-        'Notifications'
+        'Notifications',
+        'Photos',
+        'Places',
+        'Profile',
+        'Rating',
+        'UserAchievements',
+        'Users',
+        'Visited'
     ]
 })
