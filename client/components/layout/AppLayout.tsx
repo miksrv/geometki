@@ -147,6 +147,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, child
                     type={'mobile'}
                     userId={authSlice.user?.id}
                     isAuth={authSlice.isAuth}
+                    userRole={authSlice.user?.role}
                     onClick={handleCloseOverlay}
                 />
                 <div className={styles.content}>
@@ -169,6 +170,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, child
                                 type={'desktop'}
                                 userId={authSlice.user?.id}
                                 isAuth={authSlice.isAuth}
+                                userRole={authSlice.user?.role}
                             />
                             <div className={styles.switchers}>
                                 <ThemeSwitcher />
