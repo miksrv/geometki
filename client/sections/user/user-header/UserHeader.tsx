@@ -10,9 +10,9 @@ import { useAppSelector } from '@/app/store'
 import { AchievementBadge, Header } from '@/components/shared'
 import { Reputation } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
-import { levelImage, nextLevelPercentage } from '@/features/levels/levels.utils'
 import defaultAvatar from '@/public/images/no-avatar.png'
 import { formatDate, makeActiveLink, minutesAgo, removeProtocolFromUrl, timeAgo } from '@/utils/helpers'
+import { levelImage, nextLevelPercentage } from '@/utils/levels'
 
 import { UserAvatarEditor } from '../user-avatar-editor'
 

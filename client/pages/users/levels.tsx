@@ -12,7 +12,7 @@ import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, Header, UserAvatarGroup } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
-import { levelImage } from '@/features/levels/levels.utils'
+import { levelImage } from '@/utils/levels'
 import { buildHreflangTags } from '@/utils/seo'
 
 interface LevelsPageProps {
