@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 import { ApiModel } from '@/api'
 import { UserAvatar } from '@/components/shared'
-import { levelImage } from '@/features/levels/levels.utils'
+import { levelImage } from '@/utils/levels'
 
 import styles from './styles.module.sass'
 

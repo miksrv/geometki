@@ -12,7 +12,7 @@ import { useTranslation } from 'next-i18next'
 import { API, ApiModel } from '@/api'
 import { BookmarkButton, PlacePlate } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
-import { categoryImage } from '@/features/categories/categories.utils'
+import { categoryImage } from '@/utils/categories'
 import { addDecimalPoint, numberFormatter } from '@/utils/helpers'
 
 import styles from './styles.module.sass'

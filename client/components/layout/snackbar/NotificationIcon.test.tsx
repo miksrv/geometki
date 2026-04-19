@@ -25,7 +25,7 @@ jest.mock('@/config/env', () => ({
     IMG_HOST: 'https://img.example.com'
 }))
 
-jest.mock('@/features/levels/levels.utils', () => ({
+jest.mock('@/utils/levels', () => ({
     levelImage: jest.fn().mockReturnValue({ src: '/levels/level-1.png' })
 }))
 

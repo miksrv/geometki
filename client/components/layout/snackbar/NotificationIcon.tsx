@@ -5,7 +5,7 @@ import Image from 'next/image'
 
 import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { levelImage } from '@/features/levels/levels.utils'
+import { levelImage } from '@/utils/levels'
 
 import styles from './styles.module.sass'
 

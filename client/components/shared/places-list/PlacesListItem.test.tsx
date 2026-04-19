@@ -49,7 +49,7 @@ jest.mock('@/config/env', () => ({
     IMG_HOST: 'https://img.example.com'
 }))
 
-jest.mock('@/features/categories/categories.utils', () => ({
+jest.mock('@/utils/categories', () => ({
     categoryImage: jest.fn().mockReturnValue({ src: '/category-icons/default.png' })
 }))
 

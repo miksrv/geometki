@@ -5,7 +5,7 @@ import { useTranslation } from 'next-i18next'
 
 import { API, ApiType } from '@/api'
 import { Autocomplete, AutocompleteOption } from '@/components/ui'
-import { categoryImage } from '@/features/categories/categories.utils'
+import { categoryImage } from '@/utils/categories'
 import * as Coordinates from '@/utils/coordinates'
 
 import styles from './styles.module.sass'

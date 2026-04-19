@@ -60,7 +60,7 @@ jest.mock('@/api', () => ({
     }
 }))
 
-jest.mock('@/features/categories/categories.utils', () => ({
+jest.mock('@/utils/categories', () => ({
     categoryImage: jest.fn().mockReturnValue({ src: '/icons/category.png' })
 }))
 
