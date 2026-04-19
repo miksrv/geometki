@@ -1,0 +1,30 @@
+@use '../../../styles/variables' as variables
+
+.categoryGroup
+    margin-bottom: 20px
+
+.categoryGroupTitle
+    font-size: variables.$fontSizeParagraph
+    font-weight: 500
+    color: var(--text-color-secondary)
+    text-transform: uppercase
+    letter-spacing: 0.05em
+    margin: 0 0 10px
+    padding-left: 6px
+
+.achievementsGrid
+    display: flex
+    flex-wrap: wrap
+    margin: -6px
+
+.achievementsGridItem
+    flex-basis: calc(33.3333% - 12px)
+    margin: 6px
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-basis: 100%
+
+.emptyState
+    text-align: center
+    padding: 40px 20px
+    color: var(--text-color-secondary)
