@@ -161,8 +161,7 @@ $routes->group('achievements', static function ($routes) {
     $routes->post('/', 'Achievements::create');
     $routes->put('(:segment)', 'Achievements::update/$1');
     $routes->delete('(:segment)', 'Achievements::delete/$1');
-    $routes->post('(:segment)/activate', 'Achievements::activate/$1');
-    $routes->post('(:segment)/image', 'Achievements::uploadImage/$1');
+$routes->post('(:segment)/image', 'Achievements::uploadImage/$1');
 
     $routes->options('/', static function () {});
     $routes->options('(:segment)', static function () {});

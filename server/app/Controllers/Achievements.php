@@ -407,32 +407,6 @@ class Achievements extends ResourceController
     }
 
     /**
-     * POST /achievements/:id/activate
-     * Admin only.
-     */
-    public function activate($id = null): ResponseInterface
-    {
-        if (!$this->session->isAuth || $this->session->user?->role !== 'admin') {
-            return $this->failForbidden();
-        }
-
-        if (!$id) {
-            return $this->failNotFound(lang('Achievements.notFound'));
-        }
-
-        $achievementsModel = new AchievementsModel();
-        $achievement       = $achievementsModel->find($id);
-
-        if (!$achievement) {
-            return $this->failNotFound(lang('Achievements.notFound'));
-        }
-
-        $achievementsModel->update($id, ['is_active' => 1]);
-
-        return $this->respond(['id' => $id, 'is_active' => true]);
-    }
-
-    /**
      * POST /achievements/:id/image
      * Admin only — upload PNG/SVG badge image.
      */
