@@ -4,6 +4,7 @@ import { createApi, fetchBaseQuery, FetchBaseQueryError } from '@reduxjs/toolkit
 
 import { ApiType } from '@/api'
 import { RootState } from '@/app/store'
+import { API_HOST } from '@/config/env'
 import { encodeQueryData } from '@/utils/url'
 
 type Maybe<T> = T | void
@@ -34,7 +35,7 @@ const isHydrateAction = (action: Action): action is PayloadAction<RootState> => 
 
 export const API = createApi({
     baseQuery: fetchBaseQuery({
-        baseUrl: process.env.NEXT_PUBLIC_API_HOST || 'http://localhost:8080/',
+        baseUrl: API_HOST,
         prepareHeaders: (headers, { getState }) => {
             // By default, if we have a token in the store, let's use that for authenticated requests
             const token = (getState() as RootState).auth.token
