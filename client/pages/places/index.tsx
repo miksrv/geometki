@@ -263,7 +263,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                 currentPage={breadCrumbCurrent}
             />
 
-            <Container style={{ paddingTop: 4, paddingBottom: 4 }}>
+            <Container style={{ padding: '10px' }}>
                 <PlaceFilterPanel
                     sort={sort}
                     order={order}
