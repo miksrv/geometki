@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import ReactCrop, { Crop } from 'react-image-crop'
-import { Button, Spinner } from 'simple-react-ui-kit'
+import { Button, Dialog, Spinner } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next'
 
 import { API, ApiType } from '@/api'
 import { toggleOverlay } from '@/app/applicationSlice'
 import { useAppDispatch } from '@/app/store'
-import { Dialog, ImageUploader } from '@/components/ui'
+import { ImageUploader } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
 
 import 'react-image-crop/src/ReactCrop.scss'
@@ -148,74 +148,77 @@ export const UserAvatarEditor: React.FC<UserAvatarProps> = ({ onSaveAvatar }) =>
             <Dialog
                 contentHeight={'500px'}
                 maxWidth={'700px'}
-                header={!uploadedFile ? t('upload') : t('save')}
+                title={!uploadedFile ? t('upload') : t('save')}
                 open={coverDialogOpen}
                 backLinkCaption={t('back')}
                 showBackLink={!!uploadedFile}
-                actions={
-                    <Button
-                        mode={'primary'}
-                        label={t('save')}
-                        onClick={handleSaveCover}
-                        disabled={disabled}
-                    />
-                }
                 onBackClick={() => {
                     setUploadedFile(undefined)
                     setImageSizes(undefined)
                 }}
                 onCloseDialog={handleCoverDialogClose}
             >
-                {!uploadLoading ? (
-                    <div className={styles.innerContainer}>
-                        {!uploadedFile ? (
-                            <>
-                                <input
-                                    ref={inputFile}
-                                    style={{ display: 'none' }}
-                                    type={'file'}
-                                    accept={'image/png, image/gif, image/jpeg'}
-                                    onChange={handleSelectedFilesUpload}
-                                />
+                <>
+                    {!uploadLoading ? (
+                        <div className={styles.innerContainer}>
+                            {!uploadedFile ? (
+                                <>
+                                    <input
+                                        ref={inputFile}
+                                        style={{ display: 'none' }}
+                                        type={'file'}
+                                        accept={'image/png, image/gif, image/jpeg'}
+                                        onChange={handleSelectedFilesUpload}
+                                    />
 
-                                <ImageUploader
-                                    disabled={uploadLoading}
-                                    onClick={handlePhotoUploadClick}
-                                />
-                            </>
-                        ) : (
-                            <ReactCrop
-                                circularCrop={true}
-                                crop={imageCropData}
-                                aspect={1}
-                                minHeight={
-                                    // 50% in px of width
-                                    imageSizes ? imageSizes.halfRealSize / 2 / imageSizes.ratioHeight : 500
-                                }
-                                minWidth={
-                                    // 50% in px of height
-                                    imageSizes ? imageSizes.halfRealSize / 2 / imageSizes.ratioWidth : 500
-                                }
-                                onChange={(c, p) => setImageCropData(p)}
-                            >
-                                {/* eslint-disable-next-line next/no-img-element */}
-                                <img
-                                    ref={imageRef}
-                                    src={`${IMG_HOST}${uploadedFile.filepath}`}
-                                    onLoad={handleImageLoad}
-                                    alt={''}
-                                    style={{
-                                        height: '100%'
-                                    }}
-                                />
-                            </ReactCrop>
-                        )}
+                                    <ImageUploader
+                                        disabled={uploadLoading}
+                                        onClick={handlePhotoUploadClick}
+                                    />
+                                </>
+                            ) : (
+                                <ReactCrop
+                                    circularCrop={true}
+                                    crop={imageCropData}
+                                    aspect={1}
+                                    minHeight={
+                                        // 50% in px of width
+                                        imageSizes ? imageSizes.halfRealSize / 2 / imageSizes.ratioHeight : 500
+                                    }
+                                    minWidth={
+                                        // 50% in px of height
+                                        imageSizes ? imageSizes.halfRealSize / 2 / imageSizes.ratioWidth : 500
+                                    }
+                                    onChange={(c, p) => setImageCropData(p)}
+                                >
+                                    {/* eslint-disable-next-line next/no-img-element */}
+                                    <img
+                                        ref={imageRef}
+                                        src={`${IMG_HOST}${uploadedFile.filepath}`}
+                                        onLoad={handleImageLoad}
+                                        alt={''}
+                                        style={{
+                                            height: '100%'
+                                        }}
+                                    />
+                                </ReactCrop>
+                            )}
+                        </div>
+                    ) : (
+                        <div className={styles.loader}>
+                            <Spinner />
+                        </div>
+                    )}
+
+                    <div className={styles.dialogFooter}>
+                        <Button
+                            mode={'primary'}
+                            label={t('save')}
+                            onClick={handleSaveCover}
+                            disabled={disabled}
+                        />
                     </div>
-                ) : (
-                    <div className={styles.loader}>
-                        <Spinner />
-                    </div>
-                )}
+                </>
             </Dialog>
         </>
     )

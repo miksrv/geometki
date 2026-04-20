@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo } from 'react'
+import debounce from 'lodash-es/debounce'
+import { Select, SelectOptionType } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { Autocomplete, Dropdown, DropdownOption, DropdownOptionsList } from '@/components/ui'
 import { categoryImage } from '@/utils/categories'
 
 import { PlacesFilterType } from './types'
@@ -16,22 +17,16 @@ interface PlaceFilterPanelProps {
     order?: ApiType.SortOrdersType
     location?: ApiModel.AddressItem
     category?: string | null
-    optionsOpen?: boolean
     onChange?: (key: keyof PlacesFilterType, value: string | number | undefined) => void
-    onOpenOptions?: (title?: string) => void
     onChangeLocation?: (location?: ApiModel.AddressItem) => void
 }
-
-type OpenedOptionsType = 'sort' | 'order' | 'category' | undefined
 
 export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
     sort,
     order,
     location,
     category,
-    optionsOpen,
     onChange,
-    onOpenOptions,
     onChangeLocation
 }) => {
     const { t } = useTranslation()
@@ -43,201 +38,124 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
 
     const [searchAddress, { data: addressData, isLoading: addressLoading }] = API.useLocationGetSearchMutation()
 
-    const [openedOptions, setOpenedOptions] = useState<OpenedOptionsType>(undefined)
-
-    const sortOptions: DropdownOption[] = useMemo(
+    const sortOptions: Array<SelectOptionType<string>> = useMemo(
         () =>
             Object.values(ApiType.SortFields)
-                .filter((sort) => sort !== ApiType.SortFields.Category)
-                .filter((sort) => sort !== ApiType.SortFields.Recommended || isAuth)
-                .map((sort) => ({
-                    disabled: sort === ApiType.SortFields.Distance && (!userLocation?.lat || !userLocation.lon),
-                    key: sort,
-                    value: t(`sort_${sort}`)
+                .filter((s) => s !== ApiType.SortFields.Category)
+                .filter((s) => !(s === ApiType.SortFields.Recommended && !isAuth))
+                .filter((s) => !(s === ApiType.SortFields.Trending && isAuth))
+                .map((s) => ({
+                    disabled: s === ApiType.SortFields.Distance && (!userLocation?.lat || !userLocation.lon),
+                    key: s,
+                    value: t(`sort_${s}`)
                 })),
-        [ApiType.SortFields, isAuth]
+        [isAuth, userLocation]
     )
 
-    const orderOptions: DropdownOption[] = useMemo(
-        () =>
-            Object.values(ApiType.SortOrders).map((order) => ({
-                key: order,
-                value: t(`order_${order}`)
-            })),
-        [ApiType.SortOrders]
+    const orderOptions: Array<SelectOptionType<string>> = useMemo(
+        () => Object.values(ApiType.SortOrders).map((o) => ({ key: o, value: t(`order_${o}`) })),
+        []
     )
 
-    const handleChangeSort = (value: DropdownOption | undefined) => {
-        onChange?.('sort', value?.key)
-        setOpenedOptions(undefined)
-    }
-
-    const handleChangeOrder = (value: DropdownOption | undefined) => {
-        onChange?.('order', value?.key)
-        setOpenedOptions(undefined)
-    }
-
-    const handleChangeCategory = (value: DropdownOption | undefined) => {
-        onChange?.('category', value?.key)
-        setOpenedOptions(undefined)
-    }
-
-    const handleOpenSort = () => {
-        onOpenOptions?.(t('sorting'))
-        setOpenedOptions('sort')
-    }
-
-    const handleOpenOrder = () => {
-        onOpenOptions?.(t('order'))
-        setOpenedOptions('order')
-    }
-
-    const handleOpenOptionsCategory = () => {
-        onOpenOptions?.(t('category'))
-        setOpenedOptions('category')
-    }
-
-    const handleSearchLocation = async (value: string) => {
-        if (value.length >= 3) {
-            await searchAddress(value)
-        }
-    }
-
-    const categoryOptions = useMemo(
+    const categoryOptions: Array<SelectOptionType<string>> = useMemo(
         () =>
             categoryData?.items?.map((item) => ({
-                image: categoryImage(item.name),
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                image: categoryImage(item.name as ApiModel.Categories) as any,
                 key: item.name,
                 value: item.title
-            })),
+            })) ?? [],
         [categoryData?.items]
     )
 
-    const locationOptions = useMemo(
-        () => [
-            ...(addressData?.countries?.map((item) => ({
-                title: item.name,
-                type: 'country',
-                value: item.id
-            })) || []),
-            ...(addressData?.regions?.map((item) => ({
-                title: item.name,
-                type: 'region',
-                value: item.id
-            })) || []),
-            ...(addressData?.districts?.map((item) => ({
-                title: item.name,
-                type: 'district',
-                value: item.id
-            })) || []),
-            ...(addressData?.cities?.map((item) => ({
-                title: item.name,
-                type: 'locality',
-                value: item.id
-            })) || [])
-        ],
-        [addressData]
-    )
+    const locationOptions: Array<SelectOptionType<string>> = useMemo(() => {
+        const results: Array<SelectOptionType<string>> = [
+            ...(addressData?.countries?.map((item) => ({ key: `country:${item.id}`, value: item.name })) ?? []),
+            ...(addressData?.regions?.map((item) => ({ key: `region:${item.id}`, value: item.name })) ?? []),
+            ...(addressData?.districts?.map((item) => ({ key: `district:${item.id}`, value: item.name })) ?? []),
+            ...(addressData?.cities?.map((item) => ({ key: `locality:${item.id}`, value: item.name })) ?? [])
+        ]
 
-    const selectedSort = sortOptions.find(({ key }) => key === sort)
-    const selectedOrder = orderOptions.find(({ key }) => key === order)
-    const selectedCategory = categoryOptions?.find(({ key }) => key === category)
-
-    useEffect(() => {
-        if (!optionsOpen) {
-            setOpenedOptions(undefined)
+        if (location?.id && location?.name && location?.type) {
+            const currentKey = `${location.type}:${location.id}`
+            if (!results.find((o) => o.key === currentKey)) {
+                results.unshift({ key: currentKey, value: location.name })
+            }
         }
-    }, [optionsOpen])
+
+        return results
+    }, [addressData, location])
+
+    const handleChangeSort = (selected: Array<SelectOptionType<string>> | undefined) => {
+        onChange?.('sort', selected?.[0]?.key)
+    }
+
+    const handleChangeOrder = (selected: Array<SelectOptionType<string>> | undefined) => {
+        onChange?.('order', selected?.[0]?.key)
+    }
+
+    const handleChangeCategory = (selected: Array<SelectOptionType<string>> | undefined) => {
+        onChange?.('category', selected?.[0]?.key)
+    }
+
+    const handleChangeLocation = (selected: Array<SelectOptionType<string>> | undefined) => {
+        const item = selected?.[0]
+        if (!item) {
+            onChangeLocation?.(undefined)
+            return
+        }
+        const colonIndex = item.key.indexOf(':')
+        const type = item.key.slice(0, colonIndex) as ApiType.LocationTypes
+        const id = parseInt(item.key.slice(colonIndex + 1), 10)
+        onChangeLocation?.({ id, name: item.value, type })
+    }
+
+    const handleSearchLocation = useCallback(
+        debounce(async (text?: string) => {
+            if (text && text.length >= 3) {
+                await searchAddress(text)
+            }
+        }, 600),
+        []
+    )
 
     return (
         <div className={styles.component}>
-            {openedOptions === 'sort' && (
-                <DropdownOptionsList
-                    selectedOption={selectedSort}
-                    options={sortOptions}
-                    onSelect={handleChangeSort}
-                />
-            )}
+            <Select
+                searchable={true}
+                clearable={true}
+                loading={addressLoading}
+                placeholder={t('filter-by-location')}
+                notFoundCaption={t('nothing-found')}
+                options={locationOptions}
+                value={location?.id && location?.type ? `${location.type}:${location.id}` : undefined}
+                onSearch={handleSearchLocation}
+                onSelect={handleChangeLocation}
+            />
 
-            {openedOptions === 'order' && (
-                <DropdownOptionsList
-                    selectedOption={selectedOrder}
+            <Select
+                placeholder={t('sorting-geotags')}
+                options={sortOptions}
+                value={sort}
+                onSelect={handleChangeSort}
+            />
+
+            {sort !== ApiType.SortFields.Recommended && (
+                <Select
+                    placeholder={t('sorting-order')}
                     options={orderOptions}
+                    value={order}
                     onSelect={handleChangeOrder}
                 />
             )}
 
-            {openedOptions === 'category' && (
-                <DropdownOptionsList
-                    selectedOption={selectedCategory}
-                    options={categoryOptions}
-                    onSelect={handleChangeCategory}
-                />
-            )}
-
-            {!openedOptions && (
-                <>
-                    <Autocomplete
-                        label={t('filter-by-location')}
-                        notFoundCaption={t('nothing-found')}
-                        placeholder={t('start-typing-caption')}
-                        clearable={true}
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore
-                        value={
-                            location?.id && location?.name
-                                ? { value: location?.id, title: location?.name, type: location?.type }
-                                : undefined
-                        }
-                        loading={addressLoading}
-                        options={locationOptions}
-                        onSearch={handleSearchLocation}
-                        onSelect={(option) =>
-                            onChangeLocation?.(
-                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                // @ts-ignore
-                                option?.value
-                                    ? {
-                                          id: option?.value,
-                                          name: option?.title,
-                                          type: option?.type
-                                      }
-                                    : undefined
-                            )
-                        }
-                    />
-
-                    <Dropdown
-                        label={t('sorting-geotags')}
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore
-                        value={selectedSort}
-                        onSelect={handleChangeSort}
-                        onOpen={handleOpenSort}
-                    />
-
-                    {sort !== ApiType.SortFields.Recommended && (
-                        <Dropdown
-                            label={t('sorting-order')}
-                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                            // @ts-ignore
-                            value={selectedOrder}
-                            onSelect={handleChangeOrder}
-                            onOpen={handleOpenOrder}
-                        />
-                    )}
-
-                    <Dropdown
-                        clearable={true}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        value={selectedCategory as any}
-                        label={t('filter-by-category')}
-                        placeholder={t('input_category-placeholder')}
-                        onSelect={handleChangeCategory}
-                        onOpen={handleOpenOptionsCategory}
-                    />
-                </>
-            )}
+            <Select
+                clearable={true}
+                placeholder={t('input_category-placeholder')}
+                options={categoryOptions}
+                value={category ?? undefined}
+                onSelect={handleChangeCategory}
+            />
         </div>
     )
 }

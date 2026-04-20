@@ -1,6 +1,6 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react'
 import ReactCrop, { Crop } from 'react-image-crop'
-import { Button } from 'simple-react-ui-kit'
+import { Button, Dialog } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 import { useTranslation } from 'next-i18next'
@@ -9,7 +9,6 @@ import { API } from '@/api'
 import { openAuthDialog, toggleOverlay } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
-import { Dialog } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
 import { getErrorMessage } from '@/utils/api'
 
@@ -130,72 +129,74 @@ const PlaceCoverEditor: React.ForwardRefRenderFunction<PlaceCoverEditorRefProps,
         <Dialog
             contentHeight={'490px'}
             maxWidth={'700px'}
-            header={!selectedPhotoId ? t('select-photo') : t('editing')}
+            title={!selectedPhotoId ? t('select-photo') : t('editing')}
             open={coverDialogOpen}
             backLinkCaption={t('back')}
             showBackLink={!!selectedPhotoId}
-            actions={
-                selectedPhoto && (
-                    <Button
-                        size={'small'}
-                        mode={'primary'}
-                        label={t('save')}
-                        disabled={disabled}
-                        onClick={handleSaveCover}
-                    />
-                )
-            }
             onBackClick={() => {
                 setSelectedPhotoId('')
             }}
             onCloseDialog={handleCoverDialogClose}
         >
-            {!photoLoading && !photosData?.items?.length && (
-                <div className={styles.noPhotos}>
-                    {t('no-photos-here-yet')}
-                    <br />
-                    {t('first-upload-photos-after-edit-cover')}
-                </div>
-            )}
-            {!selectedPhotoId ? (
-                <ul className={styles.coverPhotosList}>
-                    {photosData?.items?.map((photo) => (
-                        <li key={`coverDialog${photo.id}`}>
-                            <Image
-                                src={`${IMG_HOST}${photo.preview}`}
+            <>
+                {!photoLoading && !photosData?.items?.length && (
+                    <div className={styles.noPhotos}>
+                        {t('no-photos-here-yet')}
+                        <br />
+                        {t('first-upload-photos-after-edit-cover')}
+                    </div>
+                )}
+                {!selectedPhotoId ? (
+                    <ul className={styles.coverPhotosList}>
+                        {photosData?.items?.map((photo) => (
+                            <li key={`coverDialog${photo.id}`}>
+                                <Image
+                                    src={`${IMG_HOST}${photo.preview}`}
+                                    alt={''}
+                                    width={200}
+                                    height={150}
+                                    onClick={() => {
+                                        setSelectedPhotoId(photo.id)
+                                    }}
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <div className={styles.innerContainer}>
+                        <ReactCrop
+                            crop={imageCropData}
+                            aspect={870 / 300}
+                            minWidth={870 / widthRatio}
+                            minHeight={300 / heightRatio}
+                            onChange={(c, p) => setImageCropData(p)}
+                        >
+                            {/* eslint-disable-next-line next/no-img-element */}
+                            <img
+                                src={`${IMG_HOST}${selectedPhoto?.full}`}
+                                onLoad={handleImageLoad}
                                 alt={''}
-                                width={200}
-                                height={150}
-                                onClick={() => {
-                                    setSelectedPhotoId(photo.id)
+                                style={{
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    width: '100%'
                                 }}
                             />
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <div className={styles.innerContainer}>
-                    <ReactCrop
-                        crop={imageCropData}
-                        aspect={870 / 300}
-                        minWidth={870 / widthRatio}
-                        minHeight={300 / heightRatio}
-                        onChange={(c, p) => setImageCropData(p)}
-                    >
-                        {/* eslint-disable-next-line next/no-img-element */}
-                        <img
-                            src={`${IMG_HOST}${selectedPhoto?.full}`}
-                            onLoad={handleImageLoad}
-                            alt={''}
-                            style={{
-                                height: '100%',
-                                objectFit: 'cover',
-                                width: '100%'
-                            }}
+                        </ReactCrop>
+                    </div>
+                )}
+
+                {selectedPhoto && (
+                    <div className={styles.dialogFooter}>
+                        <Button
+                            mode={'primary'}
+                            label={t('save')}
+                            disabled={disabled}
+                            onClick={handleSaveCover}
                         />
-                    </ReactCrop>
-                </div>
-            )}
+                    </div>
+                )}
+            </>
         </Dialog>
     )
 }

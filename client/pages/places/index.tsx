@@ -1,6 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import type { BreadcrumbList } from 'schema-dts'
-import { Button, Container, Dialog } from 'simple-react-ui-kit'
+import { Container } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
@@ -10,8 +10,8 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { NextSeo } from 'next-seo'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { setLocale, toggleOverlay } from '@/app/applicationSlice'
-import { useAppDispatch, wrapper } from '@/app/store'
+import { setLocale } from '@/app/applicationSlice'
+import { wrapper } from '@/app/store'
 import { AppLayout, Header, PlacesList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { AUTH_COOKIES } from '@/config/constants'
@@ -67,11 +67,6 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
     const { t, i18n } = useTranslation()
 
     const router = useRouter()
-    const dispatch = useAppDispatch()
-
-    const [filterOpenTitle, setFilterOpenTitle] = useState<string>('')
-    const [filtersOptionsOpen, setFiltersOptionsOpen] = useState<boolean>(false)
-    const [filtersDialogOpen, setFiltersDialogOpen] = useState<boolean>(false)
 
     const initialFilter: PlacesFilterType = {
         category: category ?? undefined,
@@ -124,9 +119,6 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                 update.page = undefined
             }
 
-            setFiltersOptionsOpen(false)
-            setFilterOpenTitle('')
-
             return await router.push('/places' + encodeQueryData(update))
         },
         [category, country, currentPage, district, initialFilter, locality, order, region, router, sort, tag]
@@ -142,11 +134,6 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         }
 
         return await router.push('/places' + encodeQueryData(filter))
-    }
-
-    const handleOpenFilterOptions = (filterTitle?: string) => {
-        setFiltersOptionsOpen(true)
-        setFilterOpenTitle(filterTitle || '')
     }
 
     const handleChangeLocation = async (location?: ApiModel.AddressItem) => {
@@ -209,35 +196,6 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
             : currentPage > 1
               ? `${t('page')} ${initialFilter.page}`
               : t('interesting-places')
-
-    const filtersCount = useMemo(() => {
-        let count = 0
-
-        if (locationType) {
-            count++
-        }
-
-        if (category) {
-            count++
-        }
-
-        return count
-    }, [category, locationType])
-
-    const handleClickOpenFiltersDialog = () => {
-        dispatch(toggleOverlay(true))
-        setFiltersDialogOpen(true)
-    }
-
-    const handleFiltersDialogClose = () => {
-        dispatch(toggleOverlay(false))
-        setFiltersDialogOpen(false)
-    }
-
-    const handleFiltersBackLink = () => {
-        setFiltersOptionsOpen(false)
-        setFilterOpenTitle('')
-    }
 
     const breadCrumbSchema: unknown | BreadcrumbList = {
         '@context': 'https://schema.org',
@@ -303,18 +261,22 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                 homePageTitle={t('geotags')}
                 links={breadcrumbsLinks || []}
                 currentPage={breadCrumbCurrent}
-                actions={
-                    <Button
-                        size={'medium'}
-                        mode={'primary'}
-                        icon={'Tune'}
-                        onClick={handleClickOpenFiltersDialog}
-                    >
-                        {t('filters')}
-                        {filtersCount > 0 && ` (${filtersCount})`}
-                    </Button>
-                }
             />
+
+            <Container style={{ padding: '10px' }}>
+                <PlaceFilterPanel
+                    sort={sort}
+                    order={order}
+                    category={category}
+                    location={
+                        locationData && locationType
+                            ? { id: locationData.id, name: locationData.name, type: locationType }
+                            : undefined
+                    }
+                    onChange={handleChangeFilter}
+                    onChangeLocation={handleChangeLocation}
+                />
+            </Container>
 
             <PlacesList places={placesList} />
 
@@ -333,35 +295,6 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                     linkPart={'places'}
                 />
             </Container>
-
-            <Dialog
-                contentHeight={'306px'}
-                title={filterOpenTitle || t('filters')}
-                open={filtersDialogOpen}
-                backLinkCaption={t('back')}
-                showBackLink={filtersOptionsOpen}
-                onBackClick={handleFiltersBackLink}
-                onCloseDialog={handleFiltersDialogClose}
-            >
-                <PlaceFilterPanel
-                    sort={sort}
-                    order={order}
-                    category={category}
-                    optionsOpen={filtersOptionsOpen}
-                    location={
-                        locationData && locationType
-                            ? {
-                                  id: locationData.id,
-                                  name: locationData.name,
-                                  type: locationType
-                              }
-                            : undefined
-                    }
-                    onChange={handleChangeFilter}
-                    onOpenOptions={handleOpenFilterOptions}
-                    onChangeLocation={handleChangeLocation}
-                />
-            </Dialog>
         </AppLayout>
     )
 }
