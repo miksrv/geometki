@@ -12,7 +12,7 @@ import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import { PhotoGallery, PhotoUploader } from '@/components/shared'
 import { ChipsSelect, ContentEditor, ImageUploader, ScreenSpinner } from '@/components/ui'
-import { categoryImage } from '@/features/categories/categories.utils'
+import { categoryImage } from '@/utils/categories'
 
 import styles from './styles.module.sass'
 

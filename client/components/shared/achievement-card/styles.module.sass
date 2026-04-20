@@ -1,0 +1,320 @@
+@use '../../../styles/variables' as variables
+
+.achievementCard
+    position: relative
+    background: var(--container-background-color)
+    border-radius: var(--border-radius)
+    box-shadow: var(--container-shadow)
+    padding: 16px
+    display: flex
+    flex-direction: column
+    gap: 10px
+    overflow: hidden
+
+    &.earnedCard
+        &::before
+            content: ''
+            position: absolute
+            top: 0
+            left: 0
+            right: 0
+            height: 3px
+            background: var(--tier-color)
+
+.cardHeader
+    display: flex
+    align-items: flex-start
+    gap: 12px
+
+.iconWrapper
+    flex-shrink: 0
+    width: 44px
+    height: 44px
+    border-radius: 50%
+    background: var(--input-background-color)
+    display: flex
+    align-items: center
+    justify-content: center
+
+    svg
+        width: 22px
+        height: 22px
+        color: var(--tier-color)
+
+.cardMeta
+    flex: 1
+    min-width: 0
+
+.cardTitle
+    font-weight: 500
+    font-size: variables.$fontSizeTitleH2
+    color: var(--text-color-primary)
+    margin: 0 0 4px
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+
+.tierChip
+    display: inline-flex
+    align-items: center
+    gap: 4px
+    font-size: variables.$fontSizeCaption
+    font-weight: 500
+    padding: 2px 8px
+    border-radius: 10px
+    background: color-mix(in srgb, var(--tier-color) 15%, transparent)
+    color: var(--tier-color)
+
+.cardDescription
+    font-size: variables.$fontSizeParagraph
+    color: var(--text-color-secondary)
+    margin: 0
+    line-height: 1.4
+
+.progressSection
+    margin-top: 4px
+
+.progressLabel
+    display: flex
+    justify-content: space-between
+    font-size: variables.$fontSizeCaption
+    color: var(--text-color-secondary)
+    margin-bottom: 4px
+
+.progressBar
+    width: 100%
+    height: 6px
+    border-radius: 3px
+    background: var(--input-background-color)
+    overflow: hidden
+
+.progressFill
+    height: 100%
+    border-radius: 3px
+    background: var(--tier-color)
+    transition: width 0.3s ease
+
+.earnedBadge
+    display: flex
+    align-items: center
+    gap: 6px
+    font-size: variables.$fontSizeCaption
+    color: var(--color-green)
+
+    svg
+        width: 14px
+        height: 14px
+
+.xpBonus
+    font-size: variables.$fontSizeCaption
+    color: var(--text-color-secondary)
+    display: flex
+    align-items: center
+    gap: 4px
+
+    svg
+        width: 14px
+        height: 14px
+        color: var(--color-orange)
+
+// Grid layout for catalogue page
+.achievementsGrid
+    display: flex
+    flex-wrap: wrap
+    margin: 10px -6px -6px
+
+.achievementsGridItem
+    flex-basis: calc(33.3333% - 12px)
+    margin: 6px
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-basis: 100%
+
+// Badge shelf for user profile
+.badgeShelf
+    display: flex
+    flex-wrap: wrap
+    gap: 10px
+    padding: 15px
+
+.badgeItem
+    position: relative
+    cursor: pointer
+
+.badgeIcon
+    width: 48px
+    height: 48px
+    border-radius: 50%
+    background: var(--input-background-color)
+    display: flex
+    align-items: center
+    justify-content: center
+    border: 3px solid var(--tier-color)
+    transition: transform 0.15s ease
+
+    &:hover
+        transform: scale(1.1)
+
+    svg
+        width: 24px
+        height: 24px
+        color: var(--tier-color)
+
+.badgeTooltip
+    position: absolute
+    bottom: calc(100% + 6px)
+    left: 50%
+    transform: translateX(-50%)
+    background: var(--modal-background)
+    border: var(--input-border)
+    border-radius: var(--border-radius)
+    padding: 6px 10px
+    font-size: variables.$fontSizeCaption
+    white-space: nowrap
+    box-shadow: var(--popout-shadow)
+    pointer-events: none
+    z-index: 10
+
+    &::after
+        content: ''
+        position: absolute
+        top: 100%
+        left: 50%
+        transform: translateX(-50%)
+        border: 5px solid transparent
+        border-top-color: var(--modal-background)
+
+// Filter bar
+.filterBar
+    display: flex
+    align-items: center
+    gap: 8px
+    flex-wrap: wrap
+    margin-bottom: 12px
+
+.filterPill
+    display: inline-flex
+    align-items: center
+    padding: 4px 14px
+    border-radius: 14px
+    font-size: variables.$fontSizeCaption
+    font-weight: 500
+    cursor: pointer
+    border: 1px solid var(--input-border-color)
+    background: var(--container-background-color)
+    color: var(--text-color-secondary)
+    transition: background 0.15s ease, color 0.15s ease
+
+    &:hover
+        background: var(--dropdown-background-color-hover)
+
+    &.activePill
+        background: var(--color-main-background)
+        color: var(--color-main)
+        border-color: var(--color-main)
+
+.categoryGroup
+    margin-bottom: 20px
+
+.categoryGroupTitle
+    font-size: variables.$fontSizeParagraph
+    font-weight: 500
+    color: var(--text-color-secondary)
+    text-transform: uppercase
+    letter-spacing: 0.05em
+    margin: 0 0 10px
+    padding-left: 6px
+
+// CTA banner for unauthenticated users
+.signInCta
+    background: var(--color-main-background)
+    border-radius: var(--border-radius)
+    padding: 12px 16px
+    margin-bottom: 16px
+    display: flex
+    align-items: center
+    gap: 12px
+    font-size: variables.$fontSizeParagraph
+    color: var(--color-main)
+
+    svg
+        flex-shrink: 0
+        width: 18px
+        height: 18px
+
+// Empty state
+.emptyState
+    text-align: center
+    padding: 50px 20px
+    color: var(--text-color-secondary)
+
+    svg
+        width: 48px
+        height: 48px
+        margin-bottom: 12px
+        opacity: 0.4
+
+// Achievement detail modal
+.overlay
+    position: fixed
+    inset: 0
+    background: rgba(0, 0, 0, 0.5)
+    z-index: 500
+    display: flex
+    align-items: center
+    justify-content: center
+    padding: 16px
+
+.modal
+    position: relative
+    background: var(--modal-background)
+    border-radius: var(--border-radius)
+    box-shadow: variables.$boxShadow5
+    width: 100%
+    max-width: 420px
+    padding: 24px
+    border-top: 4px solid var(--tier-color)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        max-width: 96%
+
+.closeBtn
+    position: absolute
+    top: 12px
+    right: 12px
+    background: transparent
+    border: none
+    cursor: pointer
+    padding: 4px
+    display: flex
+    align-items: center
+    color: var(--text-color-secondary)
+
+    &:hover
+        color: var(--text-color-primary)
+
+    svg
+        width: 20px
+        height: 20px
+
+.modalHeader
+    display: flex
+    align-items: center
+    gap: 14px
+    margin-bottom: 16px
+
+.modalTitle
+    margin: 0 0 6px
+    font-size: variables.$fontSizeTitleH1
+    color: var(--text-color-primary)
+
+.modalDescription
+    margin: 0 0 12px
+    font-size: variables.$fontSizeParagraph
+    color: var(--text-color-secondary)
+    line-height: 1.5
+
+.modalMeta
+    margin: 0 0 8px
+    font-size: variables.$fontSizeCaption
+    color: var(--text-color-secondary)

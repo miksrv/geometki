@@ -47,7 +47,7 @@ jest.mock('@/components/shared', () => ({
     UserAvatar: ({ user }: any) => <div data-testid={'user-avatar'}>{user?.name}</div>
 }))
 
-jest.mock('@/features/levels/levels.utils', () => ({
+jest.mock('@/utils/levels', () => ({
     levelImage: jest.fn().mockReturnValue({ src: '/levels/1.png' })
 }))
 

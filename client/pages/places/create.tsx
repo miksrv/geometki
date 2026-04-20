@@ -66,15 +66,9 @@ const CreatePlacePage: NextPage<object> = () => {
                     }
                 ]}
             />
-            <Container style={{ marginTop: 15 }}>
-                {serverError && (
-                    <Message
-                        type={'error'}
-                        style={{ marginBottom: 15 }}
-                    >
-                        {serverError}
-                    </Message>
-                )}
+            <Container>
+                {serverError && <Message type={'error'}>{serverError}</Message>}
+
                 <PlaceForm
                     loading={isLoading || isSuccess || clickedButton}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any

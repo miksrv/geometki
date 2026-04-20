@@ -5,7 +5,7 @@ import { useTranslation } from 'next-i18next'
 import { API, ApiModel, ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
 import { Autocomplete, Dropdown, DropdownOption, DropdownOptionsList } from '@/components/ui'
-import { categoryImage } from '@/features/categories/categories.utils'
+import { categoryImage } from '@/utils/categories'
 
 import { PlacesFilterType } from './types'
 

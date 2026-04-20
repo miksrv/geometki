@@ -1,0 +1,54 @@
+@use '../../../styles/variables' as variables
+
+.formGrid
+    display: flex
+    flex-direction: column
+    gap: 14px
+
+.formRow
+    display: flex
+    gap: 12px
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-direction: column
+
+    > div
+        flex: 1
+
+.formField
+    display: flex
+    flex-direction: column
+    gap: 6px
+
+.label
+    font-size: variables.$fontSizeCaption
+    font-weight: 500
+    color: var(--input-label-color)
+
+.iconRow
+    display: flex
+    align-items: center
+    gap: 10px
+
+.iconPreview
+    width: 36px
+    height: 36px
+    border-radius: 50%
+    background: var(--input-background-color)
+    display: flex
+    align-items: center
+    justify-content: center
+    flex-shrink: 0
+    border: var(--input-border)
+
+    svg
+        width: 20px
+        height: 20px
+        color: var(--text-color-primary)
+
+.ruleRow
+    display: flex
+    align-items: center
+    gap: 8px
+    margin-bottom: 8px
+    flex-wrap: wrap

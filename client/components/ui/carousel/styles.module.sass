@@ -72,7 +72,6 @@
 .carousel
     position: relative
     max-width: calc(var(--width-max) - var(--width-menu))
-    margin-top: 10px
     --slide-size: 100%
 
     .viewport
@@ -87,8 +86,10 @@
             & > div, & > article
                 flex: 0 0 var(--slide-size)
                 min-width: 0
-                max-width: 282px
+                max-width: 281px
                 padding-left: var(--slide-spacing)
+                margin-top: 0
+                margin-bottom: 0
 
                 @media only screen and (max-width: variables.$mobileMaxWidth)
                     max-width: 500px

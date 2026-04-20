@@ -12,23 +12,37 @@ import styles from './styles.module.sass'
 type MenuItemType = {
     icon?: IconTypes
     auth?: boolean
+    admin?: boolean
     link?: string
     text: string
+    divider?: never
 }
+
+type DividerType = {
+    divider: true
+    icon?: never
+    auth?: never
+    admin?: never
+    link?: never
+    text?: never
+}
+
+type MenuItem = MenuItemType | DividerType
 
 interface SiteMenuProps {
     type?: 'mobile' | 'desktop'
     userId?: string
     isAuth?: boolean
+    userRole?: string
     onClick?: () => void
 }
 
-export const SiteMenu: React.FC<SiteMenuProps> = ({ type, userId, isAuth, onClick }) => {
+export const SiteMenu: React.FC<SiteMenuProps> = ({ type, userId, isAuth, userRole, onClick }) => {
     const { t } = useTranslation()
 
     const dispatch = useAppDispatch()
 
-    const menuItems: MenuItemType[] = [
+    const menuItems: MenuItem[] = [
         {
             icon: 'Feed',
             link: '/',
@@ -76,6 +90,13 @@ export const SiteMenu: React.FC<SiteMenuProps> = ({ type, userId, isAuth, onClic
             icon: 'Users',
             link: '/users/',
             text: t('users', { defaultValue: 'Пользователи' })
+        },
+        { divider: true },
+        {
+            admin: true,
+            icon: 'Settings',
+            link: '/admin/achievements',
+            text: 'Достижения'
         }
     ]
 
@@ -90,20 +111,38 @@ export const SiteMenu: React.FC<SiteMenuProps> = ({ type, userId, isAuth, onClic
 
     return (
         <menu className={styles.menu}>
-            {menuItems
-                .filter(({ link }) => !!link)
-                .map((item, i) => (
+            {menuItems.map((item, i) => {
+                if ('divider' in item && item.divider && userRole === 'admin') {
+                    return (
+                        <li key={`divider${i}`}>
+                            <div className={styles.divider} />
+                        </li>
+                    )
+                }
+
+                const menuItem = item as MenuItemType
+
+                if (menuItem.admin && userRole !== 'admin') {
+                    return null
+                }
+
+                if (!menuItem.link) {
+                    return null
+                }
+
+                return (
                     <li key={`menu${type}${i}`}>
                         <Link
-                            href={item.link!}
-                            title={item.text}
-                            onClick={(event) => handleClick(event, item)}
+                            href={menuItem.link}
+                            title={menuItem.text}
+                            onClick={(event) => handleClick(event, menuItem)}
                         >
-                            {item.icon && <Icon name={item.icon} />}
-                            {item.text}
+                            {menuItem.icon && <Icon name={menuItem.icon} />}
+                            {menuItem.text}
                         </Link>
                     </li>
-                ))}
+                )
+            })}
         </menu>
     )
 }

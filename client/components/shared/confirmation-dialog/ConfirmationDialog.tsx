@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Button, Dialog, DialogProps } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next'
@@ -37,7 +37,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
         onReject?.()
     }
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (open && !overlay) {
             dispatch(toggleOverlay(true))
         } else if (!open && overlay) {

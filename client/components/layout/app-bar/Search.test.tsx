@@ -39,7 +39,7 @@ jest.mock('@/components/ui', () => ({
     AutocompleteOption: {}
 }))
 
-jest.mock('@/features/categories/categories.utils', () => ({
+jest.mock('@/utils/categories', () => ({
     categoryImage: jest.fn().mockReturnValue({ src: '/category-icon.png' })
 }))
 

@@ -94,7 +94,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, child
     }, [application.showOverlay, sidebarOpen])
 
     return (
-        <div className={cn(className, styles.appLayout, fullSize && styles.fullSize)}>
+        <div className={cn(styles.appLayout, fullSize && styles.fullSize, className)}>
             <NextNProgress
                 color={'#2688eb'}
                 options={{ showSpinner: false }}
@@ -147,6 +147,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, child
                     type={'mobile'}
                     userId={authSlice.user?.id}
                     isAuth={authSlice.isAuth}
+                    userRole={authSlice.user?.role}
                     onClick={handleCloseOverlay}
                 />
                 <div className={styles.content}>
@@ -169,6 +170,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, child
                                 type={'desktop'}
                                 userId={authSlice.user?.id}
                                 isAuth={authSlice.isAuth}
+                                userRole={authSlice.user?.role}
                             />
                             <div className={styles.switchers}>
                                 <ThemeSwitcher />

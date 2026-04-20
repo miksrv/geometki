@@ -98,15 +98,9 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
                 ]}
             />
 
-            <Container style={{ marginTop: 15 }}>
-                {serverError && (
-                    <Message
-                        type={'error'}
-                        style={{ marginBottom: 15 }}
-                    >
-                        {serverError}
-                    </Message>
-                )}
+            <Container>
+                {serverError && <Message type={'error'}>{serverError}</Message>}
+
                 <PlaceForm
                     placeId={place?.id}
                     values={placeValuesData}

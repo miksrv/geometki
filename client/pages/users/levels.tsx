@@ -12,7 +12,7 @@ import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, Header, UserAvatarGroup } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
-import { levelImage } from '@/features/levels/levels.utils'
+import { levelImage } from '@/utils/levels'
 import { buildHreflangTags } from '@/utils/seo'
 
 interface LevelsPageProps {
@@ -53,7 +53,7 @@ const LevelsPage: NextPage<LevelsPageProps> = ({ levels }) => {
                 ]}
             />
 
-            <Container style={{ marginTop: 15 }}>
+            <Container>
                 <p>{t('user-levels-description-1')}</p>
                 <p>{t('user-levels-description-2')}</p>
                 <h2 style={{ marginBottom: '5px' }}>{t('how-much-experience-for-actions')}</h2>
@@ -69,10 +69,7 @@ const LevelsPage: NextPage<LevelsPageProps> = ({ levels }) => {
                 </ul>
             </Container>
 
-            <Container
-                style={{ marginTop: 15 }}
-                className={'levelsPage'}
-            >
+            <Container className={'levelsPage'}>
                 {levels?.items?.map((level) => (
                     <div
                         key={`level${level.level}`}

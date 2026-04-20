@@ -1,5 +1,5 @@
 import React from 'react'
-import { Container, Spinner } from 'simple-react-ui-kit'
+import { cn, Container, Spinner } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
 import { useTranslation } from 'next-i18next'
@@ -83,8 +83,7 @@ const UserBookmarksPage: React.FC<UserBookmarksPageProps> = ({ id, user, current
             />
 
             <Container
-                style={{ marginTop: 15 }}
-                className={`paginationContainer ${!data?.count || data?.count <= PLACES_PER_PAGE ? 'hide' : ''}`}
+                className={cn('paginationContainer', !data?.count || data?.count <= PLACES_PER_PAGE ? 'hide' : '')}
             >
                 <div className={styles.countContainer}>
                     {t('geotags')}: {isLoading ? <Spinner /> : <strong>{data?.count || 0}</strong>}

@@ -5,7 +5,7 @@ import Image from 'next/image'
 
 import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { levelImage } from '@/features/levels/levels.utils'
+import { levelImage } from '@/utils/levels'
 
 import styles from './styles.module.sass'
 
@@ -23,6 +23,18 @@ export const NotificationIcon: React.FC<ApiModel.Notification> = ({ ...props }):
             width={26}
             height={26}
         />
+    ) : props.type === 'achievements' ? (
+        props.meta?.image ? (
+            <Image
+                src={`${IMG_HOST}${props.meta.image}`}
+                alt={''}
+                width={36}
+                height={36}
+                style={{ borderRadius: '50%', objectFit: 'contain' }}
+            />
+        ) : (
+            <Icon name={'Award'} />
+        )
     ) : props.place ? (
         <Image
             className={styles.placeImage}

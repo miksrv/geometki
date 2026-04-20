@@ -42,14 +42,7 @@ export const PlacesList: React.FC<PlacesListProps> = ({ places, loading }) => {
                 </section>
             )}
 
-            {!places?.length && !loading && (
-                <Container
-                    style={{ marginTop: 15 }}
-                    className={'emptyList'}
-                >
-                    {t('nothing-here-yet')}
-                </Container>
-            )}
+            {!places?.length && !loading && <Container className={'emptyList'}>{t('nothing-here-yet')}</Container>}
         </>
     )
 }

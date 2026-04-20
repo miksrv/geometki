@@ -71,7 +71,7 @@ jest.mock('@/components/ui', () => ({
     Reputation: ({ value }: { value: number }) => <span data-testid={'reputation'}>{value}</span>
 }))
 
-jest.mock('@/features/levels/levels.utils', () => ({
+jest.mock('@/utils/levels', () => ({
     levelImage: jest.fn().mockReturnValue({ src: '/levels/1.png' }),
     nextLevelPercentage: jest.fn().mockReturnValue(50)
 }))

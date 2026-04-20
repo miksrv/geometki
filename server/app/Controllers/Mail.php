@@ -21,11 +21,30 @@ class Mail extends ResourceController
      */
    public function unsubscribe(): ResponseInterface
    {
-       // --- Scenario 1: unsubscribe from digest by user_id ---
-       $digestUserId = $this->request->getGet('digest', FILTER_SANITIZE_SPECIAL_CHARS);
-       if ($digestUserId) {
+       $mail = $this->request->getGet('mail', FILTER_SANITIZE_SPECIAL_CHARS);
+
+       if (!$mail) {
+           return $this->failValidationErrors(lang('Mail.emptyParameters'));
+       }
+
+       $sendingEmailModel = new SendingMail();
+       $sendingEmailData  = $sendingEmailModel
+           ->select('sending_mail.id, sending_mail.email, activity_id, activity.place_id, activity.type')
+           ->join('activity', 'activity.id = sending_mail.activity_id', 'left')
+           ->find($mail);
+
+       if (!$sendingEmailData) {
+           return $this->failValidationErrors(lang('Mail.mailWithIdNotFound'));
+       }
+
+       // --- Scenario 1: Digest email (activity_id is NULL) ---
+       if (empty($sendingEmailData->activity_id)) {
            $userModel = new UsersModel();
-           $userData  = $userModel->select('id, settings, updated_at')->find($digestUserId);
+           // Find user by email from the sending_mail record
+           $userData  = $userModel
+               ->select('id, settings, updated_at')
+               ->where('email', $sendingEmailData->email)
+               ->first();
 
            if (!$userData) {
                return $this->failValidationErrors(lang('Mail.mailWithIdNotFound'));
@@ -42,7 +61,7 @@ class Mail extends ResourceController
 
            $settings->emailDigest = false;
 
-           $userModel->update($digestUserId, [
+           $userModel->update($userData->id, [
                'settings'   => json_encode($settings),
                'updated_at' => $userData->updated_at,
            ]);
@@ -50,27 +69,7 @@ class Mail extends ResourceController
            return $this->respond(lang('Mail.successMessage'));
        }
 
-       // --- Scenario 2: unsubscribe from a specific notification type by sending_mail_id ---
-       $mail = $this->request->getGet('mail', FILTER_SANITIZE_SPECIAL_CHARS);
-
-       if (!$mail) {
-           return $this->failValidationErrors(lang('Mail.emptyParameters'));
-       }
-
-       $sendingEmailModel = new SendingMail();
-       $sendingEmailData  = $sendingEmailModel
-           ->select('sending_mail.id, activity_id, activity.place_id, activity.type')
-           ->join('activity', 'activity.id = sending_mail.activity_id', 'left')
-           ->find($mail);
-
-       if (!$sendingEmailData) {
-           return $this->failValidationErrors(lang('Mail.mailWithIdNotFound'));
-       }
-
-       if (!$sendingEmailData->activity_id) {
-           return $this->failValidationErrors(lang('Mail.mailWithIdNotFound'));
-       }
-
+       // --- Scenario 2: Activity notification email ---
        $placeModel = new PlacesModel();
        $userModel  = new UsersModel();
        $placeData  = $placeModel->select('user_id')->find($sendingEmailData->place_id);
@@ -79,7 +78,7 @@ class Mail extends ResourceController
            return $this->failValidationErrors(lang('Mail.mailWithIdNotFound'));
        }
 
-       $userData   = $userModel->select('settings, updated_at')->find($placeData->user_id);
+       $userData   = $userModel->select('id, settings, updated_at')->find($placeData->user_id);
 
        if (!$userData) {
            return $this->failValidationErrors(lang('Mail.mailWithIdNotFound'));
@@ -100,7 +99,7 @@ class Mail extends ResourceController
            $settings->{$configItem} = false;
        }
 
-       $userModel->update($placeData->user_id, ['settings' => json_encode($settings), 'updated_at' => $userData->updated_at]);
+       $userModel->update($userData->id, ['settings' => json_encode($settings), 'updated_at' => $userData->updated_at]);
 
        return $this->respond(lang('Mail.successMessage'));
    }

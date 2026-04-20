@@ -87,6 +87,7 @@ const SettingsUserPage: NextPage<object> = () => {
                 nofollow={true}
                 title={t('settings')}
             />
+
             <Header
                 title={t('settings')}
                 homePageTitle={t('geotags')}
@@ -103,7 +104,8 @@ const SettingsUserPage: NextPage<object> = () => {
                     }
                 ]}
             />
-            <Container style={{ marginTop: 15 }}>
+
+            <Container>
                 {!authSlice.isAuth && <ScreenSpinner />}
 
                 {serverError && (

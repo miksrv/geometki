@@ -6,7 +6,7 @@ import { useTranslation } from 'next-i18next'
 
 import { ApiModel } from '@/api'
 import { Reputation } from '@/components/ui'
-import { levelImage, nextLevelPercentage } from '@/features/levels/levels.utils'
+import { levelImage, nextLevelPercentage } from '@/utils/levels'
 
 import { UserAvatar } from '../user-avatar'
 
@@ -20,10 +20,7 @@ export const UsersList: React.FC<UsersListProps> = ({ users, ...props }) => {
     const { t } = useTranslation('components.users-list')
 
     return users?.length ? (
-        <Container
-            {...props}
-            style={{ marginTop: 15 }}
-        >
+        <Container {...props}>
             {users.map((user) => (
                 <div
                     key={user.id}

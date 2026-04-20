@@ -28,10 +28,7 @@ export const ActivityList: React.FC<ActivityListProps> = ({ activities, loading,
             ))}
 
             {!activities?.length && !loading && (
-                <Container
-                    style={{ marginTop: 15 }}
-                    className={'emptyList'}
-                >
+                <Container className={'emptyList'}>
                     {t('nothing-here-yet', { defaultValue: 'Тут пока ничего нет' })}
                 </Container>
             )}

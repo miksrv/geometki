@@ -8,7 +8,7 @@ import { useTranslation } from 'next-i18next'
 
 import { ApiModel } from '@/api'
 import { MapLinks, UserAvatar, UserAvatarGroup } from '@/components/shared'
-import { categoryImage } from '@/features/categories/categories.utils'
+import { categoryImage } from '@/utils/categories'
 import { convertDMS } from '@/utils/coordinates'
 import { formatDate } from '@/utils/helpers'
 

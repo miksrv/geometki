@@ -13,6 +13,10 @@ export const middleware = (request: NextRequest) => {
         return Response.redirect(new URL('/users', request.url))
     }
 
+    if (!currentUser && request.nextUrl.pathname.startsWith('/admin')) {
+        return Response.redirect(new URL('/', request.url))
+    }
+
     if (currentUser && request.nextUrl.pathname.startsWith('/auth')) {
         return Response.redirect(new URL('/', request.url))
     }

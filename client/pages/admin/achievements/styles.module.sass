@@ -1,0 +1,82 @@
+@use '../../../styles/variables' as variables
+
+.adminTable
+    width: 100%
+    border-collapse: collapse
+    font-size: variables.$fontSizeParagraph
+
+.adminTableHead
+    background: var(--table-header-background)
+
+    th
+        padding: 10px 12px
+        text-align: left
+        font-weight: 500
+        color: var(--text-color-secondary)
+        font-size: variables.$fontSizeCaption
+        border-bottom: 1px solid var(--table-border-color)
+        white-space: nowrap
+
+.adminTableRow
+    box-shadow: var(--table-row-box-shadow)
+
+    &:hover
+        background: var(--dropdown-background-color-hover)
+
+    td
+        padding: 10px 12px
+        vertical-align: middle
+
+.iconCell
+    width: 36px
+    height: 36px
+    border-radius: 50%
+    background: var(--input-background-color)
+    display: flex
+    align-items: center
+    justify-content: center
+    border: 2px solid var(--tier-color, var(--input-border-color))
+
+    svg
+        width: 18px
+        height: 18px
+        color: var(--tier-color, var(--text-color-secondary))
+
+.typeBadge
+    background: var(--input-background-color) !important
+    color: var(--text-color-secondary) !important
+
+.actionsCell
+    display: flex
+    align-items: center
+    gap: 6px
+    white-space: nowrap
+
+.actionBtn
+    background: transparent
+    border: 1px solid var(--input-border-color)
+    border-radius: var(--border-radius)
+    color: var(--text-color-secondary)
+    padding: 4px 8px
+    cursor: pointer
+    font-family: var(--font-family), sans-serif
+    font-size: variables.$fontSizeCaption
+    display: inline-flex
+    align-items: center
+    gap: 4px
+    transition: background 0.15s ease
+
+    &:hover
+        background: var(--dropdown-background-color-hover)
+        color: var(--text-color-primary)
+
+    &.danger
+        border-color: var(--color-red)
+        color: var(--color-red)
+
+        &:hover
+            background: var(--color-red-background)
+
+    svg
+        width: 14px
+        height: 14px

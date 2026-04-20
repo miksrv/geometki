@@ -2,6 +2,7 @@
 
 namespace App\Libraries;
 
+use App\Libraries\AchievementsLibrary;
 use App\Models\ActivityModel;
 use App\Models\SendingMail;
 use App\Models\UsersModel;
@@ -145,6 +146,9 @@ class ActivityLibrary {
         if ($session->isAuth && $session->user?->id) {
             $levels = new LevelsLibrary();
             $levels->push($type, $session->user?->id, $model->getInsertID());
+
+            $achievements = new AchievementsLibrary();
+            $achievements->check($session->user->id, $type);
         }
 
         // Send notification to place owner

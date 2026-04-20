@@ -111,6 +111,7 @@ $routes->group('activity', static function ($routes) {
 /** Users Controller **/
 $routes->group('users', static function ($routes) {
     $routes->get('/', 'Users::list');
+    $routes->get('(:alphanum)/achievements', 'Achievements::userAchievements/$1');
     $routes->get('(:alphanum)', 'Users::show/$1');
     $routes->post('avatar', 'Users::avatar');
     $routes->patch('crop', 'Users::crop');
@@ -118,6 +119,7 @@ $routes->group('users', static function ($routes) {
 
     $routes->options('/', static function () {});
     $routes->options('(:alphanum)', static function () {});
+    $routes->options('(:alphanum)/(:alphanum)', static function () {});
 });
 
 /** Auth Controller **/
@@ -148,6 +150,22 @@ $routes->group('levels', static function ($routes) {
     $routes->get('/', 'Levels::list');
 
     $routes->options('/', static function () {});
+});
+
+/** Achievements Controller **/
+$routes->group('achievements', static function ($routes) {
+    $routes->get('/', 'Achievements::index');
+    $routes->get('progress', 'Achievements::progress');
+    $routes->get('manage', 'Achievements::manage');
+    $routes->get('(:segment)', 'Achievements::show/$1');
+    $routes->post('/', 'Achievements::create');
+    $routes->put('(:segment)', 'Achievements::update/$1');
+    $routes->delete('(:segment)', 'Achievements::delete/$1');
+$routes->post('(:segment)/image', 'Achievements::uploadImage/$1');
+
+    $routes->options('/', static function () {});
+    $routes->options('(:segment)', static function () {});
+    $routes->options('(:segment)/(:segment)', static function () {});
 });
 
 /** Tags Controller **/
