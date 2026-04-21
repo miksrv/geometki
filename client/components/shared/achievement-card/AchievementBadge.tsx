@@ -1,10 +1,9 @@
-import React, { CSSProperties, useState } from 'react'
+import React, { useState } from 'react'
 
 import { useTranslation } from 'next-i18next'
 
 import { ApiType } from '@/api'
 import { AchievementIcon } from '@/components/shared/achievement-icon'
-import { TIER_COLORS } from '@/utils/achievements'
 import { formatDate } from '@/utils/helpers'
 
 import { AchievementDetailModal } from './AchievementDetailModal'
@@ -20,15 +19,10 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({ achievement 
     const [hovered, setHovered] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
 
-    const tierColor = TIER_COLORS[achievement.tier]
-
-    const cssVars = { '--tier-color': tierColor } as CSSProperties
-
     return (
         <>
             <div
-                className={styles.badgeItem}
-                style={cssVars}
+                className={`${styles.badgeItem} ${styles[`tier--${achievement.tier}`]}`}
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
                 onClick={() => setModalOpen(true)}

@@ -1,5 +1,3 @@
-'use client'
-
 import React from 'react'
 import { Marker, Popup } from 'react-leaflet'
 import Leaflet from 'leaflet'

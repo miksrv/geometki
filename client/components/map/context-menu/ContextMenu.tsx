@@ -1,5 +1,3 @@
-'use client'
-
 import React, { useEffect, useRef, useState } from 'react'
 import { Point } from 'leaflet'
 import { Button, Container } from 'simple-react-ui-kit'

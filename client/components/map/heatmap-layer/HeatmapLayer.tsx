@@ -1,5 +1,3 @@
-'use client'
-
 import React, { useEffect, useRef } from 'react'
 import * as ReactLeaflet from 'react-leaflet'
 import L from 'leaflet'

@@ -3,8 +3,7 @@ import { ApiModel } from '@/api'
 import notificationReducer, {
     deleteAllNotifications,
     deleteNotification,
-    setReadNotification,
-    setUnreadCounter
+    setReadNotification
 } from './notificationSlice'
 
 // addNotification is internal to the slice — access it via the reducer by constructing the action manually
@@ -15,7 +14,6 @@ const addNotification = (notification: ApiModel.Notification) => ({
 
 describe('notificationSlice', () => {
     const initialState = {
-        counter: 0,
         list: [] as ApiModel.Notification[]
     }
 
@@ -23,11 +21,10 @@ describe('notificationSlice', () => {
     const notifB: ApiModel.Notification = { id: 'b', message: 'Second notification', type: 'error' }
 
     describe('initial state', () => {
-        it('has an empty list and zero counter', () => {
+        it('has an empty list', () => {
             const state = notificationReducer(undefined, { type: '@@INIT' })
 
             expect(state.list).toStrictEqual([])
-            expect(state.counter).toBe(0)
         })
     })
 
@@ -99,21 +96,6 @@ describe('notificationSlice', () => {
             const state = notificationReducer(stateWithOne, setReadNotification('nonexistent'))
 
             expect(state.list).toHaveLength(1)
-        })
-    })
-
-    describe('setUnreadCounter', () => {
-        it('sets the counter to the given value', () => {
-            const state = notificationReducer({ ...initialState }, setUnreadCounter(7))
-
-            expect(state.counter).toBe(7)
-        })
-
-        it('resets counter to zero', () => {
-            const stateWithCounter = { ...initialState, counter: 5 }
-            const state = notificationReducer(stateWithCounter, setUnreadCounter(0))
-
-            expect(state.counter).toBe(0)
         })
     })
 })

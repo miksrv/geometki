@@ -1,11 +1,11 @@
-import React, { CSSProperties } from 'react'
+import React from 'react'
 import { Icon } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next'
 
 import { ApiType } from '@/api'
+import { AchievementTierBadge } from '@/components/shared/achievement-card/AchievementTierBadge'
 import { AchievementIcon } from '@/components/shared/achievement-icon'
-import { TIER_COLORS } from '@/utils/achievements'
 import { formatDate } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
@@ -18,14 +18,9 @@ interface AchievementCardProps {
 export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, showProgress }) => {
     const { t } = useTranslation()
 
-    const tierColor = TIER_COLORS[achievement.tier]
-
-    const cssVars = { '--tier-color': tierColor } as CSSProperties
-
     return (
         <div
-            className={`${styles.achievementCard} ${achievement.earned_at ? styles.earnedCard : ''}`}
-            style={cssVars}
+            className={`${styles.achievementCard} ${styles[`tier--${achievement.tier}`]} ${achievement.earned_at ? styles.earnedCard : ''}`}
         >
             <div className={styles.cardHeader}>
                 <div className={styles.iconWrapper}>
@@ -38,7 +33,10 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, s
                 </div>
                 <div className={styles.cardMeta}>
                     <p className={styles.cardTitle}>{achievement.title}</p>
-                    <span className={styles.tierChip}>{t(`achievements-tier-${achievement.tier}`)}</span>
+                    <AchievementTierBadge
+                        tier={achievement.tier}
+                        t={t}
+                    />
                 </div>
             </div>
 

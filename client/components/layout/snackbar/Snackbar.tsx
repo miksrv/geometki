@@ -1,9 +1,7 @@
-'use client'
-
 import React, { useEffect } from 'react'
 
 import { API } from '@/api'
-import { deleteNotification, Notify, setReadNotification, setUnreadCounter } from '@/app/notificationSlice'
+import { deleteNotification, Notify, setReadNotification } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 
 import { Notification } from './Notification'
@@ -30,8 +28,6 @@ export const Snackbar: React.FC = () => {
         data?.items?.forEach((item) => {
             void dispatch(Notify(item))
         })
-
-        void dispatch(setUnreadCounter(data?.count ?? 0))
     }, [data])
 
     return (

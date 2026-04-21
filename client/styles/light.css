@@ -130,4 +130,10 @@
 
     /* Skeleton */
     --skeleton-background-animation: linear-gradient( 90deg, transparent, rgba(0, 0, 0, 0.04), transparent);
+
+    /* Achievement tiers */
+    --color-tier-bronze: #cd7f32;
+    --color-tier-silver: #c0c0c0;
+    --color-tier-gold: #ffd700;
+    --color-tier-none: var(--icon-color-secondary);
 }

@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.6.1
+
+### Patch Changes
+
+- Removed local `Dialog`, `Textarea`, `Dropdown`, and `SearchControl` UI components; replaced all usages with equivalents from `simple-react-ui-kit` (`Dialog`, `TextArea`, `Select`) to reduce duplication and align with the shared component library
+- Refactored `PlaceCoverEditor` and `UserAvatarEditor` to use `Dialog` from `simple-react-ui-kit` with the `title` prop; moved save actions inside dialog content footer instead of using a removed `actions` prop
+- Replaced dialog-based place filters with an inline `PlaceFilterPanel` using `Select` components from `simple-react-ui-kit`; removed Redux overlay toggles and dialog state from the Places page; added debounced location search and responsive horizontal layout
+- Updated comment form to require `Ctrl+Enter` for submission to prevent accidental submits; replaced local `Textarea` with `TextArea` from `simple-react-ui-kit` (`autoResize`, `rows=1`)
+- Refactored achievement tier colors: introduced `--color-tier-bronze`, `--color-tier-silver`, `--color-tier-gold` CSS variables in light and dark themes; replaced inline `style` / `TIER_COLORS` map with SASS `@each`-generated tier modifier classes across `AchievementCard`, `AchievementBadge`, and `AchievementDetailModal`
+- Extracted `AchievementTierBadge` component to centralise tier label rendering with `Badge` from `simple-react-ui-kit`; badge is hidden when tier is `none`; reused in `AchievementCard` and `AchievementDetailModal`
+- Refactored `AchievementDetailModal` to use `Dialog` from `simple-react-ui-kit`; replaced custom overlay and close button logic with library-provided overlay and a custom close icon button
+- Improved notifications: fixed API pagination to replace the first page in full and deduplicate appended pages by `id`; removed `unreadCounter` state and `setUnreadCounter` action from the notification slice; switched `NotificationList` to read unread count from the API cache; `clearNotification` now uses `.unwrap()` with error toast on failure
+- Removed `'use client'` directives from components that do not require them (`AppAuthChecker`, `Logo`, `LoginForm`, `RegistrationForm`, map controls, place sections, and others)
+- Tightened spacing on the Places page container and filter panel for a more compact layout
+- Bumped `simple-react-ui-kit` to `1.8.4` and `@typescript-eslint` packages to `8.59.0`
+
 ## 1.6.0
 
 ### Minor Changes
