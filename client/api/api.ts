@@ -238,10 +238,15 @@ export const API = createApi({
         >({
             forceRefetch: ({ currentArg, previousArg }) => currentArg?.offset !== previousArg?.offset,
             merge: (currentCache, newItems, { arg }) => {
-                if ((arg?.offset as number) === 0 && newItems.count === 0 && currentCache.items) {
-                    currentCache.items.length = 0
+                const isFirstPage = (arg?.offset as number) === 0
+
+                if (isFirstPage) {
+                    currentCache.items = newItems.items ?? []
+                    currentCache.count = newItems.count
                 } else {
-                    currentCache.items?.push(...(newItems.items ?? []))
+                    const existingIds = new Set(currentCache.items?.map((i) => i.id))
+                    const fresh = (newItems.items ?? []).filter((i) => !existingIds.has(i.id))
+                    currentCache.items?.push(...fresh)
                 }
             },
             providesTags: ['Notifications'],

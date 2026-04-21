@@ -6,7 +6,6 @@ import type { RootState } from './store'
 
 type SnackbarStateProps = {
     list: ApiModel.Notification[]
-    counter: number
 }
 
 export const Notify = createAsyncThunk(
@@ -33,7 +32,6 @@ export const Notify = createAsyncThunk(
 
 const notificationSlice = createSlice({
     initialState: {
-        counter: 0,
         list: []
     } as SnackbarStateProps,
     name: 'snackbar',
@@ -61,14 +59,11 @@ const notificationSlice = createSlice({
                     }
                 ]
             }
-        },
-        setUnreadCounter: (state, { payload }: PayloadAction<number>) => {
-            state.counter = payload
         }
     }
 })
 
-export const { deleteAllNotifications, setReadNotification, deleteNotification, setUnreadCounter, addNotification } =
+export const { deleteAllNotifications, setReadNotification, deleteNotification, addNotification } =
     notificationSlice.actions
 
 export { notificationSlice }
