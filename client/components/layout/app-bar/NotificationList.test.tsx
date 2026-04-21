@@ -59,7 +59,8 @@ jest.mock('@/api', () => ({
         useNotificationsDeleteMutation: jest.fn().mockReturnValue([jest.fn(), { isLoading: false, isSuccess: false }]),
         useNotificationsGetListQuery: jest
             .fn()
-            .mockReturnValue({ data: undefined, isLoading: false, isFetching: false })
+            .mockReturnValue({ data: undefined, isLoading: false, isFetching: false }),
+        useNotificationsGetUpdatesQuery: jest.fn().mockReturnValue({ data: undefined })
     }
 }))
 
@@ -116,16 +117,14 @@ describe('NotificationList', () => {
         })
 
         it('does not render the counter when unread count is 0', () => {
-            renderWithStore(<NotificationList />, {
-                notification: { counter: 0, list: [] }
-            })
+            jest.mocked(API.useNotificationsGetUpdatesQuery).mockReturnValue({ data: { count: 0 } })
+            renderWithStore(<NotificationList />)
             expect(screen.queryByTestId('counter')).not.toBeInTheDocument()
         })
 
         it('renders the counter with unread count when counter > 0', () => {
-            renderWithStore(<NotificationList />, {
-                notification: { counter: 3, list: [] }
-            })
+            jest.mocked(API.useNotificationsGetUpdatesQuery).mockReturnValue({ data: { count: 3 } })
+            renderWithStore(<NotificationList />)
             expect(screen.getByTestId('counter')).toHaveTextContent('3')
         })
 
