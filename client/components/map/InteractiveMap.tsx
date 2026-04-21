@@ -1,5 +1,3 @@
-'use client'
-
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import * as ReactLeaflet from 'react-leaflet'
 import { LatLngBounds, LatLngExpression, Map, MapOptions } from 'leaflet'
