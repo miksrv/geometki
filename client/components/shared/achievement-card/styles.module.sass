@@ -19,7 +19,21 @@
             left: 0
             right: 0
             height: 3px
-            background: var(--tier-color)
+
+    @each $tier in bronze, silver, gold
+        &.tier--#{$tier}
+            &.earnedCard::before
+                background: var(--color-tier-#{$tier})
+
+            .iconWrapper svg
+                color: var(--color-tier-#{$tier})
+
+            .tierChip
+                background: color-mix(in srgb, var(--color-tier-#{$tier}) 15%, transparent) !important
+                color: var(--color-tier-#{$tier}) !important
+
+            .progressFill
+                background: var(--color-tier-#{$tier})
 
 .cardHeader
     display: flex
@@ -39,7 +53,6 @@
     svg
         width: 22px
         height: 22px
-        color: var(--tier-color)
 
 .cardMeta
     flex: 1
@@ -55,15 +68,9 @@
     text-overflow: ellipsis
 
 .tierChip
-    display: inline-flex
-    align-items: center
-    gap: 4px
     font-size: variables.$fontSizeCaption
     font-weight: 500
-    padding: 2px 8px
     border-radius: 10px
-    background: color-mix(in srgb, var(--tier-color) 15%, transparent)
-    color: var(--tier-color)
 
 .cardDescription
     font-size: variables.$fontSizeParagraph
@@ -91,7 +98,6 @@
 .progressFill
     height: 100%
     border-radius: 3px
-    background: var(--tier-color)
     transition: width 0.3s ease
 
 .earnedBadge
@@ -141,6 +147,14 @@
     position: relative
     cursor: pointer
 
+    @each $tier in bronze, silver, gold
+        &.tier--#{$tier}
+            .badgeIcon
+                border-color: var(--color-tier-#{$tier})
+
+                svg
+                    color: var(--color-tier-#{$tier})
+
 .badgeIcon
     width: 48px
     height: 48px
@@ -149,7 +163,7 @@
     display: flex
     align-items: center
     justify-content: center
-    border: 3px solid var(--tier-color)
+    border: 3px solid transparent
     transition: transform 0.15s ease
 
     &:hover
@@ -158,7 +172,6 @@
     svg
         width: 24px
         height: 24px
-        color: var(--tier-color)
 
 .badgeTooltip
     position: absolute
@@ -255,29 +268,6 @@
         opacity: 0.4
 
 // Achievement detail modal
-.overlay
-    position: fixed
-    inset: 0
-    background: rgba(0, 0, 0, 0.5)
-    z-index: 500
-    display: flex
-    align-items: center
-    justify-content: center
-    padding: 16px
-
-.modal
-    position: relative
-    background: var(--modal-background)
-    border-radius: var(--border-radius)
-    box-shadow: variables.$boxShadow5
-    width: 100%
-    max-width: 420px
-    padding: 24px
-    border-top: 4px solid var(--tier-color)
-
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        max-width: 96%
-
 .closeBtn
     position: absolute
     top: 12px
@@ -297,6 +287,15 @@
         width: 20px
         height: 20px
 
+.modalContent
+    @each $tier in bronze, silver, gold
+        &--#{$tier}
+            border-top: 4px solid var(--color-tier-#{$tier})
+
+            .tierChip
+                background: color-mix(in srgb, var(--color-tier-#{$tier}) 15%, transparent) !important
+                color: var(--color-tier-#{$tier}) !important
+
 .modalHeader
     display: flex
     align-items: center
@@ -304,7 +303,7 @@
     margin-bottom: 16px
 
 .modalTitle
-    margin: 0 0 6px
+    margin: 0
     font-size: variables.$fontSizeTitleH1
     color: var(--text-color-primary)
 
