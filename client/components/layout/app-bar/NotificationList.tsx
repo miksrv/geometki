@@ -4,7 +4,7 @@ import { Button, Popout, Spinner } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next'
 
 import { API } from '@/api'
-import { deleteAllNotifications, Notify, setUnreadCounter } from '@/app/notificationSlice'
+import { deleteAllNotifications, Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import { Counter } from '@/components/ui'
 
@@ -18,12 +18,16 @@ export const NotificationList: React.FC = () => {
 
     const notifyContainerRef = useRef<HTMLDivElement>(null)
 
-    const notifyCounter = useAppSelector((state) => state.notification.counter)
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const [notifyShow, setNotifyShow] = useState<boolean>(false)
     const [notifyPage, setNotifyPage] = useState<number>(1)
 
     const [clearNotification, { isLoading: loadingClear, isSuccess }] = API.useNotificationsDeleteMutation()
+
+    // Reads from the cache already held by Snackbar — no extra network request
+    const { data: updatesData } = API.useNotificationsGetUpdatesQuery(undefined, { skip: !isAuth })
+    const unreadCount = updatesData?.count ?? 0
 
     const {
         data: notifyData,
@@ -42,9 +46,19 @@ export const NotificationList: React.FC = () => {
     const handleClearNotificationsClick = async () => {
         setNotifyPage(1)
 
-        await clearNotification()
-        dispatch(setUnreadCounter(0))
-        dispatch(deleteAllNotifications())
+        try {
+            await clearNotification().unwrap()
+            dispatch(deleteAllNotifications())
+        } catch {
+            void dispatch(
+                Notify({
+                    id: 'clearNotificationError',
+                    message: t('notification-list-clear-error', { defaultValue: 'Не удалось очистить уведомления' }),
+                    title: '',
+                    type: 'error'
+                })
+            )
+        }
     }
 
     useEffect(() => {
@@ -52,24 +66,13 @@ export const NotificationList: React.FC = () => {
             void dispatch(
                 Notify({
                     id: 'clearNotification',
+                    message: t('notification-list-has-been-cleared', { defaultValue: 'Список уведомлений очищен' }),
                     title: '',
-                    type: 'success',
-                    message: t('notification-list-has-been-cleared', {
-                        defaultValue: 'Список уведомлений очищен'
-                    })
+                    type: 'success'
                 })
             )
         }
-    }, [isSuccess])
-
-    useEffect(() => {
-        const unreadCount = notifyData?.items?.filter(({ read }) => !read).length
-
-        if (unreadCount) {
-            const newUnreadValue = notifyCounter - unreadCount
-            dispatch(setUnreadCounter(newUnreadValue < 0 ? 0 : newUnreadValue))
-        }
-    }, [notifyData])
+    }, [isSuccess, dispatch, t])
 
     useEffect(() => {
         const onScroll = () => {
@@ -87,7 +90,7 @@ export const NotificationList: React.FC = () => {
                 !!notifyData.items?.length &&
                 notifyData.count > notifyData.items.length
             ) {
-                setNotifyPage(notifyPage + 1)
+                setNotifyPage((prev) => prev + 1)
             }
         }
 
@@ -102,21 +105,22 @@ export const NotificationList: React.FC = () => {
         return () => {
             targetDiv.removeEventListener('scroll', onScroll)
         }
-    }, [notifyPage, notifyFetching, notifyData])
+    }, [notifyFetching, notifyData])
 
     return (
         <Popout
             onOpenChange={setNotifyShow}
             trigger={
                 <Button
+                    aria-label={t('notifications', { defaultValue: 'Уведомления' })}
                     mode={'outline'}
                     icon={'Bell'}
                     size={'medium'}
                 >
-                    {notifyCounter > 0 && (
+                    {unreadCount > 0 && (
                         <Counter
                             className={styles.notifyCounter}
-                            value={notifyCounter}
+                            value={unreadCount}
                         />
                     )}
                 </Button>
