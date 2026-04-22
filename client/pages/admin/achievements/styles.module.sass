@@ -31,11 +31,25 @@
     background: var(--input-background-color) !important
     color: var(--text-color-secondary) !important
 
-.actionsCell
+.imageCell
+    img, svg
+        vertical-align: middle
+
+.titleCell
     display: flex
-    align-items: center
-    gap: 6px
+    flex-direction: column
+    gap: 2px
+
+.titleDescription
+    font-size: variables.$fontSizeCaption
+    color: var(--text-color-secondary)
     white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+    max-width: 300px
+
+    &.titleDate
+        font-weight: 700
 
 .actionBtn
     background: transparent
