@@ -33,28 +33,26 @@ jest.mock('next-i18next', () => ({
 
 // Mock simple-react-ui-kit Dialog and Button
 jest.mock('simple-react-ui-kit', () => ({
-    Button: ({ label, onClick, variant, mode }: any) => (
+    Button: ({ children, onClick, variant, mode }: any) => (
         <button
             data-variant={variant}
             data-mode={mode}
             onClick={onClick}
         >
-            {label}
+            {children}
         </button>
     ),
-    Dialog: ({ open, children, onCloseDialog }: any) =>
+    Dialog: ({ open, children, onCloseDialog, contentClassName }: any) =>
         open ? (
             <div
                 data-testid={'dialog'}
+                data-content-class={contentClassName}
                 onClick={(e) => e.target === e.currentTarget && onCloseDialog?.()}
             >
                 {children}
             </div>
         ) : null
 }))
-
-// Suppress react-image-crop scss import
-jest.mock('react-image-crop/src/ReactCrop.scss', () => {}, { virtual: true })
 
 const makeStore = () =>
     configureStore({
@@ -70,79 +68,67 @@ const renderWithStore = (ui: React.ReactElement) => {
     return { store, ...render(<Provider store={store}>{ui}</Provider>) }
 }
 
+const defaultProps = {
+    open: true,
+    message: 'Are you sure?',
+    onConfirm: jest.fn(),
+    onCancel: jest.fn()
+}
+
 describe('ConfirmationDialog', () => {
     describe('when closed', () => {
         it('renders nothing when open is false', () => {
-            const { container } = renderWithStore(<ConfirmationDialog open={false} />)
+            const { container } = renderWithStore(
+                <ConfirmationDialog
+                    {...defaultProps}
+                    open={false}
+                />
+            )
             expect(container.firstChild).toBeNull()
         })
     })
 
     describe('when open', () => {
         it('renders the dialog element', () => {
-            renderWithStore(<ConfirmationDialog open />)
+            renderWithStore(<ConfirmationDialog {...defaultProps} />)
             expect(screen.getByTestId('dialog')).toBeInTheDocument()
         })
 
-        it('renders custom message when provided', () => {
-            renderWithStore(
-                <ConfirmationDialog
-                    open
-                    message={'Are you sure?'}
-                />
-            )
+        it('renders the provided message', () => {
+            renderWithStore(<ConfirmationDialog {...defaultProps} />)
             expect(screen.getByText('Are you sure?')).toBeInTheDocument()
         })
 
-        it('renders default message via translation key when message is omitted', () => {
-            renderWithStore(<ConfirmationDialog open />)
-            // The t mock returns the key as-is
-            expect(screen.getByText('confirmation-dialog-text')).toBeInTheDocument()
-        })
-
-        it('renders accept and reject buttons', () => {
-            renderWithStore(<ConfirmationDialog open />)
-            // Buttons render with the i18n key as text
-            expect(screen.getByText('confirmation-dialog-accept')).toBeInTheDocument()
-            expect(screen.getByText('confirmation-dialog-reject')).toBeInTheDocument()
-        })
-
-        it('renders custom button texts when provided', () => {
-            renderWithStore(
-                <ConfirmationDialog
-                    open
-                    acceptText={'Yes, delete'}
-                    rejectText={'Cancel'}
-                />
-            )
-            expect(screen.getByText('Yes, delete')).toBeInTheDocument()
-            expect(screen.getByText('Cancel')).toBeInTheDocument()
+        it('renders cancel and delete buttons via translation keys', () => {
+            renderWithStore(<ConfirmationDialog {...defaultProps} />)
+            expect(screen.getByText('cancel')).toBeInTheDocument()
+            expect(screen.getByText('delete')).toBeInTheDocument()
         })
     })
 
     describe('interaction', () => {
-        it('calls onAccept when the accept button is clicked', () => {
-            const onAccept = jest.fn()
+        it('calls onConfirm when the delete button is clicked', () => {
+            const onConfirm = jest.fn()
             renderWithStore(
                 <ConfirmationDialog
-                    open
-                    onAccept={onAccept}
+                    {...defaultProps}
+                    onConfirm={onConfirm}
                 />
             )
-            fireEvent.click(screen.getByText('confirmation-dialog-accept'))
-            expect(onAccept).toHaveBeenCalledTimes(1)
+            fireEvent.click(screen.getByText('delete'))
+            expect(onConfirm).toHaveBeenCalledTimes(1)
         })
 
-        it('calls onReject when the reject button is clicked', () => {
-            const onReject = jest.fn()
+        it('calls onCancel when the cancel button is clicked', () => {
+            const onCancel = jest.fn()
             renderWithStore(
                 <ConfirmationDialog
-                    open
-                    onReject={onReject}
+                    {...defaultProps}
+                    onCancel={onCancel}
                 />
             )
-            fireEvent.click(screen.getByText('confirmation-dialog-reject'))
-            expect(onReject).toHaveBeenCalledTimes(1)
+            fireEvent.click(screen.getByText('cancel'))
+            expect(onCancel).toHaveBeenCalledTimes(1)
         })
     })
 })

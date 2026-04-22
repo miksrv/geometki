@@ -33,14 +33,11 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({ 
         </button>
 
         <div className={styles.modalHeader}>
-            <div className={styles.iconWrapper}>
-                <AchievementIcon
-                    image={achievement.image}
-                    icon={achievement.icon}
-                    alt={achievement.title}
-                    size={36}
-                />
-            </div>
+            <AchievementIcon
+                image={achievement.image}
+                alt={achievement.title}
+                size={48}
+            />
             <div>
                 <h2 className={styles.modalTitle}>{achievement.title}</h2>
                 <AchievementTierBadge

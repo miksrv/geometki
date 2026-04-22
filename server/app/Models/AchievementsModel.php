@@ -20,7 +20,6 @@ class AchievementsModel extends ApplicationBaseModel
         'title_ru',
         'description_en',
         'description_ru',
-        'icon',
         'image',
         'rules',
         'season_start',

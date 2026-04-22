@@ -98,33 +98,37 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                 size={'medium'}
             />
 
-            <Input
-                label={`${t('achievements-admin-title-en')} *`}
-                value={form.title_en}
-                onChange={(e) => onFieldChange('title_en', e.target.value)}
-                size={'medium'}
-            />
+            <div className={styles.formRow}>
+                <Input
+                    required={true}
+                    label={`${t('achievements-admin-name')} 🇷🇺`}
+                    value={form.title_ru}
+                    onChange={(e) => onFieldChange('title_ru', e.target.value)}
+                    size={'medium'}
+                />
+                <Input
+                    required={true}
+                    label={`${t('achievements-admin-name')} 🇬🇧`}
+                    value={form.title_en}
+                    onChange={(e) => onFieldChange('title_en', e.target.value)}
+                    size={'medium'}
+                />
+            </div>
 
-            <Input
-                label={`${t('achievements-admin-title-ru')} *`}
-                value={form.title_ru}
-                onChange={(e) => onFieldChange('title_ru', e.target.value)}
-                size={'medium'}
-            />
-
-            <TextArea
-                label={t('achievements-admin-description-en')}
-                value={form.description_en ?? ''}
-                onChange={(e) => onFieldChange('description_en', e.target.value)}
-                rows={2}
-            />
-
-            <TextArea
-                label={t('achievements-admin-description-ru')}
-                value={form.description_ru ?? ''}
-                onChange={(e) => onFieldChange('description_ru', e.target.value)}
-                rows={2}
-            />
+            <div className={styles.formRow}>
+                <TextArea
+                    label={`${t('description')} 🇷🇺`}
+                    value={form.description_ru ?? ''}
+                    onChange={(e) => onFieldChange('description_ru', e.target.value)}
+                    rows={2}
+                />
+                <TextArea
+                    label={`${t('description')} 🇬🇧`}
+                    value={form.description_en ?? ''}
+                    onChange={(e) => onFieldChange('description_en', e.target.value)}
+                    rows={2}
+                />
+            </div>
 
             <div className={styles.formRow}>
                 <Select
@@ -196,25 +200,6 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                     onChange={(e) => onFieldChange('sort_order', parseInt(e.target.value, 10) || 0)}
                     size={'medium'}
                 />
-            </div>
-
-            <div className={styles.formField}>
-                <div className={styles.iconRow}>
-                    <Input
-                        label={t('achievements-admin-icon')}
-                        value={form.icon ?? ''}
-                        onChange={(e) => onFieldChange('icon', e.target.value)}
-                        placeholder={'Award'}
-                        size={'medium'}
-                        style={{ flex: 1 }}
-                    />
-                    <div className={styles.iconPreview}>
-                        <AchievementIcon
-                            icon={form.icon || 'Award'}
-                            size={36}
-                        />
-                    </div>
-                </div>
             </div>
 
             {onImageUpload && (

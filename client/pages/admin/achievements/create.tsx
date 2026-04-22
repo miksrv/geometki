@@ -21,7 +21,6 @@ const defaultForm: AchievementInput = {
     description_en: '',
     description_ru: '',
     group_slug: '',
-    icon: '',
     is_active: true,
     rules: [{ metric: 'places_created', operator: '>=', value: 1 }],
     season_end: null,

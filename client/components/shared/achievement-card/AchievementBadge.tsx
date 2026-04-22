@@ -31,15 +31,11 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({ achievement 
                 onKeyDown={(e) => e.key === 'Enter' && setModalOpen(true)}
                 aria-label={achievement.title}
             >
-                <div className={styles.badgeIcon}>
-                    <AchievementIcon
-                        image={achievement.image}
-                        icon={achievement.icon}
-                        alt={achievement.title}
-                        size={36}
-                        style={{ borderRadius: '50%' }}
-                    />
-                </div>
+                <AchievementIcon
+                    image={achievement.image}
+                    alt={achievement.title}
+                    size={36}
+                />
                 {hovered && (
                     <div
                         className={styles.badgeTooltip}

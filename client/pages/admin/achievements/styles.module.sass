@@ -27,30 +27,29 @@
         padding: 10px 12px
         vertical-align: middle
 
-.iconCell
-    width: 36px
-    height: 36px
-    border-radius: 50%
-    background: var(--input-background-color)
-    display: flex
-    align-items: center
-    justify-content: center
-    border: 2px solid var(--tier-color, var(--input-border-color))
-
-    svg
-        width: 18px
-        height: 18px
-        color: var(--tier-color, var(--text-color-secondary))
-
 .typeBadge
     background: var(--input-background-color) !important
     color: var(--text-color-secondary) !important
 
-.actionsCell
+.imageCell
+    img, svg
+        vertical-align: middle
+
+.titleCell
     display: flex
-    align-items: center
-    gap: 6px
+    flex-direction: column
+    gap: 2px
+
+.titleDescription
+    font-size: variables.$fontSizeCaption
+    color: var(--text-color-secondary)
     white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+    max-width: 300px
+
+    &.titleDate
+        font-weight: 700
 
 .actionBtn
     background: transparent

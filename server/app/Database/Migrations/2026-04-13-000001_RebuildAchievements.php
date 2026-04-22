@@ -57,11 +57,6 @@ class RebuildAchievements extends Migration
                 'type' => 'TEXT',
                 'null' => true,
             ],
-            'icon' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 100,
-                'null'       => true,
-            ],
             'image' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 200,

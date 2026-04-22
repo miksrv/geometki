@@ -23,6 +23,7 @@ This directory documents proposed features for Geometki. The existing system alr
 | [15](./15-dynamic-place-freshness-badges.md) | **Dynamic Place Freshness Badges** | Medium | High | Places table, photo/rating data, cron infrastructure |
 | [16](./16-weekly-digest-push-notifications.md) | **Weekly Digest & Smart Push Notifications** | Medium | Very High | Email service, all retention features as data sources |
 | [17](./17-personal-fog-of-war-explorer-map.md) | **Personal Fog of War & Explorer Map** | Medium–High | Very High | `sessions_history` coordinates, `user_explored_tiles` (new), Leaflet heatmap layer |
+| [18](./18-visited-places-checkin.md) | **Verified Visit Mechanic ("Я здесь был")** | Low–Medium | Medium | `users_visited_places`, `places` table, existing visited toggle |
 
 ## Recommended Implementation Order
 

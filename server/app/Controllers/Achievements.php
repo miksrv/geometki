@@ -77,7 +77,6 @@ class Achievements extends ResourceController
                 'category'     => $achievement->category,
                 'title'        => $achievement->{"title_$locale"} ?? $achievement->title_en,
                 'description'  => $achievement->{"description_$locale"} ?? $achievement->description_en,
-                'icon'         => $achievement->icon,
                 'image'        => $achievement->image,
                 'xp_bonus'     => (int) $achievement->xp_bonus,
                 'season_start' => $achievement->season_start,
@@ -125,7 +124,6 @@ class Achievements extends ResourceController
             'category'     => $achievement->category,
             'title'        => $achievement->{"title_$locale"} ?? $achievement->title_en,
             'description'  => $achievement->{"description_$locale"} ?? $achievement->description_en,
-            'icon'         => $achievement->icon,
             'image'        => $achievement->image,
             'xp_bonus'     => (int) $achievement->xp_bonus,
             'season_start' => $achievement->season_start,
@@ -189,7 +187,6 @@ class Achievements extends ResourceController
                 'category'     => $achievement->category,
                 'title'        => $achievement->{"title_$locale"} ?? $achievement->title_en,
                 'description'  => $achievement->{"description_$locale"} ?? $achievement->description_en,
-                'icon'         => $achievement->icon,
                 'image'        => $achievement->image,
                 'xp_bonus'     => (int) $achievement->xp_bonus,
                 'season_start' => $achievement->season_start,
@@ -240,7 +237,6 @@ class Achievements extends ResourceController
                 'description'    => $achievement->{"description_$locale"} ?? $achievement->description_en,
                 'description_en' => $achievement->description_en,
                 'description_ru' => $achievement->description_ru,
-                'icon'           => $achievement->icon,
                 'image'          => $achievement->image,
                 'xp_bonus'       => (int) $achievement->xp_bonus,
                 'sort_order'     => (int) $achievement->sort_order,
@@ -283,7 +279,6 @@ class Achievements extends ResourceController
         $entity->title_ru       = $input['title_ru']       ?? '';
         $entity->description_en = $input['description_en'] ?? null;
         $entity->description_ru = $input['description_ru'] ?? null;
-        $entity->icon           = $input['icon']           ?? null;
         $entity->image          = $input['image']          ?? null;
         $entity->rules          = isset($input['rules']) ? json_encode($input['rules']) : '[]';
         $entity->season_start   = $input['season_start']   ?? null;
@@ -333,7 +328,7 @@ class Achievements extends ResourceController
 
         $fields = [
             'group_slug', 'type', 'tier', 'category', 'title_en', 'title_ru',
-            'description_en', 'description_ru', 'icon', 'image', 'season_start',
+            'description_en', 'description_ru', 'image', 'season_start',
             'season_end', 'xp_bonus', 'sort_order', 'is_active',
         ];
 

@@ -225,11 +225,10 @@ export const PlaceHeader: React.FC<PlaceHeaderProps> = ({
             <ConfirmationDialog
                 open={showRemoveDialog}
                 message={t('delete-place-confirmation')}
-                acceptText={t('delete')}
-                onReject={() => {
+                onCancel={() => {
                     setShowRemoveDialog(false)
                 }}
-                onAccept={async () => {
+                onConfirm={async () => {
                     if (place?.id) {
                         void removePlace(place.id)
                     }

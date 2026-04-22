@@ -1,5 +1,5 @@
-import React, { CSSProperties } from 'react'
-import { Badge, Button, Container, Dialog, Icon, Table, TableColumnProps } from 'simple-react-ui-kit'
+import React from 'react'
+import { Badge, Button, cn, Container, Table, TableColumnProps } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
 import Link from 'next/link'
@@ -10,9 +10,10 @@ import { NextSeo } from 'next-seo'
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, Header } from '@/components/shared'
+import { AppLayout, ConfirmationDialog, Header } from '@/components/shared'
+import { AchievementTierBadge } from '@/components/shared/achievement-card/AchievementTierBadge'
 import { AchievementIcon } from '@/components/shared/achievement-icon'
-import { TIER_COLORS } from '@/utils/achievements'
+import { formatDate } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 import styles from './styles.module.sass'
@@ -47,115 +48,80 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
 
     const columns: Array<TableColumnProps<ApiType.Achievements.AchievementAdmin>> = [
         {
-            accessor: 'icon',
+            accessor: 'image',
             header: '',
+            className: styles.imageCell,
             formatter: (_, sortedData, rowIndex) => {
                 const achievement = sortedData[rowIndex]
-                const tierColor = TIER_COLORS[achievement.tier]
-                const cssVars = { '--tier-color': tierColor } as CSSProperties
-
                 return (
-                    <div
-                        className={styles.iconCell}
-                        style={cssVars}
-                    >
-                        <AchievementIcon
-                            image={achievement.image}
-                            icon={achievement.icon}
-                            alt={achievement.title}
-                            size={18}
-                            style={{ borderRadius: '50%' }}
-                        />
-                    </div>
+                    <AchievementIcon
+                        image={achievement.image}
+                        alt={achievement.title}
+                        size={24}
+                    />
                 )
             }
         },
         {
             accessor: 'title',
-            header: t('achievements-admin-title'),
+            header: t('achievements-admin-name'),
             formatter: (_, sortedData, rowIndex) => {
                 const achievement = sortedData[rowIndex]
-                return <strong>{achievement.title}</strong>
+                return (
+                    <div className={styles.titleCell}>
+                        <Link href={`/admin/achievements/${String(achievement.id)}`}>{achievement.title}</Link>
+                        {achievement.description && (
+                            <span className={styles.titleDescription}>{achievement.description}</span>
+                        )}
+                        {achievement.season_start && achievement.season_end && (
+                            <span className={cn(styles.titleDescription, styles.titleDate)}>
+                                {formatDate(achievement.season_start, 'D MMM YYYY')}
+                                {' – '}
+                                {formatDate(achievement.season_end, 'D MMM YYYY')}
+                            </span>
+                        )}
+                    </div>
+                )
             }
         },
         {
             accessor: 'tier',
             header: t('achievements-admin-tier'),
-            formatter: (_, sortedData, rowIndex) => {
-                const achievement = sortedData[rowIndex]
-                const tierColor = TIER_COLORS[achievement.tier]
-                return (
-                    <Badge
-                        size={'small'}
-                        label={t(`achievements-tier-${String(achievement.tier)}`)}
-                        style={{
-                            background: `color-mix(in srgb, ${String(tierColor)} 15%, transparent)`,
-                            color: tierColor
-                        }}
-                    />
-                )
-            }
+            formatter: (_, sortedData, rowIndex) => (
+                <AchievementTierBadge
+                    tier={sortedData[rowIndex].tier}
+                    t={t}
+                />
+            )
         },
         {
             accessor: 'type',
             header: t('achievements-admin-type'),
-            formatter: (_, sortedData, rowIndex) => {
-                const achievement = sortedData[rowIndex]
-                return (
-                    <Badge
-                        size={'small'}
-                        label={t(`achievements-${String(achievement.type)}`)}
-                        className={styles.typeBadge}
-                    />
-                )
-            }
+            formatter: (_, sortedData, rowIndex) => (
+                <Badge
+                    size={'small'}
+                    label={t(`achievements-${String(sortedData[rowIndex].type)}`)}
+                    className={styles.typeBadge}
+                />
+            )
         },
         {
             accessor: 'category',
             header: t('achievements-admin-category'),
-            formatter: (_, sortedData, rowIndex) => {
-                const achievement = sortedData[rowIndex]
-                return <>{t(`achievements-category-${String(achievement.category)}`)}</>
-            }
-        },
-        {
-            accessor: 'season_start',
-            header: t('achievements-admin-season-dates'),
-            formatter: (_, sortedData, rowIndex) => {
-                const achievement = sortedData[rowIndex]
-                return (
-                    <>
-                        {achievement.season_start && achievement.season_end
-                            ? `${String(achievement.season_start)} – ${String(achievement.season_end)}`
-                            : '—'}
-                    </>
-                )
-            }
+            formatter: (_, sortedData, rowIndex) => t(`achievements-category-${String(sortedData[rowIndex].category)}`)
         },
         {
             accessor: 'id',
             header: '',
-            formatter: (_, sortedData, rowIndex) => {
-                const achievement = sortedData[rowIndex]
-                return (
-                    <div className={styles.actionsCell}>
-                        <Link
-                            className={styles.actionBtn}
-                            href={`/admin/achievements/${String(achievement.id)}`}
-                            title={t('edit')}
-                        >
-                            <Icon name={'Pencil'} />
-                        </Link>
-                        <button
-                            className={`${styles.actionBtn} ${styles.danger}`}
-                            onClick={() => setDeleteTarget(achievement)}
-                            title={t('delete')}
-                        >
-                            <Icon name={'Close'} />
-                        </button>
-                    </div>
-                )
-            }
+            formatter: (_, sortedData, rowIndex) => (
+                <Button
+                    icon={'Close'}
+                    variant={'negative'}
+                    size={'small'}
+                    className={`${styles.actionBtn} ${styles.danger}`}
+                    onClick={() => setDeleteTarget(sortedData[rowIndex])}
+                />
+            )
         }
     ]
 
@@ -195,29 +161,12 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
                 />
             </Container>
 
-            <Dialog
+            <ConfirmationDialog
                 open={!!deleteTarget}
-                title={t('achievements-admin-delete-confirm')}
-                showCloseButton
-                onCloseDialog={() => setDeleteTarget(null)}
-            >
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '8px' }}>
-                    <Button
-                        mode={'secondary'}
-                        size={'medium'}
-                        onClick={() => setDeleteTarget(null)}
-                    >
-                        {t('cancel')}
-                    </Button>
-                    <Button
-                        mode={'primary'}
-                        size={'medium'}
-                        onClick={handleDelete}
-                    >
-                        {t('delete')}
-                    </Button>
-                </div>
-            </Dialog>
+                message={t('achievements-admin-delete-confirm')}
+                onConfirm={handleDelete}
+                onCancel={() => setDeleteTarget(null)}
+            />
         </AppLayout>
     )
 }

@@ -16,7 +16,6 @@ class AchievementEntity extends Entity
         'title_ru'       => null,
         'description_en' => null,
         'description_ru' => null,
-        'icon'           => null,
         'image'          => null,
         'rules'          => null,
         'season_start'   => null,

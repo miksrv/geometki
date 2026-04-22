@@ -12,7 +12,9 @@
     @media only screen and (max-width: variables.$mobileMaxWidth)
         flex-direction: column
 
-    > div
+    > div,
+    > textarea,
+    > label
         flex: 1
 
 .formField
@@ -29,22 +31,6 @@
     display: flex
     align-items: center
     gap: 10px
-
-.iconPreview
-    width: 36px
-    height: 36px
-    border-radius: 50%
-    background: var(--input-background-color)
-    display: flex
-    align-items: center
-    justify-content: center
-    flex-shrink: 0
-    border: var(--input-border)
-
-    svg
-        width: 20px
-        height: 20px
-        color: var(--text-color-primary)
 
 .ruleRow
     display: flex

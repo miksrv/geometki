@@ -35,7 +35,7 @@ export const Notification: React.FC<NotificationProps> = ({ showDate, onClose, o
                 typeof props.title !== 'undefined' && !props.title?.length ? styles.noTitle : ''
             )}
         >
-            <div className={cn(styles.before)}>
+            <div className={styles.before}>
                 <NotificationIcon {...props} />
             </div>
             <div className={styles.body}>
@@ -61,11 +61,6 @@ export const Notification: React.FC<NotificationProps> = ({ showDate, onClose, o
                             {locale === 'en'
                                 ? (props.meta?.title_en ?? '')
                                 : (props.meta?.title_ru ?? props.meta?.title_en ?? '')}
-                            {props.meta?.tier && props.meta.tier !== 'none' && (
-                                <span style={{ color: 'var(--text-color-secondary)', marginLeft: '4px' }}>
-                                    ({t(`achievements-tier-${props.meta.tier}`, { defaultValue: props.meta.tier })})
-                                </span>
-                            )}
                         </span>
                     ) : props.place ? (
                         <Link
