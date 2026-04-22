@@ -17,7 +17,10 @@ export const AchievementIcon: React.FC<AchievementIconProps> = ({ image, alt = '
         return null
     }
 
-    const src = image.startsWith('http://') || image.startsWith('https://') ? image : `${IMG_HOST}${image}`
+    const src =
+        image.startsWith('http://') || image.startsWith('https://')
+            ? image
+            : `${IMG_HOST?.replace(/\/$/, '')}/${image.replace(/^\//, '')}`
 
     return (
         <Image
@@ -25,6 +28,7 @@ export const AchievementIcon: React.FC<AchievementIconProps> = ({ image, alt = '
             alt={alt}
             width={size}
             height={size}
+            unoptimized
             className={className}
             style={{ objectFit: 'contain', ...style }}
         />
