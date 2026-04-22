@@ -1,5 +1,5 @@
 import React from 'react'
-import { Badge, Button, cn, Container, Dialog, Icon, Table, TableColumnProps } from 'simple-react-ui-kit'
+import { Badge, Button, cn, Container, Table, TableColumnProps } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
 import Link from 'next/link'
@@ -10,7 +10,7 @@ import { NextSeo } from 'next-seo'
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, Header } from '@/components/shared'
+import { AppLayout, ConfirmationDialog, Header } from '@/components/shared'
 import { AchievementTierBadge } from '@/components/shared/achievement-card/AchievementTierBadge'
 import { AchievementIcon } from '@/components/shared/achievement-icon'
 import { formatDate } from '@/utils/helpers'
@@ -172,29 +172,12 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
                 />
             </Container>
 
-            <Dialog
+            <ConfirmationDialog
                 open={!!deleteTarget}
-                title={t('achievements-admin-delete-confirm')}
-                showCloseButton
-                onCloseDialog={() => setDeleteTarget(null)}
-            >
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '8px' }}>
-                    <Button
-                        mode={'secondary'}
-                        size={'medium'}
-                        onClick={() => setDeleteTarget(null)}
-                    >
-                        {t('cancel')}
-                    </Button>
-                    <Button
-                        mode={'primary'}
-                        size={'medium'}
-                        onClick={handleDelete}
-                    >
-                        {t('delete')}
-                    </Button>
-                </div>
-            </Dialog>
+                message={t('achievements-admin-delete-confirm')}
+                onConfirm={handleDelete}
+                onCancel={() => setDeleteTarget(null)}
+            />
         </AppLayout>
     )
 }

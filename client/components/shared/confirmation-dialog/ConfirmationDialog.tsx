@@ -1,71 +1,43 @@
-import React, { useEffect } from 'react'
-import { Button, Dialog, DialogProps } from 'simple-react-ui-kit'
+import React from 'react'
+import { Button, Dialog } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next'
 
-import { toggleOverlay } from '@/app/applicationSlice'
-import { useAppDispatch, useAppSelector } from '@/app/store'
-
-import 'react-image-crop/src/ReactCrop.scss'
 import styles from './styles.module.sass'
 
-interface ConfirmationDialogProps extends DialogProps {
-    open?: boolean
-    message?: string
-    acceptText?: string
-    rejectText?: string
-    onAccept?: () => void
-    onReject?: () => void
+interface ConfirmationDialogProps {
+    open: boolean
+    message: string
+    onConfirm: () => void
+    onCancel: () => void
 }
 
-export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
-    open,
-    message,
-    acceptText,
-    rejectText,
-    onAccept,
-    onReject
-}) => {
+export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({ open, message, onConfirm, onCancel }) => {
     const { t } = useTranslation()
-
-    const dispatch = useAppDispatch()
-
-    const overlay = useAppSelector((state) => state.application.showOverlay)
-
-    const handleCoverDialogClose = () => {
-        dispatch(toggleOverlay(false))
-        onReject?.()
-    }
-
-    useEffect(() => {
-        if (open && !overlay) {
-            dispatch(toggleOverlay(true))
-        } else if (!open && overlay) {
-            dispatch(toggleOverlay(false))
-        }
-    }, [open])
 
     return (
         <Dialog
-            maxWidth={'400px'}
             open={open}
-            onCloseDialog={handleCoverDialogClose}
+            contentClassName={styles.dialog}
+            onCloseDialog={onCancel}
         >
-            <p className={styles.message}>{message ?? t('confirmation-dialog-text')}</p>
-
-            <div className={styles.bottomActions}>
+            <p className={styles.message}>{message}</p>
+            <div className={styles.actions}>
                 <Button
                     mode={'secondary'}
-                    onClick={onReject}
-                    label={rejectText ?? t('confirmation-dialog-reject')}
-                />
-
+                    size={'medium'}
+                    onClick={onCancel}
+                >
+                    {t('cancel')}
+                </Button>
                 <Button
-                    variant={'negative'}
                     mode={'primary'}
-                    onClick={onAccept}
-                    label={acceptText ?? t('confirmation-dialog-accept')}
-                />
+                    variant={'negative'}
+                    size={'medium'}
+                    onClick={onConfirm}
+                >
+                    {t('delete')}
+                </Button>
             </div>
         </Dialog>
     )

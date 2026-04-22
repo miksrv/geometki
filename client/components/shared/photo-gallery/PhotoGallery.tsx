@@ -228,12 +228,11 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             <ConfirmationDialog
                 open={!!photoDeleteID}
                 message={t('delete-photo', { defaultValue: 'Удалить фотографию?' })}
-                acceptText={t('delete', { defaultValue: 'Удалить' })}
-                onReject={() => {
+                onCancel={() => {
                     setPhotoDeleteID(undefined)
                     setPhotoLoadingID(undefined)
                 }}
-                onAccept={async () => {
+                onConfirm={async () => {
                     const photo = photos?.find(({ id }) => id === photoDeleteID)
 
                     if (photo) {

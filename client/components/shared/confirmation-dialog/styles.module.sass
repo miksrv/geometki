@@ -1,9 +1,14 @@
+@use '../../../styles/variables' as variables
+
+.dialog
+    border-top: 4px solid var(--color-red)
+
 .message
-    margin-bottom: 30px
+    color: var(--text-color-primary)
+    font-size: variables.$fontSizeParagraph
 
-.bottomActions
+.actions
     display: flex
+    gap: 10px
     justify-content: flex-end
-
-    button:not(:last-child)
-        margin-right: 15px
+    margin-top: 16px
