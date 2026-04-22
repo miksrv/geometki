@@ -1,4 +1,4 @@
-import React, { CSSProperties } from 'react'
+import React from 'react'
 import { Badge, Button, Container, Dialog, Icon, Table, TableColumnProps } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
@@ -13,7 +13,6 @@ import { useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, Header } from '@/components/shared'
 import { AchievementTierBadge } from '@/components/shared/achievement-card/AchievementTierBadge'
 import { AchievementIcon } from '@/components/shared/achievement-icon'
-import { TIER_COLORS } from '@/utils/achievements'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 import styles from './styles.module.sass'
@@ -52,21 +51,12 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
             header: '',
             formatter: (_, sortedData, rowIndex) => {
                 const achievement = sortedData[rowIndex]
-                const tierColor = TIER_COLORS[achievement.tier]
-                const cssVars = { '--tier-color': tierColor } as CSSProperties
-
                 return (
-                    <div
-                        className={styles.iconCell}
-                        style={cssVars}
-                    >
-                        <AchievementIcon
-                            image={achievement.image}
-                            alt={achievement.title}
-                            size={18}
-                            style={{ borderRadius: '50%' }}
-                        />
-                    </div>
+                    <AchievementIcon
+                        image={achievement.image}
+                        alt={achievement.title}
+                        size={24}
+                    />
                 )
             }
         },

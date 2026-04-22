@@ -23,13 +23,11 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, s
             className={`${styles.achievementCard} ${styles[`tier--${achievement.tier}`]} ${achievement.earned_at ? styles.earnedCard : ''}`}
         >
             <div className={styles.cardHeader}>
-                <div className={styles.iconWrapper}>
-                    <AchievementIcon
-                        image={achievement.image}
-                        alt={achievement.title}
-                        size={36}
-                    />
-                </div>
+                <AchievementIcon
+                    image={achievement.image}
+                    alt={achievement.title}
+                    size={36}
+                />
                 <div className={styles.cardMeta}>
                     <p className={styles.cardTitle}>{achievement.title}</p>
                     <AchievementTierBadge

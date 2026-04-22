@@ -25,9 +25,6 @@
             &.earnedCard::before
                 background: var(--color-tier-#{$tier})
 
-            .iconWrapper svg
-                color: var(--color-tier-#{$tier})
-
             .tierChip
                 background: color-mix(in srgb, var(--color-tier-#{$tier}) 15%, transparent) !important
                 color: var(--color-tier-#{$tier}) !important
@@ -39,20 +36,6 @@
     display: flex
     align-items: flex-start
     gap: 12px
-
-.iconWrapper
-    flex-shrink: 0
-    width: 44px
-    height: 44px
-    border-radius: 50%
-    background: var(--input-background-color)
-    display: flex
-    align-items: center
-    justify-content: center
-
-    svg
-        width: 22px
-        height: 22px
 
 .cardMeta
     flex: 1
@@ -146,32 +129,6 @@
 .badgeItem
     position: relative
     cursor: pointer
-
-    @each $tier in bronze, silver, gold
-        &.tier--#{$tier}
-            .badgeIcon
-                border-color: var(--color-tier-#{$tier})
-
-                svg
-                    color: var(--color-tier-#{$tier})
-
-.badgeIcon
-    width: 48px
-    height: 48px
-    border-radius: 50%
-    background: var(--input-background-color)
-    display: flex
-    align-items: center
-    justify-content: center
-    border: 3px solid transparent
-    transition: transform 0.15s ease
-
-    &:hover
-        transform: scale(1.1)
-
-    svg
-        width: 24px
-        height: 24px
 
 .badgeTooltip
     position: absolute
