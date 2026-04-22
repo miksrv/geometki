@@ -63,7 +63,7 @@ const LevelsPage: NextPage<LevelsPageProps> = ({ levels }) => {
                             <li key={key}>
                                 {t(`action_${key}`)}
                                 {': '}
-                                <strong>{`+${value}`}</strong> {t('experience')}
+                                <strong>{`+${value}`}</strong>
                             </li>
                         ))}
                 </ul>
