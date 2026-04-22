@@ -16,7 +16,6 @@ export interface Achievement {
     category: AchievementCategory
     title: string
     description: string
-    icon: string
     image?: string | null
     xp_bonus: number
     season_start: string | null
@@ -43,7 +42,6 @@ export interface AchievementInput {
     title_ru: string
     description_en?: string
     description_ru?: string
-    icon?: string
     image?: string | null
     rules: AchievementRule[]
     season_start?: string | null

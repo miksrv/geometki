@@ -48,7 +48,7 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
 
     const columns: Array<TableColumnProps<ApiType.Achievements.AchievementAdmin>> = [
         {
-            accessor: 'icon',
+            accessor: 'image',
             header: '',
             formatter: (_, sortedData, rowIndex) => {
                 const achievement = sortedData[rowIndex]
@@ -62,7 +62,6 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
                     >
                         <AchievementIcon
                             image={achievement.image}
-                            icon={achievement.icon}
                             alt={achievement.title}
                             size={18}
                             style={{ borderRadius: '50%' }}

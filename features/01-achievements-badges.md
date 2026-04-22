@@ -65,7 +65,6 @@ CREATE TABLE achievements (
     title_ru        VARCHAR(150) NOT NULL,
     description_en  TEXT,
     description_ru  TEXT,
-    icon            VARCHAR(100),                         -- icon name from icon set
     image           VARCHAR(200),                         -- uploaded PNG/SVG path
     rules           JSON NOT NULL,
     season_start    DATETIME NULL,
@@ -82,7 +81,7 @@ CREATE TABLE achievements (
 Key design points:
 - `slug` is unique per tier variant (`explorer_bronze`, `explorer_silver`, `explorer_gold`).
 - `group_slug` is shared across all tiers of the same concept (`explorer`). Single-tier achievements use `group_slug = slug`.
-- `image` stores the path to an uploaded PNG/SVG badge image (uploaded via `POST /achievements/:id/image`). Takes precedence over `icon` in the UI.
+- `image` stores the path to an uploaded PNG/SVG badge image (uploaded via `POST /achievements/:id/image`).
 
 ### `users_achievements` table
 
@@ -168,7 +167,6 @@ The `rules` JSON column stores an array of metric conditions. **All conditions m
     'tier'             => $achievement->tier,
     'title_en'         => $achievement->title_en,
     'title_ru'         => $achievement->title_ru,
-    'icon'             => $achievement->icon,
     'image'            => $achievement->image,
     'xp_bonus'         => $achievement->xp_bonus,
     'is_upgrade'       => bool,
@@ -185,7 +183,7 @@ The `rules` JSON column stores an array of metric conditions. **All conditions m
 GET /achievements?category=&tier=&type=
 ```
 
-Response includes `group_slug` and `image` fields. Authenticated requests also include `earned_at` and `progress`.
+Response includes `group_slug`, `image`, and other fields. Authenticated requests also include `earned_at` and `progress`.
 
 ### User achievements (profile)
 
@@ -237,12 +235,12 @@ Both create and edit pages redirect to `/admin/achievements` on save. Auth guard
 
 ### Badge Images
 
-The edit page (`/admin/achievements/[id].tsx`) includes a file input accepting PNG and SVG (max 1 MB). On selection, the file is uploaded via `POST /achievements/:id/image`. The returned path is displayed immediately. If `image` is set, it takes precedence over the `icon` name in `AchievementBadge`.
+The edit page (`/admin/achievements/[id].tsx`) includes a file input accepting PNG and SVG (max 1 MB). On selection, the file is uploaded via `POST /achievements/:id/image`. The returned path is displayed immediately.
 
 ### Notifications
 
 Achievement notifications (`type === 'achievements'`) display:
-- **Icon**: the badge's `image` (if set) or the `Award` icon.
+- **Icon**: the badge's `image` (if set) or a default `Award` icon.
 - **Title**: `t('notification_achievements')` ("New achievement" / "Новое достижение").
 - **Content**: localised achievement title + tier label in parentheses (omitted for `tier === 'none'`).
 

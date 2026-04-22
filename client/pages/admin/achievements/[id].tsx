@@ -42,7 +42,6 @@ const AdminAchievementsEdit: React.FC<AdminAchievementsEditProps> = () => {
                 description_en: achievement.description_en ?? '',
                 description_ru: achievement.description_ru ?? '',
                 group_slug: achievement.group_slug ?? '',
-                icon: achievement.icon ?? '',
                 image: achievement.image,
                 is_active: achievement.is_active,
                 rules: achievement.rules ?? [],

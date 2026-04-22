@@ -26,7 +26,6 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, s
                 <div className={styles.iconWrapper}>
                     <AchievementIcon
                         image={achievement.image}
-                        icon={achievement.icon}
                         alt={achievement.title}
                         size={36}
                     />

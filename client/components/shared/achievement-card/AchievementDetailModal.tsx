@@ -36,7 +36,6 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({ 
             <div className={styles.iconWrapper}>
                 <AchievementIcon
                     image={achievement.image}
-                    icon={achievement.icon}
                     alt={achievement.title}
                     size={36}
                 />

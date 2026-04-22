@@ -34,7 +34,6 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({ achievement 
                 <div className={styles.badgeIcon}>
                     <AchievementIcon
                         image={achievement.image}
-                        icon={achievement.icon}
                         alt={achievement.title}
                         size={36}
                         style={{ borderRadius: '50%' }}
