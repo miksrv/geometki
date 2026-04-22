@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.6.2
+
+### Patch Changes
+
+- Dropped the legacy `icon` name field from achievements in favour of image-based badges; updated TypeScript types, `AchievementIcon` component, admin UI, server migration, and seeder accordingly
+- Fixed `AchievementIcon` image URL construction (trim leading/trailing slashes when joining `IMG_HOST` and image path); added `unoptimized` prop to `Next/Image` in the component
+- Expanded achievements seeder with new tiers and badges: trailblazer, debut, collector, all-rounder, legend, gold streak, dedicated, and a set of seasonal achievements for 2026–2027
+- Simplified `AchievementIcon` by removing redundant wrapper elements across achievement components; centralised sizing/styling in the component itself and cleaned up leftover SASS rules (`.iconWrapper`, `.badgeIcon`, `.iconCell`)
+- Replaced inline achievement image logic in `NotificationIcon` with the shared `AchievementIcon` component; simplified `Notification` markup and removed tier text rendering from notification items
+- Extracted `AchievementTierBadge` into its own `components/shared/achievement-tier-badge/` directory with self-contained styles; tier colours are now applied via `.tier--<tier>` modifier classes directly on the badge instead of relying on a parent container — fixes missing colours when the badge is used outside `AchievementCard` (e.g. admin table)
+- Improved admin achievements table: title column now includes an edit link, optional description, and formatted season date range; removed the separate `season_start` column; simplified row actions to a single delete button
+- Fixed achievement season date fields in the admin form to use `YYYY-MM-DD` (date-only) strings, preventing timezone/time-component issues in date inputs
+- Rewrote `ConfirmationDialog` to a simpler API: replaced `onAccept`/`onReject` and `acceptText`/`rejectText` props with `onConfirm`/`onCancel`; removed Redux overlay handling; updated all usages (`PhotoGallery`, admin achievements page, `PlaceHeader`)
+- Updated user level progression to a 30-level scale with revised XP thresholds and renamed levels (EN + RU translations)
+- Bumped PHP server dependencies: CodeIgniter 4 to v4.7.2, Symfony HTTP Client to v7.4.8, Symfony Polyfill-PHP83 to v1.36.0
+
 ## 1.6.1
 
 ### Patch Changes

@@ -34,6 +34,7 @@ const config: Config.InitialOptions = {
 
         // Map ESM-only packages to their manual CJS mocks
         '^simple-react-ui-kit$': '<rootDir>/__mocks__/simple-react-ui-kit.tsx',
+        '^lodash-es/(.*)$': 'lodash/$1',
 
         // Handle module aliases
         '^@/(.*)$': '<rootDir>/$1',
