@@ -176,6 +176,7 @@ export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
                             </ul>
                         </div>
                     </div>
+
                     {userAchievements.length > 0 && (
                         <div className={styles.achievementsBadges}>
                             {userAchievements.slice(0, 10).map((achievement) => (

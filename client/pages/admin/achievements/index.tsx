@@ -11,6 +11,7 @@ import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, Header } from '@/components/shared'
+import { AchievementTierBadge } from '@/components/shared/achievement-card/AchievementTierBadge'
 import { AchievementIcon } from '@/components/shared/achievement-icon'
 import { TIER_COLORS } from '@/utils/achievements'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
@@ -83,15 +84,10 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
             header: t('achievements-admin-tier'),
             formatter: (_, sortedData, rowIndex) => {
                 const achievement = sortedData[rowIndex]
-                const tierColor = TIER_COLORS[achievement.tier]
                 return (
-                    <Badge
-                        size={'small'}
-                        label={t(`achievements-tier-${String(achievement.tier)}`)}
-                        style={{
-                            background: `color-mix(in srgb, ${String(tierColor)} 15%, transparent)`,
-                            color: tierColor
-                        }}
+                    <AchievementTierBadge
+                        tier={achievement.tier}
+                        t={t}
                     />
                 )
             }
