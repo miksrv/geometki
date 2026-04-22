@@ -231,7 +231,17 @@ The word *game* is intentional. Not in a trivial sense, but in the sense that th
 
 ---
 
-#### 1.6 — "Streak Expires Tonight" Push / Email Notification
+#### 1.6 — Verified Visit Mechanic ("Я здесь был")
+
+**What:** Extend the existing visited toggle with: (a) a `visited_at` timestamp, (b) optional GPS-based verification — if the user shares their location and is within the place's configurable radius, the visit is marked "verified" with a ✓ badge. Unverified visits count identically toward all stats and achievements; verification is an opt-in signal, never a gate. A soft UX prompt asks for location permission on click. An offline queue in `localStorage` handles connectivity gaps (e.g., remote areas) — visits recorded offline are submitted on reconnect, with coordinates up to 24 hours old accepted. Places that are physically unreachable (island, reservoir center) get a `verification_exempt` flag; for them, the prompt is suppressed entirely.
+
+**Why it improves retention:** The `visited_at` timestamp unblocks seasonal achievement windows (count only visits during an event period), Fog of War integration (Feature 17), and the "First Explorer" mechanic (Feature 11). The verification badge adds a lightweight trust layer to the map — a place with 40 verified visits signals real-world relevance in a way 40 anonymous clicks cannot. It also creates a small moment of ceremony around physical exploration: the app acknowledges you were actually there.
+
+**How to implement:** Two non-breaking migrations: add `visited_at`, `verified`, `lat`, `lon` to `users_visited_places`; add `visit_radius_m` (default 200) and `verification_exempt` to `places`. Update `Visited.php::set()` to accept optional `lat/lon` and run a Haversine distance check. Frontend: geolocation prompt modal on button click, `localStorage` offline queue, updated visit counter showing `34 visits · 12 verified ✓`. See `features/18-visited-places-checkin.md` for full spec. **Estimated effort: 2–3 days backend + 2 days frontend.**
+
+---
+
+#### 1.7 — "Streak Expires Tonight" Push / Email Notification
 
 **What:** A proactive notification (push on mobile, email on web) sent at 8 PM local time if the user has an active streak of 3+ days but has not been active today. Message: *"Your 8-day streak ends in 4 hours. One action is enough to keep it."*
 
