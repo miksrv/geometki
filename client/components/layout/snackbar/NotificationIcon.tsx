@@ -4,6 +4,7 @@ import { Icon } from 'simple-react-ui-kit'
 import Image from 'next/image'
 
 import { ApiModel } from '@/api'
+import { AchievementIcon } from '@/components/shared/achievement-icon'
 import { IMG_HOST } from '@/config/env'
 import { levelImage } from '@/utils/levels'
 
@@ -24,17 +25,11 @@ export const NotificationIcon: React.FC<ApiModel.Notification> = ({ ...props }):
             height={26}
         />
     ) : props.type === 'achievements' ? (
-        props.meta?.image ? (
-            <Image
-                src={`${IMG_HOST}${props.meta.image}`}
-                alt={''}
-                width={36}
-                height={36}
-                style={{ borderRadius: '50%', objectFit: 'contain' }}
-            />
-        ) : (
-            <Icon name={'Award'} />
-        )
+        <AchievementIcon
+            image={props.meta?.image}
+            alt={''}
+            size={26}
+        />
     ) : props.place ? (
         <Image
             className={styles.placeImage}

@@ -1,4 +1,5 @@
 import React from 'react'
+import { Icon } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 
@@ -9,12 +10,17 @@ interface AchievementIconProps {
     alt?: string
     size?: number
     className?: string
-    style?: React.CSSProperties
 }
 
-export const AchievementIcon: React.FC<AchievementIconProps> = ({ image, alt = '', size = 36, className, style }) => {
+export const AchievementIcon: React.FC<AchievementIconProps> = ({ image, alt = '', size = 36, className }) => {
     if (!image) {
-        return null
+        return (
+            <Icon
+                name={'Award'}
+                className={className}
+                style={{ width: size, height: size }}
+            />
+        )
     }
 
     const src =
@@ -30,7 +36,7 @@ export const AchievementIcon: React.FC<AchievementIconProps> = ({ image, alt = '
             height={size}
             unoptimized
             className={className}
-            style={{ objectFit: 'contain', ...style }}
+            style={{ objectFit: 'contain' }}
         />
     )
 }
