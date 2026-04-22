@@ -1,0 +1,11 @@
+@use '../../../styles/variables' as variables
+
+.tierChip
+    font-size: variables.$fontSizeCaption
+    font-weight: 500
+    border-radius: 10px
+
+@each $tier in bronze, silver, gold
+    .tier--#{$tier}
+        background: color-mix(in srgb, var(--color-tier-#{$tier}) 15%, transparent) !important
+        color: var(--color-tier-#{$tier}) !important

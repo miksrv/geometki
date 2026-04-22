@@ -69,9 +69,7 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
                 const achievement = sortedData[rowIndex]
                 return (
                     <div className={styles.titleCell}>
-                        <strong>
-                            <Link href={`/admin/achievements/${String(achievement.id)}`}>{achievement.title}</Link>
-                        </strong>
+                        <Link href={`/admin/achievements/${String(achievement.id)}`}>{achievement.title}</Link>
                         {achievement.description && (
                             <span className={styles.titleDescription}>{achievement.description}</span>
                         )}
@@ -89,37 +87,28 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
         {
             accessor: 'tier',
             header: t('achievements-admin-tier'),
-            formatter: (_, sortedData, rowIndex) => {
-                const achievement = sortedData[rowIndex]
-                return (
-                    <AchievementTierBadge
-                        tier={achievement.tier}
-                        t={t}
-                    />
-                )
-            }
+            formatter: (_, sortedData, rowIndex) => (
+                <AchievementTierBadge
+                    tier={sortedData[rowIndex].tier}
+                    t={t}
+                />
+            )
         },
         {
             accessor: 'type',
             header: t('achievements-admin-type'),
-            formatter: (_, sortedData, rowIndex) => {
-                const achievement = sortedData[rowIndex]
-                return (
-                    <Badge
-                        size={'small'}
-                        label={t(`achievements-${String(achievement.type)}`)}
-                        className={styles.typeBadge}
-                    />
-                )
-            }
+            formatter: (_, sortedData, rowIndex) => (
+                <Badge
+                    size={'small'}
+                    label={t(`achievements-${String(sortedData[rowIndex].type)}`)}
+                    className={styles.typeBadge}
+                />
+            )
         },
         {
             accessor: 'category',
             header: t('achievements-admin-category'),
-            formatter: (_, sortedData, rowIndex) => {
-                const achievement = sortedData[rowIndex]
-                return <>{t(`achievements-category-${String(achievement.category)}`)}</>
-            }
+            formatter: (_, sortedData, rowIndex) => t(`achievements-category-${String(sortedData[rowIndex].category)}`)
         },
         {
             accessor: 'id',

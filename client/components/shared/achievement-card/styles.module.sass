@@ -25,10 +25,6 @@
             &.earnedCard::before
                 background: var(--color-tier-#{$tier})
 
-            .tierChip
-                background: color-mix(in srgb, var(--color-tier-#{$tier}) 15%, transparent) !important
-                color: var(--color-tier-#{$tier}) !important
-
             .progressFill
                 background: var(--color-tier-#{$tier})
 
@@ -248,10 +244,6 @@
     @each $tier in bronze, silver, gold
         &--#{$tier}
             border-top: 4px solid var(--color-tier-#{$tier})
-
-            .tierChip
-                background: color-mix(in srgb, var(--color-tier-#{$tier}) 15%, transparent) !important
-                color: var(--color-tier-#{$tier}) !important
 
 .modalHeader
     display: flex
