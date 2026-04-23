@@ -2,16 +2,28 @@
 
 namespace App\Models;
 
-class UsersBookmarksModel extends ApplicationBaseModel {
+use App\Entities\UserBookmarkEntity;
+
+/**
+ * Model for the `users_bookmarks` table.
+ *
+ * Tracks places that users have saved as bookmarks. No soft-deletion —
+ * bookmarks are created and deleted directly.
+ *
+ * @package App\Models
+ */
+class UsersBookmarksModel extends ApplicationBaseModel
+{
     protected $table            = 'users_bookmarks';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = false;
-    protected $returnType       = \App\Entities\UserBookmarkEntity::class;
+    protected $returnType       = UserBookmarkEntity::class;
     protected $useSoftDeletes   = false;
 
+    /** @var array<int, string> */
     protected $allowedFields = [
         'user_id',
-        'place_id'
+        'place_id',
     ];
 
     protected $useTimestamps = true;
@@ -19,18 +31,10 @@ class UsersBookmarksModel extends ApplicationBaseModel {
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    protected $validationRules      = [];
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationRules    = [];
+    protected $validationMessages = [];
+    protected $skipValidation     = true;
 
     protected $allowCallbacks = true;
     protected $beforeInsert   = ['generateId'];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
-    protected $afterFind      = [];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
 }

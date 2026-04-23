@@ -7,22 +7,33 @@ use CodeIgniter\I18n\Time;
 use Exception;
 use ReflectionException;
 
-class UsersModel extends ApplicationBaseModel {
+/**
+ * Model for the `users` table.
+ *
+ * Handles user retrieval, authentication lookups, and activity tracking.
+ * Soft-deletes are enabled; deleted_at is hidden from output via $hiddenFields.
+ *
+ * @package App\Models
+ */
+class UsersModel extends ApplicationBaseModel
+{
     protected $table            = 'users';
     protected $primaryKey       = 'id';
-    protected $returnType       = UserEntity::class;
     protected $useAutoIncrement = false;
+    protected $returnType       = UserEntity::class;
     protected $useSoftDeletes   = true;
 
+    /** @var array<int, string> */
     protected array $hiddenFields = ['deleted_at'];
 
+    /** @var array<int, string> */
     protected $allowedFields = [
         'name',
         'email',
         'password',
         'role',
         'auth_type',
-        'language',
+        'locale',
         'experience',
         'level',
         'avatar',
@@ -30,8 +41,6 @@ class UsersModel extends ApplicationBaseModel {
         'reputation',
         'settings',
         'digest_sent_at',
-        'created_at',
-        'updated_at',
         'activity_at',
     ];
 
@@ -41,26 +50,26 @@ class UsersModel extends ApplicationBaseModel {
     protected $updatedField  = 'updated_at';
     protected $deletedField  = 'deleted_at';
 
-    protected $validationRules      = [];
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationRules    = [];
+    protected $validationMessages = [];
+    protected $skipValidation     = true;
 
     protected $allowCallbacks = true;
     protected $beforeInsert   = ['generateId'];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
     protected $afterFind      = ['prepareOutput'];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
+
+    // -------------------------------------------------------------------------
+    // Custom query methods
+    // -------------------------------------------------------------------------
 
     /**
+     * Find a user by their e-mail address, selecting only the columns required
+     * for authentication flows.
+     *
      * @param string $emailAddress
      * @return UserEntity|array|null
      */
-    public function findUserByEmailAddress(string $emailAddress): UserEntity | array | null
+    public function findUserByEmailAddress(string $emailAddress): UserEntity|array|null
     {
         return $this
             ->select('id, name, avatar, email, password, auth_type, role, locale, settings, level, experience')
@@ -69,6 +78,8 @@ class UsersModel extends ApplicationBaseModel {
     }
 
     /**
+     * Update the activity_at timestamp for a user without altering updated_at.
+     *
      * @param string $userId
      * @return void
      * @throws ReflectionException
@@ -86,19 +97,26 @@ class UsersModel extends ApplicationBaseModel {
     }
 
     /**
+     * Retrieve a public user profile by ID.
+     *
+     * Pass $settings = true to include the user's notification preference
+     * object with safe defaults applied.
+     *
      * @param string $userId
-     * @param bool $settings
+     * @param bool   $settings  Whether to include and normalise the settings column.
      * @return array|object|null
      */
     public function getUserById(string $userId, bool $settings = false): array|object|null
     {
-        $settings = $settings ? ', settings' : '';
+        $settingsCol = $settings ? ', settings' : '';
 
         $data = $this
-            ->select('id, name, email, locale, avatar, created_at as created,
+            ->select(
+                'id, name, email, locale, avatar, created_at as created,
                 updated_at as updated, activity_at as activity, level, role,
-                auth_type as authType, website, experience, reputation' . $settings
-            )->find($userId);
+                auth_type as authType, website, experience, reputation' . $settingsCol
+            )
+            ->find($userId);
 
         if (!$settings) {
             return $data;
@@ -106,11 +124,11 @@ class UsersModel extends ApplicationBaseModel {
 
         $data->settings = (object) [
             'emailComment' => $data->settings->emailComment ?? true,
-            'emailEdit'    => $data->settings->emailEdit ?? true,
-            'emailPhoto'   => $data->settings->emailPhoto ?? true,
-            'emailRating'  => $data->settings->emailRating ?? true,
-            'emailCover'   => $data->settings->emailCover ?? true,
-            'emailDigest'  => $data->settings->emailDigest ?? true,
+            'emailEdit'    => $data->settings->emailEdit    ?? true,
+            'emailPhoto'   => $data->settings->emailPhoto   ?? true,
+            'emailRating'  => $data->settings->emailRating  ?? true,
+            'emailCover'   => $data->settings->emailCover   ?? true,
+            'emailDigest'  => $data->settings->emailDigest  ?? true,
         ];
 
         return $data;
