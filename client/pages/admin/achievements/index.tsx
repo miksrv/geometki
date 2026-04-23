@@ -152,7 +152,7 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
             />
 
             <Container style={{ padding: '2px' }}>
-                <Table
+                <Table<ApiType.Achievements.AchievementAdmin>
                     data={achievements}
                     columns={columns}
                     loading={isLoading}
