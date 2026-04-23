@@ -2,19 +2,30 @@
 
 namespace App\Models;
 
-class RatingModel extends ApplicationBaseModel {
+use App\Entities\RatingEntity;
+
+/**
+ * Model for the `rating` table.
+ *
+ * Stores per-user (or per-session) rating values for places.
+ * Soft-deletion is enabled so that rating history is preserved.
+ *
+ * @package App\Models
+ */
+class RatingModel extends ApplicationBaseModel
+{
     protected $table            = 'rating';
     protected $primaryKey       = 'id';
-    protected $returnType       = \App\Entities\RatingEntity::class;
     protected $useAutoIncrement = false;
+    protected $returnType       = RatingEntity::class;
     protected $useSoftDeletes   = true;
 
+    /** @var array<int, string> */
     protected $allowedFields = [
         'place_id',
         'user_id',
         'session_id',
         'value',
-        'created_at'
     ];
 
     protected $useTimestamps = true;
@@ -23,18 +34,10 @@ class RatingModel extends ApplicationBaseModel {
     protected $updatedField  = 'updated_at';
     protected $deletedField  = 'deleted_at';
 
-    protected $validationRules      = [];
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationRules    = [];
+    protected $validationMessages = [];
+    protected $skipValidation     = true;
 
     protected $allowCallbacks = true;
     protected $beforeInsert   = ['generateId'];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
-    protected $afterFind      = [];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
 }

@@ -2,15 +2,28 @@
 
 namespace App\Models;
 
-class PhotosModel extends ApplicationBaseModel {
+use App\Entities\PhotoEntity;
+
+/**
+ * Model for the `photos` table.
+ *
+ * Manages photo metadata records attached to places. Soft-deletion is enabled.
+ * updated_at and deleted_at are stripped from output via $hiddenFields.
+ *
+ * @package App\Models
+ */
+class PhotosModel extends ApplicationBaseModel
+{
     protected $table            = 'photos';
     protected $primaryKey       = 'id';
-    protected $returnType       = \App\Entities\PhotoEntity::class;
     protected $useAutoIncrement = false;
+    protected $returnType       = PhotoEntity::class;
     protected $useSoftDeletes   = true;
 
+    /** @var array<int, string> */
     protected array $hiddenFields = ['updated_at', 'deleted_at'];
 
+    /** @var array<int, string> */
     protected $allowedFields = [
         'place_id',
         'user_id',
@@ -23,7 +36,6 @@ class PhotosModel extends ApplicationBaseModel {
         'filesize',
         'width',
         'height',
-        'created_at',
     ];
 
     protected $useTimestamps = true;
@@ -32,18 +44,11 @@ class PhotosModel extends ApplicationBaseModel {
     protected $updatedField  = 'updated_at';
     protected $deletedField  = 'deleted_at';
 
-    protected $validationRules      = [];
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationRules    = [];
+    protected $validationMessages = [];
+    protected $skipValidation     = true;
 
     protected $allowCallbacks = true;
     protected $beforeInsert   = ['generateId'];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
     protected $afterFind      = ['prepareOutput'];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
 }

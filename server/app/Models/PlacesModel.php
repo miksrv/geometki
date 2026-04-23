@@ -2,15 +2,28 @@
 
 namespace App\Models;
 
-class PlacesModel extends ApplicationBaseModel {
+use App\Entities\PlaceEntity;
+
+/**
+ * Model for the `places` table.
+ *
+ * Manages POI records including soft-deletion, view/engagement counters,
+ * trending score refresh, and personalised recommendation scoring.
+ *
+ * @package App\Models
+ */
+class PlacesModel extends ApplicationBaseModel
+{
     protected $table            = 'places';
     protected $primaryKey       = 'id';
-    protected $returnType       = \App\Entities\PlaceEntity::class;
     protected $useAutoIncrement = false;
+    protected $returnType       = PlaceEntity::class;
     protected $useSoftDeletes   = true;
 
+    /** @var array<int, string> */
     protected array $hiddenFields = ['deleted_at'];
 
+    /** @var array<int, string> */
     protected $allowedFields = [
         'category',
         'lat',
@@ -28,8 +41,6 @@ class PlacesModel extends ApplicationBaseModel {
         'district_id',
         'locality_id',
         'user_id',
-        'updated_at',
-        'created_at'
     ];
 
     protected $useTimestamps = true;
@@ -54,21 +65,20 @@ class PlacesModel extends ApplicationBaseModel {
         'user_id'     => 'required|string|min_length[3]|max_length[40]',
     ];
 
-    protected $validationMessages   = [];
-    protected $skipValidation       = false;
-    protected $cleanValidationRules = true;
+    protected $validationMessages = [];
+    protected $skipValidation     = false;
 
     protected $allowCallbacks = true;
     protected $beforeInsert   = ['generateId'];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
     protected $afterFind      = ['prepareOutput'];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
+
+    // -------------------------------------------------------------------------
+    // Custom query methods
+    // -------------------------------------------------------------------------
 
     /**
+     * Count the number of non-deleted places for a given category slug.
+     *
      * @param string $category
      * @return int|string
      */
@@ -81,11 +91,16 @@ class PlacesModel extends ApplicationBaseModel {
     }
 
     /**
-     * @param float|null $lat
-     * @param float|null $lon
+     * Build a Haversine distance SELECT expression for use in queries.
+     *
+     * Returns an empty string when either coordinate is missing. The returned
+     * string begins with a leading comma and should be appended to a SELECT list.
+     *
+     * @param float|null $lat  Observer latitude in decimal degrees.
+     * @param float|null $lon  Observer longitude in decimal degrees.
      * @return string
      */
-    public function makeDistanceSQL(float | null $lat, float | null $lon): string
+    public function makeDistanceSQL(?float $lat, ?float $lon): string
     {
         if (!$lat || !$lon) {
             return '';
@@ -95,14 +110,18 @@ class PlacesModel extends ApplicationBaseModel {
     }
 
     /**
-     * @param string $id
-     * @param string $distanceSQL
+     * Fetch a single place record by ID, including joined user, location,
+     * and category data, plus an optional Haversine distance expression.
+     *
+     * @param string $id          Place primary key.
+     * @param string $distanceSQL Optional distance SELECT fragment from makeDistanceSQL().
      * @return array|object|null
      */
     public function getPlaceDataByID(string $id, string $distanceSQL): array|object|null
     {
         return $this
-            ->select('places.id, places.lat, places.lon, places.views, places.photos, places.rating, places.comments,
+            ->select(
+                'places.id, places.lat, places.lon, places.views, places.photos, places.rating, places.comments,
                 places.bookmarks, places.updated_at as updated, places.created_at as created, places.category,
                 places.country_id, places.region_id, places.district_id, places.locality_id, places.address_ru, places.address_en,
                 users.id as user_id, users.name as user_name, users.avatar as user_avatar, users.activity_at,
@@ -110,7 +129,8 @@ class PlacesModel extends ApplicationBaseModel {
                 location_regions.title_en as region_en, location_regions.title_ru as region_ru,
                 location_districts.title_en as district_en, location_districts.title_ru as district_ru,
                 location_localities.title_en as city_en, location_localities.title_ru as city_ru,
-                category.title_ru as category_ru, category.title_en as category_en, ' . $distanceSQL)
+                category.title_ru as category_ru, category.title_en as category_en' . $distanceSQL
+            )
             ->join('users', 'places.user_id = users.id', 'left')
             ->join('category', 'places.category = category.name', 'left')
             ->join('location_countries', 'location_countries.id = places.country_id', 'left')
@@ -121,9 +141,12 @@ class PlacesModel extends ApplicationBaseModel {
     }
 
     /**
-     * Apply the standard list select columns and joins (with optional distance expression).
+     * Apply the standard list SELECT columns and LEFT JOINs, with an optional
+     * distance expression appended to the SELECT list.
      *
-     * @param string $distanceSQL  Extra SELECT expression for distance, e.g. ", 6378 * 2 * ASIN(...) AS distance". Pass '' to omit.
+     * Returns $this for method chaining.
+     *
+     * @param string $distanceSQL  Extra SELECT fragment from makeDistanceSQL(). Pass '' to omit.
      * @return static
      */
     public function applyListSelect(string $distanceSQL = ''): static
@@ -155,7 +178,7 @@ class PlacesModel extends ApplicationBaseModel {
      * @param float  $lon
      * @return object|null
      */
-    public function findDuplicate(string $userId, float $lat, float $lon): object|null
+    public function findDuplicate(string $userId, float $lat, float $lon): ?object
     {
         return $this
             ->select('id')
@@ -164,19 +187,24 @@ class PlacesModel extends ApplicationBaseModel {
     }
 
     /**
-     * Record a place view: increments the views counter, logs to places_views_log (in a transaction),
-     * and optionally records per-user view tracking.
+     * Increment the views counter atomically, log to places_views_log
+     * (inside a transaction), and optionally track per-user views.
      *
-     * @param string $placeId
+     * The $updatedAt value is passed through so that the model timestamp is
+     * preserved — the direct builder call bypasses the model's $updatedField
+     * auto-update.
+     *
+     * @param string      $placeId
      * @param string|null $userId
-     * @param string $updatedAt  The current updated_at value to preserve (avoid touching the timestamp)
+     * @param string      $updatedAt  Current updated_at value to preserve.
+     * @return void
      */
     public function recordView(string $placeId, ?string $userId, string $updatedAt): void
     {
         $db = \Config\Database::connect();
         $db->transStart();
 
-        // Use builder() to bypass model validation for atomic increment
+        // Use builder() to bypass model validation for atomic increment.
         $this->builder()
             ->set('views', 'views + 1', false)
             ->set('updated_at', $updatedAt)
@@ -192,7 +220,7 @@ class PlacesModel extends ApplicationBaseModel {
 
         $db->transComplete();
 
-        // Best-effort per-user tracking — outside the transaction
+        // Best-effort per-user tracking — outside the transaction.
         if ($userId !== null) {
             $db->query(
                 'INSERT INTO users_place_views (user_id, place_id, last_at)
@@ -201,22 +229,23 @@ class PlacesModel extends ApplicationBaseModel {
                 [$userId, $placeId]
             );
 
-            // Refresh user interest profile (throttled to once per hour)
             $this->maybeRefreshUserInterests($userId);
         }
     }
 
     /**
-     * Refresh user interest profile if not updated recently (within 1 hour).
-     * This ensures recommendations stay fresh without overloading the system.
+     * Refresh user interest profile if not updated within the last hour.
+     *
+     * Throttles expensive profile recalculation to at most once per hour per
+     * user.
      *
      * @param string $userId
+     * @return void
      */
     protected function maybeRefreshUserInterests(string $userId): void
     {
         $db = \Config\Database::connect();
 
-        // Check when the user's interest profile was last updated
         $result = $db->query(
             'SELECT MAX(updated_at) AS last_update FROM users_interest_profiles WHERE user_id = ?',
             [$userId]
@@ -240,10 +269,12 @@ class PlacesModel extends ApplicationBaseModel {
     }
 
     /**
-     * Apply a sub-join that exposes weekly view sums for ordering by views_week.
-     * Returns $this for chaining.
+     * Add a sub-join that exposes weekly view sums for ordering by views_week.
      *
-     * @param string $order  'ASC' or 'DESC'
+     * Returns $this for method chaining.
+     *
+     * @param string $order  'ASC' or 'DESC'.
+     * @return static
      */
     public function applyWeeklyViewsSort(string $order = 'DESC'): static
     {
@@ -261,24 +292,23 @@ class PlacesModel extends ApplicationBaseModel {
     }
 
     /**
-     * Apply the personalized recommendation sort join for a given user.
-     * Takes into account both category and tag interests.
-     * Tags have higher weight (0.5) than categories (0.3) as they are more specific.
-     * Returns $this for chaining.
+     * Apply the personalised recommendation score join for a given user.
+     *
+     * Scoring weights: category affinity 0.3, tag affinity 0.5, trending 0.2.
+     * Tags carry higher weight because they are more specific than categories.
+     *
+     * Returns $this for method chaining.
      *
      * @param string $userId
+     * @return static
      */
     public function applyRecommendationSort(string $userId): static
     {
         $db            = \Config\Database::connect();
         $escapedUserId = $db->escape($userId);
 
-        // Subquery calculates recommendation score based on:
-        // - Category affinity (weight 0.3) - only if not ignored
-        // - Best matching tag affinity (weight 0.5) - only if not ignored
-        // - Trending score (weight 0.2)
         $this->join(
-            "(SELECT 
+            "(SELECT
                 p2.id,
                 (
                     COALESCE(uip_cat.affinity, 0) * 0.3
@@ -287,12 +317,12 @@ class PlacesModel extends ApplicationBaseModel {
                 ) AS rec_score
             FROM places p2
             LEFT JOIN users_interest_profiles uip_cat
-                ON uip_cat.user_id = {$escapedUserId} 
-                AND uip_cat.interest_type = 'category' 
+                ON uip_cat.user_id = {$escapedUserId}
+                AND uip_cat.interest_type = 'category'
                 AND uip_cat.interest_value = p2.category
                 AND uip_cat.ignored = 0
             LEFT JOIN (
-                SELECT 
+                SELECT
                     pt.place_id,
                     MAX(uip_tag.affinity) AS max_tag_affinity
                 FROM places_tags pt
@@ -316,30 +346,33 @@ class PlacesModel extends ApplicationBaseModel {
 
     /**
      * Increment the photos counter for a place.
+     *
+     * @param string $id  Place primary key.
+     * @return void
      */
     public function incrementPhotos(string $id): void
     {
         $db = \Config\Database::connect();
-        $db->query(
-            'UPDATE places SET photos = photos + 1 WHERE id = ?',
-            [$id]
-        );
+        $db->query('UPDATE places SET photos = photos + 1 WHERE id = ?', [$id]);
     }
 
     /**
-     * Decrement the photos counter for a place (floor at 0).
+     * Decrement the photos counter for a place, floored at 0.
+     *
+     * @param string $id  Place primary key.
+     * @return void
      */
     public function decrementPhotos(string $id): void
     {
         $db = \Config\Database::connect();
-        $db->query(
-            'UPDATE places SET photos = GREATEST(0, photos - 1) WHERE id = ?',
-            [$id]
-        );
+        $db->query('UPDATE places SET photos = GREATEST(0, photos - 1) WHERE id = ?', [$id]);
     }
 
     /**
      * Re-query and sync the actual photo count for a place.
+     *
+     * @param string $id  Place primary key.
+     * @return void
      */
     public function syncPhotosCount(string $id): void
     {
@@ -354,42 +387,48 @@ class PlacesModel extends ApplicationBaseModel {
 
     /**
      * Increment the comments counter for a place.
+     *
+     * @param string $id  Place primary key.
+     * @return void
      */
     public function incrementComments(string $id): void
     {
         $db = \Config\Database::connect();
-        $db->query(
-            'UPDATE places SET comments = comments + 1 WHERE id = ?',
-            [$id]
-        );
+        $db->query('UPDATE places SET comments = comments + 1 WHERE id = ?', [$id]);
     }
 
     /**
      * Increment the bookmarks counter for a place.
+     *
+     * @param string $id  Place primary key.
+     * @return void
      */
     public function incrementBookmarks(string $id): void
     {
         $db = \Config\Database::connect();
-        $db->query(
-            'UPDATE places SET bookmarks = bookmarks + 1 WHERE id = ?',
-            [$id]
-        );
+        $db->query('UPDATE places SET bookmarks = bookmarks + 1 WHERE id = ?', [$id]);
     }
 
     /**
-     * Decrement the bookmarks counter for a place (floor at 0).
+     * Decrement the bookmarks counter for a place, floored at 0.
+     *
+     * @param string $id  Place primary key.
+     * @return void
      */
     public function decrementBookmarks(string $id): void
     {
         $db = \Config\Database::connect();
-        $db->query(
-            'UPDATE places SET bookmarks = GREATEST(0, bookmarks - 1) WHERE id = ?',
-            [$id]
-        );
+        $db->query('UPDATE places SET bookmarks = GREATEST(0, bookmarks - 1) WHERE id = ?', [$id]);
     }
 
     /**
-     * Refresh trending scores for all non-deleted places using weighted view/engagement signals.
+     * Refresh trending scores for all non-deleted places using weighted
+     * view/engagement signals.
+     *
+     * Weights: 7-day views ×1.0, 30-day views ×0.2, rating ×20,
+     * bookmarks ×5, comments ×3, photos ×2.
+     *
+     * @return void
      */
     public function refreshTrendingScores(): void
     {
