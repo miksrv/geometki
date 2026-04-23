@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import { Badge, Container, Table, TableColumnProps } from 'simple-react-ui-kit'
+import { Badge, cn, Container, Table, TableColumnProps } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
 import { useTranslation } from 'next-i18next'
@@ -23,10 +23,10 @@ interface AdminSendingMailPageProps {
 }
 
 const DEFAULT_FILTERS: ApiType.SendingMail.SendingMailListRequest = {
-    sort: 'created_at',
+    sort: 'created',
     order: 'desc',
     page: 1,
-    limit: 20
+    limit: 40
 }
 
 const getStatusBadgeClass = (
@@ -58,20 +58,11 @@ const AdminSendingMailPage: React.FC<AdminSendingMailPageProps> = () => {
 
     const pageTitle = t('sending-mail-admin-title')
 
-    const sortFieldMap: Partial<
-        Record<keyof ApiType.SendingMail.SendingMailItem, ApiType.SendingMail.SendingMailListRequest['sort']>
-    > = {
-        created: 'created_at',
-        updated: 'updated_at',
-        status: 'status'
-    }
-
     const handleSortChange = (field: keyof ApiType.SendingMail.SendingMailItem) => {
-        const sortField = sortFieldMap[field] ?? 'created_at'
         setFilters((prev) => ({
             ...prev,
-            sort: sortField,
-            order: prev.sort === sortField && prev.order === 'asc' ? 'desc' : 'asc',
+            sort: field,
+            order: prev.order === 'asc' ? 'desc' : 'asc',
             page: 1
         }))
     }
@@ -138,7 +129,11 @@ const AdminSendingMailPage: React.FC<AdminSendingMailPageProps> = () => {
             onChangeSort: ({ key }) => handleSortChange(key),
             formatter: (_, sortedData, rowIndex) => {
                 const item = sortedData[rowIndex]
-                return item.status !== 'created' ? formatDate(item.updated?.date, 'D.M.YYYY, HH:mm') : ''
+                return item.status !== 'created' ? (
+                    <span className={styles.dateCell}>{formatDate(item.updated?.date, 'DD.MM.YYYY, HH:mm')}</span>
+                ) : (
+                    ''
+                )
             }
         },
         {
@@ -148,10 +143,10 @@ const AdminSendingMailPage: React.FC<AdminSendingMailPageProps> = () => {
             onChangeSort: ({ key }) => handleSortChange(key),
             formatter: (_, sortedData, rowIndex) => (
                 <span
-                    className={styles.clickableCell}
+                    className={cn(styles.dateCell, styles.clickableCell)}
                     onClick={() => setSelectedId(sortedData[rowIndex].id)}
                 >
-                    {formatDate(sortedData[rowIndex].created?.date, 'D.M.YYYY, HH:mm')}
+                    {formatDate(sortedData[rowIndex].created?.date, 'DD.MM.YYYY, HH:mm')}
                 </span>
             )
         }
@@ -182,9 +177,11 @@ const AdminSendingMailPage: React.FC<AdminSendingMailPageProps> = () => {
                 />
             </Container>
 
-            <Container>
-                <Table
+            <Container style={{ padding: '2px' }}>
+                <Table<ApiType.SendingMail.SendingMailItem>
                     data={data?.items ?? []}
+                    defaultSort={{ key: DEFAULT_FILTERS.sort!, direction: DEFAULT_FILTERS.order! }}
+                    sort={{ key: filters?.sort || 'created', direction: filters?.order || 'desc' }}
                     columns={columns}
                     loading={isLoading}
                     noDataCaption={t('sending-mail-admin-no-data')}

@@ -151,7 +151,7 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
                 }
             />
 
-            <Container>
+            <Container style={{ padding: '2px' }}>
                 <Table
                     data={achievements}
                     columns={columns}

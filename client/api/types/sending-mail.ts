@@ -43,7 +43,7 @@ export interface SendingMailListRequest {
     email?: string
     date_from?: string
     date_to?: string
-    sort?: 'created_at' | 'updated_at' | 'status' | 'email'
+    sort?: keyof SendingMailItem
     order?: 'asc' | 'desc'
     page?: number
     limit?: number
