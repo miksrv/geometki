@@ -1,0 +1,23 @@
+@import '../../../styles/variables'
+
+.component
+    display: flex
+    flex-direction: row
+    align-items: flex-end
+    gap: 10px
+
+    & > div
+        flex: 1
+        min-width: 0
+        margin-bottom: 0
+
+    @media (max-width: $mobileMaxWidth)
+        overflow-x: auto
+        flex-wrap: nowrap
+        padding-bottom: 8px
+        gap: 8px
+        -webkit-overflow-scrolling: touch
+
+        & > div
+            min-width: 160px
+            flex-shrink: 0
