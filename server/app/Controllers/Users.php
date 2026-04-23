@@ -14,6 +14,14 @@ use Exception;
 use ReflectionException;
 use Throwable;
 
+/**
+ * Users controller
+ *
+ * Manages user profile retrieval, profile updates (name, website, password,
+ * notification settings), and avatar upload/crop workflows.
+ *
+ * @package App\Controllers
+ */
 class Users extends ResourceController
 {
     protected SessionLibrary $session;
@@ -24,9 +32,13 @@ class Users extends ResourceController
     }
 
     /**
-     * Returns the list of users
-     * @return ResponseInterface
+     * Return a paginated list of users ordered by recent activity.
+     *
+     * GET /users — optional query params: limit, offset.
+     *
      * @throws Exception
+     *
+     * @return ResponseInterface
      */
     public function list(): ResponseInterface
     {
@@ -79,10 +91,18 @@ class Users extends ResourceController
     }
 
     /**
-     * @param $id
-     * @return ResponseInterface
+     * Return the public profile for a single user with level and stat data.
+     *
+     * GET /users/:id
+     * When the authenticated user requests their own profile, private fields
+     * are included.
+     *
+     * @param string|null $id User primary key.
+     *
      * @throws ReflectionException
      * @throws Exception
+     *
+     * @return ResponseInterface
      */
     public function show($id = null): ResponseInterface
     {
@@ -108,9 +128,16 @@ class Users extends ResourceController
     }
 
     /**
-     * @param $id
-     * @return ResponseInterface
+     * Update the authenticated user's profile data.
+     *
+     * PUT /users/:id — auth required; user may only update their own profile.
+     * Accepts JSON: name, website, oldPassword + newPassword, and settings object.
+     *
+     * @param string|null $id User primary key.
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function update($id = null): ResponseInterface
     {
@@ -177,6 +204,12 @@ class Users extends ResourceController
     }
 
     /**
+     * Upload a new avatar image to the temporary directory for cropping.
+     *
+     * POST /users/avatar — auth required.
+     * Validates MIME type (JPEG, PNG, WebP) and max size (5 MB).
+     * Resizes to max avatar dimensions before returning the temporary path.
+     *
      * @return ResponseInterface
      */
     public function avatar(): ResponseInterface
@@ -238,8 +271,15 @@ class Users extends ResourceController
     }
 
     /**
-     * @return ResponseInterface
+     * Crop the uploaded avatar and save small and medium variants.
+     *
+     * POST /users/crop — auth required.
+     * Expects JSON with filename (from the avatar upload step) and crop
+     * coordinates: x, y, width, height.
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function crop(): ResponseInterface
     {

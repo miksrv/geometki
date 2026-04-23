@@ -19,10 +19,12 @@ use ReflectionException;
 use Throwable;
 
 /**
- * Available methods:
- *   - list()
- *   - upload($id)
- *   - delete($id)
+ * Photos controller
+ *
+ * Manages place photo uploads, deletion, rotation, and paginated listing.
+ * Automatically generates preview images and a place cover on first upload.
+ *
+ * @package App\Controllers
  */
 class Photos extends ResourceController
 {
@@ -35,12 +37,10 @@ class Photos extends ResourceController
     }
 
     /**
-     * Getting a list of all photos
-     * GET parameters:
-     *   - author (string)
-     *   - place (string)
-     *   - limit (int)
-     *   - offset (int)
+     * Return a paginated list of photos, optionally filtered by author or place.
+     *
+     * GET /photos — optional query params: author, place, limit, offset.
+     *
      * @return ResponseInterface
      */
     public function list(): ResponseInterface
@@ -49,7 +49,7 @@ class Photos extends ResourceController
         $limit  = abs($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 40);
         $offset = abs($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0);
 
-        $photosData = $this->_makeListFilters()->orderBy('photos.created_at')->findAll(min($limit, 40), $offset);
+        $photosData = $this->makeListFilters()->orderBy('photos.created_at')->findAll(min($limit, 40), $offset);
 
         if (empty($photosData)) {
             return $this->respond([
@@ -86,13 +86,19 @@ class Photos extends ResourceController
 
         return $this->respond([
             'items' => $photosData,
-            'count' => $this->_makeListFilters()->countAllResults()
+            'count' => $this->makeListFilters()->countAllResults()
         ]);
     }
 
     /**
-     * Uploading a photo by place ID
-     * @param null $id
+     * Upload a photo and attach it to a place.
+     *
+     * POST /photos/upload/:id — auth required.
+     * Validates MIME type and size, resizes to max dimensions, generates a
+     * preview thumbnail, and creates the place cover when this is the first photo.
+     *
+     * @param int|string|null $id Place primary key.
+     *
      * @return ResponseInterface
      */
     public function upload($id = null): ResponseInterface
@@ -215,7 +221,16 @@ class Photos extends ResourceController
     }
 
     /**
+     * Delete a photo and remove its files from disk.
+     *
+     * DELETE /photos/:id — auth required (owner or admin).
+     * Removes the cover images when this was the only photo of the place.
+     *
+     * @param int|string|null $id Photo primary key.
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function delete($id = null): ResponseInterface
     {
@@ -262,9 +277,17 @@ class Photos extends ResourceController
     }
 
     /**
-     * @param $id
-     * @return ResponseInterface
+     * Rotate a photo 90° counter-clockwise and regenerate its preview.
+     *
+     * PUT /photos/:id/rotate — auth required.
+     * Saves the rotated file under a new random name, regenerates the preview,
+     * removes the old files from disk, and updates the DB record.
+     *
+     * @param int|string|null $id Photo primary key.
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function rotate($id = null): ResponseInterface
     {
@@ -302,7 +325,7 @@ class Photos extends ResourceController
 
         $photoPath = PATH_PHOTOS . $photoData->place_id . '/' . $name;
 
-        return $this->respondDeleted([
+        return $this->respondUpdated([
             'id'      => $id,
             'full'    => $photoPath . '.' . $photoData->extension,
             'preview' => $photoPath . '_preview.' . $photoData->extension,
@@ -310,9 +333,14 @@ class Photos extends ResourceController
     }
 
     /**
-     * @return PhotosModel
+     * Build a PhotosModel query with the optional author/place filters applied.
+     *
+     * Reads author and place from GET query parameters. Used both for fetching
+     * the paginated photo list and for counting the total matching records.
+     *
+     * @return PhotosModel Configured model query builder.
      */
-    protected function _makeListFilters(): PhotosModel
+    protected function makeListFilters(): PhotosModel
     {
         $author = $this->request->getGet('author', FILTER_SANITIZE_SPECIAL_CHARS);
         $place  = $this->request->getGet('place', FILTER_SANITIZE_SPECIAL_CHARS);

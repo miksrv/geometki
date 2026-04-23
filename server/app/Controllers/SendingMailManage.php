@@ -8,6 +8,15 @@ use App\Models\SendingMail;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
+/**
+ * SendingMailManage controller
+ *
+ * Admin-only interface for inspecting the outgoing mail queue (sending_mail table).
+ * Provides a paginated, filterable list and a full detail view including the
+ * email body and any delivery error.
+ *
+ * @package App\Controllers
+ */
 class SendingMailManage extends ResourceController
 {
     protected AvatarLibrary $avatarLibrary;
@@ -16,13 +25,17 @@ class SendingMailManage extends ResourceController
 
     public function __construct()
     {
-        $this->session = new SessionLibrary();
+        $this->session       = new SessionLibrary();
         $this->avatarLibrary = new AvatarLibrary();
     }
 
     /**
-     * GET /sending-mail/manage
-     * Admin only — paginated list with filtering, sorting, and stats.
+     * Return a paginated, filtered list of sent mail records with aggregate stats.
+     *
+     * GET /sending-mail/manage — admin only.
+     * Accepted query params: status, email, date_from, date_to, sort, order, page, limit.
+     *
+     * @return ResponseInterface
      */
     public function index(): ResponseInterface
     {
@@ -76,8 +89,14 @@ class SendingMailManage extends ResourceController
     }
 
     /**
-     * GET /sending-mail/manage/:id
-     * Admin only — full record with email body and error details.
+     * Return the full detail for a single sent mail record.
+     *
+     * GET /sending-mail/manage/:id — admin only.
+     * Includes the rendered email body and any delivery error message.
+     *
+     * @param int|string|null $id Sending mail primary key.
+     *
+     * @return ResponseInterface
      */
     public function show($id = null): ResponseInterface
     {
@@ -110,6 +129,13 @@ class SendingMailManage extends ResourceController
     // Private helpers — presentation only, no SQL
     // -------------------------------------------------------------------------
 
+    /**
+     * Map a raw sending_mail row to the list response shape.
+     *
+     * @param object $row Raw DB row from the model.
+     *
+     * @return object Formatted list item.
+     */
     private function formatListItem(object $row): object
     {
         return (object) [
@@ -124,6 +150,13 @@ class SendingMailManage extends ResourceController
         ];
     }
 
+    /**
+     * Map a raw sending_mail row to the detail response shape (includes message and error).
+     *
+     * @param object $row Raw DB row from the model.
+     *
+     * @return object Formatted detail item.
+     */
     private function formatDetailItem(object $row): object
     {
         return (object) [
@@ -140,6 +173,13 @@ class SendingMailManage extends ResourceController
         ];
     }
 
+    /**
+     * Extract the associated user data from a row, if present.
+     *
+     * @param object $row Raw DB row containing optional user_id, user_name, avatar fields.
+     *
+     * @return object|null User object or null when no user is linked.
+     */
     private function extractUser(object $row): ?object
     {
         if (empty($row->user_id)) {
@@ -153,6 +193,13 @@ class SendingMailManage extends ResourceController
         ];
     }
 
+    /**
+     * Extract the linked activity data from a row, if present.
+     *
+     * @param object $row Raw DB row containing optional activity_id and activity_type.
+     *
+     * @return object|null Activity object or null when no activity is linked.
+     */
     private function extractActivity(object $row): ?object
     {
         if (empty($row->activity_id) || empty($row->activity_type)) {
@@ -164,6 +211,13 @@ class SendingMailManage extends ResourceController
         ];
     }
 
+    /**
+     * Convert a datetime string to the standard PHP DateTime object shape.
+     *
+     * @param string|null $value MySQL datetime string or null.
+     *
+     * @return object|null Object with date, timezone_type, and timezone fields; or null.
+     */
     private function toDateTime(?string $value): ?object
     {
         if (!$value) {
