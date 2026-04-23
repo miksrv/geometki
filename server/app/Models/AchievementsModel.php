@@ -2,16 +2,26 @@
 
 namespace App\Models;
 
+use App\Entities\AchievementEntity;
+
+/**
+ * Model for the `achievements` table.
+ *
+ * Provides read and write access to the achievement definition catalogue.
+ * No soft-deletion — achievements are deactivated via the is_active flag.
+ *
+ * @package App\Models
+ */
 class AchievementsModel extends ApplicationBaseModel
 {
     protected $table            = 'achievements';
     protected $primaryKey       = 'id';
-    protected $returnType       = \App\Entities\AchievementEntity::class;
     protected $useAutoIncrement = false;
+    protected $returnType       = AchievementEntity::class;
     protected $useSoftDeletes   = false;
 
+    /** @var array<int, string> */
     protected $allowedFields = [
-        'id',
         'group_slug',
         'type',
         'tier',
@@ -27,8 +37,6 @@ class AchievementsModel extends ApplicationBaseModel
         'xp_bonus',
         'sort_order',
         'is_active',
-        'created_at',
-        'updated_at',
     ];
 
     protected $useTimestamps = true;
@@ -36,18 +44,10 @@ class AchievementsModel extends ApplicationBaseModel
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    protected $validationRules      = [];
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationRules    = [];
+    protected $validationMessages = [];
+    protected $skipValidation     = true;
 
     protected $allowCallbacks = true;
     protected $beforeInsert   = ['generateId'];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
-    protected $afterFind      = [];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
 }

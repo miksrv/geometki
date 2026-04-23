@@ -2,21 +2,34 @@
 
 namespace App\Models;
 
-class LocationLocalitiesModel extends ApplicationBaseModel {
+use App\Entities\LocationLocalityEntity;
+
+/**
+ * Model for the `location_localities` table.
+ *
+ * Reference table of cities/localities used to tag places.
+ * Soft-deletion is enabled. Timestamp fields are hidden from output.
+ *
+ * @package App\Models
+ */
+class LocationLocalitiesModel extends ApplicationBaseModel
+{
     protected $table            = 'location_localities';
     protected $primaryKey       = 'id';
-    protected $returnType       = \App\Entities\LocationLocalityEntity::class;
     protected $useAutoIncrement = true;
+    protected $returnType       = LocationLocalityEntity::class;
     protected $useSoftDeletes   = true;
 
+    /** @var array<int, string> */
     protected array $hiddenFields = ['created_at', 'updated_at', 'deleted_at'];
 
+    /** @var array<int, string> */
     protected $allowedFields = [
         'country_id',
         'region_id',
         'district_id',
         'title_en',
-        'title_ru'
+        'title_ru',
     ];
 
     protected $useTimestamps = true;
@@ -27,20 +40,12 @@ class LocationLocalitiesModel extends ApplicationBaseModel {
 
     protected $validationRules = [
         'title_en' => 'required|string|max_length[100]',
-        'title_ru' => 'required|string|max_length[100]'
+        'title_ru' => 'required|string|max_length[100]',
     ];
 
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationMessages = [];
+    protected $skipValidation     = false;
 
     protected $allowCallbacks = true;
-    protected $beforeInsert   = [];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
     protected $afterFind      = ['prepareOutput'];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
 }
