@@ -11,6 +11,14 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use ReflectionException;
 
+/**
+ * Achievements controller
+ *
+ * Manages the achievements catalogue and tracks per-user progress and earnings.
+ * Admin-restricted write operations are included (create, update, delete, uploadImage).
+ *
+ * @package App\Controllers
+ */
 class Achievements extends ResourceController
 {
     private SessionLibrary $session;
@@ -21,7 +29,12 @@ class Achievements extends ResourceController
     }
 
     /**
+     * Return a filterable list of active achievements with optional auth context.
+     *
      * GET /achievements
+     * Optional query params: category, tier, type.
+     *
+     * @return ResponseInterface
      */
     public function index(): ResponseInterface
     {
@@ -96,7 +109,13 @@ class Achievements extends ResourceController
     }
 
     /**
+     * Return a single achievement by ID.
+     *
      * GET /achievements/:id
+     *
+     * @param int|string|null $id Achievement primary key.
+     *
+     * @return ResponseInterface
      */
     public function show($id = null): ResponseInterface
     {
@@ -134,8 +153,11 @@ class Achievements extends ResourceController
     }
 
     /**
-     * GET /achievements/progress
-     * Auth required.
+     * Return the authenticated user's achievement progress map.
+     *
+     * GET /achievements/progress — auth required.
+     *
+     * @return ResponseInterface
      */
     public function progress(): ResponseInterface
     {
@@ -150,8 +172,13 @@ class Achievements extends ResourceController
     }
 
     /**
-     * GET /users/:id/achievements
-     * Public — all achievements with this user's earned status and progress.
+     * Return all achievements annotated with a specific user's earned status and progress.
+     *
+     * GET /users/:id/achievements — public endpoint.
+     *
+     * @param string $userId The target user's ID.
+     *
+     * @return ResponseInterface
      */
     public function userAchievements(string $userId): ResponseInterface
     {
@@ -205,8 +232,11 @@ class Achievements extends ResourceController
     }
 
     /**
-     * GET /achievements/manage
-     * Admin only.
+     * Return the full achievement list for admin management (includes inactive and all locales).
+     *
+     * GET /achievements/manage — admin only.
+     *
+     * @return ResponseInterface
      */
     public function manage(): ResponseInterface
     {
@@ -251,10 +281,13 @@ class Achievements extends ResourceController
     }
 
     /**
-     * POST /achievements
-     * Admin only.
+     * Create a new achievement record.
+     *
+     * POST /achievements — admin only.
      *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function create(): ResponseInterface
     {
@@ -300,10 +333,15 @@ class Achievements extends ResourceController
     }
 
     /**
-     * PUT /achievements/:id
-     * Admin only.
+     * Update an existing achievement.
+     *
+     * PUT /achievements/:id — admin only.
+     *
+     * @param int|string|null $id Achievement primary key.
      *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function update($id = null): ResponseInterface
     {
@@ -362,9 +400,15 @@ class Achievements extends ResourceController
     }
 
     /**
-     * DELETE /achievements/:id
-     * Admin only — soft delete (is_active = 0).
-     * Hard deletes if no users have earned it.
+     * Delete an achievement.
+     *
+     * DELETE /achievements/:id — admin only.
+     * Soft-deletes (is_active = 0) when users have already earned the achievement;
+     * hard-deletes otherwise.
+     *
+     * @param int|string|null $id Achievement primary key.
+     *
+     * @return ResponseInterface
      */
     public function delete($id = null): ResponseInterface
     {
@@ -402,8 +446,13 @@ class Achievements extends ResourceController
     }
 
     /**
-     * POST /achievements/:id/image
-     * Admin only — upload PNG/SVG badge image.
+     * Upload and attach a badge image (PNG or SVG) to an achievement.
+     *
+     * POST /achievements/:id/image — admin only.
+     *
+     * @param int|string|null $id Achievement primary key.
+     *
+     * @return ResponseInterface
      */
     public function uploadImage($id = null): ResponseInterface
     {

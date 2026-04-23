@@ -9,6 +9,14 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use Throwable;
 
+/**
+ * Bookmarks controller
+ *
+ * Allows authenticated users to add or remove places from their personal
+ * bookmark list and to check whether a place is already bookmarked.
+ *
+ * @package App\Controllers
+ */
 class Bookmarks extends ResourceController
 {
 
@@ -20,7 +28,11 @@ class Bookmarks extends ResourceController
     }
 
     /**
-     * Checks whether this place is already in the user's bookmarks or not
+     * Check whether the given place is in the authenticated user's bookmarks.
+     *
+     * GET /bookmarks/check?placeId=:id
+     * Returns {"result": false} for unauthenticated requests.
+     *
      * @return ResponseInterface
      */
     public function check(): ResponseInterface
@@ -45,7 +57,12 @@ class Bookmarks extends ResourceController
     }
 
     /**
-     * Adds an interesting place to the user's bookmarks
+     * Toggle a place bookmark for the authenticated user.
+     *
+     * POST /bookmarks/set — auth required.
+     * Creates the bookmark when it does not exist; removes it when it does.
+     * Also increments/decrements the place's bookmark counter.
+     *
      * @return ResponseInterface
      */
     public function set(): ResponseInterface

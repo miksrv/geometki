@@ -8,7 +8,11 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
 /**
- * Categories API controller (not use now)
+ * Categories controller
+ *
+ * Returns the place category catalogue with optional per-category place counts.
+ *
+ * @package App\Controllers
  */
 class Categories extends ResourceController
 {
@@ -21,6 +25,10 @@ class Categories extends ResourceController
     }
 
     /**
+     * Return all categories, optionally enriched with place counts.
+     *
+     * GET /categories — optional query param: places (boolean).
+     *
      * @return ResponseInterface
      */
     public function list(): ResponseInterface
@@ -33,7 +41,7 @@ class Categories extends ResourceController
             ->findAll();
 
         if (empty($data)) {
-            $this->respond(['items'  => []]);
+            return $this->respond(['items' => []]);
         }
 
         if ($places) {
