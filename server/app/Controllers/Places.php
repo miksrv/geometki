@@ -27,6 +27,16 @@ use Geocoder\Exception\Exception;
 use ReflectionException;
 use Throwable;
 
+/**
+ * Places controller
+ *
+ * Core CRUD controller for the POI (places) resource. Handles listing with
+ * rich filtering/sorting, single-place retrieval, creation with geocoding and
+ * temporary-photo migration, content editing, cover image generation, and
+ * admin-only deletion.
+ *
+ * @package App\Controllers
+ */
 class Places extends ResourceController
 {
     protected bool $coordinatesAvailable = false;
@@ -42,9 +52,17 @@ class Places extends ResourceController
     }
 
     /**
-     * @return ResponseInterface
+     * Return a paginated, filterable list of places.
+     *
+     * GET /places — optional query params: sort, order, category, limit, offset,
+     * author, country, region, district, locality, search, tag, bookmarkUser,
+     * lat, lon, excludePlaces.
+     *
      * @throws \Exception
+     *
      * @example GET /places?sort=rating&order=ASC&category=historic&limit=20&offset=1
+     *
+     * @return ResponseInterface
      */
     public function list(): ResponseInterface
     {
@@ -148,9 +166,9 @@ class Places extends ResourceController
         // IDs of the places found using the search criteria
         $countModel = new PlacesModel();
         $countModel->applyListSelect($coordinates);
-        $placesCount = $this->_makeListFilters($countModel, $searchPlacesIds)->countAllResults();
+        $placesCount = $this->makeListFilters($countModel, $searchPlacesIds)->countAllResults();
 
-        $placesList = $this->_makeListFilters($this->model, $searchPlacesIds)->get()->getResult();
+        $placesList = $this->makeListFilters($this->model, $searchPlacesIds)->get()->getResult();
         $placesIds  = array_column($placesList, 'id');
 
         // We find translations for all objects if no search was used.
@@ -192,10 +210,17 @@ class Places extends ResourceController
     }
 
     /**
-     * @param $id
-     * @return ResponseInterface
+     * Return the full detail view for a single place.
+     *
+     * GET /places/:id — optional query params: lat, lon.
+     * Increments the view counter and records a per-user view log.
+     *
+     * @param string|null $id Place primary key.
+     *
      * @throws ReflectionException
      * @throws \Exception
+     *
+     * @return ResponseInterface
      */
     public function show($id = null): ResponseInterface
     {
@@ -227,7 +252,7 @@ class Places extends ResourceController
 
         $formatter = new PlaceFormatterLibrary();
         $avatarLibrary = new AvatarLibrary();
-        $placeData->editors = $this->_editors($id, $placeData->user_id);
+        $placeData->editors = $this->editors($id, $placeData->user_id);
         $placeData->author  = [
             'id'       => $placeData->user_id,
             'name'     => $placeData->user_name,
@@ -285,10 +310,17 @@ class Places extends ResourceController
     }
 
     /**
-     * Create new place
-     * @return ResponseInterface
+     * Create a new place with geocoding and optional photo migration.
+     *
+     * POST /places — auth required.
+     * Validates coordinates and category, resolves the address via Geocoder,
+     * saves the place inside a transaction, migrates temporary photos, and
+     * records an activity event.
+     *
      * @throws ReflectionException
      * @throws Exception
+     *
+     * @return ResponseInterface
      */
     public function create(): ResponseInterface
     {
@@ -390,11 +422,18 @@ class Places extends ResourceController
     }
 
     /**
-     * Update place content by ID
-     * @param $id
-     * @return ResponseInterface
+     * Update place content, tags, category, and/or coordinates.
+     *
+     * PUT /places/:id — auth required.
+     * Manages content versioning: edits within 3 months of the last edit by the
+     * same author overwrite the existing version; older edits create a new version.
+     *
+     * @param string|null $id Place primary key.
+     *
      * @throws ReflectionException
      * @throws Exception
+     *
+     * @return ResponseInterface
      */
     public function update($id = null): ResponseInterface
     {
@@ -509,8 +548,14 @@ class Places extends ResourceController
     }
 
     /**
-     * Delete place by ID (Only for administrator role)
-     * @param $id
+     * Hard-delete a place and all its associated photos and DB records.
+     *
+     * DELETE /places/:id — admin only.
+     * Removes photo files from disk, purges activity/rating/bookmark records via
+     * cascading DB deletes, and removes the place itself.
+     *
+     * @param string|null $id Place primary key.
+     *
      * @return ResponseInterface
      */
     public function delete($id = null): ResponseInterface
@@ -539,7 +584,16 @@ class Places extends ResourceController
     }
 
     /**
+     * Crop and save a new cover image from an existing place photo.
+     *
+     * POST /places/:id/cover — auth required.
+     * Expects JSON with photoId, x, y, width, height crop coordinates.
+     *
+     * @param string|null $id Place primary key.
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function cover($id = null): ResponseInterface
     {
@@ -598,9 +652,23 @@ class Places extends ResourceController
     }
 
     /**
+     * Migrate temporary photos to the place's permanent directory and persist records.
+     *
+     * Called during place creation when the user pre-uploaded photos before the
+     * place was saved. Reads each file from UPLOAD_TEMPORARY, saves metadata to
+     * the photos table, records activity, and generates the place cover from the
+     * first photo.
+     *
+     * @param array                          $photos  Temporary filenames to process.
+     * @param string                         $placeId Newly created place ID.
+     * @param \App\Entities\PlaceEntity      $place   Place entity (provides lat/lon).
+     * @param \App\Entities\PlaceContentEntity $content Content entity (provides title).
+     *
      * @throws ReflectionException
+     *
+     * @return bool|void False when the photo list is empty; void on success.
      */
-    protected function savePhotos(array $photos, string $placeId, \App\Entities\PlaceEntity $place, \App\Entities\PlaceContentEntity $content)
+    protected function savePhotos(array $photos, string $placeId, \App\Entities\PlaceEntity $place, \App\Entities\PlaceContentEntity $content): bool|null
     {
         if (empty($photos) || empty($placeId)) {
             return false;
@@ -677,11 +745,18 @@ class Places extends ResourceController
     }
 
     /**
-     * @param PlacesModel $placesModel
-     * @param array $placeIds
-     * @return PlacesModel
+     * Apply request-driven filters, sorting, and pagination to a PlacesModel query.
+     *
+     * Reads sort, order, author, category, country, region, district, locality,
+     * limit, offset, and excludePlaces from GET parameters. When $placeIds is
+     * non-empty the result set is restricted to those IDs.
+     *
+     * @param PlacesModel $placesModel The model instance to decorate.
+     * @param array       $placeIds   Optional allow-list of place IDs to restrict results.
+     *
+     * @return PlacesModel The same model instance with all filters applied.
      */
-    protected function _makeListFilters(PlacesModel $placesModel, array $placeIds = []): PlacesModel
+    protected function makeListFilters(PlacesModel $placesModel, array $placeIds = []): PlacesModel
     {
         $orderDefault  = 'DESC';
         $sortingFields = ['views', 'views_week', 'trending', 'recommended', 'rating', 'comments', 'bookmarks', 'category', 'distance', 'created_at', 'updated_at'];
@@ -761,11 +836,14 @@ class Places extends ResourceController
     }
 
     /**
-     * @param string $placeId
-     * @param string $excludeUserId
-     * @return array
+     * Return the list of users who have edited a place, excluding its original author.
+     *
+     * @param string $placeId       The place ID to look up.
+     * @param string $excludeUserId The original author's user ID to exclude.
+     *
+     * @return array Editor user objects with id, name, and avatar.
      */
-    protected function _editors(string $placeId, string $excludeUserId): array
+    protected function editors(string $placeId, string $excludeUserId): array
     {
         $model = new ActivityModel();
         $data  = $model->gePlaceEditors($placeId, $excludeUserId);

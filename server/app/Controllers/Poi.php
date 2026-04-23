@@ -12,12 +12,22 @@ use App\Models\SessionsModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
-class Poi extends ResourceController {
-    public function __construct()
-    {
-    }
-
+/**
+ * Poi (Points of Interest) controller
+ *
+ * Supplies lightweight marker data for the map view: place pin list, photo
+ * heat-map markers, a miniature place card, and online-user heatmap coordinates.
+ * Optionally clusters markers server-side via the Cluster library.
+ *
+ * @package App\Controllers
+ */
+class Poi extends ResourceController
+{
     /**
+     * Return place markers for the map, optionally clustered.
+     *
+     * GET /poi — optional query params: categories, zoom, author, cluster, bounds.
+     *
      * @return ResponseInterface
      */
     public function list(): ResponseInterface
@@ -26,7 +36,7 @@ class Poi extends ResourceController {
         $zoom    = abs($this->request->getGet('zoom', FILTER_SANITIZE_NUMBER_INT) ?? 10);
         $author  = $this->request->getGet('author', FILTER_SANITIZE_SPECIAL_CHARS);
         $cluster = $this->request->getGet('cluster', FILTER_VALIDATE_BOOL);
-        $bounds  = $this->_getBounds();
+        $bounds  = $this->getBounds();
 
         $placesModel = new PlacesModel();
         $placesData  = $placesModel->select('id, category, lat, lon');
@@ -64,8 +74,11 @@ class Poi extends ResourceController {
         ]);
     }
 
-
     /**
+     * Return photo markers for the map, optionally clustered.
+     *
+     * GET /poi/photos — optional query params: zoom, cluster, bounds.
+     *
      * @return ResponseInterface
      */
     public function photos(): ResponseInterface
@@ -73,7 +86,7 @@ class Poi extends ResourceController {
         $zoom    = abs($this->request->getGet('zoom', FILTER_SANITIZE_NUMBER_INT) ?? 10);
         $locale  = $this->request->getLocale();
         $cluster = $this->request->getGet('cluster', FILTER_VALIDATE_BOOL);
-        $bounds  = $this->_getBounds();
+        $bounds  = $this->getBounds();
 
         $photosModel = new PhotosModel();
         $photosData  = $photosModel->select('place_id as placeId, lat, lon, filename, extension, title_en, title_ru');
@@ -120,9 +133,13 @@ class Poi extends ResourceController {
         ]);
     }
 
-
     /**
-     * @param $id
+     * Return a miniature place card for the map popup.
+     *
+     * GET /poi/:id
+     *
+     * @param int|string|null $id Place primary key.
+     *
      * @return ResponseInterface
      */
     public function show($id = null): ResponseInterface
@@ -156,8 +173,11 @@ class Poi extends ResourceController {
         return $this->respond($placeData);
     }
 
-
     /**
+     * Return current online-user coordinates for the heatmap layer.
+     *
+     * GET /poi/users — returns up to 500 [lat, lon] pairs from active sessions.
+     *
      * @return ResponseInterface
      */
     public function users(): ResponseInterface
@@ -180,10 +200,15 @@ class Poi extends ResourceController {
     }
 
     /**
-     * Getting the map boundaries from the GET parameter
-     * @return array|null
+     * Parse and validate the map bounding box from the GET `bounds` parameter.
+     *
+     * Expects four comma-separated floats: left lon, top lat, right lon, bottom lat.
+     * Returns null when the parameter is absent, malformed, or out of geographic range.
+     *
+     * @return array|null Four-element float array [lonMin, latMax, lonMax, latMin],
+     *                    or null when the bounds are invalid.
      */
-    protected function _getBounds(): ?array
+    protected function getBounds(): ?array
     {
         // left (lon), top (lat), right (lon), bottom (lat)
         $bounds = $this->request->getGet('bounds', FILTER_SANITIZE_SPECIAL_CHARS);

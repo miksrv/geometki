@@ -2,19 +2,32 @@
 
 namespace App\Models;
 
-class LocationRegionsModel extends ApplicationBaseModel {
+use App\Entities\LocationRegionEntity;
+
+/**
+ * Model for the `location_regions` table.
+ *
+ * Reference table of regions (states/provinces) used to tag places.
+ * Soft-deletion is enabled. Timestamp fields are hidden from output.
+ *
+ * @package App\Models
+ */
+class LocationRegionsModel extends ApplicationBaseModel
+{
     protected $table            = 'location_regions';
     protected $primaryKey       = 'id';
-    protected $returnType       = \App\Entities\LocationRegionEntity::class;
     protected $useAutoIncrement = true;
+    protected $returnType       = LocationRegionEntity::class;
     protected $useSoftDeletes   = true;
 
+    /** @var array<int, string> */
     protected array $hiddenFields = ['created_at', 'updated_at', 'deleted_at'];
 
-    protected $allowedFields  = [
+    /** @var array<int, string> */
+    protected $allowedFields = [
         'country_id',
         'title_en',
-        'title_ru'
+        'title_ru',
     ];
 
     protected $useTimestamps = true;
@@ -28,17 +41,9 @@ class LocationRegionsModel extends ApplicationBaseModel {
         'title_ru' => 'required|string|max_length[100]',
     ];
 
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationMessages = [];
+    protected $skipValidation     = false;
 
     protected $allowCallbacks = true;
-    protected $beforeInsert   = [];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
     protected $afterFind      = ['prepareOutput'];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
 }

@@ -11,11 +11,13 @@ use Config\Services;
 use Throwable;
 
 /**
- * This controller is designed to work with temporary photos that are uploaded not to a specific geotag directory,
- * but to a common directory for storing temporary photos.
+ * PhotosTemporary controller
  *
- * The controller is used when creating a new geotag, when the geotag has not yet been created,
- * but the user is already uploading photos through the interface
+ * Handles temporary photo uploads used during new place creation, before the
+ * place record exists. Photos are stored in a shared temporary directory and
+ * are moved to the place's permanent directory once the place is saved.
+ *
+ * @package App\Controllers
  */
 class PhotosTemporary extends ResourceController
 {
@@ -28,7 +30,12 @@ class PhotosTemporary extends ResourceController
     }
 
     /**
-     * Uploading a temporary photo
+     * Upload a photo to the temporary directory.
+     *
+     * POST /photos/temporary — auth required.
+     * Validates MIME type and size, resizes to max dimensions, generates a
+     * preview thumbnail, and returns paths for immediate client-side preview.
+     *
      * @return ResponseInterface
      */
     public function upload(): ResponseInterface
@@ -108,7 +115,14 @@ class PhotosTemporary extends ResourceController
     }
 
     /**
-     * @param null $id
+     * Delete a temporary photo and its preview from the temporary directory.
+     *
+     * DELETE /photos/temporary/:id — auth required.
+     * Validates that the path stays within the temporary upload directory
+     * to prevent path traversal attacks.
+     *
+     * @param string|null $id Filename of the temporary photo (e.g. abc123.jpg).
+     *
      * @return ResponseInterface
      */
     public function delete($id = null): ResponseInterface
@@ -135,7 +149,14 @@ class PhotosTemporary extends ResourceController
     }
 
     /**
-     * @param $id
+     * Rotate a temporary photo 90° counter-clockwise and regenerate its preview.
+     *
+     * PUT /photos/temporary/:id/rotate — auth required.
+     * Validates that the path stays within the temporary upload directory
+     * to prevent path traversal attacks.
+     *
+     * @param string|null $id Filename of the temporary photo (e.g. abc123.jpg).
+     *
      * @return ResponseInterface
      */
     public function rotate($id = null): ResponseInterface
@@ -166,7 +187,7 @@ class PhotosTemporary extends ResourceController
             ->fit(PHOTO_PREVIEW_WIDTH, PHOTO_PREVIEW_HEIGHT)
             ->save(UPLOAD_TEMPORARY . $originalFile[0] . '_preview.' . $ext);
 
-        return $this->respondDeleted([
+        return $this->respondUpdated([
             'id'      => $id,
             'full'    => PATH_TEMPORARY . $originalFile[0] . '.' . $ext,
             'preview' => PATH_TEMPORARY . $originalFile[0] . '_preview.' . $ext,

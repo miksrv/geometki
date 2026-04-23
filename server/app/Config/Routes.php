@@ -152,6 +152,15 @@ $routes->group('levels', static function ($routes) {
     $routes->options('/', static function () {});
 });
 
+/** SendingMailManage Controller **/
+$routes->group('sending-mail', static function ($routes) {
+    $routes->get('manage', 'SendingMailManage::index');
+    $routes->get('manage/(:segment)', 'SendingMailManage::show/$1');
+
+    $routes->options('manage', static function () {});
+    $routes->options('manage/(:segment)', static function () {});
+});
+
 /** Achievements Controller **/
 $routes->group('achievements', static function ($routes) {
     $routes->get('/', 'Achievements::index');

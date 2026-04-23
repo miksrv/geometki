@@ -11,22 +11,29 @@ use CodeIgniter\RESTful\ResourceController;
 use ReflectionException;
 
 /**
- * User activity controller
- * Show all user activity such as places, photos and rating
+ * Activity controller
+ *
+ * Exposes a feed of user activity events (place creation, photos, ratings,
+ * comments, edits) grouped into consolidated timeline entries.
+ *
+ * @package App\Controllers
  */
 class Activity extends ResourceController
 {
 
     protected $model;
 
-    function __construct()
+    public function __construct()
     {
         $this->model = new ActivityModel();
     }
 
     /**
-     * List user activities
-     * We group similar activities together
+     * Return a grouped activity feed.
+     *
+     * Accepts GET parameters: date, limit, offset, author, place.
+     * Similar consecutive activity items are collapsed into a single group.
+     *
      * @return ResponseInterface
      */
     public function list(): ResponseInterface
@@ -73,8 +80,11 @@ class Activity extends ResourceController
     }
 
     /**
-     * Recursively add next activity items that can be grouped with the last item
-     * @param array $activityData
+     * Recursively append activity items that can be grouped with the last item in the list.
+     *
+     * @param array $activityData Activity rows, passed by reference.
+     *
+     * @return void
      */
     protected function addNextActivityItems(array &$activityData): void
     {
@@ -107,12 +117,14 @@ class Activity extends ResourceController
     }
 
     /**
-     * Determine if two activity items should be grouped together
-     * @param object $lastItem
-     * @param object $nextItem
-     * @return bool
+     * Determine if two activity items should be collapsed into one group.
+     *
+     * @param object $lastItem The last item already in the current group.
+     * @param object $nextItem The candidate item to potentially append.
+     *
+     * @return bool True when the two items belong in the same group.
      */
-    private function shouldGroupActivities($lastItem, $nextItem): bool
+    private function shouldGroupActivities(object $lastItem, object $nextItem): bool
     {
         return (
             (!isset($lastItem->place) || $lastItem->place->id === $nextItem->place_id) &&
@@ -122,15 +134,17 @@ class Activity extends ResourceController
     }
 
     /**
-     * Group similar activities together
-     * Activities are grouped if they are of the same type, by the same user,
-     * and optionally related to the same place within a certain time frame.
+     * Group similar activities into consolidated timeline entries.
      *
-     * @param array $activityData List of activity items to be grouped.
-     * @param PlacesContent|null $placeContent Instance of PlacesContent for fetching place details.
-     * @return array List of grouped activity items.
+     * Activities are grouped when they share the same author and optionally the
+     * same place. The group's type is resolved by priority: place > edit > photo.
+     *
+     * @param array             $activityData List of raw activity rows to collapse.
+     * @param PlacesContent|null $placeContent PlacesContent instance for title/content lookup.
+     *
+     * @return array Grouped activity entries ready for the API response.
      */
-    protected function groupSimilarActivities(array $activityData, PlacesContent $placeContent = null): array
+    protected function groupSimilarActivities(array $activityData, ?PlacesContent $placeContent = null): array
     {
         $categoriesModel = new CategoryModel();
         $categoriesData  = $categoriesModel->findAll();

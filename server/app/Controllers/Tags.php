@@ -6,6 +6,14 @@ use App\Models\TagsModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
+/**
+ * Tags controller
+ *
+ * Provides the tag catalogue for place filtering and a typeahead search
+ * endpoint for the tag input field.
+ *
+ * @package App\Controllers
+ */
 class Tags extends ResourceController
 {
 
@@ -17,6 +25,10 @@ class Tags extends ResourceController
     }
 
     /**
+     * Return all tags ordered by usage count and last-updated date.
+     *
+     * GET /tags
+     *
      * @return ResponseInterface
      */
     public function list(): ResponseInterface
@@ -42,7 +54,11 @@ class Tags extends ResourceController
     }
 
     /**
-     * Find max 10 tags by search text
+     * Return up to 10 tags whose title matches the search text.
+     *
+     * GET /tags/search?text=:query
+     * Returns an empty list when the query is empty or exceeds 30 characters.
+     *
      * @return ResponseInterface
      */
     public function search(): ResponseInterface

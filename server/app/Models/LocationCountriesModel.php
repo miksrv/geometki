@@ -2,18 +2,31 @@
 
 namespace App\Models;
 
-class LocationCountriesModel extends ApplicationBaseModel {
+use App\Entities\LocationCountryEntity;
+
+/**
+ * Model for the `location_countries` table.
+ *
+ * Reference table of countries used to tag places with geographic data.
+ * Soft-deletion is enabled. Timestamp fields are hidden from output.
+ *
+ * @package App\Models
+ */
+class LocationCountriesModel extends ApplicationBaseModel
+{
     protected $table            = 'location_countries';
     protected $primaryKey       = 'id';
-    protected $returnType       = \App\Entities\LocationCountryEntity::class;
     protected $useAutoIncrement = true;
+    protected $returnType       = LocationCountryEntity::class;
     protected $useSoftDeletes   = true;
 
+    /** @var array<int, string> */
     protected array $hiddenFields = ['created_at', 'updated_at', 'deleted_at'];
 
+    /** @var array<int, string> */
     protected $allowedFields = [
         'title_en',
-        'title_ru'
+        'title_ru',
     ];
 
     protected $useTimestamps = true;
@@ -27,17 +40,9 @@ class LocationCountriesModel extends ApplicationBaseModel {
         'title_ru' => 'required|string|max_length[50]',
     ];
 
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationMessages = [];
+    protected $skipValidation     = false;
 
     protected $allowCallbacks = true;
-    protected $beforeInsert   = [];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
     protected $afterFind      = ['prepareOutput'];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
 }

@@ -2,42 +2,50 @@
 
 namespace App\Models;
 
-class PlacesTagsModel extends ApplicationBaseModel {
+/**
+ * Model for the `places_tags` pivot table.
+ *
+ * Manages many-to-many associations between places and tags.
+ * No soft-deletion on this pivot — rows are inserted/deleted directly.
+ * No entity class; returns plain stdClass objects.
+ *
+ * @package App\Models
+ */
+class PlacesTagsModel extends ApplicationBaseModel
+{
     protected $table            = 'places_tags';
     protected $primaryKey       = 'id';
-    protected $returnType       = 'object';
     protected $useAutoIncrement = false;
+    protected $returnType       = 'object';
     protected $useSoftDeletes   = false;
 
+    /** @var array<int, string> */
     protected $allowedFields = [
         'tag_id',
-        'place_id'
+        'place_id',
     ];
 
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
-    protected $deletedField  = 'deleted_at';
 
-    protected $validationRules      = [];
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationRules    = [];
+    protected $validationMessages = [];
+    protected $skipValidation     = true;
 
     protected $allowCallbacks = true;
     protected $beforeInsert   = ['generateId'];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
-    protected $afterFind      = [];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
+
+    // -------------------------------------------------------------------------
+    // Custom query methods
+    // -------------------------------------------------------------------------
 
     /**
+     * Get all tags for a place with their usage counts.
+     *
      * @param string $placeId
-     * @return array
+     * @return array<int, object>
      */
     public function getPlaceTags(string $placeId): array
     {
@@ -49,7 +57,10 @@ class PlacesTagsModel extends ApplicationBaseModel {
     }
 
     /**
+     * Delete all tag associations for a given place.
+     *
      * @param string $placeId
+     * @return void
      */
     public function deleteByPlaceId(string $placeId): void
     {
@@ -57,8 +68,10 @@ class PlacesTagsModel extends ApplicationBaseModel {
     }
 
     /**
+     * Get all pivot rows for a place, joined with the tags table.
+     *
      * @param string $placeId
-     * @return array
+     * @return array<int, object>
      */
     public function getAllByPlaceId(string $placeId): array
     {

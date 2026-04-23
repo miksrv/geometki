@@ -1,0 +1,39 @@
+@use '../../../styles/variables' as variables
+
+.userCell
+    display: flex
+    align-items: center
+    gap: 8px
+
+.userAvatar
+    border-radius: 50%
+    object-fit: cover
+    flex-shrink: 0
+
+.dateCell
+    font-size: var(--font-size-small)
+    white-space: nowrap
+
+.clickableCell
+    cursor: pointer
+    color: var(--link-color)
+
+    &:hover
+        text-decoration: underline
+        color: var(--link-color-hover)
+
+.badgeCompleted
+    background: var(--color-green-background) !important
+    color: var(--color-green) !important
+
+.badgeError
+    background: var(--color-red-background) !important
+    color: var(--color-red) !important
+
+.badgeProcess
+    background: var(--container-background-color-success) !important
+    color: var(--link-color) !important
+
+.badgeDefault
+    background: var(--input-background-color) !important
+    color: var(--text-color-secondary) !important

@@ -6,9 +6,20 @@ use App\Models\LocationLocalitiesModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
+/**
+ * Cities controller
+ *
+ * Provides the list of localities with their parent district, region, and country.
+ *
+ * @package App\Controllers
+ */
 class Cities extends ResourceController
 {
     /**
+     * Return all cities/localities joined with their administrative hierarchy.
+     *
+     * GET /cities
+     *
      * @return ResponseInterface
      */
     public function list(): ResponseInterface

@@ -2,43 +2,54 @@
 
 namespace App\Models;
 
-class UsersNotificationsModel extends ApplicationBaseModel {
+use App\Entities\UserNotificationEntity;
+
+/**
+ * Model for the `users_notifications` table.
+ *
+ * Manages in-app notifications for users. No soft-deletion; notifications are
+ * permanent. created_at is tracked manually — CI4 timestamps are off because
+ * there is no updatedField column on this table.
+ *
+ * user_id, activity_id, and created_at are hidden from output via $hiddenFields.
+ *
+ * @package App\Models
+ */
+class UsersNotificationsModel extends ApplicationBaseModel
+{
     protected $table            = 'users_notifications';
     protected $primaryKey       = 'id';
-    protected $returnType       = \App\Entities\UserNotificationEntity::class;
     protected $useAutoIncrement = false;
+    protected $returnType       = UserNotificationEntity::class;
     protected $useSoftDeletes   = false;
 
+    /** @var array<int, string> */
     protected array $hiddenFields = ['user_id', 'activity_id', 'created_at'];
 
+    /** @var array<int, string> */
     protected $allowedFields = [
         'type',
         'read',
         'meta',
         'user_id',
-        'activity_id'
+        'activity_id',
+        'created_at',
     ];
 
+    // No updatedField column exists on this table; manage created_at manually.
     protected $useTimestamps = false;
-    protected $dateFormat    = 'datetime';
-    protected $createdField  = 'created_at';
-    // protected $updatedField  = 'updated_at';
-    // protected $deletedField  = 'deleted_at';
 
-    protected $validationRules      = [];
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationRules    = [];
+    protected $validationMessages = [];
+    protected $skipValidation     = true;
 
     protected $allowCallbacks = true;
     protected $beforeInsert   = ['generateId'];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
     protected $afterFind      = ['prepareOutput'];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
+
+    // -------------------------------------------------------------------------
+    // Custom query methods
+    // -------------------------------------------------------------------------
 
     /**
      * Get recent unread notifications for a user (within the last 15 minutes),
@@ -46,7 +57,7 @@ class UsersNotificationsModel extends ApplicationBaseModel {
      *
      * @param string $userId
      * @param int    $limit
-     * @return array
+     * @return array<int, object>
      */
     public function getRecentUnread(string $userId, int $limit = 10): array
     {
@@ -82,7 +93,7 @@ class UsersNotificationsModel extends ApplicationBaseModel {
      * @param string $userId
      * @param int    $limit
      * @param int    $offset
-     * @return array
+     * @return array<int, object>
      */
     public function getPaginatedByUser(string $userId, int $limit, int $offset): array
     {
@@ -111,8 +122,9 @@ class UsersNotificationsModel extends ApplicationBaseModel {
     /**
      * Mark a set of notification IDs as read for a given user.
      *
-     * @param string $userId
-     * @param array  $ids
+     * @param string             $userId
+     * @param array<int, string> $ids
+     * @return void
      */
     public function markRead(string $userId, array $ids): void
     {

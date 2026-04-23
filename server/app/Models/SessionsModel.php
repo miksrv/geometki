@@ -2,42 +2,42 @@
 
 namespace App\Models;
 
+use App\Entities\SessionEntity;
 use CodeIgniter\Model;
 
-class SessionsModel extends Model {
+/**
+ * Model for the `sessions` table.
+ *
+ * Tracks anonymous and authenticated visitor sessions, including their last
+ * known IP address and coordinates. Auto-increment integer PK.
+ * No soft-deletion — sessions are either active or removed.
+ *
+ * @package App\Models
+ */
+class SessionsModel extends Model
+{
     protected $table            = 'sessions';
     protected $primaryKey       = 'id';
-    protected $returnType       = \App\Entities\SessionEntity::class;
     protected $useAutoIncrement = true;
+    protected $returnType       = SessionEntity::class;
     protected $useSoftDeletes   = false;
 
+    /** @var array<int, string> */
     protected $allowedFields = [
-        'id',
         'user_id',
         'user_ip',
         'lat',
         'lon',
-        'updated_at',
     ];
 
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
-    protected $deletedField  = 'deleted_at';
 
-    protected $validationRules      = [];
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationRules    = [];
+    protected $validationMessages = [];
+    protected $skipValidation     = true;
 
     protected $allowCallbacks = false;
-    protected $beforeInsert   = [];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
-    protected $afterFind      = [];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
 }

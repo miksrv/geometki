@@ -96,7 +96,13 @@ export const SiteMenu: React.FC<SiteMenuProps> = ({ type, userId, isAuth, userRo
             admin: true,
             icon: 'Settings',
             link: '/admin/achievements',
-            text: 'Достижения'
+            text: 'Настройки наград'
+        },
+        {
+            admin: true,
+            icon: 'Settings',
+            link: '/admin/sending-mail',
+            text: 'Отправленные письма'
         }
     ]
 

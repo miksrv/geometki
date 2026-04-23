@@ -10,6 +10,14 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use ReflectionException;
 
+/**
+ * Notifications controller
+ *
+ * Manages user notification feeds: recent unread notifications for snackbar
+ * display, paginated full history, bulk clear, and automatic read-marking.
+ *
+ * @package App\Controllers
+ */
 class Notifications extends ResourceController
 {
     private SessionLibrary $session;
@@ -23,10 +31,14 @@ class Notifications extends ResourceController
     }
 
     /**
-     * We get a list of notifications that were added in the last 15 minutes and that have not yet been read,
-     * such notifications will be shown to the user in Snackbar
-     * @return ResponseInterface
+     * Return recent unread notifications (last 15 min) for snackbar display.
+     *
+     * GET /notifications/updates — auth required.
+     * Also returns a count of older unread notifications.
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function updates(): ResponseInterface
     {
@@ -44,15 +56,20 @@ class Notifications extends ResourceController
         }
 
         return $this->respond([
-            'items' => $this->_formatNotifyList($notifyData),
+            'items' => $this->formatNotifyList($notifyData),
             'count' => $notifyCount
         ]);
     }
 
     /**
-     * We get a page-by-page list of all notifications of the current user
-     * @return ResponseInterface
+     * Return a paginated list of all notifications for the authenticated user.
+     *
+     * GET /notifications — auth required.
+     * Accepts query params: limit, offset.
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function list(): ResponseInterface
     {
@@ -74,13 +91,16 @@ class Notifications extends ResourceController
         }
 
         return $this->respond([
-            'items' => $this->_formatNotifyList($notifyData),
+            'items' => $this->formatNotifyList($notifyData),
             'count' => $notifyCount
         ]);
     }
 
     /**
-     * Delete all notifications for the current user
+     * Delete all notifications belonging to the authenticated user.
+     *
+     * DELETE /notifications/clear — auth required.
+     *
      * @return ResponseInterface
      */
     public function clear(): ResponseInterface
@@ -100,14 +120,18 @@ class Notifications extends ResourceController
     }
 
     /**
-     * We format the list of notifications and return the result as an array of objects.
-     * All unread notifications are immediately marked as read.
+     * Format a raw notification list into the API response shape.
      *
-     * @param array $notifyData
-     * @return array
+     * Enriches each entry with place title, cover image, and read status.
+     * All unread notifications are immediately marked as read as a side-effect.
+     *
+     * @param array $notifyData Raw notification rows from the model.
+     *
      * @throws ReflectionException
+     *
+     * @return array Formatted notification objects.
      */
-    private function _formatNotifyList(array $notifyData): array
+    private function formatNotifyList(array $notifyData): array
     {
         if (empty($notifyData)) {
             return [];

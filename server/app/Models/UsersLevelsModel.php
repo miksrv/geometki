@@ -2,42 +2,38 @@
 
 namespace App\Models;
 
+use App\Entities\UserLevelEntity;
 use CodeIgniter\Model;
 
-class UsersLevelsModel extends Model {
+/**
+ * Model for the `users_levels` table.
+ *
+ * Read-only reference table that maps level numbers to titles and XP
+ * thresholds. The PK is the level number itself (not auto-increment).
+ * No timestamps; data is seeded, not managed via the API.
+ *
+ * @package App\Models
+ */
+class UsersLevelsModel extends Model
+{
     protected $table            = 'users_levels';
     protected $primaryKey       = 'level';
-    protected $returnType       = \App\Entities\UserLevelEntity::class;
     protected $useAutoIncrement = false;
+    protected $returnType       = UserLevelEntity::class;
     protected $useSoftDeletes   = false;
 
-    // protected array $hiddenFields = [];
-
+    /** @var array<int, string> */
     protected $allowedFields = [
         'title_en',
         'title_ru',
-        'level',
-        'experience'
+        'experience',
     ];
 
-    // protected $useTimestamps = true;
-    // protected $dateFormat    = 'datetime';
-    // protected $createdField  = 'created_at';
-    // protected $updatedField  = 'updated_at';
-    // protected $deletedField  = 'deleted_at';
+    protected $useTimestamps = false;
 
-    protected $validationRules      = [];
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationRules    = [];
+    protected $validationMessages = [];
+    protected $skipValidation     = true;
 
-    protected $allowCallbacks = true;
-    protected $beforeInsert   = [];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
-    protected $afterFind      = []; // prepareOutput
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
+    protected $allowCallbacks = false;
 }

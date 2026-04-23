@@ -21,6 +21,14 @@ use Exception;
 use ReflectionException;
 use Throwable;
 
+/**
+ * Auth controller
+ *
+ * Handles native registration/login and OAuth flows for Google, VK, and Yandex.
+ * Returns a JWT token on successful authentication.
+ *
+ * @package App\Controllers
+ */
 class Auth extends ResourceController
 {
     private SessionLibrary $session;
@@ -30,11 +38,14 @@ class Auth extends ResourceController
         $this->session = new SessionLibrary();
     }
 
-
     /**
-     * Register a new user
-     * @return ResponseInterface
+     * Register a new user with name, email, and password.
+     *
+     * POST /auth/registration
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function registration(): ResponseInterface
     {
@@ -81,9 +92,16 @@ class Auth extends ResourceController
 
 
     /**
-     * Auth via Google
+     * Initiate or complete Google OAuth authentication.
+     *
+     * GET /auth/google — redirects to Google when no code is present;
+     * exchanges the code for a profile on callback.
+     *
      * @link https://console.developers.google.com/
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function google(): ResponseInterface
     {
@@ -114,14 +132,21 @@ class Auth extends ResourceController
             return $this->failServerError(lang('Auth.serviceAuthError'));
         }
 
-        return $this->_serviceAuth(AUTH_TYPE_GOOGLE, $serviceProfile);
+        return $this->serviceAuth(AUTH_TYPE_GOOGLE, $serviceProfile);
     }
 
 
     /**
-     * Auth via VK
-     * @link https://console.developers.google.com/
+     * Initiate or complete VK OAuth authentication.
+     *
+     * GET /auth/vk — redirects to VK when no code is present;
+     * exchanges the code for a profile on callback.
+     *
+     * @link https://vk.com/dev/authcode_flow_user
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function vk(): ResponseInterface
     {
@@ -154,15 +179,21 @@ class Auth extends ResourceController
             return $this->failServerError(lang('Auth.serviceAuthError'));
         }
 
-        return $this->_serviceAuth(AUTH_TYPE_VK, $serviceProfile);
+        return $this->serviceAuth(AUTH_TYPE_VK, $serviceProfile);
     }
 
 
     /**
-     * Auth via Yandex
+     * Initiate or complete Yandex OAuth authentication.
+     *
+     * GET /auth/yandex — redirects to Yandex when no code is present;
+     * exchanges the code for a profile on callback.
+     *
      * @link https://oauth.yandex.ru/
-     * @return ResponseInterface
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function yandex(): ResponseInterface
     {
@@ -193,14 +224,18 @@ class Auth extends ResourceController
             return $this->failServerError(lang('Auth.serviceAuthError'));
         }
 
-        return $this->_serviceAuth(AUTH_TYPE_YANDEX, $serviceProfile);
+        return $this->serviceAuth(AUTH_TYPE_YANDEX, $serviceProfile);
     }
 
 
     /**
-     * Native authenticate existing user
-     * @return ResponseInterface
+     * Authenticate an existing native user with email and password.
+     *
+     * POST /auth/login
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function login(): ResponseInterface
     {
@@ -240,7 +275,13 @@ class Auth extends ResourceController
 
 
     /**
+     * Return the current session status and user data.
+     *
+     * GET /auth/me — refreshes the JWT token when it is within 5 minutes of expiry.
+     *
      * @throws Exception
+     *
+     * @return ResponseInterface
      */
     public function me(): ResponseInterface
     {
@@ -293,12 +334,19 @@ class Auth extends ResourceController
 
 
     /**
-     * @param $input
-     * @param array $rules
-     * @param array $messages
-     * @return bool
+     * Validate arbitrary input against a rule set.
+     *
+     * Accepts either a rule array or a named group from Config\Validation.
+     * Populates $this->validator so callers can retrieve errors via
+     * $this->validator->getErrors().
+     *
+     * @param mixed  $input    Associative array of values to validate.
+     * @param array|string $rules   Rule array or validation group name.
+     * @param array  $messages Custom error messages keyed by field.rule.
+     *
+     * @return bool True when validation passes.
      */
-    public function validateRequest($input, array $rules, array $messages = []): bool
+    public function validateRequest(mixed $input, array|string $rules, array $messages = []): bool
     {
         $this->validator = Services::Validation()->setRules($rules);
         // If you replace the $rules array with the name of the group
@@ -325,8 +373,11 @@ class Auth extends ResourceController
 
 
     /**
-     * @param IncomingRequest $request
-     * @return array|bool|float|int|mixed|object|string|null
+     * Extract the request payload from POST fields or JSON body.
+     *
+     * @param IncomingRequest $request The current HTTP request.
+     *
+     * @return mixed Associative array of submitted values.
      */
     public function getRequestInput(IncomingRequest $request): mixed
     {
@@ -342,13 +393,19 @@ class Auth extends ResourceController
 
 
     /**
-     * Authorization through the service (Yandex, Google or VK)
-     * @param string $authType
-     * @param object|null $serviceProfile
-     * @return ResponseInterface
+     * Complete OAuth authentication for a third-party service.
+     *
+     * Creates the user account if it does not exist, downloads the remote avatar
+     * via Guzzle, then issues a session and JWT token.
+     *
+     * @param string      $authType       One of the AUTH_TYPE_* constants.
+     * @param object|null $serviceProfile Profile object returned by the OAuth client.
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
-    protected function _serviceAuth(string $authType, object | null $serviceProfile): ResponseInterface
+    protected function serviceAuth(string $authType, ?object $serviceProfile): ResponseInterface
     {
         if (empty($serviceProfile) || empty($serviceProfile->email)) {
             return $this->failValidationErrors(lang('Auth.authServiceEmptyData'));
@@ -422,6 +479,8 @@ class Auth extends ResourceController
     }
 
     /**
+     * Build the standard authentication success response with session, user, and token.
+     *
      * @return ResponseInterface
      */
     protected function responseAuth(): ResponseInterface

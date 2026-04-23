@@ -158,11 +158,14 @@ class SendEmail extends BaseCommand
 
             try {
                 $emailLibrary->sendWithAttachment($item->email, $subject, $message, $placeCover);
-                $sendingEmailModel->update($item->id, ['status' => 'completed']);
+                $sendingEmailModel->update($item->id, ['status' => 'completed', 'error' => null]);
                 $sentCount++;
             } catch (Exception $e) {
                 log_message('error', '{exception}', ['exception' => $e]);
-                $sendingEmailModel->update($item->id, ['status' => 'error']);
+                $sendingEmailModel->update($item->id, [
+                    'status' => 'error',
+                    'error'  => substr($e->getMessage(), 0, 65535),
+                ]);
                 $errorCount++;
             }
         }

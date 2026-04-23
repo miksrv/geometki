@@ -10,6 +10,14 @@ use CodeIgniter\RESTful\ResourceController;
 use ReflectionException;
 use Throwable;
 
+/**
+ * Visited controller
+ *
+ * Tracks which users have visited a place and allows authenticated users to
+ * toggle the visited status for any place.
+ *
+ * @package App\Controllers
+ */
 class Visited extends ResourceController
 {
     protected SessionLibrary $session;
@@ -20,7 +28,12 @@ class Visited extends ResourceController
     }
 
     /**
-     * @param $id
+     * Return the list of users who have marked the given place as visited.
+     *
+     * GET /visited/place/:id
+     *
+     * @param string|null $id Place primary key.
+     *
      * @return ResponseInterface
      */
     public function place($id = null): ResponseInterface
@@ -36,8 +49,15 @@ class Visited extends ResourceController
     }
 
     /**
-     * @return ResponseInterface
+     * Toggle the visited status of a place for the authenticated user.
+     *
+     * POST /visited/set — auth required.
+     * Expects JSON body with place (place ID).
+     * Removes the visited record when it already exists; creates it otherwise.
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function set(): ResponseInterface
     {

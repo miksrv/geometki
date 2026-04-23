@@ -12,6 +12,15 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use Throwable;
 
+/**
+ * Rating controller
+ *
+ * Handles place rating submission (1–5 stars), updates the place's aggregate
+ * rating and the author's reputation, and exposes the rating history for a
+ * place or user.
+ *
+ * @package App\Controllers
+ */
 class Rating extends ResourceController
 {
 
@@ -23,8 +32,10 @@ class Rating extends ResourceController
     }
 
     /**
-     * Retrieves the rating history based on user ID or place ID.
-     * TODO: Add userId implementation
+     * Return the rating history for a given place or user.
+     *
+     * GET /rating/history?placeId=:id or ?userId=:id — mutually exclusive params.
+     *
      * @return ResponseInterface
      */
     public function history(): ResponseInterface
@@ -78,8 +89,12 @@ class Rating extends ResourceController
     }
 
     /**
-     * Returns the rating of the place by placeId
-     * @param $id
+     * Return the aggregated rating and current session/user vote for a place.
+     *
+     * GET /rating/:id
+     *
+     * @param string|null $id Place primary key.
+     *
      * @return ResponseInterface
      */
     public function show($id = null): ResponseInterface
@@ -108,7 +123,12 @@ class Rating extends ResourceController
     }
 
     /**
-     * Adding a new rating
+     * Submit or update a star rating for a place.
+     *
+     * POST /rating/set
+     * Expects JSON body with place (ID) and score (1–5).
+     * Re-calculates the place aggregate rating and updates the author's reputation.
+     *
      * @return ResponseInterface
      */
     public function set(): ResponseInterface

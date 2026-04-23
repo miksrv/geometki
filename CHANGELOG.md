@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.6.3
+
+### Patch Changes
+
+- Added admin "Sent Emails" panel: new `SendingMailManage` controller exposes list, detail, filters, and aggregate stats endpoints; admin page at `/admin/sending-mail/` renders a filterable table and a detail view with full email body and per-recipient status
+- Added `SendingMailDetail` client component and `SendingMailFilterPanel` section with RTK Query API endpoints and TypeScript types for the sent-emails admin feature
+- Added `error` column to the `sending_mail` table via migration; `SendEmail` command now records delivery errors into that column for observability
+- Added EN and RU i18n strings for the sent-emails admin panel; added "Sent Emails" item to the admin site menu
+- Fixed `return` missing before `$this->respond()` in `Categories::list()` and `Location::search()/geoSearch()` — execution was falling through and sending a duplicate response
+- Fixed `Photos::rotate()` and `PhotosTemporary::rotate()` returning `respondDeleted()` instead of `respondUpdated()` on a successful rotation
+- Refactored all 24 server controllers to CI4 4.7.2 best practices: added class and method PHPDoc blocks, renamed private helpers from `_method()` to `method()` (PSR-12), tightened nullable/union type declarations, removed empty constructors
+- Refactored all 26 server models to CI4 4.7.2 best practices: added class and method PHPDoc blocks, removed primary key and timestamp fields from `$allowedFields`, removed ghost `$deletedField` declarations on non-soft-delete models, removed empty callback arrays when `$allowCallbacks = false`, aligned `$validationRules` with `$allowedFields` to eliminate dead rules
+- Fixed critical bug in `SendingMailModel`: `$useAutoIncrement = true` was combined with a `generateId` before-insert callback that assigned a hex string to the PK, causing a type mismatch on insert; callback removed
+- Added generic TypeScript type parameter to the admin achievements table component
+
 ## 1.6.2
 
 ### Patch Changes

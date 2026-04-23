@@ -2,48 +2,57 @@
 
 namespace App\Models;
 
-class TagsModel extends ApplicationBaseModel {
+use App\Entities\TagEntity;
+
+/**
+ * Model for the `tags` table.
+ *
+ * Manages user-defined tags that can be attached to places. No soft-deletion —
+ * tags are kept forever to preserve history. created_at is hidden from output.
+ *
+ * @package App\Models
+ */
+class TagsModel extends ApplicationBaseModel
+{
     protected $table            = 'tags';
     protected $primaryKey       = 'id';
-    protected $returnType       = \App\Entities\TagEntity::class;
     protected $useAutoIncrement = false;
+    protected $returnType       = TagEntity::class;
     protected $useSoftDeletes   = false;
 
-    protected array $hiddenFields = [
-        'created_at',
-        'deleted_at'
-    ];
+    /** @var array<int, string> */
+    protected array $hiddenFields = ['created_at'];
 
+    /** @var array<int, string> */
     protected $allowedFields = [
         'title_en',
         'title_ru',
-        'count'
+        'count',
     ];
 
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
-    protected $deletedField  = 'deleted_at';
 
-    protected $validationRules      = [];
-    protected $validationMessages   = [];
-    protected $skipValidation       = true;
-    protected $cleanValidationRules = true;
+    protected $validationRules    = [];
+    protected $validationMessages = [];
+    protected $skipValidation     = true;
 
     protected $allowCallbacks = true;
     protected $beforeInsert   = ['generateId'];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
     protected $afterFind      = ['prepareOutput'];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
+
+    // -------------------------------------------------------------------------
+    // Custom query methods
+    // -------------------------------------------------------------------------
 
     /**
-     * @param string $title
-     * @return array|object|null
+     * Find a tag matching the given title in either the Russian or English
+     * column, returning its ID and usage count.
+     *
+     * @param string $title  Tag title to search for.
+     * @return object|array|null
      */
     public function getTagsByTitle(string $title): object|array|null
     {
