@@ -8,13 +8,21 @@ use App\Models\UsersModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
+/**
+ * Levels controller
+ *
+ * Exposes the experience-level ladder with per-level user counts and top-user
+ * snapshots. Also returns the XP modifier constants used by the client.
+ *
+ * @package App\Controllers
+ */
 class Levels extends ResourceController
 {
-    public function __construct()
-    {
-    }
-
     /**
+     * Return all levels with user counts, top users, and XP modifier awards.
+     *
+     * GET /levels
+     *
      * @return ResponseInterface
      */
     public function list(): ResponseInterface

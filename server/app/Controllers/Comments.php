@@ -13,6 +13,15 @@ use CodeIgniter\RESTful\ResourceController;
 use ReflectionException;
 use Throwable;
 
+/**
+ * Comments controller
+ *
+ * Manages user comments on places including listing and creation.
+ * Comment creation requires authentication and updates the place comment counter
+ * inside a database transaction.
+ *
+ * @package App\Controllers
+ */
 class Comments extends ResourceController
 {
 
@@ -27,8 +36,11 @@ class Comments extends ResourceController
     }
 
     /**
+     * Return all comments for a given place, newest first.
+     *
+     * GET /comments?place=:id
+     *
      * @return ResponseInterface
-     * @throws Exception
      */
     public function list(): ResponseInterface
     {
@@ -65,8 +77,15 @@ class Comments extends ResourceController
     }
 
     /**
-     * @return ResponseInterface
+     * Post a new comment on a place.
+     *
+     * POST /comments — auth required.
+     * Expects JSON body with placeId, comment, and optional answerId.
+     * Increments the place comment counter inside a transaction and records activity.
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function create(): ResponseInterface
     {

@@ -13,16 +13,26 @@ use CodeIgniter\RESTful\ResourceController;
 use Geocoder\Exception\Exception;
 use ReflectionException;
 
+/**
+ * Location controller
+ *
+ * Provides location-related endpoints: updating user coordinates, searching
+ * administrative entities (country/region/district/city) by text, performing
+ * geocoder-based geo-search, and fetching a single location by type and ID.
+ *
+ * @package App\Controllers
+ */
 class Location extends ResourceController
 {
-    public function __construct()
-    {
-    }
-
     /**
-     * Update user coordinates
-     * @return ResponseInterface
+     * Update the coordinates stored in the current user's session.
+     *
+     * POST /location/coordinates
+     * Expects JSON body with lat and lon fields.
+     *
      * @throws ReflectionException
+     *
+     * @return ResponseInterface
      */
     public function coordinates(): ResponseInterface
     {
@@ -39,7 +49,12 @@ class Location extends ResourceController
     }
 
     /**
+     * Search countries, regions, districts, and cities by a text string.
+     *
+     * GET /location/search?text=:query
+     *
      * @example http://localhost:8080/location/search?text=Орен
+     *
      * @return ResponseInterface
      */
     public function search(): ResponseInterface
@@ -48,33 +63,39 @@ class Location extends ResourceController
         $text   = $this->request->getGet('text');
 
         if (!$text || !is_string($text)) {
-            $this->respond([]);
+            return $this->respond([]);
         }
 
         $text = trim($text);
 
-        $countriesData = $this->_searchResult(new LocationCountriesModel(), $text);
-        $regionsData   = $this->_searchResult(new LocationRegionsModel(), $text);
-        $districtsData = $this->_searchResult(new LocationDistrictsModel(), $text);
-        $citiesData    = $this->_searchResult(new LocationLocalitiesModel(), $text);
+        $countriesData = $this->searchResult(new LocationCountriesModel(), $text);
+        $regionsData   = $this->searchResult(new LocationRegionsModel(), $text);
+        $districtsData = $this->searchResult(new LocationDistrictsModel(), $text);
+        $citiesData    = $this->searchResult(new LocationLocalitiesModel(), $text);
 
-        $result['countries'] = $this->_prepareSearchData($countriesData);
-        $result['regions']   = $this->_prepareSearchData($regionsData);
-        $result['districts'] = $this->_prepareSearchData($districtsData);
-        $result['cities']    = $this->_prepareSearchData($citiesData);
+        $result['countries'] = $this->prepareSearchData($countriesData);
+        $result['regions']   = $this->prepareSearchData($regionsData);
+        $result['districts'] = $this->prepareSearchData($districtsData);
+        $result['cities']    = $this->prepareSearchData($citiesData);
 
         return $this->respond($result);
     }
 
     /**
+     * Perform a free-text geocoder search via the configured geocoding provider.
+     *
+     * GET /location/geo-search?text=:query
+     *
      * @throws Exception
+     *
+     * @return ResponseInterface
      */
     public function geoSearch(): ResponseInterface
     {
         $text = $this->request->getGet('text');
 
         if (!$text || !is_string($text)) {
-            $this->respond([]);
+            return $this->respond([]);
         }
 
         $text = trim($text);
@@ -84,8 +105,14 @@ class Location extends ResourceController
     }
 
     /**
-     * @param $id
+     * Return a single location entity by type and ID.
+     *
+     * GET /location/:id?type=country|region|district|locality
+     *
      * @example http://localhost:8080/location/1?type=district
+     *
+     * @param int|string|null $id Location primary key.
+     *
      * @return ResponseInterface
      */
     public function show($id = null): ResponseInterface
@@ -99,32 +126,35 @@ class Location extends ResourceController
 
         if ($type === 'country') {
             $countriesModel = new LocationCountriesModel();
-            return $this->_showResult($countriesModel->find($id));
+            return $this->showResult($countriesModel->find($id));
         }
 
         if ($type === 'region') {
             $regionsModel  = new LocationRegionsModel();
-            return $this->_showResult($regionsModel->find($id));
+            return $this->showResult($regionsModel->find($id));
         }
 
         if ($type === 'district') {
             $districtsModel = new LocationDistrictsModel();
-            return $this->_showResult($districtsModel->find($id));
+            return $this->showResult($districtsModel->find($id));
         }
 
         if ($type === 'locality') {
             $citiesModel = new LocationLocalitiesModel();
-            return $this->_showResult($citiesModel->find($id));
+            return $this->showResult($citiesModel->find($id));
         }
 
         return $this->failValidationErrors('Unknown location type');
     }
 
     /**
-     * @param object|null $data
+     * Format and return a single location entity, resolving the locale-specific name.
+     *
+     * @param object|null $data Raw entity from the model, or null when not found.
+     *
      * @return ResponseInterface
      */
-    private function _showResult(?object $data): ResponseInterface
+    private function showResult(?object $data): ResponseInterface
     {
         if (!$data) {
             return $this->respond(null);
@@ -140,20 +170,29 @@ class Location extends ResourceController
     }
 
     /**
-     * @param $locationModel
-     * @param string $text
-     * @return mixed
+     * Search a location model by text across English and Russian title columns.
+     *
+     * @param mixed  $locationModel Any of the location models (countries, regions, etc.).
+     * @param string $text          The search string.
+     *
+     * @return array Matching entity rows.
      */
-    private function _searchResult($locationModel, string $text): mixed
+    private function searchResult(mixed $locationModel, string $text): array
     {
         return $locationModel->like('title_en', $text)->orLike('title_ru', $text)->findAll();
     }
 
     /**
-     * @param array $data
-     * @return array
+     * Map raw location rows to a locale-aware response format.
+     *
+     * Resolves the localised name into a `name` field and removes the raw
+     * title_en / title_ru fields from the output.
+     *
+     * @param array $data Raw rows from a location model.
+     *
+     * @return array Formatted location entries.
      */
-    private function _prepareSearchData(array $data): array
+    private function prepareSearchData(array $data): array
     {
         $result = [];
         $locale = $this->request->getLocale();
