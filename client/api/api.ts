@@ -196,6 +196,20 @@ export const API = createApi({
             query: () => 'levels'
         }),
 
+        /** Controller: Sending Mail **/
+        getSendingMailList: builder.query<
+            ApiType.SendingMail.SendingMailListResponse,
+            Maybe<ApiType.SendingMail.SendingMailListRequest>
+        >({
+            providesTags: ['SendingMail'],
+            query: (params) => `sending-mail/manage${encodeQueryData(params)}`
+        }),
+
+        getSendingMailItem: builder.query<ApiType.SendingMail.SendingMailDetailResponse, string>({
+            providesTags: (result, error, id) => [{ id, type: 'SendingMail' }],
+            query: (id) => `sending-mail/manage/${id}`
+        }),
+
         /** Controller: Mail **/
         mailGetUnsubscribe: builder.query<string, Maybe<string>>({
             query: (mailId) => `mail/unsubscribe?mail=${mailId || ''}`,
@@ -461,6 +475,7 @@ export const API = createApi({
         'Places',
         'Profile',
         'Rating',
+        'SendingMail',
         'UserAchievements',
         'Users',
         'Visited'
