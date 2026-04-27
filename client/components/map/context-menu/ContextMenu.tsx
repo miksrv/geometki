@@ -3,7 +3,7 @@ import { Point } from 'leaflet'
 import { Button, Container } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 import { useLeafletContext } from '@react-leaflet/core'
 
 import { ApiType } from '@/api'

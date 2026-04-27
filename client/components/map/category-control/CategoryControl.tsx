@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Button, Checkbox, Container } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
 import { categoryImage } from '@/utils/categories'

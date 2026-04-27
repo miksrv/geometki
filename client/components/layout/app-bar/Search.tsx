@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 
 import { useRouter } from 'next/router'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
 import { Autocomplete, AutocompleteOption } from '@/components/ui'

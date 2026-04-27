@@ -1,7 +1,7 @@
 import React from 'react'
 import { Icon } from 'simple-react-ui-kit'
 
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { ApiType } from '@/api'
 import { AchievementTierBadge } from '@/components/shared/achievement-card/AchievementTierBadge'

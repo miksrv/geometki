@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button, ButtonProps } from 'simple-react-ui-kit'
 
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 
 import { API } from '@/api'

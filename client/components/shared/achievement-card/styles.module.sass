@@ -20,7 +20,7 @@
             right: 0
             height: 3px
 
-    @each $tier in bronze, silver, gold
+    @each $tier in 'bronze', 'silver', 'gold'
         &.tier--#{$tier}
             &.earnedCard::before
                 background: var(--color-tier-#{$tier})
@@ -241,7 +241,7 @@
         height: 20px
 
 .modalContent
-    @each $tier in bronze, silver, gold
+    @each $tier in 'bronze', 'silver', 'gold'
         &--#{$tier}
             border-top: 4px solid var(--color-tier-#{$tier})
 

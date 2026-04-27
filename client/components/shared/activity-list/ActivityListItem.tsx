@@ -3,7 +3,7 @@ import PhotoAlbum from 'react-photo-album'
 import { cn, Container, Icon } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { PhotoLightbox, Rating, UserAvatar } from '@/components/shared'

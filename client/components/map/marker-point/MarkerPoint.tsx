@@ -5,7 +5,7 @@ import { Skeleton } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
 import { BookmarkButton, PlacePlate } from '@/components/shared'
