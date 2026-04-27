@@ -160,15 +160,6 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
     return (
         <AppLayout>
             <Head>
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify([breadCrumbSchema, placeSchema])
-                    }}
-                />
-            </Head>
-
-            <Head>
                 {generateNextSeo({
                     title: place?.title,
                     description: truncateText(removeMarkdown(place?.content), 300),
@@ -197,6 +188,12 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                     twitter: { cardType: 'summary_large_image' },
                     additionalLinkTags: buildHreflangTags(`places/${place?.id}`)
                 })}
+                <script
+                    type={'application/ld+json'}
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify([breadCrumbSchema, placeSchema])
+                    }}
+                />
             </Head>
 
             <PlaceHeader

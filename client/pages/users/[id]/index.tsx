@@ -92,21 +92,6 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
     return (
         <AppLayout>
             <Head>
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(breadCrumbSchema)
-                    }}
-                />
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(userSchema)
-                    }}
-                />
-            </Head>
-
-            <Head>
                 {generateNextSeo({
                     title: `${user?.name} - ${t('profile')}`,
                     canonical: `${canonicalUrl}users/${user?.id}`,
@@ -130,6 +115,18 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
                     twitter: { cardType: 'summary_large_image' },
                     additionalLinkTags: buildHreflangTags(`users/${user?.id}`)
                 })}
+                <script
+                    type={'application/ld+json'}
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify(breadCrumbSchema)
+                    }}
+                />
+                <script
+                    type={'application/ld+json'}
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify(userSchema)
+                    }}
+                />
             </Head>
 
             <UserHeader user={user} />

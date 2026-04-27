@@ -51,30 +51,6 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
     return (
         <AppLayout>
             <Head>
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify({
-                            '@context': 'https://schema.org',
-                            '@type': 'Organization',
-                            logo: `${SITE_LINK}android-chrome-512x512.png`,
-                            name: 'Geometki',
-                            url: SITE_LINK
-                        })
-                    }}
-                />
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify([
-                            ...placesList.map((place) => PlaceSchema(place)),
-                            ...usersList.map((user) => UserSchema(user))
-                        ])
-                    }}
-                />
-            </Head>
-
-            <Head>
                 {generateNextSeo({
                     title: t('news-feed') + ' - ' + t('interesting-places'),
                     description: t('geotags-description'),
@@ -97,6 +73,27 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
                     twitter: { cardType: 'summary_large_image' },
                     additionalLinkTags: buildHreflangTags('')
                 })}
+                <script
+                    type={'application/ld+json'}
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            '@context': 'https://schema.org',
+                            '@type': 'Organization',
+                            logo: `${SITE_LINK}android-chrome-512x512.png`,
+                            name: 'Geometki',
+                            url: SITE_LINK
+                        })
+                    }}
+                />
+                <script
+                    type={'application/ld+json'}
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify([
+                            ...placesList.map((place) => PlaceSchema(place)),
+                            ...usersList.map((user) => UserSchema(user))
+                        ])
+                    }}
+                />
             </Head>
 
             <Header
