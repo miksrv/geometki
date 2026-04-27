@@ -4,7 +4,7 @@ import { Button, Container, Icon } from 'simple-react-ui-kit'
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { MapLinks, UserAvatar, UserAvatarGroup } from '@/components/shared'

@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from 'react'
 import debounce from 'lodash-es/debounce'
 import { Input, Select, SelectOptionType } from 'simple-react-ui-kit'
 
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { ApiType } from '@/api'
 

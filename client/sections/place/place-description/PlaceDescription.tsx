@@ -3,7 +3,7 @@ import Markdown from 'react-markdown'
 import { Button, Container } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'

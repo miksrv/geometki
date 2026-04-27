@@ -5,7 +5,7 @@ import { Button, Input, Message, Select } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { Notify } from '@/app/notificationSlice'

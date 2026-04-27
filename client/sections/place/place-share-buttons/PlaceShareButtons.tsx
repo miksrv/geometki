@@ -15,7 +15,7 @@ import {
 } from 'react-share'
 import { Container, Dialog, Spinner } from 'simple-react-ui-kit'
 
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
 import { toggleOverlay } from '@/app/applicationSlice'

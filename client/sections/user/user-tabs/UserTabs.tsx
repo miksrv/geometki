@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 
 import { useRouter } from 'next/router'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { Tabs } from '@/components/ui'

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { Button, Checkbox, Input, Message } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
-import { Trans, useTranslation } from 'next-i18next'
+import { Trans, useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
