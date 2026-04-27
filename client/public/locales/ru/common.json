@@ -61,7 +61,7 @@
     "map-layer_MapBoxSat": "Спутник (MapBox)",
     "map-type_Photos": "Фотографии",
     "map-type_Places": "Геометки",
-    "map-type_Heatmap": "Пользователи онлайн",
+    "map-type_Heatmap": "Исследования",
     "map-type_HistoricalPhotos": "Исторические фото",
     "error_email-incorrect": "Введенный email адрес не корректный",
     "error_name-required": "Имя обязательно для заполнения",

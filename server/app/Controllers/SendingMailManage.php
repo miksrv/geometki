@@ -189,7 +189,7 @@ class SendingMailManage extends ResourceController
         return (object) [
             'id'     => $row->user_id,
             'name'   => $row->user_name,
-            'avatar' => $this->avatarLibrary->buildPath($row->user_id, $row->avatar, 'small')
+            'avatar' => $this->avatarLibrary->buildPath($row->user_id, $row->user_avatar, 'small')
         ];
     }
 

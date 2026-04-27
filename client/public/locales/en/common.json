@@ -61,7 +61,7 @@
     "map-layer_MapBoxSat": "Satellite (MapBox)",
     "map-type_Photos": "Photos",
     "map-type_Places": "Places of interest",
-    "map-type_Heatmap": "Users online",
+    "map-type_Heatmap": "Explorations",
     "map-type_HistoricalPhotos": "Historical Photos",
     "error_email-incorrect": "The entered email address is incorrect",
     "error_name-required": "Name is required",

@@ -28,7 +28,7 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
     onSwitchMapType,
     onSwitchAdditionalLayers
 }) => {
-    const { t } = useTranslation('components.interactive-map.layer-switcher-control')
+    const { t } = useTranslation('common')
 
     const layersContainerRef = useRef<HTMLDivElement>(null)
     const [open, setOpen] = useState<boolean>(false)
@@ -83,7 +83,7 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
 
     const titleAdditionalMapType: Record<MapAdditionalLayersEnum, string> = {
         [MapAdditionalLayersEnum.HEATMAP]: t('map-type_Heatmap', {
-            defaultValue: 'Heatmap'
+            defaultValue: 'Explorations'
         }),
         [MapAdditionalLayersEnum.HISTORICAL_PHOTOS]: t('map-type_HistoricalPhotos', {
             defaultValue: 'Historical Photos'
