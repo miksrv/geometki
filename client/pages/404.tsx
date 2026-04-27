@@ -2,17 +2,20 @@ import React from 'react'
 import { Button } from 'simple-react-ui-kit'
 
 import { NextPage } from 'next'
+import Head from 'next/head'
 import Image from 'next/image'
-import { NextSeo } from 'next-seo'
+import { generateNextSeo } from 'next-seo/pages'
 
 import logo from '@/public/images/geometki.svg'
 
 const NotFound: NextPage<object> = () => (
     <div className={'page404'}>
-        <NextSeo
-            nofollow={true}
-            noindex={true}
-        />
+        <Head>
+            {generateNextSeo({
+                nofollow: true,
+                noindex: true
+            })}
+        </Head>
         <div className={'container'}>
             <Image
                 src={logo}

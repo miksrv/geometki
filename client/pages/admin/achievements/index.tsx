@@ -2,10 +2,11 @@ import React from 'react'
 import { Badge, Button, cn, Container, Table, TableColumnProps } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
+import Head from 'next/head'
 import Link from 'next/link'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -127,14 +128,16 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
 
     return (
         <AppLayout>
-            <NextSeo
-                title={pageTitle}
-                noindex={true}
-                openGraph={{
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    title: pageTitle
-                }}
-            />
+            <Head>
+                {generateNextSeo({
+                    title: pageTitle,
+                    noindex: true,
+                    openGraph: {
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        title: pageTitle
+                    }
+                })}
+            </Head>
 
             <Header
                 title={pageTitle}

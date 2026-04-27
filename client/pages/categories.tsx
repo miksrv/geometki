@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import Head from 'next/head'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -26,28 +27,30 @@ const CategoriesPage: NextPage<CategoriesPageProps> = ({ categories }) => {
 
     return (
         <AppLayout>
-            <NextSeo
-                title={t('categories-places')}
-                canonical={`${canonicalUrl}categories`}
-                description={`${t('categories-places')}: ${description}`}
-                openGraph={{
-                    description: `${t('categories-places')}: ${description}`,
-                    images: [
-                        {
-                            height: 1402,
-                            url: `${SITE_LINK}images/pages/categories.jpg`,
-                            width: 1760
-                        }
-                    ],
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    siteName: t('geotags'),
+            <Head>
+                {generateNextSeo({
                     title: t('categories-places'),
-                    type: 'website',
-                    url: `${canonicalUrl}categories`
-                }}
-                twitter={{ cardType: 'summary_large_image' }}
-                additionalLinkTags={buildHreflangTags('categories')}
-            />
+                    canonical: `${canonicalUrl}categories`,
+                    description: `${t('categories-places')}: ${description}`,
+                    openGraph: {
+                        description: `${t('categories-places')}: ${description}`,
+                        images: [
+                            {
+                                height: 1402,
+                                url: `${SITE_LINK}images/pages/categories.jpg`,
+                                width: 1760
+                            }
+                        ],
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        siteName: t('geotags'),
+                        title: t('categories-places'),
+                        type: 'website',
+                        url: `${canonicalUrl}categories`
+                    },
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags('categories')
+                })}
+            </Head>
 
             <Header
                 title={t('categories-places')}

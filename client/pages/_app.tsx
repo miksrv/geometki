@@ -9,7 +9,7 @@ import { useRouter } from 'next/dist/client/router'
 import Head from 'next/head'
 import Script from 'next/script'
 // import { useReportWebVitals } from 'next/web-vitals'
-import { appWithTranslation, useTranslation } from 'next-i18next'
+import { appWithTranslation, useTranslation } from 'next-i18next/pages'
 import { ThemeProvider } from 'next-themes'
 
 import { wrapper } from '@/app/store'
