@@ -2,7 +2,7 @@ import React from 'react'
 import { Container, ContainerProps, Progress } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { Reputation } from '@/components/ui'

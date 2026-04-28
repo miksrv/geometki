@@ -2,7 +2,7 @@ import React from 'react'
 
 import Image, { StaticImageData } from 'next/image'
 import Link from 'next/link'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { ApiType } from '@/api'
 import googleLogo from '@/public/images/google-logo.png'

@@ -5,9 +5,10 @@ import debounce from 'lodash-es/debounce'
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
 import dynamic from 'next/dynamic'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import Head from 'next/head'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
@@ -155,28 +156,30 @@ const MapPage: NextPage<object> = () => {
             fullSize={true}
             className={'mainLayout'}
         >
-            <NextSeo
-                title={t('map-of-interesting-pages')}
-                description={t('geotags-map-description')}
-                canonical={`${canonicalUrl}map`}
-                openGraph={{
-                    description: t('geotags-map-description'),
-                    images: [
-                        {
-                            height: 1305,
-                            url: `${SITE_LINK}images/pages/map.jpg`,
-                            width: 1730
-                        }
-                    ],
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    siteName: t('geotags'),
+            <Head>
+                {generateNextSeo({
                     title: t('map-of-interesting-pages'),
-                    type: 'website',
-                    url: `${canonicalUrl}map`
-                }}
-                twitter={{ cardType: 'summary_large_image' }}
-                additionalLinkTags={buildHreflangTags('map')}
-            />
+                    description: t('geotags-map-description'),
+                    canonical: `${canonicalUrl}map`,
+                    openGraph: {
+                        description: t('geotags-map-description'),
+                        images: [
+                            {
+                                height: 1305,
+                                url: `${SITE_LINK}images/pages/map.jpg`,
+                                width: 1730
+                            }
+                        ],
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        siteName: t('geotags'),
+                        title: t('map-of-interesting-pages'),
+                        type: 'website',
+                        url: `${canonicalUrl}map`
+                    },
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags('map')
+                })}
+            </Head>
 
             <PhotoLightbox
                 photos={photoLightbox}

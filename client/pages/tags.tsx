@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import Head from 'next/head'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -33,27 +34,29 @@ const TagsPage: NextPage<TagsPageProps> = ({ tags }) => {
 
     return (
         <AppLayout>
-            <NextSeo
-                title={t('features-of-places')}
-                canonical={`${canonicalUrl}tags`}
-                description={`${t('features-of-places')}: ${tagsList
-                    .map(({ title }) => title)
-                    .join(', ')
-                    .substring(0, 180)}`}
-                openGraph={{
+            <Head>
+                {generateNextSeo({
+                    title: t('features-of-places'),
+                    canonical: `${canonicalUrl}tags`,
                     description: `${t('features-of-places')}: ${tagsList
                         .map(({ title }) => title)
                         .join(', ')
                         .substring(0, 180)}`,
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    siteName: t('geotags'),
-                    title: t('features-of-places'),
-                    type: 'website',
-                    url: `${canonicalUrl}tags`
-                }}
-                twitter={{ cardType: 'summary_large_image' }}
-                additionalLinkTags={buildHreflangTags('tags')}
-            />
+                    openGraph: {
+                        description: `${t('features-of-places')}: ${tagsList
+                            .map(({ title }) => title)
+                            .join(', ')
+                            .substring(0, 180)}`,
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        siteName: t('geotags'),
+                        title: t('features-of-places'),
+                        type: 'website',
+                        url: `${canonicalUrl}tags`
+                    },
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags('tags')
+                })}
+            </Head>
 
             <Header
                 title={t('features-of-places')}

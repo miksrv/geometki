@@ -3,9 +3,10 @@ import { Container, Message } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import Head from 'next/head'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -50,11 +51,13 @@ const CreatePlacePage: NextPage<object> = () => {
 
     return (
         <AppLayout>
-            <NextSeo
-                noindex={true}
-                nofollow={true}
-                title={t('create-geotag')}
-            />
+            <Head>
+                {generateNextSeo({
+                    noindex: true,
+                    nofollow: true,
+                    title: t('create-geotag')
+                })}
+            </Head>
             <Header
                 title={t('create-geotag')}
                 homePageTitle={t('geotags')}

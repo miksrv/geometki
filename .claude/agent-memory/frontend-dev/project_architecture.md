@@ -31,7 +31,9 @@ Next.js 16 (Pages Router) with React 19. TypeScript throughout.
 - Env constants: `import { IMG_HOST, SITE_LINK } from '@/config/env'`
 - Validation helper: `import { isApiValidationErrors } from '@/utils/api'`
 
-**i18n**: `next-i18next` with two locales: `ru` (default) and `en`. Run `yarn locales:build` after adding translation keys (always dot-separated).
+**i18n**: `next-i18next` v16 with two locales: `ru` (default) and `en`. Pages Router API is under subpaths — import `appWithTranslation`, `useTranslation`, `Trans` from `'next-i18next/pages'`; import `serverSideTranslations` from `'next-i18next/pages/serverSideTranslations'`. Run `yarn locales:build` after adding translation keys (always dot-separated).
+
+**next-seo**: v7. Pages Router uses `generateNextSeo({...})` function (not `<NextSeo>` component). Import from `'next-seo/pages'`. Wrap in `<Head>{generateNextSeo({title: ..., description: ...})}</Head>`.
 
 **Map**: Leaflet + react-leaflet v5, loaded client-side only via `next/dynamic` with `ssr: false`.
 

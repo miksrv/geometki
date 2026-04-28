@@ -442,11 +442,15 @@ export const API = createApi({
         }),
 
         /** Controller: Visited **/
+        visitedCheckPlace: builder.query<ApiType.Visited.CheckResponse, ApiType.Visited.CheckRequest>({
+            providesTags: (res, err, arg) => [{ id: arg.placeId, type: 'Visited' }],
+            query: (params) => `visited${encodeQueryData(params)}`
+        }),
         visitedGetUsersList: builder.query<ApiType.Visited.ListResponse, string>({
             providesTags: (result, error, arg) => [{ id: arg, type: 'Visited' }],
             query: (item) => `visited/${item}`
         }),
-        visitedPutPlace: builder.mutation<void, ApiType.Visited.PutRequest>({
+        visitedPutPlace: builder.mutation<ApiType.Visited.PutResponse, ApiType.Visited.PutRequest>({
             invalidatesTags: (res, err, arg) => [{ id: arg.place, type: 'Visited' }, { type: 'Notifications' }],
             query: (data) => ({
                 body: data,

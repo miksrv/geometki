@@ -2,9 +2,10 @@ import React from 'react'
 import { Container } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult } from 'next'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import Head from 'next/head'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -31,20 +32,22 @@ const UserAchievementsPage: React.FC<UserAchievementsPageProps> = ({ id, user })
 
     return (
         <AppLayout>
-            <NextSeo
-                title={pageTitle}
-                description={pageTitle}
-                canonical={`${canonicalUrl}users/${id}/achievements`}
-                openGraph={{
-                    description: pageTitle,
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    siteName: t('geotags'),
+            <Head>
+                {generateNextSeo({
                     title: pageTitle,
-                    type: 'website',
-                    url: `${canonicalUrl}users/${id}/achievements`
-                }}
-                twitter={{ cardType: 'summary_large_image' }}
-            />
+                    description: pageTitle,
+                    canonical: `${canonicalUrl}users/${id}/achievements`,
+                    openGraph: {
+                        description: pageTitle,
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        siteName: t('geotags'),
+                        title: pageTitle,
+                        type: 'website',
+                        url: `${canonicalUrl}users/${id}/achievements`
+                    },
+                    twitter: { cardType: 'summary_large_image' }
+                })}
+            </Head>
 
             <UserHeader user={user} />
 

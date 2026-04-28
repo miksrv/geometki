@@ -4,7 +4,7 @@ import { Button, cn, Container, ContainerProps, Popout, Spinner } from 'simple-r
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
 import { Notify } from '@/app/notificationSlice'

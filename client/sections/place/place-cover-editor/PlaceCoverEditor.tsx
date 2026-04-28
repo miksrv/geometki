@@ -3,7 +3,7 @@ import ReactCrop, { Crop } from 'react-image-crop'
 import { Button, Dialog } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
 import { openAuthDialog, toggleOverlay } from '@/app/applicationSlice'

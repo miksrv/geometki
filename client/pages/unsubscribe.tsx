@@ -3,10 +3,11 @@ import { Button, Container, Message, Spinner } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
+import Head from 'next/head'
 import { useSearchParams } from 'next/navigation'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -53,11 +54,13 @@ const UnsubscribePage: NextPage<object> = () => {
 
     return (
         <>
-            <NextSeo
-                nofollow={true}
-                noindex={true}
-                title={t('unsubscribe-from-email-notifications')}
-            />
+            <Head>
+                {generateNextSeo({
+                    nofollow: true,
+                    noindex: true,
+                    title: t('unsubscribe-from-email-notifications')
+                })}
+            </Head>
             <div className={'centerPageContainer'}>
                 <div className={'wrapper'}>
                     <Container>

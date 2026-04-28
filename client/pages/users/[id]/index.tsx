@@ -5,9 +5,9 @@ import { Button } from 'simple-react-ui-kit'
 import { GetServerSidePropsResult } from 'next'
 import Head from 'next/head'
 import Link from 'next/link'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -92,6 +92,29 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
     return (
         <AppLayout>
             <Head>
+                {generateNextSeo({
+                    title: `${user?.name} - ${t('profile')}`,
+                    canonical: `${canonicalUrl}users/${user?.id}`,
+                    description: `${user?.name} - ${t('user-profile')}`,
+                    openGraph: {
+                        images: photosList?.map((photo, index) => ({
+                            alt: `${photo.title} (${index + 1})`,
+                            height: photo.height,
+                            url: `${IMG_HOST}${photo.full}`,
+                            width: photo.width
+                        })),
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        profile: {
+                            username: user?.name
+                        },
+                        siteName: t('geotags'),
+                        title: user?.name,
+                        type: 'http://ogp.me/ns/profile#',
+                        url: `${canonicalUrl}users/${user?.id}`
+                    },
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags(`users/${user?.id}`)
+                })}
                 <script
                     type={'application/ld+json'}
                     dangerouslySetInnerHTML={{
@@ -105,30 +128,6 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
                     }}
                 />
             </Head>
-
-            <NextSeo
-                title={`${user?.name} - ${t('profile')}`}
-                canonical={`${canonicalUrl}users/${user?.id}`}
-                description={`${user?.name} - ${t('user-profile')}`}
-                openGraph={{
-                    images: photosList?.map((photo, index) => ({
-                        alt: `${photo.title} (${index + 1})`,
-                        height: photo.height,
-                        url: `${IMG_HOST}${photo.full}`,
-                        width: photo.width
-                    })),
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    profile: {
-                        username: user?.name
-                    },
-                    siteName: t('geotags'),
-                    title: user?.name,
-                    type: 'http://ogp.me/ns/profile#',
-                    url: `${canonicalUrl}users/${user?.id}`
-                }}
-                twitter={{ cardType: 'summary_large_image' }}
-                additionalLinkTags={buildHreflangTags(`users/${user?.id}`)}
-            />
 
             <UserHeader user={user} />
 

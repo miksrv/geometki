@@ -5,9 +5,9 @@ import { Container } from 'simple-react-ui-kit'
 import type { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
 import Head from 'next/head'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -219,6 +219,28 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
     return (
         <AppLayout>
             <Head>
+                {generateNextSeo({
+                    title: title,
+                    description: `${title} - ${placesList
+                        ?.map(({ title }) => title)
+                        ?.join(', ')
+                        ?.substring(0, 220)}`,
+                    canonical: canonicalPage,
+                    openGraph: {
+                        images: placesList
+                            .filter(({ cover }) => cover?.full)
+                            .map(({ cover, title }) => ({
+                                alt: `${title}`,
+                                height: 180,
+                                url: `${IMG_HOST}${cover?.preview}`,
+                                width: 280
+                            })),
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        type: 'website'
+                    },
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags('places')
+                })}
                 <script
                     type={'application/ld+json'}
                     dangerouslySetInnerHTML={{
@@ -232,29 +254,6 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                     }}
                 />
             </Head>
-
-            <NextSeo
-                title={title}
-                description={`${title} - ${placesList
-                    ?.map(({ title }) => title)
-                    ?.join(', ')
-                    ?.substring(0, 220)}`}
-                canonical={canonicalPage}
-                openGraph={{
-                    images: placesList
-                        .filter(({ cover }) => cover?.full)
-                        .map(({ cover, title }) => ({
-                            alt: `${title}`,
-                            height: 180,
-                            url: `${IMG_HOST}${cover?.preview}`,
-                            width: 280
-                        })),
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    type: 'website'
-                }}
-                twitter={{ cardType: 'summary_large_image' }}
-                additionalLinkTags={buildHreflangTags('places')}
-            />
 
             <Header
                 title={title}

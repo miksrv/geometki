@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import ReactCrop, { Crop } from 'react-image-crop'
 import { Button, Dialog, Spinner } from 'simple-react-ui-kit'
 
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
 import { toggleOverlay } from '@/app/applicationSlice'

@@ -2,9 +2,10 @@ import React from 'react'
 import { cn, Container, Spinner } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import Head from 'next/head'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -39,20 +40,22 @@ const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage }
 
     return (
         <AppLayout>
-            <NextSeo
-                title={`${user?.name} - ${title}${pageTitle}`}
-                description={`${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`}
-                canonical={`${canonicalUrl}users/${id}/places${currentPage > 1 ? `?page=${currentPage}` : ''}`}
-                openGraph={{
-                    description: `${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`,
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    siteName: t('geotags'),
+            <Head>
+                {generateNextSeo({
                     title: `${user?.name} - ${title}${pageTitle}`,
-                    type: 'website',
-                    url: `${canonicalUrl}users/${id}/places`
-                }}
-                twitter={{ cardType: 'summary_large_image' }}
-            />
+                    description: `${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`,
+                    canonical: `${canonicalUrl}users/${id}/places${currentPage > 1 ? `?page=${currentPage}` : ''}`,
+                    openGraph: {
+                        description: `${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`,
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        siteName: t('geotags'),
+                        title: `${user?.name} - ${title}${pageTitle}`,
+                        type: 'website',
+                        url: `${canonicalUrl}users/${id}/places`
+                    },
+                    twitter: { cardType: 'summary_large_image' }
+                })}
+            </Head>
 
             <Header
                 title={`${user?.name} - ${title}${pageTitle}`}

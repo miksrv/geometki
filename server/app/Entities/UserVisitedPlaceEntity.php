@@ -6,8 +6,12 @@ use CodeIgniter\Entity\Entity;
 
 class UserVisitedPlaceEntity extends Entity {
     protected $attributes = [
-        'user_id'  => null,
-        'place_id' => null,
+        'user_id'    => null,
+        'place_id'   => null,
+        'visited_at' => null,
+        'verified'   => null,
+        'lat'        => null,
+        'lon'        => null,
     ];
 
     protected $dates = [
@@ -18,6 +22,9 @@ class UserVisitedPlaceEntity extends Entity {
 
     protected $casts = [
         'user_id'  => 'string',
-        'place_id' => 'integer'
+        'place_id' => 'integer',
+        'verified' => 'boolean',
+        'lat'      => '?float',
+        'lon'      => '?float',
     ];
 }

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Badge, Dialog, Message } from 'simple-react-ui-kit'
 
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
 import { UserAvatar } from '@/components/shared'

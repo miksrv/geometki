@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import useGeolocation from 'react-hook-geolocation'
 import { Button, cn, Icon } from 'simple-react-ui-kit'
 
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
 import { openAuthDialog, setUserLocation } from '@/app/applicationSlice'

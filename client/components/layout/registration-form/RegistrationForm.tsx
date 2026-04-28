@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Button, Input, Message } from 'simple-react-ui-kit'
 
 import { useRouter } from 'next/dist/client/router'
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
 import { closeAuthDialog } from '@/app/applicationSlice'

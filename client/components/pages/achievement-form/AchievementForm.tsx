@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { Button, Input, Select, TextArea } from 'simple-react-ui-kit'
 
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
 import { AchievementIcon } from '@/components/shared'

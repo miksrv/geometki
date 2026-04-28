@@ -4,9 +4,9 @@ import { Button, Container } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
@@ -21,7 +21,8 @@ import {
     PlaceDescription,
     PlaceHeader,
     PlaceInformation,
-    PlaceShareButtons
+    PlaceShareButtons,
+    PlaceVisited
 } from '@/sections/place'
 import { formatDateISO, formatDateUTC, removeMarkdown, truncateText } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
@@ -160,6 +161,34 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
     return (
         <AppLayout>
             <Head>
+                {generateNextSeo({
+                    title: place?.title,
+                    description: truncateText(removeMarkdown(place?.content), 300),
+                    canonical: pagePlaceUrl,
+                    openGraph: {
+                        article: {
+                            authors: [`${SITE_LINK}users/${place?.author?.id}`],
+                            modifiedTime: formatDateUTC(place?.updated?.date),
+                            publishedTime: formatDateUTC(place?.created?.date),
+                            section: place?.category?.name,
+                            tags: place?.tags
+                        },
+                        description: truncateText(removeMarkdown(place?.content), 300),
+                        images: photoList?.slice(0, 3).map((photo, index) => ({
+                            alt: `${photo.title} (${index + 1})`,
+                            height: photo.height,
+                            url: `${IMG_HOST}${photo.full}`,
+                            width: photo.width
+                        })),
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        siteName: t('geotags'),
+                        title: place?.title,
+                        type: 'article',
+                        url: pagePlaceUrl
+                    },
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags(`places/${place?.id}`)
+                })}
                 <script
                     type={'application/ld+json'}
                     dangerouslySetInnerHTML={{
@@ -167,35 +196,6 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                     }}
                 />
             </Head>
-
-            <NextSeo
-                title={place?.title}
-                description={truncateText(removeMarkdown(place?.content), 300)}
-                canonical={pagePlaceUrl}
-                openGraph={{
-                    article: {
-                        authors: [`${SITE_LINK}users/${place?.author?.id}`],
-                        modifiedTime: formatDateUTC(place?.updated?.date),
-                        publishedTime: formatDateUTC(place?.created?.date),
-                        section: place?.category?.name,
-                        tags: place?.tags
-                    },
-                    description: truncateText(removeMarkdown(place?.content), 300),
-                    images: photoList?.slice(0, 3).map((photo, index) => ({
-                        alt: `${photo.title} (${index + 1})`,
-                        height: photo.height,
-                        url: `${IMG_HOST}${photo.full}`,
-                        width: photo.width
-                    })),
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    siteName: t('geotags'),
-                    title: place?.title,
-                    type: 'article',
-                    url: pagePlaceUrl
-                }}
-                twitter={{ cardType: 'summary_large_image' }}
-                additionalLinkTags={buildHreflangTags(`places/${place?.id}`)}
-            />
 
             <PlaceHeader
                 place={place}
@@ -209,7 +209,10 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             <PlaceShareButtons
                 placeId={place?.id}
                 placeUrl={pagePlaceUrl}
+                verificationExempt={place?.verification_exempt}
             />
+
+            <PlaceVisited place={place} />
 
             <PhotoGallery
                 title={t('photos')}

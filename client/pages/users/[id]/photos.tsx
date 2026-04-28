@@ -2,9 +2,10 @@ import React from 'react'
 import { Container } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import Head from 'next/head'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -32,26 +33,28 @@ const UserPhotosPage: React.FC<UserPhotosPageProps> = ({ id, user, photosList, p
 
     return (
         <AppLayout>
-            <NextSeo
-                title={`${user?.name} - ${t('photos')}${pageTitle}`}
-                description={`${user?.name} - ${t('all-traveler-photos')}${pageTitle}`}
-                canonical={`${canonicalUrl}users/${id}/photos${currentPage > 1 ? `?page=${currentPage}` : ''}`}
-                openGraph={{
-                    description: `${user?.name} - ${t('all-traveler-photos')}${pageTitle}`,
-                    images: photosList?.slice(0, 3).map((photo, index) => ({
-                        alt: `${photo.title} (${index + 1})`,
-                        height: photo.height,
-                        url: `${IMG_HOST}${photo.full}`,
-                        width: photo.width
-                    })),
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    siteName: t('geotags'),
+            <Head>
+                {generateNextSeo({
                     title: `${user?.name} - ${t('photos')}${pageTitle}`,
-                    type: 'website',
-                    url: `${canonicalUrl}users/${id}/photos`
-                }}
-                twitter={{ cardType: 'summary_large_image' }}
-            />
+                    description: `${user?.name} - ${t('all-traveler-photos')}${pageTitle}`,
+                    canonical: `${canonicalUrl}users/${id}/photos${currentPage > 1 ? `?page=${currentPage}` : ''}`,
+                    openGraph: {
+                        description: `${user?.name} - ${t('all-traveler-photos')}${pageTitle}`,
+                        images: photosList?.slice(0, 3).map((photo, index) => ({
+                            alt: `${photo.title} (${index + 1})`,
+                            height: photo.height,
+                            url: `${IMG_HOST}${photo.full}`,
+                            width: photo.width
+                        })),
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        siteName: t('geotags'),
+                        title: `${user?.name} - ${t('photos')}${pageTitle}`,
+                        type: 'website',
+                        url: `${canonicalUrl}users/${id}/photos`
+                    },
+                    twitter: { cardType: 'summary_large_image' }
+                })}
+            </Head>
 
             <Header
                 title={`${user?.name} - ${t('photos')}${pageTitle}`}

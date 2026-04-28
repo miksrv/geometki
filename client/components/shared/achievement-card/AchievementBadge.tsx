@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { ApiType } from '@/api'
 import { AchievementIcon } from '@/components/shared/achievement-icon'

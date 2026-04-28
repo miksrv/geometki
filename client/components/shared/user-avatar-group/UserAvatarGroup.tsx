@@ -1,7 +1,7 @@
 import React from 'react'
 import { cn } from 'simple-react-ui-kit'
 
-import { Trans } from 'next-i18next'
+import { Trans } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 

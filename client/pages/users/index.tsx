@@ -2,9 +2,10 @@ import React, { useMemo } from 'react'
 import { Container } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import Head from 'next/head'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -35,27 +36,29 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
 
     return (
         <AppLayout>
-            <NextSeo
-                title={title}
-                description={`${title} - ${usersList
-                    ?.map(({ name }) => name)
-                    ?.join(', ')
-                    ?.substring(0, 220)}`}
-                canonical={`${canonicalUrl}users${currentPage && currentPage > 1 ? '?page=' + currentPage : ''}`}
-                openGraph={{
+            <Head>
+                {generateNextSeo({
+                    title: title,
                     description: `${title} - ${usersList
                         ?.map(({ name }) => name)
                         ?.join(', ')
                         ?.substring(0, 220)}`,
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    siteName: t('geotags'),
-                    title,
-                    type: 'website',
-                    url: `${canonicalUrl}users`
-                }}
-                twitter={{ cardType: 'summary_large_image' }}
-                additionalLinkTags={buildHreflangTags('users')}
-            />
+                    canonical: `${canonicalUrl}users${currentPage && currentPage > 1 ? '?page=' + currentPage : ''}`,
+                    openGraph: {
+                        description: `${title} - ${usersList
+                            ?.map(({ name }) => name)
+                            ?.join(', ')
+                            ?.substring(0, 220)}`,
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        siteName: t('geotags'),
+                        title,
+                        type: 'website',
+                        url: `${canonicalUrl}users`
+                    },
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags('users')
+                })}
+            </Head>
 
             <Header
                 title={title}

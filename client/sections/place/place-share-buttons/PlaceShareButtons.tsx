@@ -15,13 +15,13 @@ import {
 } from 'react-share'
 import { Container, Dialog, Spinner } from 'simple-react-ui-kit'
 
-import { useTranslation } from 'next-i18next'
+import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
 import { toggleOverlay } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
-import { Rating, UserAvatar } from '@/components/shared'
+import { Rating, UserAvatar, WasHereButton } from '@/components/shared'
 import { getErrorMessage } from '@/utils/api'
 import { addDecimalPoint, formatDate } from '@/utils/helpers'
 
@@ -30,9 +30,10 @@ import styles from './styles.module.sass'
 interface SocialRatingProps {
     placeId?: string
     placeUrl?: string
+    verificationExempt?: boolean
 }
 
-export const PlaceShareButtons: React.FC<SocialRatingProps> = ({ placeId, placeUrl }) => {
+export const PlaceShareButtons: React.FC<SocialRatingProps> = ({ placeId, placeUrl, verificationExempt }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
 
@@ -119,6 +120,11 @@ export const PlaceShareButtons: React.FC<SocialRatingProps> = ({ placeId, placeU
                         ''
                     )}
                 </div>
+
+                <WasHereButton
+                    placeId={placeId}
+                    verificationExempt={verificationExempt}
+                />
             </div>
 
             <div className={styles.share}>

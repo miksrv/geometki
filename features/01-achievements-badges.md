@@ -1,5 +1,7 @@
 # Feature 01 — Achievements & Badges
 
+> **Status: ✅ Completed**
+
 ## Overview
 
 A gamified achievement system that rewards users for meaningful actions on the platform. The system distinguishes between **base achievements** (always visible, permanent progress) and **seasonal achievements** (visible only during their active window, time-bounded progress). Achievements are organised into **groups** (concepts, e.g. "Explorer") with optional tier progression (Bronze → Silver → Gold). Each user holds **one medal per group** — reaching a higher tier upgrades the existing medal rather than adding a new one.

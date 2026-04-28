@@ -46,6 +46,15 @@ jest.mock('next-i18next', () => ({
     })
 }))
 
+jest.mock('next-i18next/pages', () => ({
+    useTranslation: () => ({
+        i18n: {
+            language: 'ru',
+            changeLanguage: mockChangeLanguage
+        }
+    })
+}))
+
 jest.mock('@/hooks/useLocalStorage', () => jest.fn().mockReturnValue(['ru', jest.fn()]))
 
 const makeStore = () =>

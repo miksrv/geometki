@@ -16,6 +16,12 @@ jest.mock('next-i18next', () => ({
     )
 }))
 
+jest.mock('next-i18next/pages', () => ({
+    Trans: ({ i18nKey, values }: { i18nKey: string; values?: { count?: number } }) => (
+        <span>{`${i18nKey}:${String(values?.count)}`}</span>
+    )
+}))
+
 jest.mock('../user-avatar', () => ({
     UserAvatar: ({ user }: any) => <div data-testid={'user-avatar'}>{user?.name}</div>
 }))

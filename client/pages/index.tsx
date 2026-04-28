@@ -4,9 +4,9 @@ import { Button } from 'simple-react-ui-kit'
 import type { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
 import Link from 'next/link'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -51,6 +51,28 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
     return (
         <AppLayout>
             <Head>
+                {generateNextSeo({
+                    title: t('news-feed') + ' - ' + t('interesting-places'),
+                    description: t('geotags-description'),
+                    canonical: canonicalUrl,
+                    openGraph: {
+                        description: t('geotags-description'),
+                        images: [
+                            {
+                                height: 1538,
+                                url: `${SITE_LINK}images/pages/main.jpg`,
+                                width: 1768
+                            }
+                        ],
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        siteName: t('geotags'),
+                        title: t('news-feed'),
+                        type: 'website',
+                        url: canonicalUrl
+                    },
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags('')
+                })}
                 <script
                     type={'application/ld+json'}
                     dangerouslySetInnerHTML={{
@@ -73,29 +95,6 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
                     }}
                 />
             </Head>
-
-            <NextSeo
-                title={t('news-feed') + ' - ' + t('interesting-places')}
-                description={t('geotags-description')}
-                canonical={canonicalUrl}
-                openGraph={{
-                    description: t('geotags-description'),
-                    images: [
-                        {
-                            height: 1538,
-                            url: `${SITE_LINK}images/pages/main.jpg`,
-                            width: 1768
-                        }
-                    ],
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    siteName: t('geotags'),
-                    title: t('news-feed'),
-                    type: 'website',
-                    url: canonicalUrl
-                }}
-                twitter={{ cardType: 'summary_large_image' }}
-                additionalLinkTags={buildHreflangTags('')}
-            />
 
             <Header
                 title={t('news-feed') + ' - ' + t('interesting-places')}

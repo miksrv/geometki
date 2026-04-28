@@ -2,10 +2,11 @@ import React from 'react'
 import { Container } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
+import Head from 'next/head'
 import Image from 'next/image'
-import { useTranslation } from 'next-i18next'
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
-import { NextSeo } from 'next-seo'
+import { useTranslation } from 'next-i18next/pages'
+import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
@@ -26,21 +27,23 @@ const LevelsPage: NextPage<LevelsPageProps> = ({ levels }) => {
 
     return (
         <AppLayout>
-            <NextSeo
-                title={t('user-levels')}
-                canonical={`${canonicalUrl}users/levels`}
-                description={t('user-levels-description-1')}
-                openGraph={{
-                    description: t('user-levels-description-1'),
-                    locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                    siteName: t('geotags'),
+            <Head>
+                {generateNextSeo({
                     title: t('user-levels'),
-                    type: 'website',
-                    url: `${canonicalUrl}users/levels`
-                }}
-                twitter={{ cardType: 'summary_large_image' }}
-                additionalLinkTags={buildHreflangTags('users/levels')}
-            />
+                    canonical: `${canonicalUrl}users/levels`,
+                    description: t('user-levels-description-1'),
+                    openGraph: {
+                        description: t('user-levels-description-1'),
+                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        siteName: t('geotags'),
+                        title: t('user-levels'),
+                        type: 'website',
+                        url: `${canonicalUrl}users/levels`
+                    },
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags('users/levels')
+                })}
+            </Head>
             <Header
                 title={t('user-levels')}
                 homePageTitle={t('geotags')}

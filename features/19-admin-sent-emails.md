@@ -1,4 +1,6 @@
-# Feature 19 — Admin: Sent Emails Dashboard ✅ COMPLETED (2026-04-23)
+# Feature 19 — Admin: Sent Emails Dashboard
+
+> **Status: ✅ Completed** (2026-04-23)
 
 ---
 

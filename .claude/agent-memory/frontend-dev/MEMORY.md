@@ -1,8 +1,9 @@
 # Memory Index
 
 ## Project
-- [project_architecture.md](./project_architecture.md) — Core stack (Next.js 16/Pages Router, React 19, RTK Query, Leaflet, next-i18next, SASS modules), file structure, and key patterns in the geometki client.
+- [project_architecture.md](./project_architecture.md) — Core stack (Next.js 16/Pages Router, React 19, RTK Query, Leaflet, next-i18next v16, next-seo v7, SASS modules), file structure, and key patterns in the geometki client.
 - [project_known_bugs.md](./project_known_bugs.md) — Five critical bugs identified in March 2026 audit (auth cookie, stale closures, broken regex, MapEvents effect).
+- [project_package_upgrades.md](./project_package_upgrades.md) — April 2026 major package upgrades: what changed and why ESLint 10 was not adopted.
 
 ## Testing
 - `client/__mocks__/commonMocks.ts` — shared test store factory, renderWithStore helper, mockRouter, mockUseTranslation, and fixture data.

@@ -196,6 +196,7 @@ $routes->group('bookmarks', static function ($routes) {
 
 /** Visited Controller **/
 $routes->group('visited', static function ($routes) {
+    $routes->get('/', 'Visited::check');
     $routes->get('(:alphanum)', 'Visited::place/$1');
     $routes->put('/', 'Visited::set');
 
