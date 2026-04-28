@@ -317,5 +317,15 @@
     "sending-mail-status-completed": "Delivered",
     "sending-mail-status-error": "Error",
     "sending-mail-status-rejected": "Rejected",
-    "sending-mail-admin-total": "Total emails"
+    "sending-mail-admin-total": "Total emails",
+    "visited-dialog-title": "Confirm visit",
+    "visited-dialog-share-location": "Share location",
+    "visited-dialog-without-confirmation": "Mark without confirmation",
+    "visited-confirmed": "Visit confirmed ✓",
+    "visited-unconfirmed": "Marked without confirmation",
+    "visited-removed": "Mark removed",
+    "visited-count": "{{total}} visits",
+    "visited-verified-count": "{{verified}} confirmed ✓",
+    "visited-dialog-description": "Share your location to verify your visit and earn a bonus. Or mark without confirmation.",
+    "visited-was-here": "I was here"
 }

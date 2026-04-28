@@ -316,5 +316,15 @@
     "sending-mail-status-completed": "Доставлено",
     "sending-mail-status-error": "Ошибка",
     "sending-mail-status-rejected": "Отклонено",
-    "sending-mail-admin-total": "Всего писем"
+    "sending-mail-admin-total": "Всего писем",
+    "visited-dialog-title": "Подтвердить визит",
+    "visited-dialog-share-location": "Поделиться местоположением",
+    "visited-dialog-without-confirmation": "Отметить без подтверждения",
+    "visited-confirmed": "Визит подтверждён ✓",
+    "visited-unconfirmed": "Отмечено без подтверждения",
+    "visited-removed": "Отметка снята",
+    "visited-count": "{{total}} посещений",
+    "visited-verified-count": "{{verified}} подтверждённых ✓",
+    "visited-dialog-description": "Поделитесь геолокацией, чтобы подтвердить визит и получить бонус XP. Или отметьте без подтверждения.",
+    "visited-was-here": "Я тут был(а)"
 }
