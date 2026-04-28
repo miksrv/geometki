@@ -53,6 +53,9 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, title 
                                 [ApiModel.ActivityTypes.Comment]: t('activity-comment', {
                                     defaultValue: 'Комментировал(а) интересное место'
                                 }),
+                                [ApiModel.ActivityTypes.Cover]: t('activity-cover', {
+                                    defaultValue: 'Обновил(а) обложку интересного места'
+                                }),
                                 [ApiModel.ActivityTypes.Edit]: t('activity-editing', {
                                     defaultValue: 'Редактировал(а) интересное место'
                                 }),
