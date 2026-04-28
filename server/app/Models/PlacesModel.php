@@ -129,7 +129,8 @@ class PlacesModel extends ApplicationBaseModel
                 location_regions.title_en as region_en, location_regions.title_ru as region_ru,
                 location_districts.title_en as district_en, location_districts.title_ru as district_ru,
                 location_localities.title_en as city_en, location_localities.title_ru as city_ru,
-                category.title_ru as category_ru, category.title_en as category_en' . $distanceSQL
+                category.title_ru as category_ru, category.title_en as category_en,
+                places.visit_radius_m, places.verification_exempt' . $distanceSQL
             )
             ->join('users', 'places.user_id = users.id', 'left')
             ->join('category', 'places.category = category.name', 'left')
