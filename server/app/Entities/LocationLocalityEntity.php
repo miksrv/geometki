@@ -11,13 +11,13 @@ class LocationLocalityEntity extends Entity {
         'region_id'   => null,
         'district_id' => null,
         'title_en'    => null,
-        'title_ru'    => null
+        'title_ru'    => null,
     ];
 
     protected $dates = [
         'created_at',
         'updated_at',
-        'deleted_at'
+        'deleted_at',
     ];
 
     protected $casts = [
@@ -26,6 +26,6 @@ class LocationLocalityEntity extends Entity {
         'region_id'   => 'integer',
         'district_id' => 'integer',
         'title_en'    => 'string',
-        'title_ru'    => 'string'
+        'title_ru'    => 'string',
     ];
 }

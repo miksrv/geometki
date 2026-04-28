@@ -19,7 +19,7 @@ class ActivityEntity extends Entity {
     protected $dates = [
         'created_at',
         'updated_at',
-        'deleted_at'
+        'deleted_at',
     ];
 
     protected $casts = [
@@ -30,6 +30,6 @@ class ActivityEntity extends Entity {
         'photo_id'   => 'string',
         'place_id'   => 'string',
         'rating_id'  => 'string',
-        'comment_id' => 'string'
+        'comment_id' => 'string',
     ];
 }
