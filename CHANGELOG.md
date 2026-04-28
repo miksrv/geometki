@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.6.4
+
+### Patch Changes
+
+- Added "Was Here" visit verification feature: new `WasHereButton` component integrates with visited API endpoints, shows a geolocation confirmation dialog, supports offline visits via localStorage (24 h TTL) with automatic flush when back online, and dispatches auth dialog for unauthenticated users
+- Added `PlaceVisited` component displaying visited and verified counts with an avatar group of recent visitors; integrated into the place page alongside `WasHereButton` in the share buttons area
+- Added `Visited::check` server endpoint (`GET /visited`) reporting whether the authenticated user has visited a given place; enhanced `Visited::set()` to accept optional lat/lon, compute proximity verification via Haversine formula against `visit_radius_m`, store `visited_at/lat/lon/verified`, and return visit+verification status
+- Added database migration: `visited_at`, `verified`, `lat`, `lon` columns to `users_visited_places`; `visit_radius_m` and `verification_exempt` columns to `places`; updated `UserVisitedPlaceEntity` and `UsersVisitedPlacesModel` accordingly
+- Extended client visited API types: `visitedCheckPlace` query, `PutResponse` with `visited/verified` flags, `ListResponse` with `verified_count` and `total_count`; extended `Place` model with `visit_radius_m` and `verification_exempt`
+- Added EN and RU translation keys for the visit confirmation dialog, location sharing, unconfirmed marking, and visit/verified counts
+- Upgraded frontend dependencies: `next-i18next` to v16, `next-seo` to v7, `i18next`, `react-i18next`, `schema-dts`, `TypeScript`, and `@typescript-eslint` packages; updated `yarn.lock` accordingly
+- Migrated all i18n imports across client components and pages from `next-i18next` to `next-i18next/pages` to match the new package entrypoint layout
+- Migrated SEO markup on all pages from the `<NextSeo>` component to `generateNextSeo` rendered inside `next/head`; consolidated JSON-LD structured-data scripts into the same `<Head>` to remove duplicate wrappers
+- Updated SASS files to use `@use` with a `variables` namespace instead of the legacy `@import`; fixed `@each` loops in achievement styles by quoting tier names for correct SASS parsing
+- Fixed avatar path in `SendingMailManage`: use `user_avatar` row field instead of `avatar`
+- Changed heatmap layer label to "Explorations" (updated EN/RU locale keys)
+- Removed pathname restriction on the localhost `remotePattern` in `next.config.js` so assets at any path under `localhost:8080` are allowed
+- Added 10 px padding to the tags grid for consistent spacing
+
+
 ## 1.6.3
 
 ### Patch Changes
