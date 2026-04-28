@@ -11,7 +11,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
-import { BookmarkButton, WasHereButton } from '@/components/shared'
+import { BookmarkButton } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
 
 import styles from './styles.module.sass'
@@ -119,11 +119,6 @@ export const PlaceHeader: React.FC<PlaceHeaderProps> = ({
                 />
 
                 <div className={styles.actionButtons}>
-                    <WasHereButton
-                        placeId={place?.id}
-                        verificationExempt={place?.verification_exempt}
-                    />
-
                     <BookmarkButton
                         size={'medium'}
                         mode={'secondary'}

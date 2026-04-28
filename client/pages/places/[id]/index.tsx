@@ -21,7 +21,8 @@ import {
     PlaceDescription,
     PlaceHeader,
     PlaceInformation,
-    PlaceShareButtons
+    PlaceShareButtons,
+    PlaceVisited
 } from '@/sections/place'
 import { formatDateISO, formatDateUTC, removeMarkdown, truncateText } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
@@ -208,7 +209,10 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             <PlaceShareButtons
                 placeId={place?.id}
                 placeUrl={pagePlaceUrl}
+                verificationExempt={place?.verification_exempt}
             />
+
+            <PlaceVisited place={place} />
 
             <PhotoGallery
                 title={t('photos')}

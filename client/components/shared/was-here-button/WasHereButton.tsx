@@ -35,10 +35,7 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({ placeId, verificat
 
     const [putVisit, { isLoading }] = API.useVisitedPutPlaceMutation()
 
-    const { data: visitedData } = API.useVisitedCheckPlaceQuery(
-        { placeId: placeId! },
-        { skip: !placeId || !isAuth }
-    )
+    const { data: visitedData } = API.useVisitedCheckPlaceQuery({ placeId: placeId! }, { skip: !placeId || !isAuth })
 
     const callApi = useCallback(
         async (lat?: number, lon?: number) => {
@@ -194,7 +191,7 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({ placeId, verificat
         <>
             <Button
                 mode={visitedData?.result ? 'primary' : 'secondary'}
-                size={'medium'}
+                size={'small'}
                 className={styles.wasHereButton}
                 disabled={!placeId || isLoading}
                 loading={isLoading}
