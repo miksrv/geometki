@@ -19,7 +19,7 @@ export type Activity = {
 
 export const ActivityTypes = {
     Comment: 'comment',
-    // Cover: 'cover',
+    Cover: 'cover',
     Edit: 'edit',
     Photo: 'photo',
     Place: 'place',

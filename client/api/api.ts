@@ -123,7 +123,15 @@ export const API = createApi({
             },
             providesTags: (result, error, arg) => [{ id: arg?.author || arg?.place || 'LIST', type: 'Activity' }],
             query: (params) => `activity${encodeQueryData(params)}`,
-            serializeQueryArgs: ({ endpointName, queryArgs }) => queryArgs?.author || queryArgs?.place || endpointName
+            serializeQueryArgs: ({ endpointName, queryArgs }) => {
+                if (queryArgs?.author) {
+                    return `${endpointName}_author_${queryArgs.author}`
+                }
+                if (queryArgs?.place) {
+                    return `${endpointName}_place_${queryArgs.place}`
+                }
+                return endpointName
+            }
         }),
         activityGetList: builder.query<ApiType.Activity.GetListResponse, Maybe<ApiType.Activity.GetListRequest>>({
             providesTags: (result, error, arg) => [{ id: arg?.place || arg?.author, type: 'Activity' }],
