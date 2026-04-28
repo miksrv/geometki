@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Libraries\AvatarLibrary;
 use App\Libraries\SessionLibrary;
 use App\Models\PlacesModel;
 use App\Models\UsersVisitedPlacesModel;
@@ -70,11 +71,18 @@ class Visited extends ResourceController
     {
         $visitedModel = new UsersVisitedPlacesModel();
 
+        $avatarLibrary = new AvatarLibrary();
+
         $items = $visitedModel
             ->select('users.id, users.name, users.avatar')
             ->join('users', 'users_visited_places.user_id = users.id', 'inner')
             ->where(['place_id' => $id])
             ->findAll();
+
+        $items = array_map(function ($item) use ($avatarLibrary) {
+            $item->avatar = $avatarLibrary->buildPath($item->id, $item->avatar, 'small');
+            return $item;
+        }, $items);
 
         $verifiedCount = $visitedModel
             ->where(['place_id' => $id, 'verified' => 1])
