@@ -28,6 +28,6 @@ export type Place = {
         full: string
         preview: string
     }
-    visit_radius_m?: number
-    verification_exempt?: boolean
+    visitRadiusM?: number
+    verificationExempt?: boolean
 }
