@@ -24,12 +24,13 @@ class UsersVisitedPlacesModel extends ApplicationBaseModel
     protected $allowedFields = [
         'user_id',
         'place_id',
+        'visited_at',
+        'verified',
+        'lat',
+        'lon',
     ];
 
-    protected $useTimestamps = true;
-    protected $dateFormat    = 'datetime';
-    protected $createdField  = 'created_at';
-    protected $updatedField  = 'updated_at';
+    protected $useTimestamps = false;
 
     protected $validationRules    = [];
     protected $validationMessages = [];
