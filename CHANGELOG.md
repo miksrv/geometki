@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.6.5
+
+### Patch Changes
+
+- Activity feed: improved pagination and grouping — Fetch N+1 items as a lookahead and drop the extra to enforce the requested limit. Added recursion depth limit to `addNextActivityItems`. Grouping now compares timestamps (≤600 s) and requires matching `place_id`/`user_id`. Group type priority refined: `place > edit > cover > photo`. Server ordering changed to `created_at DESC, type DESC`; `cover` activity type re-enabled; `rating.value` and `comments.content` joined and selected.
+- Activity feed: cover label and scroll cursor fix — Added translation mapping for `ActivityTypes.Cover`. Refactored `IndexPage` scroll handler to derive `cursorDate` from the last item's `created.date`, replacing the previous `items.length` guard. `onScroll` dependencies updated to `[data, isFetching]`.
+- Activity feed: scoped cache keys per author/place — `serializeQueryArgs` now namespaces cache keys with endpoint and `author`/`place` (e.g. `endpoint_author_<id>`) to prevent collisions and ensure correct per-query caching. `Cover` activity type re-enabled in `ActivityTypes`.
+- Places model: expose `visit_radius_m` and `verification_exempt` — Both fields added to the `SELECT` clause in `PlacesModel` so they are returned by place queries and available for distance calculations and verification logic.
+- Entity normalization: casts, dates, formatting — Standardized `$dates`, `$casts`, and array formatting across `UserAchievementEntity`, `UserBookmarkEntity`, `UserEntity`, `UserLevelEntity`, `UserNotificationEntity`, and `UserVisitedPlaceEntity`. Added `earned_at` and `visited_at` to relevant `$dates`; `read` cast changed to `boolean`.
+- Entity formatting: `RatingEntity` `created` cast — Added `'created' => 'datetime'` cast to `RatingEntity`. Applied consistent formatting (trailing commas, datamap cleanup) across entity classes.
+- Entity formatting: `OverpassCategory` explicit attributes and casts — Added `$attributes` and `$casts` to `OverpassCategory` so properties are properly typed. Removed commented-out `$dates` from `CategoryEntity`. Normalized array formatting across multiple entity classes.
+- Places: avatar resolution for visited users — `AvatarLibrary` instantiated in the visited-users query; returned records now map raw `avatar` values to resolved paths via `buildPath('small')`.
+- API: normalize place fields to camelCase — Renamed `visit_radius_m` → `visitRadiusM` and `verification_exempt` → `verificationExempt` in API responses. Server controller maps DB snake_case to camelCase and strips the originals; client models updated accordingly.
+- Notifications: centralized localization and simplified meta — Server now reads the request locale and builds a simplified `meta` object (`title`, `level`/`image`) for `achievements` and `level` notifications. Client API model updated; notification UI simplified to use `meta.title`, removing locale-dependent rendering.
+- Notifications and places: payload trimming and formatter extension — Removed unused fields from the `achievements` notification payload (only `title_en`, `title_ru`, `image` retained). `PlaceFormatterLibrary` extended to include `visit_radius_m` and `verification_exempt` in formatted place rows.
+
 ## 1.6.4
 
 ### Patch Changes
