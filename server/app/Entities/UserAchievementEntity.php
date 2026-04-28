@@ -4,8 +4,7 @@ namespace App\Entities;
 
 use CodeIgniter\Entity\Entity;
 
-class UserAchievementEntity extends Entity
-{
+class UserAchievementEntity extends Entity {
     protected $attributes = [
         'id'             => null,
         'user_id'        => null,
@@ -16,9 +15,14 @@ class UserAchievementEntity extends Entity
         'emailed'        => 0,
     ];
 
+    protected $dates = ['earned_at'];
+
     protected $casts = [
-        'notified' => 'integer',
-        'emailed'  => 'integer',
-        'progress' => 'json-array',
+        'id'             => 'string',
+        'user_id'        => 'string',
+        'achievement_id' => 'string',
+        'notified'       => 'integer',
+        'emailed'        => 'integer',
+        'progress'       => 'json-array',
     ];
 }

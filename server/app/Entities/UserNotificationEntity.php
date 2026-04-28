@@ -16,14 +16,14 @@ class UserNotificationEntity extends Entity {
     protected $dates = [
         'created_at',
         'updated_at',
-        'deleted_at'
+        'deleted_at',
     ];
 
     protected $casts = [
         'type'        => 'string',
-        'read'        => 'bool',
+        'read'        => 'boolean',
         'meta'        => 'json',
         'user_id'     => 'string',
-        'activity_id' => 'string'
+        'activity_id' => 'string',
     ];
 }
