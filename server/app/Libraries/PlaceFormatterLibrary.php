@@ -131,7 +131,8 @@ class PlaceFormatterLibrary
             $row->region_id, $row->region_en, $row->region_ru,
             $row->district_id, $row->district_en, $row->district_ru,
             $row->locality_id, $row->city_en, $row->city_ru,
-            $row->created_at, $row->updated_at, $row->deleted_at
+            $row->created_at, $row->updated_at, $row->deleted_at,
+            $row->visit_radius_m, $row->verification_exempt
         );
     }
 }
