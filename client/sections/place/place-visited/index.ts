@@ -1,0 +1,1 @@
+export { PlaceVisited } from './PlaceVisited'
