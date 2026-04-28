@@ -1,12 +1,14 @@
-# Feature: Weekly Personal Digest & Smart Push Notifications
+# Feature 16 — Weekly Personal Digest & Smart Push Notifications
+
+> **Status: ⚡ Partial** — Weekly Email Digest (Part 1 core) completed; Smart Push Notifications (Part 2) pending
 
 ## Status
 
 | Part | Status | Notes |
 |------|--------|-------|
-| Part 1: Weekly Email Digest (core) | `🚧 IN PROGRESS` | QW3 sprint — sections on available data |
-| Part 1: Streak / Rank / Freshness / Followers sections | `⏳ PENDING` | Blocked on Features 1.1, 13, 15, follow system |
-| Part 2: Smart Push Notifications | `⏳ PENDING` | Blocked on mobile push token infra + web push |
+| Part 1: Weekly Email Digest (core) | ✅ Done | Implemented |
+| Part 1: Streak / Rank / Freshness / Followers sections | ⏳ Pending | Blocked on Features 03, 13, 15, follow system |
+| Part 2: Smart Push Notifications | ⏳ Pending | Blocked on mobile push token infra + web push |
 
 ---
 
