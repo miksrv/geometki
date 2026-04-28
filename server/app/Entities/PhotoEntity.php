@@ -22,7 +22,7 @@ class PhotoEntity extends Entity {
     protected $dates = [
         'created_at',
         'updated_at',
-        'deleted_at'
+        'deleted_at',
     ];
 
     protected $casts = [
@@ -41,7 +41,6 @@ class PhotoEntity extends Entity {
     ];
 
     protected $datamap = [
-        // property_name => db_column_name
-        'created' => 'created_at'
+        'created' => 'created_at',
     ];
 }

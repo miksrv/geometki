@@ -16,7 +16,7 @@ class RatingEntity extends Entity {
     protected $dates = [
         'created_at',
         'updated_at',
-        'deleted_at'
+        'deleted_at',
     ];
 
     protected $casts = [
@@ -24,10 +24,11 @@ class RatingEntity extends Entity {
         'user_id'    => 'string',
         'session_id' => 'string',
         'rating'     => 'string',
-        'value'      => 'integer'
+        'value'      => 'integer',
+        'created'    => 'datetime',
     ];
 
     protected $datamap = [
-        'created' => 'created_at'
+        'created' => 'created_at',
     ];
 }
