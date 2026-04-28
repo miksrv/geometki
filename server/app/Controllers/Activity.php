@@ -45,7 +45,12 @@ class Activity extends ResourceController
         $place    = $this->request->getGet('place', FILTER_SANITIZE_SPECIAL_CHARS);
 
         $placeContent  = new PlacesContent();
-        $activityData  = $this->model->getActivityList($lastDate, $author, $place, min($limit, 40), $offset);
+        $activityData  = $this->model->getActivityList($lastDate, $author, $place, min($limit + 1, 40), $offset);
+
+        // Drop the extra lookahead row so we return at most $limit items
+        if (count($activityData) > $limit) {
+            array_pop($activityData);
+        }
 
         $placesIds   = [];
         $activityIds = [];
@@ -66,10 +71,6 @@ class Activity extends ResourceController
         // Now we group the data
         $groupedData = $this->groupSimilarActivities($activityData, $placeContent);
 
-        // Remove the last object in the array if it may not be fully grouped
-        if (count($groupedData) >= $limit) {
-            array_pop($groupedData);
-        }
 
         // Increasing the view counter
         if (!empty($activityIds)) {
@@ -86,9 +87,9 @@ class Activity extends ResourceController
      *
      * @return void
      */
-    protected function addNextActivityItems(array &$activityData): void
+    protected function addNextActivityItems(array &$activityData, int $depth = 0): void
     {
-        if (empty($activityData)) {
+        if (empty($activityData) || $depth >= 5) {
             return;
         }
 
@@ -105,6 +106,8 @@ class Activity extends ResourceController
         }
 
         foreach ($nextItems as $nextItem) {
+            $lastItem = end($activityData);
+
             if ($this->shouldGroupActivities($lastItem, $nextItem)) {
                 $activityData[] = $nextItem;
             } else {
@@ -113,7 +116,7 @@ class Activity extends ResourceController
         }
 
         // Recursively call the function to add the following elements
-        $this->addNextActivityItems($activityData);
+        $this->addNextActivityItems($activityData, $depth + 1);
     }
 
     /**
@@ -126,10 +129,12 @@ class Activity extends ResourceController
      */
     private function shouldGroupActivities(object $lastItem, object $nextItem): bool
     {
+        $timeDiff = abs($lastItem->created_at->getTimestamp() - $nextItem->created_at->getTimestamp());
+
         return (
-            (!isset($lastItem->place) || $lastItem->place->id === $nextItem->place_id) &&
-            $lastItem->user_id === $nextItem->user_id
-            // (strtotime($lastItem->created) - strtotime($nextItem->created_at)) <= 60 * 60
+            $lastItem->user_id === $nextItem->user_id &&
+            $lastItem->place_id === $nextItem->place_id &&
+            $timeDiff <= 600
         );
     }
 
@@ -155,10 +160,11 @@ class Activity extends ResourceController
             return $groupData;
         }
 
-        $avatarLibrary  = new AvatarLibrary();
-        $lastGroupIndex = -1;
+        $avatarLibrary   = new AvatarLibrary();
+        $lastGroupIndex  = -1;
+        $groupCreatedTs  = [];
         foreach ($activityData as $item) {
-            // $itemCreatedAt = strtotime($item->created_at);
+            $itemCreatedAt = $item->created_at->getTimestamp();
             $photoPath = PATH_PHOTOS . $item->place_id . '/';
             $itemPhoto = $item->type === 'photo' && $item->filename ? [
                 'full'      => $photoPath . $item->filename . '.' . $item->extension,
@@ -172,19 +178,22 @@ class Activity extends ResourceController
             if (
                 $lastGroupIndex !== -1 &&
                 (!isset($groupData[$lastGroupIndex]->place) || $groupData[$lastGroupIndex]->place->id === $item->place_id) &&
-                isset($groupData[$lastGroupIndex]->author) && $groupData[$lastGroupIndex]->author?->id === $item?->user_id
-                // ($itemCreatedAt - strtotime($groupData[$lastGroupIndex]->created)) <= 60 * 60
+                isset($groupData[$lastGroupIndex]->author) && $groupData[$lastGroupIndex]->author?->id === $item?->user_id &&
+                abs($itemCreatedAt - $groupCreatedTs[$lastGroupIndex]) <= 600
             ) {
                 // We are updating the group date to an earlier one.
-                if (strtotime($item->created_at) < strtotime($groupData[$lastGroupIndex]->created)) {
+                if ($itemCreatedAt < $groupCreatedTs[$lastGroupIndex]) {
                     $groupData[$lastGroupIndex]->created = $item->created_at;
+                    $groupCreatedTs[$lastGroupIndex]     = $itemCreatedAt;
                 }
 
-                // Determine the group type based on priority
+                // Determine the group type based on priority: place > edit > cover > photo
                 if ($item->type === 'place') {
                     $groupData[$lastGroupIndex]->type = 'place';
                 } elseif ($item->type === 'edit' && $groupData[$lastGroupIndex]->type !== 'place') {
                     $groupData[$lastGroupIndex]->type = 'edit';
+                } elseif ($item->type === 'cover' && !in_array($groupData[$lastGroupIndex]->type, ['place', 'edit'])) {
+                    $groupData[$lastGroupIndex]->type = 'cover';
                 } elseif ($item->type === 'photo' && $groupData[$lastGroupIndex]->type === 'photo') {
                     $groupData[$lastGroupIndex]->type = 'photo';
                 }
@@ -245,8 +254,9 @@ class Activity extends ResourceController
                 ];
             }
 
-            $groupData[]    = $currentGroup;
-            $lastGroupIndex = array_key_last($groupData);
+            $groupData[]                          = $currentGroup;
+            $lastGroupIndex                       = array_key_last($groupData);
+            $groupCreatedTs[$lastGroupIndex]      = $itemCreatedAt;
         }
 
         return array_values($groupData);
