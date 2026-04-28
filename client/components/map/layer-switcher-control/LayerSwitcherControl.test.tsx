@@ -93,7 +93,7 @@ describe('LayerSwitcherControl', () => {
         it('renders heatmap and historical photos when hideAdditionalLayers is false', () => {
             render(<LayerSwitcherControl />)
             fireEvent.click(screen.getByRole('button'))
-            expect(screen.getByText('Heatmap')).toBeInTheDocument()
+            expect(screen.getByText('Explorations')).toBeInTheDocument()
             expect(screen.getByText('Historical Photos')).toBeInTheDocument()
         })
 
