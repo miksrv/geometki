@@ -17,7 +17,8 @@ class UserVisitedPlaceEntity extends Entity {
     protected $dates = [
         'created_at',
         'updated_at',
-        'deleted_at'
+        'deleted_at',
+        'visited_at',
     ];
 
     protected $casts = [

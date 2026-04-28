@@ -34,11 +34,12 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
 
     const onScroll = useCallback(() => {
         const scrolledToBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 20
+        const cursorDate = data?.items[data.items.length - 1]?.created?.date
 
-        if (scrolledToBottom && !isFetching && !!data?.items.length) {
-            setLastDate(data.items[data.items.length - 1].created?.date)
+        if (scrolledToBottom && !isFetching && cursorDate) {
+            setLastDate(cursorDate)
         }
-    }, [isFetching, data])
+    }, [data, isFetching])
 
     useEffect(() => {
         document.addEventListener('scroll', onScroll)

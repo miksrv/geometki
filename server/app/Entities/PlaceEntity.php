@@ -20,13 +20,13 @@ class PlaceEntity extends Entity {
         'region_id'   => null,
         'district_id' => null,
         'locality_id' => null,
-        'user_id'     => null
+        'user_id'     => null,
     ];
 
     protected $dates = [
         'created_at',
         'updated_at',
-        'deleted_at'
+        'deleted_at',
     ];
 
     protected $casts = [
@@ -45,8 +45,7 @@ class PlaceEntity extends Entity {
         'district_id' => 'integer',
         'locality_id' => 'integer',
         'user_id'     => 'string',
-
-        'created' => 'datetime',
-        'updated' => 'datetime',
+        'created'     => 'datetime',
+        'updated'     => 'datetime',
     ];
 }

@@ -209,7 +209,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             <PlaceShareButtons
                 placeId={place?.id}
                 placeUrl={pagePlaceUrl}
-                verificationExempt={place?.verification_exempt}
+                verificationExempt={place?.verificationExempt}
             />
 
             <PlaceVisited place={place} />

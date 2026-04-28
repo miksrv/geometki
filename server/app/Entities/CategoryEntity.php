@@ -13,17 +13,11 @@ class CategoryEntity extends Entity {
         'content_ru' => null,
     ];
 
-    // protected $dates = [
-    //     'created_at',
-    //     'updated_at',
-    //     'deleted_at'
-    // ];
-
     protected $casts = [
         'name'       => 'string',
         'title_en'   => 'string',
         'title_ru'   => 'string',
         'content_en' => 'string',
-        'content_ru' => 'string'
+        'content_ru' => 'string',
     ];
 }

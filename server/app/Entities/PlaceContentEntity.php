@@ -17,7 +17,7 @@ class PlaceContentEntity extends Entity {
     protected $dates = [
         'created_at',
         'updated_at',
-        'deleted_at'
+        'deleted_at',
     ];
 
     protected $casts = [
@@ -26,6 +26,6 @@ class PlaceContentEntity extends Entity {
         'locale'   => 'string',
         'title'    => 'string',
         'content'  => 'string',
-        'delta'    => 'integer'
+        'delta'    => 'integer',
     ];
 }

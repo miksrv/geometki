@@ -200,6 +200,9 @@ class Places extends ResourceController
                 $place->cover = $cover;
             }
 
+            $place->visitRadiusM       = (int) $place->visit_radius_m;
+            $place->verificationExempt = (bool) $place->verification_exempt;
+
             $formatter->cleanupFields($place);
         }
 
@@ -292,6 +295,9 @@ class Places extends ResourceController
         $placeData->title   = $placeContent->title($id);
         $placeData->content = $placeContent->content($id);
 
+        $placeData->visitRadiusM       = (int) $placeData->visit_radius_m;
+        $placeData->verificationExempt = (bool) $placeData->verification_exempt;
+
         unset($placeData->user_id, $placeData->user_name, $placeData->user_avatar, $placeData->activity_at,
             $placeData->country_id, $placeData->region_id, $placeData->district_id, $placeData->locality_id,
             $placeData->address_en, $placeData->address_ru,
@@ -300,6 +306,7 @@ class Places extends ResourceController
             $placeData->district_en, $placeData->district_ru,
             $placeData->city_en, $placeData->city_ru,
             $placeData->category_en, $placeData->category_ru,
+            $placeData->visit_radius_m, $placeData->verification_exempt,
         );
 
         // Incrementing view counter + daily log (atomic) + optional per-user tracking

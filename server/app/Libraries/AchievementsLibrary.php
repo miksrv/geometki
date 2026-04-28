@@ -459,15 +459,9 @@ class AchievementsLibrary
 
         $notify = new NotifyLibrary();
         $notify->push('achievements', $userId, null, [
-            'achievement_id' => $achievement->id,
-            'group_slug'     => $achievement->group_slug,
-            'tier'             => $achievement->tier,
-            'title_en'         => $achievement->title_en,
-            'title_ru'         => $achievement->title_ru,
-            'icon'             => $achievement->icon,
-            'image'            => $achievement->image,
-            'xp_bonus'         => $achievement->xp_bonus,
-            'is_upgrade'       => $isUpgrade,
+            'title_en' => $achievement->title_en,
+            'title_ru' => $achievement->title_ru,
+            'image'    => $achievement->image,
         ]);
     }
 

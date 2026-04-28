@@ -2,7 +2,6 @@ import React, { useEffect } from 'react'
 import { cn, Icon } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
-import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
@@ -20,7 +19,6 @@ interface NotificationProps extends ApiModel.Notification {
 
 export const Notification: React.FC<NotificationProps> = ({ showDate, onClose, onLoad, ...props }) => {
     const { t } = useTranslation()
-    const { locale } = useRouter()
 
     useEffect(() => {
         onLoad?.(props.id)
@@ -57,11 +55,7 @@ export const Notification: React.FC<NotificationProps> = ({ showDate, onClose, o
                     ) : props.type === 'level' ? (
                         `${props.meta?.title} (${props.meta?.level})`
                     ) : props.type === 'achievements' ? (
-                        <span>
-                            {locale === 'en'
-                                ? (props.meta?.title_en ?? '')
-                                : (props.meta?.title_ru ?? props.meta?.title_en ?? '')}
-                        </span>
+                        <span>{props.meta?.title ?? ''}</span>
                     ) : props.place ? (
                         <Link
                             href={`/places/${props.place.id}`}

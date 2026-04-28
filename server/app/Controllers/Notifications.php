@@ -137,6 +137,7 @@ class Notifications extends ResourceController
             return [];
         }
 
+        $locale       = $this->request->getLocale();
         $placeContent = new PlacesContent(350);
         $placesData = [];
         $placesIds  = [];
@@ -165,11 +166,26 @@ class Notifications extends ResourceController
 
             $findPlace = array_search($notify->place_id, array_column($placesData, 'id'));
             $placeData = $findPlace !== false ? $placesData[$findPlace] : null;
+            $meta = $notify->meta;
+            if ($meta) {
+                if ($notify->type === 'achievements') {
+                    $meta = [
+                        'title' => $locale === 'en' ? ($meta->title_en ?? '') : ($meta->title_ru ?? $meta->title_en ?? ''),
+                        'image' => $meta->image ?? null,
+                    ];
+                } elseif ($notify->type === 'level') {
+                    $meta = [
+                        'title' => $locale === 'en' ? ($meta->title_en ?? '') : ($meta->title_ru ?? $meta->title_en ?? ''),
+                        'level' => $meta->level ?? null,
+                    ];
+                }
+            }
+
             $tempData  = [
                 'id'       => $notify->id,
                 'type'     => $notify->type,
                 'activity' => $notify->activity_type,
-                'meta'     => $notify->meta
+                'meta'     => $meta
             ];
 
             if (isset($notify->created_at)) {

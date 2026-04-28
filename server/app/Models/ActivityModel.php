@@ -107,8 +107,10 @@ class ActivityModel extends ApplicationBaseModel
             $model->where('activity.place_id', $placeId);
         }
 
-        return $model->whereIn('activity.type', ['photo', 'place', 'rating', 'edit', 'comment'])
-            ->orderBy('activity.created_at, activity.type', 'DESC')
+//        return $model->whereIn('activity.type', ['photo', 'place', 'rating', 'edit', 'comment', 'cover'])
+        return $model
+            ->orderBy('activity.created_at', 'DESC')
+            ->orderBy('activity.type', 'DESC')
             ->findAll(min(abs($limit), 100), abs($offset));
     }
 
@@ -149,11 +151,14 @@ class ActivityModel extends ApplicationBaseModel
     ): array {
         return $this->select(
             'activity.*, places.id as place_id, places.category, users.id as user_id, users.name as user_name,
-            users.avatar as user_avatar, photos.filename, photos.extension, photos.width, photos.height'
+            users.avatar as user_avatar, photos.filename, photos.extension, photos.width, photos.height,
+            rating.value, comments.content as comment_text'
         )
             ->join('places', 'activity.place_id = places.id', 'left')
             ->join('photos', 'activity.photo_id = photos.id', 'left')
             ->join('users', 'activity.user_id = users.id', 'left')
+            ->join('rating', 'activity.rating_id = rating.id', 'left')
+            ->join('comments', 'activity.comment_id = comments.id', 'left')
             ->whereNotIn('activity.id', $activityIds)
             ->where('activity.created_at >=', $createdAt)
             ->where('activity.user_id', $userId)

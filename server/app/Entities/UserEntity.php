@@ -25,7 +25,7 @@ class UserEntity extends Entity {
         'created_at',
         'updated_at',
         'deleted_at',
-        'activity_at'
+        'activity_at',
     ];
 
     protected $casts = [
@@ -43,9 +43,8 @@ class UserEntity extends Entity {
         'avatar'      => 'string',
         'settings'    => 'json',
         'activity_at' => 'datetime',
-
-        'created'  => 'datetime',
-        'activity' => 'datetime',
-        'updated'  => 'datetime',
+        'created'     => 'datetime',
+        'updated'     => 'datetime',
+        'activity'    => 'datetime',
     ];
 }

@@ -4,8 +4,7 @@ namespace App\Entities;
 
 use CodeIgniter\Entity\Entity;
 
-class AchievementEntity extends Entity
-{
+class AchievementEntity extends Entity {
     protected $attributes = [
         'id'             => null,
         'group_slug'     => null,
