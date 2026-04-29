@@ -87,7 +87,7 @@ export const PlacesListItem: React.FC<PlacesListItemProps> = ({ t, place }) => (
             </div>
         </div>
 
-        <p>
+        <p className={styles.content}>
             {place.content?.length ? (
                 removeMarkdown(place.content)
             ) : (
