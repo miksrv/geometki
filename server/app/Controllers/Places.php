@@ -512,9 +512,8 @@ class Places extends ResourceController
                 }
             }
 
-            // In any case, we update the time when the post was last edited
             $place = new PlaceEntity();
-            $place->updated_at = time();
+            $hasChanges = false;
 
             $lat = isset($input->lat) ? round($input->lat, 6) : $placeData->lat;
             $lon = isset($input->lon) ? round($input->lon, 6) : $placeData->lon;
@@ -532,14 +531,22 @@ class Places extends ResourceController
                 $place->region_id   = $geocoder->regionId;
                 $place->district_id = $geocoder->districtId;
                 $place->locality_id = $geocoder->localityId;
+                $hasChanges = true;
             }
 
             // Change category
             if (isset($input->category)) {
                 $place->category = $input->category;
+                $hasChanges = true;
             }
 
-            $this->model->update($id, $place);
+            // update() auto-sets updated_at via useTimestamps; touch() handles the case
+            // where nothing substantive changed but we still need to record the edit time
+            if ($hasChanges) {
+                $this->model->update($id, $place);
+            } else {
+                $this->model->touch($id);
+            }
 
             $return = ['content' => !empty($updatedContent) ? $updatedContent : $placeContent->content($id)];
 
@@ -646,7 +653,7 @@ class Places extends ResourceController
                 ->fit(PLACE_COVER_PREVIEW_WIDTH, PLACE_COVER_PREVIEW_HEIGHT)
                 ->save($photoDir . '/cover_preview.jpg');
 
-            $this->model->update($id, ['updated_at' => new Time('now')]);
+            $this->model->touch($id);
 
             $userActivity = new ActivityLibrary();
             $userActivity->owner($placeData->user_id)->cover($id);

@@ -77,6 +77,20 @@ class PlacesModel extends ApplicationBaseModel
     // -------------------------------------------------------------------------
 
     /**
+     * Update only the updated_at timestamp without touching any other field.
+     *
+     * Needed when the only intended side-effect of an operation is marking the
+     * place as recently modified (e.g. cover change), because updated_at is not
+     * in allowedFields and CI4 rejects an otherwise-empty update data set.
+     */
+    public function touch(string $id): bool
+    {
+        return $this->db->table($this->table)
+            ->where($this->primaryKey, $id)
+            ->update(['updated_at' => date('Y-m-d H:i:s')]);
+    }
+
+    /**
      * Count the number of non-deleted places for a given category slug.
      *
      * @param string $category
