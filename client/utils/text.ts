@@ -21,8 +21,19 @@ export const removeMarkdown = (text?: string): string => {
         return ''
     }
 
+    // Decode common HTML entities before markdown processing
+    let cleanedText = text
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&mdash;/g, '—')
+        .replace(/&ndash;/g, '–')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'")
+
     // Remove headers
-    let cleanedText = text.replace(/(^|\s)(#{1,6})\s+([^\n]+)/g, '$1$3')
+    cleanedText = cleanedText.replace(/(^|\s)(#{1,6})\s+([^\n]+)/g, '$1$3')
     // Remove bold and italic
     cleanedText = cleanedText.replace(/(\*\*|__)(.*?)\1/g, '$2')
     cleanedText = cleanedText.replace(/(\*\|_)(.*?)\1/g, '$2')

@@ -1,3 +1,5 @@
 export { UserForm } from './user-form'
 export { UserHeader } from './user-header'
 export { UserPagesEnum, UserTabs } from './user-tabs'
+export type { UsersFilterType } from './users-filter-panel'
+export { UsersFilterPanel } from './users-filter-panel'

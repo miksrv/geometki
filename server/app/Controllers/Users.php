@@ -44,16 +44,31 @@ class Users extends ResourceController
     {
         $limit  = abs($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 40);
         $offset = abs($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0);
+        $search = trim((string) ($this->request->getGet('search') ?? ''));
+
+        $allowedSortFields = ['created_at', 'activity_at', 'reputation', 'experience'];
+        $sortRaw  = $this->request->getGet('sort') ?? '';
+        $orderRaw = strtoupper((string) ($this->request->getGet('order') ?? ''));
+
+        $sort  = in_array($sortRaw, $allowedSortFields, true) ? $sortRaw : 'activity_at';
+        $order = in_array($orderRaw, ['ASC', 'DESC'], true) ? $orderRaw : 'DESC';
 
         $userLevels = new LevelsLibrary();
         $usersModel = new UsersModel();
-        
-        // Get total count of users
+
+        if ($search !== '') {
+            $usersModel->like('name', $search);
+        }
+
         $totalCount = $usersModel->countAllResults(false);
-        
+
+        if ($search !== '') {
+            $usersModel->like('name', $search);
+        }
+
         $usersData  = $usersModel
             ->select('id, name, avatar, created_at, activity_at, updated_at, level, experience, reputation')
-            ->orderBy('activity_at, updated_at', 'DESC')
+            ->orderBy($sort, $order)
             ->findAll(min($limit, 40), $offset);
 
         $result = [];

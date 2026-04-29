@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.6
+
+### Patch Changes
+
+- Users list: search, filtering, and sorting — Added `UsersFilterPanel` section component (role, gender filters + sort options). Users index page wired to panel state with defaults. Server `Users` controller extended to accept `search`, `sort`, and `order` query params; full-name search applied via `LIKE` on `name`/`surname`. EN and RU i18n keys added for all new controls.
+- Places list: fade mask on excerpt — Added `.content` wrapper class and a CSS `::after` gradient overlay to `PlacesListItem` for smooth visual truncation of long place descriptions.
+- Content sanitization: HTML stripping and entity decoding — `client/utils/text.ts` extended with `decodeEntities` and `stripHtml` helpers; applied to place descriptions on the client. Server `Places` controller now strips HTML tags from `content` before persisting.
+- Place page UI: `WasHereButton` repositioned inside `PlaceShareButtons`; added bottom margin to the rating component for consistent spacing.
+- Places: touch `updated_at` on no-change edits — New `PlacesModel::touchUpdatedAt()` method issues an explicit `UPDATE` to bump `updated_at` even when no other fields changed, ensuring the edit is always reflected in the timeline.
+
 ## 1.6.5
 
 ### Patch Changes

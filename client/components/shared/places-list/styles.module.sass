@@ -104,16 +104,13 @@
                 a
                     color: #FFF
 
-    p
+    .content
         margin: 0
         line-height: 20px
-        height: 130px
         padding: 10px 10px 0
         overflow: hidden
-        text-overflow: ellipsis
-
-        @media only screen and (max-width: variables.$mobileMaxWidth)
-            height: 110px
+        height: 130px
+        mask-image: linear-gradient(to bottom, black 60%, transparent 100%)
 
     .emptyContent
         color: var(--text-color-secondary)
