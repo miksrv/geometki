@@ -2,9 +2,21 @@ import { ApiModel } from '@/api'
 
 export type ItemResponse = ApiModel.User
 
+export const UserSortFields = {
+    Created: 'created_at',
+    Activity: 'activity_at',
+    Reputation: 'reputation',
+    Experience: 'experience'
+} as const
+
+export type UserSortFields = (typeof UserSortFields)[keyof typeof UserSortFields]
+
 export interface ListRequest {
     limit?: number
     offset?: number
+    search?: string
+    sort?: UserSortFields
+    order?: 'ASC' | 'DESC'
 }
 
 export interface ListResponse {
