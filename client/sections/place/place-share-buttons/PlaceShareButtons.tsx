@@ -98,6 +98,11 @@ export const PlaceShareButtons: React.FC<SocialRatingProps> = ({ placeId, placeU
     return (
         <Container className={styles.shareSocial}>
             <div className={styles.rating}>
+                <WasHereButton
+                    placeId={placeId}
+                    verificationExempt={verificationExempt}
+                />
+
                 <Rating
                     value={ratingData?.rating}
                     voted={!!ratingData?.vote}
@@ -120,11 +125,6 @@ export const PlaceShareButtons: React.FC<SocialRatingProps> = ({ placeId, placeU
                         ''
                     )}
                 </div>
-
-                <WasHereButton
-                    placeId={placeId}
-                    verificationExempt={verificationExempt}
-                />
             </div>
 
             <div className={styles.share}>
