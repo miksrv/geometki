@@ -21,20 +21,23 @@ const TIER_PROGRESSION: Partial<Record<ApiType.Achievements.AchievementTier, num
     gold: 3
 }
 
-function isCompleted(a: ApiType.Achievements.Achievement): boolean {
-    return !!a.earned_at || (a.progress !== null && a.progress.pct >= 100) // eslint-disable-line eqeqeq
-}
-
 function pickCurrentFromGroup(items: ApiType.Achievements.Achievement[]): ApiType.Achievements.Achievement {
-    const uncompleted = items.filter((a) => !isCompleted(a))
+    const lowestTier = (list: ApiType.Achievements.Achievement[]) =>
+        list.reduce((best, a) => ((TIER_PROGRESSION[a.tier] ?? 0) < (TIER_PROGRESSION[best.tier] ?? 0) ? a : best))
 
-    if (uncompleted.length > 0) {
-        return uncompleted.reduce((best, a) =>
-            (TIER_PROGRESSION[a.tier] ?? 0) < (TIER_PROGRESSION[best.tier] ?? 0) ? a : best
-        )
+    const highestTier = (list: ApiType.Achievements.Achievement[]) =>
+        list.reduce((best, a) => ((TIER_PROGRESSION[a.tier] ?? 0) > (TIER_PROGRESSION[best.tier] ?? 0) ? a : best))
+
+    const earned = items.filter((a) => !!a.earned_at)
+
+    if (earned.length === 0) {
+        return lowestTier(items)
     }
 
-    return items.reduce((best, a) => ((TIER_PROGRESSION[a.tier] ?? 0) > (TIER_PROGRESSION[best.tier] ?? 0) ? a : best))
+    const highestEarnedOrder = Math.max(...earned.map((a) => TIER_PROGRESSION[a.tier] ?? 0))
+    const nextTargets = items.filter((a) => (TIER_PROGRESSION[a.tier] ?? 0) > highestEarnedOrder)
+
+    return nextTargets.length > 0 ? lowestTier(nextTargets) : highestTier(earned)
 }
 
 interface AchievementsListProps {
