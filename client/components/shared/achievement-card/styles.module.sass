@@ -125,6 +125,7 @@
 .badgeItem
     position: relative
     cursor: pointer
+    outline: none
 
 .badgeTooltip
     position: absolute
@@ -245,11 +246,23 @@
         &--#{$tier}
             border-top: 4px solid var(--color-tier-#{$tier})
 
-.modalHeader
+.modalBody
+    display: flex
+    align-items: flex-start
+    gap: 20px
+
+.modalImageCol
+    flex-shrink: 0
     display: flex
     align-items: center
-    gap: 14px
-    margin-bottom: 16px
+    justify-content: center
+
+.modalInfoCol
+    flex: 1
+    min-width: 0
+    display: flex
+    flex-direction: column
+    gap: 8px
 
 .modalTitle
     margin: 0
@@ -257,12 +270,12 @@
     color: var(--text-color-primary)
 
 .modalDescription
-    margin: 0 0 12px
+    margin: 0
     font-size: variables.$fontSizeParagraph
     color: var(--text-color-secondary)
     line-height: 1.5
 
 .modalMeta
-    margin: 0 0 8px
+    margin: 0
     font-size: variables.$fontSizeCaption
     color: var(--text-color-secondary)

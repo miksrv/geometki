@@ -34,7 +34,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({ achievement 
                 <AchievementIcon
                     image={achievement.image}
                     alt={achievement.title}
-                    size={36}
+                    size={58}
                 />
                 {hovered && (
                     <div
@@ -44,7 +44,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({ achievement 
                         <div>
                             <strong>{achievement.title}</strong>
                         </div>
-                        {achievement.earned_at && <div>{formatDate(achievement.earned_at, 'D MMMM YYYY')}</div>}
+                        {achievement.earned_at && <div>{formatDate(achievement.earned_at.date, 'D MMMM YYYY')}</div>}
                     </div>
                 )}
             </div>

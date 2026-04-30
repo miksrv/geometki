@@ -26,7 +26,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, s
                 <AchievementIcon
                     image={achievement.image}
                     alt={achievement.title}
-                    size={36}
+                    size={50}
                 />
                 <div className={styles.cardMeta}>
                     <p className={styles.cardTitle}>{achievement.title}</p>
@@ -59,7 +59,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, s
             {achievement.earned_at && (
                 <div className={styles.earnedBadge}>
                     <Icon name={'CheckCircle'} />
-                    {t('achievements-earned-at', { date: formatDate(achievement.earned_at, 'D MMMM YYYY') })}
+                    {t('achievements-earned-at', { date: formatDate(achievement.earned_at.date, 'D MMMM YYYY') })}
                 </div>
             )}
 

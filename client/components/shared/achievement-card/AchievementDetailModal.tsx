@@ -32,35 +32,39 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({ 
             <Icon name={'Close'} />
         </button>
 
-        <div className={styles.modalHeader}>
-            <AchievementIcon
-                image={achievement.image}
-                alt={achievement.title}
-                size={48}
-            />
-            <div>
+        <div className={styles.modalBody}>
+            <div className={styles.modalImageCol}>
+                <AchievementIcon
+                    image={achievement.image}
+                    alt={achievement.title}
+                    size={136}
+                />
+            </div>
+
+            <div className={styles.modalInfoCol}>
                 <h2 className={styles.modalTitle}>{achievement.title}</h2>
+
                 <AchievementTierBadge
                     tier={achievement.tier}
                     t={t}
                 />
+
+                {achievement.description && <p className={styles.modalDescription}>{achievement.description}</p>}
+
+                {achievement.earned_at && (
+                    <p className={styles.modalMeta}>
+                        {t('achievements-earned-at', {
+                            date: formatDate(achievement.earned_at.date, 'D MMMM YYYY')
+                        })}
+                    </p>
+                )}
+
+                {achievement.xp_bonus > 0 && (
+                    <p className={styles.modalMeta}>
+                        {t('achievements-xp-bonus')}: <strong>+{achievement.xp_bonus} XP</strong>
+                    </p>
+                )}
             </div>
         </div>
-
-        {achievement.description && <p className={styles.modalDescription}>{achievement.description}</p>}
-
-        {achievement.earned_at && (
-            <p className={styles.modalMeta}>
-                {t('achievements-earned-at', {
-                    date: formatDate(achievement.earned_at, 'D MMMM YYYY')
-                })}
-            </p>
-        )}
-
-        {achievement.xp_bonus > 0 && (
-            <p className={styles.modalMeta}>
-                {t('achievements-xp-bonus')}: <strong>+{achievement.xp_bonus} XP</strong>
-            </p>
-        )}
     </Dialog>
 )
