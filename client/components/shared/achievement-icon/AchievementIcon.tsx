@@ -32,7 +32,7 @@ export const AchievementIcon: React.FC<AchievementIconProps> = ({ image, alt = '
         <Image
             src={src}
             alt={alt}
-            width={size}
+            width={size / 1.414}
             height={size}
             unoptimized
             className={className}
