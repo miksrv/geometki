@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.7
+
+### Patch Changes
+
+- Achievements: fix experience recalculation ignoring XP bonuses — `LevelsLibrary::calculate()` now joins `users_achievements` with `achievements` and adds the sum of earned `xp_bonus` values to the activity-based XP before comparing with the stored value. Previously, every profile request wiped achievement XP because `calculate()` only counted activity-table modifiers.
+- Achievements: award delta XP on tier upgrade — `AchievementsLibrary::awardAchievement()` now fetches the previous tier's `xp_bonus` when upgrading and grants only the difference (`new_xp − old_xp`), keeping the stored experience consistent with what `calculate()` would recompute from scratch.
+- Achievements: fix multi-rule progress aggregation — `getProgress()` now iterates all rules instead of only the primary one. `required` is the sum of all rule thresholds; `current` is the sum of `min(actual, threshold)` per rule. Single-rule achievements benefit too: a user with 101 places against a threshold of 10 now shows `10 / 10` instead of `101 / 10`.
+- Achievements: fix tier selection showing wrong tier in grouped list — Replaced the `isCompleted` helper (which used `pct >= 100` and incorrectly flagged multi-rule achievements as done) with tier-order logic: find the highest earned tier by `earned_at`, then display the next tier above it, or the highest earned tier if all are complete, or the lowest tier if none are earned.
+- Achievements: detail modal layout — Refactored `AchievementDetailModal` into a two-column layout: large medal icon on the left (`size={110}`) and all metadata (title, tier badge, description, date, XP) stacked on the right. Added `modalBody`, `modalImageCol`, `modalInfoCol` SASS classes; tightened margins via `gap`.
+- Achievements: `earned_at` typed as `DateTime` — Changed `Achievement.earned_at` in the client API types from `string | null` to `DateTime`, consistent with other date fields.
+
 ## 1.6.6
 
 ### Patch Changes

@@ -64,6 +64,17 @@ class LevelsLibrary {
         $experience += $statistic->cover * MODIFIER_COVER;
         $experience += $statistic->comment * MODIFIER_COMMENT;
 
+        // Add XP bonuses from earned achievements (only current tier per group)
+        $db  = \Config\Database::connect();
+        $row = $db->query(
+            'SELECT COALESCE(SUM(a.xp_bonus), 0) AS achievement_xp
+             FROM users_achievements ua
+             JOIN achievements a ON a.id = ua.achievement_id
+             WHERE ua.user_id = ?',
+            [$user->id]
+        )->getRow();
+        $experience += (int) ($row->achievement_xp ?? 0);
+
         $this->statistic = $statistic;
 
         // Let's see what level the user should actually have

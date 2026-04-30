@@ -1,3 +1,5 @@
+import { DateTime } from '@/api/types/index'
+
 export type AchievementTier = 'none' | 'bronze' | 'silver' | 'gold'
 export type AchievementType = 'base' | 'seasonal'
 export type AchievementCategory = 'exploration' | 'content' | 'social' | 'reputation' | 'consistency' | 'seasonal'
@@ -20,7 +22,7 @@ export interface Achievement {
     xp_bonus: number
     season_start: string | null
     season_end: string | null
-    earned_at: string | null
+    earned_at: DateTime
     progress: AchievementProgress | null
     sort_order: number
     is_active: boolean
