@@ -207,10 +207,18 @@ class AchievementsLibrary
             $from = ($achievement->type === 'seasonal') ? $achievement->season_start : null;
             $to   = ($achievement->type === 'seasonal') ? $achievement->season_end   : null;
 
-            $primaryRule = $rules[0];
-            $current     = $this->resolveMetric($userId, $primaryRule, $from, $to);
-            $required    = (int) $primaryRule['value'];
-            $pct         = $required > 0 ? min(100.0, round(($current / $required) * 100, 1)) : 100.0;
+            $current  = 0;
+            $required = 0;
+
+            foreach ($rules as $rule) {
+                $threshold = (int) $rule['value'];
+                $actual    = $this->resolveMetric($userId, $rule, $from, $to);
+
+                $required += $threshold;
+                $current  += min($actual, $threshold);
+            }
+
+            $pct = $required > 0 ? min(100.0, round(($current / $required) * 100, 1)) : 100.0;
 
             $result[$achievement->id] = [
                 'current'  => $current,
@@ -449,11 +457,22 @@ class AchievementsLibrary
             $userAchievementsModel->insert($entity);
         }
 
-        if ($achievement->xp_bonus > 0) {
+        $xpDelta = $achievement->xp_bonus;
+        if ($isUpgrade) {
+            $oldAchievementId = $earnedGroupMap[$achievement->group_slug]['achievement_id'];
+            $db               = \Config\Database::connect();
+            $oldRow           = $db->table('achievements')
+                ->select('xp_bonus')
+                ->where('id', $oldAchievementId)
+                ->get()->getRow();
+            $xpDelta = max(0, $achievement->xp_bonus - (int) ($oldRow->xp_bonus ?? 0));
+        }
+
+        if ($xpDelta > 0) {
             $db = \Config\Database::connect();
             $db->query(
-                "UPDATE users SET experience = experience + ? WHERE id = ?",
-                [$achievement->xp_bonus, $userId]
+                'UPDATE users SET experience = experience + ? WHERE id = ?',
+                [$xpDelta, $userId]
             );
         }
 
