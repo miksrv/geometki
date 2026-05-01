@@ -36,9 +36,7 @@ const NotFoundPage: NextPage<object> = () => {
     )
 }
 
-export const getStaticProps = async (context: {
-    locale?: string
-}): Promise<GetStaticPropsResult<object>> => {
+export const getStaticProps = async (context: { locale?: string }): Promise<GetStaticPropsResult<object>> => {
     const locale = context.locale ?? 'ru'
     const translations = await serverSideTranslations(locale)
 
