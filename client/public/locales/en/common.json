@@ -1,4 +1,6 @@
 {
+    "page-not-found": "Page not found",
+    "page-not-found-description": "You've gone off the map. The page you're looking for doesn't exist.",
     "map-of-interesting-pages": "Map of interesting places",
     "all-interesting-places": "All interesting places",
     "add-new-place": "Add new place",

@@ -1,4 +1,6 @@
 {
+    "page-not-found": "Страница не найдена",
+    "page-not-found-description": "Вы вышли за пределы карты. Запрошенная страница не существует.",
     "map-of-interesting-pages": "Карта интересных мест",
     "all-interesting-places": "Все интересные места",
     "add-new-place": "Добавить место на карту",
