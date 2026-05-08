@@ -52,6 +52,23 @@
         bottom: 10px
         left: 10px
 
+    &.compact
+        :global(.leaflet-control-zoom-in), :global(.leaflet-control-zoom-out)
+            width: 26px !important
+            height: 26px !important
+            line-height: 26px !important
+
+        .leftControls, .rightControls, .bottomControls
+            top: 70px
+
+            button
+                padding: 4px 5.5px
+                min-height: 26px
+
+                svg
+                    width: 14px
+                    height: 14px
+
     .rightControls
         left: auto
         top: 10px
