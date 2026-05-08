@@ -29,7 +29,6 @@ $routes->group('poi', static function ($routes) {
 /** Places Controller **/
 $routes->group('places', static function ($routes) {
     $routes->get('/', 'Places::list');
-    $routes->get('marks', 'Places::marks');
     $routes->get('(:alphanum)', 'Places::show/$1');
     $routes->post('/', 'Places::create');
     $routes->patch('cover/(:alphanum)', 'Places::cover/$1');
@@ -37,7 +36,6 @@ $routes->group('places', static function ($routes) {
     $routes->delete('(:alphanum)', 'Places::delete/$1');
 
     $routes->options('/', static function () {});
-    $routes->options('marks', static function () {});
     $routes->options('(:alphanum)', static function () {});
     $routes->options('(:alphanum)/(:alphanum)', static function () {});
 });
@@ -199,13 +197,11 @@ $routes->group('bookmarks', static function ($routes) {
 /** Visited Controller **/
 $routes->group('visited', static function ($routes) {
     $routes->get('/', 'Visited::check');
-    $routes->get('user/(:alphanum)/marks', 'Visited::userMarks/$1');
     $routes->get('user/(:alphanum)', 'Visited::user/$1');
     $routes->get('(:alphanum)', 'Visited::place/$1');
     $routes->put('/', 'Visited::set');
 
     $routes->options('/', static function () {});
-    $routes->options('user/(:alphanum)/marks', static function () {});
     $routes->options('user/(:alphanum)', static function () {});
     $routes->options('(:alphanum)', static function () {});
 });

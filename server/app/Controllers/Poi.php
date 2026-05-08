@@ -35,27 +35,32 @@ class Poi extends ResourceController
         $categories = $this->request->getGet('categories', FILTER_SANITIZE_SPECIAL_CHARS);
         $zoom    = abs($this->request->getGet('zoom', FILTER_SANITIZE_NUMBER_INT) ?? 10);
         $author  = $this->request->getGet('author', FILTER_SANITIZE_SPECIAL_CHARS);
+        $visited = $this->request->getGet('visited', FILTER_SANITIZE_SPECIAL_CHARS);
         $cluster = $this->request->getGet('cluster', FILTER_VALIDATE_BOOL);
         $bounds  = $this->getBounds();
 
         $placesModel = new PlacesModel();
-        $placesData  = $placesModel->select('id, category, lat, lon');
+        $placesData  = $placesModel->select('places.id, places.category, places.lat, places.lon');
 
         if ($bounds) {
             $placesData->where([
-                'lon >=' => $bounds[0],
-                'lat >=' => $bounds[1],
-                'lon <=' => $bounds[2],
-                'lat <=' => $bounds[3],
+                'places.lon >=' => $bounds[0],
+                'places.lat >=' => $bounds[1],
+                'places.lon <=' => $bounds[2],
+                'places.lat <=' => $bounds[3],
             ]);
         }
 
         if (isset($categories)) {
-            $placesData->whereIn('category', explode(',', $categories));
+            $placesData->whereIn('places.category', explode(',', $categories));
         }
 
         if ($author) {
-            $placesData->where('user_id', $author);
+            $placesData->where('places.user_id', $author);
+        }
+
+        if ($visited) {
+            $placesData->filterByVisitedUser($visited);
         }
 
         $placesData  = $placesData->findAll();
