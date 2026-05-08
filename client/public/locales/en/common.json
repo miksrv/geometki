@@ -333,5 +333,6 @@
     "visited-count": "{{total}} visits",
     "visited-verified-count": "{{verified}} confirmed ✓",
     "visited-dialog-description": "Share your location to verify your visit and earn a bonus. Or mark without confirmation.",
-    "visited-was-here": "I was here"
+    "visited-was-here": "I was here",
+    "visited-places": "Visited Places"
 }

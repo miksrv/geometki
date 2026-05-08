@@ -332,5 +332,6 @@
     "visited-count": "{{total}} посещений",
     "visited-verified-count": "{{verified}} подтверждённых ✓",
     "visited-dialog-description": "Поделитесь геолокацией, чтобы подтвердить визит и получить бонус XP. Или отметьте без подтверждения.",
-    "visited-was-here": "Я тут был(а)"
+    "visited-was-here": "Я тут был(а)",
+    "visited-places": "Посещённые места"
 }
