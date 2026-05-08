@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { LatLngBounds, LatLngExpression } from 'leaflet'
 import debounce from 'lodash-es/debounce'
 
@@ -49,6 +49,8 @@ const MapPage: NextPage<object> = () => {
     const [mapBounds, setMapBounds] = useState<string>()
     const [mapZoom, setMapZoom] = useState<number>()
 
+    const mapSetHashRef = useRef<string>('')
+
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
 
     const { data: poiListData, isFetching: placesLoading } = API.usePoiGetListQuery(
@@ -92,6 +94,7 @@ const MapPage: NextPage<object> = () => {
             url.hash = `#${lat},${lon},${zoom}`
         }
 
+        mapSetHashRef.current = `${lat},${lon},${zoom}`
         await router.replace(url.toString())
     }
 
@@ -130,26 +133,37 @@ const MapPage: NextPage<object> = () => {
     }
 
     useEffect(() => {
-        const hash = window.location.hash ?? null
-
         setCategories(Object.values(ApiModel.Categories))
         setMapCategories(Object.values(ApiModel.Categories))
-
-        if (hash) {
-            const splitCords = hash.replace('#', '').split(',')
-            const lat = parseFloat(splitCords[0])
-            const lon = parseFloat(splitCords[1])
-            const zoom = parseFloat(splitCords[2])
-
-            if (lat && lon) {
-                setInitMapCoords([lat, lon])
-            }
-
-            if (zoom && Number(zoom) >= 6 && Number(zoom) <= 18) {
-                setInitMapZoom(Number(zoom))
-            }
-        }
     }, [])
+
+    useEffect(() => {
+        const hashIndex = router.asPath.indexOf('#')
+
+        if (hashIndex === -1) {
+            return
+        }
+
+        const hash = router.asPath.slice(hashIndex + 1)
+        const coordsPart = hash.split('?')[0]
+
+        if (coordsPart === mapSetHashRef.current) {
+            return
+        }
+
+        const splitCords = coordsPart.split(',')
+        const lat = parseFloat(splitCords[0])
+        const lon = parseFloat(splitCords[1])
+        const zoom = parseFloat(splitCords[2])
+
+        if (lat && lon) {
+            setInitMapCoords([lat, lon])
+        }
+
+        if (zoom && Number(zoom) >= 6 && Number(zoom) <= 18) {
+            setInitMapZoom(Number(zoom))
+        }
+    }, [router.asPath])
 
     return (
         <AppLayout
