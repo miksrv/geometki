@@ -161,6 +161,11 @@ export const Search: React.FC<SearchProps> = () => {
         }
     }
 
+    const allOptions = useMemo(
+        () => foundCoords ?? [...(options || []), ...(locationOptions || [])],
+        [foundCoords, options, locationOptions]
+    )
+
     return (
         <Autocomplete<string | ApiType.Coordinates>
             className={styles.search}
@@ -170,7 +175,7 @@ export const Search: React.FC<SearchProps> = () => {
             leftIcon={'Search'}
             hideArrow={!options?.length || !searchString.length}
             loading={isFetching || loadingAddress}
-            options={foundCoords ?? [...(options || []), ...(locationOptions || [])]}
+            options={allOptions}
             onSearch={handleSearchLocation}
             onSelect={handleSelectLocation}
         />

@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.6.8
+
+### Patch Changes
+
+- User profile: visited places page and tab — Added a dedicated `/users/[id]/visited` page listing a user's visited geotags with an embedded interactive map, pagination (21 per page), and SSR via `getServerSideProps`. Wired a new `UserPagesEnum.VISITED` tab into `UserTabs`. Server: new `Visited::user` action returns a paginated, formatted list of visited places for a given user.
+- User profile: "places visited" statistic — Added `visited` to the `UserStatistic` type and displays its count in the user header. Server `Users` controller now queries `UsersVisitedPlacesModel` to populate the field; EN/RU translations updated (replaced unused `changed-covers` key with `places-visited`).
+- User places page: embedded interactive map — User places page dynamically imports `InteractiveMap` (SSR disabled) and renders it when POI marks are available. Map data is prefetched server-side via `poiGetList.initiate` for SSR hydration.
+- Interactive map: `controlsSize` prop and compact styles — Added a `controlsSize: 'small' | 'medium'` prop to `InteractiveMap` (default `'medium'`). When `'small'`, a compact CSS class shrinks zoom controls, button padding, icon sizes, and adjusts control positions. `PlaceInformation` now passes `controlsSize='small'` to its embedded map.
+- POI: visited filter and user visited API — `Poi` controller reads a new `visited` query param and delegates to `PlacesModel::filterByVisitedUser`. Removed obsolete `marks/user` routes; table aliases added to avoid ambiguous-column errors on joined queries. Client `visitedGetUserPlaces` RTK Query endpoint added; `POI ListRequest` extended with `author` and `visited` filter fields; `UserPlacesRequest`/`UserPlacesResponse` types added to visited types.
+- 404 page: localization and catch-all SSR handler — Refactored the 404 page to use `AppLayout`, `Container`, and `next-i18next` translations, replacing the static logo with localized text and button. Added `getStaticProps` with `serverSideTranslations`. Introduced a new `[...not-found].tsx` catch-all page that renders the same 404 UI via `wrapper.getServerSideProps`, hydrating auth from cookies and loading translations for server-side rendering of unknown routes.
+- Repo: removed mobile directory — Deleted the unmaintained Expo/React Native `mobile/` sub-project (42 files, ~10 700 lines).
+- Client: dependency upgrades — Bumped `next` to 16.2.6, `react`/`react-dom` to 19.2.6, `i18next` to 26.0.10, `react-i18next` to 17.0.7, `jest` to 30.4.1, `@typescript-eslint` packages to 8.59.2, and various other devDependencies; `yarn.lock` updated accordingly.
+- Map: fix search navigation — Selecting a geosearch result from the AppBar now flies the map to the correct coordinates without requiring a page reload. Zoom from the search result (level 17) takes priority over the current map zoom. Resolved a URL-hash update loop that caused the map to jump back to a previous position while panning.
+- AppBar search: fix dropdown reopening on map pan — Memoized the combined options array in `Search.tsx` so a new reference is only created when API data actually changes, preventing the Autocomplete dropdown from reopening on every URL hash update caused by map movement.
+
 ## 1.6.7
 
 ### Patch Changes

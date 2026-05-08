@@ -41,7 +41,8 @@ jest.mock('simple-react-ui-kit', () => ({
             onClick={onClick}
         />
     ),
-    Spinner: () => <div data-testid={'spinner'} />
+    Spinner: () => <div data-testid={'spinner'} />,
+    cn: (...args: any[]) => args.filter(Boolean).join(' ')
 }))
 
 jest.mock('next/dist/client/router', () => ({

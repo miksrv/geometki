@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import * as ReactLeaflet from 'react-leaflet'
 import { LatLngBounds, LatLngExpression, Map, MapOptions } from 'leaflet'
 import isEqual from 'lodash-es/isEqual'
-import { Button, Spinner } from 'simple-react-ui-kit'
+import { Button, cn, Spinner } from 'simple-react-ui-kit'
 
 import { useRouter } from 'next/dist/client/router'
 
@@ -50,6 +50,7 @@ type MapProps = {
     onChangeBounds?: (bounds: LatLngBounds, zoom: number) => void
     onPhotoClick?: (photos: ApiModel.PhotoMark[], index?: number) => void
     onClickCreatePlace?: () => void
+    controlsSize?: 'small' | 'medium'
 } & MapOptions
 
 const DEFAULT_MAP_ZOOM = 12
@@ -112,6 +113,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
     onChangeBounds,
     onPhotoClick,
     onClickCreatePlace,
+    controlsSize = 'medium',
     ...props
 }) => {
     const router = useRouter()
@@ -235,7 +237,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
         if (props.center || props.zoom) {
             mapRef.current?.setView(
                 props.center ?? DEFAULT_MAP_CENTER,
-                mapPosition?.zoom ?? props.zoom ?? DEFAULT_MAP_ZOOM
+                props.zoom ?? mapPosition?.zoom ?? DEFAULT_MAP_ZOOM
             )
         }
     }, [props.center, props.zoom])
@@ -257,7 +259,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
     }, [])
 
     return (
-        <div className={styles.mapContainer}>
+        <div className={cn(styles.mapContainer, controlsSize === 'small' && styles.compact)}>
             <ReactLeaflet.MapContainer
                 {...props}
                 center={props.center ?? DEFAULT_MAP_CENTER}
@@ -368,6 +370,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                 <div className={styles.leftControls}>
                     {onClickCreatePlace && (
                         <Button
+                            size={controlsSize}
                             mode={'secondary'}
                             icon={'PlusCircle'}
                             onClick={onClickCreatePlace}
@@ -376,6 +379,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
                     {enableFullScreen && (
                         <Button
+                            size={controlsSize}
                             mode={'secondary'}
                             icon={isFullscreen ? 'FullscreenOut' : 'FullscreenIn'}
                             onClick={handleToggleFullscreen}
@@ -384,6 +388,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
                     {userLatLon && (
                         <Button
+                            size={controlsSize}
                             mode={'secondary'}
                             icon={'Position'}
                             onClick={handleUserPosition}
@@ -392,6 +397,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
                     {fullMapLink && (
                         <Button
+                            size={controlsSize}
                             noIndex={true}
                             mode={'secondary'}
                             icon={'External'}

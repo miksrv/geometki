@@ -10,6 +10,7 @@ export enum UserPagesEnum {
     FEED = 'feed',
     PLACES = 'places',
     BOOKMARKS = 'bookmarks',
+    VISITED = 'visited',
     PHOTOS = 'photos',
     ACHIEVEMENTS = 'achievements'
 }
@@ -37,6 +38,7 @@ export const UserTabs: React.FC<UserTabsProps> = ({ user, currentPage }) => {
                 { key: UserPagesEnum.FEED, label: t('activity-feed') },
                 { key: UserPagesEnum.PLACES, label: t('geotags') },
                 { key: UserPagesEnum.BOOKMARKS, label: t('favorites') },
+                { key: UserPagesEnum.VISITED, label: t('visited-places') },
                 { key: UserPagesEnum.PHOTOS, label: t('photos') },
                 { key: UserPagesEnum.ACHIEVEMENTS, label: t('achievements-title') }
             ]}

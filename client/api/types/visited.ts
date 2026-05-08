@@ -1,4 +1,4 @@
-import { ApiModel } from '@/api'
+import { ApiModel, ApiType } from '@/api'
 
 export interface ListResponse {
     items: ApiModel.User[]
@@ -24,3 +24,11 @@ export interface CheckRequest {
 export interface CheckResponse {
     result: boolean
 }
+
+export interface UserPlacesRequest {
+    userId: string
+    limit?: number
+    offset?: number
+}
+
+export type UserPlacesResponse = ApiType.Places.ListResponse

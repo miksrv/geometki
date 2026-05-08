@@ -197,10 +197,12 @@ $routes->group('bookmarks', static function ($routes) {
 /** Visited Controller **/
 $routes->group('visited', static function ($routes) {
     $routes->get('/', 'Visited::check');
+    $routes->get('user/(:alphanum)', 'Visited::user/$1');
     $routes->get('(:alphanum)', 'Visited::place/$1');
     $routes->put('/', 'Visited::set');
 
     $routes->options('/', static function () {});
+    $routes->options('user/(:alphanum)', static function () {});
     $routes->options('(:alphanum)', static function () {});
 });
 

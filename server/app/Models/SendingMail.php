@@ -20,7 +20,7 @@ class SendingMail extends ApplicationBaseModel
 {
     protected $table            = 'sending_mail';
     protected $primaryKey       = 'id';
-    protected $useAutoIncrement = true;
+    protected $useAutoIncrement = false;
     protected $returnType       = SendingMailEntity::class;
     protected $useSoftDeletes   = true;
 
@@ -46,10 +46,8 @@ class SendingMail extends ApplicationBaseModel
     protected $validationMessages = [];
     protected $skipValidation     = true;
 
-    // No beforeInsert callback: $useAutoIncrement = true, the PK is assigned by
-    // the database. generateId() must NOT be registered here as it would try to
-    // set a string value on an auto-increment integer column.
-    protected $allowCallbacks = false;
+    protected $allowCallbacks = true;
+    protected $beforeInsert   = ['generateId'];
 
     // -------------------------------------------------------------------------
     // Custom query methods

@@ -466,6 +466,11 @@ export const API = createApi({
                 url: 'visited'
             }),
             transformErrorResponse: extractErrorData
+        }),
+        visitedGetUserPlaces: builder.query<ApiType.Visited.UserPlacesResponse, ApiType.Visited.UserPlacesRequest>({
+            providesTags: (res, err, arg) => [{ id: arg.userId, type: 'Visited' }],
+            query: (params) =>
+                `visited/user/${params.userId}${encodeQueryData({ limit: params.limit, offset: params.offset })}`
         })
     }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

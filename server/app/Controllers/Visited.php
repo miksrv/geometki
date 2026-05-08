@@ -3,6 +3,8 @@
 namespace App\Controllers;
 
 use App\Libraries\AvatarLibrary;
+use App\Libraries\PlaceFormatterLibrary;
+use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Models\PlacesModel;
 use App\Models\UsersVisitedPlacesModel;
@@ -96,6 +98,85 @@ class Visited extends ResourceController
             'items'          => $items,
             'verified_count' => $verifiedCount,
             'total_count'    => $totalCount,
+        ]);
+    }
+
+    /**
+     * Return a paginated list of places visited by the given user.
+     *
+     * GET /visited/user/:userId — public endpoint.
+     * Optional query params: limit (default 21), offset (default 0).
+     *
+     * @param string|null $userId The user whose visited places are requested.
+     *
+     * @return ResponseInterface
+     */
+    public function user($userId = null): ResponseInterface
+    {
+        $limit  = abs((int) ($this->request->getGet('limit',  FILTER_SANITIZE_NUMBER_INT) ?? 21));
+        $offset = abs((int) ($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0));
+
+        $visitedModel = new UsersVisitedPlacesModel();
+        $visitedData  = $visitedModel
+            ->select('place_id')
+            ->where('user_id', $userId)
+            ->asArray()
+            ->findAll();
+
+        if (empty($visitedData)) {
+            return $this->respond(['items' => [], 'count' => 0]);
+        }
+
+        $placeIds = array_column($visitedData, 'place_id');
+
+        $locale = $this->request->getLocale();
+
+        $placesModel = new PlacesModel();
+        $placesModel->applyListSelect();
+
+        $countModel = new PlacesModel();
+        $countModel->applyListSelect();
+
+        $placesCount = $countModel->whereIn('places.id', $placeIds)->countAllResults();
+
+        $placesList = $placesModel
+            ->whereIn('places.id', $placeIds)
+            ->limit(min($limit, 40), $offset)
+            ->get()
+            ->getResult();
+
+        $foundIds = array_column($placesList, 'id');
+
+        $placeContent = new PlacesContent(350);
+        $placeContent->translate($foundIds);
+
+        $formatter = new PlaceFormatterLibrary();
+        foreach ($placesList as $place) {
+            $place->address   = $formatter->formatAddress($place, $locale);
+            $place->rating    = (int) $place->rating;
+            $place->views     = (int) $place->views;
+            $place->photos    = (int) $place->photos;
+            $place->comments  = (int) $place->comments;
+            $place->bookmarks = (int) $place->bookmarks;
+            $place->title     = $placeContent->title($place->id);
+            $place->content   = strip_tags(html_entity_decode($placeContent->content($place->id), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $place->category  = $formatter->formatCategory($place, $locale);
+            $place->author    = $formatter->formatAuthor($place);
+
+            $cover = $formatter->formatCover($place->id, (int) $place->photos);
+            if ($cover) {
+                $place->cover = $cover;
+            }
+
+            $place->visitRadiusM       = (int) $place->visit_radius_m;
+            $place->verificationExempt = (bool) $place->verification_exempt;
+
+            $formatter->cleanupFields($place);
+        }
+
+        return $this->respond([
+            'items' => $placesList,
+            'count' => $placesCount,
         ]);
     }
 

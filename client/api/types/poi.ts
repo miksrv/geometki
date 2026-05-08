@@ -10,6 +10,8 @@ export interface ListRequest {
     zoom?: number
     cluster?: boolean
     categories?: ApiModel.Categories[]
+    author?: string
+    visited?: string
 }
 
 export interface PlacesListResponse {

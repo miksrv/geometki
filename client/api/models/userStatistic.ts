@@ -3,6 +3,6 @@ export type UserStatistic = {
     photo: number
     rating: number
     edit: number
-    cover: number
     comment: number
+    visited: number
 }

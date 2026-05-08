@@ -23,7 +23,7 @@ class UserVisitedPlaceEntity extends Entity {
 
     protected $casts = [
         'user_id'  => 'string',
-        'place_id' => 'integer',
+        'place_id' => 'string',
         'verified' => 'boolean',
         'lat'      => '?float',
         'lon'      => '?float',

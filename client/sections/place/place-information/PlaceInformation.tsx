@@ -123,6 +123,7 @@ export const PlaceInformation: React.FC<PlaceInformationProps> = ({ place }) => 
                         enableFullScreen={false}
                         scrollWheelZoom={false}
                         dragging={false}
+                        controlsSize={'small'}
                         fullMapLink={`/map#${place.lat},${place.lon},14`}
                         places={[
                             {

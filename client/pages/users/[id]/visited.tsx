@@ -22,45 +22,45 @@ const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap').t
     ssr: false
 })
 
-export const PLACES_PER_PAGE = 21
+export const VISITED_PLACES_PER_PAGE = 21
 
-interface UserPlacesPageProps {
+interface UserVisitedPageProps {
     id: string
     currentPage: number
     user?: ApiModel.User
 }
 
-const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage }) => {
+const UserVisitedPage: React.FC<UserVisitedPageProps> = ({ id, user, currentPage }) => {
     const { t, i18n } = useTranslation()
 
-    const { data, isLoading } = API.usePlacesGetListQuery({
-        author: id,
-        limit: PLACES_PER_PAGE,
-        offset: (currentPage - 1) * PLACES_PER_PAGE
+    const { data, isLoading } = API.useVisitedGetUserPlacesQuery({
+        userId: id,
+        limit: VISITED_PLACES_PER_PAGE,
+        offset: (currentPage - 1) * VISITED_PLACES_PER_PAGE
     })
 
-    const { data: marksData } = API.usePoiGetListQuery({ author: id })
+    const { data: marksData } = API.usePoiGetListQuery({ visited: id })
 
     const placeMarks: ApiModel.PlaceMark[] = marksData?.items ?? []
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     const pageTitle = currentPage > 1 ? ` - ${t('page')} ${currentPage}` : ''
-    const title = t('geotags')
+    const title = t('visited-places')
 
     return (
         <AppLayout>
             <Head>
                 {generateNextSeo({
                     title: `${user?.name} - ${title}${pageTitle}`,
-                    description: `${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`,
-                    canonical: `${canonicalUrl}users/${id}/places${currentPage > 1 ? `?page=${currentPage}` : ''}`,
+                    description: `${user?.name} - ${title}${pageTitle}`,
+                    canonical: `${canonicalUrl}users/${id}/visited${currentPage > 1 ? `?page=${currentPage}` : ''}`,
                     openGraph: {
-                        description: `${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`,
+                        description: `${user?.name} - ${title}${pageTitle}`,
                         locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
                         siteName: t('geotags'),
                         title: `${user?.name} - ${title}${pageTitle}`,
                         type: 'website',
-                        url: `${canonicalUrl}users/${id}/places`
+                        url: `${canonicalUrl}users/${id}/visited`
                     },
                     twitter: { cardType: 'summary_large_image' }
                 })}
@@ -102,7 +102,7 @@ const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage }
 
             <UserTabs
                 user={user}
-                currentPage={UserPagesEnum.PLACES}
+                currentPage={UserPagesEnum.VISITED}
             />
 
             <PlacesList
@@ -111,10 +111,13 @@ const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage }
             />
 
             <Container
-                className={cn('paginationContainer', !data?.count || data?.count <= PLACES_PER_PAGE ? 'hide' : '')}
+                className={cn(
+                    'paginationContainer',
+                    !data?.count || data?.count <= VISITED_PLACES_PER_PAGE ? 'hide' : ''
+                )}
             >
                 <div className={styles.countContainer}>
-                    {t('geotags')}: {isLoading ? <Spinner /> : <strong>{data?.count || 0}</strong>}
+                    {t('visited-places')}: {isLoading ? <Spinner /> : <strong>{data?.count || 0}</strong>}
                 </div>
 
                 <Pagination
@@ -123,8 +126,8 @@ const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage }
                     captionNextPage={t('next-page')}
                     captionPrevPage={t('prev-page')}
                     totalItemsCount={data?.count ?? 0}
-                    perPage={PLACES_PER_PAGE}
-                    linkPart={`users/${id}/places`}
+                    perPage={VISITED_PLACES_PER_PAGE}
+                    linkPart={`users/${id}/visited`}
                 />
             </Container>
         </AppLayout>
@@ -133,7 +136,7 @@ const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage }
 
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
-        async (context): Promise<GetServerSidePropsResult<UserPlacesPageProps>> => {
+        async (context): Promise<GetServerSidePropsResult<UserVisitedPageProps>> => {
             const id = typeof context.params?.id === 'string' ? context.params.id : undefined
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const currentPage = parseInt(context.query.page as string, 10) || 1
@@ -152,14 +155,14 @@ export const getServerSideProps = wrapper.getServerSideProps(
             }
 
             await store.dispatch(
-                API.endpoints.placesGetList.initiate({
-                    author: id,
-                    limit: PLACES_PER_PAGE,
-                    offset: (currentPage - 1) * PLACES_PER_PAGE
+                API.endpoints.visitedGetUserPlaces.initiate({
+                    userId: id,
+                    limit: VISITED_PLACES_PER_PAGE,
+                    offset: (currentPage - 1) * VISITED_PLACES_PER_PAGE
                 })
             )
 
-            await store.dispatch(API.endpoints.poiGetList.initiate({ author: id }))
+            await store.dispatch(API.endpoints.poiGetList.initiate({ visited: id }))
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
@@ -174,4 +177,4 @@ export const getServerSideProps = wrapper.getServerSideProps(
         }
 )
 
-export default UserPlacesPage
+export default UserVisitedPage
