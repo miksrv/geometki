@@ -6,6 +6,7 @@ use App\Libraries\AvatarLibrary;
 use App\Libraries\LevelsLibrary;
 use App\Libraries\SessionLibrary;
 use App\Models\UsersModel;
+use App\Models\UsersVisitedPlacesModel;
 use CodeIgniter\Files\File;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -136,6 +137,9 @@ class Users extends ResourceController
         $usersData->levelData = $userLevels->getLevelData($usersData);
         $usersData->statistic = $userLevels->statistic;
         $usersData->avatar    = $avatarLibrary->buildPath($usersData->id, $usersData->avatar, 'medium');
+
+        $visitedModel = new UsersVisitedPlacesModel();
+        $usersData->statistic->visited = $visitedModel->where('user_id', $id)->countAllResults();
 
         unset($usersData->experience, $usersData->level);
 

@@ -170,8 +170,8 @@ export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
                                     <div className={styles.value}>{user?.statistic?.edit}</div>
                                 </li>
                                 <li>
-                                    <div className={styles.key}>{t('changed-covers')}:</div>
-                                    <div className={styles.value}>{user?.statistic?.cover}</div>
+                                    <div className={styles.key}>{t('places-visited')}:</div>
+                                    <div className={styles.value}>{user?.statistic?.visited}</div>
                                 </li>
                             </ul>
                         </div>
