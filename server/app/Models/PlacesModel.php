@@ -185,6 +185,20 @@ class PlacesModel extends ApplicationBaseModel
     }
 
     /**
+     * Constrain the query to places visited by the given user.
+     * Applies an INNER JOIN against users_visited_places.
+     *
+     * @param string $userId
+     * @return static
+     */
+    public function filterByVisitedUser(string $userId): static
+    {
+        return $this
+            ->join('users_visited_places', 'users_visited_places.place_id = places.id', 'inner')
+            ->where('users_visited_places.user_id', $userId);
+    }
+
+    /**
      * Find an existing place by owner and exact coordinates.
      * Used to prevent duplicate submissions.
      *
