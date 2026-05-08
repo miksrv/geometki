@@ -2,6 +2,7 @@ import React from 'react'
 import { cn, Container, Spinner } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
+import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
 import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
@@ -16,6 +17,10 @@ import { SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
 
 import styles from '@/sections/user/styles.module.sass'
+
+const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap').then((m) => m.InteractiveMap), {
+    ssr: false
+})
 
 export const PLACES_PER_PAGE = 21
 
@@ -33,6 +38,10 @@ const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage }
         limit: PLACES_PER_PAGE,
         offset: (currentPage - 1) * PLACES_PER_PAGE
     })
+
+    const { data: marksData } = API.usePoiGetListQuery({ author: id })
+
+    const placeMarks: ApiModel.PlaceMark[] = marksData?.items ?? []
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     const pageTitle = currentPage > 1 ? ` - ${t('page')} ${currentPage}` : ''
@@ -74,6 +83,22 @@ const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage }
                     }
                 ]}
             />
+
+            {!!placeMarks.length && (
+                <Container style={{ height: '350px', padding: '2px' }}>
+                    <InteractiveMap
+                        places={placeMarks}
+                        enableCenterPopup={false}
+                        enableContextMenu={false}
+                        enableFullScreen={false}
+                        enableCoordsControl={false}
+                        enableCategoryControl={false}
+                        enableLayersSwitcher={false}
+                        storeMapPosition={false}
+                        controlsSize={'small'}
+                    />
+                </Container>
+            )}
 
             <UserTabs
                 user={user}
@@ -133,6 +158,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     offset: (currentPage - 1) * PLACES_PER_PAGE
                 })
             )
+
+            await store.dispatch(API.endpoints.poiGetList.initiate({ author: id }))
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
