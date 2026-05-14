@@ -18,12 +18,13 @@ class SessionsModel extends Model
 {
     protected $table            = 'sessions';
     protected $primaryKey       = 'id';
-    protected $useAutoIncrement = true;
+    protected $useAutoIncrement = false;
     protected $returnType       = SessionEntity::class;
     protected $useSoftDeletes   = false;
 
     /** @var array<int, string> */
     protected $allowedFields = [
+        'id',
         'user_id',
         'user_ip',
         'lat',

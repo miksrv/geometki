@@ -35,8 +35,8 @@ export const NotificationList: React.FC = () => {
         isFetching: notifyFetching
     } = API.useNotificationsGetListQuery(
         {
-            limit: 5,
-            offset: (notifyPage - 1) * 5
+            limit: 10,
+            offset: (notifyPage - 1) * 10
         },
         {
             skip: !notifyShow

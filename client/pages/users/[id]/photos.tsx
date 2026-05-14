@@ -14,6 +14,7 @@ import { AppLayout, Header, PhotoGallery } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
+import { buildHreflangTags } from '@/utils/seo'
 
 export const PHOTOS_PER_PAGE = 32
 
@@ -52,7 +53,8 @@ const UserPhotosPage: React.FC<UserPhotosPageProps> = ({ id, user, photosList, p
                         type: 'website',
                         url: `${canonicalUrl}users/${id}/photos`
                     },
-                    twitter: { cardType: 'summary_large_image' }
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags(`users/${id}/photos`)
                 })}
             </Head>
 

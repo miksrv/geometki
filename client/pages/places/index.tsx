@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo } from 'react'
-import type { BreadcrumbList } from 'schema-dts'
 import { Container } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
@@ -7,6 +6,7 @@ import { useRouter } from 'next/dist/client/router'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
 import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { JsonLdScript } from 'next-seo'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
@@ -197,7 +197,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
               ? `${t('page')} ${initialFilter.page}`
               : t('interesting-places')
 
-    const breadCrumbSchema: unknown | BreadcrumbList = {
+    const breadCrumbSchema = {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
@@ -221,19 +221,15 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
             <Head>
                 {generateNextSeo({
                     title: title,
-                    description: `${title} - ${placesList
-                        ?.map(({ title }) => title)
-                        ?.join(', ')
-                        ?.substring(0, 220)}`,
+                    description: title,
                     canonical: canonicalPage,
                     openGraph: {
                         images: placesList
                             .filter(({ cover }) => cover?.full)
+                            .slice(0, 3)
                             .map(({ cover, title }) => ({
                                 alt: `${title}`,
-                                height: 180,
-                                url: `${IMG_HOST}${cover?.preview}`,
-                                width: 280
+                                url: `${IMG_HOST}${cover?.full}`
                             })),
                         locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
                         type: 'website'
@@ -241,19 +237,16 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                     twitter: { cardType: 'summary_large_image' },
                     additionalLinkTags: buildHreflangTags('places')
                 })}
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(breadCrumbSchema)
-                    }}
-                />
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(placesList.map((place) => PlaceSchema(place)))
-                    }}
-                />
             </Head>
+
+            <JsonLdScript
+                scriptKey={'places-breadcrumb'}
+                data={breadCrumbSchema}
+            />
+            <JsonLdScript
+                scriptKey={'places-list'}
+                data={placesList.map((place) => PlaceSchema(place, SITE_LINK))}
+            />
 
             <Header
                 title={title}

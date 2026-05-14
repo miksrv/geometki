@@ -2,7 +2,7 @@ const { i18n } = require('./next-i18next.config.js')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    i18n,
+    i18n: { ...i18n, localeDetection: false },
     // Authorization does not work in this mode
     reactStrictMode: false,
     images: {
@@ -29,6 +29,7 @@ const nextConfig = {
         unoptimized: false
     },
     output: 'standalone',
+    trailingSlash: false,
 
     transpilePackages: ['@uiw/react-md-editor', 'leaflet', 'leaflet.heat'],
 }

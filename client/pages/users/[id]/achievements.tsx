@@ -14,6 +14,7 @@ import { AchievementsList } from '@/components/pages/achievements-list'
 import { AppLayout } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
+import { buildHreflangTags } from '@/utils/seo'
 
 interface UserAchievementsPageProps {
     id: string
@@ -45,7 +46,8 @@ const UserAchievementsPage: React.FC<UserAchievementsPageProps> = ({ id, user })
                         type: 'website',
                         url: `${canonicalUrl}users/${id}/achievements`
                     },
-                    twitter: { cardType: 'summary_large_image' }
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags(`users/${id}/achievements`)
                 })}
             </Head>
 

@@ -6,5 +6,6 @@ Disallow: /unsubscribe
 Disallow: /places/create
 Disallow: /places/*/edit
 Disallow: /users/settings
+Disallow: /admin
 
 Sitemap: https://geometki.com/sitemap.xml

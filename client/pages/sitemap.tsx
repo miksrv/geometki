@@ -22,7 +22,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             const { data } = await store.dispatch(API.endpoints.sitemapGetList.initiate())
 
-            const staticPages = ['map', 'places', 'users', 'users/levels', 'categories']
+            const staticPages = ['map', 'places', 'users', 'users/levels', 'categories', 'tags']
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
@@ -50,17 +50,19 @@ export const getServerSideProps = wrapper.getServerSideProps(
             </url>
           `
 
+            // Static pages don't have a reliable lastmod — use a fixed date so crawlers don't
+            // see them as "just updated" on every request, which wastes crawl budget.
+            const STATIC_LASTMOD = '2025-01-01T00:00:00.000Z'
+
             // Homepage (RU and EN)
-            sitemap += makeUrlNode('', new Date().toISOString(), 'daily', '1.0')
-            sitemap += makeUrlNode('en', new Date().toISOString(), 'daily', '1.0')
+            sitemap += makeUrlNode('', STATIC_LASTMOD, 'daily', '1.0')
+            sitemap += makeUrlNode('en', STATIC_LASTMOD, 'daily', '1.0')
 
             // Static RU Locale
-            sitemap += staticPages.map((url) => makeUrlNode(url, new Date().toISOString(), 'monthly', '0.8')).join('')
+            sitemap += staticPages.map((url) => makeUrlNode(url, STATIC_LASTMOD, 'monthly', '0.8')).join('')
 
             // Static EN Locale
-            sitemap += staticPages
-                .map((url) => makeUrlNode('en/' + url, new Date().toISOString(), 'monthly', '0.8'))
-                .join('')
+            sitemap += staticPages.map((url) => makeUrlNode('en/' + url, STATIC_LASTMOD, 'monthly', '0.8')).join('')
 
             // Dynamic RU Locale
             sitemap += [...placesPages, ...usersPages]

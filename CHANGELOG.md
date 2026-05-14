@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.9
+
+### Patch Changes
+
+- Map page: hero section — Added a hero section on the map index page with `Next/Image` and a new CSS module. Localized `map-hero-title`, `map-hero-subtitle`, and `map-hero-cta` keys added to EN/RU locales. `WebApplication` JSON-LD block added to the map page.
+- SEO: `JsonLdScript` and hreflang — Replaced manual `<script type="application/ld+json">` injections with `next-seo`'s `JsonLdScript` across place and user pages; removed `schema-dts` typed annotations. Added `buildHreflangTags` to user subpages (achievements, bookmarks, photos, places, visited). Tightened meta descriptions and updated OG images to full-size URLs.
+- Client: remove locale gating and add default SEO template — Removed `isLocaleReady` state and conditional minimal-loader so the app renders immediately. Added default SEO title template (`'%s | Geometki'`) via `generateDefaultSeo`; simplified viewport meta.
+- SEO: sitemap, localeDetection, robots — Disabled `localeDetection` and trailing slashes in `next.config.js`. Added `tags` static page to sitemap with a fixed `STATIC_LASTMOD` to prevent stale timestamps. Added `Disallow: /admin` to `robots.txt`.
+- Achievements: seeder 2 — Added `AchievementsSeeder2` seeding collector, commenter, wanderer, pioneer, scout, and debut achievement tiers with XP, sort order, and rules.
+- Notifications: increased page size and dynamic limit — Notification list now fetches 10 items per page (up from 5). Admin sending-mail page now uses `filters.limit` instead of a hardcoded 20.
+- Server: sessions model custom IDs — Set `$useAutoIncrement = false` and added `id` to `$allowedFields` in `SessionModel` to allow externally generated session IDs.
+
 ## 1.6.8
 
 ### Patch Changes

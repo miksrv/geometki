@@ -334,5 +334,8 @@
     "visited-verified-count": "{{verified}} confirmed ✓",
     "visited-dialog-description": "Share your location to verify your visit and earn a bonus. Or mark without confirmation.",
     "visited-was-here": "I was here",
-    "visited-places": "Visited Places"
+    "visited-places": "Visited Places",
+    "map-hero-title": "Interactive Map of Interesting Places",
+    "map-hero-subtitle": "Thousands of geotags across Russia and beyond — scenic natural objects, mountain peaks, waterfalls and caves, abandoned buildings and industrial sites, historical monuments, temples and bunkers. Every place is added by real travelers with exact GPS coordinates, photos and detailed descriptions. Discover hidden attractions that never appear in ordinary travel guides — use the map to find geotags near you.",
+    "map-hero-cta": "Open Map"
 }
