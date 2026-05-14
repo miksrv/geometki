@@ -200,7 +200,7 @@ const AdminSendingMailPage: React.FC<AdminSendingMailPageProps> = () => {
                 <Pagination
                     currentPage={filters.page ?? 1}
                     totalItemsCount={data?.count ?? 0}
-                    perPage={20}
+                    perPage={filters.limit ?? DEFAULT_FILTERS.limit!}
                     captionPage={t('page')}
                     captionNextPage={t('next-page')}
                     captionPrevPage={t('prev-page')}
