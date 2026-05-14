@@ -3,9 +3,11 @@ import { Button } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { JsonLdScript } from 'next-seo'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
@@ -18,6 +20,8 @@ import { PlaceSchema, UserSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
+import styles from './index.module.sass'
+
 interface IndexPageProps {
     placesList: ApiModel.Place[]
     usersList: ApiModel.User[]
@@ -26,7 +30,7 @@ interface IndexPageProps {
 const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
     const { t, i18n } = useTranslation()
 
-    const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en' : '')
+    const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
 
     const [lastDate, setLastDate] = useState<string>()
 
@@ -74,33 +78,69 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
                     twitter: { cardType: 'summary_large_image' },
                     additionalLinkTags: buildHreflangTags('')
                 })}
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify({
-                            '@context': 'https://schema.org',
-                            '@type': 'Organization',
-                            logo: `${SITE_LINK}android-chrome-512x512.png`,
-                            name: 'Geometki',
-                            url: SITE_LINK
-                        })
-                    }}
-                />
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify([
-                            ...placesList.map((place) => PlaceSchema(place)),
-                            ...usersList.map((user) => UserSchema(user))
-                        ])
-                    }}
-                />
             </Head>
+            <JsonLdScript
+                scriptKey={'organization'}
+                data={{
+                    '@context': 'https://schema.org',
+                    '@type': 'Organization',
+                    logo: `${SITE_LINK}android-chrome-512x512.png`,
+                    name: 'Geometki',
+                    url: SITE_LINK
+                }}
+            />
+            <JsonLdScript
+                scriptKey={'website'}
+                data={{
+                    '@context': 'https://schema.org',
+                    '@type': 'WebSite',
+                    name: 'Geometki',
+                    url: SITE_LINK,
+                    potentialAction: {
+                        '@type': 'SearchAction',
+                        target: {
+                            '@type': 'EntryPoint',
+                            urlTemplate: `${SITE_LINK}places?search={search_term_string}`
+                        },
+                        'query-input': 'required name=search_term_string'
+                    }
+                }}
+            />
+            <JsonLdScript
+                scriptKey={'places-users'}
+                data={[
+                    ...placesList.map((place) => PlaceSchema(place, SITE_LINK)),
+                    ...usersList.map((user) => UserSchema(user, SITE_LINK))
+                ]}
+            />
 
             <Header
                 title={t('news-feed') + ' - ' + t('interesting-places')}
                 currentPage={t('updated-geotags-users-photos')}
             />
+
+            <div className={styles.mapHero}>
+                <Image
+                    src={'/images/pages/map-hero.png'}
+                    alt={t('map-hero-title')}
+                    fill
+                    priority
+                    className={styles.mapHeroImage}
+                />
+                <div className={styles.mapHeroOverlay} />
+                <div className={styles.mapHeroContent}>
+                    <h2 className={styles.mapHeroTitle}>
+                        <Link href={'/map'}>{t('map-hero-title')}</Link>
+                    </h2>
+                    <p className={styles.mapHeroSubtitle}>{t('map-hero-subtitle')}</p>
+                    <Link
+                        href={'/map'}
+                        className={styles.mapHeroCta}
+                    >
+                        {t('map-hero-cta')} →
+                    </Link>
+                </div>
+            </div>
 
             <Carousel options={{ dragFree: true, loop: true }}>
                 {placesList.map((place) => (

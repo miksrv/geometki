@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
 import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { JsonLdScript } from 'next-seo'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
@@ -194,6 +195,19 @@ const MapPage: NextPage<object> = () => {
                     additionalLinkTags: buildHreflangTags('map')
                 })}
             </Head>
+            <JsonLdScript
+                scriptKey={'map-app'}
+                data={{
+                    '@context': 'https://schema.org',
+                    '@type': 'WebApplication',
+                    applicationCategory: 'TravelApplication',
+                    description: t('geotags-map-description'),
+                    name: t('map-of-interesting-pages'),
+                    offers: { '@type': 'Offer', price: '0', priceCurrency: 'RUB' },
+                    operatingSystem: 'Web',
+                    url: `${canonicalUrl}map`
+                }}
+            />
 
             <PhotoLightbox
                 photos={photoLightbox}
