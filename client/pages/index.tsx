@@ -57,7 +57,7 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
         <AppLayout>
             <Head>
                 {generateNextSeo({
-                    title: t('news-feed') + ' - ' + t('interesting-places'),
+                    title: t('home-seo-title'),
                     description: t('geotags-description'),
                     canonical: canonicalUrl,
                     openGraph: {
@@ -71,7 +71,7 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
                         ],
                         locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
                         siteName: t('geotags'),
-                        title: t('news-feed'),
+                        title: t('home-seo-title'),
                         type: 'website',
                         url: canonicalUrl
                     },

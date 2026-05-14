@@ -57,7 +57,7 @@ const App = ({ Component, pageProps }: AppProps) => {
     return (
         <ThemeProvider defaultTheme={'light'}>
             <Head>
-                {generateDefaultSeo({ titleTemplate: '%s | Geometki' })}
+                {generateDefaultSeo({ titleTemplate: `%s | ${i18n.language === 'ru' ? 'Геометки' : 'Geometki'}` })}
                 <meta charSet={'utf-8'} />
                 <meta
                     name={'mobile-web-app-capable'}

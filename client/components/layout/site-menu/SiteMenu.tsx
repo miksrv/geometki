@@ -51,7 +51,7 @@ export const SiteMenu: React.FC<SiteMenuProps> = ({ type, userId, isAuth, userRo
         {
             icon: 'Map',
             link: '/map',
-            text: t('map-of-interesting-pages', { defaultValue: 'Карта интересных мест' })
+            text: t('nav-map', { defaultValue: 'Карта интересных мест' })
         },
         {
             icon: 'Point',
@@ -79,7 +79,7 @@ export const SiteMenu: React.FC<SiteMenuProps> = ({ type, userId, isAuth, userRo
         {
             icon: 'Bookmark',
             link: '/categories',
-            text: t('categories-places', { defaultValue: 'Категории мест' })
+            text: t('nav-categories', { defaultValue: 'Категории мест' })
         },
         {
             icon: 'Tag',
