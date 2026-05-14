@@ -99,7 +99,7 @@ export const CategoryControl: React.FC<CategoryControlProps> = ({ categories, on
                                     <Image
                                         src={categoryImage(item.name).src}
                                         alt={''}
-                                        width={15}
+                                        width={18}
                                         height={18}
                                         style={{ marginRight: '4px' }}
                                     />

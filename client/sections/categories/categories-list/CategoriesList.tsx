@@ -29,7 +29,7 @@ export const CategoriesList: React.FC<CategoriesListProps> = ({ categories }) =>
                             className={styles.categoryImage}
                             src={categoryImage(category.name).src}
                             alt={''}
-                            width={15}
+                            width={18}
                             height={18}
                             style={{ marginRight: '4px' }}
                         />

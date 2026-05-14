@@ -25,8 +25,8 @@ export const PlacesListItem: React.FC<PlacesListItemProps> = ({ t, place }) => (
                 className={styles.categoryIcon}
                 src={categoryImage(place.category?.name).src}
                 alt={place.category?.title || ''}
-                width={22}
-                height={26}
+                width={20}
+                height={20}
             />
 
             <Link

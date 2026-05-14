@@ -214,7 +214,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({ placeId, loading, values, 
                         className={styles.categoryImage}
                         src={categoryImage(selectedCategory.key).src}
                         alt={''}
-                        width={17}
+                        width={20}
                         height={20}
                     />
                 )}

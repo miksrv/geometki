@@ -121,7 +121,7 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
 
             <div className={styles.mapHero}>
                 <Image
-                    src={'/images/pages/map-hero.png'}
+                    src={'/images/pages/map-hero.jpg'}
                     alt={t('map-hero-title')}
                     fill
                     priority
