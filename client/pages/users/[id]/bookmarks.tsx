@@ -14,6 +14,7 @@ import { AppLayout, Header, PlacesList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
+import { buildHreflangTags } from '@/utils/seo'
 
 import styles from '@/sections/user/styles.module.sass'
 
@@ -53,7 +54,8 @@ const UserBookmarksPage: React.FC<UserBookmarksPageProps> = ({ id, user, current
                         type: 'website',
                         url: `${canonicalUrl}users/${id}/bookmarks`
                     },
-                    twitter: { cardType: 'summary_large_image' }
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags(`users/${id}/bookmarks`)
                 })}
             </Head>
 

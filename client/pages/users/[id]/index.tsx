@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import type { BreadcrumbList, ProfilePage } from 'schema-dts'
 import { Button } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
@@ -7,6 +6,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { JsonLdScript } from 'next-seo'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
@@ -57,7 +57,7 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
         setLastDate(undefined)
     }, [id])
 
-    const breadCrumbSchema: unknown | BreadcrumbList = {
+    const breadCrumbSchema = {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
@@ -76,7 +76,7 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
         ]
     }
 
-    const userSchema: unknown | ProfilePage = {
+    const userSchema = {
         '@context': 'https://schema.org',
         '@type': 'ProfilePage',
         dateCreated: formatDateISO(user?.created?.date),
@@ -115,19 +115,16 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
                     twitter: { cardType: 'summary_large_image' },
                     additionalLinkTags: buildHreflangTags(`users/${user?.id}`)
                 })}
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(breadCrumbSchema)
-                    }}
-                />
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(userSchema)
-                    }}
-                />
             </Head>
+
+            <JsonLdScript
+                scriptKey={'user-breadcrumb'}
+                data={breadCrumbSchema}
+            />
+            <JsonLdScript
+                scriptKey={'user-profile'}
+                data={userSchema}
+            />
 
             <UserHeader user={user} />
 

@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { BreadcrumbList, LocalBusiness } from 'schema-dts'
 import { Button, Container } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
 import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
+import { JsonLdScript } from 'next-seo'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
@@ -86,7 +86,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
         }
     }
 
-    const breadCrumbSchema: unknown | BreadcrumbList = useMemo(
+    const breadCrumbSchema = useMemo(
         () => ({
             '@context': 'https://schema.org',
             '@type': 'BreadcrumbList',
@@ -108,7 +108,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
         [canonicalUrl, place?.title, t]
     )
 
-    const placeSchema: unknown | LocalBusiness = useMemo(
+    const placeSchema = useMemo(
         () => ({
             '@context': 'https://schema.org',
             '@type': 'LocalBusiness',
@@ -163,7 +163,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             <Head>
                 {generateNextSeo({
                     title: place?.title,
-                    description: truncateText(removeMarkdown(place?.content), 300),
+                    description: truncateText(removeMarkdown(place?.content)?.replace(/\n/g, ' '), 155),
                     canonical: pagePlaceUrl,
                     openGraph: {
                         article: {
@@ -173,7 +173,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                             section: place?.category?.name,
                             tags: place?.tags
                         },
-                        description: truncateText(removeMarkdown(place?.content), 300),
+                        description: truncateText(removeMarkdown(place?.content)?.replace(/\n/g, ' '), 155),
                         images: photoList?.slice(0, 3).map((photo, index) => ({
                             alt: `${photo.title} (${index + 1})`,
                             height: photo.height,
@@ -189,13 +189,16 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                     twitter: { cardType: 'summary_large_image' },
                     additionalLinkTags: buildHreflangTags(`places/${place?.id}`)
                 })}
-                <script
-                    type={'application/ld+json'}
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify([breadCrumbSchema, placeSchema])
-                    }}
-                />
             </Head>
+
+            <JsonLdScript
+                scriptKey={'place-breadcrumb'}
+                data={breadCrumbSchema}
+            />
+            <JsonLdScript
+                scriptKey={'place-schema'}
+                data={placeSchema}
+            />
 
             <PlaceHeader
                 place={place}

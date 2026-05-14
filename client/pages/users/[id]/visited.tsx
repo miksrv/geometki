@@ -15,6 +15,7 @@ import { AppLayout, Header, PlacesList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
+import { buildHreflangTags } from '@/utils/seo'
 
 import styles from '@/sections/user/styles.module.sass'
 
@@ -62,7 +63,8 @@ const UserVisitedPage: React.FC<UserVisitedPageProps> = ({ id, user, currentPage
                         type: 'website',
                         url: `${canonicalUrl}users/${id}/visited`
                     },
-                    twitter: { cardType: 'summary_large_image' }
+                    twitter: { cardType: 'summary_large_image' },
+                    additionalLinkTags: buildHreflangTags(`users/${id}/visited`)
                 })}
             </Head>
 
