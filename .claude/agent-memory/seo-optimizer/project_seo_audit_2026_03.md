@@ -1,27 +1,43 @@
 ---
-name: SEO audit March 2026 — completed
-description: Full SEO audit of Geometki completed 2026-03-15, findings written to ROADMAP-SEO.md
-type: project
+name: seo-audit-2026-05
+description: Full SEO audit of Geometki re-run 2026-05-13; prior audit was March 2026 (ROADMAP-SEO.md no longer exists)
+metadata:
+  type: project
 ---
 
-Full SEO audit completed 2026-03-15. 46 numbered findings written to `/Users/mik/Projects/geometki/ROADMAP-SEO.md`.
+Full re-audit conducted 2026-05-13. ROADMAP-SEO.md from March 2026 no longer exists. Prior issues that are now FIXED include: analytics now uses next/script (not dangerouslySetInnerHTML), hreflang tags implemented via buildHreflangTags() on main pages, Twitter Card tags added on all pages.
 
-**Critical issues found (fix first):**
-1. Sitemap bug: usersPages reads from data?.places instead of data?.users (line 31 sitemap.tsx)
-2. Sitemap missing: homepage, /tags, hreflang annotations
-3. No hreflang link tags on any page (confirmed live)
-4. Analytics scripts use dangerouslySetInnerHTML instead of next/script
-5. Viewport has maximum-scale=1 (accessibility + ranking issue)
-6. Index page canonical: 'en' missing trailing slash vs 'en/' on other pages
+**Still unresolved / new issues found as of 2026-05-13:**
 
-**Key structural gaps:**
-- No _document.tsx file exists (lang attribute not explicitly set)
-- No DefaultSeo or titleTemplate in _app.tsx
-- No Twitter Card tags on any page
-- No WebSite schema with SearchAction
-- No Yandex Webmaster verification
-- OG images use relative paths (should be absolute)
+CRITICAL:
+- Sitemap (/pages/sitemap.tsx line 25): /tags page missing from staticPages list
+- Sitemap: /users/[id] sub-pages (places, visited, bookmarks, photos, achievements) not in sitemap
+- Locale flicker in _app.tsx (lines 72-85): googlebot sees a blank div during the isLocaleReady:false render phase — renders `<div style={{ minHeight: '100vh' }} />` with no content or meta tags
+- PlaceSchema called without canonicalUrl on homepage (index.tsx line 93) and places listing (places/index.tsx line 253) — schema url field is undefined for all items
 
-**Why:** These findings represent the baseline state before any SEO work begins. Use this to track what has been fixed in future conversations.
+HIGH:
+- No _document.tsx — html lang attribute not explicitly set (Next.js i18n sets it but no custom Document to control it)
+- Viewport: maximum-scale=1 blocks user zoom (accessibility signal; Google downranks pages that block zoom)
+- Homepage canonical bug (index.tsx line 29): EN canonical = SITE_LINK + 'en' (no trailing slash) but all other pages use SITE_LINK + 'en/'
+- User sub-pages /users/[id]/places, /visited, /bookmarks, /photos, /achievements missing hreflang tags
+- Meta description on places listing (places/index.tsx line 224): truncated at 220 chars from a joined title list — not keyword-optimized, highly variable
 
-**How to apply:** When user asks about SEO fixes, check this against ROADMAP-SEO.md to understand what was audited and what may have changed.
+MEDIUM:
+- No WebSite schema with SearchAction on homepage (site has search functionality)
+- No FAQ or HowTo schema anywhere — missed featured snippet opportunities
+- Sitemap uses new Date().toISOString() for static pages (always today's date) — waste of crawl budget signal
+- Place detail: meta description truncated at 300 chars from raw content (can include line breaks from markdown remnants)
+- No og:image on tags page (/pages/tags.tsx)
+- User sub-pages have no hreflang link tags
+- Description on user profile pages is just "{name} - {t('user-profile')}" — not useful content
+- robots.txt: /admin/* not explicitly blocked (admin pages are noindexed but not blocked from crawling)
+
+LOW:
+- No sitemap index file — single sitemap will scale poorly as places/users grow
+- Missing x-robots-tag HTTP headers as backup to meta robots
+- No breadcrumb structured data on users sub-pages (visited, places, bookmarks)
+- Level images in /users/levels use empty alt text (alt='')
+- site.webmanifest has no `start_url` field
+- Users listing description (users/index.tsx line 70) truncated at 220 chars from user names — not useful for SEO
+
+**How to apply:** When implementing fixes, prioritize in the CRITICAL > HIGH > MEDIUM > LOW order above. Check this list to avoid re-auditing already confirmed issues.
