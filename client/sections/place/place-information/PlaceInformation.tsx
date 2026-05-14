@@ -35,7 +35,7 @@ export const PlaceInformation: React.FC<PlaceInformationProps> = ({ place }) => 
                         <Image
                             src={categoryImage(place?.category?.name).src}
                             alt={''}
-                            width={15}
+                            width={18}
                             height={18}
                             style={{ marginRight: '4px' }}
                         />

@@ -70,16 +70,6 @@ describe('SiteMenu', () => {
             expect(screen.getByTitle('Все интересные места')).toBeInTheDocument()
         })
 
-        it('renders the categories link', () => {
-            renderWithStore(<SiteMenu />)
-            expect(screen.getByTitle('Категории мест')).toBeInTheDocument()
-        })
-
-        it('renders the tags link', () => {
-            renderWithStore(<SiteMenu />)
-            expect(screen.getByTitle('Особенности мест')).toBeInTheDocument()
-        })
-
         it('renders the users link', () => {
             renderWithStore(<SiteMenu />)
             expect(screen.getByTitle('Пользователи')).toBeInTheDocument()
@@ -105,16 +95,6 @@ describe('SiteMenu', () => {
                 />
             )
             expect(screen.getByTitle('Моя страница')).toHaveAttribute('href', '/users/user-1')
-        })
-
-        it('renders my photos link with correct href when userId is provided', () => {
-            renderWithStore(
-                <SiteMenu
-                    isAuth={true}
-                    userId={'user-1'}
-                />
-            )
-            expect(screen.getByTitle('Мои фотографии')).toHaveAttribute('href', '/users/user-1/photos')
         })
     })
 

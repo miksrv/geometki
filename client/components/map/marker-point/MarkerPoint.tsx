@@ -26,8 +26,8 @@ export const MarkerPoint: React.FC<MarkerPointProps> = ({ place, keepInView }) =
     const [getPlaceItem, { isLoading, data: poiData }] = API.usePoiGetItemMutation()
 
     const placeMarkerIcon = new Leaflet.Icon({
-        iconAnchor: [8.4, 19],
-        iconSize: [17, 20],
+        iconAnchor: [10, 10],
+        iconSize: [20, 20],
         iconUrl: categoryImage(place.category).src
     })
 

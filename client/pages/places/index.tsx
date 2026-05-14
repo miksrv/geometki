@@ -201,17 +201,23 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
+            {
+                '@type': 'ListItem',
+                item: canonicalUrl,
+                name: t('geotags'),
+                position: 1
+            },
             ...(breadcrumbsLinks?.map((link, i) => ({
                 '@type': 'ListItem',
                 item: `${canonicalUrl}${link.link.replace(/^\//, '')}`,
                 name: link.text,
-                position: i + 1
+                position: i + 2
             })) || []),
             {
                 '@type': 'ListItem',
                 item: canonicalPage,
                 name: breadCrumbCurrent,
-                position: breadcrumbsLinks.length + 1
+                position: breadcrumbsLinks.length + 2
             }
         ]
     }
