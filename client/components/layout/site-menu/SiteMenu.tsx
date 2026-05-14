@@ -45,7 +45,7 @@ export const SiteMenu: React.FC<SiteMenuProps> = ({ type, userId, isAuth, userRo
     const menuItems: MenuItem[] = [
         {
             icon: 'Feed',
-            link: '/',
+            link: '/activity',
             text: t('news-feed', { defaultValue: 'Новостная лента' })
         },
         {
@@ -69,22 +69,6 @@ export const SiteMenu: React.FC<SiteMenuProps> = ({ type, userId, isAuth, userRo
             icon: 'User',
             link: userId ? `/users/${userId}` : undefined,
             text: t('my-page', { defaultValue: 'Моя страница' })
-        },
-        {
-            auth: true,
-            icon: 'Photo',
-            link: userId ? `/users/${userId}/photos` : undefined,
-            text: t('my-photos', { defaultValue: 'Мои фотографии' })
-        },
-        {
-            icon: 'Bookmark',
-            link: '/categories',
-            text: t('nav-categories', { defaultValue: 'Категории мест' })
-        },
-        {
-            icon: 'Tag',
-            link: '/tags',
-            text: t('features-of-places', { defaultValue: 'Особенности мест' })
         },
         {
             icon: 'Users',

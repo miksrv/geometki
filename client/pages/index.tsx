@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React from 'react'
 import { Button } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
@@ -13,7 +13,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { ActivityList, AppLayout, Header, PlacesListItem, UsersList } from '@/components/shared'
+import { AppLayout, Header, PlacesListItem, UsersList } from '@/components/shared'
 import { Carousel } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
 import { PlaceSchema, UserSchema } from '@/utils/schema'
@@ -31,27 +31,6 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
     const { t, i18n } = useTranslation()
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
-
-    const [lastDate, setLastDate] = useState<string>()
-
-    const { data, isFetching } = API.useActivityGetInfinityListQuery({ date: lastDate })
-
-    const onScroll = useCallback(() => {
-        const scrolledToBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 20
-        const cursorDate = data?.items[data.items.length - 1]?.created?.date
-
-        if (scrolledToBottom && !isFetching && cursorDate) {
-            setLastDate(cursorDate)
-        }
-    }, [data, isFetching])
-
-    useEffect(() => {
-        document.addEventListener('scroll', onScroll)
-
-        return () => {
-            document.removeEventListener('scroll', onScroll)
-        }
-    }, [onScroll])
 
     return (
         <AppLayout>
@@ -115,8 +94,8 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
             />
 
             <Header
-                title={t('news-feed') + ' - ' + t('interesting-places')}
-                currentPage={t('updated-geotags-users-photos')}
+                title={t('home-seo-title')}
+                currentPage={t('geotags-description')}
             />
 
             <div className={styles.mapHero}>
@@ -172,12 +151,6 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList }) => {
                     </Link>
                 }
             />
-
-            <ActivityList
-                title={t('news-feed')}
-                activities={data?.items}
-                loading={isFetching}
-            />
         </AppLayout>
     )
 }
@@ -192,21 +165,16 @@ export const getServerSideProps = wrapper.getServerSideProps(
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
-            const { data: placesList } = await store.dispatch(
-                API.endpoints.placesGetList.initiate({
-                    limit: 6,
-                    order: ApiType.SortOrders.DESC,
-                    sort: ApiType.SortFields.ViewsWeek
-                })
-            )
-
-            const { data: usersList } = await store.dispatch(
-                API.endpoints.usersGetList.initiate({
-                    limit: 4
-                })
-            )
-
-            await store.dispatch(API.endpoints.activityGetInfinityList.initiate({}))
+            const [{ data: placesList }, { data: usersList }] = await Promise.all([
+                store.dispatch(
+                    API.endpoints.placesGetList.initiate({
+                        limit: 6,
+                        order: ApiType.SortOrders.DESC,
+                        sort: ApiType.SortFields.ViewsWeek
+                    })
+                ),
+                store.dispatch(API.endpoints.usersGetList.initiate({ limit: 4 }))
+            ])
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
