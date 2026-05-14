@@ -4,12 +4,17 @@ export enum MapObjectsTypeEnum {
 }
 
 export enum MapLayersEnum {
+    CARTO_DARK = 'CartoDark',
+    CARTO_LIGHT = 'CartoLight',
+    ESRI_SAT = 'ESRISat',
     GOOGLE_MAP = 'GoogleMap',
     GOOGLE_SAT = 'GoogleSat',
     MAPBOX = 'MapBox',
     MAPBOX_SAT = 'MapBoxSat',
     OCM = 'OCM',
-    OSM = 'OSM'
+    OPEN_TOPO = 'OpenTopo',
+    OSM = 'OSM',
+    YANDEX_SAT = 'YandexSat'
 }
 
 export enum MapAdditionalLayersEnum {

@@ -52,6 +52,15 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
     }
 
     const titleMapLayer: Record<MapLayersEnum, string> = {
+        [MapLayersEnum.CARTO_DARK]: t('map-layer_CartoDark', {
+            defaultValue: 'Dark (CartoDB)'
+        }),
+        [MapLayersEnum.CARTO_LIGHT]: t('map-layer_CartoLight', {
+            defaultValue: 'Light (CartoDB)'
+        }),
+        [MapLayersEnum.ESRI_SAT]: t('map-layer_ESRISat', {
+            defaultValue: 'Satellite (ESRI)'
+        }),
         [MapLayersEnum.GOOGLE_MAP]: t('map-layer_GoogleMap', {
             defaultValue: 'Google Карты'
         }),
@@ -67,8 +76,14 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
         [MapLayersEnum.OCM]: t('map-layer_OCM', {
             defaultValue: 'OpenCycleMap'
         }),
+        [MapLayersEnum.OPEN_TOPO]: t('map-layer_OpenTopo', {
+            defaultValue: 'Topographic'
+        }),
         [MapLayersEnum.OSM]: t('map-layer_OSM', {
             defaultValue: 'OpenStreetMap'
+        }),
+        [MapLayersEnum.YANDEX_SAT]: t('map-layer_YandexSat', {
+            defaultValue: 'Satellite (Yandex)'
         })
     }
 

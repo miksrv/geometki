@@ -282,10 +282,43 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     />
                 )}
 
+                {mapLayer === MapLayersEnum.CARTO_DARK && (
+                    <ReactLeaflet.TileLayer
+                        attribution='&copy; <a href="https://carto.com">CartoDB</a>'
+                        url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+                    />
+                )}
+                {mapLayer === MapLayersEnum.CARTO_LIGHT && (
+                    <ReactLeaflet.TileLayer
+                        attribution='&copy; <a href="https://carto.com">CartoDB</a>'
+                        url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
+                    />
+                )}
+                {mapLayer === MapLayersEnum.ESRI_SAT && (
+                    <ReactLeaflet.TileLayer
+                        attribution='Tiles &copy; Esri'
+                        url='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                        maxZoom={19}
+                    />
+                )}
                 {mapLayer === MapLayersEnum.OCM && (
                     <ReactLeaflet.TileLayer
                         attribution='Open Cycle Map'
                         url={`https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${process.env.NEXT_PUBLIC_CYCLEMAP_TOKEN}`}
+                    />
+                )}
+                {mapLayer === MapLayersEnum.OPEN_TOPO && (
+                    <ReactLeaflet.TileLayer
+                        attribution='&copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
+                        url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+                        maxZoom={17}
+                    />
+                )}
+                {mapLayer === MapLayersEnum.YANDEX_SAT && (
+                    <ReactLeaflet.TileLayer
+                        attribution='&copy; Яндекс'
+                        url='https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}'
+                        maxZoom={19}
                     />
                 )}
                 {mapLayer === MapLayersEnum.MAPBOX && (
