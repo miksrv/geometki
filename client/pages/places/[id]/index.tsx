@@ -93,19 +93,25 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             itemListElement: [
                 {
                     '@type': 'ListItem',
-                    item: `${canonicalUrl}places`,
+                    item: canonicalUrl,
                     name: t('geotags'),
                     position: 1
                 },
                 {
                     '@type': 'ListItem',
+                    item: `${canonicalUrl}places`,
+                    name: t('interesting-places'),
+                    position: 2
+                },
+                {
+                    '@type': 'ListItem',
                     item: pagePlaceUrl,
                     name: place?.title,
-                    position: 2
+                    position: 3
                 }
             ]
         }),
-        [canonicalUrl, place?.title, t]
+        [canonicalUrl, pagePlaceUrl, place?.title, t]
     )
 
     const placeSchema = useMemo(

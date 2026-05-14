@@ -69,9 +69,9 @@ describe('Breadcrumbs', () => {
     })
 
     describe('accessibility', () => {
-        it('has aria-label="breadcrumb" on the list', () => {
+        it('has aria-label="breadcrumb" on the nav element', () => {
             render(<Breadcrumbs />)
-            expect(screen.getByRole('list', { name: 'breadcrumb' })).toBeInTheDocument()
+            expect(screen.getByRole('navigation', { name: 'breadcrumb' })).toBeInTheDocument()
         })
     })
 
