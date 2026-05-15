@@ -46,6 +46,8 @@ const UserBookmarksPage: React.FC<UserBookmarksPageProps> = ({ id, user, current
                     title: `${user?.name} - ${title}${pageTitle}`,
                     description: `${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`,
                     canonical: `${canonicalUrl}users/${id}/bookmarks${currentPage > 1 ? `?page=${currentPage}` : ''}`,
+                    noindex: true,
+                    nofollow: false,
                     openGraph: {
                         description: `${user?.name} - ${t('all-traveler-geotags')}${pageTitle}`,
                         locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',

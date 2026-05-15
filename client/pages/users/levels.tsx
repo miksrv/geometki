@@ -32,6 +32,8 @@ const LevelsPage: NextPage<LevelsPageProps> = ({ levels }) => {
                     title: t('user-levels'),
                     canonical: `${canonicalUrl}users/levels`,
                     description: t('user-levels-description-1'),
+                    noindex: true,
+                    nofollow: false,
                     openGraph: {
                         description: t('user-levels-description-1'),
                         locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',

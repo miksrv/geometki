@@ -39,6 +39,8 @@ const UserPhotosPage: React.FC<UserPhotosPageProps> = ({ id, user, photosList, p
                     title: `${user?.name} - ${t('photos')}${pageTitle}`,
                     description: `${user?.name} - ${t('all-traveler-photos')}${pageTitle}`,
                     canonical: `${canonicalUrl}users/${id}/photos${currentPage > 1 ? `?page=${currentPage}` : ''}`,
+                    noindex: true,
+                    nofollow: false,
                     openGraph: {
                         description: `${user?.name} - ${t('all-traveler-photos')}${pageTitle}`,
                         images: photosList?.slice(0, 3).map((photo, index) => ({
