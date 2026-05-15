@@ -20,7 +20,8 @@ export enum MapLayersEnum {
 export enum MapAdditionalLayersEnum {
     HEATMAP = 'Heatmap',
     HISTORICAL_PHOTOS = 'HistoricalPhotos',
-    WIKIMEDIA_COMMONS = 'WikimediaCommons'
+    WIKIMEDIA_COMMONS = 'WikimediaCommons',
+    WIKIPEDIA = 'Wikipedia'
 }
 
 export type MapPositionType = {
