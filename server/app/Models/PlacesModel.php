@@ -167,7 +167,12 @@ class PlacesModel extends ApplicationBaseModel
     public function applyListSelect(string $distanceSQL = ''): static
     {
         $this->select(
-            'places.*, users.id as user_id, users.name as user_name, users.avatar as user_avatar,
+            'places.id, places.lat, places.lon, places.category,
+            places.rating, places.views, places.photos, places.comments, places.bookmarks,
+            places.updated_at as updated,
+            places.country_id, places.region_id, places.district_id, places.locality_id,
+            places.address_ru, places.address_en,
+            users.id as user_id, users.name as user_name, users.avatar as user_avatar,
             location_countries.title_en as country_en, location_countries.title_ru as country_ru,
             location_regions.title_en as region_en, location_regions.title_ru as region_ru,
             location_districts.title_en as district_en, location_districts.title_ru as district_ru,

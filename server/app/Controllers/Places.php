@@ -199,8 +199,9 @@ class Places extends ResourceController
                 $place->cover = $cover;
             }
 
-            $place->visitRadiusM       = (int) $place->visit_radius_m;
-            $place->verificationExempt = (bool) $place->verification_exempt;
+            if (!empty($place->updated)) {
+                $place->updated = new \DateTime((string) $place->updated);
+            }
 
             $formatter->cleanupFields($place);
         }

@@ -92,8 +92,8 @@ defined('PATH_TEMPORARY') || define('PATH_TEMPORARY', 'uploads/temp/');
 // Place cover image sizes
 defined('PLACE_COVER_WIDTH') || define('PLACE_COVER_WIDTH', 870);
 defined('PLACE_COVER_HEIGHT') || define('PLACE_COVER_HEIGHT', 300);
-defined('PLACE_COVER_PREVIEW_WIDTH') || define('PLACE_COVER_PREVIEW_WIDTH', 285);
-defined('PLACE_COVER_PREVIEW_HEIGHT') || define('PLACE_COVER_PREVIEW_HEIGHT', 180);
+defined('PLACE_COVER_PREVIEW_WIDTH') || define('PLACE_COVER_PREVIEW_WIDTH', 680);
+defined('PLACE_COVER_PREVIEW_HEIGHT') || define('PLACE_COVER_PREVIEW_HEIGHT', 300);
 
 // PLace photo max images
 defined('PHOTO_MAX_WIDTH') || define('PHOTO_MAX_WIDTH', 4048);
