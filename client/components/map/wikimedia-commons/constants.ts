@@ -1,0 +1,2 @@
+export const WIKIMEDIA_COMMONS_COLOR = '#3ca55c'
+export const WIKIMEDIA_COMMONS_LIMIT = 50
