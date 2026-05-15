@@ -4,6 +4,7 @@ import { TFunction } from 'i18next'
 import { Button, cn } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
+import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { UserAvatar } from '@/components/shared'
@@ -31,47 +32,51 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
     isAnswer,
     formAnswerId,
     onAnswerClick
-}) => (
-    <div className={cn(styles.commentItem, isAnswer && styles.answer)}>
-        <div className={styles.block}>
-            <UserAvatar
-                size={'medium'}
-                user={comment.author}
-            />
-            <div className={styles.content}>
-                <div className={styles.user}>
-                    <Link
-                        href={`/users/${comment.author.id}`}
-                        title={''}
-                    >
-                        {comment.author.name}
-                    </Link>
-                </div>
-                <Markdown>{comment.content}</Markdown>
-                <div className={styles.info}>
-                    {timeAgo(comment.created?.date)}
+}) => {
+    const { i18n } = useTranslation()
 
-                    {isAuth && (
-                        <Button
-                            size={'small'}
-                            mode={'link'}
-                            className={styles.answerButton}
-                            onClick={() => onAnswerClick?.(formAnswerId !== comment.id ? comment.id : undefined)}
+    return (
+        <div className={cn(styles.commentItem, isAnswer && styles.answer)}>
+            <div className={styles.block}>
+                <UserAvatar
+                    size={'medium'}
+                    user={comment.author}
+                />
+                <div className={styles.content}>
+                    <div className={styles.user}>
+                        <Link
+                            href={`/users/${comment.author.id}`}
+                            title={''}
                         >
-                            {formAnswerId === comment.id ? t('comment-answer-cancel') : t('comment-answer')}
-                        </Button>
+                            {comment.author.name}
+                        </Link>
+                    </div>
+                    <Markdown>{comment.content}</Markdown>
+                    <div className={styles.info}>
+                        {timeAgo(comment.created?.date, undefined, i18n.language)}
+
+                        {isAuth && (
+                            <Button
+                                size={'small'}
+                                mode={'link'}
+                                className={styles.answerButton}
+                                onClick={() => onAnswerClick?.(formAnswerId !== comment.id ? comment.id : undefined)}
+                            >
+                                {formAnswerId === comment.id ? t('comment-answer-cancel') : t('comment-answer')}
+                            </Button>
+                        )}
+                    </div>
+
+                    {formAnswerId === comment.id && (
+                        <CommentForm
+                            placeId={placeId}
+                            answerId={comment.id}
+                            isAuth={isAuth}
+                            onCommentAdded={() => onAnswerClick?.(undefined)}
+                        />
                     )}
                 </div>
-
-                {formAnswerId === comment.id && (
-                    <CommentForm
-                        placeId={placeId}
-                        answerId={comment.id}
-                        isAuth={isAuth}
-                        onCommentAdded={() => onAnswerClick?.(undefined)}
-                    />
-                )}
             </div>
         </div>
-    </div>
-)
+    )
+}
