@@ -91,7 +91,7 @@ const PlaceCoverEditor: React.ForwardRefRenderFunction<PlaceCoverEditorRefProps,
         setWidthRatio(ratioW)
         setHeightRatio(ratioH)
 
-        const newHeight = (width / 870) * 300
+        const newHeight = (width / 1024) * 300
 
         setImageCropData({
             height: (newHeight / height) * 100,
@@ -166,8 +166,8 @@ const PlaceCoverEditor: React.ForwardRefRenderFunction<PlaceCoverEditorRefProps,
                     <div className={styles.innerContainer}>
                         <ReactCrop
                             crop={imageCropData}
-                            aspect={870 / 300}
-                            minWidth={870 / widthRatio}
+                            aspect={1024 / 300}
+                            minWidth={1024 / widthRatio}
                             minHeight={300 / heightRatio}
                             onChange={(c, p) => setImageCropData(p)}
                         >

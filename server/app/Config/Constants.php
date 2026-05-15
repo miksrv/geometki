@@ -90,7 +90,7 @@ defined('PATH_AVATARS') || define('PATH_AVATARS', 'uploads/users/');
 defined('PATH_TEMPORARY') || define('PATH_TEMPORARY', 'uploads/temp/');
 
 // Place cover image sizes
-defined('PLACE_COVER_WIDTH') || define('PLACE_COVER_WIDTH', 870);
+defined('PLACE_COVER_WIDTH') || define('PLACE_COVER_WIDTH', 1024);
 defined('PLACE_COVER_HEIGHT') || define('PLACE_COVER_HEIGHT', 300);
 defined('PLACE_COVER_PREVIEW_WIDTH') || define('PLACE_COVER_PREVIEW_WIDTH', 680);
 defined('PLACE_COVER_PREVIEW_HEIGHT') || define('PLACE_COVER_PREVIEW_HEIGHT', 300);
