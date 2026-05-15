@@ -16,7 +16,7 @@ export type Place = {
     comments?: number
     bookmarks?: number
     title: string
-    content: string
+    content?: string
     difference?: number
     distance?: number
     author?: User
