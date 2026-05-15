@@ -55,7 +55,12 @@ export const UserAvatar: React.FC<UserAvatarProps> = (props) => {
             )}
 
             {showName && (
-                <div className={cn(styles.info, size === 'medium' ? styles.medium : styles.small)}>
+                <div
+                    className={cn(
+                        styles.info,
+                        size === 'medium' ? styles.medium : size === 'tiny' ? styles.tiny : styles.small
+                    )}
+                >
                     {user?.id && user.name ? (
                         <Link
                             href={`/users/${user.id}`}

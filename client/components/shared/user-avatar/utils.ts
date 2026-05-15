@@ -1,6 +1,6 @@
 import { SizeType } from './types'
 
-export const getDimension = (size?: SizeType) => (size === 'medium' ? 36 : size === 'tiny' ? 32 : 20)
+export const getDimension = (size?: SizeType) => (size === 'medium' ? 36 : size === 'tiny' ? 28 : 20)
 
 /**
  * Получает инициалы из имени пользователя (первые буквы первых двух слов)
