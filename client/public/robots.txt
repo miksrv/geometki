@@ -8,4 +8,9 @@ Disallow: /places/*/edit
 Disallow: /users/settings
 Disallow: /admin
 
+# Yandex: treat geo-filter params as non-significant for deduplication
+User-agent: Yandex
+Clean-param: lat&lon&sort&order /places
+Clean-param: lat&lon&sort&order /en/places
+
 Sitemap: https://geometki.com/sitemap.xml
