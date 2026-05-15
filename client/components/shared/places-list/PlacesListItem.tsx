@@ -1,15 +1,17 @@
 import React from 'react'
 import { TFunction } from 'i18next'
+import { Icon } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
-import { PlacePlate } from '@/components/shared'
+import { CategoryBadge } from '@/components/shared/category-badge'
+import { UserAvatar } from '@/components/shared/user-avatar'
 import { IMG_HOST } from '@/config/env'
 import { addressToString } from '@/utils/address'
-import { categoryImage } from '@/utils/categories'
-import { addDecimalPoint, dateToUnixTime, numberFormatter } from '@/utils/helpers'
+import { addDecimalPoint, dateToUnixTime, numberFormatter, timeAgo } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -18,49 +20,49 @@ interface PlacesListItemProps {
     place: ApiModel.Place
 }
 
-export const PlacesListItem: React.FC<PlacesListItemProps> = ({ t, place }) => (
-    <article className={styles.placesListItem}>
-        <div className={styles.photoSection}>
-            <Image
-                className={styles.categoryIcon}
-                src={categoryImage(place.category?.name).src}
-                alt={place.category?.title || ''}
-                width={20}
-                height={20}
-            />
+export const PlacesListItem: React.FC<PlacesListItemProps> = ({ t, place }) => {
+    const { i18n } = useTranslation()
 
+    return (
+        <article className={styles.placesListItem}>
+            {/* Full-card photo link — sits behind all overlays */}
             <Link
                 href={`/places/${place.id}`}
                 title={place.title}
+                className={styles.photoLink}
             >
                 {place.cover && (
                     <Image
                         className={styles.photo}
                         alt={place.title || ''}
-                        quality={70}
-                        height={200}
-                        width={280}
+                        quality={75}
+                        fill
+                        sizes={'(max-width: 768px) 100vw, 33vw'}
                         src={`${IMG_HOST}${place.cover.preview}?d=${dateToUnixTime(place.updated?.date)}`}
                     />
                 )}
             </Link>
 
-            <div className={styles.bottomPanel}>
-                <div className={styles.iconsPanel}>
-                    {!!place.rating && (
-                        <PlacePlate
-                            icon={'StarEmpty'}
-                            content={addDecimalPoint(place.rating)}
-                        />
-                    )}
+            {/* Top overlay — author info */}
+            <div className={styles.topOverlay}>
+                <UserAvatar
+                    user={place.author}
+                    size={'tiny'}
+                    showName={true}
+                    hideOnlineIcon={true}
+                    caption={timeAgo(place.updated?.date, undefined, i18n.language)}
+                    className={styles.authorOverlay}
+                />
+            </div>
 
-                    {!!place.distance && (
-                        <PlacePlate
-                            icon={'Ruler'}
-                            content={numberFormatter(place.distance) + ' ' + t('km')}
-                        />
-                    )}
-                </div>
+            {/* Bottom overlay — category, title, address, stats */}
+            <div className={styles.bottomOverlay}>
+                {place.category && (
+                    <CategoryBadge
+                        category={place.category}
+                        className={styles.categoryBadge}
+                    />
+                )}
 
                 <h2 className={styles.title}>
                     <Link
@@ -71,20 +73,52 @@ export const PlacesListItem: React.FC<PlacesListItemProps> = ({ t, place }) => (
                     </Link>
                 </h2>
 
-                <div className={styles.address}>
-                    {addressToString(place.address)?.map((address, i, array) => (
-                        <span key={`address${address.type}${place.id}`}>
-                            <Link
-                                href={`/places?${address.type}=${address.id}`}
-                                title={`${t('all-geotags-at-address')} ${address.name}`}
-                            >
-                                {address.name}
-                            </Link>
-                            {array.length - 1 !== i && ', '}
+                {!!addressToString(place.address)?.length && (
+                    <div className={styles.address}>
+                        {addressToString(place.address)?.map((address, i, array) => (
+                            <span key={`address${address.type}${place.id}`}>
+                                <Link
+                                    href={`/places?${address.type}=${address.id}`}
+                                    title={`${t('all-geotags-at-address')} ${address.name}`}
+                                >
+                                    {address.name}
+                                </Link>
+                                {array.length - 1 !== i && ', '}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
+                <div className={styles.statsRow}>
+                    {!!place.rating && (
+                        <span className={styles.stat}>
+                            <Icon name={'StarEmpty'} />
+                            {addDecimalPoint(place.rating)}
                         </span>
-                    ))}
+                    )}
+
+                    {!!place.distance && (
+                        <span className={styles.stat}>
+                            <Icon name={'Ruler'} />
+                            {numberFormatter(place.distance)}&nbsp;{t('km')}
+                        </span>
+                    )}
+
+                    {!!place.views && (
+                        <span className={styles.stat}>
+                            <Icon name={'Eye'} />
+                            {numberFormatter(place.views)}
+                        </span>
+                    )}
+
+                    {!!place.photos && (
+                        <span className={styles.stat}>
+                            <Icon name={'Camera'} />
+                            {place.photos}
+                        </span>
+                    )}
                 </div>
             </div>
-        </div>
-    </article>
-)
+        </article>
+    )
+}
