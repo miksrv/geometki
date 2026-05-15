@@ -34,7 +34,7 @@ export const PlaceInformation: React.FC<PlaceInformationProps> = ({ place }) => 
                     <div className={styles.value}>
                         <Image
                             src={categoryImage(place?.category?.name).src}
-                            alt={''}
+                            alt={place?.category?.title || ''}
                             width={18}
                             height={18}
                             style={{ marginRight: '4px' }}

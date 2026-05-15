@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button, cn, Container, ContainerProps, Popout, Spinner } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
@@ -51,10 +51,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     const [photoDeleteID, setPhotoDeleteID] = useState<string>()
     const [lightboxPhotoIndex, setLightboxPhotoIndex] = useState<number>()
 
-    const isEmptyPhotoList = useMemo(
-        () => !localPhotos.length && !uploadingPhotos?.length,
-        [localPhotos.length, uploadingPhotos?.length]
-    )
+    const isEmptyPhotoList = !localPhotos.length && !uploadingPhotos?.length
 
     const handleRemoveClick = (photoId: string) => {
         if (isAuth && !deleteLoading && !hideActions) {

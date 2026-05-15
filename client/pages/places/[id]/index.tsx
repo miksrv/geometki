@@ -35,19 +35,13 @@ interface PlacePageProps {
     place?: ApiModel.Place
     photoList?: ApiModel.Photo[]
     nearPlaces?: ApiModel.Place[] | null
+    commentList?: ApiModel.Comment[]
 }
 
-const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, nearPlaces }) => {
+const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, nearPlaces, commentList }) => {
     const { t, i18n } = useTranslation()
 
     const dispatch = useAppDispatch()
-
-    const { data: commentListData, isLoading: commentListLoading } = API.useCommentsGetListQuery(
-        {
-            place: place?.id
-        },
-        { skip: !place?.id }
-    )
 
     const placeCoverEditorRef = useRef<PlaceCoverEditorRefProps>(null)
     const inputFileRef = useRef<HTMLInputElement>(null)
@@ -157,7 +151,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             name: place?.title,
             url: pagePlaceUrl
         }),
-        [canonicalUrl, pagePlaceUrl, photoList, place, ratingCount, t]
+        [canonicalUrl, pagePlaceUrl, photoList, place, ratingCount]
     )
 
     useEffect(() => {
@@ -246,8 +240,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             <Container title={t('comments-title')}>
                 <PlaceCommentList
                     placeId={place?.id}
-                    comments={commentListData?.items}
-                    loading={commentListLoading}
+                    comments={commentList}
                 />
             </Container>
 
@@ -314,24 +307,29 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return { notFound: true }
             }
 
-            const { data: ratingData } = await store.dispatch(API.endpoints.ratingGetList.initiate(id))
-            const { data: photosData } = await store.dispatch(API.endpoints.photosGetList.initiate({ place: id }))
-            const { data: nearPlaces } = await store.dispatch(
-                API.endpoints.placesGetList.initiate({
-                    excludePlaces: [id],
-                    lat: placeData?.lat,
-                    limit: NEAR_PLACES_COUNT,
-                    lon: placeData?.lon,
-                    order: ApiType.SortOrders.ASC,
-                    sort: ApiType.SortFields.Distance
-                })
-            )
+            const [{ data: ratingData }, { data: photosData }, { data: commentsData }, { data: nearPlaces }] =
+                await Promise.all([
+                    store.dispatch(API.endpoints.ratingGetList.initiate(id)),
+                    store.dispatch(API.endpoints.photosGetList.initiate({ place: id })),
+                    store.dispatch(API.endpoints.commentsGetList.initiate({ place: id })),
+                    store.dispatch(
+                        API.endpoints.placesGetList.initiate({
+                            excludePlaces: [id],
+                            lat: placeData?.lat,
+                            limit: NEAR_PLACES_COUNT,
+                            lon: placeData?.lon,
+                            order: ApiType.SortOrders.ASC,
+                            sort: ApiType.SortFields.Distance
+                        })
+                    )
+                ])
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
             return {
                 props: {
                     ...translations,
+                    commentList: commentsData?.items,
                     nearPlaces: nearPlaces?.items ?? null,
                     photoList: photosData?.items,
                     place: placeData,
