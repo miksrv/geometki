@@ -24,6 +24,7 @@ import { MarkerPointCluster } from './marker-point-cluster'
 import { MarkerUser } from './marker-user'
 import { PlaceMark } from './place-mark'
 import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum, MapPositionType } from './types'
+import { WikimediaCommons } from './wikimedia-commons'
 
 import 'leaflet/dist/leaflet.css'
 import styles from './styles.module.sass'
@@ -277,6 +278,10 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
                 {additionalLayers?.includes(MapAdditionalLayersEnum.HISTORICAL_PHOTOS) && (
                     <HistoricalPhotos onPhotoClick={onPhotoClick} />
+                )}
+
+                {additionalLayers?.includes(MapAdditionalLayersEnum.WIKIMEDIA_COMMONS) && (
+                    <WikimediaCommons onPhotoClick={onPhotoClick} />
                 )}
 
                 {mapLayer === MapLayersEnum.CARTO_DARK && (
