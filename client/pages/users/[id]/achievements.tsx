@@ -38,6 +38,8 @@ const UserAchievementsPage: React.FC<UserAchievementsPageProps> = ({ id, user })
                     title: pageTitle,
                     description: pageTitle,
                     canonical: `${canonicalUrl}users/${id}/achievements`,
+                    noindex: true,
+                    nofollow: false,
                     openGraph: {
                         description: pageTitle,
                         locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',

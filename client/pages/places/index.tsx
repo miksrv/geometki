@@ -222,6 +222,8 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         ]
     }
 
+    const isGeoFiltered = !!(lat && lon)
+
     return (
         <AppLayout>
             <Head>
@@ -229,6 +231,8 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                     title: title,
                     description: title,
                     canonical: canonicalPage,
+                    noindex: isGeoFiltered,
+                    nofollow: false,
                     openGraph: {
                         images: placesList
                             .filter(({ cover }) => cover?.full)

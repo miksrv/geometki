@@ -96,6 +96,8 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
                     title: `${user?.name} - ${t('profile')}`,
                     canonical: `${canonicalUrl}users/${user?.id}`,
                     description: `${user?.name} - ${t('user-profile')}`,
+                    noindex: true,
+                    nofollow: false,
                     openGraph: {
                         images: photosList?.map((photo, index) => ({
                             alt: `${photo.title} (${index + 1})`,

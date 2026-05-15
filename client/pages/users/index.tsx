@@ -72,6 +72,8 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
                         ?.join(', ')
                         ?.substring(0, 220)}`,
                     canonical: `${canonicalUrl}users${currentPage && currentPage > 1 ? '?page=' + currentPage : ''}`,
+                    noindex: true,
+                    nofollow: false,
                     openGraph: {
                         description: `${title} - ${usersList
                             ?.map(({ name }) => name)

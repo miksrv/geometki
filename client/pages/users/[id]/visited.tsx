@@ -55,6 +55,8 @@ const UserVisitedPage: React.FC<UserVisitedPageProps> = ({ id, user, currentPage
                     title: `${user?.name} - ${title}${pageTitle}`,
                     description: `${user?.name} - ${title}${pageTitle}`,
                     canonical: `${canonicalUrl}users/${id}/visited${currentPage > 1 ? `?page=${currentPage}` : ''}`,
+                    noindex: true,
+                    nofollow: false,
                     openGraph: {
                         description: `${user?.name} - ${title}${pageTitle}`,
                         locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
