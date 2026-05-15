@@ -346,5 +346,13 @@
     "visited-places": "Visited Places",
     "map-hero-title": "Interactive Map of Interesting Places",
     "map-hero-subtitle": "Thousands of geotags across Russia and beyond — scenic natural objects, mountain peaks, waterfalls and caves, abandoned buildings and industrial sites, historical monuments, temples and bunkers. Every place is added by real travelers with exact GPS coordinates, photos and detailed descriptions. Discover hidden attractions that never appear in ordinary travel guides — use the map to find geotags near you.",
-    "map-hero-cta": "Open Map"
+    "map-hero-cta": "Open Map",
+    "hero-title": "Discover amazing places near you and around the world",
+    "hero-subtitle": "Thousands of geotags across Russia and beyond — natural landmarks, mountain peaks, abandoned buildings and historical monuments from real travelers.",
+    "hero-cta-add": "Add place",
+    "hero-cta-explore": "Explore the map",
+    "hero-stat-places": "Places discovered",
+    "hero-stat-users": "Explorers",
+    "hero-stat-photos": "Photos",
+    "hero-stat-reviews": "Reviews & ratings"
 }
