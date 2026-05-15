@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Marker, Popup } from 'react-leaflet'
 import Leaflet from 'leaflet'
 import { Skeleton } from 'simple-react-ui-kit'
@@ -25,11 +25,15 @@ export const MarkerPoint: React.FC<MarkerPointProps> = ({ place, keepInView }) =
 
     const [getPlaceItem, { isLoading, data: poiData }] = API.usePoiGetItemMutation()
 
-    const placeMarkerIcon = new Leaflet.Icon({
-        iconAnchor: [10, 10],
-        iconSize: [20, 20],
-        iconUrl: categoryImage(place.category).src
-    })
+    const placeMarkerIcon = useMemo(
+        () =>
+            new Leaflet.Icon({
+                iconAnchor: [10, 10],
+                iconSize: [20, 20],
+                iconUrl: categoryImage(place.category).src
+            }),
+        [place.category]
+    )
 
     const placeClickHandler = async () => {
         if (place.id) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Button, cn } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
@@ -32,10 +32,20 @@ export const CommentList: React.FC<CommentListProps> = ({ placeId, comments }) =
         dispatch(openAuthDialog())
     }
 
-    const renderComments = (comments: ApiModel.Comment[], answerId?: string) =>
-        comments
-            .filter((item) => (!answerId ? !item.answerId : item.answerId === answerId))
-            .map((item) => (
+    const commentsByParent = useMemo(() => {
+        const index: Record<string, ApiModel.Comment[]> = { root: [] }
+
+        comments?.forEach((item) => {
+            const key = item.answerId ?? 'root'
+            ;(index[key] ??= []).push(item)
+        })
+
+        return index
+    }, [comments])
+
+    const renderComments = useCallback(
+        (answerId?: string) =>
+            (commentsByParent[answerId ?? 'root'] ?? []).map((item) => (
                 <React.Fragment key={item.id}>
                     <CommentListItem
                         t={t}
@@ -47,13 +57,15 @@ export const CommentList: React.FC<CommentListProps> = ({ placeId, comments }) =
                         onAnswerClick={setAnswerFormId}
                     />
 
-                    {renderComments(comments, item.id)}
+                    {renderComments(item.id)}
                 </React.Fragment>
-            ))
+            )),
+        [commentsByParent, t, placeId, appAuth.isAuth, answerFormId]
+    )
 
     return (
         <section className={styles.commentList}>
-            {!!comments?.length && renderComments(comments)}
+            {!!comments?.length && renderComments()}
 
             {appAuth.isAuth && (
                 <div className={styles.formSection}>

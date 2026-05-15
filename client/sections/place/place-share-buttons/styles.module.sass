@@ -2,6 +2,8 @@
     display: flex
     justify-content: space-between
     align-items: center
+    flex-wrap: wrap
+    gap: 8px
 
     .rating
         display: flex
@@ -27,6 +29,9 @@
 
     .share
         font-size: 0
+
+        @media (max-width: 480px)
+            width: 100%
 
         button
             font-size: 0 !important

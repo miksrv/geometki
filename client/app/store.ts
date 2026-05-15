@@ -5,6 +5,8 @@ import { combineReducers, configureStore, UnknownAction } from '@reduxjs/toolkit
 
 import { API } from '@/api/api'
 import { APIPastvu } from '@/api/apiPastvu'
+import { APIWikimediaCommons } from '@/api/apiWikimediaCommons'
+import { APIWikipedia } from '@/api/apiWikipedia'
 import { sanitizeForSerialization } from '@/utils/sanitizeState'
 
 import applicationSlice from './applicationSlice'
@@ -18,7 +20,9 @@ const combinedReducer = combineReducers({
     auth: authSlice,
     notification: notificationSlice,
     [API.reducerPath]: API.reducer,
-    [APIPastvu.reducerPath]: APIPastvu.reducer
+    [APIPastvu.reducerPath]: APIPastvu.reducer,
+    [APIWikimediaCommons.reducerPath]: APIWikimediaCommons.reducer,
+    [APIWikipedia.reducerPath]: APIWikipedia.reducer
 })
 
 // 2. Process HYDRATE separately
@@ -87,6 +91,30 @@ const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) 
                     ...state?.[APIPastvu.reducerPath]?.provided,
                     ...payload[APIPastvu.reducerPath]?.provided
                 }
+            },
+            [APIWikimediaCommons.reducerPath]: {
+                ...state?.[APIWikimediaCommons.reducerPath],
+                ...payload[APIWikimediaCommons.reducerPath],
+                queries: {
+                    ...state?.[APIWikimediaCommons.reducerPath]?.queries,
+                    ...payload[APIWikimediaCommons.reducerPath]?.queries
+                },
+                provided: {
+                    ...state?.[APIWikimediaCommons.reducerPath]?.provided,
+                    ...payload[APIWikimediaCommons.reducerPath]?.provided
+                }
+            },
+            [APIWikipedia.reducerPath]: {
+                ...state?.[APIWikipedia.reducerPath],
+                ...payload[APIWikipedia.reducerPath],
+                queries: {
+                    ...state?.[APIWikipedia.reducerPath]?.queries,
+                    ...payload[APIWikipedia.reducerPath]?.queries
+                },
+                provided: {
+                    ...state?.[APIWikipedia.reducerPath]?.provided,
+                    ...payload[APIWikipedia.reducerPath]?.provided
+                }
             }
         }
     }
@@ -100,7 +128,13 @@ export const makeStore = () =>
         reducer: rootReducer,
         devTools: process.env.NODE_ENV !== 'production',
         middleware: (getDefaultMiddleware) =>
-            getDefaultMiddleware().concat(API.middleware, APIPastvu.middleware, errorMiddleware)
+            getDefaultMiddleware().concat(
+                API.middleware,
+                APIPastvu.middleware,
+                APIWikimediaCommons.middleware,
+                APIWikipedia.middleware,
+                errorMiddleware
+            )
     })
 
 export type AppStore = ReturnType<typeof makeStore>

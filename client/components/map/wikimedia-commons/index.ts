@@ -1,0 +1,1 @@
+export { WikimediaCommons } from './WikimediaCommons'

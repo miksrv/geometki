@@ -1,20 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import {
-    OKIcon,
-    OKShareButton,
-    RedditIcon,
-    RedditShareButton,
-    TelegramIcon,
-    TelegramShareButton,
-    ViberIcon,
-    ViberShareButton,
-    VKIcon,
-    VKShareButton,
-    WhatsappIcon,
-    WhatsappShareButton
-} from 'react-share'
 import { Container, Dialog, Spinner } from 'simple-react-ui-kit'
 
+import dynamic from 'next/dynamic'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
@@ -26,6 +13,8 @@ import { getErrorMessage } from '@/utils/api'
 import { addDecimalPoint, formatDate } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
+
+const ShareButtons = dynamic(() => import('./ShareButtons'), { ssr: false })
 
 interface SocialRatingProps {
     placeId?: string
@@ -42,15 +31,13 @@ export const PlaceShareButtons: React.FC<SocialRatingProps> = ({ placeId, placeU
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const { data: ratingData, isLoading } = API.useRatingGetListQuery(placeId ?? '', {
-        skip: !placeId,
-        refetchOnMountOrArgChange: true
+        skip: !placeId
     })
 
     const { data: ratingHistoryData, isFetching: loadingRatingHistory } = API.useRatingGetHistoryQuery(
         { placeId: placeId },
         {
-            skip: !placeId || !openRatingHistory,
-            refetchOnMountOrArgChange: true
+            skip: !placeId || !openRatingHistory
         }
     )
 
@@ -127,31 +114,7 @@ export const PlaceShareButtons: React.FC<SocialRatingProps> = ({ placeId, placeU
                 </div>
             </div>
 
-            <div className={styles.share}>
-                <TelegramShareButton url={placeUrl!}>
-                    <TelegramIcon size={22} />
-                </TelegramShareButton>
-
-                <WhatsappShareButton url={placeUrl!}>
-                    <WhatsappIcon size={22} />
-                </WhatsappShareButton>
-
-                <ViberShareButton url={placeUrl!}>
-                    <ViberIcon size={22} />
-                </ViberShareButton>
-
-                <VKShareButton url={placeUrl!}>
-                    <VKIcon size={22} />
-                </VKShareButton>
-
-                <OKShareButton url={placeUrl!}>
-                    <OKIcon size={22} />
-                </OKShareButton>
-
-                <RedditShareButton url={placeUrl!}>
-                    <RedditIcon size={22} />
-                </RedditShareButton>
-            </div>
+            {placeUrl && <ShareButtons placeUrl={placeUrl} />}
 
             <Dialog
                 open={openRatingHistory}

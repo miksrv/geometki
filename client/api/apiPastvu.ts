@@ -1,34 +1,46 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
-export type Photo = {
-    s: number
+export type PastvuPhoto = {
     cid: number
     file: string
     title?: string
     dir?: string
-    geo: number[]
+    geo: [number, number]
+    year?: number
+    year2?: number
+    s?: number
+}
+
+export type PastvuCluster = {
+    geo: [number, number]
+    c: number
+}
+
+export type RequestGetByBounds = {
+    geometry: {
+        type: 'Polygon'
+        coordinates: Array<Array<[number, number]>>
+    }
+    z: number
+    isPainting?: boolean
     year?: number
     year2?: number
 }
 
-export type RequestNearestGetPhotos = {
-    lat: number
-    lon: number
-}
-
-export type ResponseNearestGetPhotos = {
+export type ResponseGetByBounds = {
     result: {
-        photos: Photo[]
+        photos: PastvuPhoto[]
+        clusters: PastvuCluster[]
     }
 }
 
 export const APIPastvu = createApi({
     baseQuery: fetchBaseQuery({
-        baseUrl: 'https://pastvu.com/api2'
+        baseUrl: 'https://api.pastvu.com/api2'
     }),
     endpoints: (builder) => ({
-        nearestGetPhotos: builder.query<ResponseNearestGetPhotos, RequestNearestGetPhotos>({
-            query: ({ lat, lon }) => `?method=photo.giveNearestPhotos&params={"geo":[${lat},${lon}],"limit":30}`
+        getByBounds: builder.query<ResponseGetByBounds, RequestGetByBounds>({
+            query: (params) => `?method=photo.getByBounds&params=${encodeURIComponent(JSON.stringify(params))}`
         })
     }),
     reducerPath: 'APIPastvu'
