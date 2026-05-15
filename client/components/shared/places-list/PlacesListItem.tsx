@@ -9,7 +9,7 @@ import { PlacePlate } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
 import { addressToString } from '@/utils/address'
 import { categoryImage } from '@/utils/categories'
-import { addDecimalPoint, dateToUnixTime, numberFormatter, removeMarkdown } from '@/utils/helpers'
+import { addDecimalPoint, dateToUnixTime, numberFormatter } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -86,13 +86,5 @@ export const PlacesListItem: React.FC<PlacesListItemProps> = ({ t, place }) => (
                 </div>
             </div>
         </div>
-
-        <p className={styles.content}>
-            {place.content?.length ? (
-                removeMarkdown(place.content)
-            ) : (
-                <span className={styles.emptyContent}>{t('description-not-added-yet')}</span>
-            )}
-        </p>
     </article>
 )
