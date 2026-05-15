@@ -67,7 +67,6 @@ const ActivityPage: NextPage<object> = () => {
             />
 
             <ActivityList
-                title={t('news-feed')}
                 activities={data?.items}
                 loading={isFetching}
             />

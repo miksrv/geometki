@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Marker } from 'react-leaflet'
 import Leaflet from 'leaflet'
 
@@ -13,12 +13,16 @@ interface MarkerPhotoProps {
 }
 
 export const MarkerPhoto: React.FC<MarkerPhotoProps> = ({ photo, onPhotoClick }) => {
-    const photoMarkerIcon = new Leaflet.Icon({
-        className: styles.markerPhoto,
-        iconAnchor: [16, 16],
-        iconSize: [32, 32],
-        iconUrl: `${IMG_HOST}${photo.preview}`
-    })
+    const photoMarkerIcon = useMemo(
+        () =>
+            new Leaflet.Icon({
+                className: styles.markerPhoto,
+                iconAnchor: [16, 16],
+                iconSize: [32, 32],
+                iconUrl: `${IMG_HOST}${photo.preview}`
+            }),
+        [photo.preview]
+    )
 
     return (
         <Marker

@@ -7,18 +7,18 @@ import userAvatar from '@/public/images/no-avatar.png'
 
 import styles from './styles.module.sass'
 
+const userMarkerIcon = new Leaflet.Icon({
+    className: styles.markerUser,
+    iconAnchor: [15, 15],
+    iconSize: [30, 30],
+    iconUrl: userAvatar.src
+})
+
 interface MarkerUserProps {
     coordinates: ApiType.Coordinates
 }
 
 export const MarkerUser: React.FC<MarkerUserProps> = ({ coordinates }) => {
-    const userMarkerIcon = new Leaflet.Icon({
-        className: styles.markerUser,
-        iconAnchor: [15, 15],
-        iconSize: [30, 30],
-        iconUrl: userAvatar.src
-    })
-
     return (
         <>
             <Circle

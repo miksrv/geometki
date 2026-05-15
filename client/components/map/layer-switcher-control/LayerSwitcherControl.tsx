@@ -102,7 +102,7 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
         }),
         [MapAdditionalLayersEnum.HISTORICAL_PHOTOS]: t('map-type_HistoricalPhotos', {
             defaultValue: 'Historical Photos'
-        })
+        }),
     }
 
     useEffect(() => {
