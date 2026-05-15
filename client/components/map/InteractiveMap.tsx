@@ -276,10 +276,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                 {additionalLayers?.includes(MapAdditionalLayersEnum.HEATMAP) && <HeatmapLayer />}
 
                 {additionalLayers?.includes(MapAdditionalLayersEnum.HISTORICAL_PHOTOS) && (
-                    <HistoricalPhotos
-                        position={mapPosition}
-                        onPhotoClick={onPhotoClick}
-                    />
+                    <HistoricalPhotos onPhotoClick={onPhotoClick} />
                 )}
 
                 {mapLayer === MapLayersEnum.CARTO_DARK && (

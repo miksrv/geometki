@@ -10,3 +10,34 @@
     &:hover
         z-index: 10000 !important
         box-shadow: 0 0 1px 1px #ffb700
+
+.pastuvMarker
+    background: none !important
+    border: none !important
+
+    &:hover
+        z-index: 10000 !important
+
+        svg circle
+            fill: #ff8c00
+
+.pastuvCluster
+    display: flex !important
+    align-items: center
+    justify-content: center
+    width: 32px !important
+    height: 32px !important
+    border-radius: 50%
+    background: rgba(255, 183, 0, 0.9)
+    border: 2px solid white
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35)
+    cursor: pointer
+
+    span
+        font-size: 11px
+        font-weight: 700
+        color: white
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5)
+
+    &:hover
+        background: rgba(255, 140, 0, 0.95)
