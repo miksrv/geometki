@@ -405,6 +405,11 @@ export const API = createApi({
             query: () => 'sitemap'
         }),
 
+        /** Controller: Stats **/
+        statsGetSummary: builder.query<ApiType.Stats.GetResponse, void>({
+            query: () => 'stats'
+        }),
+
         /** Controller: Tags **/
         tagsGetList: builder.query<ApiType.Tags.ListResponse, void>({
             query: () => 'tags'
