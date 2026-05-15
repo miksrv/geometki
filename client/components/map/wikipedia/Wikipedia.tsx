@@ -96,7 +96,7 @@ export const Wikipedia: React.FC<WikipediaProps> = () => {
                     {selectedItem?.pageid === item.pageid && (
                         <Popup
                             className={styles.wikipediaPopup}
-                            onClose={handleClose}
+                            eventHandlers={{ remove: handleClose }}
                         >
                             <div className={styles.content}>
                                 {loadingArticleId != null ? (

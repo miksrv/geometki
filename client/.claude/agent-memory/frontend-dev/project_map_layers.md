@@ -2,12 +2,13 @@
 name: project-map-layers
 description: Pattern for adding additional map layers (Pastvu, Wikimedia Commons) to the InteractiveMap component
 metadata:
-  type: project
+    type: project
 ---
 
-Additional map layers follow a strict pattern. Use `historical-photos/` as the reference implementation.
+Additional map layers follow a strict pattern. Use `historical-photos/` or `wikimedia-commons/` as reference implementations. Wikipedia layer also demonstrates the Popup variant (lazy getExtract → Leaflet Popup) vs the lightbox variant (lazy getImageInfo → onPhotoClick).
 
 Each layer lives in `components/map/<layer-name>/` with:
+
 - `constants.ts` — color constants and limits
 - `utils.ts` — pure functions: `buildParams`, icon creator, data transformers
 - `utils.test.ts` — unit tests with `jest.mock('leaflet', () => ({ divIcon: jest.fn().mockReturnValue({}) }))`
@@ -17,6 +18,7 @@ Each layer lives in `components/map/<layer-name>/` with:
 - `index.ts` — barrel export
 
 Integration checklist:
+
 1. `api/apiXxx.ts` — RTK Query slice with `reducerPath: 'APIXxx'`
 2. `components/map/types.ts` — add value to `MapAdditionalLayersEnum`
 3. `layer-switcher-control/LayerSwitcherControl.tsx` — add to `titleAdditionalMapType` Record (must be exhaustive)

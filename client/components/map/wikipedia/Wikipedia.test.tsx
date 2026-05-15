@@ -39,12 +39,12 @@ jest.mock('react-leaflet', () => ({
             {children}
         </div>
     ),
-    Popup: ({ children, onClose }: { children?: React.ReactNode; onClose?: () => void }) => (
+    Popup: ({ children, eventHandlers }: { children?: React.ReactNode; eventHandlers?: { remove?: () => void } }) => (
         <div data-testid={'leaflet-popup'}>
             {children}
             <button
                 data-testid={'leaflet-popup-close'}
-                onClick={onClose}
+                onClick={eventHandlers?.remove}
             />
         </div>
     ),
