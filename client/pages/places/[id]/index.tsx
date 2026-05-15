@@ -142,7 +142,13 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                 latitude: place?.lat,
                 longitude: place?.lon
             },
-            image: photoList?.length ? photoList.map(({ full }) => `${IMG_HOST}${full}`) : undefined,
+            image: (() => {
+                const imgs = [
+                    ...(place?.cover ? [`${IMG_HOST}${place.cover.full}`] : []),
+                    ...(photoList?.map(({ full }) => `${IMG_HOST}${full}`) ?? [])
+                ]
+                return imgs.length ? imgs : undefined
+            })(),
             interactionStatistic: {
                 '@type': 'InteractionCounter',
                 interactionType: 'https://schema.org/ViewAction',
@@ -174,12 +180,17 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                             tags: place?.tags
                         },
                         description: truncateText(removeMarkdown(place?.content)?.replace(/\n/g, ' '), 155),
-                        images: photoList?.slice(0, 3).map((photo, index) => ({
-                            alt: `${photo.title} (${index + 1})`,
-                            height: photo.height,
-                            url: `${IMG_HOST}${photo.full}`,
-                            width: photo.width
-                        })),
+                        images: [
+                            ...(place?.cover
+                                ? [{ alt: place.title || '', url: `${IMG_HOST}${place.cover.full}` }]
+                                : []),
+                            ...(photoList?.slice(0, 3).map((photo, index) => ({
+                                alt: `${photo.title} (${index + 1})`,
+                                height: photo.height,
+                                url: `${IMG_HOST}${photo.full}`,
+                                width: photo.width
+                            })) ?? [])
+                        ],
                         locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
                         siteName: t('geotags'),
                         title: place?.title,
