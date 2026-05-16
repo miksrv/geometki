@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Libraries\ActivityLibrary;
 use App\Libraries\AvatarLibrary;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
@@ -251,6 +252,9 @@ class Visited extends ResourceController
                 'lat'        => $inputLat !== null && $inputLat !== '' ? (float) $inputLat : null,
                 'lon'        => $inputLon !== null && $inputLon !== '' ? (float) $inputLon : null,
             ]));
+
+            $activity = new ActivityLibrary();
+            $activity->visit($input->place);
 
             return $this->respondCreated(['visited' => true, 'verified' => $verified]);
         } catch (Throwable $e) {

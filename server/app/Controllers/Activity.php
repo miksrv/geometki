@@ -44,7 +44,7 @@ class Activity extends ResourceController
         $author   = $this->request->getGet('author', FILTER_SANITIZE_SPECIAL_CHARS);
         $place    = $this->request->getGet('place', FILTER_SANITIZE_SPECIAL_CHARS);
 
-        $placeContent  = new PlacesContent();
+        $placeContent  = new PlacesContent(500);
         $activityData  = $this->model->getActivityList($lastDate, $author, $place, min($limit + 1, 40), $offset);
 
         // Drop the extra lookahead row so we return at most $limit items
@@ -217,6 +217,8 @@ class Activity extends ResourceController
                 $findCategory = array_search($item->category, array_column($categoriesData, 'name'));
 
                 if ($findCategory !== false) {
+                    $coverPreviewFile = UPLOAD_PHOTOS . $item->place_id . '/cover_preview.jpg';
+
                     $currentGroup->place = (object) [
                         'id'         => $item->place_id,
                         'title'      => $placeContent->get($item->place_id, 'title', $item->created_at),
@@ -225,7 +227,10 @@ class Activity extends ResourceController
                         'category'   => (object) [
                             'name'  => $categoriesData[$findCategory]->name,
                             'title' => $categoriesData[$findCategory]->title,
-                        ]
+                        ],
+                        'cover'      => file_exists($coverPreviewFile) ? (object) [
+                            'preview' => PATH_PHOTOS . $item->place_id . '/cover_preview.jpg',
+                        ] : null,
                     ];
                 }
             }
