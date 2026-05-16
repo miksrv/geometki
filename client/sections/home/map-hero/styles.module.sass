@@ -1,0 +1,191 @@
+@use '../../../styles/variables' as variables
+
+.hero
+    position: relative
+    width: 100%
+    overflow: hidden
+    border-radius: var(--border-radius)
+    display: flex
+    flex-direction: column
+    margin-top: 15px
+
+.heroImage
+    object-fit: cover
+    object-position: center
+
+.heroOverlay
+    position: absolute
+    inset: 0
+    background: linear-gradient(105deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.55) 55%, rgba(0, 0, 0, 0.18) 100%)
+    z-index: 1
+
+// Upper part: text left + pins right
+.heroBody
+    position: relative
+    z-index: 2
+    display: flex
+    align-items: center
+    justify-content: space-between
+    width: 100%
+    padding: 28px 24px 24px
+
+    @media (max-width: variables.$mobileMaxWidth)
+        flex-direction: column
+        padding: 20px 16px 16px
+
+.heroLeft
+    flex: 1
+    display: flex
+    flex-direction: column
+    gap: 12px
+    max-width: 520px
+
+    @media (max-width: variables.$mobileMaxWidth)
+        max-width: 100%
+
+.heroTitle
+    font-size: 2em
+    font-weight: 500
+    line-height: 1.35
+    color: #ffffff
+    margin: 0 0 15px
+
+    @media (max-width: variables.$mobileMaxWidth)
+        font-size: 1.3em
+
+.heroSubtitle
+    margin: 0
+    font-size: variables.$fontSizeParagraph
+    color: rgba(255, 255, 255, 0.82)
+    line-height: 1.55
+
+.heroActions
+    display: flex
+    gap: 8px
+    flex-wrap: wrap
+    margin-top: 4px
+
+    // Trailing icon inside buttons
+    button, a
+        display: inline-flex
+        align-items: center
+        gap: 8px
+
+        svg
+            margin-right: -5px
+
+.btnGhost
+    background: rgba(255, 255, 255, 0.15) !important
+    color: #ffffff !important
+    border: 1px solid rgba(255, 255, 255, 0.35) !important
+
+    svg
+        fill: #ffffff !important
+
+    &:hover
+        background: rgba(255, 255, 255, 0.25) !important
+
+// Stats bar — full-width at the bottom of the hero
+.heroStats
+    position: relative
+    z-index: 2
+    display: flex
+    align-items: stretch
+    width: 100%
+    border-top: 1px solid rgba(255, 255, 255, 0.2)
+    background: rgba(0, 0, 0, 0.28)
+    backdrop-filter: blur(4px)
+
+    @media (max-width: variables.$mobileMaxWidth)
+        flex-wrap: wrap
+
+.statItem
+    flex: 1
+    display: flex
+    align-items: center
+    gap: 10px
+    padding: 16px 24px
+
+    @media (max-width: variables.$mobileMaxWidth)
+        flex: 0 0 50%
+        padding: 10px 14px
+
+.statDivider
+    width: 1px
+    background: rgba(255, 255, 255, 0.18)
+    flex-shrink: 0
+    align-self: stretch
+    margin: 8px 0
+
+    @media (max-width: variables.$mobileMaxWidth)
+        display: none
+
+.statIcon
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 34px
+    height: 34px
+    border-radius: 8px
+    background: var(--color-main-hover)
+    flex-shrink: 0
+
+    svg
+        fill: var(--color-contrast)
+        width: 20px
+        height: 20px
+
+.statText
+    display: flex
+    flex-direction: column
+
+.statValue
+    font-size: variables.$fontSizeTitleH2
+    font-weight: 700
+    color: #ffffff
+    line-height: 1.2
+
+.statLabel
+    font-size: variables.$fontSizeCaption
+    color: rgba(255, 255, 255, 0.72)
+    line-height: 1.2
+    white-space: nowrap
+
+// Photo pins grid
+.heroPins
+    display: grid
+    grid-template-columns: repeat(3, 72px)
+    grid-template-rows: repeat(2, 72px)
+    gap: 8px
+    flex-shrink: 0
+    margin-left: 24px
+
+    @media (max-width: variables.$mobileMaxWidth)
+        display: none
+
+.pin
+    position: relative
+    width: 72px
+    height: 72px
+    border-radius: 50%
+    overflow: hidden
+    border: 3px solid rgba(255, 255, 255, 0.85)
+    box-shadow: variables.$boxShadow4
+    display: block
+    transition: transform 0.18s ease
+
+    &:hover
+        transform: scale(1.08)
+        border-color: #ffffff
+
+    &:nth-child(2)
+        margin-top: 20px
+
+    &:nth-child(4)
+        margin-top: -20px
+
+    &:nth-child(6)
+        margin-top: 12px
+
+.pinImage
+    object-fit: cover

@@ -7,8 +7,13 @@ export const dateToUnixTime = (date?: string | Date): number => dayjs(date).unix
 
 export const formatDateISO = (date?: string | Date): string => dayjs(date).toISOString()
 
-export const timeAgo = (date?: string | Date, withoutSuffix?: boolean): string =>
-    date ? dayjs.utc(date).fromNow(withoutSuffix) : ''
+export const timeAgo = (date?: string | Date, withoutSuffix?: boolean, locale?: string): string =>
+    date
+        ? dayjs
+              .utc(date)
+              .locale(locale ?? dayjs.locale())
+              .fromNow(withoutSuffix)
+        : ''
 
 export const minutesAgo = (date?: string | Date): number => (date ? dayjs().diff(dayjs.utc(date), 'minute') : 99999999)
 

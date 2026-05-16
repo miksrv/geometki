@@ -16,7 +16,7 @@ export type Place = {
     comments?: number
     bookmarks?: number
     title: string
-    content: string
+    content?: string
     difference?: number
     distance?: number
     author?: User
@@ -25,7 +25,7 @@ export type Place = {
     address?: Address
     tags?: string[]
     cover?: {
-        full: string
+        full?: string
         preview: string
     }
     visitRadiusM?: number

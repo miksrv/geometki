@@ -7,7 +7,12 @@ import { ApiModel } from '@/api'
 import { ActivityList } from './ActivityList'
 
 jest.mock('simple-react-ui-kit', () => ({
-    Container: ({ children, className }: any) => <div className={className}>{children}</div>,
+    Container: ({ children, className, title }: any) => (
+        <div className={className}>
+            {title && <h3 data-testid={'container-title'}>{title}</h3>}
+            {children}
+        </div>
+    ),
     Skeleton: ({ style }: any) => (
         <div
             data-testid={'skeleton'}
@@ -56,10 +61,7 @@ describe('ActivityList', () => {
                     title={'Latest Activity'}
                 />
             )
-            const items = screen.getAllByTestId('activity-list-item')
-            expect(items[0]).toHaveAttribute('data-title', 'Latest Activity')
-            // Second item should not have the title
-            expect(items[1]).not.toHaveAttribute('data-title', 'Latest Activity')
+            expect(screen.getByTestId('container-title')).toHaveTextContent('Latest Activity')
         })
 
         it('renders empty state when no activities and not loading', () => {

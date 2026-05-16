@@ -33,9 +33,8 @@ const App = ({ Component, pageProps }: AppProps) => {
     const { i18n } = useTranslation()
     const { store } = wrapper.useWrappedStore(pageProps)
 
-    useEffect(() => {
-        dayjs.locale(i18n.language ?? i18Config.i18n.defaultLocale)
-    }, [i18n.language])
+    // Set synchronously on every render so SSR and initial client render use the correct locale
+    dayjs.locale(i18n.language ?? i18Config.i18n.defaultLocale)
 
     useEffect(() => {
         const savedLocale = LocalStorage.getItem(LOCAL_STORAGE.LOCALE as 'LOCALE')

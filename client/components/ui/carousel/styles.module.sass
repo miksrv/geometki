@@ -86,7 +86,7 @@
             & > div, & > article
                 flex: 0 0 var(--slide-size)
                 min-width: 0
-                max-width: 281px
+                max-width: calc((var(--width-max) - var(--width-menu)) / 3 - 7px)
                 padding-left: var(--slide-spacing)
                 margin-top: 0
                 margin-bottom: 0
@@ -116,13 +116,13 @@
             justify-content: center
             cursor: pointer
             width: 48px
-            min-height: 346px
+            min-height: 200px
             height: 100%
             position: absolute
             color: #a6a6a6
 
             @media only screen and (max-width: variables.$mobileMaxWidth)
-                min-height: 402px
+                min-height: 220px
 
             span
                 background-color: var(--modal-background)

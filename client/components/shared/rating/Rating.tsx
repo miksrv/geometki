@@ -4,20 +4,21 @@ import { cn, Icon } from 'simple-react-ui-kit'
 import styles from './styles.module.sass'
 
 export interface RatingProps {
+    className?: string
     value?: number
     voted?: boolean
     disabled?: boolean
     onChange?: (rating: number) => void
 }
 
-export const Rating: React.FC<RatingProps> = ({ value, voted, disabled, onChange }) => {
+export const Rating: React.FC<RatingProps> = ({ className, value, voted, disabled, onChange }) => {
     const [hoverRating, setHoverRating] = useState<number>()
 
     const showFullStar = (rating: number) =>
         (!hoverRating && value && value >= (rating || 0)) || (hoverRating && hoverRating >= rating)
 
     return (
-        <ul className={styles.rating}>
+        <ul className={cn(styles.rating, className)}>
             {[1, 2, 3, 4, 5].map((rating) => (
                 <li
                     key={`ratingItem${rating}`}

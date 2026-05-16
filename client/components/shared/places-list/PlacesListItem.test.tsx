@@ -64,7 +64,22 @@ jest.mock('@/utils/helpers', () => ({
     addDecimalPoint: jest.fn().mockReturnValue('4.5'),
     dateToUnixTime: jest.fn().mockReturnValue(1700000000),
     numberFormatter: jest.fn().mockReturnValue('1.2'),
-    removeMarkdown: jest.fn((s: string) => s)
+    removeMarkdown: jest.fn((s: string) => s),
+    timeAgo: jest.fn().mockReturnValue('2 часа назад')
+}))
+
+jest.mock('@/components/shared/category-badge', () => ({
+    CategoryBadge: ({ category, className }: any) => (
+        <div
+            data-testid={'category-badge'}
+            data-category={category?.name}
+            className={className}
+        />
+    )
+}))
+
+jest.mock('@/components/shared/user-avatar', () => ({
+    UserAvatar: () => null
 }))
 
 const mockT = (key: string, opts?: Record<string, unknown>) => opts?.defaultValue ?? key
@@ -118,14 +133,14 @@ describe('PlacesListItem', () => {
             expect(placeLinks.length).toBeGreaterThan(0)
         })
 
-        it('renders the place content', () => {
+        it('renders the place title in a heading', () => {
             render(
                 <PlacesListItem
                     t={mockT as any}
                     place={mockPlace}
                 />
             )
-            expect(screen.getByText('A fascinating place to visit.')).toBeInTheDocument()
+            expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Cool Cave')
         })
 
         it('renders the cover image when cover is provided', () => {
@@ -139,15 +154,14 @@ describe('PlacesListItem', () => {
             expect(images.length).toBeGreaterThan(0)
         })
 
-        it('renders the category icon', () => {
+        it('renders the category badge when category is provided', () => {
             render(
                 <PlacesListItem
                     t={mockT as any}
                     place={mockPlace}
                 />
             )
-            const categoryImg = document.querySelector('img.categoryIcon')
-            expect(categoryImg).toBeInTheDocument()
+            expect(screen.getByTestId('category-badge')).toBeInTheDocument()
         })
 
         it('renders the address links', () => {
@@ -162,19 +176,17 @@ describe('PlacesListItem', () => {
     })
 
     describe('rating', () => {
-        it('renders rating PlacePlate when rating is present', () => {
+        it('renders rating value when rating is present', () => {
             render(
                 <PlacesListItem
                     t={mockT as any}
                     place={mockPlace}
                 />
             )
-            const plates = screen.getAllByTestId('place-plate')
-            const ratingPlate = plates.find((p) => p.getAttribute('data-icon') === 'StarEmpty')
-            expect(ratingPlate).toBeInTheDocument()
+            expect(screen.getByText('4.5')).toBeInTheDocument()
         })
 
-        it('does not render rating PlacePlate when rating is 0', () => {
+        it('does not render rating value when rating is 0', () => {
             const placeWithoutRating = { ...mockPlace, rating: 0 }
             render(
                 <PlacesListItem
@@ -182,26 +194,22 @@ describe('PlacesListItem', () => {
                     place={placeWithoutRating}
                 />
             )
-            const plates = screen.queryAllByTestId('place-plate')
-            const ratingPlate = plates.find((p) => p.getAttribute('data-icon') === 'StarEmpty')
-            expect(ratingPlate).toBeUndefined()
+            expect(screen.queryByText('4.5')).not.toBeInTheDocument()
         })
     })
 
     describe('distance', () => {
-        it('renders distance PlacePlate when distance is present', () => {
+        it('renders distance value when distance is present', () => {
             render(
                 <PlacesListItem
                     t={mockT as any}
                     place={mockPlace}
                 />
             )
-            const plates = screen.getAllByTestId('place-plate')
-            const distancePlate = plates.find((p) => p.getAttribute('data-icon') === 'Ruler')
-            expect(distancePlate).toBeInTheDocument()
+            expect(screen.getByText(/1\.2/)).toBeInTheDocument()
         })
 
-        it('does not render distance PlacePlate when distance is 0', () => {
+        it('does not render distance value when distance is 0', () => {
             const placeWithoutDistance = { ...mockPlace, distance: 0 }
             render(
                 <PlacesListItem
@@ -209,14 +217,12 @@ describe('PlacesListItem', () => {
                     place={placeWithoutDistance}
                 />
             )
-            const plates = screen.queryAllByTestId('place-plate')
-            const distancePlate = plates.find((p) => p.getAttribute('data-icon') === 'Ruler')
-            expect(distancePlate).toBeUndefined()
+            expect(screen.queryByText(/1\.2/)).not.toBeInTheDocument()
         })
     })
 
     describe('empty content', () => {
-        it('renders empty content message when content is empty', () => {
+        it('still renders article when content is empty', () => {
             const placeNoContent = { ...mockPlace, content: '' }
             render(
                 <PlacesListItem
@@ -224,7 +230,7 @@ describe('PlacesListItem', () => {
                     place={placeNoContent}
                 />
             )
-            expect(screen.getByText('description-not-added-yet')).toBeInTheDocument()
+            expect(screen.getByRole('article')).toBeInTheDocument()
         })
     })
 })

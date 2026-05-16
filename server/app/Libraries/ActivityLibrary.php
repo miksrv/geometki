@@ -16,7 +16,7 @@ const EMAIL_NOTIFY_FLOOD_HOURS = 5;
 class ActivityLibrary {
     private string $owner;
 
-    protected array $types = ['photo', 'place', 'rating', 'edit', 'cover', 'comment'];
+    protected array $types = ['photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit'];
 
     public function owner(string $userId): static
     {
@@ -78,6 +78,15 @@ class ActivityLibrary {
     public function comment($placeId, $commentId): void
     {
         $this->_add('comment', null, $placeId, null, $commentId);
+    }
+
+    /**
+     * @param $placeId
+     * @throws ReflectionException
+     */
+    public function visit($placeId): void
+    {
+        $this->_add('visit', null, $placeId);
     }
 
     /**

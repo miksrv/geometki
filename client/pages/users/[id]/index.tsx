@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Button } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
@@ -31,27 +31,30 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
 
     const [lastDate, setLastDate] = useState<string>()
+    const sentinelRef = useRef<HTMLDivElement>(null)
 
     const { data, isFetching } = API.useActivityGetInfinityListQuery({
         author: user?.id,
         date: lastDate
     })
 
-    const onScroll = useCallback(() => {
-        const scrolledToBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 20
-
-        if (scrolledToBottom && !isFetching && !!data?.items.length) {
-            setLastDate(data.items[data.items.length - 1].created?.date)
-        }
-    }, [isFetching, data])
-
     useEffect(() => {
-        document.addEventListener('scroll', onScroll)
-
-        return () => {
-            document.removeEventListener('scroll', onScroll)
+        const el = sentinelRef.current
+        if (!el) {
+            return
         }
-    }, [onScroll])
+
+        const observer = new IntersectionObserver(([entry]) => {
+            if (!entry.isIntersecting || isFetching || !data?.items.length) {
+                return
+            }
+
+            setLastDate(data.items[data.items.length - 1].created?.date)
+        })
+
+        observer.observe(el)
+        return () => observer.disconnect()
+    }, [data, isFetching])
 
     useEffect(() => {
         setLastDate(undefined)
@@ -167,6 +170,7 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
                 activities={data?.items}
                 loading={isFetching}
             />
+            <div ref={sentinelRef} />
         </AppLayout>
     )
 }

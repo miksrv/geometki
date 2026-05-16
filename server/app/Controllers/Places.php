@@ -187,7 +187,6 @@ class Places extends ResourceController
             $place->comments  = (int) $place->comments;
             $place->bookmarks = (int) $place->bookmarks;
             $place->title     = $placeContent->title($place->id);
-            $place->content   = strip_tags(html_entity_decode($placeContent->content($place->id), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
             $place->category  = $formatter->formatCategory($place, $locale);
             $place->author    = $formatter->formatAuthor($place);
 
@@ -200,8 +199,9 @@ class Places extends ResourceController
                 $place->cover = $cover;
             }
 
-            $place->visitRadiusM       = (int) $place->visit_radius_m;
-            $place->verificationExempt = (bool) $place->verification_exempt;
+            if (!empty($place->updated)) {
+                $place->updated = new \DateTime((string) $place->updated);
+            }
 
             $formatter->cleanupFields($place);
         }

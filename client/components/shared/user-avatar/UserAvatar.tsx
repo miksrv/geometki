@@ -14,6 +14,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = (props) => {
     const { t } = useTranslation('components.user-avatar')
     const { className, user, size, caption, showName, disableLink } = props
     const dimension = getDimension(size)
+    const userProfileTitle = `${t('user-profile', { defaultValue: 'Профиль путешественника' })} ${user?.name}`
 
     return (
         <div className={cn(styles.userAvatar, className)}>
@@ -32,7 +33,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = (props) => {
                     <Link
                         className={styles.avatarLink}
                         href={`/users/${user.id}`}
-                        title={`${t('user-profile', { defaultValue: 'Профиль путешественника' })} ${user.name}`}
+                        title={userProfileTitle}
                         style={{
                             height: dimension,
                             width: dimension
@@ -55,11 +56,16 @@ export const UserAvatar: React.FC<UserAvatarProps> = (props) => {
             )}
 
             {showName && (
-                <div className={cn(styles.info, size === 'medium' ? styles.medium : styles.small)}>
+                <div
+                    className={cn(
+                        styles.info,
+                        size === 'medium' ? styles.medium : size === 'tiny' ? styles.tiny : styles.small
+                    )}
+                >
                     {user?.id && user.name ? (
                         <Link
                             href={`/users/${user.id}`}
-                            title={`${t('user-profile', { defaultValue: 'Профиль путешественника' })} ${user.name}`}
+                            title={userProfileTitle}
                         >
                             {user.name}
                         </Link>

@@ -23,7 +23,7 @@ interface UserHeaderProps {
 }
 
 export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
 
     const appAuth = useAppSelector((state) => state.auth)
 
@@ -124,7 +124,7 @@ export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
                                             {t('online')}
                                         </span>
                                     ) : (
-                                        timeAgo(user?.activity?.date ?? user?.updated?.date)
+                                        timeAgo(user?.activity?.date ?? user?.updated?.date, undefined, i18n.language)
                                     )}
                                 </div>
                             </li>

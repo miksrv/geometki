@@ -82,6 +82,10 @@ $routes->group('mail', static function ($routes) {
     $routes->options('(:alphanum)', static function () {});
 });
 
+/** Stats Controller **/
+$routes->get('stats', 'Stats::index');
+$routes->options('stats', static function () {});
+
 /** Categories Controller **/
 $routes->group('categories', static function ($routes) {
     $routes->get('/', 'Categories::list');
