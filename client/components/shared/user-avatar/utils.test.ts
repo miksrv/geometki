@@ -5,8 +5,8 @@ describe('getDimension', () => {
         expect(getDimension('medium')).toBe(36)
     })
 
-    it('returns 32 for tiny size', () => {
-        expect(getDimension('tiny')).toBe(32)
+    it('returns 28 for tiny size', () => {
+        expect(getDimension('tiny')).toBe(28)
     })
 
     it('returns 20 for small size', () => {

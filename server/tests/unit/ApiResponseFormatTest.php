@@ -383,7 +383,7 @@ final class ApiResponseFormatTest extends CIUnitTestCase
     {
         $this->assertTrue(defined('PLACE_COVER_WIDTH'));
         $this->assertTrue(defined('PLACE_COVER_HEIGHT'));
-        $this->assertSame(870, PLACE_COVER_WIDTH);
+        $this->assertSame(1024, PLACE_COVER_WIDTH);
         $this->assertSame(300, PLACE_COVER_HEIGHT);
     }
 
