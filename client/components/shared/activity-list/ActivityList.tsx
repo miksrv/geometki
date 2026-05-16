@@ -12,28 +12,31 @@ interface ActivityListProps {
     activities?: ApiModel.Activity[]
     title?: string
     loading?: boolean
+    compact?: boolean
 }
 
-export const ActivityList: React.FC<ActivityListProps> = ({ activities, loading, title }) => {
+export const ActivityList: React.FC<ActivityListProps> = ({ activities, loading, title, compact }) => {
     const { t } = useTranslation('components.activity-list')
 
+    if (!activities?.length && !loading) {
+        return (
+            <Container className={'emptyList'}>
+                {t('nothing-here-yet', { defaultValue: 'Тут пока ничего нет' })}
+            </Container>
+        )
+    }
+
     return (
-        <>
+        <Container title={title}>
             {activities?.map((item, index) => (
                 <ActivityListItem
                     key={`activity-${index}`}
                     item={item}
-                    title={title && index === 0 ? title : undefined}
+                    compact={compact}
                 />
             ))}
 
-            {!activities?.length && !loading && (
-                <Container className={'emptyList'}>
-                    {t('nothing-here-yet', { defaultValue: 'Тут пока ничего нет' })}
-                </Container>
-            )}
-
             {loading && <ActivityListItemLoader />}
-        </>
+        </Container>
     )
 }

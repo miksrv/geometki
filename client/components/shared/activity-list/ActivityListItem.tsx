@@ -1,119 +1,96 @@
 import React, { useState } from 'react'
-import PhotoAlbum from 'react-photo-album'
-import { cn, Container, Icon } from 'simple-react-ui-kit'
+import { cn, Icon } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { PhotoLightbox, Rating, UserAvatar } from '@/components/shared'
-import { ReadMore } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
-import { formatDate } from '@/utils/helpers'
+import { formatDate, removeMarkdown, timeAgo } from '@/utils/helpers'
 
-import 'react-photo-album/rows.css'
 import styles from './styles.module.sass'
 
 interface ActivityListItemProps {
     item: ApiModel.Activity
-    title?: string
+    compact?: boolean
 }
 
-export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, title }) => {
-    const { t } = useTranslation('components.activity-list')
+export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compact }) => {
+    const { t, i18n } = useTranslation('components.activity-list')
 
     const [showLightbox, setShowLightbox] = useState<boolean>(false)
     const [photoIndex, setPhotoIndex] = useState<number>()
 
-    const handleCloseLightbox = () => {
-        setShowLightbox(false)
-    }
+    const actionText = {
+        [ApiModel.ActivityTypes.Comment]: t('activity-comment', { defaultValue: 'прокомментировал(-а) место' }),
+        [ApiModel.ActivityTypes.Cover]: t('activity-cover', { defaultValue: 'обновил(-а) обложку' }),
+        [ApiModel.ActivityTypes.Edit]: t('activity-editing', { defaultValue: 'отредактировал(-а) место' }),
+        [ApiModel.ActivityTypes.Place]: t('activity-new-place', { defaultValue: 'добавил(-а) место' }),
+        [ApiModel.ActivityTypes.Photo]: t('activity-uploading-photo', { defaultValue: 'загрузил(-а) фото' }),
+        [ApiModel.ActivityTypes.Rating]: t('activity-rating', { defaultValue: 'оценил(-а) место' }),
+        [ApiModel.ActivityTypes.Visit]: t('activity-visit', { defaultValue: 'посетил(-а) место' })
+    }[item.type]
 
-    const handlePhotoClick = (index: number) => {
-        setPhotoIndex(index)
-        setShowLightbox(true)
-    }
+    const coverPreview = item.place?.cover?.preview
+    const showCoverInGrid = !item.photos?.length && item.type !== ApiModel.ActivityTypes.Photo && !!coverPreview
 
     return (
-        <Container
-            title={title}
-            className={styles.activityContainer}
-        >
-            <UserAvatar
-                className={styles.userAvatar}
-                size={'medium'}
-                user={item.author}
-                showName={true}
-                caption={
-                    <>
-                        {formatDate(item.created?.date, t('date_time_format', { defaultValue: 'D MMMM YYYY, HH:mm' }))}
-                        {' • '}
-                        {
-                            {
-                                [ApiModel.ActivityTypes.Comment]: t('activity-comment', {
-                                    defaultValue: 'Комментировал(а) интересное место'
-                                }),
-                                [ApiModel.ActivityTypes.Cover]: t('activity-cover', {
-                                    defaultValue: 'Обновил(а) обложку интересного места'
-                                }),
-                                [ApiModel.ActivityTypes.Edit]: t('activity-editing', {
-                                    defaultValue: 'Редактировал(а) интересное место'
-                                }),
-                                [ApiModel.ActivityTypes.Place]: t('activity-new-place', {
-                                    defaultValue: 'Добавил(а) новое интересное место'
-                                }),
-                                [ApiModel.ActivityTypes.Photo]: t('activity-uploading-photo', {
-                                    defaultValue: 'Загрузил(а) фотографию к интересному месту'
-                                }),
-                                [ApiModel.ActivityTypes.Rating]: t('activity-rating', {
-                                    defaultValue: 'Оценил(а) интересное место'
-                                })
-                            }[item.type]
-                        }
-                        {item.type === ApiModel.ActivityTypes.Edit && item.place?.difference ? (
-                            <>
-                                {' ('}
-                                <span
-                                    className={
-                                        item.place.difference > 0
-                                            ? styles.green
-                                            : item.place.difference < 0
-                                              ? styles.red
-                                              : ''
-                                    }
-                                >
-                                    {item.place.difference > 0 && '+'}
-                                    {item.place.difference}
-                                </span>
-                                {')'}
-                            </>
-                        ) : (
-                            ''
-                        )}
-                    </>
-                }
-            />
+        <div className={cn(styles.activityItem, compact && styles.compact)}>
+            <div className={styles.header}>
+                <UserAvatar
+                    className={styles.userAvatar}
+                    size={compact ? 'small' : 'medium'}
+                    user={item.author}
+                />
 
-            {(item.type === ApiModel.ActivityTypes.Place || item.type === ApiModel.ActivityTypes.Edit) &&
-                item.place?.content && (
-                    <ReadMore
-                        className={cn(styles.content, !!item.photos?.length && styles.contentGallery)}
-                        showMoreText={t('show-more', { defaultValue: 'Показать полностью' })}
-                        showLessText={t('show-less', { defaultValue: 'Скрыть' })}
+                <div className={styles.meta}>
+                    <div className={styles.metaLine}>
+                        {item.author?.id ? (
+                            <Link
+                                href={`/users/${item.author.id}`}
+                                className={styles.authorName}
+                                title={item.author.name}
+                            >
+                                {item.author.name}
+                            </Link>
+                        ) : (
+                            <span className={styles.authorName}>{t('guest-user', { defaultValue: 'Гость' })}</span>
+                        )}
+                        {actionText && <span className={styles.actionText}>{actionText}</span>}
+                    </div>
+                    <time
+                        className={styles.time}
+                        dateTime={item.created?.date}
+                        title={formatDate(
+                            item.created?.date,
+                            t('date_time_format', { defaultValue: 'D MMMM YYYY, HH:mm' })
+                        )}
                     >
-                        {item.place.content}
-                    </ReadMore>
+                        {timeAgo(item.created?.date, false, i18n.language)}
+                    </time>
+                </div>
+            </div>
+
+            {!compact &&
+                (item.type === ApiModel.ActivityTypes.Place || item.type === ApiModel.ActivityTypes.Edit) &&
+                item.place?.content && (
+                    <p className={styles.content}>
+                        {removeMarkdown(item.place.content)}
+                        {item.place.content.length >= 500 ? '…' : ''}
+                    </p>
                 )}
 
-            {item.type === ApiModel.ActivityTypes.Comment && item?.comment?.content && (
+            {!compact && item.type === ApiModel.ActivityTypes.Comment && item.comment?.content && (
                 <div className={'placeContent'}>
                     <blockquote>{item.comment.content}</blockquote>
                 </div>
             )}
 
-            {item?.rating?.value && (
+            {item.rating?.value && (
                 <Rating
-                    value={item?.rating?.value}
+                    className={styles.rating}
+                    value={item.rating.value}
                     voted={true}
                     disabled={true}
                 />
@@ -121,27 +98,52 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, title 
 
             {!!item.photos?.length && (
                 <>
-                    {/*todo: https://react-photo-album.com/examples/nextjs*/}
-                    <PhotoAlbum
-                        layout={'rows'}
-                        spacing={5}
-                        photos={item.photos.map((photo) => ({
-                            height: photo.height,
-                            src: `${IMG_HOST}${photo.preview}`,
-                            width: photo.width
-                        }))}
-                        onClick={({ index }) => {
-                            handlePhotoClick(index)
-                        }}
-                    />
+                    <div className={styles.photosGrid}>
+                        {item.photos.map((photo, i) => (
+                            <button
+                                key={i}
+                                className={styles.photoThumbBtn}
+                                onClick={() => {
+                                    setPhotoIndex(i)
+                                    setShowLightbox(true)
+                                }}
+                                aria-label={`${t('photo', { defaultValue: 'Фото' })} ${i + 1}`}
+                            >
+                                <img
+                                    src={`${IMG_HOST}${photo.preview}`}
+                                    alt={''}
+                                    className={styles.photoThumb}
+                                />
+                            </button>
+                        ))}
+                    </div>
 
                     <PhotoLightbox
                         photos={item.photos}
                         photoIndex={photoIndex}
                         showLightbox={showLightbox}
-                        onCloseLightBox={handleCloseLightbox}
+                        onCloseLightBox={() => setShowLightbox(false)}
                     />
                 </>
+            )}
+
+            {showCoverInGrid && coverPreview && (
+                <div className={styles.photosGrid}>
+                    <Link
+                        href={`/places/${item.place?.id}`}
+                        className={styles.photoThumbBtn}
+                        title={item.place?.title}
+                    >
+                        <img
+                            src={`${IMG_HOST}${coverPreview}`}
+                            alt={item.place?.title}
+                            className={styles.photoThumb}
+                            onError={(e) => {
+                                e.currentTarget.closest('div')!.style.display = 'none'
+                            }}
+                        />
+                    </Link>
+                </div>
             )}
 
             <div className={styles.bottomBar}>
@@ -153,13 +155,13 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, title 
                     {item.place?.title}
                 </Link>
 
-                {!!item.views && (
+                {!compact && !!item.views && (
                     <div className={styles.viewCounter}>
                         <Icon name={'Eye'} />
-                        {item.views || 0}
+                        {item.views}
                     </div>
                 )}
             </div>
-        </Container>
+        </div>
     )
 }

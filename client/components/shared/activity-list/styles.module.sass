@@ -1,17 +1,84 @@
 @use '../../../styles/variables' as variables
 
-.activityContainer
-    padding-bottom: 9px
+.activityItem
+    padding: 0 0
+
+    &:not(:last-child)
+        border-bottom: .5px solid var(--input-border-color)
+        padding-bottom: 12px
+        margin-bottom: 12px
+
+    .header
+        display: flex
+        align-items: flex-start
+        gap: 10px
+        margin-bottom: 8px
 
     .userAvatar
-        margin-bottom: 10px
+        flex-shrink: 0
+
+    .meta
+        flex: 1
+        min-width: 0
+
+    .metaLine
+        display: flex
+        flex-wrap: wrap
+        align-items: baseline
+        gap: 4px
+        line-height: 1.4
+
+    .authorName
+        font-weight: 500
+        color: var(--text-color)
+
+        &:hover
+            text-decoration: underline
+
+    .actionText
+        color: var(--text-color-secondary)
+        font-size: variables.$fontSizeCaption
+
+    .time
+        display: block
+        color: var(--text-color-secondary)
+        font-size: variables.$fontSizeCaption
+        margin-top: 2px
 
     .content
-        p:last-of-type
-            margin-bottom: 0
+        margin: 6px 0
+        color: var(--text-color-secondary)
+        font-size: variables.$fontSizeCaption
 
-        &.contentGallery
-            padding-bottom: 15px
+    .rating
+        margin-left: 0
+
+    .photosGrid
+        display: flex
+        flex-wrap: wrap
+        gap: 5px
+        margin: 8px 0
+
+    .photoThumbBtn
+        background: none
+        border: none
+        padding: 0
+        cursor: pointer
+        border-radius: 4px
+        overflow: hidden
+        line-height: 0
+
+    .photoThumb
+        width: 80px
+        height: 80px
+        object-fit: cover
+        display: block
+        border-radius: 4px
+
+    .bottomBar
+        display: flex
+        justify-content: space-between
+        align-items: center
 
     .pointLink
         display: inline-block
@@ -19,27 +86,26 @@
         white-space: nowrap
         text-overflow: ellipsis
         padding-right: 5px
+        color: var(--text-color)
+        font-weight: 400
 
-    .bottomBar
+        &:hover
+            text-decoration: underline
+
+    .viewCounter
         display: flex
-        justify-content: space-between
+        font-size: variables.$fontSizeCaption
+        color: var(--text-color-secondary)
         align-items: center
-        margin-top: 10px
+        flex-shrink: 0
 
-        .viewCounter
-            display: flex
-            font-size: variables.$fontSizeCaption
-            color: var(--text-color-secondary)
-            align-items: center
+        svg
+            width: 16px
+            height: 16px
+            fill: var(--icon-color-secondary)
+            margin-right: 5px
 
-            svg
-                width: 16px
-                height: 16px
-                fill: var(--icon-color-secondary)
-                margin-right: 5px
-
-    .red
-        color: var(--color-red)
-
-    .green
-        color: var(--color-green)
+    &.compact
+        .photoThumb
+            width: 60px
+            height: 60px

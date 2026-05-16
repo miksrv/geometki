@@ -1,39 +1,37 @@
 import React from 'react'
-import { Container, Skeleton } from 'simple-react-ui-kit'
+import { Skeleton } from 'simple-react-ui-kit'
 
 import styles from './styles.module.sass'
 
 export const ActivityListItemLoader: React.FC = () => (
-    <Container className={styles.activityContainer}>
-        <div
-            className={styles.userAvatar}
-            style={{ display: 'flex' }}
-        >
+    <div className={styles.activityItem}>
+        <div className={styles.header}>
             <Skeleton
                 style={{
                     borderRadius: '50%',
                     height: '32px',
-                    width: '32px'
+                    width: '32px',
+                    flexShrink: 0
                 }}
             />
-            <div style={{ marginLeft: '10px' }}>
+            <div style={{ flex: 1 }}>
                 <Skeleton
                     style={{
-                        height: '16px',
-                        marginBottom: '5px',
-                        width: '100px'
+                        height: '14px',
+                        marginBottom: '6px',
+                        width: '140px'
                     }}
                 />
                 <Skeleton
                     style={{
                         height: '12px',
-                        width: '200px'
+                        width: '80px'
                     }}
                 />
             </div>
         </div>
 
-        {Array(5)
+        {Array(3)
             .fill('')
             .map((_, i) => (
                 <Skeleton
@@ -41,9 +39,17 @@ export const ActivityListItemLoader: React.FC = () => (
                     style={{
                         height: '16px',
                         marginBottom: '5px',
-                        width: i === 4 ? '75%' : '100%'
+                        width: i === 2 ? '60%' : '100%'
                     }}
                 />
             ))}
-    </Container>
+
+        <Skeleton
+            style={{
+                height: '14px',
+                marginTop: '10px',
+                width: '120px'
+            }}
+        />
+    </div>
 )
