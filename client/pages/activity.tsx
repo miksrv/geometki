@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
@@ -20,25 +20,30 @@ const ActivityPage: NextPage<object> = () => {
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
 
     const [lastDate, setLastDate] = useState<string>()
+    const sentinelRef = useRef<HTMLDivElement>(null)
 
     const { data, isFetching } = API.useActivityGetInfinityListQuery({ date: lastDate })
 
-    const onScroll = useCallback(() => {
-        const scrolledToBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 20
-        const cursorDate = data?.items[data.items.length - 1]?.created?.date
-
-        if (scrolledToBottom && !isFetching && cursorDate) {
-            setLastDate(cursorDate)
-        }
-    }, [data, isFetching])
-
     useEffect(() => {
-        document.addEventListener('scroll', onScroll)
-
-        return () => {
-            document.removeEventListener('scroll', onScroll)
+        const el = sentinelRef.current
+        if (!el) {
+            return
         }
-    }, [onScroll])
+
+        const observer = new IntersectionObserver(([entry]) => {
+            if (!entry.isIntersecting || isFetching) {
+                return
+            }
+
+            const cursorDate = data?.items[data.items.length - 1]?.created?.date
+            if (cursorDate) {
+                setLastDate(cursorDate)
+            }
+        })
+
+        observer.observe(el)
+        return () => observer.disconnect()
+    }, [data, isFetching])
 
     return (
         <AppLayout>
@@ -70,6 +75,7 @@ const ActivityPage: NextPage<object> = () => {
                 activities={data?.items}
                 loading={isFetching}
             />
+            <div ref={sentinelRef} />
         </AppLayout>
     )
 }
