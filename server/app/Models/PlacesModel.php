@@ -105,6 +105,28 @@ class PlacesModel extends ApplicationBaseModel
     }
 
     /**
+     * Find the most-viewed place in a category that has at least one photo.
+     * Returns only id and photos columns, sufficient for cover URL generation.
+     *
+     * @param string $category
+     * @return object|null
+     */
+    public function getCoverPlaceByCategory(string $category): ?object
+    {
+        return $this->db->query("
+            SELECT p.id, p.photos
+            FROM places p
+            LEFT JOIN places_views_log pvl ON pvl.place_id = p.id
+            WHERE p.category = ?
+              AND p.photos > 0
+              AND p.deleted_at IS NULL
+            GROUP BY p.id, p.photos
+            ORDER BY SUM(pvl.count) DESC
+            LIMIT 1
+        ", [$category])->getRowObject() ?: null;
+    }
+
+    /**
      * Build a Haversine distance SELECT expression for use in queries.
      *
      * Returns an empty string when either coordinate is missing. The returned
