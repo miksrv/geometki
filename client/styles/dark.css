@@ -88,7 +88,7 @@
     --text-color-secondary-hover: #7B7D7F;
 
     /* Layout and Containers */
-    --border-radius: 4px;
+    --border-radius: 6px;
     --body-background: #1b1b1b;
     --modal-background: #2c2d2e;
     --overlay-background: rgba(35, 35, 36, 0.57);

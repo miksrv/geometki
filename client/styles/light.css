@@ -79,7 +79,7 @@
     --text-color-secondary-hover: #939CA9;
 
     /* Layout and Containers */
-    --border-radius: 4px;
+    --border-radius: 6px;
     --body-background: #ebedf0;
     --modal-background: #ffffff;
     --overlay-background: rgba(242, 243, 252, 0.7);
