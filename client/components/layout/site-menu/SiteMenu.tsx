@@ -59,6 +59,11 @@ export const SiteMenu: React.FC<SiteMenuProps> = ({ type, userId, isAuth, userRo
             text: t('all-interesting-places', { defaultValue: 'Все интересные места' })
         },
         {
+            icon: 'Tag',
+            link: '/categories',
+            text: t('nav-categories', { defaultValue: 'Категории мест' })
+        },
+        {
             auth: true,
             icon: 'PlusCircle',
             link: '/places/create',

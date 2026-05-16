@@ -1,5 +1,14 @@
 @use '../styles/variables' as variables
 
+.twoColumns
+    display: grid
+    grid-template-columns: 1fr 1fr
+    gap: 16px
+    align-items: start
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: 1fr
+
 .mapHero
     position: relative
     display: block

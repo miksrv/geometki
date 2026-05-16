@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
@@ -9,7 +9,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, Header } from '@/components/shared'
+import { AppLayout, PageHeader } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { CategoriesList } from '@/sections/categories'
 import { buildHreflangTags } from '@/utils/seo'
@@ -17,13 +17,14 @@ import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 interface CategoriesPageProps {
     categories: ApiModel.Category[]
+    topCategories: ApiModel.TopCategory[]
 }
 
-const CategoriesPage: NextPage<CategoriesPageProps> = ({ categories }) => {
+const CategoriesPage: NextPage<CategoriesPageProps> = ({ categories, topCategories }) => {
     const { t, i18n } = useTranslation()
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
-    const description = useMemo(() => categories.map(({ title }) => title).join(', '), [categories])
+    const description = t('categories-places-description')
 
     return (
         <AppLayout>
@@ -31,9 +32,9 @@ const CategoriesPage: NextPage<CategoriesPageProps> = ({ categories }) => {
                 {generateNextSeo({
                     title: t('categories-places'),
                     canonical: `${canonicalUrl}categories`,
-                    description: `${t('categories-places')}: ${description}`,
+                    description,
                     openGraph: {
-                        description: `${t('categories-places')}: ${description}`,
+                        description,
                         images: [
                             {
                                 height: 1402,
@@ -52,13 +53,17 @@ const CategoriesPage: NextPage<CategoriesPageProps> = ({ categories }) => {
                 })}
             </Head>
 
-            <Header
+            <PageHeader
                 title={t('categories-places')}
+                description={t('categories-places-description')}
                 homePageTitle={t('geotags')}
                 currentPage={t('categories-places')}
             />
 
-            <CategoriesList categories={categories} />
+            <CategoriesList
+                categories={categories}
+                topCategories={topCategories}
+            />
         </AppLayout>
     )
 }
@@ -73,16 +78,18 @@ export const getServerSideProps = wrapper.getServerSideProps(
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
-            const { data: categoriesList } = await store.dispatch(
-                API.endpoints.categoriesGetList.initiate({ places: true })
-            )
+            const [{ data: categoriesList }, { data: topCategoriesData }] = await Promise.all([
+                store.dispatch(API.endpoints.categoriesGetList.initiate({ places: true })),
+                store.dispatch(API.endpoints.categoriesGetTop.initiate())
+            ])
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
             return {
                 props: {
                     ...translations,
-                    categories: categoriesList?.items ?? []
+                    categories: categoriesList?.items ?? [],
+                    topCategories: topCategoriesData?.items ?? []
                 }
             }
         }
