@@ -1,8 +1,7 @@
 import React from 'react'
 import { Button } from 'simple-react-ui-kit'
 
-import type { BreadcrumbsProps } from '@/components/ui'
-import { Breadcrumbs } from '@/components/ui'
+import { Breadcrumbs, BreadcrumbsProps } from '@/components/ui'
 
 import styles from './styles.module.sass'
 

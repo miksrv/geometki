@@ -9,12 +9,16 @@ import { useTranslation } from 'next-i18next/pages'
 import { API, ApiModel } from '@/api'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
-import { PhotoLightbox } from '@/components/shared'
 import { ImageUploader } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
 import { getErrorMessage } from '@/utils/api'
 
 import styles from './styles.module.sass'
+
+const PhotoLightbox = dynamic(
+    () => import('@/components/shared/photo-lightbox/PhotoLightbox').then((m) => ({ default: m.PhotoLightbox })),
+    { ssr: false }
+)
 
 const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
     ssr: false
@@ -176,6 +180,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                                     quality={50}
                                     width={206}
                                     height={150}
+                                    sizes={'206px'}
                                 />
                             </Link>
 
@@ -215,30 +220,34 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 </ul>
             )}
 
-            <PhotoLightbox
-                photos={localPhotos}
-                photoIndex={lightboxPhotoIndex}
-                showLightbox={typeof lightboxPhotoIndex === 'number'}
-                onCloseLightBox={() => setLightboxPhotoIndex(undefined)}
-            />
+            {typeof lightboxPhotoIndex === 'number' && (
+                <PhotoLightbox
+                    photos={localPhotos}
+                    photoIndex={lightboxPhotoIndex}
+                    showLightbox={true}
+                    onCloseLightBox={() => setLightboxPhotoIndex(undefined)}
+                />
+            )}
 
-            <ConfirmationDialog
-                open={!!photoDeleteID}
-                message={t('delete-photo', { defaultValue: 'Удалить фотографию?' })}
-                onCancel={() => {
-                    setPhotoDeleteID(undefined)
-                    setPhotoLoadingID(undefined)
-                }}
-                onConfirm={async () => {
-                    const photo = photos?.find(({ id }) => id === photoDeleteID)
-
-                    if (photo) {
-                        await deletePhoto({ id: photo?.id, temporary: photo?.placeId === 'temporary' })
+            {!!photoDeleteID && (
+                <ConfirmationDialog
+                    open={!!photoDeleteID}
+                    message={t('delete-photo', { defaultValue: 'Удалить фотографию?' })}
+                    onCancel={() => {
                         setPhotoDeleteID(undefined)
                         setPhotoLoadingID(undefined)
-                    }
-                }}
-            />
+                    }}
+                    onConfirm={async () => {
+                        const photo = photos?.find(({ id }) => id === photoDeleteID)
+
+                        if (photo) {
+                            await deletePhoto({ id: photo?.id, temporary: photo?.placeId === 'temporary' })
+                            setPhotoDeleteID(undefined)
+                            setPhotoLoadingID(undefined)
+                        }
+                    }}
+                />
+            )}
         </Container>
     )
 }

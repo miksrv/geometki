@@ -2,25 +2,25 @@
 
 .pageHeader
     display: flex
-    align-items: flex-start
-    justify-content: space-between
-    gap: 16px
+    align-items: center
+    justify-content: flex-start
+    gap: 8px
     margin-top: 15px
 
-    @media (max-width: variables.$mobileMaxWidth)
-        flex-direction: column
-        gap: 10px
+    & > a, & > a > button
+        height: 100% !important
 
 .left
     display: flex
     flex-direction: column
     gap: 4px
     min-width: 0
+    height: 100%
 
 .title
     margin: 0
     font-size: 1.4em
-    font-weight: 700
+    font-weight: 500
     line-height: 1.2
     color: var(--text-color-primary)
 

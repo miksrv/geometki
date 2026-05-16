@@ -106,7 +106,7 @@ export const PlaceHeader: React.FC<PlaceHeaderProps> = ({
                         fill={true}
                         priority={true}
                         style={{ objectFit: 'cover' }}
-                        sizes={'(max-width: 768px) 100vw, 100vw'}
+                        sizes={'(max-width: 768px) 100vw, 1024px'}
                     />
                 )}
             </div>
@@ -222,20 +222,22 @@ export const PlaceHeader: React.FC<PlaceHeaderProps> = ({
                 </div>
             </div>
 
-            <ConfirmationDialog
-                open={showRemoveDialog}
-                message={t('delete-place-confirmation')}
-                onCancel={() => {
-                    setShowRemoveDialog(false)
-                }}
-                onConfirm={async () => {
-                    if (place?.id) {
-                        void removePlace(place.id)
-                    }
+            {showRemoveDialog && (
+                <ConfirmationDialog
+                    open={showRemoveDialog}
+                    message={t('delete-place-confirmation')}
+                    onCancel={() => {
+                        setShowRemoveDialog(false)
+                    }}
+                    onConfirm={async () => {
+                        if (place?.id) {
+                            void removePlace(place.id)
+                        }
 
-                    setShowRemoveDialog(false)
-                }}
-            />
+                        setShowRemoveDialog(false)
+                    }}
+                />
+            )}
         </section>
     )
 }
