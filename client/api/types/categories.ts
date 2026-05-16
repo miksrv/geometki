@@ -7,3 +7,11 @@ export interface Response {
 export interface Request {
     places?: boolean
 }
+
+export interface TopRequest {
+    limit?: number
+}
+
+export interface TopResponse {
+    items?: ApiModel.TopCategory[]
+}
