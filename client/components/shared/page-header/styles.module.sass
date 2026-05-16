@@ -1,0 +1,41 @@
+@use '../../../styles/variables' as variables
+
+.pageHeader
+    display: flex
+    align-items: flex-start
+    justify-content: space-between
+    gap: 16px
+    margin-bottom: 4px
+    margin-top: 15px
+
+    @media (max-width: variables.$mobileMaxWidth)
+        flex-direction: column
+        gap: 10px
+
+.left
+    display: flex
+    flex-direction: column
+    gap: 4px
+    min-width: 0
+
+.title
+    margin: 0
+    font-size: 1.4em
+    font-weight: 700
+    line-height: 1.2
+    color: var(--text-color-primary)
+
+.description
+    margin: 0
+    font-size: variables.$fontSizeHeadline
+    color: var(--text-color-secondary)
+    line-height: 1.5
+
+.right
+    display: flex
+    align-items: center
+    gap: 8px
+    flex-shrink: 0
+
+    @media (max-width: variables.$mobileMaxWidth)
+        width: 100%
