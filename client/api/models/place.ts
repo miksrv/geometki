@@ -25,7 +25,7 @@ export type Place = {
     address?: Address
     tags?: string[]
     cover?: {
-        full: string
+        full?: string
         preview: string
     }
     visitRadiusM?: number

@@ -23,7 +23,8 @@ export const ActivityTypes = {
     Edit: 'edit',
     Photo: 'photo',
     Place: 'place',
-    Rating: 'rating'
+    Rating: 'rating',
+    Visit: 'visit'
 } as const
 
 export type ActivityEnum = (typeof ActivityTypes)[keyof typeof ActivityTypes]
