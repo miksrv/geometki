@@ -1,5 +1,5 @@
 import React from 'react'
-import { Container } from 'simple-react-ui-kit'
+import { Container, ContainerProps } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
@@ -8,14 +8,24 @@ import { ApiModel } from '@/api'
 import { ActivityListItem } from './ActivityListItem'
 import { ActivityListItemLoader } from './ActivityListItemLoader'
 
-interface ActivityListProps {
+import styles from './styles.module.sass'
+
+interface ActivityListProps extends Pick<ContainerProps, 'action'> {
     activities?: ApiModel.Activity[]
     title?: string
     loading?: boolean
     compact?: boolean
+    scrollable?: boolean
 }
 
-export const ActivityList: React.FC<ActivityListProps> = ({ activities, loading, title, compact }) => {
+export const ActivityList: React.FC<ActivityListProps> = ({
+    activities,
+    loading,
+    title,
+    action,
+    compact,
+    scrollable
+}) => {
     const { t } = useTranslation('components.activity-list')
 
     if (!activities?.length && !loading) {
@@ -26,8 +36,8 @@ export const ActivityList: React.FC<ActivityListProps> = ({ activities, loading,
         )
     }
 
-    return (
-        <Container title={title}>
+    const content = (
+        <>
             {activities?.map((item, index) => (
                 <ActivityListItem
                     key={`activity-${index}`}
@@ -35,8 +45,16 @@ export const ActivityList: React.FC<ActivityListProps> = ({ activities, loading,
                     compact={compact}
                 />
             ))}
-
             {loading && <ActivityListItemLoader />}
+        </>
+    )
+
+    return (
+        <Container
+            title={title}
+            action={action}
+        >
+            {scrollable ? <div className={styles.scrollableContent}>{content}</div> : content}
         </Container>
     )
 }
