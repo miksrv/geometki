@@ -1,32 +1,186 @@
 @use '../../../styles/variables' as variables
 
-.categoriesList
-    .categoryItem
-        margin-bottom: 10px
-        padding-bottom: 10px
-        border-bottom: var(--container-border-separator)
+.categoriesPage
+    display: flex
+    flex-direction: column
+    gap: 16px
 
-        &:last-of-type
-            margin-bottom: 0
-            border-bottom: none
-            padding-bottom: 0
+// ── Top 3 hero cards ──────────────────────────────────────────────────────────
 
-        .header
-            display: flex
-            align-items: center
-            margin-bottom: 0
+.topSection
+    display: grid
+    grid-template-columns: repeat(3, 1fr)
+    gap: 16px
 
-            a
-                color: var(--text-color-primary)
-                font-weight: 400
-                text-decoration: none
+    @media (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: 1fr
 
-        p
-            margin: 0
-            padding: 0
+.topCard
+    position: relative
+    display: flex
+    flex-direction: column
+    justify-content: flex-end
+    min-height: 240px
+    border-radius: var(--border-radius)
+    overflow: hidden
+    background-color: #333
 
-        .description
-            display: flex
-            justify-content: space-between
-            font-size: variables.$fontSizeHeadline
-            color: var(--text-color-secondary)
+    &:hover .topCardImage
+        transform: scale(1.05)
+
+.topCardImage
+    transition: transform 0.3s ease
+
+.topCardOverlay
+    position: absolute
+    inset: 0
+    background: linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.74) 100%)
+    z-index: 1
+
+.topCardTopRow
+    position: absolute
+    top: 12px
+    left: 12px
+    right: 12px
+    z-index: 2
+    display: flex
+    align-items: center
+    justify-content: space-between
+
+.topCardIcon
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 48px
+    height: 48px
+    border-radius: 12px
+    flex-shrink: 0
+
+    img
+        opacity: 0.9
+
+.topBadge
+    display: inline-block
+    padding: 3px 9px
+    border-radius: 6px
+    background: #fff
+    font-size: variables.$fontSizeCaption
+    font-weight: 600
+    color: #1b1b1b
+    margin-top: -15px
+    backdrop-filter: blur(4px)
+
+.topCardContent
+    position: relative
+    z-index: 2
+    padding: 12px 16px 16px
+    display: flex
+    flex-direction: column
+    gap: 6px
+
+.topCardTitle
+    font-size: variables.$fontSizeTitleH2
+    font-weight: 700
+    color: #fff
+    text-decoration: none
+    line-height: 1.25
+
+    &:hover
+        color: #fff
+
+.topCardDescription
+    margin: 0
+    font-size: variables.$fontSizeCaption
+    color: rgba(255,255,255,0.82)
+    display: -webkit-box
+    -webkit-line-clamp: 2
+    -webkit-box-orient: vertical
+    overflow: hidden
+
+.topCardButton
+    display: inline-flex
+    align-items: center
+    padding: 5px 12px
+    border-radius: var(--border-radius)
+    font-size: variables.$fontSizeCaption
+    font-weight: 600
+    color: #fff
+    text-decoration: none
+    width: fit-content
+    margin-top: 4px
+
+    &:hover
+        color: #fff
+
+// ── Regular category grid ─────────────────────────────────────────────────────
+
+.categoriesGrid
+    display: grid
+    grid-template-columns: repeat(5, 1fr)
+    gap: 12px
+
+    @media (max-width: 1100px)
+        grid-template-columns: repeat(4, 1fr)
+
+    @media (max-width: 900px)
+        grid-template-columns: repeat(3, 1fr)
+
+    @media (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: repeat(2, 1fr)
+
+.categoryCard
+    display: flex
+    flex-direction: column
+    gap: 6px
+
+.categoryCardHeader
+    display: flex
+    align-items: center
+    gap: 8px
+
+.categoryIcon
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 42px
+    height: 42px
+    border-radius: 6px
+    flex-shrink: 0
+
+    img
+        opacity: 0.9
+
+.categoryTitle
+    font-size: variables.$fontSizeHeadline
+    font-weight: 600
+    color: var(--text-color-primary)
+    text-decoration: none
+    line-height: 1.3
+
+    &:hover
+        color: var(--link-color)
+
+.categoryDescription
+    margin: 0
+    font-size: variables.$fontSizeCaption
+    color: var(--text-color-secondary)
+    display: -webkit-box
+    -webkit-line-clamp: 3
+    -webkit-box-orient: vertical
+    overflow: hidden
+    line-height: 1.4
+
+.categoryButton
+    display: inline-flex
+    align-items: center
+    padding: 4px 10px
+    border-radius: var(--border-radius)
+    font-size: variables.$fontSizeCaption
+    font-weight: 600
+    color: #fff
+    text-decoration: none
+    width: fit-content
+    margin-top: 2px
+
+    &:hover
+        color: #fff
