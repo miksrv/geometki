@@ -11,7 +11,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, Header } from '@/components/shared'
+import { AppLayout, PageHeader } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { PlaceForm } from '@/sections/place'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
@@ -84,7 +84,7 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
                 })}
             </Head>
 
-            <Header
+            <PageHeader
                 title={`${place?.title} - ${t('editing')}`}
                 homePageTitle={t('geotags')}
                 currentPage={t('editing')}

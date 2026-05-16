@@ -12,7 +12,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, Header, PlacesList } from '@/components/shared'
+import { AppLayout, PageHeader, PlacesList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
@@ -222,7 +222,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         ]
     }
 
-    const isGeoFiltered = !!(lat && lon)
+    const isGeoFiltered = !!(lat || lon || sort !== DEFAULT_SORT || order !== DEFAULT_ORDER)
 
     return (
         <AppLayout>
@@ -258,7 +258,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                 data={placesList.map((place) => PlaceSchema(place, SITE_LINK))}
             />
 
-            <Header
+            <PageHeader
                 title={title}
                 homePageTitle={t('geotags')}
                 links={breadcrumbsLinks || []}

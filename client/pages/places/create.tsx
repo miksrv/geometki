@@ -11,7 +11,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, Header } from '@/components/shared'
+import { AppLayout, PageHeader } from '@/components/shared'
 import { PlaceForm } from '@/sections/place'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
@@ -58,7 +58,7 @@ const CreatePlacePage: NextPage<object> = () => {
                     title: t('create-geotag')
                 })}
             </Head>
-            <Header
+            <PageHeader
                 title={t('create-geotag')}
                 homePageTitle={t('geotags')}
                 currentPage={t('create-geotag')}
