@@ -21,7 +21,7 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = ({ category, classNam
     return (
         <span
             className={cn(styles.categoryBadge, className)}
-            style={{ backgroundColor: color }}
+            style={{ backgroundColor: color + '50' }}
         >
             <Image
                 src={categoryImage(category.name).src}
