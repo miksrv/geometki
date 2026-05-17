@@ -9,7 +9,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { ActivityList, AppLayout, Header } from '@/components/shared'
+import { ActivityList, AppLayout, PageHeader } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
@@ -65,7 +65,7 @@ const ActivityPage: NextPage<object> = () => {
                 })}
             </Head>
 
-            <Header
+            <PageHeader
                 title={t('news-feed')}
                 homePageTitle={t('geotags')}
                 currentPage={t('news-feed')}

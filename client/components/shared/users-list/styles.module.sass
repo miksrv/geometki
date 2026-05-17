@@ -1,5 +1,13 @@
 @use '../../../styles/variables' as variables
 
+.scrollableContent
+    margin-top: 10px
+
+    @media only screen and (min-width: #{variables.$mobileMaxWidth + 1})
+        height: 460px
+        overflow-y: auto
+        padding-right: 4px
+
 .usersListItem
     display: flex
     justify-content: space-between

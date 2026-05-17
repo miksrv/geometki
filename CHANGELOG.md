@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.7.0
+
+### Patch Changes
+
+- Homepage: hero sections and site stats — Added `MapHero` section with image and styles, a `Stats` server controller and `/stats` route returning aggregate counts, and a client stats API endpoint that renders a summary block on the homepage. Added homepage hero translations (EN/RU) and a `PopularCategories` section displaying top category cards in a grid layout.
+- Top categories: API and UI — New `/categories/top` server endpoint backed by `getCoverPlaceByCategory` and `getTopByWeeklyViews` model methods. Client side: `topCategoriesGetList` RTK Query endpoint, TypeScript types, and a hero/cards grid layout with i18n keys for the categories section.
+- Map: Wikipedia, Wikimedia Commons, and Pastvu layers — Added three new optional map overlay layers: Wikipedia POI markers (with API client, map component, utils, and unit tests), Wikimedia Commons media pins (same structure), and Pastvu historical photos layer. Each layer is toggle-able from the layer control. Standardized Leaflet tooltip font size across layers; memoized map marker icons to avoid unnecessary re-renders.
+- Activity: dedicated page and compact list — Added a standalone Activity page (`/activity`) with menu entry and locales. `ActivityList` now supports compact view mode with embedded photo thumbnails and scroll-based pagination via `IntersectionObserver` (replacing manual scroll handlers). Added `visit` activity type to both server and client; `activity_title` removed from markers.
+- Place: cover preview and visit logging — Server now generates a `1024×300` cover image on place creation/edit and records a view on each place detail fetch. Added a CLI command to regenerate cover previews for existing places. `cover.full` made optional in the `Place` TypeScript type; `visit_radius_m` and `updated` fields exposed in place preview responses.
+- PageHeader and CategoryBadge components — Extracted a reusable `PageHeader` component (title + subtitle slot) and rolled it out across index pages (places, users, activity, categories). Added `CategoryBadge` component with styles for inline category labels. `UsersList` gained an optional `scrollable` prop; `Rating` gained a `className` prop and increased `border-radius`.
+- SEO: noindex rules, breadcrumbs, and hreflang — User profile sub-pages marked `noindex, nofollow`. Geo-filtered place list URLs marked noindex; Yandex `Clean-param` directive added to `robots.txt` for filter query params. Breadcrumb markup improved and JSON-LD schemas updated. Hreflang keys added to the two-column layout; `cover` image added to place JSON-LD `image` array and location structured data spec extended.
+- UI: places list layout and image sizing — `PlacesListItem` UI and skeleton loader refactored for visual consistency. Places list layout and carousel sizing adjusted; two-column gap reduced. Image sizing tuned across place and category cards. Tiny (`xs`) user avatar size added. `Place.content` made optional and container max-width increased.
+- Client: `react-photo-album` and `ReadMore` removed — Dropped the `react-photo-album` dependency (gallery replaced with the existing custom implementation). Removed the `ReadMore` component and all related files. `Tooltip` component extracted, then consolidated into Leaflet layer usage only.
+- i18n: time locale and key cleanup — `dayjs` time display now uses the active i18n locale. Stale and duplicated i18n keys cleaned up across EN/RU locale files; SEO title keys updated for the activity and categories pages.
+- Node.js: bumped `.nvmrc` and SonarCloud workflow to Node 22 LTS — `client/.nvmrc` updated from `20.11.0` to `22`; `sonarcloud.yml` `node-version` updated from `20` to `22` to match the other CI workflows.
+
 ## 1.6.9
 
 ### Patch Changes

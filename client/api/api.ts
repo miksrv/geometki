@@ -183,6 +183,9 @@ export const API = createApi({
         categoriesGetList: builder.query<ApiType.Categories.Response, Maybe<ApiType.Categories.Request>>({
             query: (params) => `categories${encodeQueryData(params)}`
         }),
+        categoriesGetTop: builder.query<ApiType.Categories.TopResponse, Maybe<ApiType.Categories.TopRequest>>({
+            query: (params) => `categories/top${encodeQueryData(params)}`
+        }),
 
         /** Controller: Comments **/
         commentsGetList: builder.query<ApiType.Comments.ListResponse, Maybe<ApiType.Comments.ListRequest>>({

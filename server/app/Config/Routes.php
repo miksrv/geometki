@@ -89,8 +89,10 @@ $routes->options('stats', static function () {});
 /** Categories Controller **/
 $routes->group('categories', static function ($routes) {
     $routes->get('/', 'Categories::list');
+    $routes->get('top', 'Categories::top');
 
     $routes->options('/', static function () {});
+    $routes->options('top', static function () {});
 });
 
 /** Rating Controller **/

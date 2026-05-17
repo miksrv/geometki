@@ -2,7 +2,7 @@ import React from 'react'
 import { cn, Spinner } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
-import { IMarkdownEditor } from '@uiw/react-markdown-editor'
+import type { IMarkdownEditor } from '@uiw/react-markdown-editor'
 
 import styles from './styles.module.sass'
 

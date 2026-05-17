@@ -65,6 +65,11 @@ export const SiteMenu: React.FC<SiteMenuProps> = ({ type, userId, isAuth, userRo
             text: t('add-new-place', { defaultValue: 'Добавить место на карту' })
         },
         {
+            icon: 'Tag',
+            link: '/categories',
+            text: t('nav-categories', { defaultValue: 'Категории мест' })
+        },
+        {
             auth: true,
             icon: 'User',
             link: userId ? `/users/${userId}` : undefined,

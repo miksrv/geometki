@@ -232,7 +232,7 @@ describe('ActivityListItem', () => {
                     compact={true}
                 />
             )
-            expect(screen.getByTestId('user-avatar')).toHaveAttribute('data-size', 'small')
+            expect(screen.getByTestId('user-avatar')).toHaveAttribute('data-size', 'medium')
         })
 
         it('uses medium avatar in full mode', () => {

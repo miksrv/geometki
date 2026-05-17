@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Libraries\PlaceFormatterLibrary;
 use App\Models\CategoryModel;
 use App\Models\PlacesModel;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -53,5 +54,42 @@ class Categories extends ResourceController
         }
 
         return $this->respond(['items' => $data]);
+    }
+
+    /**
+     * Return the top 3 most-viewed categories over the last 7 days.
+     *
+     * GET /categories/top
+     *
+     * Each item includes the localised name/title/content, total place count,
+     * and cover image URLs sourced from the most-viewed place in that category.
+     *
+     * @return ResponseInterface
+     */
+    public function top(): ResponseInterface
+    {
+        $locale        = $this->request->getLocale();
+        $limit         = min((int) ($this->request->getGet('limit') ?? 3), 10);
+        $placesModel   = new PlacesModel();
+        $formatter     = new PlaceFormatterLibrary();
+
+        $topCategories = $this->model->getTopByWeeklyViews($limit, $locale);
+
+        if (empty($topCategories)) {
+            return $this->respond(['items' => []]);
+        }
+
+        foreach ($topCategories as $category) {
+            $category->count = $placesModel->getCountPlacesByCategory($category->name);
+
+            $coverPlace      = $placesModel->getCoverPlaceByCategory($category->name);
+            $category->cover = $coverPlace
+                ? $formatter->formatCover($coverPlace->id, (int) $coverPlace->photos)
+                : null;
+
+            unset($category->weekly_views);
+        }
+
+        return $this->respond(['items' => $topCategories]);
     }
 }

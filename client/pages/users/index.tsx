@@ -11,7 +11,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, Header, UsersList } from '@/components/shared'
+import { AppLayout, PageHeader, UsersList } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
 import { UsersFilterPanel, UsersFilterType } from '@/sections/user'
@@ -90,7 +90,7 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
                 })}
             </Head>
 
-            <Header
+            <PageHeader
                 title={title}
                 homePageTitle={t('geotags')}
                 currentPage={t('users')}

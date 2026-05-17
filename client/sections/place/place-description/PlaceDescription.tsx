@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Markdown from 'react-markdown'
 import { Button, Container } from 'simple-react-ui-kit'
 
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
@@ -9,10 +10,15 @@ import { API } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
-import { ChipsSelect, ContentEditor, ScreenSpinner } from '@/components/ui'
+import { ChipsSelect, ScreenSpinner } from '@/components/ui'
 import { equalsArrays } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
+
+const ContentEditor = dynamic(
+    () => import('@/components/ui/content-editor/ContentEditor').then((m) => ({ default: m.ContentEditor })),
+    { ssr: false }
+)
 
 interface PlaceDescriptionProps {
     placeId?: string

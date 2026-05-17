@@ -30,3 +30,10 @@ export type Category = {
     content?: string
     count?: number
 }
+
+export type TopCategory = Category & {
+    cover?: {
+        full?: string
+        preview: string
+    }
+}

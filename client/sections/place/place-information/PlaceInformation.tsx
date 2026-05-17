@@ -99,14 +99,7 @@ export const PlaceInformation: React.FC<PlaceInformationProps> = ({ place }) => 
                     <Icon name={'Point'} />
                     <div className={styles.key}>{t('coordinates')}:</div>
                     <div className={styles.value}>
-                        <Link
-                            className={styles.coordinatesLink}
-                            color={'inherit'}
-                            target={'_blank'}
-                            href={`geo:${place?.lat},${place?.lon}`}
-                        >
-                            {convertDMS(place?.lat || 0, place?.lon || 0)}
-                        </Link>
+                        <span className={styles.coordinatesLink}>{convertDMS(place?.lat || 0, place?.lon || 0)}</span>
                         <MapLinks
                             title={place?.title}
                             lat={place?.lat ?? 0}
