@@ -102,9 +102,11 @@
         display: flex
         justify-content: space-between
         align-items: center
+        max-width: 300px
 
     .pointLink
-        display: inline-block
+        flex: 1
+        min-width: 0
         overflow: hidden
         white-space: nowrap
         text-overflow: ellipsis
@@ -146,3 +148,10 @@
         .photoThumb
             width: 64px
             height: 64px
+
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            flex-wrap: wrap
+
+            .compactRight
+                width: 100%
+                flex-shrink: 1
