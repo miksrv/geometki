@@ -24,6 +24,7 @@ const nextConfig = {
                 protocol: 'http'
             }
         ],
+        qualities: [50, 75],
         // unoptimized - When true, the source image will be served as-is instead of changing quality,
         // size, or format. Defaults to false.
         unoptimized: false

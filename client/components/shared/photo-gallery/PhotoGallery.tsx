@@ -181,6 +181,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                                     width={206}
                                     height={150}
                                     sizes={'206px'}
+                                    style={{ width: '100%', height: '100%' }}
                                 />
                             </Link>
 

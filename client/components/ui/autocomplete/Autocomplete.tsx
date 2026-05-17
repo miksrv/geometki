@@ -168,7 +168,6 @@ export const Autocomplete = <T,>({
                     <input
                         type={'text'}
                         value={search || ''}
-                        defaultValue={selectedOption?.title ?? ''}
                         className={styles.searchInput}
                         placeholder={placeholder ?? ''}
                         onMouseMove={(e) => e.stopPropagation()}

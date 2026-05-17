@@ -5,7 +5,7 @@ export const formatDate = (date?: string | Date, format: string = 'D MMMM YYYY, 
 
 export const dateToUnixTime = (date?: string | Date): number => dayjs(date).unix()
 
-export const formatDateISO = (date?: string | Date): string => dayjs(date).toISOString()
+export const formatDateISO = (date?: string | Date): string => (date ? dayjs(date).toISOString() : '')
 
 export const timeAgo = (date?: string | Date, withoutSuffix?: boolean, locale?: string): string =>
     date
