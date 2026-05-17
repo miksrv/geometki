@@ -10,8 +10,8 @@ export const buildHreflangTags = (path: string) => {
     const enUrl = path ? `${base}en/${path}` : `${base}en`
 
     return [
-        { rel: 'alternate', hrefLang: 'ru', href: ruUrl },
-        { rel: 'alternate', hrefLang: 'en', href: enUrl },
-        { rel: 'alternate', hrefLang: 'x-default', href: ruUrl }
+        { keyOverride: 'hreflang-ru', rel: 'alternate', hrefLang: 'ru', href: ruUrl },
+        { keyOverride: 'hreflang-en', rel: 'alternate', hrefLang: 'en', href: enUrl },
+        { keyOverride: 'hreflang-x-default', rel: 'alternate', hrefLang: 'x-default', href: ruUrl }
     ]
 }
