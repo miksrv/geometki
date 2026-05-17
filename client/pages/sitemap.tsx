@@ -5,7 +5,6 @@ import { GetServerSidePropsResult, NextPage } from 'next'
 import { API } from '@/api'
 import { wrapper } from '@/app/store'
 import { SITE_LINK } from '@/config/env'
-import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 type SitemapDynamicPage = {
     link: string
@@ -17,9 +16,6 @@ const SiteMap: NextPage<object> = () => <></>
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<object>> => {
-            const cookies = context.req.cookies
-            hydrateAuthFromCookies(store, cookies)
-
             const { data } = await store.dispatch(API.endpoints.sitemapGetList.initiate())
 
             const staticPages = ['map', 'places', 'users', 'users/levels', 'categories', 'tags']
@@ -38,15 +34,31 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     update: new Date(user.updated.date).toISOString()
                 })) || []
 
-            let sitemap =
-                '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            // Normalize base URL to always have a trailing slash
+            const base = SITE_LINK?.endsWith('/') ? SITE_LINK : `${SITE_LINK}/`
 
-            const makeUrlNode = (url: string, date: string, freq: 'monthly' | 'daily', priority: string = '1.0') => `
+            let sitemap =
+                '<?xml version="1.0" encoding="UTF-8"?>' +
+                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">'
+
+            const makeHreflang = (ruPath: string, enPath: string) =>
+                `<xhtml:link rel="alternate" hreflang="ru" href="${base}${ruPath}"/>` +
+                `<xhtml:link rel="alternate" hreflang="en" href="${base}${enPath}"/>` +
+                `<xhtml:link rel="alternate" hreflang="x-default" href="${base}${ruPath}"/>`
+
+            const makeUrlNode = (
+                url: string,
+                date: string,
+                freq: 'monthly' | 'daily',
+                priority: string,
+                hreflang?: string
+            ) => `
             <url>
-              <loc>${SITE_LINK}${url}</loc>
+              <loc>${base}${url}</loc>
               <lastmod>${date}</lastmod>
               <changefreq>${freq}</changefreq>
               <priority>${priority}</priority>
+              ${hreflang ?? ''}
             </url>
           `
 
@@ -54,24 +66,37 @@ export const getServerSideProps = wrapper.getServerSideProps(
             // see them as "just updated" on every request, which wastes crawl budget.
             const STATIC_LASTMOD = '2025-01-01T00:00:00.000Z'
 
-            // Homepage (RU and EN)
-            sitemap += makeUrlNode('', STATIC_LASTMOD, 'daily', '1.0')
-            sitemap += makeUrlNode('en', STATIC_LASTMOD, 'daily', '1.0')
+            // Homepage
+            sitemap += makeUrlNode('', STATIC_LASTMOD, 'daily', '1.0', makeHreflang('', 'en'))
 
-            // Static RU Locale
-            sitemap += staticPages.map((url) => makeUrlNode(url, STATIC_LASTMOD, 'monthly', '0.8')).join('')
-
-            // Static EN Locale
-            sitemap += staticPages.map((url) => makeUrlNode('en/' + url, STATIC_LASTMOD, 'monthly', '0.8')).join('')
-
-            // Dynamic RU Locale
-            sitemap += [...placesPages, ...usersPages]
-                .map((page) => makeUrlNode(page.link, page.update, 'daily'))
+            // Static pages (RU + EN paired with hreflang)
+            sitemap += staticPages
+                .map((url) => makeUrlNode(url, STATIC_LASTMOD, 'monthly', '0.8', makeHreflang(url, `en/${url}`)))
                 .join('')
 
-            // Dynamic EN Locale
+            sitemap += staticPages
+                .map((url) =>
+                    makeUrlNode(`en/${url}`, STATIC_LASTMOD, 'monthly', '0.8', makeHreflang(url, `en/${url}`))
+                )
+                .join('')
+
+            // Dynamic pages (RU + EN paired with hreflang)
             sitemap += [...placesPages, ...usersPages]
-                .map((page) => makeUrlNode('en/' + page.link, page.update, 'daily'))
+                .map((page) =>
+                    makeUrlNode(page.link, page.update, 'daily', '0.7', makeHreflang(page.link, `en/${page.link}`))
+                )
+                .join('')
+
+            sitemap += [...placesPages, ...usersPages]
+                .map((page) =>
+                    makeUrlNode(
+                        `en/${page.link}`,
+                        page.update,
+                        'daily',
+                        '0.7',
+                        makeHreflang(page.link, `en/${page.link}`)
+                    )
+                )
                 .join('')
 
             sitemap += '</urlset>'
