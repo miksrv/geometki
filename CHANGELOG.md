@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.3
+
+### Patch Changes
+
+- Styles: `dark.css` and `light.css` merged into a single `theme.css` of design tokens (surfaces, borders, shadows, radii, motion)
+- Styles: component shadows use `--shadow-*` tokens instead of SASS `$boxShadow` variables
+- Globals: unified keyboard focus ring, `prefers-reduced-motion` support, inverted Leaflet tiles in the dark theme
+
 ## 1.8.2
 
 ### Patch Changes
