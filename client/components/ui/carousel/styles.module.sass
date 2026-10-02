@@ -71,8 +71,14 @@
 
 .carousel
     position: relative
-    max-width: calc(var(--width-max) - var(--width-menu))
-    --slide-size: 100%
+    width: 100%
+    // Slides are sized relative to the carousel, so three of them always
+    // fit the content width regardless of the page container size
+    --slide-spacing: 10px
+    --slide-size: 33.3333%
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        --slide-size: 100%
 
     .viewport
         overflow: hidden
@@ -83,16 +89,17 @@
             touch-action: pan-y
             margin-left: calc(var(--slide-spacing) * -1)
 
-            & > div, & > article
-                flex: 0 0 var(--slide-size)
-                min-width: 0
-                max-width: calc((var(--width-max) - var(--width-menu)) / 3 - 7px)
-                padding-left: var(--slide-spacing)
-                margin-top: 0
-                margin-bottom: 0
+        // Spacing lives inside the slide wrapper, so the first card starts at the
+        // left edge of the viewport and the last one ends at the right edge
+        .slide
+            flex: 0 0 var(--slide-size)
+            min-width: 0
+            padding-left: var(--slide-spacing)
 
-                @media only screen and (max-width: variables.$mobileMaxWidth)
-                    max-width: 500px
+            & > *
+                width: 100%
+                max-width: 100%
+                margin: 0
 
     .buttonsContainer
         opacity: 0

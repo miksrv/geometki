@@ -98,6 +98,13 @@ NEXT_PUBLIC_CYCLEMAP_TOKEN   # Optional
 - **Mobile:** Expo ~47 / React Native 0.70 / Redux Toolkit
 - **CI:** GitHub Actions (lint + test + build checks on PR; separate deploy workflows)
 
+## Pull Request Checklist
+
+Before opening a PR from a feature branch:
+
+1. Bump `"version"` in `client/package.json`. Almost always the **patch** number; the **minor** number only for noticeable new features or UX changes; the **major** number practically never.
+2. Add a new section for that version to the top of `CHANGELOG.md` (repo root), following the existing format: `## X.Y.Z`, then `### Patch Changes` or `### Minor Changes`, then a bulleted list. Keep entries very short, one line each, e.g. `- Layout: removed the site sidebar, widened the content area`.
+
 ## MCP Tools
 
 Always use context7 MCP to get up-to-date documentation when:

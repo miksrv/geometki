@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.8.2
+
+### Patch Changes
+
+- Layout: removed the site sidebar, widened the content area to the full container width
+- AppBar: horizontal section navigation, inline search on wide screens and a search overlay on narrow ones, "Add place" action
+- Mobile: bottom navigation bar with the primary "add" action; square logo tile in the header
+- User menu: admin links moved here from the sidebar; theme and language switchers moved to the footer
+- Carousel: slide widths are relative to the container, three cards fit without clipping
+- Map page: container height accounts for the mobile bottom navigation
+- Docs: PR checklist (version bump + changelog) added to CLAUDE.md
+
 ## 1.8.1
 
 ### Patch Changes

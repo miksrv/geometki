@@ -118,6 +118,27 @@ describe('UserMenu', () => {
             expect(screen.getByTitle('Перейти в настройки')).toHaveAttribute('href', '/users/settings')
         })
 
+        it('does not render admin links for a regular user', () => {
+            render(
+                <UserMenu
+                    t={mockT as any}
+                    user={mockUser as any}
+                />
+            )
+            expect(screen.queryByText('Настройки наград')).not.toBeInTheDocument()
+        })
+
+        it('renders admin links for an admin user', () => {
+            render(
+                <UserMenu
+                    t={mockT as any}
+                    user={{ ...mockUser, role: 'admin' } as any}
+                />
+            )
+            expect(screen.getByText('Настройки наград').closest('a')).toHaveAttribute('href', '/admin/achievements')
+            expect(screen.getByText('Отправленные письма').closest('a')).toHaveAttribute('href', '/admin/sending-mail')
+        })
+
         it('renders the logout link', () => {
             render(
                 <UserMenu

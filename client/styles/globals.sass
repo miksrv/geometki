@@ -128,10 +128,13 @@ a
 
 /* Index (map) page */
 .mainLayout
-    & > section > main
+    .mapContainer
+        width: 100%
+        height: calc(100vh - 50px)
+
         @media only screen and (max-width: variables.$mobileMaxWidth)
-            padding: 0 !important
-            margin-bottom: 0 !important
+            // Leave room for the fixed bottom navigation
+            height: calc(100dvh - 50px - 56px - env(safe-area-inset-bottom, 0px))
 
 .mainHeader
     @media only screen and (max-width: variables.$mobileMaxWidth)

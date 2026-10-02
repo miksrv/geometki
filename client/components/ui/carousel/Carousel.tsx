@@ -25,7 +25,11 @@ export const Carousel: React.FC<CarouselProps> = ({ options, children }) => {
                 ref={emblaRef}
                 className={styles.viewport}
             >
-                <div className={styles.container}>{children}</div>
+                <div className={styles.container}>
+                    {React.Children.map(children, (child) =>
+                        child ? <div className={styles.slide}>{child}</div> : null
+                    )}
+                </div>
             </div>
 
             <div className={styles.buttonsContainer}>

@@ -13,7 +13,11 @@ export const Logo: React.FC = () => {
         <Link
             href={'/'}
             title={'Geometki'}
+            aria-label={'Geometki'}
             className={cn(styles.logo, theme === 'dark' && styles.dark)}
-        />
+        >
+            <span className={styles.logoMark} />
+            <span className={styles.logoWordmark} />
+        </Link>
     )
 }

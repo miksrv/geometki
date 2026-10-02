@@ -17,6 +17,14 @@ jest.mock('next/image', () => {
     return Image
 })
 
+jest.mock('../theme-switcher', () => ({
+    ThemeSwitcher: () => <div data-testid={'theme-switcher'} />
+}))
+
+jest.mock('../language-switcher', () => ({
+    LanguageSwitcher: () => <div data-testid={'language-switcher'} />
+}))
+
 jest.mock('@/utils/helpers', () => ({
     formatDate: (_date: Date | string, format: string) => {
         if (format === 'YYYY') {
@@ -34,6 +42,12 @@ describe('Footer', () => {
         it('renders a footer element', () => {
             render(<Footer />)
             expect(screen.getByRole('contentinfo')).toBeInTheDocument()
+        })
+
+        it('renders theme and language switchers', () => {
+            render(<Footer />)
+            expect(screen.getByTestId('theme-switcher')).toBeInTheDocument()
+            expect(screen.getByTestId('language-switcher')).toBeInTheDocument()
         })
 
         it('renders the copyright text', () => {

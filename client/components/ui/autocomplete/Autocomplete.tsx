@@ -35,6 +35,7 @@ interface DropdownProps<T> {
     onEnterPress?: (value: string) => void
     inputValue?: string
     suppressDropdown?: boolean
+    autoFocus?: boolean
 }
 
 export const Autocomplete = <T,>({
@@ -57,7 +58,8 @@ export const Autocomplete = <T,>({
     onClear,
     onEnterPress,
     inputValue: externalInputValue,
-    suppressDropdown
+    suppressDropdown,
+    autoFocus
 }: DropdownProps<T>) => {
     const dropdownRef = useRef<HTMLDivElement>(null)
     const [search, setSearch] = useState<string>()
@@ -194,6 +196,7 @@ export const Autocomplete = <T,>({
                         value={search || ''}
                         className={styles.searchInput}
                         placeholder={placeholder ?? ''}
+                        autoFocus={autoFocus}
                         onMouseMove={(e) => e.stopPropagation()}
                         onWheelCapture={(e) => e.stopPropagation()}
                         onKeyDown={handleKeyPress}

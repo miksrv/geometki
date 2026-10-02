@@ -12,6 +12,7 @@ import { AppLayout } from './AppLayout'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Dialog: ({ open, children, onCloseDialog }: any) =>
         open ? (
             <div
@@ -24,14 +25,7 @@ jest.mock('simple-react-ui-kit', () => ({
                     onClick={onCloseDialog}
                 />
             </div>
-        ) : null,
-    Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
-}))
-
-jest.mock('next-i18next', () => ({
-    useTranslation: () => ({
-        t: (key: string, opts?: Record<string, unknown>) => opts?.defaultValue ?? key
-    })
+        ) : null
 }))
 
 jest.mock('nextjs-progressbar', () => () => <div data-testid={'progress-bar'} />)
@@ -53,27 +47,25 @@ jest.mock('cookies-next', () => ({
 }))
 
 jest.mock('./app-bar', () => ({
-    AppBar: ({ onMenuClick }: any) => (
-        <div data-testid={'app-bar'}>
-            <button
-                data-testid={'menu-button'}
-                onClick={onMenuClick}
-            >
-                Menu
-            </button>
-        </div>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    AppBar: ({ fullSize }: any) => (
+        <div
+            data-testid={'app-bar'}
+            data-full-size={fullSize ? 'true' : 'false'}
+        />
     )
 }))
 
-jest.mock('./footer', () => ({
-    Footer: () => <div data-testid={'footer'} />
+jest.mock('./bottom-nav', () => ({
+    BottomNav: () => <nav data-testid={'bottom-nav'} />
 }))
 
-jest.mock('./language-switcher', () => ({
-    LanguageSwitcher: () => <div data-testid={'language-switcher'} />
+jest.mock('./footer', () => ({
+    Footer: () => <footer data-testid={'footer'} />
 }))
 
 jest.mock('./login-form', () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     LoginForm: ({ onClickRegistration }: any) => (
         <div data-testid={'login-form'}>
             <button onClick={onClickRegistration}>Go to registration</button>
@@ -82,6 +74,7 @@ jest.mock('./login-form', () => ({
 }))
 
 jest.mock('./registration-form', () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     RegistrationForm: ({ onClickLogin }: any) => (
         <div data-testid={'registration-form'}>
             <button onClick={onClickLogin}>Go to login</button>
@@ -89,16 +82,8 @@ jest.mock('./registration-form', () => ({
     )
 }))
 
-jest.mock('./site-menu', () => ({
-    SiteMenu: () => <div data-testid={'site-menu'} />
-}))
-
 jest.mock('./snackbar', () => ({
     Snackbar: () => <div data-testid={'snackbar'} />
-}))
-
-jest.mock('./theme-switcher', () => ({
-    ThemeSwitcher: () => <div data-testid={'theme-switcher'} />
 }))
 
 const makeStore = (preloadedState?: Record<string, unknown>) =>
@@ -114,6 +99,10 @@ const makeStore = (preloadedState?: Record<string, unknown>) =>
 const renderWithStore = (ui: React.ReactElement, preloadedState?: Record<string, unknown>) => {
     const store = makeStore(preloadedState)
     return render(<Provider store={store}>{ui}</Provider>)
+}
+
+const authDialogState = {
+    application: { showAuthDialog: true, showOverlay: true, userLocation: undefined }
 }
 
 describe('AppLayout', () => {
@@ -133,28 +122,24 @@ describe('AppLayout', () => {
             expect(screen.getByTestId('snackbar')).toBeInTheDocument()
         })
 
-        it('renders children in the main content area', () => {
+        it('renders children inside the main landmark', () => {
             renderWithStore(
                 <AppLayout>
                     <div data-testid={'page-content'}>Page</div>
                 </AppLayout>
             )
-            expect(screen.getByTestId('page-content')).toBeInTheDocument()
+            expect(screen.getByRole('main')).toContainElement(screen.getByTestId('page-content'))
         })
 
-        it('renders the SiteMenu', () => {
+        it('renders the footer and the bottom navigation', () => {
             renderWithStore(<AppLayout />)
-            expect(screen.getAllByTestId('site-menu').length).toBeGreaterThanOrEqual(1)
+            expect(screen.getByTestId('footer')).toBeInTheDocument()
+            expect(screen.getByTestId('bottom-nav')).toBeInTheDocument()
         })
 
-        it('renders the ThemeSwitcher', () => {
-            renderWithStore(<AppLayout />)
-            expect(screen.getAllByTestId('theme-switcher').length).toBeGreaterThanOrEqual(1)
-        })
-
-        it('renders the LanguageSwitcher', () => {
-            renderWithStore(<AppLayout />)
-            expect(screen.getAllByTestId('language-switcher').length).toBeGreaterThanOrEqual(1)
+        it('does not render a site menu sidebar', () => {
+            const { container } = renderWithStore(<AppLayout />)
+            expect(container.querySelector('aside')).not.toBeInTheDocument()
         })
     })
 
@@ -165,34 +150,40 @@ describe('AppLayout', () => {
         })
 
         it('renders the auth dialog when showAuthDialog is true', () => {
-            renderWithStore(<AppLayout />, {
-                application: { showAuthDialog: true, showOverlay: false, userLocation: null }
-            })
+            renderWithStore(<AppLayout />, authDialogState)
             expect(screen.getByTestId('auth-dialog')).toBeInTheDocument()
         })
 
         it('shows LoginForm by default in the auth dialog', () => {
-            renderWithStore(<AppLayout />, {
-                application: { showAuthDialog: true, showOverlay: false, userLocation: null }
-            })
+            renderWithStore(<AppLayout />, authDialogState)
             expect(screen.getByTestId('login-form')).toBeInTheDocument()
         })
 
         it('switches to RegistrationForm when onClickRegistration is called', () => {
-            renderWithStore(<AppLayout />, {
-                application: { showAuthDialog: true, showOverlay: false, userLocation: null }
-            })
+            renderWithStore(<AppLayout />, authDialogState)
             fireEvent.click(screen.getByText('Go to registration'))
             expect(screen.getByTestId('registration-form')).toBeInTheDocument()
         })
 
         it('switches back to LoginForm when onClickLogin is called from RegistrationForm', () => {
-            renderWithStore(<AppLayout />, {
-                application: { showAuthDialog: true, showOverlay: false, userLocation: null }
-            })
+            renderWithStore(<AppLayout />, authDialogState)
             fireEvent.click(screen.getByText('Go to registration'))
             fireEvent.click(screen.getByText('Go to login'))
             expect(screen.getByTestId('login-form')).toBeInTheDocument()
+        })
+    })
+
+    describe('overlay', () => {
+        it('locks body scroll while the overlay is displayed', () => {
+            const { unmount } = renderWithStore(<AppLayout />, authDialogState)
+            expect(document.body.style.overflow).toBe('hidden')
+            unmount()
+            expect(document.body.style.overflow).toBe('')
+        })
+
+        it('marks the overlay as displayed when showOverlay is true', () => {
+            const { container } = renderWithStore(<AppLayout />, authDialogState)
+            expect(container.querySelector('.overlay')).toHaveClass('displayed')
         })
     })
 
@@ -202,20 +193,15 @@ describe('AppLayout', () => {
             expect(container.firstChild).toHaveClass('fullSize')
         })
 
-        it('does not render the desktop menubar aside when fullSize is true', () => {
-            const { container } = renderWithStore(<AppLayout fullSize />)
-            // Desktop menubar is .menubar — it should not exist in fullSize mode
-            expect(container.querySelector('.menubar')).not.toBeInTheDocument()
+        it('passes fullSize to the AppBar', () => {
+            renderWithStore(<AppLayout fullSize />)
+            expect(screen.getByTestId('app-bar')).toHaveAttribute('data-full-size', 'true')
         })
-    })
 
-    describe('sidebar', () => {
-        it('opens the sidebar when menu button is clicked', () => {
-            renderWithStore(<AppLayout />)
-            fireEvent.click(screen.getByTestId('menu-button'))
-            // Sidebar aside should have 'opened' class
-            const sidebar = document.querySelector('.sidebar')
-            expect(sidebar).toHaveClass('opened')
+        it('hides the footer but keeps the bottom navigation when fullSize is true', () => {
+            renderWithStore(<AppLayout fullSize />)
+            expect(screen.queryByTestId('footer')).not.toBeInTheDocument()
+            expect(screen.getByTestId('bottom-nav')).toBeInTheDocument()
         })
     })
 })

@@ -1,20 +1,17 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { cn, Dialog, Icon } from 'simple-react-ui-kit'
+import React, { useEffect, useState } from 'react'
+import { cn, Dialog } from 'simple-react-ui-kit'
 
-import { useTranslation } from 'next-i18next/pages'
 import NextNProgress from 'nextjs-progressbar'
 
 import { closeAuthDialog } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 
 import { AppBar } from './app-bar'
+import { BottomNav } from './bottom-nav'
 import { Footer } from './footer'
-import { LanguageSwitcher } from './language-switcher'
 import { LoginForm } from './login-form'
 import { RegistrationForm } from './registration-form'
-import { SiteMenu } from './site-menu'
 import { Snackbar } from './snackbar'
-import { ThemeSwitcher } from './theme-switcher'
 
 import styles from './styles.module.sass'
 
@@ -22,76 +19,30 @@ type AuthFormType = 'login' | 'registration'
 
 interface AppLayoutProps {
     className?: string
+    /** Edge-to-edge layout without container paddings and footer (map page) */
     fullSize?: boolean
     children?: React.ReactNode
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, children }) => {
-    const { t } = useTranslation('components.app-layout')
     const dispatch = useAppDispatch()
 
-    const authSlice = useAppSelector((state) => state.auth)
     const application = useAppSelector((store) => store.application)
 
-    const [leftDistance, setLeftDistance] = useState<number>()
-    const [scrollTopVisible, setScrollTopVisible] = useState<boolean>(false)
-    const menuBarRef = useRef<HTMLDivElement>(null)
-
-    const [sidebarOpen, setSidebarOpen] = useState<boolean>(false)
     const [authForm, setAuthForm] = useState<AuthFormType>('login')
-
-    const handleCloseOverlay = () => {
-        setSidebarOpen(false)
-    }
-
-    const handleOpenSideBar = () => {
-        setSidebarOpen(true)
-    }
 
     const handleCloseAuthDialog = () => {
         setAuthForm('login')
         dispatch(closeAuthDialog())
     }
 
-    const handleScrollToTop = () => {
-        window.scrollTo(0, 0)
-    }
-
     useEffect(() => {
-        const handleScroll = () => {
-            setScrollTopVisible(window.scrollY > 500)
-        }
-
-        const handleResize = () => {
-            if (menuBarRef.current) {
-                const rect = menuBarRef.current.getBoundingClientRect()
-
-                setLeftDistance(rect.left + rect.width - 5)
-            }
-        }
-
-        handleResize()
-
-        window.addEventListener('scroll', handleScroll)
-        window.addEventListener('resize', handleResize)
+        document.body.style.overflow = application.showOverlay ? 'hidden' : ''
 
         return () => {
-            window.removeEventListener('scroll', handleScroll)
-            window.removeEventListener('resize', handleResize)
+            document.body.style.overflow = ''
         }
-    }, [])
-
-    useEffect(() => {
-        if (application.showOverlay || sidebarOpen) {
-            document.body.style.overflow = 'hidden'
-        } else {
-            document.body.style.overflow = 'auto'
-        }
-
-        return () => {
-            document.body.style.overflow = 'auto'
-        }
-    }, [application.showOverlay, sidebarOpen])
+    }, [application.showOverlay])
 
     return (
         <div className={cn(styles.appLayout, fullSize && styles.fullSize, className)}>
@@ -101,31 +52,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, child
             />
 
             <div
-                tabIndex={0}
-                role={'button'}
-                className={styles.scrollArea}
-                style={{
-                    display: scrollTopVisible ? 'block' : 'none',
-                    width: leftDistance
-                }}
-                onKeyDown={() => undefined}
-                onClick={handleScrollToTop}
-            >
-                <div className={styles.buttonToTop}>
-                    <Icon name={'KeyboardUp'} />
-                    {t('scroll-to-top', { defaultValue: 'Наверх' })}
-                </div>
-            </div>
-
-            <div
-                role={'button'}
-                tabIndex={0}
-                className={cn(
-                    styles.overlay,
-                    application.showOverlay || sidebarOpen ? styles.displayed : styles.hidden
-                )}
-                onKeyDown={handleCloseOverlay}
-                onClick={handleCloseOverlay}
+                aria-hidden={true}
+                className={cn(styles.overlay, application.showOverlay ? styles.displayed : styles.hidden)}
             />
 
             <Dialog
@@ -137,52 +65,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, child
                 {authForm === 'registration' && <RegistrationForm onClickLogin={() => setAuthForm('login')} />}
             </Dialog>
 
-            <AppBar
-                fullSize={fullSize}
-                onMenuClick={handleOpenSideBar}
-            />
+            <AppBar fullSize={fullSize} />
 
-            <aside className={cn(styles.sidebar, sidebarOpen ? styles.opened : styles.closed)}>
-                <SiteMenu
-                    type={'mobile'}
-                    userId={authSlice.user?.id}
-                    isAuth={authSlice.isAuth}
-                    userRole={authSlice.user?.role}
-                    onClick={handleCloseOverlay}
-                />
-                <div className={styles.content}>
-                    <div className={styles.switchers}>
-                        <ThemeSwitcher />
-                        <LanguageSwitcher />
-                    </div>
-                    <Footer />
-                </div>
-            </aside>
+            <main className={styles.main}>{children}</main>
 
-            <section className={styles.mainContainer}>
-                {!fullSize && (
-                    <aside
-                        className={styles.menubar}
-                        ref={menuBarRef}
-                    >
-                        <div className={styles.rails}>
-                            <SiteMenu
-                                type={'desktop'}
-                                userId={authSlice.user?.id}
-                                isAuth={authSlice.isAuth}
-                                userRole={authSlice.user?.role}
-                            />
-                            <div className={styles.switchers}>
-                                <ThemeSwitcher />
-                                <LanguageSwitcher />
-                            </div>
-                            <Footer />
-                        </div>
-                    </aside>
-                )}
+            {!fullSize && <Footer />}
 
-                <main className={styles.main}>{children}</main>
-            </section>
+            <BottomNav />
 
             <Snackbar />
         </div>
