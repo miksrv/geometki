@@ -8,7 +8,7 @@ $inlineSearchMinWidth: 1024px
     z-index: 450
     color: var(--text-color-primary)
     background-color: var(--container-background)
-    box-shadow: variables.$boxShadow1
+    box-shadow: 0 1px 0 var(--border), var(--shadow-sm)
     height: $appBarHeight
     position: fixed
     width: 100%
@@ -94,7 +94,7 @@ $inlineSearchMinWidth: 1024px
     white-space: nowrap
     color: var(--text-color-primary)
     text-decoration: none
-    transition: color .15s ease-out, background-color .15s ease-out
+    transition: color var(--duration-fast) var(--ease), background-color var(--duration-fast) var(--ease)
 
     &:hover,
     &:focus
@@ -104,7 +104,7 @@ $inlineSearchMinWidth: 1024px
 
     &:focus-visible
         outline: 2px solid var(--color-main)
-        outline-offset: 1px
+        outline-offset: 2px
 
     &.navItemActive
         color: var(--color-main)
@@ -156,7 +156,7 @@ $inlineSearchMinWidth: 1024px
 
     ul
         top: 34px !important
-        box-shadow: variables.$boxShadow1 !important
+        box-shadow: var(--popout-shadow) !important
         border: none !important
 
 .searchOverlay
@@ -166,7 +166,7 @@ $inlineSearchMinWidth: 1024px
     right: 0
     height: $appBarHeight
     background-color: var(--container-background)
-    box-shadow: variables.$boxShadow1
+    box-shadow: 0 1px 0 var(--border), var(--shadow-sm)
     z-index: 460
     opacity: 0
     visibility: hidden

@@ -4,6 +4,20 @@
 *, ::before, ::after
     box-sizing: border-box
 
+// Keyboard focus only: one ring for every interactive element
+:focus-visible
+    outline: 2px solid var(--color-main)
+    outline-offset: 2px
+
+:focus:not(:focus-visible)
+    outline: none
+
+@media (prefers-reduced-motion: reduce)
+    *, ::before, ::after
+        animation-duration: 0.01ms !important
+        animation-iteration-count: 1 !important
+        transition-duration: 0.01ms !important
+
 html
     -moz-osx-font-smoothing: grayscale
     -webkit-text-size-adjust: 100%
@@ -73,8 +87,7 @@ a
     color: var(--link-color)
     cursor: pointer
     text-decoration: none
-    outline: none
-    transition: color .15s ease-out
+    transition: color var(--duration-fast) var(--ease)
 
     &:hover, &:focus
         color: var(--link-color-hover)
@@ -190,6 +203,15 @@ a
             display: none
 
 /* Leaflet */
+.leaflet-container, .leaflet-popup-tip
+    background-color: var(--input-background-color)
+
+:root[data-theme='dark']
+    .leaflet-layer,
+    .leaflet-control-attribution,
+    .map-tiles
+        filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)
+
 .leaflet-marker-pane
     & > img
         outline: none
