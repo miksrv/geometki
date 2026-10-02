@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react'
 import useGeolocation from 'react-hook-geolocation'
-import { Button, cn, Icon } from 'simple-react-ui-kit'
+import { Button, cn } from 'simple-react-ui-kit'
 
+import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
@@ -18,14 +20,22 @@ import { UserMenu } from './UserMenu'
 
 import styles from './styles.module.sass'
 
-interface AppBarProps {
-    fullSize?: boolean
-    onMenuClick?: () => void
+type NavItem = {
+    label: string
+    href: string
 }
 
-export const AppBar: React.FC<AppBarProps> = ({ fullSize, onMenuClick }) => {
+interface AppBarProps {
+    fullSize?: boolean
+}
+
+export const isNavItemActive = (pathname: string, href: string): boolean =>
+    pathname === href || pathname.startsWith(`${href}/`)
+
+export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
     const { t } = useTranslation('components.app-bar')
     const dispatch = useAppDispatch()
+    const router = useRouter()
     const geolocation = useGeolocation()
 
     const appAuth = useAppSelector((state) => state.auth)
@@ -33,9 +43,23 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize, onMenuClick }) => {
 
     const [updateLocation] = API.useLocationPutCoordinatesMutation()
 
+    const navItems: NavItem[] = [
+        { href: '/activity', label: t('nav-activity', { defaultValue: 'Лента' }) },
+        { href: '/map', label: t('nav-map', { defaultValue: 'Карта' }) },
+        { href: '/places', label: t('nav-places', { defaultValue: 'Места' }) },
+        { href: '/users', label: t('nav-users', { defaultValue: 'Пользователи' }) }
+    ]
+
     const handleLoginClick = (event: React.MouseEvent) => {
         event.preventDefault()
         dispatch(openAuthDialog())
+    }
+
+    const handleAddPlaceClick = (event: React.MouseEvent) => {
+        if (appAuth.isAuth !== true) {
+            event.preventDefault()
+            dispatch(openAuthDialog())
+        }
     }
 
     const handleLogout = () => {
@@ -61,19 +85,42 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize, onMenuClick }) => {
         <header className={cn(styles.appBar, fullSize && styles.fullSize)}>
             <AppAuthChecker />
             <div className={styles.wrapper}>
-                <button
-                    className={styles.hamburgerButton}
-                    onClick={onMenuClick}
-                    aria-label={'Toggle Sidebar'}
-                >
-                    <Icon name={'Menu'} />
-                </button>
-
                 <Logo />
 
-                <Search />
+                <nav
+                    className={styles.nav}
+                    aria-label={t('main-navigation', { defaultValue: 'Основная навигация' })}
+                >
+                    {navItems.map((item) => {
+                        const active = isNavItemActive(router.pathname, item.href)
+
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={cn(styles.navItem, active && styles.navItemActive)}
+                                aria-current={active ? 'page' : undefined}
+                            >
+                                {item.label}
+                            </Link>
+                        )
+                    })}
+                </nav>
 
                 <div className={styles.rightSection}>
+                    <Search />
+
+                    <Button
+                        mode={'primary'}
+                        size={'medium'}
+                        icon={'PlusCircle'}
+                        link={'/places/create'}
+                        label={t('add-place_button', { defaultValue: 'Добавить место' })}
+                        title={t('add-place_title', { defaultValue: 'Добавить новое место на карту' })}
+                        className={styles.addButton}
+                        onClick={handleAddPlaceClick}
+                    />
+
                     {appAuth.isAuth === true && <NotificationList />}
 
                     {appAuth.isAuth === true && appAuth.user && (
@@ -87,6 +134,7 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize, onMenuClick }) => {
                     {appAuth.isAuth !== true && (
                         <Button
                             mode={'secondary'}
+                            size={'medium'}
                             title={t('authorization-on-site_title', {
                                 defaultValue: 'Авторизация на сайте'
                             })}

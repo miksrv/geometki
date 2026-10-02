@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 
 import { Search } from './Search'
 
@@ -27,13 +27,27 @@ jest.mock('@/api', () => ({
     ApiType: {}
 }))
 
+jest.mock('simple-react-ui-kit', () => ({
+    cn: (...args: string[]) => args.filter(Boolean).join(' '),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Button: ({ onClick, className, icon, ...rest }: any) => (
+        <button
+            className={className}
+            data-icon={icon}
+            aria-label={rest['aria-label']}
+            onClick={onClick}
+        />
+    )
+}))
+
 jest.mock('@/components/ui', () => ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Autocomplete: ({ placeholder, className }: any) => (
+    Autocomplete: ({ placeholder, className, autoFocus }: any) => (
         <input
             data-testid={'autocomplete'}
             placeholder={placeholder}
             className={className}
+            data-autofocus={autoFocus ? 'true' : 'false'}
         />
     ),
     AutocompleteOption: {}
@@ -49,6 +63,40 @@ describe('Search', () => {
         it('renders with the correct placeholder text', () => {
             render(<Search />)
             expect(screen.getByPlaceholderText('Поиск мест, координат')).toBeInTheDocument()
+        })
+
+        it('renders the compact search button for narrow screens', () => {
+            render(<Search />)
+            expect(screen.getByRole('button', { name: 'Поиск мест, координат' })).toBeInTheDocument()
+        })
+
+        it('does not render the overlay field until opened', () => {
+            render(<Search />)
+            expect(screen.getAllByTestId('autocomplete')).toHaveLength(1)
+        })
+    })
+
+    describe('mobile overlay', () => {
+        it('opens the overlay with a focused field and closes it again', () => {
+            render(<Search />)
+
+            fireEvent.click(screen.getByRole('button', { name: 'Поиск мест, координат' }))
+            const fields = screen.getAllByTestId('autocomplete')
+            expect(fields).toHaveLength(2)
+            expect(fields[1]).toHaveAttribute('data-autofocus', 'true')
+
+            fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }))
+            expect(screen.getAllByTestId('autocomplete')).toHaveLength(1)
+        })
+
+        it('closes the overlay on Escape', () => {
+            render(<Search />)
+
+            fireEvent.click(screen.getByRole('button', { name: 'Поиск мест, координат' }))
+            expect(screen.getAllByTestId('autocomplete')).toHaveLength(2)
+
+            fireEvent.keyDown(document, { key: 'Escape' })
+            expect(screen.getAllByTestId('autocomplete')).toHaveLength(1)
         })
     })
 })

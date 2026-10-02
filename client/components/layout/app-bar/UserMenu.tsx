@@ -17,6 +17,8 @@ interface UserMenuProps {
 
 export const UserMenu: React.FC<UserMenuProps> = ({ t, user, onLogout }) => (
     <Popout
+        position={'right'}
+        closeOnChildrenClick={true}
         trigger={
             <UserAvatar
                 size={'medium'}
@@ -53,6 +55,22 @@ export const UserMenu: React.FC<UserMenuProps> = ({ t, user, onLogout }) => (
                         {t('app-layout.settings', { defaultValue: 'Настройки' })}
                     </Link>
                 </li>
+                {user?.role === 'admin' && (
+                    <>
+                        <li>
+                            <Link href={'/admin/achievements'}>
+                                <Icon name={'Award'} />
+                                {t('app-layout.admin-achievements', { defaultValue: 'Настройки наград' })}
+                            </Link>
+                        </li>
+                        <li>
+                            <Link href={'/admin/sending-mail'}>
+                                <Icon name={'Feed'} />
+                                {t('app-layout.admin-sending-mail', { defaultValue: 'Отправленные письма' })}
+                            </Link>
+                        </li>
+                    </>
+                )}
                 <li>
                     <Link
                         href={'/'}
