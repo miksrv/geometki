@@ -217,7 +217,7 @@ const MapPage: NextPage<object> = () => {
                 onCloseLightBox={handleCloseLightbox}
             />
 
-            <div style={{ width: '100%', height: 'calc(100vh - 50px)' }}>
+            <div className={'mapContainer'}>
                 <InteractiveMap
                     center={initMapCoords}
                     zoom={initMapZoom}

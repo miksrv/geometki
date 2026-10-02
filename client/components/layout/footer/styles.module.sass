@@ -1,11 +1,37 @@
 @use '../../../styles/variables' as variables
 
 .footer
-    text-align: left
-    margin-top: 10px
-    padding-left: 8px
+    width: 100%
+    max-width: var(--width-max)
+    margin: 0 auto
+    padding: 0 16px 20px
     font-size: variables.$fontSizeCaption
     color: var(--text-color-secondary)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        padding: 0 10px calc(56px + env(safe-area-inset-bottom, 0px) + 10px)
+
+    .inner
+        display: flex
+        align-items: center
+        justify-content: space-between
+        flex-wrap: wrap
+        gap: 8px 16px
+        padding-top: 12px
+        border-top: var(--container-border-separator)
+
+    .copyright
+        display: flex
+        flex-wrap: wrap
+        gap: 4px 12px
+
+    .version
+        opacity: .8
+
+    .switchers
+        display: flex
+        align-items: center
+        gap: 12px
 
     a
         color: var(--text-color-primary)
