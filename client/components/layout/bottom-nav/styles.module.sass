@@ -1,0 +1,68 @@
+@use '../../../styles/variables' as variables
+
+$bottomNavHeight: 56px
+
+.bottomNav
+    display: none
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: flex
+        align-items: stretch
+        position: fixed
+        left: 0
+        right: 0
+        bottom: 0
+        z-index: 450
+        height: calc(#{$bottomNavHeight} + env(safe-area-inset-bottom, 0px))
+        padding-bottom: env(safe-area-inset-bottom, 0px)
+        background-color: var(--container-background)
+        border-top: var(--container-border-separator)
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, .06)
+
+.navItem
+    flex: 1
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+    gap: 2px
+    min-width: 0
+    padding: 0 4px
+    text-decoration: none
+    color: var(--text-color-secondary)
+    font-size: 10px
+    line-height: 1.2
+    transition: color .15s ease-out
+    -webkit-tap-highlight-color: transparent
+
+    span
+        max-width: 100%
+        white-space: nowrap
+        overflow: hidden
+        text-overflow: ellipsis
+
+    svg
+        width: 24px
+        height: 24px
+        fill: currentColor
+
+    &:hover,
+    &:focus-visible
+        color: var(--text-color-primary)
+        outline: none
+
+    &.active
+        color: var(--color-main)
+
+    &.primary
+        color: var(--color-main)
+
+        svg
+            width: 36px
+            height: 36px
+            fill: currentColor
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .15))
+
+        &:hover,
+        &:focus-visible
+            color: var(--color-main-hover)
