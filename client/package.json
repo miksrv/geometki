@@ -49,7 +49,7 @@
         "remove": "^0.1.5",
         "schema-dts": "^2.0.0",
         "sharp": "^0.34.5",
-        "simple-react-ui-kit": "^1.8.6",
+        "simple-react-ui-kit": "^2.0.0",
         "yet-another-react-lightbox": "^3.32.2"
     },
     "devDependencies": {
