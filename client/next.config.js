@@ -38,6 +38,11 @@ const nextConfig = {
     trailingSlash: false,
 
     transpilePackages: ['@uiw/react-md-editor', 'leaflet', 'leaflet.heat'],
+
+    // Type-check only the app sources during build, tests are covered by Jest
+    typescript: {
+        tsconfigPath: 'tsconfig.build.json'
+    }
 }
 
 module.exports = nextConfig

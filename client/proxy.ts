@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server'
 
 import { AUTH_COOKIES } from '@/config/constants'
 
-export const middleware = (request: NextRequest) => {
+export const proxy = (request: NextRequest) => {
     const currentUser = request.cookies.get(AUTH_COOKIES.TOKEN)?.value
 
     if (!currentUser && request.nextUrl.pathname.startsWith('/places/create')) {

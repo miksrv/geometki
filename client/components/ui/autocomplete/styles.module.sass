@@ -8,9 +8,10 @@
         +truncate
         display: block
         color: var(--input-label-color)
-        padding-bottom: 4px
+        padding-bottom: var(--input-label-gap)
         padding-top: 2px
-        font-size: variables.$fontSizeHeadline
+        font-size: var(--input-label-font-size)
+        font-weight: var(--input-label-font-weight)
 
     .loader
         width: 18px !important
@@ -31,7 +32,7 @@
             box-sizing: border-box
             border: var(--input-border)
             color: var(--text-color-primary)
-            height: 34px
+            height: var(--size-control-medium)
             margin: 0
             padding: 0 10px 0 0
             display: flex
