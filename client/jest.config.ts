@@ -8,7 +8,7 @@ const config: Config.InitialOptions = {
         '!**/index.ts',
         '!**/types.ts',
         '!**/*.types.ts',
-        '!**/middleware.ts',
+        '!**/proxy.ts',
         '!**/update.ts',
         '!**/store.ts',
         '!**/env.ts',

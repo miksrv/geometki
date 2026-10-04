@@ -54,8 +54,8 @@ Uses **Next.js Pages Router** (not App Router) with **Redux Toolkit + RTK Query*
 - `api/types/` — TypeScript interfaces for all API response shapes
 - `components/` — Split into `common/` (layout, header, shared UI) and `pages/` (page-specific)
 - `functions/` — Pure utilities: `helpers.ts`, `coordinates.ts`, `validators.ts`; unit tests co-located as `*.test.ts`
-- `middleware.ts` — Protects `/places/create` and `/users/settings` routes; redirects unauthenticated users
-- `styles/` — Global SASS with dark/light theme variables
+- `proxy.ts` — Next.js proxy (formerly middleware); protects `/places/create` and `/users/settings` routes; redirects unauthenticated users
+- `styles/` — Global SASS; `theme.css` holds project token overrides on top of `simple-react-ui-kit/theme.css` (imported first in `pages/_app.tsx`)
 
 **i18n:** `next-i18next` with Russian (default, `/`) and English (`/en`) locales. Translation files are in `public/locales/`. Run `yarn locales:build` after adding new translation keys.
 
