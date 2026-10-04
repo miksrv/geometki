@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.8.4
+
+### Patch Changes
+
+- UI Kit: upgraded `simple-react-ui-kit` to 2.0.0 and imported its `theme.css` design tokens before the project overrides
+- Styles: `theme.css` trimmed to brand colours, icon and link colours and project-only tokens; kit defaults are no longer duplicated
+- Styles: form controls use the kit sizes (36px medium, 44px large) and radius (6px), filled form fields kept
+- Styles: fixed references to undefined tokens (`--border-color`, `--text-color`, `--color-text-secondary`, `--color-primary`)
+- Dependencies: Next.js 16.3.8, React 19.3.0; `middleware.ts` renamed to `proxy.ts`
+
 ## 1.8.3
 
 ### Patch Changes
