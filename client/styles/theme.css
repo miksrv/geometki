@@ -25,6 +25,14 @@
     --color-tier-none: var(--icon-color-secondary);
 }
 
+/* Component aliases: re-declared on [data-theme] like the kit does, so
+   they are not reset inside a themed subtree */
+:root,
+[data-theme] {
+    /* Containers share the corner radius of buttons and photos */
+    --container-radius: var(--border-radius);
+}
+
 /* ------------------------------------------------------------------ */
 /* 2. Light theme (default)                                            */
 /* ------------------------------------------------------------------ */
