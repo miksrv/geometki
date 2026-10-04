@@ -1,61 +1,22 @@
 /*
- * Design tokens.
+ * Project design tokens.
  *
- * Structure:
- *   1. Primitive scales shared by both themes (sizes, radii, motion, type).
- *   2. Light theme colours (default).
- *   3. Dark theme colour overrides only — never duplicate non-colour tokens here.
+ * `simple-react-ui-kit/theme.css` is imported first (see pages/_app.tsx) and
+ * defines every token the kit components use, including the dark theme.
+ * This file keeps only what differs from the kit defaults plus tokens the kit
+ * does not know about. Do not duplicate kit defaults here.
  *
- * Naming: new semantic tokens (--surface-*, --border*, --shadow-*, --radius-*)
- * are the source of truth; the older names consumed by simple-react-ui-kit and
- * existing components are kept as aliases that point at them.
+ *   1. Project primitives (theme-independent)
+ *   2. Light theme overrides and project-only colours
+ *   3. Dark theme overrides: colours only
  */
 
 /* ------------------------------------------------------------------ */
-/* 1. Shared, theme-independent                                        */
+/* 1. Project primitives                                               */
 /* ------------------------------------------------------------------ */
 :root {
     --letter-spacing: 0.00938em;
     --width-max: 1260px;
-
-    /* Radii: controls / cards / hero-style surfaces */
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
-    --radius-full: 999px;
-    --border-radius: var(--radius-md);
-
-    /* Motion */
-    --duration-fast: 150ms;
-    --duration-base: 220ms;
-    --duration-slow: 350ms;
-    --ease: cubic-bezier(0.2, 0, 0, 1);
-
-    /* Typography */
-    --font-size: 14px;
-    --font-size-small: 12px;
-    --font-family:
-        -apple-system, BlinkMacSystemFont, 'Segoe UI (Custom)', Roboto, 'Helvetica Neue', 'Open Sans (Custom)',
-        system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-
-    /* Element heights for `size` props */
-    --size-small: 24px;
-    --size-medium: 32px;
-    --size-large: 38px;
-    /* Form controls: Input, Select, Button, TextArea */
-    --size-control-small: 26px;
-    --size-control-medium: 32px;
-    --size-control-large: 36px;
-    /* Badge */
-    --size-badge-small: 20px;
-    --size-badge-medium: 24px;
-    --size-badge-large: 28px;
-    /* Table row heights */
-    --size-table-small: 32px;
-    --size-table-medium: 38px;
-    --size-table-large: 38px;
-
-    --button-font-weight: 500;
 
     /* Achievement tiers */
     --color-tier-bronze: #cd7f32;
@@ -68,37 +29,6 @@
 /* 2. Light theme (default)                                            */
 /* ------------------------------------------------------------------ */
 :root {
-    /* Ink: the RGB used to tint shadows so they read as the page's own
-       colour, not as a grey smudge. */
-    --ink-rgb: 23, 28, 36;
-
-    /* Neutral surfaces: page → card → nested/hover → pressed */
-    --body-background: #f1f2f4;
-    --surface-1: #ffffff;
-    --surface-2: #f3f4f6;
-    --surface-3: #e9ebee;
-
-    /* Borders: hairline for cards and separators, stronger for form controls */
-    --border: #e4e6ea;
-    --border-strong: #cfd3d9;
-
-    /* Text */
-    --text-color-primary: rgba(0, 0, 0, 0.9);
-    --text-color-secondary: #6f7a87;
-    --text-color-secondary-hover: #5b6570;
-    --color-contrast: #fff;
-
-    /* Icons */
-    --icon-color-primary: #99a2ad;
-    --icon-color-primary-hover: #7f8894;
-    --icon-color-secondary: #818c99;
-    --icon-color-secondary-hover: #6b7580;
-
-    /* Shadows (tinted with --ink-rgb) */
-    --shadow-sm: 0 1px 2px rgba(var(--ink-rgb), 0.05);
-    --shadow-md: 0 1px 2px rgba(var(--ink-rgb), 0.04), 0 8px 24px -12px rgba(var(--ink-rgb), 0.14);
-    --shadow-lg: 0 2px 4px rgba(var(--ink-rgb), 0.06), 0 16px 40px -12px rgba(var(--ink-rgb), 0.24);
-
     /* Brand */
     --color-main: #3770b1;
     --color-main-hover: #2f64a0;
@@ -109,112 +39,33 @@
     --link-color-hover: #2466b3;
     --link-color-active: #1f5a9e;
 
-    /* Status pairs: deep tone for text/fills, pale tint of the same hue for backgrounds */
-    --color-green: #2f7d43;
-    --color-green-hover: #2a7039;
-    --color-green-active: #256332;
-    --color-green-background: #e7f3ea;
+    /* Icons */
+    --icon-color-primary: #99a2ad;
+    --icon-color-primary-hover: #7f8894;
+    --icon-color-secondary: #818c99;
+    --icon-color-secondary-hover: #6b7580;
 
-    --color-orange: #b9560f;
-    --color-orange-hover: #a74d0d;
-    --color-orange-active: #94440b;
-    --color-orange-background: #fbeee1;
-
-    --color-red: #b42318;
-    --color-red-hover: #a11f15;
-    --color-red-active: #8e1b12;
-    --color-red-background: #fbe9e7;
-
-    /* Containers (aliases over the semantic tokens above) */
-    --container-background: var(--surface-1);
-    --container-background-color: var(--surface-1);
-    --container-border-separator: 1px solid var(--border);
-    --container-shadow: 0 0 0 1px var(--border);
-    --container-background-color-error: var(--color-red-background);
-    --container-color-error: var(--color-red);
-    --container-background-color-success: var(--color-green-background);
-    --container-color-success: var(--color-green);
-    --container-error-background-color: var(--color-red-background);
-    --container-error-color: var(--color-red);
-    --container-success-background-color: var(--color-green-background);
-    --container-success-color: var(--color-green);
-
-    --modal-background: var(--surface-1);
-    --overlay-background: rgba(var(--ink-rgb), 0.45);
-    --menu-background-hover: var(--surface-2);
-
-    /* Inputs and dropdowns */
+    /* Filled form fields: the project also uses this token as the grey
+       surface of markers, snackbars and hover rows */
     --input-background-color: var(--surface-2);
     --input-background-content: var(--surface-1);
-    --input-background-color-error: var(--color-red-background);
-    --input-label-color: #6d7885;
-    --input-border-color: var(--border-strong);
-    --input-border: 1px solid var(--input-border-color);
-    --input-border-focus-color: var(--color-main);
 
-    --dropdown-background-color: var(--surface-1);
-    --dropdown-background-color-hover: var(--surface-2);
-    --dropdown-badge-background-color: var(--surface-1);
-
-    /* Buttons */
-    --button-default-color: var(--color-main);
-    --button-default-background: transparent;
-    --button-default-background-hover: var(--surface-2);
-    --button-default-background-active: var(--surface-3);
-
-    --button-primary-color: #ffffff;
-    --button-primary-background: var(--color-main);
-    --button-primary-background-hover: var(--color-main-hover);
-    --button-primary-background-active: var(--color-main-active);
-
+    /* Secondary buttons tinted with the brand blue */
     --button-secondary-background: #eaf1fa;
     --button-secondary-background-hover: #dfe9f6;
     --button-secondary-background-active: #d3e1f2;
-    --button-secondary-color: var(--color-main);
-    --button-secondary-color-hover: var(--color-main-hover);
-    --button-secondary-color-active: var(--color-main-active);
 
-    /* Popout */
-    --popout-shadow: 0 0 0 1px var(--border), var(--shadow-lg);
-
-    /* Table */
-    --table-header-background: #f8f9fb;
-    --table-header-background-hover: var(--surface-2);
-    --table-border-color: var(--border);
-    --table-row-box-shadow: inset 0 -1px var(--border);
-
-    /* Skeleton */
-    --skeleton-background-animation: linear-gradient(90deg, transparent, rgba(var(--ink-rgb), 0.04), transparent);
+    /* Container aliases used by project components */
+    --container-background: var(--surface-1);
+    --container-border-separator: 1px solid var(--border);
+    --container-background-color-success: var(--color-green-background);
+    --container-color-success: var(--color-green);
 }
 
 /* ------------------------------------------------------------------ */
 /* 3. Dark theme: colour overrides only                                */
 /* ------------------------------------------------------------------ */
 :root[data-theme='dark'] {
-    --ink-rgb: 0, 0, 0;
-
-    --body-background: #161718;
-    --surface-1: #232426;
-    --surface-2: #2b2d30;
-    --surface-3: #34373b;
-
-    --border: #35383d;
-    --border-strong: #474b52;
-
-    --text-color-primary: #e1e3e6;
-    --text-color-secondary: #8b9098;
-    --text-color-secondary-hover: #a3a8b0;
-    --color-contrast: #000;
-
-    --icon-color-primary: #e1e3e6;
-    --icon-color-primary-hover: #f0f2f4;
-    --icon-color-secondary: #7f848c;
-    --icon-color-secondary-hover: #9499a1;
-
-    --shadow-sm: 0 1px 2px rgba(var(--ink-rgb), 0.3);
-    --shadow-md: 0 1px 2px rgba(var(--ink-rgb), 0.35), 0 8px 24px -12px rgba(var(--ink-rgb), 0.6);
-    --shadow-lg: 0 2px 4px rgba(var(--ink-rgb), 0.4), 0 16px 40px -12px rgba(var(--ink-rgb), 0.7);
-
     --color-main: #4f93e6;
     --color-main-hover: #66a2eb;
     --color-main-active: #3f85d9;
@@ -224,42 +75,8 @@
     --link-color-hover: #86b7f3;
     --link-color-active: #5a99ea;
 
-    --color-green: #5fbf74;
-    --color-green-hover: #74c987;
-    --color-green-active: #4fb166;
-    --color-green-background: #1f3326;
-
-    --color-orange: #e8a04a;
-    --color-orange-hover: #edad62;
-    --color-orange-active: #d9913a;
-    --color-orange-background: #3a2a17;
-
-    --color-red: #f07167;
-    --color-red-hover: #f38a82;
-    --color-red-active: #e95c51;
-    --color-red-background: #3a1f1d;
-
-    --overlay-background: rgba(0, 0, 0, 0.6);
-
-    --input-label-color: #969a9f;
-
-    --button-default-color: var(--text-color-primary);
-    --button-default-background-hover: rgba(255, 255, 255, 0.05);
-    --button-default-background-active: rgba(255, 255, 255, 0.09);
-
-    --button-primary-color: var(--body-background);
-    --button-primary-background: var(--text-color-primary);
-    --button-primary-background-hover: #eef0f2;
-    --button-primary-background-active: #d7d9dc;
-
-    --button-secondary-background: rgba(255, 255, 255, 0.08);
-    --button-secondary-background-hover: rgba(255, 255, 255, 0.11);
-    --button-secondary-background-active: rgba(255, 255, 255, 0.14);
-    --button-secondary-color: var(--text-color-primary);
-    --button-secondary-color-hover: var(--text-color-primary);
-    --button-secondary-color-active: var(--text-color-primary);
-
-    --table-header-background: #1f2022;
-
-    --skeleton-background-animation: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    --icon-color-primary: #e1e3e6;
+    --icon-color-primary-hover: #f0f2f4;
+    --icon-color-secondary: #7f848c;
+    --icon-color-secondary-hover: #9499a1;
 }
