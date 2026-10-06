@@ -122,3 +122,15 @@ const AUTH_TYPE_GOOGLE = 'google';
 const AUTH_TYPE_YANDEX = 'yandex';
 const AUTH_TYPE_VK = 'vk';
 const AUTH_TYPE_EMAIL = 'email';
+
+// Collections: silent SEO indexability thresholds (never shown in the UI)
+// and field length limits.
+const COLLECTION_INDEX_MIN_PLACES = 5;
+const COLLECTION_INDEX_MIN_DESCRIPTION = 500;
+const COLLECTION_TITLE_MAX_LENGTH = 120;
+const COLLECTION_META_DESCRIPTION_MAX_LENGTH = 200;
+const COLLECTION_NOTE_MAX_LENGTH = 500;
+const COLLECTION_DESCRIPTION_MAX_LENGTH = 20000;
+const COLLECTION_CREATE_DAILY_LIMIT = 10;
+const COLLECTION_ADD_PLACES_MAX = 100;
+const COLLECTION_ACTIVITY_MIN_PLACES = 3;
