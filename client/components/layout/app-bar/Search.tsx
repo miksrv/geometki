@@ -6,6 +6,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
 import { Autocomplete, AutocompleteOption } from '@/components/ui'
+import { buildPlaceUrl } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -100,7 +101,7 @@ export const Search: React.FC = () => {
         const suggestion = option.value
 
         if (suggestion.type === SuggestionType.PLACE) {
-            await router.push(`/places/${suggestion.id}`)
+            await router.push(buildPlaceUrl(suggestion.id, suggestion.slug))
             return
         }
 

@@ -11,7 +11,7 @@ import { CategoryBadge } from '@/components/shared/category-badge'
 import { UserAvatar } from '@/components/shared/user-avatar'
 import { IMG_HOST } from '@/config/env'
 import { addressToString } from '@/utils/address'
-import { addDecimalPoint, dateToUnixTime, numberFormatter, timeAgo } from '@/utils/helpers'
+import { addDecimalPoint, buildPlaceUrl, dateToUnixTime, numberFormatter, timeAgo } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -27,7 +27,7 @@ export const PlacesListItem: React.FC<PlacesListItemProps> = ({ t, place }) => {
         <article className={styles.placesListItem}>
             {/* Full-card photo link — sits behind all overlays */}
             <Link
-                href={`/places/${place.id}`}
+                href={buildPlaceUrl(place.id, place.slug)}
                 title={place.title}
                 className={styles.photoLink}
             >
@@ -66,7 +66,7 @@ export const PlacesListItem: React.FC<PlacesListItemProps> = ({ t, place }) => {
 
                 <h2 className={styles.title}>
                     <Link
-                        href={`/places/${place.id}`}
+                        href={buildPlaceUrl(place.id, place.slug)}
                         title={place.title}
                     >
                         {place.title}

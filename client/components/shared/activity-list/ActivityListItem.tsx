@@ -7,7 +7,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { ApiModel } from '@/api'
 import { PhotoLightbox, Rating, UserAvatar } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
-import { formatDate, removeMarkdown, timeAgo } from '@/utils/helpers'
+import { buildPlaceUrl, formatDate, removeMarkdown, timeAgo } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -25,6 +25,7 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
     const [photoIndex, setPhotoIndex] = useState<number>()
 
     const actionText = {
+        [ApiModel.ActivityTypes.Bookmark]: t('activity-bookmark', { defaultValue: 'добавил(-а) место в закладки' }),
         [ApiModel.ActivityTypes.Comment]: t('activity-comment', { defaultValue: 'оставил(-а) отзыв на место' }),
         [ApiModel.ActivityTypes.Cover]: t('activity-cover', { defaultValue: 'обновил(-а) обложку' }),
         [ApiModel.ActivityTypes.Edit]: t('activity-editing', { defaultValue: 'отредактировал(-а) место' }),
@@ -105,7 +106,7 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
         <div className={styles.bottomBar}>
             {!hidePlaceName && (
                 <Link
-                    href={`/places/${item.place?.id}`}
+                    href={buildPlaceUrl(item.place?.id ?? '', item.place?.slug)}
                     title={item.place?.title}
                     className={styles.pointLink}
                 >
@@ -166,7 +167,7 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
                             </>
                         ) : (
                             <Link
-                                href={`/places/${item.place?.id}`}
+                                href={buildPlaceUrl(item.place?.id ?? '', item.place?.slug)}
                                 className={styles.photoThumbBtn}
                                 title={item.place?.title}
                             >
@@ -238,7 +239,7 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
             {showCoverInGrid && coverPreview && (
                 <div className={styles.photosGrid}>
                     <Link
-                        href={`/places/${item.place?.id}`}
+                        href={buildPlaceUrl(item.place?.id ?? '', item.place?.slug)}
                         className={styles.photoThumbBtn}
                         title={item.place?.title}
                     >

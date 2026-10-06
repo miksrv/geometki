@@ -17,7 +17,7 @@ import { SITE_LINK } from '@/config/env'
 import { useConfirmLeave } from '@/hooks/useConfirmLeave'
 import { PlaceForm } from '@/sections/place'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
-import { equalsArrays } from '@/utils/helpers'
+import { equalsArrays, parsePlaceId } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 interface PlaceEditPageProps {
@@ -142,12 +142,19 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<PlaceEditPageProps>> => {
-            const id = context.params?.id
+            const rawParam = context.params?.id
             const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const translations = await serverSideTranslations(locale)
 
-            if (typeof id !== 'string') {
+            if (typeof rawParam !== 'string') {
+                return { notFound: true }
+            }
+
+            // Tolerate a slugged param (`{id}-{slug}`); the API is always called with the bare id.
+            const id = parsePlaceId(rawParam)
+
+            if (!id) {
                 return { notFound: true }
             }
 

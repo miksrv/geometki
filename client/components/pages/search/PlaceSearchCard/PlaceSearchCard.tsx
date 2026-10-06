@@ -9,7 +9,7 @@ import { ApiModel } from '@/api'
 import { CategoryBadge } from '@/components/shared/category-badge'
 import { UserAvatar } from '@/components/shared/user-avatar'
 import { IMG_HOST } from '@/config/env'
-import { formatCount } from '@/utils/helpers'
+import { buildPlaceUrl, formatCount } from '@/utils/helpers'
 
 import { haversineDistanceKm } from './utils'
 
@@ -32,7 +32,7 @@ export const PlaceSearchCard: React.FC<PlaceSearchCardProps> = ({ place, userLat
     return (
         <article className={styles.card}>
             <Link
-                href={`/places/${place.id}`}
+                href={buildPlaceUrl(place.id, place.slug)}
                 title={place.title}
                 className={styles.coverLink}
                 aria-label={place.title}
@@ -51,7 +51,7 @@ export const PlaceSearchCard: React.FC<PlaceSearchCardProps> = ({ place, userLat
             <div className={styles.content}>
                 <div className={styles.titleRow}>
                     <Link
-                        href={`/places/${place.id}`}
+                        href={buildPlaceUrl(place.id, place.slug)}
                         title={place.title}
                         className={styles.title}
                     >

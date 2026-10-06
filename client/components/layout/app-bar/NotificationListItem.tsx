@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
-import { formatDate } from '@/utils/helpers'
+import { buildPlaceUrl, formatDate } from '@/utils/helpers'
 import { getActivityTitle } from '@/utils/notifications'
 
 import { NotificationIcon } from '../snackbar/NotificationIcon'
@@ -40,7 +40,7 @@ export const NotificationListItem: React.FC<ApiModel.Notification> = (props) => 
         if (props.place) {
             return (
                 <Link
-                    href={`/places/${props.place.id}`}
+                    href={buildPlaceUrl(props.place.id, props.place.slug)}
                     title={props.place.title}
                 >
                     {props.place.title}

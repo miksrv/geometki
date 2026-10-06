@@ -16,6 +16,7 @@ import { ConfirmationDialog } from '@/components/shared/confirmation-dialog'
 import { useConfirmLeave } from '@/hooks/useConfirmLeave'
 import { PlaceForm } from '@/sections/place'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
+import { buildPlaceUrl } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 const CreatePlacePage: NextPage<object> = () => {
@@ -60,7 +61,7 @@ const CreatePlacePage: NextPage<object> = () => {
     useEffect(() => {
         if (data?.id && isSuccess) {
             allowLeaveNavigation()
-            void router.push(`/places/${data.id}`)
+            void router.push(buildPlaceUrl(data.id))
         } else if (isSuccess) {
             setClickedButton(false)
         }
