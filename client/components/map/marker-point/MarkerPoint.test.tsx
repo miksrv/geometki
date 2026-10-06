@@ -101,6 +101,7 @@ jest.mock('@/utils/categories', () => ({
 
 jest.mock('@/utils/helpers', () => ({
     addDecimalPoint: jest.fn((v: number) => String(v)),
+    buildPlaceUrl: jest.requireActual('@/utils/place').buildPlaceUrl,
     numberFormatter: jest.fn((v: number) => String(v))
 }))
 
