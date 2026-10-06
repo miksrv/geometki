@@ -293,10 +293,22 @@ class Search extends ResourceController
         $placeContent->search($q);
 
         $topPlaceIds = array_slice($placeContent->placeIds, 0, 2);
+
+        $slugsById = [];
+        if (!empty($topPlaceIds)) {
+            $placesModel = new PlacesModel();
+            $slugsById   = array_column(
+                $placesModel->select('id, slug')->whereIn('id', $topPlaceIds)->findAll(),
+                'slug',
+                'id'
+            );
+        }
+
         foreach ($topPlaceIds as $placeId) {
             $suggestions[] = [
                 'type'  => 'place',
                 'id'    => $placeId,
+                'slug'  => $slugsById[$placeId] ?? null,
                 'title' => $placeContent->title($placeId),
             ];
         }

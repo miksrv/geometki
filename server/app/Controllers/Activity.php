@@ -226,6 +226,7 @@ class Activity extends ResourceController
 
                     $currentGroup->place = (object) [
                         'id'         => $item->place_id,
+                        'slug'       => $item->place_slug ?? null,
                         'title'      => $placeContent->get($item->place_id, 'title', $item->created_at),
                         'content'    => $placeContent->get($item->place_id, 'content', $item->created_at),
                         'difference' => (int) $placeContent->get($item->place_id, 'delta', $item->created_at),

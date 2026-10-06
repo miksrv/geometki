@@ -86,13 +86,13 @@ $hr = '<hr style="border:none;border-top:1px solid #eaebed;margin:16px 0">';
             <tr>
                 <?php if (!empty($place['cover'])): ?>
                 <td style="width:120px;vertical-align:top;padding-right:12px">
-                    <a href="https://geometki.com/places/<?= esc($place['place_id']) ?>" style="text-decoration:none">
+                    <a href="https://geometki.com/places/<?= esc(placeSlugPath($place['place_id'], $place['slug'] ?? null)) ?>" style="text-decoration:none">
                         <img src="<?= esc($place['cover']) ?>" alt="" style="width:120px;height:45px;object-fit:cover;border-radius:6px;display:block">
                     </a>
                 </td>
                 <?php endif; ?>
                 <td style="vertical-align:top">
-                    <a href="https://geometki.com/places/<?= esc($place['place_id']) ?>" style="color:#0867ec;text-decoration:none;font-weight:bold;font-size:15px;display:block;margin-bottom:4px;white-space: nowrap;overflow: hidden;max-width: 416px;text-overflow: ellipsis;">
+                    <a href="https://geometki.com/places/<?= esc(placeSlugPath($place['place_id'], $place['slug'] ?? null)) ?>" style="color:#0867ec;text-decoration:none;font-weight:bold;font-size:15px;display:block;margin-bottom:4px;white-space: nowrap;overflow: hidden;max-width: 416px;text-overflow: ellipsis;">
                         <?= esc($place['title']) ?>
                     </a>
                     <span style="font-size:13px;color:#9a9ea6">

@@ -180,13 +180,15 @@ class DigestService
 
         $placesModel = new PlacesModel();
         $placesData  = $placesModel
-            ->select('id, photos')
+            ->select('id, slug, photos')
             ->whereIn('id', $allPlaceIds)
             ->findAll();
 
         $photosMap = [];
+        $slugMap   = [];
         foreach ($placesData as $place) {
             $photosMap[$place->id] = (int) ($place->photos ?? 0);
+            $slugMap[$place->id]   = $place->slug;
         }
 
         $result = [];
@@ -201,6 +203,7 @@ class DigestService
 
             $result[] = [
                 'place_id' => $placeId,
+                'slug'     => $slugMap[$placeId] ?? null,
                 'title'    => $placeContent->title($placeId) ?: "Place #{$placeId}",
                 'cover'    => $coverUrl,
                 'ratings'  => (int) ($a['ratings']  ?? 0),

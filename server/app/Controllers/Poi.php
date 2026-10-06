@@ -160,7 +160,7 @@ class Poi extends ResourceController
         $placesModel = new PlacesModel();
         $coordinates = $placesModel->makeDistanceSQL($sessionLib->lat, $sessionLib->lon);
         $placeData   = $placesModel
-            ->select('id, rating, views, photos, photos, comments, bookmarks' . $coordinates)
+            ->select('id, slug, rating, views, photos, photos, comments, bookmarks' . $coordinates)
             ->find($id);
 
         $placeData->title = $placeContent->title($id);

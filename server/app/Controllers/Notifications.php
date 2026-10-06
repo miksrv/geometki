@@ -154,7 +154,7 @@ class Notifications extends ResourceController
         // If we have collected IDs of places, we will get information about them from the database and download translations
         if ($placesIds) {
             $placesModel = new PlacesModel();
-            $placesData  = $placesModel->select('id, photos')->whereIn('id', $placesIds)->findAll();
+            $placesData  = $placesModel->select('id, slug, photos')->whereIn('id', $placesIds)->findAll();
             $placeContent->translate($placesIds);
         }
 
@@ -200,6 +200,7 @@ class Notifications extends ResourceController
             if ($placeData && $placeData->id) {
                 $tempData['place'] = [
                     'id'    => $placeData->id,
+                    'slug'  => $placeData->slug,
                     'title' => $placeContent->title($placeData->id),
                     'cover' => $placeData->photos && file_exists(UPLOAD_PHOTOS . $placeData->id . '/cover.jpg') ? [
                         'preview' => PATH_PHOTOS . $placeData->id . '/cover_preview.jpg',

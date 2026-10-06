@@ -86,7 +86,7 @@ class ActivityModel extends ApplicationBaseModel
         int $offset = 0
     ): array {
         $model = $this->select(
-            'activity.*, places.id as place_id, places.category, users.id as user_id, users.name as user_name,
+            'activity.*, places.id as place_id, places.slug as place_slug, places.category, users.id as user_id, users.name as user_name,
             users.avatar as user_avatar, photos.filename, photos.extension, photos.width, photos.height, rating.value, comments.content as comment_text'
         )
             ->join('places', 'activity.place_id = places.id', 'left')
@@ -108,7 +108,9 @@ class ActivityModel extends ApplicationBaseModel
         }
 
 //        return $model->whereIn('activity.type', ['photo', 'place', 'rating', 'edit', 'comment', 'cover'])
+        // Bookmarks are private: they exist only to notify the place author
         return $model
+            ->where('activity.type !=', 'bookmark')
             ->orderBy('activity.created_at', 'DESC')
             ->orderBy('activity.type', 'DESC')
             ->findAll(min(abs($limit), 100), abs($offset));
@@ -150,7 +152,7 @@ class ActivityModel extends ApplicationBaseModel
         int $limit = 15
     ): array {
         return $this->select(
-            'activity.*, places.id as place_id, places.category, users.id as user_id, users.name as user_name,
+            'activity.*, places.id as place_id, places.slug as place_slug, places.category, users.id as user_id, users.name as user_name,
             users.avatar as user_avatar, photos.filename, photos.extension, photos.width, photos.height,
             rating.value, comments.content as comment_text'
         )
@@ -163,6 +165,7 @@ class ActivityModel extends ApplicationBaseModel
             ->where('activity.created_at >=', $createdAt)
             ->where('activity.user_id', $userId)
             ->where('activity.place_id', $placeId)
+            ->where('activity.type !=', 'bookmark')
             ->orderBy('activity.created_at', 'ASC')
             ->findAll($limit);
     }
