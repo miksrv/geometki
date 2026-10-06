@@ -2,11 +2,14 @@
 
 namespace App\Controllers;
 
+use App\Libraries\ActivityLibrary;
 use App\Libraries\SessionLibrary;
+use App\Models\ActivityModel;
 use App\Models\PlacesModel;
 use App\Models\UsersBookmarksModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
+use ReflectionException;
 use Throwable;
 
 /**
@@ -63,6 +66,13 @@ class Bookmarks extends ResourceController
      * Creates the bookmark when it does not exist; removes it when it does.
      * Also increments/decrements the place's bookmark counter.
      *
+     * Notifies the place author (in-app + email, subject to their settings)
+     * when someone else bookmarks their place. Removing a bookmark deletes
+     * the matching activity record so a later re-add is treated as a fresh
+     * action and notifies again, mirroring Visited::set().
+     *
+     * @throws ReflectionException
+     *
      * @return ResponseInterface
      */
     public function set(): ResponseInterface
@@ -82,7 +92,7 @@ class Bookmarks extends ResourceController
             $bookmarksModel = new UsersBookmarksModel();
             $placesModel    = new PlacesModel();
             $bookmarksData  = $bookmarksModel->where($bookmarkData)->first();
-            $placesData     = $placesModel->select('id')->find($input->placeId);
+            $placesData     = $placesModel->select('id, user_id')->find($input->placeId);
 
             if (!$placesData) {
                 return $this->failNotFound(lang('Bookmarks.placeNotFound'));
@@ -92,6 +102,11 @@ class Bookmarks extends ResourceController
                 $bookmarksModel->delete($bookmarksData->id);
                 $placesModel->decrementBookmarks($input->placeId);
 
+                $activityModel = new ActivityModel();
+                $activityModel
+                    ->where(['user_id' => $this->session->user?->id, 'place_id' => $input->placeId, 'type' => 'bookmark'])
+                    ->delete();
+
                 return $this->respondDeleted();
             }
 
@@ -99,6 +114,10 @@ class Bookmarks extends ResourceController
 
             // Update the bookmarks count
             $placesModel->incrementBookmarks($input->placeId);
+
+            /* ACTIVITY */
+            $activity = new ActivityLibrary();
+            $activity->owner($placesData->user_id)->bookmark($input->placeId);
 
             return $this->respondCreated();
         } catch (Throwable $e) {

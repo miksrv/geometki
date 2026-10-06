@@ -2,7 +2,7 @@ import { ApiModel } from '@/api'
 
 export type PoiItemResponse = Pick<
     ApiModel.Place,
-    'id' | 'rating' | 'title' | 'views' | 'photos' | 'cover' | 'comments' | 'bookmarks' | 'distance'
+    'id' | 'slug' | 'rating' | 'title' | 'views' | 'photos' | 'cover' | 'comments' | 'bookmarks' | 'distance'
 >
 
 export interface ListRequest {

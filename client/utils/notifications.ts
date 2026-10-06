@@ -14,6 +14,10 @@ export const getActivityTitle = (type: ActivityType | undefined, t: TFunction): 
             return t('notification_edit', { defaultValue: 'Отредактирована геометка' })
         case 'cover':
             return t('notification_cover', { defaultValue: 'Изменена обложка' })
+        case 'bookmark':
+            return t('notification_bookmark', { defaultValue: 'Геометка добавлена в закладки' })
+        case 'visit':
+            return t('notification_visit', { defaultValue: 'Отмечено посещение геометки' })
         case 'level':
             return t('notification_level', { defaultValue: 'Новый уровень!' })
         case 'achievements':

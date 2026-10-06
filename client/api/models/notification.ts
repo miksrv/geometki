@@ -17,6 +17,6 @@ export type Notification = {
         nextLevel?: number
     }
     activity?: ActivityType
-    place?: Pick<Place, 'id' | 'title' | 'cover'>
+    place?: Pick<Place, 'id' | 'slug' | 'title' | 'cover'>
     created?: DateTime
 }

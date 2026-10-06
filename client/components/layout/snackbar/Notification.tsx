@@ -6,7 +6,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { LevelProgress } from '@/components/shared/level-progress/LevelProgress'
-import { formatDate } from '@/utils/helpers'
+import { buildPlaceUrl, formatDate } from '@/utils/helpers'
 import { getActivityTitle } from '@/utils/notifications'
 
 import { NotificationIcon } from './NotificationIcon'
@@ -77,7 +77,7 @@ export const Notification: React.FC<NotificationProps> = ({ showDate, onClose, o
                             <span>{props.meta?.title ?? ''}</span>
                         ) : props.place ? (
                             <Link
-                                href={`/places/${props.place.id}`}
+                                href={buildPlaceUrl(props.place.id, props.place.slug)}
                                 title={props.place.title}
                             >
                                 {props.place.title}

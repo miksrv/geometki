@@ -162,19 +162,26 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
 
             <div className={styles.section}>
                 <h3 className={styles.header}>{t('sending-notifications-by-email')}</h3>
-                {['emailPhoto', 'emailRating', 'emailComment', 'emailEdit', 'emailCover', 'emailDigest'].map(
-                    (setting) => (
-                        <Checkbox
-                            className={styles.settings}
-                            key={setting}
-                            id={setting}
-                            label={t(`checkbox_${setting}`)}
-                            disabled={loading}
-                            onChange={handleChangeCheckbox}
-                            checked={formData?.settings?.[setting as keyof ApiModel.UserSettings]}
-                        />
-                    )
-                )}
+                {[
+                    'emailPhoto',
+                    'emailRating',
+                    'emailComment',
+                    'emailEdit',
+                    'emailCover',
+                    'emailBookmark',
+                    'emailVisit',
+                    'emailDigest'
+                ].map((setting) => (
+                    <Checkbox
+                        className={styles.settings}
+                        key={setting}
+                        id={setting}
+                        label={t(`checkbox_${setting}`)}
+                        disabled={loading}
+                        onChange={handleChangeCheckbox}
+                        checked={formData?.settings?.[setting as keyof ApiModel.UserSettings]}
+                    />
+                ))}
             </div>
 
             {!loading && !!values?.authType && (
@@ -278,6 +285,8 @@ const mapFormValues = (values?: FormDataType): FormDataType => ({
     settings: {
         emailComment: values?.settings?.emailComment ?? true,
         emailCover: values?.settings?.emailCover ?? true,
+        emailBookmark: values?.settings?.emailBookmark ?? true,
+        emailVisit: values?.settings?.emailVisit ?? true,
         emailDigest: values?.settings?.emailDigest ?? true,
         emailEdit: values?.settings?.emailEdit ?? true,
         emailPhoto: values?.settings?.emailPhoto ?? true,

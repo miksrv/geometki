@@ -6,6 +6,7 @@ import { User } from './user'
 
 export type Place = {
     id: string
+    slug?: string | null
     created?: DateTime
     updated?: DateTime
     lat: number

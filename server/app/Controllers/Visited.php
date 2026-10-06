@@ -192,6 +192,10 @@ class Visited extends ResourceController
      * visited=false. When it does not exist a new record is created; if valid
      * coordinates are provided and the place is not verification_exempt, the
      * Haversine distance is compared against visit_radius_m to set verified.
+     * Notifies the place author (in-app + email, subject to their settings)
+     * when someone else marks their place as visited, whether verified via
+     * GPS or not. Removing the visit also deletes the matching activity
+     * record, so a later re-visit notifies again.
      *
      * @throws ReflectionException
      *
@@ -260,7 +264,7 @@ class Visited extends ResourceController
             ]));
 
             $activity = new ActivityLibrary();
-            $activity->visit($input->place);
+            $activity->owner($placesData->user_id)->visit($input->place);
 
             return $this->respondCreated(['visited' => true, 'verified' => $verified]);
         } catch (Throwable $e) {

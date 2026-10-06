@@ -7,6 +7,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
 import { IMG_HOST } from '@/config/env'
+import { buildPlaceUrl } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -77,7 +78,7 @@ export const MapHero: React.FC<MapHeroProps> = ({ stats, places }) => {
                         {pins.map((place) => (
                             <Link
                                 key={place.id}
-                                href={`/places/${place.id}`}
+                                href={buildPlaceUrl(place.id, place.slug)}
                                 className={styles.pin}
                                 title={place.title}
                             >

@@ -5,6 +5,7 @@ import { GetServerSidePropsResult, NextPage } from 'next'
 import { API } from '@/api'
 import { wrapper } from '@/app/store'
 import { SITE_LINK } from '@/config/env'
+import { buildPlaceUrl } from '@/utils/helpers'
 
 type SitemapDynamicPage = {
     link: string
@@ -16,7 +17,11 @@ const SiteMap: NextPage<object> = () => <></>
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<object>> => {
-            const { data } = await store.dispatch(API.endpoints.sitemapGetList.initiate())
+            const { data, error } = await store.dispatch(API.endpoints.sitemapGetList.initiate())
+
+            if (error) {
+                console.error('Sitemap: failed to load places/users', error)
+            }
 
             const staticPages = ['map', 'places', 'users', 'categories', 'tags']
 
@@ -24,7 +29,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             const placesPages: SitemapDynamicPage[] =
                 data?.places?.map((place) => ({
-                    link: `places/${place.id}`,
+                    link: buildPlaceUrl(place.id, place.slug).replace(/^\//, ''),
                     update: new Date(place.updated.date).toISOString()
                 })) || []
 

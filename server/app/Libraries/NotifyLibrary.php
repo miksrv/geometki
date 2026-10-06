@@ -5,10 +5,10 @@ use App\Models\UsersNotificationsModel;
 use ReflectionException;
 
 class NotifyLibrary {
-    protected array $types = ['photo', 'place', 'rating', 'comment', 'edit', 'cover', 'experience', 'level', 'achievements'];
+    protected array $types = ['photo', 'place', 'rating', 'comment', 'edit', 'cover', 'experience', 'level', 'achievements', 'bookmark', 'visit'];
 
     /**
-     * @param string $type One of: 'photo', 'place', 'rating', 'comment', 'edit', 'cover', 'experience', 'level', 'achievements'
+     * @param string $type One of: 'photo', 'place', 'rating', 'comment', 'edit', 'cover', 'experience', 'level', 'achievements', 'bookmark', 'visit'
      * @param string $userId
      * @param string|null $activity
      * @param array|object|null $value

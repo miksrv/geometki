@@ -348,6 +348,8 @@ class Places extends ResourceController
             return $this->failValidationErrors($this->validator->getErrors());
         }
 
+        helper('slug');
+
         try {
             $placeTitle   = isset($input->title) ? strip_tags(html_entity_decode($input->title)) : null;
             $placeContent = isset($input->content) ? strip_tags(html_entity_decode($input->content)) : null;
@@ -374,6 +376,7 @@ class Places extends ResourceController
             $place->lon         = $input->lon;
             $place->user_id     = $this->session->user?->id;
             $place->category    = $input->category;
+            $place->slug        = generatePlaceSlug($placeTitle);
             $place->address_en  = $geocoder->addressEn;
             $place->address_ru  = $geocoder->addressRu;
             $place->country_id  = $geocoder->countryId;
@@ -461,6 +464,8 @@ class Places extends ResourceController
             return $this->failValidationErrors($this->validator->getErrors());
         }
 
+        helper('slug');
+
         try {
             $placeTags    = new PlaceTags();
             $placeContent = new PlacesContent();
@@ -542,6 +547,12 @@ class Places extends ResourceController
                 $place->category = $input->category;
                 $hasChanges = true;
                 $shouldRecordActivity = true;
+            }
+
+            // The slug follows the Russian title; other locales only fill it in when it is missing
+            if (!empty($updatedTitle) && ($locale === 'ru' || empty($placeData->slug))) {
+                $place->slug = generatePlaceSlug($updatedTitle);
+                $hasChanges = true;
             }
 
             // update() auto-sets updated_at via useTimestamps; touch() handles the case

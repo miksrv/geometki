@@ -219,7 +219,7 @@ $routes->group('visited', static function ($routes) {
 });
 
 /** Sitemap Controller **/
-$routes->group('visited', static function ($routes) {
+$routes->group('sitemap', static function ($routes) {
     $routes->get('/', 'Sitemap::index');
 
     $routes->options('/', static function () {});

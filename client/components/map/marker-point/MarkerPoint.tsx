@@ -11,7 +11,7 @@ import { API, ApiModel } from '@/api'
 import { BookmarkButton, PlacePlate } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
 import { categoryImage } from '@/utils/categories'
-import { addDecimalPoint, numberFormatter } from '@/utils/helpers'
+import { addDecimalPoint, buildPlaceUrl, numberFormatter } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -59,7 +59,7 @@ export const MarkerPoint: React.FC<MarkerPointProps> = ({ place, keepInView }) =
                 >
                     <div className={styles.content}>
                         <Link
-                            href={`/places/${place.id}`}
+                            href={buildPlaceUrl(place.id!, poiData?.slug)}
                             title={poiData?.title}
                         >
                             {(isLoading || !poiData) && <Skeleton />}

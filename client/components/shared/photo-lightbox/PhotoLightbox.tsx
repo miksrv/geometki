@@ -8,7 +8,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { formatDate } from '@/utils/helpers'
+import { buildPlaceUrl, formatDate } from '@/utils/helpers'
 
 import { UserAvatar } from '../user-avatar'
 
@@ -65,7 +65,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                         // srcSet: [{ src: imageHost(photo.preview), width: 300, height: 200 }],
                         title: photo.placeId ? (
                             <Link
-                                href={`/places/${photo.placeId}`}
+                                href={buildPlaceUrl(photo.placeId)}
                                 title={photo.title}
                                 className={styles.title}
                             >

@@ -29,9 +29,18 @@ class Sitemap extends ResourceController
         $placesModel = new PlacesModel();
         $usersModel  = new UsersModel();
 
+        $places = $placesModel->select('id, slug, updated_at as updated')->findAll();
+        $users  = $usersModel->select('id, updated_at as updated')->findAll();
+
+        foreach ([...$places, ...$users] as $row) {
+            if (!empty($row->updated)) {
+                $row->updated = new \DateTime((string) $row->updated);
+            }
+        }
+
         return $this->respond([
-            'places' => $placesModel->select('id, updated_at as updated')->findAll(),
-            'users'  => $usersModel->select('id, updated_at as updated')->findAll(),
+            'places' => $places,
+            'users'  => $users,
         ]);
     }
 }

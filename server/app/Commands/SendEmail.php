@@ -29,6 +29,8 @@ class SendEmail extends BaseCommand
 
     public function run(array $params)
     {
+        helper('slug');
+
         $sendingEmailModel = new SendingMail();
         $sendingEmailData  = $sendingEmailModel
             ->select('activity.type, activity.place_id, sending_mail.*')
@@ -88,7 +90,7 @@ class SendEmail extends BaseCommand
         // If we have collected IDs of places, we will get information about them from the database and download translations
         if ($placesIds) {
             $placesModel = new PlacesModel();
-            $placesData  = $placesModel->select('id, photos')->whereIn('id', $placesIds)->findAll();
+            $placesData  = $placesModel->select('id, slug, photos')->whereIn('id', $placesIds)->findAll();
             $placeContent->translate($placesIds);
         }
 
@@ -121,6 +123,7 @@ class SendEmail extends BaseCommand
              */
             if ($findPlace !== false) {
                 $placeId    = $placesData[$findPlace]->id;
+                $placeSlug  = $placesData[$findPlace]->slug;
                 $placeTitle = $placeContent->title($placeId);
                 $placeCover = $placesData[$findPlace]->photos && file_exists(UPLOAD_PHOTOS . $placeId . '/cover.jpg')
                     ? PATH_PHOTOS . $placeId . '/cover.jpg'
@@ -138,7 +141,7 @@ class SendEmail extends BaseCommand
                     'message'     => $message,
                     'preheader'   => lang('SendingMail.placeModified' , [], $locale),
                     'actionText'  => lang('SendingMail.placeOpenText' , [], $locale),
-                    'actionLink'  => 'https://geometki.com/places/' . $placeId,
+                    'actionLink'  => 'https://geometki.com/places/' . placeSlugPath($placeId, $placeSlug),
                     'unsubscribe' => 'https://geometki.com/unsubscribe?mail=' . $item->id,
                 ]);
 

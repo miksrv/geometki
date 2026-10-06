@@ -26,7 +26,15 @@ import {
     PlaceInfoSidebar,
     PlaceVisited
 } from '@/sections/place'
-import { formatDateISO, formatDateUTC, removeMarkdown, truncateText } from '@/utils/helpers'
+import {
+    buildPlaceUrl,
+    encodeQueryData,
+    formatDateISO,
+    formatDateUTC,
+    parsePlaceId,
+    removeMarkdown,
+    truncateText
+} from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
@@ -75,7 +83,8 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
-    const pagePlaceUrl = `${canonicalUrl}places/${place?.id}`
+    const placePath = buildPlaceUrl(place?.id ?? '', place?.slug)
+    const pagePlaceUrl = `${canonicalUrl}${placePath.replace(/^\//, '')}`
 
     const handleSaveCover = () => {
         setTimeout(() => setCoverHash(Math.floor(Date.now() / 1000)), 400)
@@ -230,7 +239,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                         url: pagePlaceUrl
                     },
                     twitter: { cardType: 'summary_large_image' },
-                    additionalLinkTags: buildHreflangTags(`places/${place?.id}`)
+                    additionalLinkTags: buildHreflangTags(placePath.replace(/^\//, ''))
                 })}
             </Head>
 
@@ -351,12 +360,20 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<PlacePageProps>> => {
-            const id = typeof context.params?.id === 'string' ? context.params.id : undefined
+            const rawParam = typeof context.params?.id === 'string' ? context.params.id : undefined
             const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const translations = await serverSideTranslations(locale)
 
-            if (typeof id !== 'string') {
+            if (typeof rawParam !== 'string') {
+                return { notFound: true }
+            }
+
+            // The route param may be the bare id or the SEO-friendly `{id}-{slug}` form; the
+            // API itself is always called with the bare id.
+            const id = parsePlaceId(rawParam)
+
+            if (!id) {
                 return { notFound: true }
             }
 
@@ -367,6 +384,26 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             if (isError) {
                 return { notFound: true }
+            }
+
+            // Redirect to the canonical `{id}` / `{id}-{slug}` URL when the requested param
+            // doesn't match it (missing slug, stale slug, or a bare id for a place that now has
+            // one). An empty/missing slug always canonicalises to the bare id, so this cannot loop.
+            const canonicalParam = placeData?.slug ? `${id}-${placeData.slug}` : id
+
+            if (rawParam !== canonicalParam) {
+                const localePrefix = locale === 'en' ? '/en' : ''
+                const query = { ...context.query }
+                delete query.id
+                const queryString = encodeQueryData(query)
+
+                return {
+                    redirect: {
+                        destination: `${localePrefix}${buildPlaceUrl(id, placeData?.slug)}${queryString}`,
+                        // TODO: flip to a permanent (301) redirect once the slug rollout is confirmed stable
+                        permanent: false
+                    }
+                }
             }
 
             const [{ data: ratingData }, { data: photosData }, { data: _commentsData }, { data: nearPlaces }] =

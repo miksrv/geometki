@@ -60,6 +60,7 @@ jest.mock('@/config/env', () => ({
 }))
 
 jest.mock('@/utils/helpers', () => ({
+    buildPlaceUrl: jest.requireActual('@/utils/place').buildPlaceUrl,
     formatDate: jest.fn().mockReturnValue('01.01.2026'),
     removeMarkdown: jest.fn().mockImplementation((s: string) => s),
     timeAgo: jest.fn().mockReturnValue('2 часа назад')

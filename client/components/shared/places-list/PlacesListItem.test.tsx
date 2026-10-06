@@ -62,6 +62,7 @@ jest.mock('@/utils/address', () => ({
 
 jest.mock('@/utils/helpers', () => ({
     addDecimalPoint: jest.fn().mockReturnValue('4.5'),
+    buildPlaceUrl: jest.requireActual('@/utils/place').buildPlaceUrl,
     dateToUnixTime: jest.fn().mockReturnValue(1700000000),
     numberFormatter: jest.fn().mockReturnValue('1.2'),
     removeMarkdown: jest.fn((s: string) => s),

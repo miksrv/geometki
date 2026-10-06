@@ -157,12 +157,14 @@ class UsersModel extends ApplicationBaseModel
         }
 
         $data->settings = (object) [
-            'emailComment' => $data->settings->emailComment ?? true,
-            'emailEdit'    => $data->settings->emailEdit    ?? true,
-            'emailPhoto'   => $data->settings->emailPhoto   ?? true,
-            'emailRating'  => $data->settings->emailRating  ?? true,
-            'emailCover'   => $data->settings->emailCover   ?? true,
-            'emailDigest'  => $data->settings->emailDigest  ?? true,
+            'emailComment'  => $data->settings->emailComment  ?? true,
+            'emailEdit'     => $data->settings->emailEdit     ?? true,
+            'emailPhoto'    => $data->settings->emailPhoto    ?? true,
+            'emailRating'   => $data->settings->emailRating   ?? true,
+            'emailCover'    => $data->settings->emailCover    ?? true,
+            'emailBookmark' => $data->settings->emailBookmark ?? true,
+            'emailVisit'    => $data->settings->emailVisit    ?? true,
+            'emailDigest'   => $data->settings->emailDigest   ?? true,
         ];
 
         return $data;

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.9.0
+
+### Minor Changes
+
+- Place URLs: `/places/{id}-{slug}` with a Latin transliteration of the Russian title, stored in `places.slug`; old URLs redirect to the canonical one
+- Notifications: place authors get in-app and email notifications when their place is bookmarked or marked as visited, with new email settings
+- Activity feed: bookmarks are no longer shown publicly
+
+### Patch Changes
+
+- Sitemap: fixed the API route, places and users are listed again
+
 ## 1.8.4
 
 ### Patch Changes

@@ -170,6 +170,7 @@ class WeeklyDigestCommand extends BaseCommand
 
             // Render the digest body (inner content only, NOT wrapped in email.php)
             // SendEmail.php will wrap it in the email template when processing the queue.
+            helper('slug');
             $digestHtml = view('email_digest', [
                 'userName' => $user->name,
                 'sections' => $sections,
