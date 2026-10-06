@@ -37,4 +37,6 @@ export interface MarkerPinData {
     lon: number
     type: MarkerPinType
     label?: string
+    /** Optional position number rendered inside the pin (e.g. collection place order) */
+    number?: number
 }

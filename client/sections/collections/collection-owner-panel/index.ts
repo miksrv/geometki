@@ -1,0 +1,1 @@
+export { CollectionOwnerPanel } from './CollectionOwnerPanel'

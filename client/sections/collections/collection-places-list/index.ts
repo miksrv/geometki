@@ -1,0 +1,1 @@
+export { CollectionPlacesList } from './CollectionPlacesList'

@@ -1,0 +1,1 @@
+export { AddToCollectionModal } from './AddToCollectionModal'

@@ -32,9 +32,12 @@ export const MarkerPin: React.FC<MarkerPinProps> = ({ pin }) => {
                 className: '',
                 iconAnchor: [12, 12],
                 iconSize: [24, 24],
-                html: `<div style="width:24px;height:24px;background:${color};border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid #fff"><svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="${path}"/></svg></div>`
+                html:
+                    pin.number !== undefined
+                        ? `<div style="width:24px;height:24px;background:${color};border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid #fff"><span style="color:#fff;font-size:11px;font-weight:700;line-height:1">${pin.number}</span></div>`
+                        : `<div style="width:24px;height:24px;background:${color};border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid #fff"><svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="${path}"/></svg></div>`
             }),
-        [color, path]
+        [color, path, pin.number]
     )
 
     return (
