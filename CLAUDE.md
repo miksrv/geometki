@@ -105,6 +105,13 @@ Before opening a PR from a feature branch:
 1. Bump `"version"` in `client/package.json`. Almost always the **patch** number; the **minor** number only for noticeable new features or UX changes; the **major** number practically never.
 2. Add a new section for that version to the top of `CHANGELOG.md` (repo root), following the existing format: `## X.Y.Z`, then `### Patch Changes` or `### Minor Changes`, then a bulleted list. Keep entries very short, one line each, e.g. `- Layout: removed the site sidebar, widened the content area`.
 
+## Release
+
+Only after the PR with the version bump is merged into `main` (never before):
+
+1. Tag the merge commit on `main` with the new version: `v` + the version from `client/package.json`, e.g. `v1.9.0` (same style as the existing `v1.8.x` tags).
+2. Create a GitHub release for that tag, like the existing ones: title is the tag name (`v1.9.0`), body is that version's section from `CHANGELOG.md` without the `## X.Y.Z` heading (starts with `### Minor Changes` / `### Patch Changes`), marked as latest. One command does both: `gh release create v1.9.0 --target main --title v1.9.0 --notes-file <section.md> --latest`.
+
 ## MCP Tools
 
 Always use context7 MCP to get up-to-date documentation when:
