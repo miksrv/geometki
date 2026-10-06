@@ -152,6 +152,28 @@ describe('Notification', () => {
         })
     })
 
+    describe('bookmark and visit types', () => {
+        it('renders the bookmark notification title', () => {
+            const notification = {
+                ...baseNotification,
+                type: 'bookmark' as const,
+                place: { id: 'p1', title: 'Cool Spot', cover: undefined }
+            }
+            render(<Notification {...notification} />)
+            expect(screen.getByText('Геометка добавлена в закладки')).toBeInTheDocument()
+        })
+
+        it('renders the visit notification title', () => {
+            const notification = {
+                ...baseNotification,
+                type: 'visit' as const,
+                place: { id: 'p1', title: 'Cool Spot', cover: undefined }
+            }
+            render(<Notification {...notification} />)
+            expect(screen.getByText('Отмечено посещение геометки')).toBeInTheDocument()
+        })
+    })
+
     describe('experience type', () => {
         it('renders xp amount in the title for experience notification type', () => {
             const notification = {

@@ -35,6 +35,8 @@ export type ActivityType =
     | 'rating'
     | 'edit'
     | 'cover'
+    | 'visit'
+    | 'bookmark'
     | 'experience'
     | 'level'
     | 'achievements'

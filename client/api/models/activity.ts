@@ -18,6 +18,7 @@ export type Activity = {
 }
 
 export const ActivityTypes = {
+    Bookmark: 'bookmark',
     Comment: 'comment',
     Cover: 'cover',
     Edit: 'edit',
