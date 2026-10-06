@@ -35,14 +35,17 @@ final class CollectionsDescriptionSanitizationTest extends CIUnitTestCase
         $this->assertSame($markdown, $this->sanitize($markdown));
     }
 
-    public function testScriptTagIsStrippedEntirely(): void
+    public function testScriptTagIsStrippedLeavingInertText(): void
     {
+        // strip_tags() removes the tags but keeps their inner text; what is
+        // left is plain text, rendered by react-markdown without raw HTML.
         $input = 'Текст <script>alert(1)</script> продолжение';
 
         $sanitized = $this->sanitize($input);
 
-        $this->assertStringNotContainsString('<script>', $sanitized);
-        $this->assertStringNotContainsString('alert(1)', $sanitized);
+        $this->assertStringNotContainsString('<script', $sanitized);
+        $this->assertStringNotContainsString('</script>', $sanitized);
+        $this->assertSame('Текст alert(1) продолжение', $sanitized);
     }
 
     public function testAnchorTagWithJavascriptHrefIsStrippedNotJustAllowed(): void
