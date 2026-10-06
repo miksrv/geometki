@@ -7,6 +7,7 @@ use CodeIgniter\Entity\Entity;
 class PlaceEntity extends Entity {
     protected $attributes = [
         'id'          => null,
+        'slug'        => null,
         'lat'         => 0,
         'lon'         => 0,
         'rating'      => null,
@@ -31,6 +32,7 @@ class PlaceEntity extends Entity {
 
     protected $casts = [
         'id'          => 'string',
+        'slug'        => '?string',
         'lat'         => 'float',
         'lon'         => 'float',
         'rating'      => 'float',
