@@ -103,7 +103,7 @@ NEXT_PUBLIC_CYCLEMAP_TOKEN   # Optional
 Before opening a PR from a feature branch:
 
 1. Bump `"version"` in `client/package.json`. Almost always the **patch** number; the **minor** number only for noticeable new features or UX changes; the **major** number practically never.
-2. Add a new section for that version to the top of `CHANGELOG.md` (repo root), following the existing format: `## X.Y.Z`, then `### Patch Changes` or `### Minor Changes`, then a bulleted list. Keep entries very short, one line each, e.g. `- Layout: removed the site sidebar, widened the content area`.
+2. Add a new section for that version to the top of `CHANGELOG.md` (repo root), following the existing format: `## X.Y.Z`, then `### Patch Changes` or `### Minor Changes`, then a bulleted list. Keep entries very short, one line each, e.g. `- Layout: removed the site sidebar, widened the content area`. Write the changelog in English only, including UI labels (translate them, e.g. "Add to collection", not "В коллекцию").
 
 ## Release
 

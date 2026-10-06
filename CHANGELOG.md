@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.10.0
+
+### Minor Changes
+
+- Collections: new `/collections` section — users can curate themed lists of places with a description, map and numbered list
+- Collections: "Add to collection" button and modal on the place page, with inline creation; "In collections" block listing collections that include the place
+- Collections: owner edit mode with a description editor, "Search"/"Recommended" add-places tabs, reorder, notes and removal
+- Collections: "Collections" tab on user profiles, entry in the main and mobile navigation, and sitemap entries
+
 ## 1.9.0
 
 ### Minor Changes
