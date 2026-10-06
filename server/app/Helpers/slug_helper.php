@@ -89,6 +89,18 @@ function generatePlaceSlug(?string $title): ?string
 }
 
 /**
+ * Generates an SEO-friendly slug for a collection title, reusing the same
+ * transliteration/formatting rules as place slugs (see generatePlaceSlug()).
+ *
+ * @param string|null $title
+ * @return string|null
+ */
+function generateCollectionSlug(?string $title): ?string
+{
+    return generatePlaceSlug($title);
+}
+
+/**
  * Builds the path segment used for SEO-friendly place links: "{id}-{slug}"
  * when a slug is available, otherwise just "{id}".
  *
