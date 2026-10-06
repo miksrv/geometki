@@ -249,6 +249,14 @@ class Activity extends ResourceController
                 ];
             }
 
+            if (!empty($item->collection_id)) {
+                $currentGroup->collection = (object) [
+                    'id'    => $item->collection_id,
+                    'slug'  => $item->collection_slug ?? null,
+                    'title' => $item->collection_title ?? null,
+                ];
+            }
+
             if ($item->type === 'photo') {
                 $currentGroup->photos[] = $itemPhoto;
             }

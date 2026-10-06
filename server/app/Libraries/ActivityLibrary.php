@@ -16,7 +16,7 @@ const EMAIL_NOTIFY_FLOOD_HOURS = 5;
 class ActivityLibrary {
     private string $owner;
 
-    protected array $types = ['photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark'];
+    protected array $types = ['photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark', 'collection', 'collection_place'];
 
     public function owner(string $userId): static
     {
@@ -99,11 +99,45 @@ class ActivityLibrary {
     }
 
     /**
-     * @param string $type One of: 'photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark'
+     * Record that a collection was created. Fired at most once per
+     * collection — the caller (Collections controller) checks
+     * ActivityModel::hasCollectionActivity() first.
+     *
+     * @param string $collectionId
+     * @param string|null $asUserId Attribute the activity (and its XP/achievements)
+     *                              to this user instead of the current session —
+     *                              used when an admin or another member added the
+     *                              places, so credit still goes to the collection's
+     *                              actual owner.
+     * @throws ReflectionException
+     */
+    public function collection(string $collectionId, ?string $asUserId = null): void
+    {
+        $this->_add('collection', null, null, null, null, $collectionId, $asUserId);
+    }
+
+    /**
+     * Record that a place was added to someone else's collection, and
+     * (via ->owner()) notify the place's owner.
+     *
+     * @param string $collectionId
+     * @param string $placeId
+     * @throws ReflectionException
+     */
+    public function collectionPlace(string $collectionId, string $placeId): void
+    {
+        $this->_add('collection_place', null, $placeId, null, null, $collectionId);
+    }
+
+    /**
+     * @param string $type One of: 'photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark', 'collection', 'collection_place'
      * @param string|null $photoId
      * @param string|null $placeId
      * @param string|null $ratingId
      * @param string|null $commentId
+     * @param string|null $collectionId
+     * @param string|null $asUserId Attribute the activity (and its XP/achievements)
+     *                              to this user instead of the current session's user.
      * @throws ReflectionException
      * @throws Exception
      */
@@ -113,6 +147,8 @@ class ActivityLibrary {
         string|null $placeId  = null,
         string|null $ratingId = null,
         string|null $commentId = null,
+        string|null $collectionId = null,
+        string|null $asUserId = null,
     ): void {
         if (!in_array($type, $this->types)) {
             return ;
@@ -121,6 +157,12 @@ class ActivityLibrary {
         $timeNow = new Time('now');
         $model   = new ActivityModel();
         $session = new SessionLibrary();
+
+        // Normally the activity is attributed to whoever is acting in the
+        // current session. When $asUserId is given, attribute it (and the
+        // XP/achievements below) to that user instead.
+        $attributedUserId = $asUserId ?? ($session->user?->id ?? null);
+        $isAttributedAuth = $asUserId !== null || $session->isAuth;
 
         /**
          * If no more than that many minutes have passed since the user’s previous activity with exactly
@@ -150,12 +192,13 @@ class ActivityLibrary {
         $activity = new \App\Entities\ActivityEntity();
 
         $activity->type       = $type;
-        $activity->session_id = !$session->isAuth ? $session->id : null;
-        $activity->user_id    = $session->user?->id ?? null;
+        $activity->session_id = !$isAttributedAuth ? $session->id : null;
+        $activity->user_id    = $attributedUserId;
         $activity->photo_id   = $photoId;
         $activity->place_id   = $placeId;
         $activity->rating_id  = $ratingId;
         $activity->comment_id = $commentId;
+        $activity->collection_id = $collectionId;
 
         $model->insert($activity);
         $session->update();
@@ -163,16 +206,16 @@ class ActivityLibrary {
         $activityId = $model->getLastGeneratedId();
 
         // If user authorized - add user experience
-        if ($session->isAuth && $session->user?->id) {
+        if ($isAttributedAuth && $attributedUserId) {
             $levels = new LevelsLibrary();
-            $levels->push($type, $session->user?->id, $activityId);
+            $levels->push($type, $attributedUserId, $activityId);
 
             $achievements = new AchievementsLibrary();
-            $achievements->check($session->user->id, $type);
+            $achievements->check($attributedUserId, $type);
         }
 
         // Send notification to place owner
-        if (isset($this->owner) && $this->owner !== $session->user?->id) {
+        if (isset($this->owner) && $this->owner !== $attributedUserId) {
             $notify = new NotifyLibrary();
             $notify->push($type, $this->owner, $activityId);
 

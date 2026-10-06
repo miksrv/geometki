@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Models\CollectionsModel;
 use App\Models\PlacesModel;
 use App\Models\UsersModel;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -26,21 +27,27 @@ class Sitemap extends ResourceController
      */
     public function index(): ResponseInterface
     {
-        $placesModel = new PlacesModel();
-        $usersModel  = new UsersModel();
+        $placesModel      = new PlacesModel();
+        $usersModel       = new UsersModel();
+        $collectionsModel = new CollectionsModel();
 
-        $places = $placesModel->select('id, slug, updated_at as updated')->findAll();
-        $users  = $usersModel->select('id, updated_at as updated')->findAll();
+        $places      = $placesModel->select('id, slug, updated_at as updated')->findAll();
+        $users       = $usersModel->select('id, updated_at as updated')->findAll();
+        $collections = $collectionsModel
+            ->select('id, slug, updated_at as updated')
+            ->where(['hidden' => 0, 'indexable' => 1])
+            ->findAll();
 
-        foreach ([...$places, ...$users] as $row) {
+        foreach ([...$places, ...$users, ...$collections] as $row) {
             if (!empty($row->updated)) {
                 $row->updated = new \DateTime((string) $row->updated);
             }
         }
 
         return $this->respond([
-            'places' => $places,
-            'users'  => $users,
+            'places'      => $places,
+            'users'       => $users,
+            'collections' => $collections,
         ]);
     }
 }

@@ -31,6 +31,7 @@ class ActivityModel extends ApplicationBaseModel
         'place_id',
         'comment_id',
         'rating_id',
+        'collection_id',
     ];
 
     protected $useTimestamps = true;
@@ -87,13 +88,15 @@ class ActivityModel extends ApplicationBaseModel
     ): array {
         $model = $this->select(
             'activity.*, places.id as place_id, places.slug as place_slug, places.category, users.id as user_id, users.name as user_name,
-            users.avatar as user_avatar, photos.filename, photos.extension, photos.width, photos.height, rating.value, comments.content as comment_text'
+            users.avatar as user_avatar, photos.filename, photos.extension, photos.width, photos.height, rating.value, comments.content as comment_text,
+            collections.slug as collection_slug, collections.title as collection_title'
         )
             ->join('places', 'activity.place_id = places.id', 'left')
             ->join('photos', 'activity.photo_id = photos.id', 'left')
             ->join('users', 'activity.user_id = users.id', 'left')
             ->join('rating', 'activity.rating_id = rating.id', 'left')
-            ->join('comments', 'activity.comment_id = comments.id', 'left');
+            ->join('comments', 'activity.comment_id = comments.id', 'left')
+            ->join('collections', 'activity.collection_id = collections.id', 'left');
 
         if ($lastDate) {
             $model->where('activity.created_at < ', $lastDate);
@@ -114,6 +117,21 @@ class ActivityModel extends ApplicationBaseModel
             ->orderBy('activity.created_at', 'DESC')
             ->orderBy('activity.type', 'DESC')
             ->findAll(min(abs($limit), 100), abs($offset));
+    }
+
+    /**
+     * Whether a 'collection' (created) activity has already been recorded
+     * for the given collection. Used to fire that activity only once, when
+     * the collection first reaches the minimum place count.
+     *
+     * @param string $collectionId
+     * @return bool
+     */
+    public function hasCollectionActivity(string $collectionId): bool
+    {
+        return (bool) $this
+            ->where(['type' => 'collection', 'collection_id' => $collectionId])
+            ->countAllResults();
     }
 
     /**
@@ -154,13 +172,15 @@ class ActivityModel extends ApplicationBaseModel
         return $this->select(
             'activity.*, places.id as place_id, places.slug as place_slug, places.category, users.id as user_id, users.name as user_name,
             users.avatar as user_avatar, photos.filename, photos.extension, photos.width, photos.height,
-            rating.value, comments.content as comment_text'
+            rating.value, comments.content as comment_text,
+            collections.slug as collection_slug, collections.title as collection_title'
         )
             ->join('places', 'activity.place_id = places.id', 'left')
             ->join('photos', 'activity.photo_id = photos.id', 'left')
             ->join('users', 'activity.user_id = users.id', 'left')
             ->join('rating', 'activity.rating_id = rating.id', 'left')
             ->join('comments', 'activity.comment_id = comments.id', 'left')
+            ->join('collections', 'activity.collection_id = collections.id', 'left')
             ->whereNotIn('activity.id', $activityIds)
             ->where('activity.created_at >=', $createdAt)
             ->where('activity.user_id', $userId)
