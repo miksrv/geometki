@@ -63,12 +63,14 @@ class Mail extends ResourceController
             }
 
             $settings = $userData->settings ?? (object) [
-                'emailComment' => true,
-                'emailEdit'    => true,
-                'emailPhoto'   => true,
-                'emailRating'  => true,
-                'emailCover'   => true,
-                'emailDigest'  => true,
+                'emailComment'  => true,
+                'emailEdit'     => true,
+                'emailPhoto'    => true,
+                'emailRating'   => true,
+                'emailCover'    => true,
+                'emailBookmark' => true,
+                'emailVisit'    => true,
+                'emailDigest'   => true,
             ];
 
             $settings->emailDigest = false;
@@ -100,11 +102,13 @@ class Mail extends ResourceController
 
         // If settings is null, create default settings object
         $settings = $userData->settings ?? (object) [
-            'emailComment' => true,
-            'emailEdit'    => true,
-            'emailPhoto'   => true,
-            'emailRating'  => true,
-            'emailCover'   => true,
+            'emailComment'  => true,
+            'emailEdit'     => true,
+            'emailPhoto'    => true,
+            'emailRating'   => true,
+            'emailCover'    => true,
+            'emailBookmark' => true,
+            'emailVisit'    => true,
         ];
 
         if ($configItem) {
@@ -126,11 +130,13 @@ class Mail extends ResourceController
     protected function mapActivityType(string $activityType): string
     {
         return match ($activityType) {
-            'comment' => 'emailComment',
-            'edit'    => 'emailEdit',
-            'photo'   => 'emailPhoto',
-            'rating'  => 'emailRating',
-            'cover'   => 'emailCover',
+            'comment'  => 'emailComment',
+            'edit'     => 'emailEdit',
+            'photo'    => 'emailPhoto',
+            'rating'   => 'emailRating',
+            'cover'    => 'emailCover',
+            'bookmark' => 'emailBookmark',
+            'visit'    => 'emailVisit',
 
             default => '',
         };

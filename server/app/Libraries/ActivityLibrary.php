@@ -16,7 +16,7 @@ const EMAIL_NOTIFY_FLOOD_HOURS = 5;
 class ActivityLibrary {
     private string $owner;
 
-    protected array $types = ['photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit'];
+    protected array $types = ['photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark'];
 
     public function owner(string $userId): static
     {
@@ -90,7 +90,16 @@ class ActivityLibrary {
     }
 
     /**
-     * @param string $type One of: 'photo', 'place', 'rating', 'edit', 'cover', 'comment'
+     * @param $placeId
+     * @throws ReflectionException
+     */
+    public function bookmark($placeId): void
+    {
+        $this->_add('bookmark', null, $placeId);
+    }
+
+    /**
+     * @param string $type One of: 'photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark'
      * @param string|null $photoId
      * @param string|null $placeId
      * @param string|null $ratingId
@@ -180,6 +189,8 @@ class ActivityLibrary {
                 || ($settings->emailEdit && $type === 'edit')
                 || ($settings->emailRating && $type === 'rating')
                 || ($settings->emailCover && $type === 'cover')
+                || ($settings->emailBookmark && $type === 'bookmark')
+                || ($settings->emailVisit && $type === 'visit')
             ) {
                 /**
                  * When we send email as notification of any activity on the site, we
