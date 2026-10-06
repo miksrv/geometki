@@ -37,9 +37,11 @@ export const BottomNav: React.FC = () => {
     const isAuth = useAppSelector((state) => state.auth.isAuth)
     const userId = useAppSelector((state) => state.auth.user?.id)
 
+    // Kept strictly symmetric: 2 items, the primary "add place" action in the
+    // center, 2 items — so the center button is visually centered on all widths.
     const items: BottomNavItem[] = [
-        { href: '/activity', icon: 'Feed', label: t('nav-activity', { defaultValue: 'Лента' }) },
         { href: '/map', icon: 'Map', label: t('nav-map', { defaultValue: 'Карта' }) },
+        { href: '/places', icon: 'Point', label: t('nav-places', { defaultValue: 'Места' }) },
         {
             auth: true,
             href: '/places/create',
@@ -47,7 +49,7 @@ export const BottomNav: React.FC = () => {
             label: t('nav-add', { defaultValue: 'Добавить' }),
             primary: true
         },
-        { href: '/places', icon: 'Point', label: t('nav-places', { defaultValue: 'Места' }) },
+        { href: '/collections', icon: 'Layers', label: t('nav-collections', { defaultValue: 'Коллекции' }) },
         {
             auth: true,
             href: userId ? `/users/${userId}` : '/users',

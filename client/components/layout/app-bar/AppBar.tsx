@@ -47,6 +47,7 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
         { href: '/activity', label: t('nav-activity', { defaultValue: 'Лента' }) },
         { href: '/map', label: t('nav-map', { defaultValue: 'Карта' }) },
         { href: '/places', label: t('nav-places', { defaultValue: 'Места' }) },
+        { href: '/collections', label: t('nav-collections', { defaultValue: 'Коллекции' }) },
         { href: '/users', label: t('nav-users', { defaultValue: 'Пользователи' }) }
     ]
 

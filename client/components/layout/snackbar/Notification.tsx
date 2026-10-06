@@ -6,7 +6,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { LevelProgress } from '@/components/shared/level-progress/LevelProgress'
-import { buildPlaceUrl, formatDate } from '@/utils/helpers'
+import { buildCollectionUrl, buildPlaceUrl, formatDate } from '@/utils/helpers'
 import { getActivityTitle } from '@/utils/notifications'
 
 import { NotificationIcon } from './NotificationIcon'
@@ -75,6 +75,13 @@ export const Notification: React.FC<NotificationProps> = ({ showDate, onClose, o
                             `${props.meta?.title} (${props.meta?.level})`
                         ) : props.type === 'achievements' ? (
                             <span>{props.meta?.title ?? ''}</span>
+                        ) : props.collection ? (
+                            <Link
+                                href={buildCollectionUrl(props.collection.id, props.collection.slug)}
+                                title={props.collection.title}
+                            >
+                                {props.collection.title}
+                            </Link>
                         ) : props.place ? (
                             <Link
                                 href={buildPlaceUrl(props.place.id, props.place.slug)}

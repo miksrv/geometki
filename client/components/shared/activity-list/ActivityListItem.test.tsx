@@ -60,6 +60,7 @@ jest.mock('@/config/env', () => ({
 }))
 
 jest.mock('@/utils/helpers', () => ({
+    buildCollectionUrl: jest.requireActual('@/utils/collection').buildCollectionUrl,
     buildPlaceUrl: jest.requireActual('@/utils/place').buildPlaceUrl,
     formatDate: jest.fn().mockReturnValue('01.01.2026'),
     removeMarkdown: jest.fn().mockImplementation((s: string) => s),
@@ -147,6 +148,45 @@ describe('ActivityListItem', () => {
                 />
             )
             expect(screen.getByText('оставил(-а) отзыв на место')).toBeInTheDocument()
+        })
+    })
+
+    describe('collection activity', () => {
+        const collectionActivity: ApiModel.Activity = {
+            type: 'collection',
+            collection: { id: 'c1', slug: 'waterfalls', title: 'Waterfalls' },
+            author: { id: 'u1', name: 'Alice' }
+        }
+
+        it('renders action text for collection type', () => {
+            render(<ActivityListItem item={collectionActivity} />)
+            expect(screen.getByText('создал(-а) новую коллекцию')).toBeInTheDocument()
+        })
+
+        it('renders a link to the collection instead of an empty place link', () => {
+            render(<ActivityListItem item={collectionActivity} />)
+            const link = screen.getByTitle('Waterfalls')
+            expect(link).toHaveAttribute('href', '/collections/c1-waterfalls')
+        })
+    })
+
+    describe('collection_place activity', () => {
+        const collectionPlaceActivity: ApiModel.Activity = {
+            type: 'collection_place',
+            place: { id: 'p1', title: 'Awesome Cave', lat: 55.0, lon: 37.0 },
+            collection: { id: 'c1', slug: 'waterfalls', title: 'Waterfalls' },
+            author: { id: 'u1', name: 'Alice' }
+        }
+
+        it('renders action text for collection_place type', () => {
+            render(<ActivityListItem item={collectionPlaceActivity} />)
+            expect(screen.getByText('добавил(-а) место в коллекцию')).toBeInTheDocument()
+        })
+
+        it('renders both the place link and the collection link', () => {
+            render(<ActivityListItem item={collectionPlaceActivity} />)
+            expect(screen.getByTitle('Awesome Cave')).toHaveAttribute('href', '/places/p1')
+            expect(screen.getByTitle('Waterfalls')).toHaveAttribute('href', '/collections/c1-waterfalls')
         })
     })
 

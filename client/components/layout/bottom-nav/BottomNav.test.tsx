@@ -80,10 +80,25 @@ describe('BottomNav', () => {
 
     it('renders section links', () => {
         renderWithStore(<BottomNav />)
-        expect(screen.getByRole('link', { name: 'Лента' })).toHaveAttribute('href', '/activity')
         expect(screen.getByRole('link', { name: 'Карта' })).toHaveAttribute('href', '/map')
         expect(screen.getByRole('link', { name: 'Места' })).toHaveAttribute('href', '/places')
+        expect(screen.getByRole('link', { name: 'Коллекции' })).toHaveAttribute('href', '/collections')
         expect(screen.getByRole('link', { name: 'Добавить' })).toHaveAttribute('href', '/places/create')
+    })
+
+    it('does not render the activity feed link (moved out of the bottom nav)', () => {
+        renderWithStore(<BottomNav />)
+        expect(screen.queryByRole('link', { name: 'Лента' })).not.toBeInTheDocument()
+    })
+
+    it('keeps the primary add-place action exactly in the center, two items on each side', () => {
+        renderWithStore(<BottomNav />, { store: authenticatedStore() })
+        const nav = screen.getByRole('navigation', { name: 'Основная навигация' })
+        const links = Array.from(nav.querySelectorAll('a'))
+        expect(links).toHaveLength(5)
+        expect(links[2]).toHaveAttribute('href', '/places/create')
+        expect(links.slice(0, 2).map((link) => link.getAttribute('href'))).toEqual(['/map', '/places'])
+        expect(links.slice(3).map((link) => link.getAttribute('href'))).toEqual(['/collections', '/users/u1'])
     })
 
     it('marks the current section with aria-current', () => {

@@ -17,6 +17,7 @@ import { ConfirmationDialog } from '@/components/shared/confirmation-dialog'
 import { Carousel } from '@/components/ui'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { useConfirmLeave } from '@/hooks/useConfirmLeave'
+import { PlaceCollections } from '@/sections/collections'
 import {
     PlaceActionBar,
     PlaceActivity,
@@ -305,6 +306,8 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                     <PlaceVisited place={place} />
                 </aside>
             </div>
+
+            <PlaceCollections placeId={place?.id} />
 
             {!!nearPlaces?.length && (
                 <div className={styles.nearPlaces}>

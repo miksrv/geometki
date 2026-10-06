@@ -1,13 +1,15 @@
-import React, { useEffect } from 'react'
-import { Container, Spinner } from 'simple-react-ui-kit'
+import React, { useEffect, useState } from 'react'
+import { Button, Container, Spinner } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
+import { openAuthDialog } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import { Rating, WasHereButton } from '@/components/shared'
+import { AddToCollectionModal } from '@/sections/collections'
 import { getErrorMessage } from '@/utils/api'
 import { addDecimalPoint } from '@/utils/helpers'
 
@@ -27,6 +29,16 @@ export const PlaceActionBar: React.FC<PlaceActionBarProps> = ({ placeId, placeUr
     const { t } = useTranslation()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
+
+    const [collectionModalOpen, setCollectionModalOpen] = useState(false)
+
+    const handleAddToCollectionClick = () => {
+        if (!isAuth) {
+            dispatch(openAuthDialog())
+        } else {
+            setCollectionModalOpen(true)
+        }
+    }
 
     const { data: ratingData, isLoading } = API.useRatingGetListQuery(placeId ?? '', {
         skip: !placeId
@@ -102,7 +114,20 @@ export const PlaceActionBar: React.FC<PlaceActionBarProps> = ({ placeId, placeUr
                 </div>
             )}
 
+            <Button
+                mode={'secondary'}
+                icon={'PlusCircle'}
+                label={t('collections_add-to-collection-button', { defaultValue: 'В коллекцию' })}
+                onClick={handleAddToCollectionClick}
+            />
+
             {placeUrl && <ShareButtons placeUrl={placeUrl} />}
+
+            <AddToCollectionModal
+                placeId={placeId}
+                open={collectionModalOpen}
+                onClose={() => setCollectionModalOpen(false)}
+            />
         </Container>
     )
 }

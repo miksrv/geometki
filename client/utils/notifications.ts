@@ -18,6 +18,10 @@ export const getActivityTitle = (type: ActivityType | undefined, t: TFunction): 
             return t('notification_bookmark', { defaultValue: 'Геометка добавлена в закладки' })
         case 'visit':
             return t('notification_visit', { defaultValue: 'Отмечено посещение геометки' })
+        case 'collection':
+            return t('notification_collection', { defaultValue: 'Создана новая коллекция' })
+        case 'collection_place':
+            return t('notification_collection_place', { defaultValue: 'Ваше место добавлено в коллекцию' })
         case 'level':
             return t('notification_level', { defaultValue: 'Новый уровень!' })
         case 'achievements':

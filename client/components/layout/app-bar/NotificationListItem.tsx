@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
-import { buildPlaceUrl, formatDate } from '@/utils/helpers'
+import { buildCollectionUrl, buildPlaceUrl, formatDate } from '@/utils/helpers'
 import { getActivityTitle } from '@/utils/notifications'
 
 import { NotificationIcon } from '../snackbar/NotificationIcon'
@@ -36,6 +36,16 @@ export const NotificationListItem: React.FC<ApiModel.Notification> = (props) => 
         }
         if (props.type === 'achievements') {
             return props.meta?.title ?? ''
+        }
+        if (props.collection) {
+            return (
+                <Link
+                    href={buildCollectionUrl(props.collection.id, props.collection.slug)}
+                    title={props.collection.title}
+                >
+                    {props.collection.title}
+                </Link>
+            )
         }
         if (props.place) {
             return (
