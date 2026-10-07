@@ -401,8 +401,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return {
                     redirect: {
                         destination: `${localePrefix}${buildPlaceUrl(id, placeData?.slug)}${queryString}`,
-                        // TODO: flip to a permanent (301) redirect once the slug rollout is confirmed stable
-                        permanent: false
+                        // Permanent (301) redirect: the canonical `{id}-{slug}` URL never changes for a
+                        // given place, so search engines (Yandex in particular) should consolidate
+                        // ranking signals onto it instead of re-crawling the old URL as a separate page.
+                        statusCode: 301
                     }
                 }
             }

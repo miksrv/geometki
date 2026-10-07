@@ -388,7 +388,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return {
                     redirect: {
                         destination: `${localePrefix}${buildCollectionUrl(id, data?.slug)}${encodeQueryData(query)}`,
-                        permanent: false
+                        // Permanent (301) redirect: the canonical `{id}-{slug}` URL never changes for a
+                        // given collection, so search engines (Yandex in particular) should consolidate
+                        // ranking signals onto it instead of re-crawling the old URL as a separate page.
+                        statusCode: 301
                     }
                 }
             }
