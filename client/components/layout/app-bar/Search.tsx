@@ -31,6 +31,8 @@ export const Search: React.FC = () => {
     const [inputValue, setInputValue] = useState<string>(urlQuery)
     const [overlayOpen, setOverlayOpen] = useState<boolean>(false)
     const overlayRef = useRef<HTMLDivElement>(null)
+    // Element that opened the overlay; Button (simple-react-ui-kit) doesn't accept a ref
+    const triggerButtonRef = useRef<HTMLElement | null>(null)
 
     useEffect(() => {
         setInputValue(urlQuery)
@@ -72,13 +74,15 @@ export const Search: React.FC = () => {
         [suggestData?.suggestions]
     )
 
-    const handleOpenOverlay = () => {
+    const handleOpenOverlay = (event: React.MouseEvent<HTMLButtonElement>) => {
+        triggerButtonRef.current = event.currentTarget
         setOverlayOpen(true)
     }
 
     const handleCloseOverlay = () => {
         setOverlayOpen(false)
         setInputValue(urlQuery)
+        triggerButtonRef.current?.focus()
     }
 
     const handleSearch = (value: string) => {
@@ -183,7 +187,7 @@ export const Search: React.FC = () => {
                 size={'medium'}
                 className={styles.searchButton}
                 aria-label={placeholder}
-                title={placeholder}
+                tooltip={placeholder}
                 onClick={handleOpenOverlay}
             />
 
@@ -205,6 +209,7 @@ export const Search: React.FC = () => {
                                 icon={'Close'}
                                 size={'medium'}
                                 aria-label={t('close', { defaultValue: 'Закрыть' })}
+                                tooltip={t('close-search', { defaultValue: 'Закрыть поиск' })}
                                 onClick={handleCloseOverlay}
                             />
                         </>

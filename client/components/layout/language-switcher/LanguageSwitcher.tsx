@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import { setCookie } from 'cookies-next'
+import { Tooltip } from 'simple-react-ui-kit'
 
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
@@ -13,7 +14,7 @@ import useLocalStorage from '@/hooks/useLocalStorage'
 import styles from './styles.module.sass'
 
 export const LanguageSwitcher: React.FC = () => {
-    const { i18n } = useTranslation()
+    const { t, i18n } = useTranslation()
     const router = useRouter()
     const dispatch = useAppDispatch()
 
@@ -42,18 +43,22 @@ export const LanguageSwitcher: React.FC = () => {
 
     return (
         <div className={styles.languageSwitcher}>
-            <button
-                className={currentLanguage === 'en' ? styles.active : undefined}
-                onClick={() => changeLanguage('en')}
-            >
-                {'Eng'}
-            </button>
-            <button
-                className={currentLanguage === 'ru' ? styles.active : undefined}
-                onClick={() => changeLanguage('ru')}
-            >
-                {'Rus'}
-            </button>
+            <Tooltip content={t('language-english', { defaultValue: 'English' })}>
+                <button
+                    className={currentLanguage === 'en' ? styles.active : undefined}
+                    onClick={() => changeLanguage('en')}
+                >
+                    {'Eng'}
+                </button>
+            </Tooltip>
+            <Tooltip content={t('language-russian', { defaultValue: 'Русский' })}>
+                <button
+                    className={currentLanguage === 'ru' ? styles.active : undefined}
+                    onClick={() => changeLanguage('ru')}
+                >
+                    {'Rus'}
+                </button>
+            </Tooltip>
         </div>
     )
 }

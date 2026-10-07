@@ -12,10 +12,11 @@ import { LoginForm } from './LoginForm'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
-    Button: ({ label, mode, onClick, disabled, loading, children }: any) => (
+    Button: ({ label, mode, onClick, disabled, loading, children, ...rest }: any) => (
         <button
             data-mode={mode}
             disabled={disabled || loading}
+            aria-label={rest['aria-label']}
             onClick={onClick}
         >
             {label ?? children}
@@ -206,6 +207,12 @@ describe('LoginForm', () => {
             const buttons = screen.getAllByRole('button')
             expect(buttons.length).toBeGreaterThanOrEqual(5)
             expect(screen.getByText('Войти по ссылке на email')).toBeInTheDocument()
+        })
+
+        it('gives the logo-only VK and Yandex buttons an accessible name', () => {
+            renderWithStore(<LoginForm />)
+            expect(screen.getByRole('button', { name: 'Войти через VK' })).toBeInTheDocument()
+            expect(screen.getByRole('button', { name: 'Войти через Яндекс' })).toBeInTheDocument()
         })
     })
 

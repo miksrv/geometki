@@ -12,7 +12,11 @@ jest.mock('simple-react-ui-kit', () => ({
             <div data-testid={'popout-trigger'}>{trigger}</div>
             <div data-testid={'popout-content'}>{children}</div>
         </div>
-    )
+    ),
+    useTooltip: (config: any) => ({
+        triggerProps: {},
+        tooltip: config?.content ? <span data-testid={'tooltip'}>{config.content}</span> : null
+    })
 }))
 
 jest.mock('next/image', () => {
@@ -105,7 +109,7 @@ describe('UserMenu', () => {
                     user={mockUser as any}
                 />
             )
-            expect(screen.getByTitle('Перейти на мою страницу')).toHaveAttribute('href', '/users/user-1')
+            expect(screen.getByText('Моя страница').closest('a')).toHaveAttribute('href', '/users/user-1')
         })
 
         it('renders the settings link', () => {
@@ -115,7 +119,17 @@ describe('UserMenu', () => {
                     user={mockUser as any}
                 />
             )
-            expect(screen.getByTitle('Перейти в настройки')).toHaveAttribute('href', '/users/settings')
+            expect(screen.getByText('Настройки').closest('a')).toHaveAttribute('href', '/users/settings')
+        })
+
+        it('shows a tooltip naming the user menu trigger', () => {
+            render(
+                <UserMenu
+                    t={mockT as any}
+                    user={mockUser as any}
+                />
+            )
+            expect(screen.getByTestId('tooltip')).toHaveTextContent('Меню пользователя')
         })
 
         it('does not render admin links for a regular user', () => {
@@ -146,7 +160,7 @@ describe('UserMenu', () => {
                     user={mockUser as any}
                 />
             )
-            expect(screen.getByTitle('Выйти')).toBeInTheDocument()
+            expect(screen.getByText('Выйти')).toBeInTheDocument()
         })
     })
 
@@ -160,7 +174,7 @@ describe('UserMenu', () => {
                     onLogout={onLogout}
                 />
             )
-            fireEvent.click(screen.getByTitle('Выйти'))
+            fireEvent.click(screen.getByText('Выйти'))
             expect(onLogout).toHaveBeenCalledTimes(1)
         })
     })

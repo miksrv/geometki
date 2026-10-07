@@ -30,8 +30,9 @@ jest.mock('@/api', () => ({
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Button: ({ onClick, className, icon, ...rest }: any) => (
+    Button: ({ onClick, className, icon, ref, ...rest }: any) => (
         <button
+            ref={ref}
             className={className}
             data-icon={icon}
             aria-label={rest['aria-label']}
@@ -97,6 +98,16 @@ describe('Search', () => {
 
             fireEvent.keyDown(document, { key: 'Escape' })
             expect(screen.getAllByTestId('autocomplete')).toHaveLength(1)
+        })
+
+        it('returns focus to the trigger button when the overlay closes', () => {
+            render(<Search />)
+
+            const triggerButton = screen.getByRole('button', { name: 'Поиск мест, координат' })
+            fireEvent.click(triggerButton)
+
+            fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }))
+            expect(triggerButton).toHaveFocus()
         })
     })
 })

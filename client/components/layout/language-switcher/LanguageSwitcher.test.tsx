@@ -39,6 +39,7 @@ jest.mock('next/router', () => ({
 
 jest.mock('next-i18next', () => ({
     useTranslation: () => ({
+        t: (key: string, opts?: Record<string, unknown>) => opts?.defaultValue ?? key,
         i18n: {
             language: 'ru',
             changeLanguage: mockChangeLanguage
@@ -48,6 +49,7 @@ jest.mock('next-i18next', () => ({
 
 jest.mock('next-i18next/pages', () => ({
     useTranslation: () => ({
+        t: (key: string, opts?: Record<string, unknown>) => opts?.defaultValue ?? key,
         i18n: {
             language: 'ru',
             changeLanguage: mockChangeLanguage

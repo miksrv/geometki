@@ -42,6 +42,13 @@ export const Container = ({ header, children, className }: any) => (
     </div>
 )
 
+export const Tooltip = ({ children }: { children: React.ReactNode }) => children
+
+export const useTooltip = (config: { content?: React.ReactNode } | null | undefined) => ({
+    triggerProps: {},
+    tooltip: config?.content ? <span data-testid={'tooltip'}>{config.content}</span> : null
+})
+
 export const Dialog = ({ open, header, children, onCloseDialog, maxWidth }: any) =>
     open ? (
         <div

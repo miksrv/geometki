@@ -17,6 +17,7 @@ export const Snackbar: React.FC = () => {
     const { data } = API.useNotificationsGetUpdatesQuery(undefined, {
         pollingInterval: 15 * 1000,
         refetchOnMountOrArgChange: true,
+        skipPollingIfUnfocused: true,
         skip: !isAuth
     })
 

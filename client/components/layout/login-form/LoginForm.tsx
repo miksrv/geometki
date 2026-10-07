@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Input, Message } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
@@ -34,6 +34,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
 
     const [formData, setFormData] = useState<ApiType.Auth.PostLoginNativeRequest>()
     const [formErrors, setFormErrors] = useState<ApiType.Auth.PostLoginNativeRequest>()
+
+    // Input (simple-react-ui-kit) doesn't forward a ref to the underlying <input>, so the
+    // wrapping element is used to find and focus it after a failed validation.
+    const emailFieldRef = useRef<HTMLDivElement>(null)
+    const passwordFieldRef = useRef<HTMLDivElement>(null)
 
     const [authLoginNative, { data: authData, isLoading: nativeLoading, isSuccess: nativeSuccess, error }] =
         API.useAuthPostLoginMutation()
@@ -73,6 +78,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
         }
 
         setFormErrors(errors)
+
+        if (errors.email) {
+            emailFieldRef.current?.querySelector('input')?.focus()
+        } else if (errors.password) {
+            passwordFieldRef.current?.querySelector('input')?.focus()
+        }
 
         return !Object.keys(errors).length
     }, [formData])
@@ -163,6 +174,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
                 <Button
                     mode={'outline'}
                     disabled={loadingForm}
+                    aria-label={t('sign-in-with-vk', { defaultValue: 'Войти через VK' })}
+                    tooltip={t('sign-in-with-vk', { defaultValue: 'Войти через VK' })}
                     onClick={() => handleLoginServiceButton('vk')}
                 >
                     <Image
@@ -191,6 +204,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
                 <Button
                     mode={'outline'}
                     disabled={loadingForm}
+                    aria-label={t('sign-in-with-yandex', { defaultValue: 'Войти через Яндекс' })}
+                    tooltip={t('sign-in-with-yandex', { defaultValue: 'Войти через Яндекс' })}
                     onClick={() => handleLoginServiceButton('yandex')}
                 >
                     <Image
@@ -215,12 +230,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
                 </Message>
             )}
 
-            <div className={styles.formElement}>
+            <div
+                className={styles.formElement}
+                ref={emailFieldRef}
+            >
                 <Input
                     tabIndex={0}
                     autoFocus={true}
                     label={t('input_email', { defaultValue: 'Email адрес' })}
                     name={'email'}
+                    type={'email'}
+                    autoComplete={'email'}
+                    inputMode={'email'}
                     error={formErrors?.email}
                     disabled={loadingForm}
                     onKeyDown={handleKeyPress}
@@ -228,11 +249,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
                 />
             </div>
 
-            <div className={styles.formElement}>
+            <div
+                className={styles.formElement}
+                ref={passwordFieldRef}
+            >
                 <Input
                     label={t('input_password', { defaultValue: 'Пароль' })}
                     name={'password'}
                     type={'password'}
+                    autoComplete={'current-password'}
                     error={formErrors?.password}
                     disabled={loadingForm}
                     onKeyDown={handleKeyPress}
