@@ -1,6 +1,7 @@
 import React from 'react'
 import { EmblaOptionsType } from 'embla-carousel'
 import useEmblaCarousel from 'embla-carousel-react'
+import { Tooltip } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
@@ -33,16 +34,20 @@ export const Carousel: React.FC<CarouselProps> = ({ options, children }) => {
             </div>
 
             <div className={styles.buttonsContainer}>
-                <PrevButton
-                    aria-label={t('prev', { defaultValue: 'Назад' })}
-                    onClick={onPrevButtonClick}
-                    disabled={prevBtnDisabled}
-                />
-                <NextButton
-                    aria-label={t('next', { defaultValue: 'Вперёд' })}
-                    onClick={onNextButtonClick}
-                    disabled={nextBtnDisabled}
-                />
+                <Tooltip content={t('prev', { defaultValue: 'Назад' })}>
+                    <PrevButton
+                        aria-label={t('prev', { defaultValue: 'Назад' })}
+                        onClick={onPrevButtonClick}
+                        disabled={prevBtnDisabled}
+                    />
+                </Tooltip>
+                <Tooltip content={t('next', { defaultValue: 'Вперёд' })}>
+                    <NextButton
+                        aria-label={t('next', { defaultValue: 'Вперёд' })}
+                        onClick={onNextButtonClick}
+                        disabled={nextBtnDisabled}
+                    />
+                </Tooltip>
             </div>
         </div>
     )
