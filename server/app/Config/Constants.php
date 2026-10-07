@@ -89,9 +89,13 @@ defined('PATH_PHOTOS') || define('PATH_PHOTOS', 'uploads/places/');
 defined('PATH_AVATARS') || define('PATH_AVATARS', 'uploads/users/');
 defined('PATH_TEMPORARY') || define('PATH_TEMPORARY', 'uploads/temp/');
 
-// Place cover image sizes
-defined('PLACE_COVER_WIDTH') || define('PLACE_COVER_WIDTH', 1024);
-defined('PLACE_COVER_HEIGHT') || define('PLACE_COVER_HEIGHT', 350);
+// Place cover image sizes. The cover is the place page hero: 3:1 at up to 1228px of content
+// width, stored at about 1.5x of it for sharp HiDPI screens (next/image serves smaller copies)
+defined('PLACE_COVER_WIDTH') || define('PLACE_COVER_WIDTH', 1800);
+defined('PLACE_COVER_HEIGHT') || define('PLACE_COVER_HEIGHT', 600);
+// Smallest crop of a photo accepted as a cover (same 3:1, upscaled to the cover size)
+defined('PLACE_COVER_MIN_WIDTH') || define('PLACE_COVER_MIN_WIDTH', 1024);
+defined('PLACE_COVER_MIN_HEIGHT') || define('PLACE_COVER_MIN_HEIGHT', 341);
 defined('PLACE_COVER_PREVIEW_WIDTH') || define('PLACE_COVER_PREVIEW_WIDTH', 680);
 defined('PLACE_COVER_PREVIEW_HEIGHT') || define('PLACE_COVER_PREVIEW_HEIGHT', 300);
 

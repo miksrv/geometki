@@ -28,7 +28,7 @@ describe('ImageUploader', () => {
 
         it('renders the supported formats hint', () => {
             render(<ImageUploader />)
-            expect(screen.getByText(/JPG, JPEG, PNG/)).toBeInTheDocument()
+            expect(screen.getByText(/JPG, PNG, GIF, WEBP/)).toBeInTheDocument()
         })
     })
 

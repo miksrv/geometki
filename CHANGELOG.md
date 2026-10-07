@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.12.0
+
+### Minor Changes
+
+- Map: new ruler tool — measure a route with draggable points, segment and total lengths
+- Map: new area tool — draw a polygon to get its area and perimeter; drag, add and remove points
+- Map: cursor coordinates are always shown at the bottom of the map
+- Map: "Add to collection" button in the place popup
+- Map: Wikipedia and Wikimedia markers match the category icons; the "Wikimedia Commons" layer is now "Wikimedia Photos"
+- Photos: drag and drop images onto a place gallery or the new place form to upload them
+- Photos: phone photos are no longer sideways; large portrait photos are scaled down instead of cropped
+- Place page: wider 3:1 cover in higher resolution; category icon next to the title
+- Places: category shown as an icon instead of a text badge on cards and in search suggestions; category icons redrawn in higher resolution
+- Forms: a confirmation before leaving with unsaved changes in the place, profile, comment, collection and achievement forms
+- Search page: results scroll next to the map, which stays in view on desktop
+- Collections: the list is sorted by recently updated
+
+### Patch Changes
+
+- Photos: a failed file no longer cancels the rest of an upload; wrong file types and files over 10 MB are rejected with a message; WEBP can be picked in the file dialog
+- Photos: fixed photos uploaded together overwriting each other in the gallery
+- Photos: fixed uploads failing for photos with an empty GPS location; the location of large photos added to a new place is no longer lost
+- Login and registration: errors are shown next to the fields
+- Profile settings: Save is enabled only when something changed
+- Comments: the text is kept if sending fails
+- Description editor: fixed the preview layout
+- Notifications: the unread badge is capped at "99+"
+- Footer: simpler theme switcher
+- Performance: optimized the map popup and the new place form (fewer requests, lighter photo previews)
+- SEO: place breadcrumbs include the category
+
 ## 1.11.0
 
 ### Minor Changes

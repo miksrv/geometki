@@ -19,9 +19,9 @@ export const ThemeSwitcher: React.FC = () => {
 
     return isClient ? (
         <Button
+            unstyled
             className={styles.themeSwitchButton}
             icon={theme === 'dark' ? 'Sun' : 'Moon'}
-            mode={'outline'}
             tooltip={
                 theme === 'dark'
                     ? t('theme-switch-to-light', { defaultValue: 'Светлая тема' })

@@ -314,8 +314,8 @@ export const Autocomplete = <T,>({
                                                 className={styles.optionImage}
                                                 src={option.image.src}
                                                 alt={''}
-                                                width={22}
-                                                height={26}
+                                                width={16}
+                                                height={16}
                                             />
                                         )}
                                         <span>{option.title}</span>

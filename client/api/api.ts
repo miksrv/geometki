@@ -477,7 +477,9 @@ export const API = createApi({
         }),
 
         /** Controller: POI **/
-        poiGetItem: builder.mutation<ApiType.POI.PoiItemResponse, string>({
+        poiGetItem: builder.query<ApiType.POI.PoiItemResponse, string>({
+            // The popup shows the bookmark state and counter: refetch it when the bookmark is toggled
+            providesTags: (res, err, id) => [{ id, type: 'Bookmarks' }],
             query: (item) => `poi/${item}`
         }),
         poiGetList: builder.query<ApiType.POI.PlacesListResponse, Maybe<ApiType.POI.ListRequest>>({

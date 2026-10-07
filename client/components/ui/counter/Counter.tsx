@@ -5,8 +5,12 @@ import styles from './styles.module.sass'
 
 interface CounterProps {
     value?: number
+    /** Larger values are shown as `{max}+` so the badge keeps its size */
+    max?: number
     className?: string
 }
 
-export const Counter: React.FC<CounterProps> = ({ value, className }) =>
-    value ? <div className={cn(className, styles.counter)}>{value}</div> : null
+export const Counter: React.FC<CounterProps> = ({ value, max, className }) =>
+    value ? (
+        <div className={cn(className, styles.counter)}>{max !== undefined && value > max ? `${max}+` : value}</div>
+    ) : null

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Container } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
+import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
@@ -13,10 +14,14 @@ import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
 import { AchievementForm } from '@/components/pages/achievement-form'
 import { AppLayout, PageHeader } from '@/components/shared'
-import { IMG_HOST } from '@/config/env'
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 type AchievementInput = ApiType.Achievements.AchievementInput
+
+const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
+    ssr: false
+})
 
 interface AdminAchievementsEditProps {
     locale: ApiType.Locale
@@ -32,55 +37,56 @@ const AdminAchievementsEdit: React.FC<AdminAchievementsEditProps> = () => {
     const { data: manageData } = API.useGetAchievementsManageQuery(undefined, { skip: !isAuth || !achievementId })
     const achievement = manageData?.data?.find((a) => a.id === achievementId)
 
-    const [form, setForm] = useState<AchievementInput | null>(null)
+    const [isDirty, setIsDirty] = useState(false)
+    const { allowNavigation, dialogProps: leaveDialogProps } = useUnsavedChangesGuard(isDirty)
+
     const [updateAchievement, { isLoading: isUpdating }] = API.useUpdateAchievementMutation()
     const [uploadImage, { isLoading: isUploading }] = API.useUploadAchievementImageMutation()
 
-    useEffect(() => {
-        if (achievement) {
-            setForm({
-                category: achievement.category,
-                description_en: achievement.description_en ?? '',
-                description_ru: achievement.description_ru ?? '',
-                group_slug: achievement.group_slug ?? '',
-                image: achievement.image,
-                is_active: achievement.is_active,
-                rules: achievement.rules ?? [],
-                season_end: achievement.season_end?.slice(0, 10) ?? null,
-                season_start: achievement.season_start?.slice(0, 10) ?? null,
-                sort_order: achievement.sort_order,
-                tier: achievement.tier,
-                title_en: achievement.title_en,
-                title_ru: achievement.title_ru,
-                type: achievement.type,
-                xp_bonus: achievement.xp_bonus
-            })
-        }
-    }, [achievement])
+    const form = useMemo<AchievementInput | null>(
+        () =>
+            achievement
+                ? {
+                      category: achievement.category,
+                      description_en: achievement.description_en ?? '',
+                      description_ru: achievement.description_ru ?? '',
+                      group_slug: achievement.group_slug ?? '',
+                      image: achievement.image,
+                      is_active: achievement.is_active,
+                      rules: achievement.rules ?? [],
+                      season_end: achievement.season_end?.slice(0, 10) ?? null,
+                      season_start: achievement.season_start?.slice(0, 10) ?? null,
+                      sort_order: achievement.sort_order,
+                      tier: achievement.tier,
+                      title_en: achievement.title_en,
+                      title_ru: achievement.title_ru,
+                      type: achievement.type,
+                      xp_bonus: achievement.xp_bonus
+                  }
+                : null,
+        [achievement?.id]
+    )
 
-    const setField = <K extends keyof AchievementInput>(key: K, value: AchievementInput[K]) => {
-        setForm((prev) => (prev ? { ...prev, [key]: value } : prev))
-    }
-
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (!file || !achievementId) {
-            return
+    const handleImageUpload = async (file: File) => {
+        if (!achievementId) {
+            return undefined
         }
         try {
             const result = await uploadImage({ file, id: achievementId }).unwrap()
-            setField('image', result.image)
+            return result.image
         } catch {
             // handled by error middleware
+            return undefined
         }
     }
 
-    const handleSubmit = async () => {
-        if (!achievementId || !form) {
+    const handleSubmit = async (values: AchievementInput) => {
+        if (!achievementId) {
             return
         }
         try {
-            await updateAchievement({ body: form, id: achievementId }).unwrap()
+            await updateAchievement({ body: values, id: achievementId }).unwrap()
+            allowNavigation()
             void router.push('/admin/achievements')
         } catch {
             // errors handled by error middleware
@@ -118,14 +124,15 @@ const AdminAchievementsEdit: React.FC<AdminAchievementsEditProps> = () => {
 
             <Container>
                 <AchievementForm
-                    form={form}
+                    defaultValues={form}
                     isLoading={isUpdating}
-                    imageUrl={form.image ? `${IMG_HOST}${form.image}` : null}
                     isUploading={isUploading}
-                    onFieldChange={setField}
                     onSubmit={handleSubmit}
                     onImageUpload={handleImageUpload}
+                    onDirtyChange={setIsDirty}
                 />
+
+                <ConfirmationDialog {...leaveDialogProps} />
             </Container>
         </AppLayout>
     )

@@ -33,6 +33,6 @@ export interface SuggestResponse {
 }
 
 export type Suggestion =
-    | { type: 'place'; id: string; title: string; slug?: string | null }
+    | { type: 'place'; id: string; title: string; slug?: string | null; category?: ApiModel.Categories | null }
     | { type: 'location'; title: string; lat: number; lon: number }
     | { type: 'coordinates'; lat: number; lon: number }

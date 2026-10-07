@@ -6331,6 +6331,7 @@ __metadata:
     prettier: "npm:^3.8.3"
     react: "npm:19.3.0"
     react-dom: "npm:19.3.0"
+    react-hook-form: "npm:^7.89.0"
     react-hook-geolocation: "npm:^1.1.0"
     react-i18next: "npm:^17.0.8"
     react-image-crop: "npm:^11.1.2"
@@ -10199,6 +10200,19 @@ __metadata:
   peerDependencies:
     react: ^19.3.0
   checksum: 10c0/c513044b724dd6bfe9500a9682d60973e7f8a48cffba00b6b16d3e910e27dcc459bf71bf0a5c33d7d62a3843ca30de1bd1e2098058aa4ed71f618a24b6061da5
+  languageName: node
+  linkType: hard
+
+"react-hook-form@npm:^7.89.0":
+  version: 7.89.0
+  resolution: "react-hook-form@npm:7.89.0"
+  peerDependencies:
+    "@types/react": "*"
+    react: ^16.8.0 || ^17 || ^18 || ^19
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+  checksum: 10c0/efeefbacb6ded5e1c0eb0b740cab9e839b9b8018f692fe538f68295a0a655b42d1530a6aa00a47e34a272e429bd752f3ea8c8799b182ed8cf299a9966e90332a
   languageName: node
   linkType: hard
 

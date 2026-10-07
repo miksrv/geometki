@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
+import { collectionPickerStyles } from '@/components/shared/add-to-collection'
 import { IMG_HOST } from '@/config/env'
 import { buildCollectionUrl } from '@/utils/helpers'
 
@@ -42,10 +43,10 @@ export const PlaceCollections: React.FC<PlaceCollectionsProps> = ({ placeId }) =
                     <li key={collection.id}>
                         <Link
                             href={buildCollectionUrl(collection.id, collection.slug)}
-                            className={cn(styles.pickerRow, styles.sidebarRow)}
+                            className={cn(collectionPickerStyles.pickerRow, styles.sidebarRow)}
                             title={collection.title}
                         >
-                            <span className={styles.pickerCover}>
+                            <span className={collectionPickerStyles.pickerCover}>
                                 {collection.cover?.preview ? (
                                     <Image
                                         src={`${IMG_HOST}${collection.cover.preview}`}
@@ -58,7 +59,7 @@ export const PlaceCollections: React.FC<PlaceCollectionsProps> = ({ placeId }) =
                                     <Icon name={'Layers'} />
                                 )}
                             </span>
-                            <span className={styles.pickerBody}>
+                            <span className={collectionPickerStyles.pickerBody}>
                                 <strong>{collection.title}</strong>
                                 <span>
                                     {t('collections_places-count', {

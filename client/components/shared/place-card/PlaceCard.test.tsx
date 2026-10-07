@@ -63,8 +63,14 @@ jest.mock('@/utils/helpers', () => ({
     numberFormatter: jest.fn((value: number) => String(value))
 }))
 
-jest.mock('@/components/shared/category-badge', () => ({
-    CategoryBadge: ({ category }: any) => <div data-testid={'category-badge'}>{category?.title}</div>
+jest.mock('@/components/shared/category-icon', () => ({
+    CategoryIcon: ({ category, size }: any) => (
+        <span
+            data-testid={'category-icon'}
+            data-name={category?.name}
+            data-size={size}
+        />
+    )
 }))
 
 const place: ApiModel.PlaceListItem = {
@@ -105,16 +111,23 @@ describe('PlaceCard', () => {
         })
 
         it('shows neither who added the place nor when', () => {
-            const { container } = render(<PlaceCard place={place} />)
+            const { container } = render(<PlaceCard place={{ ...place, category: undefined }} />)
 
             expect(container.querySelectorAll('article > div')).toHaveLength(1)
             expect(screen.queryByText(/2026/)).not.toBeInTheDocument()
         })
 
-        it('renders the category badge, address links and stats in the fixed order', () => {
+        it('shows the category as an icon over the cover, without its name', () => {
             render(<PlaceCard place={place} />)
 
-            expect(screen.getByTestId('category-badge')).toHaveTextContent('Caves')
+            expect(screen.getByTestId('category-icon')).toHaveAttribute('data-name', 'cave')
+            expect(screen.getByTestId('category-icon')).toHaveAttribute('data-size', '16')
+            expect(screen.queryByText('Caves')).not.toBeInTheDocument()
+        })
+
+        it('renders the address links and stats in the fixed order', () => {
+            render(<PlaceCard place={place} />)
+
             expect(screen.getByRole('link', { name: /Russia/ })).toHaveAttribute('href', '/places?country=ru')
 
             const icons = screen.getAllByTestId(/^icon-/).map((icon) => icon.getAttribute('data-testid'))
@@ -134,7 +147,7 @@ describe('PlaceCard', () => {
 
             expect(screen.getByRole('article')).toBeInTheDocument()
             expect(screen.queryByRole('img')).not.toBeInTheDocument()
-            expect(screen.queryByTestId('category-badge')).not.toBeInTheDocument()
+            expect(screen.queryByTestId('category-icon')).not.toBeInTheDocument()
         })
 
         it('renders actions over the cover only when given', () => {
@@ -165,7 +178,8 @@ describe('PlaceCard', () => {
 
             expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('Cool Cave')
             expect(screen.getByText('Russia, Moscow Oblast')).toBeInTheDocument()
-            expect(screen.getByTestId('category-badge')).toBeInTheDocument()
+            expect(screen.getByTestId('category-icon')).toHaveAttribute('data-size', '16')
+            expect(screen.queryByText('Caves')).not.toBeInTheDocument()
         })
 
         it('prefers an explicit distance and label over the API distance', () => {

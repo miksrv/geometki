@@ -11,6 +11,7 @@ import { ApiModel, ApiType } from '@/api'
 import { LOCAL_STORAGE } from '@/config/constants'
 import useLocalStorage from '@/hooks/useLocalStorage'
 
+import { AreaMeasure } from './area-measure'
 import { CategoryControl } from './category-control'
 import { ContextMenu } from './context-menu'
 import { CoordinatesControl } from './coordinates-control'
@@ -26,6 +27,7 @@ import { MarkerPoint } from './marker-point'
 import { MarkerPointCluster } from './marker-point-cluster'
 import { MarkerUser } from './marker-user'
 import { PlaceMark } from './place-mark'
+import { Ruler } from './ruler'
 import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum, MapPositionType, MarkerPinData } from './types'
 import { WikimediaCommons } from './wikimedia-commons'
 import { Wikipedia } from './wikipedia'
@@ -43,6 +45,9 @@ type MapProps = {
     storeMapPosition?: boolean
     enableCenterPopup?: boolean
     enableFullScreen?: boolean
+    /** "Линейка" button: measuring distances on the map */
+    enableRuler?: boolean
+    enableAreaMeasure?: boolean
     enableCoordsControl?: boolean
     enableCategoryControl?: boolean
     enableLayersSwitcher?: boolean
@@ -62,43 +67,49 @@ type MapProps = {
     boundsOptions?: FitBoundsOptions
 } & MapOptions
 
+type MeasureTool = 'ruler' | 'area'
+
+// The kit has no icon for an area: a polygon with its corner points, drawn like the kit icons
+const AreaIcon: React.FC = () => (
+    <svg
+        viewBox={'0 0 24 24'}
+        aria-hidden={true}
+    >
+        <path
+            fillOpacity={0.3}
+            d={'M6.7 7.13 16.99 8.97 15.97 16.8 6.37 14.58Z'}
+        />
+        <path
+            fillRule={'evenodd'}
+            d={'M5 5 19 7.5 17.5 19 4.5 16ZM6.7 7.13 16.99 8.97 15.97 16.8 6.37 14.58Z'}
+        />
+        <circle
+            cx={5}
+            cy={5}
+            r={2.2}
+        />
+        <circle
+            cx={19}
+            cy={7.5}
+            r={2.2}
+        />
+        <circle
+            cx={17.5}
+            cy={19}
+            r={2.2}
+        />
+        <circle
+            cx={4.5}
+            cy={16}
+            r={2.2}
+        />
+    </svg>
+)
+
 const DEFAULT_MAP_ZOOM = 12
 const DEFAULT_MAP_CENTER: LatLngExpression = [51.765445, 55.099745]
 const DEFAULT_MAP_LAYER = MapLayersEnum.OSM
 const DEFAULT_MAP_TYPE = MapObjectsTypeEnum.PLACES
-
-interface CursorCoordinatesDisplayProps {
-    mapPosition?: ApiType.Coordinates
-    enableCoordsControl?: boolean
-    coordinatesOpen: boolean
-    onChangeOpen: (open: boolean) => void
-}
-
-const CursorCoordinatesDisplay: React.FC<CursorCoordinatesDisplayProps> = React.memo(
-    ({ mapPosition, enableCoordsControl, coordinatesOpen, onChangeOpen }) => {
-        const [cursorPosition, setCursorPosition] = useState<ApiType.Coordinates>()
-
-        const handleMouseMove = useCallback((coords: ApiType.Coordinates) => {
-            setCursorPosition(coords)
-        }, [])
-
-        return (
-            <>
-                <div className={styles.bottomControls}>
-                    {enableCoordsControl && (
-                        <CoordinatesControl
-                            coordinates={cursorPosition ?? mapPosition}
-                            onChangeOpen={onChangeOpen}
-                        />
-                    )}
-                </div>
-                {enableCoordsControl && coordinatesOpen && <MapEvents onMouseMove={handleMouseMove} />}
-            </>
-        )
-    }
-)
-
-CursorCoordinatesDisplay.displayName = 'CursorCoordinatesDisplay'
 
 export const InteractiveMap: React.FC<MapProps> = ({
     places,
@@ -110,6 +121,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
     storeMapPosition,
     enableCenterPopup,
     enableFullScreen,
+    enableRuler,
+    enableAreaMeasure,
     enableCoordsControl,
     enableCategoryControl,
     enableLayersSwitcher,
@@ -132,7 +145,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
     const [readyStorage, setReadyStorage] = useState<boolean>(false)
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false)
-    const [coordinatesOpen, setCoordinatesOpen] = useState<boolean>(false)
+    // One measuring tool at a time: both take over the map clicks
+    const [activeTool, setActiveTool] = useState<MeasureTool>()
     const [placeMark, setPlaceMark] = useState<ApiType.Coordinates>()
     const [mapPosition, setMapPosition] = useState<MapPositionType>()
     const [mapLayer, setMapLayer] = useState<MapLayersEnum>(DEFAULT_MAP_LAYER)
@@ -146,6 +160,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
             mapRef.current?.setView([userLatLon.lat, userLatLon.lon], DEFAULT_MAP_ZOOM)
         }
     }
+
+    const toggleTool = (tool: MeasureTool) => setActiveTool((prev) => (prev === tool ? undefined : tool))
 
     const handleChangeBounds = (bounds: LatLngBounds, zoom: number) => {
         const center = bounds.getCenter()
@@ -414,7 +430,9 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         />
                     ) : (
                         <MarkerPoint
-                            key={`markerPoint${i}`}
+                            // By place: a marker keeps its loaded popup data, which must not move to
+                            // another place when the list changes order
+                            key={place.id ?? `markerPoint${i}`}
                             place={place}
                             keepInView={enableCenterPopup}
                         />
@@ -447,6 +465,10 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
                 {enableContextMenu && <ContextMenu />}
 
+                {enableRuler && activeTool === 'ruler' && <Ruler />}
+
+                {enableAreaMeasure && activeTool === 'area' && <AreaMeasure />}
+
                 <div className={styles.leftControls}>
                     {onClickCreatePlace && (
                         <Button
@@ -470,6 +492,44 @@ export const InteractiveMap: React.FC<MapProps> = ({
                             }
                             onClick={handleToggleFullscreen}
                         />
+                    )}
+
+                    {enableRuler && (
+                        <Button
+                            size={controlsSize}
+                            mode={'secondary'}
+                            className={cn(activeTool === 'ruler' && styles.activeControl)}
+                            icon={'Ruler'}
+                            aria-pressed={activeTool === 'ruler'}
+                            tooltip={
+                                activeTool === 'ruler'
+                                    ? t('ruler-off', { defaultValue: 'Выключить линейку' })
+                                    : t('ruler-on', { defaultValue: 'Измерить расстояние' })
+                            }
+                            onClick={() => toggleTool('ruler')}
+                        />
+                    )}
+
+                    {enableAreaMeasure && (
+                        <Button
+                            size={controlsSize}
+                            mode={'secondary'}
+                            className={cn(styles.customIconControl, activeTool === 'area' && styles.activeControl)}
+                            aria-pressed={activeTool === 'area'}
+                            aria-label={
+                                activeTool === 'area'
+                                    ? t('area-measure-off', { defaultValue: 'Выключить измерение площади' })
+                                    : t('area-measure-on', { defaultValue: 'Измерить площадь' })
+                            }
+                            tooltip={
+                                activeTool === 'area'
+                                    ? t('area-measure-off', { defaultValue: 'Выключить измерение площади' })
+                                    : t('area-measure-on', { defaultValue: 'Измерить площадь' })
+                            }
+                            onClick={() => toggleTool('area')}
+                        >
+                            <AreaIcon />
+                        </Button>
                     )}
 
                     {userLatLon && (
@@ -515,12 +575,11 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     )}
                 </div>
 
-                <CursorCoordinatesDisplay
-                    mapPosition={mapPosition}
-                    enableCoordsControl={enableCoordsControl}
-                    coordinatesOpen={coordinatesOpen}
-                    onChangeOpen={setCoordinatesOpen}
-                />
+                {enableCoordsControl && (
+                    <div className={styles.bottomControls}>
+                        <CoordinatesControl coordinates={mapPosition} />
+                    </div>
+                )}
 
                 {userLatLon && <MarkerUser coordinates={userLatLon} />}
                 <div

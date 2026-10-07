@@ -108,13 +108,23 @@ $inlineSearchMinWidth: 1024px
         @media only screen and (max-width: variables.$mobileMaxWidth)
             display: none
 
+.notifyTrigger
+    position: relative
+    display: inline-flex
+
+// A pill over the button's corner: round for one digit, wider up to "99+"
 .notifyCounter
-    width: 20px
-    height: 20px
-    font-size: 10px !important
     position: absolute
-    top: -3px
-    right: -3px
+    top: -5px
+    right: -5px
+    min-width: 18px
+    height: 18px
+    padding: 0 5px !important
+    border-radius: 9px !important
+    font-size: 10px !important
+    line-height: 1
+    // Clicks and hover go to the button underneath
+    pointer-events: none
 
 // --- Search ---
 

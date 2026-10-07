@@ -32,14 +32,13 @@ export const createWikipediaIcon = (loading?: boolean): Leaflet.DivIcon => {
 
     return Leaflet.divIcon({
         className: styles.wikipediaMarker,
-        html: `<svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-            <rect x="4" y="4" width="20" height="22" rx="2" fill="${color}" stroke="white" stroke-width="1.5"/>
-            <rect x="7" y="9" width="14" height="1.5" rx="0.75" fill="white"/>
-            <rect x="7" y="13" width="14" height="1.5" rx="0.75" fill="white"/>
-            <rect x="7" y="17" width="10" height="1.5" rx="0.75" fill="white"/>
+        // Same look as the category icons: a rounded square with a white glyph (the "W" letter here)
+        html: `<svg width="20" height="20" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+            <rect width="128" height="128" rx="14" fill="${color}"/>
+            <polyline points="22,36 44,94 64,52 84,94 106,36" fill="none" stroke="white" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>`,
-        iconAnchor: [14, 14],
-        iconSize: [28, 28]
+        iconAnchor: [10, 10],
+        iconSize: [20, 20]
     })
 }
 

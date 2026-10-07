@@ -72,12 +72,12 @@ describe('createWikimediaIcon', () => {
 
     it('calls divIcon with correct iconSize', () => {
         createWikimediaIcon()
-        expect(mockDivIcon).toHaveBeenCalledWith(expect.objectContaining({ iconSize: [28, 28] }))
+        expect(mockDivIcon).toHaveBeenCalledWith(expect.objectContaining({ iconSize: [20, 20] }))
     })
 
     it('calls divIcon with correct iconAnchor', () => {
         createWikimediaIcon()
-        expect(mockDivIcon).toHaveBeenCalledWith(expect.objectContaining({ iconAnchor: [14, 14] }))
+        expect(mockDivIcon).toHaveBeenCalledWith(expect.objectContaining({ iconAnchor: [10, 10] }))
     })
 
     it('uses WIKIMEDIA_COMMONS_COLOR when not loading', () => {
@@ -95,7 +95,7 @@ describe('createWikimediaIcon', () => {
         expect(String(mockDivIcon.mock.calls[0][0].html)).toContain(WIKIMEDIA_COMMONS_COLOR)
     })
 
-    it('includes camera SVG structure — rect for body', () => {
+    it('includes camera SVG structure — rect for background and body', () => {
         createWikimediaIcon()
         expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('<rect')
     })

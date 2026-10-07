@@ -16,6 +16,7 @@ import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { AppLayout } from '@/components/shared'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import {
     CollectionDescription,
     CollectionHeader,
@@ -88,6 +89,14 @@ const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: initial
     const canonicalPageUrl = i18n.language === 'en' ? ruPageUrl : pageUrl
     const isOwner = !!userId && userId === collection?.author.id
 
+    // Place edits (order, removal) are saved as they happen; only the description draft can be lost
+    const descriptionChanged = editMode && descriptionDraft.trim() !== (collection?.description ?? '').trim()
+    const {
+        allowNavigation,
+        confirmDiscard,
+        dialogProps: leaveDialogProps
+    } = useUnsavedChangesGuard(descriptionChanged)
+
     // Leaving the collection (or losing ownership) always leaves edit mode
     useEffect(() => {
         setEditMode(false)
@@ -116,10 +125,11 @@ const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: initial
         setEditMode(true)
     }
 
-    const handleCancelEdit = () => {
-        setDescriptionDraft(collection?.description ?? '')
-        setEditMode(false)
-    }
+    const handleCancelEdit = () =>
+        confirmDiscard(() => {
+            setDescriptionDraft(collection?.description ?? '')
+            setEditMode(false)
+        })
 
     // "Готово": save the description if it changed, then leave edit mode. Place edits
     // (order, removal) are already saved as they happen.
@@ -162,6 +172,7 @@ const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: initial
         if (!('error' in result)) {
             setDeleteOpen(false)
             setSettingsOpen(false)
+            allowNavigation()
             await router.push('/collections')
         }
     }
@@ -252,9 +263,7 @@ const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: initial
                     nofollow: false,
                     openGraph: {
                         description,
-                        images: coverUrl
-                            ? [{ alt: collection?.title, height: 350, url: coverUrl, width: 1024 }]
-                            : undefined,
+                        images: coverUrl ? [{ alt: collection?.title, url: coverUrl }] : undefined,
                         locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
                         siteName: t('geotags'),
                         title: collection?.title,
@@ -347,6 +356,8 @@ const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: initial
                     />
                 </>
             )}
+
+            <ConfirmationDialog {...leaveDialogProps} />
         </AppLayout>
     )
 }

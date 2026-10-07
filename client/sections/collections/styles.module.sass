@@ -12,127 +12,6 @@
         @media only screen and (max-width: variables.$mobileMaxWidth)
             min-width: 100%
 
-// --- "В коллекцию" picker (AddToCollectionModal) ---
-
-.picker
-    display: flex
-    flex-direction: column
-    width: 100%
-
-.pickerSearch
-    margin-bottom: 8px
-
-// Fixed-height viewport for rows / skeletons / empty states, so the dialog keeps one
-// height while typing and when switching tabs
-.pickerResults
-    display: flex
-    flex-direction: column
-    height: 320px
-
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        height: 45vh
-
-.pickerList
-    list-style: none
-    margin: 0 -8px
-    padding: 0
-    flex: 1
-    min-height: 0
-    overflow-y: auto
-    transition: opacity .15s
-
-    &.pickerListFetching
-        opacity: .6
-
-.pickerRow
-    display: flex
-    align-items: center
-    gap: 12px
-    min-height: 52px
-    padding: 6px 8px
-    border-radius: var(--border-radius)
-    cursor: pointer
-    transition: background-color .15s
-
-    &:hover,
-    &:focus-within
-        background-color: var(--surface-2)
-
-    &.pickerRowPending
-        opacity: .6
-        pointer-events: none
-
-.pickerCover
-    position: relative
-    display: flex
-    align-items: center
-    justify-content: center
-    width: 40px
-    height: 40px
-    border-radius: var(--radius-sm)
-    overflow: hidden
-    flex-shrink: 0
-    background: var(--surface-2)
-    color: var(--text-color-secondary)
-
-    img
-        border-radius: inherit
-
-    svg
-        width: 18px
-        height: 18px
-        fill: currentColor
-
-.pickerBody
-    flex-grow: 1
-    min-width: 0
-    overflow: hidden
-
-    strong
-        display: block
-        font-weight: 600
-        +truncate
-
-    span
-        display: block
-        color: var(--text-color-secondary)
-        font-size: variables.$fontSizeCaption
-
-.pickerEmpty
-    flex: 1
-    display: flex
-    flex-direction: column
-    justify-content: center
-    gap: 4px
-    padding: 20px 8px
-    text-align: center
-    color: var(--text-color-secondary)
-
-    strong
-        color: var(--text-color-primary)
-        font-weight: 600
-
-.pickerFooter
-    margin-top: 8px
-    padding-top: 12px
-    border-top: 1px solid var(--divider-color)
-
-    &.pickerFooterBare
-        margin-top: 0
-        padding-top: 0
-        border-top: none
-
-.pickerCreate
-    display: flex
-    flex-direction: column
-    gap: 8px
-
-.pickerCreateActions
-    display: flex
-    align-items: center
-    justify-content: space-between
-    gap: 8px
-
 .charCounter
     display: block
     text-align: right
@@ -171,8 +50,9 @@
     margin: 0 -8px
     padding: 0
 
-// Picker row chrome as a link: no pointer cursor override, the text stays primary
-.sidebarRow
+// Picker row chrome as a link: no pointer cursor override, the text stays primary.
+// Nested under .sidebarRows so it wins over the shared .pickerRow regardless of CSS order
+.sidebarRows .sidebarRow
     text-decoration: none
     color: inherit
     min-height: 48px
@@ -239,17 +119,12 @@
     margin-top: 15px
 
 // --- Dialog helpers shared by AddPlacesDialog / CollectionSettingsDialog ---
+// (picker rows themselves come from `collectionPickerStyles` in components/shared/add-to-collection)
 
 .segmented
     display: flex
     gap: 6px
     margin-bottom: 10px
-
-.pickerRowStatic
-    cursor: default
-
-    &:hover
-        background-color: transparent
 
 .settings
     display: flex
@@ -273,4 +148,4 @@
     gap: 8px
     margin-top: 8px
     padding-top: 12px
-    border-top: 1px solid var(--divider-color)
+    border-top: 1px solid var(--border)

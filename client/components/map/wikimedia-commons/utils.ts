@@ -20,14 +20,16 @@ export const createWikimediaIcon = (loading?: boolean): Leaflet.DivIcon => {
 
     return Leaflet.divIcon({
         className: styles.wikimediaMarker,
-        html: `<svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-            <rect x="2" y="8" width="24" height="16" rx="2" fill="${color}" stroke="white" stroke-width="1.5"/>
-            <rect x="10" y="4" width="8" height="5" rx="1" fill="${color}" stroke="white" stroke-width="1.5"/>
-            <circle cx="14" cy="16" r="5" fill="white" fill-opacity="0.9"/>
-            <circle cx="14" cy="16" r="3" fill="${color}"/>
+        // Same look as the category icons: a rounded square with a white glyph (a camera here)
+        html: `<svg width="20" height="20" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+            <rect width="128" height="128" rx="14" fill="${color}"/>
+            <rect x="48" y="30" width="32" height="18" rx="4" fill="white"/>
+            <rect x="22" y="42" width="84" height="58" rx="8" fill="white"/>
+            <circle cx="64" cy="71" r="19" fill="${color}"/>
+            <circle cx="64" cy="71" r="10" fill="white"/>
         </svg>`,
-        iconAnchor: [14, 14],
-        iconSize: [28, 28]
+        iconAnchor: [10, 10],
+        iconSize: [20, 20]
     })
 }
 

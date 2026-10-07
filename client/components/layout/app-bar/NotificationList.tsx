@@ -111,20 +111,24 @@ export const NotificationList: React.FC = () => {
         <Popout
             onOpenChange={setNotifyShow}
             trigger={
-                <Button
-                    aria-label={t('notifications', { defaultValue: 'Уведомления' })}
-                    tooltip={t('notifications', { defaultValue: 'Уведомления' })}
-                    mode={'outline'}
-                    icon={'Bell'}
-                    size={'medium'}
-                >
+                // The badge sits next to an icon-only button, not inside it: a child would turn the
+                // square icon button into a padded text button that widens with the number
+                <span className={styles.notifyTrigger}>
+                    <Button
+                        aria-label={t('notifications', { defaultValue: 'Уведомления' })}
+                        tooltip={t('notifications', { defaultValue: 'Уведомления' })}
+                        mode={'outline'}
+                        icon={'Bell'}
+                        size={'medium'}
+                    />
                     {unreadCount > 0 && (
                         <Counter
                             className={styles.notifyCounter}
                             value={unreadCount}
+                            max={99}
                         />
                     )}
-                </Button>
+                </span>
             }
         >
             <div className={styles.notifyPopup}>

@@ -34,15 +34,15 @@
     .image
         border-radius: var(--border-radius)
         width: 100%
-        height: 350px
+        // 3:1 like the cover file (about 410px at the full 1228px content width); phones keep
+        // a 240px minimum so the title and actions on top of it still fit
+        aspect-ratio: 3 / 1
+        min-height: 240px
         background-image: url('/images/no-image.svg')
         background-position: center
         background-size: cover
         overflow: hidden
         position: relative
-
-        @media only screen and (max-width: variables.$mobileMaxWidth)
-            height: 240px
 
         & > div
             width: 100%
@@ -105,6 +105,20 @@
         @media only screen and (max-width: variables.$mobileMaxWidth)
             flex-direction: column
             align-items: flex-start
+
+        // Category icon on the left of the title and address
+        .titleRow
+            flex: 1
+            min-width: 0
+            display: flex
+            align-items: center
+            gap: 12px
+
+            @media only screen and (max-width: variables.$mobileMaxWidth)
+                width: 100%
+
+        .category
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35)
 
         .textContent
             flex: 1

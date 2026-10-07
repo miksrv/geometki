@@ -6,6 +6,7 @@ use App\Entities\PhotoEntity;
 use App\Entities\PlaceEntity;
 use App\Libraries\AvatarLibrary;
 use App\Libraries\Geocoder;
+use App\Libraries\PhotoLibrary;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlaceTags;
 use App\Libraries\PlacesContent;
@@ -656,7 +657,7 @@ class Places extends ResourceController
             return $this->failValidationErrors(lang('Places.coverIncorrectData'));
         }
 
-        if ($input->width < PLACE_COVER_WIDTH || $input->height < PLACE_COVER_HEIGHT) {
+        if ($input->width < PLACE_COVER_MIN_WIDTH || $input->height < PLACE_COVER_MIN_HEIGHT) {
             return $this->failValidationErrors(lang('Places.coverFailDimensions'));
         }
 
@@ -723,26 +724,35 @@ class Places extends ResourceController
             return;
         }
 
-        $photoCount = 0;
+        $photoCount   = 0;
+        $photoDir     = UPLOAD_PHOTOS . $placeId . '/';
+        $photoLibrary = new PhotoLibrary();
 
-        if (!is_dir(PATH_PHOTOS . $placeId)) {
-            mkdir(PATH_PHOTOS . $placeId,0777, TRUE);
+        if (!is_dir($photoDir)) {
+            mkdir($photoDir, 0777, true);
         }
 
         foreach ($photos as $photoFile) {
-            if (!file_exists(UPLOAD_TEMPORARY . $photoFile)) {
+            // Only bare names of files in the temporary directory: a client-sent `../` path
+            // would otherwise move another place's photos into this one
+            if (!is_string($photoFile) || !preg_match(PhotoLibrary::FILENAME_PATTERN, $photoFile)) {
                 continue;
             }
 
-            $file = new File(UPLOAD_TEMPORARY . $photoFile);
-            $name = pathinfo($file, PATHINFO_FILENAME);
-            $ext  = $file->getExtension();
+            if (!is_file(UPLOAD_TEMPORARY . $photoFile)) {
+                continue;
+            }
 
-            list($width, $height) = getimagesize($file->getRealPath());
+            $name = pathinfo($photoFile, PATHINFO_FILENAME);
+            $ext  = pathinfo($photoFile, PATHINFO_EXTENSION);
 
-            helper('exif');
+            [$width, $height] = getimagesize(UPLOAD_TEMPORARY . $photoFile);
 
-            $coordinates = getPhotoLocation($file->getRealPath());
+            // GPS position read from the EXIF at upload time (the processed file has none)
+            $coordinatesFile = UPLOAD_TEMPORARY . $name . '.json';
+            $coordinates     = is_file($coordinatesFile) ? json_decode(file_get_contents($coordinatesFile)) : null;
+            PhotoLibrary::removeFile($coordinatesFile);
+
             $photosModel = new PhotosModel();
 
             // Save photo to DB
@@ -755,7 +765,7 @@ class Places extends ResourceController
             $photo->title_ru  = $content->title;
             $photo->filename  = $name;
             $photo->extension = $ext;
-            $photo->filesize  = $file->getSize();
+            $photo->filesize  = filesize(UPLOAD_TEMPORARY . $photoFile);
             $photo->width     = $width;
             $photo->height    = $height;
             $photosModel->insert($photo);
@@ -765,26 +775,17 @@ class Places extends ResourceController
             $activity = new ActivityLibrary();
             $activity->photo($photoId, $placeId);
 
-            $photoPath = PATH_PHOTOS . $placeId . '/';
-
             // If this first uploaded photo - we automated make place cover image
             if ($photoCount === 0) {
-                $image = Services::image('gd'); // imagick
-                $image->withFile($file->getRealPath())
-                    ->fit(PLACE_COVER_WIDTH, PLACE_COVER_HEIGHT)
-                    ->save($photoPath . '/cover.jpg');
-
-                $image->withFile($file->getRealPath())
-                    ->fit(PLACE_COVER_PREVIEW_WIDTH, PLACE_COVER_PREVIEW_HEIGHT)
-                    ->save($photoPath . '/cover_preview.jpg');
+                $photoLibrary->generateCover(UPLOAD_TEMPORARY . $photoFile, $photoDir);
             }
 
             // Move photos
-            $file->move($photoPath);
+            (new File(UPLOAD_TEMPORARY . $photoFile))->move($photoDir);
 
-            $fileName = explode('.', $photoFile);
-            $file     = new File(UPLOAD_TEMPORARY . $fileName[0] . '_preview.' . $fileName[1]);
-            $file->move($photoPath);
+            if (is_file(UPLOAD_TEMPORARY . $name . '_preview.' . $ext)) {
+                (new File(UPLOAD_TEMPORARY . $name . '_preview.' . $ext))->move($photoDir);
+            }
 
             $photoCount++;
         }

@@ -23,7 +23,8 @@ jest.mock('@/api', () => ({
             data: undefined,
             refetch: jest.fn(),
             isSuccess: false
-        })
+        }),
+        util: { resetApiState: jest.fn(() => ({ type: 'api/resetApiState' })) }
     }
 }))
 
@@ -96,6 +97,8 @@ describe('AppAuthChecker', () => {
 
             const { container } = renderWithStore(<AppAuthChecker />)
             expect(container).toBeDefined()
+            // An anonymous visitor keeps the cache: resetting it would refetch and log out again
+            expect(API.util.resetApiState).not.toHaveBeenCalled()
         })
     })
 })

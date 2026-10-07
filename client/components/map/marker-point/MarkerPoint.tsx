@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Marker, Popup } from 'react-leaflet'
 import Leaflet from 'leaflet'
 import { Skeleton } from 'simple-react-ui-kit'
@@ -8,7 +8,8 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
-import { BookmarkButton, PlacePlate } from '@/components/shared'
+import { useAppDispatch } from '@/app/store'
+import { AddToCollectionButton, BookmarkButton, PlacePlate } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
 import { categoryImage } from '@/utils/categories'
 import { addDecimalPoint, buildPlaceUrl, numberFormatter } from '@/utils/helpers'
@@ -22,8 +23,11 @@ interface MarkerPointProps {
 
 const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView }) => {
     const { t } = useTranslation('common')
+    const dispatch = useAppDispatch()
 
-    const [getPlaceItem, { isLoading, data: poiData }] = API.usePoiGetItemMutation()
+    // Cached per place: reopening the same popup does not refetch the card
+    const [getPlaceItem, { data: poiData }] = API.useLazyPoiGetItemQuery()
+    const [bookmarkReady, setBookmarkReady] = useState(false)
 
     const placeMarkerIcon = useMemo(
         () =>
@@ -36,9 +40,22 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
     )
 
     const placeClickHandler = async () => {
-        if (place.id) {
-            await getPlaceItem(place.id!)
+        if (!place.id) {
+            return
         }
+
+        const { data } = await getPlaceItem(place.id, true)
+
+        // The POI response already carries the bookmark state for signed-in users: seed the
+        // BookmarkButton cache with it before the button gets its placeId, so it does not
+        // send its own check request
+        if (data?.bookmarked !== undefined) {
+            await dispatch(
+                API.util.upsertQueryData('bookmarksGetPlace', { placeId: data.id }, { result: data.bookmarked })
+            )
+        }
+
+        setBookmarkReady(true)
     }
 
     return (
@@ -62,9 +79,9 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
                             href={buildPlaceUrl(place.id!, poiData?.slug)}
                             title={poiData?.title}
                         >
-                            {(isLoading || !poiData) && <Skeleton />}
+                            {!poiData && <Skeleton />}
 
-                            {!isLoading && poiData && poiData?.cover && (
+                            {poiData?.cover && (
                                 <Image
                                     className={styles.image}
                                     src={`${IMG_HOST}${poiData.cover.preview}`}
@@ -74,7 +91,7 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
                                 />
                             )}
 
-                            {!isLoading && poiData && !poiData?.cover && (
+                            {poiData && !poiData.cover && (
                                 <Image
                                     className={styles.image}
                                     src={'/images/no-image.svg'}
@@ -85,8 +102,13 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
                             )}
                         </Link>
 
-                        <div className={styles.bookmarkButton}>
+                        <div className={styles.actions}>
                             <BookmarkButton
+                                placeId={bookmarkReady ? poiData?.id : undefined}
+                                size={'small'}
+                                hideLabel={true}
+                            />
+                            <AddToCollectionButton
                                 placeId={poiData?.id}
                                 size={'small'}
                                 hideLabel={true}

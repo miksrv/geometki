@@ -1,13 +1,20 @@
-import React, { useState } from 'react'
+import React from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { Button, Message, TextArea } from 'simple-react-ui-kit'
 
+import dynamic from 'next/dynamic'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
 import { UserAvatar } from '@/components/shared'
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import { getErrorMessage } from '@/utils/api'
 
 import styles from './styles.module.sass'
+
+const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
+    ssr: false
+})
 
 interface CommentFormProps {
     placeId?: string
@@ -28,26 +35,35 @@ export const CommentForm: React.FC<CommentFormProps> = ({
 }) => {
     const { t } = useTranslation()
 
-    const [comment, setComment] = useState<string | undefined>()
+    const { control, handleSubmit, reset, watch } = useForm<{ comment: string }>({ defaultValues: { comment: '' } })
 
-    const [submit, { isLoading, error }] = API.useCommentsPostMutation()
+    const comment = watch('comment')
 
-    const handleKeyPress = async (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (event.key === 'Enter' && event.ctrlKey && comment && comment.length > 1) {
-            event.preventDefault()
-            await handleSubmit()
-        }
-    }
+    const [submitComment, { isLoading, error }] = API.useCommentsPostMutation()
 
-    const handleSubmit = async () => {
-        await submit({
+    // An unsent comment is lost on leaving the page, so it is guarded like any other form
+    const { dialogProps: leaveDialogProps } = useUnsavedChangesGuard(!!comment.trim())
+
+    const submit = handleSubmit(async (values) => {
+        const result = await submitComment({
             answerId: replyTo?.id,
-            comment,
+            comment: values.comment,
             placeId
         })
 
-        setComment('')
+        if ('error' in result) {
+            return
+        }
+
+        reset({ comment: '' })
         onCommentAdded?.()
+    })
+
+    const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (event.key === 'Enter' && event.ctrlKey && comment.trim().length > 1) {
+            event.preventDefault()
+            void submit()
+        }
     }
 
     const errorMessage = getErrorMessage(error)
@@ -88,17 +104,24 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                     />
                 )}
 
-                <TextArea
-                    key={replyTo?.id ?? 'root'}
-                    autoFocus={!!replyTo}
-                    autoResize={true}
-                    rows={1}
-                    className={styles.textarea}
-                    value={comment}
-                    disabled={isLoading}
-                    onChange={(e) => setComment(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    placeholder={t('write-comment')}
+                <Controller
+                    name={'comment'}
+                    control={control}
+                    render={({ field }) => (
+                        <TextArea
+                            key={replyTo?.id ?? 'root'}
+                            autoFocus={!!replyTo}
+                            autoResize={true}
+                            rows={1}
+                            className={styles.textarea}
+                            value={field.value}
+                            disabled={isLoading}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            onKeyDown={handleKeyPress}
+                            placeholder={t('write-comment')}
+                        />
+                    )}
                 />
 
                 <Button
@@ -107,10 +130,12 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                     className={styles.submitButton}
                     tooltip={t('comment-submit', { defaultValue: 'Отправить отзыв' })}
                     loading={isLoading}
-                    disabled={isLoading || !comment}
-                    onClick={handleSubmit}
+                    disabled={isLoading || !comment.trim()}
+                    onClick={() => void submit()}
                 />
             </div>
+
+            <ConfirmationDialog {...leaveDialogProps} />
         </div>
     ) : null
 }

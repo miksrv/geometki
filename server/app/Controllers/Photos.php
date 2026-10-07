@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Entities\PhotoEntity;
 use App\Libraries\AvatarLibrary;
 use App\Libraries\LevelsLibrary;
+use App\Libraries\PhotoLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
@@ -133,65 +134,31 @@ class Photos extends ResourceController
 
         try {
             $photoDir = UPLOAD_PHOTOS . $placesData->id . '/';
-            $newName = $photo->getRandomName();
+            $newName  = $photo->getRandomName();
             $photo->move($photoDir, $newName, true);
 
-            $file = new File($photoDir . $newName);
-            $name = pathinfo($file, PATHINFO_FILENAME);
-            $ext  = $file->getExtension();
+            // The first photo of a place also becomes its cover
+            $photoLibrary = new PhotoLibrary();
+            $processed    = $photoLibrary->processFile($photoDir . $newName, $photoDir, (int) $placesData->photos === 0);
 
-            list($width, $height) = getimagesize($file->getRealPath());
+            $name = $processed->name;
+            $ext  = $processed->ext;
 
-            // Calculating Aspect Ratio
-            $orientation = $width > $height ? 'h' : 'v';
-            $width = $orientation === 'h' ? $width : $height;
-            $height = $orientation === 'h' ? $height : $width;
-
-            // If the uploaded image dimensions exceed the maximum
-            if ($width > PHOTO_MAX_WIDTH || $height > PHOTO_MAX_HEIGHT) {
-                $image = Services::image('gd');
-                $image->withFile($file->getRealPath())
-                    ->fit(PHOTO_MAX_WIDTH, PHOTO_MAX_HEIGHT)
-                    ->reorient(true)
-                    ->save($photoDir . $name . '.' . $ext);
-
-                list($width, $height) = getimagesize($file->getRealPath());
-            }
-
-            $image = Services::image('gd'); // imagick
-            $image->withFile($file->getRealPath())
-                ->fit(PHOTO_PREVIEW_WIDTH, PHOTO_PREVIEW_HEIGHT)
-                ->save($photoDir . $name . '_preview.' . $ext);
-
-            // If this first uploaded photo - we automated make place cover image
-            if ($placesData->photos === 0) {
-                $image->withFile($file->getRealPath())
-                    ->fit(PLACE_COVER_WIDTH, PLACE_COVER_HEIGHT)
-                    ->save($photoDir . '/cover.jpg');
-
-                $image->withFile($file->getRealPath())
-                    ->fit(PLACE_COVER_PREVIEW_WIDTH, PLACE_COVER_PREVIEW_HEIGHT)
-                    ->save($photoDir . '/cover_preview.jpg');
-            }
-
-            helper('exif');
-
-            $coordinates = getPhotoLocation($file->getRealPath());
             $photosModel = new PhotosModel();
 
             // Save photo to DB
             $photo = new PhotoEntity();
-            $photo->lat       = $coordinates?->lat ?? $placesData->lat;
-            $photo->lon       = $coordinates?->lon ?? $placesData->lon;
+            $photo->lat       = $processed->coordinates?->lat ?? $placesData->lat;
+            $photo->lon       = $processed->coordinates?->lon ?? $placesData->lon;
             $photo->place_id  = $placesData->id;
             $photo->user_id   = $this->session->user?->id;
             $photo->title_en  = $placeContent->title($id);
             $photo->title_ru  = $placeContent->title($id);
             $photo->filename  = $name;
             $photo->extension = $ext;
-            $photo->filesize  = $file->getSize();
-            $photo->width     = $width;
-            $photo->height    = $height;
+            $photo->filesize  = $processed->filesize;
+            $photo->width     = $processed->width;
+            $photo->height    = $processed->height;
             $photosModel->insert($photo);
 
             $photoId = $photosModel->getInsertID();
@@ -256,13 +223,15 @@ class Photos extends ResourceController
             return $this->failServerError(lang('Photos.deleteError'));
         }
 
-        unlink(UPLOAD_PHOTOS . $photoData->place_id . '/' . $photoData->filename . '.' . $photoData->extension);
-        unlink(UPLOAD_PHOTOS . $photoData->place_id . '/' . $photoData->filename . '_preview.' . $photoData->extension);
+        $photoDir = UPLOAD_PHOTOS . $photoData->place_id . '/';
+
+        PhotoLibrary::removeFile($photoDir . $photoData->filename . '.' . $photoData->extension);
+        PhotoLibrary::removeFile($photoDir . $photoData->filename . '_preview.' . $photoData->extension);
 
         // If this was last photo of place - we need to remove place cover files
-        if ($placesData->photos === 1) {
-            unlink(UPLOAD_PHOTOS . $photoData->place_id . '/cover.jpg');
-            unlink(UPLOAD_PHOTOS . $photoData->place_id . '/cover_preview.jpg');
+        if ((int) $placesData?->photos === 1) {
+            PhotoLibrary::removeFile($photoDir . 'cover.jpg');
+            PhotoLibrary::removeFile($photoDir . 'cover_preview.jpg');
         }
 
         $userModel  = new UsersModel();
@@ -314,8 +283,8 @@ class Photos extends ResourceController
             ->fit(PHOTO_PREVIEW_WIDTH, PHOTO_PREVIEW_HEIGHT)
             ->save($photoDir . $name . '_preview.' . $photoData->extension);
 
-        unlink($photoDir . $photoData->filename . '.' . $photoData->extension);
-        unlink($photoDir . $photoData->filename . '_preview.' . $photoData->extension);
+        PhotoLibrary::removeFile($photoDir . $photoData->filename . '.' . $photoData->extension);
+        PhotoLibrary::removeFile($photoDir . $photoData->filename . '_preview.' . $photoData->extension);
 
         $photosModel->update($id, [
             'filename' => $name,

@@ -42,12 +42,29 @@
                 svg
                     fill: var(--icon-color-primary-hover)
 
-    // Kit buttons are inline-flex, so the vertical stack is laid out here
-    .leftControls
+            // A button with its own icon (children) instead of a kit one: square like the icon-only ones
+            &.customIconControl
+                aspect-ratio: 1
+                justify-content: center
+
+            // A tool that is on (the ruler, the area measure): main colour instead of the control surface
+            &.activeControl, &.activeControl:hover
+                background-color: var(--color-main)
+                border-color: var(--color-main) !important
+
+                svg
+                    fill: #fff
+
+    // Kit buttons are inline-flex, so the vertical stacks are laid out here
+    .leftControls, .rightControls
         display: flex
         flex-direction: column
         align-items: flex-start
         gap: 5px
+
+    // Open panels are absolutely positioned at the top right of the column, over the buttons
+    .rightControls
+        align-items: flex-end
 
     .bottomControls
         height: auto

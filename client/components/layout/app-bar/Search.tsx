@@ -6,6 +6,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
 import { Autocomplete, AutocompleteOption } from '@/components/ui'
+import { categoryImage } from '@/utils/categories'
 import { buildPlaceUrl } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
@@ -53,6 +54,7 @@ export const Search: React.FC = () => {
                     return {
                         title: suggestion.title,
                         type: SuggestionType.PLACE,
+                        image: suggestion.category ? categoryImage(suggestion.category) : undefined,
                         value: suggestion
                     }
                 }

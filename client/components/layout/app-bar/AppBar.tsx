@@ -8,7 +8,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
 import { openAuthDialog, setUserLocation } from '@/app/applicationSlice'
-import { logout } from '@/app/authSlice'
+import { logoutUser } from '@/app/logoutUser'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import { round } from '@/utils/helpers'
 
@@ -63,7 +63,7 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
     }
 
     const handleLogout = () => {
-        dispatch(logout())
+        dispatch(logoutUser())
     }
 
     useEffect(() => {

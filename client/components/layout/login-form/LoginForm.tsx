@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
+import { Controller, FieldErrors, useForm } from 'react-hook-form'
 import { Button, Input, Message } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
@@ -20,6 +21,8 @@ import { validateEmail } from '@/utils/validators'
 
 import styles from './styles.module.sass'
 
+type LoginFormValues = Required<ApiType.Auth.PostLoginNativeRequest>
+
 interface LoginFormProps {
     onClickRegistration?: () => void
     onSuccessLogin?: () => void
@@ -32,8 +35,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
 
     const [, setReturnPath] = useLocalStorage<string>(LOCAL_STORAGE.RETURN_PATH)
 
-    const [formData, setFormData] = useState<ApiType.Auth.PostLoginNativeRequest>()
-    const [formErrors, setFormErrors] = useState<ApiType.Auth.PostLoginNativeRequest>()
+    const {
+        control,
+        formState: { errors: formErrors },
+        getValues,
+        handleSubmit,
+        setError,
+        watch
+    } = useForm<LoginFormValues>({ defaultValues: { email: '', password: '' } })
+
+    const email = watch('email')
 
     // Input (simple-react-ui-kit) doesn't forward a ref to the underlying <input>, so the
     // wrapping element is used to find and focus it after a failed validation.
@@ -62,41 +73,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
         [error]
     )
 
-    const validateForm = useCallback(() => {
-        const errors: ApiType.Auth.PostLoginNativeRequest = {}
-
-        if (!validateEmail(formData?.email)) {
-            errors.email = t('error_email-incorrect', { defaultValue: 'Введенный email адрес не корректный' })
-        }
-
-        if (!formData?.password) {
-            errors.password = t('error_password-required', { defaultValue: 'Пароль обязателен для входа' })
-        }
-
-        if (formData?.password && formData.password.length < 8) {
-            errors.password = t('error_password-length', { defaultValue: 'Пароль должен быть не менее 8 символов' })
-        }
-
-        setFormErrors(errors)
-
+    // Moves the focus to the first invalid field after a failed submit
+    const focusFirstError = (errors: FieldErrors<LoginFormValues>) => {
         if (errors.email) {
             emailFieldRef.current?.querySelector('input')?.focus()
         } else if (errors.password) {
             passwordFieldRef.current?.querySelector('input')?.focus()
         }
-
-        return !Object.keys(errors).length
-    }, [formData])
-
-    const handleChange = ({ target: { name, value } }: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [name]: value })
     }
 
-    const handleLoginButton = async () => {
-        if (validateForm() && formData) {
-            await authLoginNative(formData)
-        }
-    }
+    const handleLoginButton = handleSubmit(async (values) => {
+        await authLoginNative(values)
+    }, focusFirstError)
 
     const handleLoginServiceButton = async (service: ApiType.AuthService) => {
         setReturnPath(router.asPath)
@@ -104,10 +92,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
     }
 
     const handleMagicLinkButton = async () => {
-        if (!validateEmail(formData?.email) || !formData?.email) {
-            setFormErrors({
-                ...formErrors,
-                email: t('error_email-incorrect', { defaultValue: 'Введенный email адрес не корректный' })
+        const email = getValues('email')
+
+        if (!validateEmail(email) || !email) {
+            setError('email', {
+                message: t('error_email-incorrect', { defaultValue: 'Введенный email адрес не корректный' })
             })
             return
         }
@@ -117,28 +106,37 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
         setReturnPath(router.asPath)
 
         await requestMagicLink({
-            email: formData.email,
+            email,
             returnPath: isValidReturnPath ? router.asPath : undefined
         })
     }
 
-    const handleKeyPress = async (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
-            await handleLoginButton()
+            void handleLoginButton()
         }
     }
 
     const loadingForm = nativeLoading || nativeSuccess || serviceLoading || serviceSuccess || magicLinkLoading
 
     useEffect(() => {
-        setFormErrors(validationErrors)
+        if (validationErrors?.email) {
+            setError('email', { message: validationErrors.email, type: 'server' })
+        }
+        if (validationErrors?.password) {
+            setError('password', { message: validationErrors.password, type: 'server' })
+        }
     }, [error])
 
     useEffect(() => {
-        if (magicLinkValidationErrors) {
-            setFormErrors({ ...formErrors, ...magicLinkValidationErrors })
+        if (magicLinkValidationErrors?.email) {
+            setError('email', { message: magicLinkValidationErrors.email, type: 'server' })
         }
     }, [magicLinkError])
+
+    const errorMessages = [formErrors.email?.message, formErrors.password?.message].filter(
+        (message): message is string => !!message
+    )
 
     useEffect(() => {
         dispatch(login(authData))
@@ -161,7 +159,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
                 <Message type={'success'}>
                     {t('magic-link-sent', {
                         defaultValue: 'Письмо со ссылкой для входа отправлено на {{email}}. Проверьте почту.',
-                        email: formData?.email
+                        email
                     })}
                 </Message>
             </div>
@@ -217,15 +215,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
                 </Button>
             </div>
 
-            {!!Object.values(formErrors || {}).length && (
+            {!!errorMessages.length && (
                 <Message
                     type={'error'}
                     title={t('correct-errors-on-form', { defaultValue: 'Исправьте ошибки в форме' })}
                 >
                     <ul className={'errorMessageList'}>
-                        {Object.values(formErrors || {}).map((item: string) =>
-                            item.length ? <li key={`item${item}`}>{item}</li> : ''
-                        )}
+                        {errorMessages.map((item) => (
+                            <li key={`item${item}`}>{item}</li>
+                        ))}
                     </ul>
                 </Message>
             )}
@@ -234,18 +232,31 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
                 className={styles.formElement}
                 ref={emailFieldRef}
             >
-                <Input
-                    tabIndex={0}
-                    autoFocus={true}
-                    label={t('input_email', { defaultValue: 'Email адрес' })}
+                <Controller
                     name={'email'}
-                    type={'email'}
-                    autoComplete={'email'}
-                    inputMode={'email'}
-                    error={formErrors?.email}
-                    disabled={loadingForm}
-                    onKeyDown={handleKeyPress}
-                    onChange={handleChange}
+                    control={control}
+                    rules={{
+                        validate: (value) =>
+                            validateEmail(value) ||
+                            t('error_email-incorrect', { defaultValue: 'Введенный email адрес не корректный' })
+                    }}
+                    render={({ field, fieldState }) => (
+                        <Input
+                            tabIndex={0}
+                            autoFocus={true}
+                            label={t('input_email', { defaultValue: 'Email адрес' })}
+                            name={field.name}
+                            type={'email'}
+                            autoComplete={'email'}
+                            inputMode={'email'}
+                            value={field.value}
+                            error={fieldState.error?.message}
+                            disabled={loadingForm}
+                            onKeyDown={handleKeyPress}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                        />
+                    )}
                 />
             </div>
 
@@ -253,15 +264,32 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
                 className={styles.formElement}
                 ref={passwordFieldRef}
             >
-                <Input
-                    label={t('input_password', { defaultValue: 'Пароль' })}
+                <Controller
                     name={'password'}
-                    type={'password'}
-                    autoComplete={'current-password'}
-                    error={formErrors?.password}
-                    disabled={loadingForm}
-                    onKeyDown={handleKeyPress}
-                    onChange={handleChange}
+                    control={control}
+                    rules={{
+                        required: t('error_password-required', { defaultValue: 'Пароль обязателен для входа' }),
+                        minLength: {
+                            message: t('error_password-length', {
+                                defaultValue: 'Пароль должен быть не менее 8 символов'
+                            }),
+                            value: 8
+                        }
+                    }}
+                    render={({ field, fieldState }) => (
+                        <Input
+                            label={t('input_password', { defaultValue: 'Пароль' })}
+                            name={field.name}
+                            type={'password'}
+                            autoComplete={'current-password'}
+                            value={field.value}
+                            error={fieldState.error?.message}
+                            disabled={loadingForm}
+                            onKeyDown={handleKeyPress}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                        />
+                    )}
                 />
             </div>
 
@@ -270,7 +298,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
                     mode={'secondary'}
                     style={{ width: '100%' }}
                     loading={magicLinkLoading}
-                    disabled={loadingForm || !validateEmail(formData?.email)}
+                    disabled={loadingForm || !validateEmail(email)}
                     onClick={handleMagicLinkButton}
                 >
                     {t('sign-in-with-magic-link', { defaultValue: 'Войти по ссылке на email' })}
@@ -290,7 +318,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
                     mode={'primary'}
                     loading={loadingForm}
                     disabled={loadingForm}
-                    onClick={handleLoginButton}
+                    onClick={() => void handleLoginButton()}
                 >
                     {t('sign-in', { defaultValue: 'Войти' })}
                 </Button>

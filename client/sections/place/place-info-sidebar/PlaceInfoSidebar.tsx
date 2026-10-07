@@ -2,12 +2,10 @@ import React from 'react'
 import { Container, Icon } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
-import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { CopyCoordinates, MapLinks, UserAvatar, UserAvatarGroup } from '@/components/shared'
-import { CategoryBadge } from '@/components/shared/category-badge'
 import { formatDate, formatThousands } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
@@ -24,22 +22,6 @@ export const PlaceInfoSidebar: React.FC<PlaceInfoSidebarProps> = ({ place }) => 
     return (
         <Container className={styles.component}>
             <ul>
-                <li>
-                    <Icon name={'Bookmark'} />
-                    <div className={styles.info}>
-                        <div className={styles.key}>{t('category')}</div>
-                        <div className={styles.value}>
-                            {place?.category && (
-                                <Link
-                                    href={`/places?category=${place.category.name}`}
-                                    title={`${place.category.title} - ${t('all-geotags-at-address')}`}
-                                >
-                                    <CategoryBadge category={place.category} />
-                                </Link>
-                            )}
-                        </div>
-                    </div>
-                </li>
                 <li>
                     <Icon name={'User'} />
                     <div className={styles.info}>

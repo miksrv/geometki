@@ -61,7 +61,12 @@ jest.mock('./bottom-nav', () => ({
 }))
 
 jest.mock('./footer', () => ({
-    Footer: () => <footer data-testid={'footer'} />
+    Footer: ({ className }: { className?: string }) => (
+        <footer
+            data-testid={'footer'}
+            className={className}
+        />
+    )
 }))
 
 jest.mock('./login-form', () => ({
@@ -204,6 +209,19 @@ describe('AppLayout', () => {
             renderWithStore(<AppLayout fullSize />)
             expect(screen.queryByTestId('footer')).not.toBeInTheDocument()
             expect(screen.getByTestId('bottom-nav')).toBeInTheDocument()
+        })
+    })
+
+    describe('fitViewport prop', () => {
+        it('applies the fitViewport class and keeps the regular width', () => {
+            const { container } = renderWithStore(<AppLayout fitViewport />)
+            expect(container.firstChild).toHaveClass('fitViewport')
+            expect(container.firstChild).not.toHaveClass('fullSize')
+        })
+
+        it('keeps the footer for phones, hidden on desktop by a class', () => {
+            renderWithStore(<AppLayout fitViewport />)
+            expect(screen.getByTestId('footer')).toHaveClass('desktopHidden')
         })
     })
 })

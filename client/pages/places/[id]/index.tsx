@@ -13,9 +13,9 @@ import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, PhotoGallery, PlaceCard } from '@/components/shared'
-import { Carousel } from '@/components/ui'
+import type { PhotoUploaderHandle } from '@/components/shared/photo-uploader'
+import { Carousel, FileDropZone } from '@/components/ui'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
-import { useConfirmLeave } from '@/hooks/useConfirmLeave'
 import { PlaceCollections } from '@/sections/collections'
 import {
     PlaceActionBar,
@@ -53,10 +53,6 @@ const PhotoUploader = dynamic(
     { ssr: false }
 )
 
-const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
-    ssr: false
-})
-
 const NEAR_PLACES_COUNT = 10
 
 interface PlacePageProps {
@@ -72,17 +68,12 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
     const dispatch = useAppDispatch()
 
     const inputFileRef = useRef<HTMLInputElement>(null)
+    const uploaderRef = useRef<PhotoUploaderHandle>(null)
 
     const [coverEditorOpen, setCoverEditorOpen] = useState<boolean>(false)
     const [coverHash, setCoverHash] = useState<number | undefined>()
     const [localPhotos, setLocalPhotos] = useState<ApiModel.Photo[]>(photoList ?? [])
     const [uploadingPhotos, setUploadingPhotos] = useState<string[]>()
-    const [descriptionEditorOpen, setDescriptionEditorOpen] = useState(false)
-    const {
-        isOpen: leaveDialogOpen,
-        handleConfirm: handleLeaveConfirm,
-        handleCancel: handleLeaveCancel
-    } = useConfirmLeave(descriptionEditorOpen)
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
@@ -113,6 +104,14 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
         }
     }
 
+    const handleDropPhotos = (files: File[]) => {
+        if (!isAuth) {
+            dispatch(openAuthDialog())
+        } else {
+            uploaderRef.current?.upload(files)
+        }
+    }
+
     const breadCrumbSchema = useMemo(
         () => ({
             '@context': 'https://schema.org',
@@ -130,15 +129,26 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                     name: t('interesting-places'),
                     position: 2
                 },
+                // Same trail as the visible breadcrumbs: places › category › place
+                ...(place?.category
+                    ? [
+                          {
+                              '@type': 'ListItem',
+                              item: `${canonicalUrl}places?category=${place.category.name}`,
+                              name: place.category.title,
+                              position: 3
+                          }
+                      ]
+                    : []),
                 {
                     '@type': 'ListItem',
                     item: pagePlaceUrl,
                     name: place?.title,
-                    position: 3
+                    position: place?.category ? 4 : 3
                 }
             ]
         }),
-        [canonicalUrl, pagePlaceUrl, place?.title, t]
+        [canonicalUrl, pagePlaceUrl, place?.title, place?.category, t]
     )
 
     const placeSchema = useMemo(
@@ -223,9 +233,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                                 ? [
                                       {
                                           alt: place.title || '',
-                                          url: `${IMG_HOST}${place.cover.full}`,
-                                          width: 1024,
-                                          height: 350
+                                          url: `${IMG_HOST}${place.cover.full}`
                                       }
                                   ]
                                 : []),
@@ -276,22 +284,27 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                         placeId={place?.id}
                         content={place?.content}
                         tags={place?.tags}
-                        onEditorModeChange={setDescriptionEditorOpen}
                     />
 
-                    <PhotoGallery
-                        title={t('photos')}
-                        photos={localPhotos}
-                        uploadingPhotos={uploadingPhotos}
-                        action={
-                            <Button
-                                mode={'link'}
-                                onClick={handleUploadPhotoClick}
-                            >
-                                {t('upload-photo')}
-                            </Button>
-                        }
-                    />
+                    <FileDropZone
+                        label={t('photo-drop-label', { defaultValue: 'Перетащите фотографии сюда, чтобы загрузить' })}
+                        hint={t('photo-drop-hint', { defaultValue: 'JPG, PNG, GIF или WEBP, до 10 МБ' })}
+                        onDrop={handleDropPhotos}
+                    >
+                        <PhotoGallery
+                            title={t('photos')}
+                            photos={localPhotos}
+                            uploadingPhotos={uploadingPhotos}
+                            action={
+                                <Button
+                                    mode={'link'}
+                                    onClick={handleUploadPhotoClick}
+                                >
+                                    {t('upload-photo')}
+                                </Button>
+                            }
+                        />
+                    </FileDropZone>
 
                     <Container title={t('comments-title')}>
                         <PlaceCommentList placeId={place?.id} />
@@ -344,18 +357,9 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             <PhotoUploader
                 placeId={place?.id}
                 fileInputRef={inputFileRef}
+                uploaderRef={uploaderRef}
                 onSelectFiles={setUploadingPhotos}
-                onUploadPhoto={(photo) => {
-                    setLocalPhotos([photo, ...localPhotos])
-                }}
-            />
-
-            <ConfirmationDialog
-                open={leaveDialogOpen}
-                message={t('unsaved-changes-message')}
-                confirmLabel={t('leave-without-saving')}
-                onConfirm={handleLeaveConfirm}
-                onCancel={handleLeaveCancel}
+                onUploadPhoto={(photo) => setLocalPhotos((prev) => [photo, ...prev])}
             />
         </AppLayout>
     )

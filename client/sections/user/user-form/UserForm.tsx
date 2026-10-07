@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { Button, Checkbox, Input, Message } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
@@ -19,167 +20,161 @@ interface UserFormProps {
     errors?: ApiType.Users.PatchRequest
     onSubmit?: (formData?: ApiType.Users.PatchRequest) => void
     onCancel?: () => void
+    /** Reports whether the form holds changes that would be lost on leaving */
+    onDirtyChange?: (isDirty: boolean) => void
 }
 
 type FormDataType = ApiType.Users.PatchRequest & { confirmPassword?: string }
 
-export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onSubmit, onCancel }) => {
+const TEXT_FIELDS = ['name', 'website', 'oldPassword', 'newPassword', 'confirmPassword'] as const
+
+const SETTINGS: Array<keyof ApiModel.UserSettings> = [
+    'emailPhoto',
+    'emailRating',
+    'emailComment',
+    'emailEdit',
+    'emailCover',
+    'emailBookmark',
+    'emailVisit',
+    'emailDigest'
+]
+
+export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onSubmit, onCancel, onDirtyChange }) => {
     const { t } = useTranslation()
 
     const userEmail = useAppSelector((state) => state.auth.user?.email)
 
-    const [formErrors, setFormErrors] = useState<FormDataType>()
-    const [formData, setFormData] = useState<FormDataType>(mapFormValues(values))
+    const {
+        control,
+        formState: { errors: formErrors, isDirty },
+        getValues,
+        handleSubmit,
+        reset,
+        setError
+    } = useForm<FormDataType>({ defaultValues: mapFormValues(values) })
 
-    const disabled =
-        JSON.stringify(mapFormValues(values)?.settings) === JSON.stringify(formData.settings) &&
-        values?.name === formData?.name &&
-        values?.website === formData?.website &&
-        !formData?.newPassword &&
-        !formData?.oldPassword
-
-    const handleChange = ({ target: { name, value } }: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [name]: value })
-    }
-
-    const handleChangeCheckbox = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({
-            ...formData,
-            settings: {
-                ...formData?.settings,
-                [event.target.id as ApiModel.UserSettingEnum]: event.target.checked
-            }
-        })
-    }
-
-    const validateForm = useCallback(() => {
-        const errors: FormDataType = {}
-
-        if (!formData.name) {
-            errors.name = t('error_name-required')
+    const submit = handleSubmit((data) => {
+        if (isDirty) {
+            onSubmit?.(data)
         }
-
-        if (formData.newPassword && !formData.oldPassword) {
-            errors.oldPassword = t('error_old-password-required')
-        }
-
-        if (!formData.newPassword && formData.oldPassword) {
-            errors.newPassword = t('error_new-password-required')
-        }
-
-        if (
-            formData.oldPassword &&
-            formData.newPassword &&
-            formData.newPassword.length > 0 &&
-            formData.newPassword !== formData.confirmPassword
-        ) {
-            errors.confirmPassword = t('error_password-mismatch')
-        }
-
-        if (formData.newPassword && formData.newPassword.length < 8) {
-            errors.newPassword = t('error_password-length')
-        }
-
-        setFormErrors(errors)
-
-        return !Object.keys(errors).length
-    }, [formData])
-
-    const handleSubmit = () => {
-        if (validateForm() && !disabled) {
-            onSubmit?.(formData)
-        }
-    }
+    })
 
     const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
-            handleSubmit()
+            void submit()
         }
     }
 
+    // A refetch of the profile must not wipe what the user is typing
     useEffect(() => {
-        setFormData(mapFormValues(values))
+        reset(mapFormValues(values), { keepDirtyValues: true })
     }, [values])
 
     useEffect(() => {
-        setFormErrors(errors)
+        TEXT_FIELDS.forEach((field) => {
+            const message = errors?.[field as keyof ApiType.Users.PatchRequest]
+            if (typeof message === 'string' && message) {
+                setError(field, { message, type: 'server' })
+            }
+        })
     }, [errors])
+
+    useEffect(() => {
+        onDirtyChange?.(isDirty)
+    }, [isDirty])
+
+    const errorMessages = TEXT_FIELDS.map((field) => formErrors[field]?.message).filter(
+        (message): message is string => !!message
+    )
+
+    const renderTextInput = (
+        name: (typeof TEXT_FIELDS)[number],
+        props: React.ComponentProps<typeof Input>,
+        rules?: React.ComponentProps<typeof Controller<FormDataType, typeof name>>['rules']
+    ) => (
+        <Controller
+            name={name}
+            control={control}
+            rules={rules}
+            render={({ field, fieldState }) => (
+                <Input
+                    {...props}
+                    name={field.name}
+                    disabled={props.disabled ?? loading}
+                    value={field.value ?? ''}
+                    error={fieldState.error?.message}
+                    onKeyDown={handleKeyPress}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                />
+            )}
+        />
+    )
 
     return (
         <section className={styles.component}>
             {loading && <ScreenSpinner />}
 
-            {!!Object.values(formErrors || {}).length && (
+            {!!errorMessages.length && (
                 <Message
                     type={'error'}
                     title={t('correct-errors-on-form')}
                 >
                     <ul className={'errorMessageList'}>
-                        {Object.values(formErrors || {}).map((item: string) =>
-                            item.length ? <li key={`item${item}`}>{item}</li> : ''
-                        )}
+                        {errorMessages.map((item) => (
+                            <li key={`item${item}`}>{item}</li>
+                        ))}
                     </ul>
                 </Message>
             )}
 
             <h3 className={styles.header}>{t('general-settings')}</h3>
             <div className={styles.formElement}>
-                <Input
-                    tabIndex={0}
-                    required={true}
-                    autoFocus={true}
-                    name={'name'}
-                    label={t('input_name')}
-                    placeholder={t('input_name-placeholder')}
-                    disabled={loading}
-                    value={formData.name}
-                    error={formErrors?.name}
-                    onKeyDown={handleKeyPress}
-                    onChange={handleChange}
-                />
+                {renderTextInput(
+                    'name',
+                    {
+                        autoFocus: true,
+                        label: t('input_name'),
+                        placeholder: t('input_name-placeholder'),
+                        required: true,
+                        tabIndex: 0
+                    },
+                    { validate: (value) => !!value?.trim() || t('error_name-required') }
+                )}
             </div>
 
             <div className={styles.formElement}>
                 <Input
                     label={t('input_email')}
                     disabled={true}
-                    value={userEmail}
+                    value={userEmail ?? ''}
                 />
             </div>
 
             <div className={styles.formElement}>
-                <Input
-                    name={'website'}
-                    label={t('personal-page')}
-                    placeholder={t('input_website-placeholder')}
-                    disabled={loading}
-                    value={formData.website}
-                    error={formErrors?.website}
-                    onKeyDown={handleKeyPress}
-                    onChange={handleChange}
-                />
+                {renderTextInput('website', {
+                    label: t('personal-page'),
+                    placeholder: t('input_website-placeholder')
+                })}
             </div>
 
             <div className={styles.section}>
                 <h3 className={styles.header}>{t('sending-notifications-by-email')}</h3>
-                {[
-                    'emailPhoto',
-                    'emailRating',
-                    'emailComment',
-                    'emailEdit',
-                    'emailCover',
-                    'emailBookmark',
-                    'emailVisit',
-                    'emailDigest'
-                ].map((setting) => (
-                    <Checkbox
-                        className={styles.settings}
+                {SETTINGS.map((setting) => (
+                    <Controller
                         key={setting}
-                        id={setting}
-                        label={t(`checkbox_${setting}`)}
-                        disabled={loading}
-                        onChange={handleChangeCheckbox}
-                        checked={formData?.settings?.[setting as keyof ApiModel.UserSettings]}
+                        name={`settings.${setting}`}
+                        control={control}
+                        render={({ field }) => (
+                            <Checkbox
+                                className={styles.settings}
+                                id={setting}
+                                label={t(`checkbox_${setting}`)}
+                                disabled={loading}
+                                checked={!!field.value}
+                                onChange={(event) => field.onChange(event.target.checked)}
+                            />
+                        )}
                     />
                 ))}
             </div>
@@ -190,44 +185,53 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
                     {values?.authType === 'native' ? (
                         <>
                             <div className={styles.formElement}>
-                                <Input
-                                    name={'oldPassword'}
-                                    label={t('input_old-password')}
-                                    type={'password'}
-                                    placeholder={t('input_old-password-placeholder')}
-                                    disabled={loading}
-                                    value={formData?.oldPassword}
-                                    error={formErrors?.oldPassword}
-                                    onKeyDown={handleKeyPress}
-                                    onChange={handleChange}
-                                />
+                                {renderTextInput(
+                                    'oldPassword',
+                                    {
+                                        label: t('input_old-password'),
+                                        placeholder: t('input_old-password-placeholder'),
+                                        type: 'password'
+                                    },
+                                    {
+                                        validate: (value) =>
+                                            !getValues('newPassword') || !!value || t('error_old-password-required')
+                                    }
+                                )}
                             </div>
 
                             <div className={styles.formElement}>
-                                <Input
-                                    name={'newPassword'}
-                                    label={t('input_new-password')}
-                                    type={'password'}
-                                    placeholder={t('input_new-password-placeholder')}
-                                    disabled={loading}
-                                    value={formData?.newPassword}
-                                    error={formErrors?.newPassword}
-                                    onKeyDown={handleKeyPress}
-                                    onChange={handleChange}
-                                />
+                                {renderTextInput(
+                                    'newPassword',
+                                    {
+                                        label: t('input_new-password'),
+                                        placeholder: t('input_new-password-placeholder'),
+                                        type: 'password'
+                                    },
+                                    {
+                                        validate: (value) => {
+                                            if (!value) {
+                                                return !getValues('oldPassword') || t('error_new-password-required')
+                                            }
+                                            return value.length >= 8 || t('error_password-length')
+                                        }
+                                    }
+                                )}
                             </div>
 
                             <div className={styles.formElement}>
-                                <Input
-                                    name={'confirmPassword'}
-                                    label={t('input_password-repeat')}
-                                    type={'password'}
-                                    disabled={loading}
-                                    value={formData?.confirmPassword}
-                                    error={formErrors?.confirmPassword}
-                                    onKeyDown={handleKeyPress}
-                                    onChange={handleChange}
-                                />
+                                {renderTextInput(
+                                    'confirmPassword',
+                                    {
+                                        label: t('input_password-repeat'),
+                                        type: 'password'
+                                    },
+                                    {
+                                        validate: (value) =>
+                                            !getValues('newPassword') ||
+                                            value === getValues('newPassword') ||
+                                            t('error_password-mismatch')
+                                    }
+                                )}
                             </div>
                         </>
                     ) : (
@@ -261,8 +265,8 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
                     mode={'primary'}
                     loading={loading}
                     label={t('save')}
-                    disabled={loading || disabled}
-                    onClick={handleSubmit}
+                    disabled={loading || !isDirty}
+                    onClick={() => void submit()}
                 />
 
                 <Button
@@ -278,6 +282,7 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
 }
 
 const mapFormValues = (values?: FormDataType): FormDataType => ({
+    confirmPassword: '',
     id: values?.id ?? '',
     name: values?.name ?? '',
     newPassword: '',
@@ -293,5 +298,5 @@ const mapFormValues = (values?: FormDataType): FormDataType => ({
         emailPlace: values?.settings?.emailPlace ?? true,
         emailRating: values?.settings?.emailRating ?? true
     },
-    website: values?.website
+    website: values?.website ?? ''
 })

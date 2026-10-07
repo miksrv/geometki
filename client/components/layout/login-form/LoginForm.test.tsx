@@ -220,8 +220,7 @@ describe('LoginForm', () => {
         it('shows validation errors when submitting an empty form', async () => {
             renderWithStore(<LoginForm />)
             fireEvent.click(screen.getByText('Войти'))
-            await Promise.resolve()
-            expect(screen.queryAllByRole('alert').length).toBeGreaterThan(0)
+            expect((await screen.findAllByRole('alert')).length).toBeGreaterThan(0)
         })
 
         it('shows email error when email is invalid', async () => {
@@ -229,8 +228,7 @@ describe('LoginForm', () => {
             const emailInput = screen.getByLabelText('Email адрес')
             fireEvent.change(emailInput, { target: { name: 'email', value: 'not-an-email' } })
             fireEvent.click(screen.getByText('Войти'))
-            await Promise.resolve()
-            expect(screen.getAllByText('Введенный email адрес не корректный').length).toBeGreaterThan(0)
+            expect((await screen.findAllByText('Введенный email адрес не корректный')).length).toBeGreaterThan(0)
         })
     })
 

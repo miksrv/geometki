@@ -10,10 +10,9 @@ import { useTranslation } from 'next-i18next/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
-import { BookmarkButton } from '@/components/shared'
+import { AddToCollectionButton, BookmarkButton, CategoryIcon } from '@/components/shared'
 import { Breadcrumbs } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
-import { AddToCollectionButton } from '@/sections/collections'
 import { dateToUnixTime } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
@@ -104,7 +103,8 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                         fill={true}
                         priority={true}
                         style={{ objectFit: 'cover' }}
-                        sizes={'(max-width: 768px) 100vw, 1024px'}
+                        // The hero spans the content column: full viewport below --width-max (1260px), 1228px above
+                        sizes={'(max-width: 1260px) 100vw, 1228px'}
                     />
                 )}
             </div>
@@ -194,22 +194,32 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
             </div>
 
             <div className={styles.bottomPanel}>
-                <div className={styles.textContent}>
-                    <h1>{place?.title}</h1>
-                    <div className={styles.address}>
-                        {placeAddress.map((address, i) => (
-                            <span key={`address${address.type}`}>
-                                <Link
-                                    href={`/places?${address.type}=${address.id}`}
-                                    title={`${t('all-geotags-at-address')} ${address.name}`}
-                                >
-                                    {address.name}
-                                </Link>
-                                {placeAddress.length - 1 !== i && ', '}
-                            </span>
-                        ))}
+                <div className={styles.titleRow}>
+                    {place?.category && (
+                        <CategoryIcon
+                            category={place.category}
+                            size={40}
+                            className={styles.category}
+                        />
+                    )}
 
-                        {place?.address?.street && <>{`, ${place.address.street}`}</>}
+                    <div className={styles.textContent}>
+                        <h1>{place?.title}</h1>
+                        <div className={styles.address}>
+                            {placeAddress.map((address, i) => (
+                                <span key={`address${address.type}`}>
+                                    <Link
+                                        href={`/places?${address.type}=${address.id}`}
+                                        title={`${t('all-geotags-at-address')} ${address.name}`}
+                                    >
+                                        {address.name}
+                                    </Link>
+                                    {placeAddress.length - 1 !== i && ', '}
+                                </span>
+                            ))}
+
+                            {place?.address?.street && <>{`, ${place.address.street}`}</>}
+                        </div>
                     </div>
                 </div>
 

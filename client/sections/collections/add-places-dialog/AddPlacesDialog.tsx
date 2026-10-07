@@ -7,6 +7,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { API, ApiModel } from '@/api'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch } from '@/app/store'
+import { collectionPickerStyles } from '@/components/shared/add-to-collection'
 import { IMG_HOST } from '@/config/env'
 import { addressToString } from '@/utils/address'
 import { getErrorMessage } from '@/utils/api'
@@ -27,13 +28,13 @@ interface AddPlacesDialogProps {
 
 const RowLoader: React.FC = () => (
     <li
-        className={styles.pickerRow}
+        className={collectionPickerStyles.pickerRow}
         aria-hidden={true}
     >
-        <div className={styles.pickerCover}>
+        <div className={collectionPickerStyles.pickerCover}>
             <Skeleton style={{ position: 'absolute', inset: 0 }} />
         </div>
-        <div className={styles.pickerBody}>
+        <div className={collectionPickerStyles.pickerBody}>
             <Skeleton style={{ height: '14px', width: '60%', marginBottom: '6px' }} />
             <Skeleton style={{ height: '12px', width: '40%' }} />
         </div>
@@ -156,7 +157,7 @@ export const AddPlacesDialog: React.FC<AddPlacesDialogProps> = ({ collection, op
     }
 
     const renderEmpty = (text: string, hint?: string) => (
-        <div className={styles.pickerEmpty}>
+        <div className={collectionPickerStyles.pickerEmpty}>
             <span>{text}</span>
             {hint && <span>{hint}</span>}
         </div>
@@ -170,7 +171,7 @@ export const AddPlacesDialog: React.FC<AddPlacesDialogProps> = ({ collection, op
     ) => {
         if (loading) {
             return (
-                <ul className={styles.pickerList}>
+                <ul className={collectionPickerStyles.pickerList}>
                     {Array(4)
                         .fill('')
                         .map((_, i) => (
@@ -186,7 +187,7 @@ export const AddPlacesDialog: React.FC<AddPlacesDialogProps> = ({ collection, op
 
         return (
             <ul
-                className={cn(styles.pickerList, fetching && styles.pickerListFetching)}
+                className={cn(collectionPickerStyles.pickerList, fetching && collectionPickerStyles.pickerListFetching)}
                 aria-busy={fetching || undefined}
             >
                 {items.map((place) => {
@@ -197,9 +198,9 @@ export const AddPlacesDialog: React.FC<AddPlacesDialogProps> = ({ collection, op
                     return (
                         <li
                             key={place.id}
-                            className={cn(styles.pickerRow, styles.pickerRowStatic)}
+                            className={cn(collectionPickerStyles.pickerRow, collectionPickerStyles.pickerRowStatic)}
                         >
-                            <div className={styles.pickerCover}>
+                            <div className={collectionPickerStyles.pickerCover}>
                                 {place.cover ? (
                                     <Image
                                         src={`${IMG_HOST}${place.cover.preview}`}
@@ -213,7 +214,7 @@ export const AddPlacesDialog: React.FC<AddPlacesDialogProps> = ({ collection, op
                                 )}
                             </div>
 
-                            <div className={styles.pickerBody}>
+                            <div className={collectionPickerStyles.pickerBody}>
                                 <strong>{place.title}</strong>
                                 <span>{[place.category?.title, address].filter(Boolean).join(' · ')}</span>
                             </div>
@@ -238,7 +239,7 @@ export const AddPlacesDialog: React.FC<AddPlacesDialogProps> = ({ collection, op
         <Dialog
             open={open}
             title={t('collections_add-places', { defaultValue: 'Добавить места' })}
-            contentClassName={styles.picker}
+            contentClassName={collectionPickerStyles.picker}
             maxWidth={'560px'}
             onCloseDialog={onClose}
         >
@@ -270,7 +271,7 @@ export const AddPlacesDialog: React.FC<AddPlacesDialogProps> = ({ collection, op
                 <>
                     <Input
                         autoFocus
-                        className={styles.pickerSearch}
+                        className={collectionPickerStyles.pickerSearch}
                         size={'medium'}
                         clearable
                         placeholder={t('collections_search-places-placeholder', {
@@ -280,7 +281,7 @@ export const AddPlacesDialog: React.FC<AddPlacesDialogProps> = ({ collection, op
                         onChange={(event) => setSearch(event.target.value)}
                     />
 
-                    <div className={styles.pickerResults}>
+                    <div className={collectionPickerStyles.pickerResults}>
                         {canSearch
                             ? renderRows(
                                   searchNew,
@@ -297,7 +298,7 @@ export const AddPlacesDialog: React.FC<AddPlacesDialogProps> = ({ collection, op
 
             {tab === 'recommended' && (
                 <>
-                    <div className={styles.pickerResults}>
+                    <div className={collectionPickerStyles.pickerResults}>
                         {hasRegion
                             ? renderRows(
                                   recommendedNew,
@@ -314,7 +315,7 @@ export const AddPlacesDialog: React.FC<AddPlacesDialogProps> = ({ collection, op
                     </div>
 
                     {recommendedNew.length > 1 && (
-                        <div className={cn(styles.pickerFooter, styles.dialogActions)}>
+                        <div className={cn(collectionPickerStyles.pickerFooter, styles.dialogActions)}>
                             <Button
                                 mode={'primary'}
                                 size={'medium'}

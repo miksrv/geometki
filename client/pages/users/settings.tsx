@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Container, Message } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
+import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
 import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
@@ -14,8 +15,13 @@ import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, PageHeader } from '@/components/shared'
 import { ScreenSpinner } from '@/components/ui'
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import { UserForm } from '@/sections/user'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
+
+const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
+    ssr: false
+})
 
 const SettingsUserPage: NextPage<object> = () => {
     const { t } = useTranslation()
@@ -32,6 +38,9 @@ const SettingsUserPage: NextPage<object> = () => {
 
     const [updateProfile, { data, error, isLoading, isSuccess }] = API.useUsersPatchProfileMutation()
 
+    const [isDirty, setIsDirty] = useState(false)
+    const { allowNavigation, dialogProps: leaveDialogProps } = useUnsavedChangesGuard(isDirty)
+
     const validationErrors = useMemo(
         () => (isApiValidationErrors<ApiType.Users.PatchRequest>(error) ? error.messages : undefined),
         [error]
@@ -39,6 +48,7 @@ const SettingsUserPage: NextPage<object> = () => {
 
     const serverError = useMemo(() => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined), [error])
 
+    // Leaving by Cancel goes through the same unsaved-changes guard as any other navigation
     const handleCancel = () => {
         router.back()
     }
@@ -56,18 +66,20 @@ const SettingsUserPage: NextPage<object> = () => {
                     ? formData.oldPassword
                     : undefined,
             settings: formData?.settings,
-            website: formData?.website !== userData?.website ? formData?.website : undefined
+            website: formData?.website !== (userData?.website ?? '') ? formData?.website : undefined
         })
     }
 
     useEffect(() => {
         if (authSlice.isAuth === false) {
+            allowNavigation()
             void router.push('/users')
         }
     }, [authSlice?.isAuth])
 
     useEffect(() => {
         if (isSuccess) {
+            allowNavigation()
             void router.replace(`/users/${authSlice.user?.id}`)
 
             void dispatch(
@@ -118,7 +130,10 @@ const SettingsUserPage: NextPage<object> = () => {
                     errors={validationErrors as any}
                     onSubmit={handleSubmit}
                     onCancel={handleCancel}
+                    onDirtyChange={setIsDirty}
                 />
+
+                <ConfirmationDialog {...leaveDialogProps} />
             </Container>
         </AppLayout>
     )

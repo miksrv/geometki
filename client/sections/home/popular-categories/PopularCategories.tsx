@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
-import { CATEGORY_COLORS } from '@/components/shared/category-badge/constants'
+import { CATEGORY_COLORS } from '@/components/shared/category-icon/constants'
 import { categoryImage } from '@/utils/categories'
 
 import styles from './styles.module.sass'
