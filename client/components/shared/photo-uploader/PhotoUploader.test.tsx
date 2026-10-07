@@ -2,13 +2,13 @@ import React, { createRef } from 'react'
 import { Provider } from 'react-redux'
 
 import { configureStore } from '@reduxjs/toolkit'
-import { fireEvent, render } from '@testing-library/react'
+import { act, fireEvent, render, waitFor } from '@testing-library/react'
 
 import applicationReducer from '@/app/applicationSlice'
 import authReducer from '@/app/authSlice'
 import notificationReducer from '@/app/notificationSlice'
 
-import { PhotoUploader } from './PhotoUploader'
+import { PhotoUploader, PhotoUploaderHandle } from './PhotoUploader'
 
 jest.mock('@/utils/localstorage', () => ({
     getItem: jest.fn().mockReturnValue(null),
@@ -26,14 +26,17 @@ jest.mock('cookies-next', () => ({
     deleteCookie: jest.fn()
 }))
 
+const mockUpload = jest.fn()
+
 jest.mock('@/api', () => ({
     API: {
-        usePhotoPostUploadMutation: jest
-            .fn()
-            .mockReturnValue([jest.fn(), { data: undefined, isLoading: false, isError: false, error: undefined }])
+        usePhotoPostUploadMutation: () => [mockUpload, { data: undefined, isLoading: false }]
     },
     ApiModel: {}
 }))
+
+const resolveWith = (value: unknown) => ({ unwrap: () => Promise.resolve(value) })
+const rejectWith = (error: unknown) => ({ unwrap: () => Promise.reject(error) })
 
 jest.mock('@/utils/api', () => ({
     getErrorMessage: jest.fn().mockReturnValue('Upload error')
@@ -51,6 +54,7 @@ jest.mock('@/config/constants', () => ({
 }))
 
 global.URL.createObjectURL = jest.fn((file: File) => `blob:${file.name}`)
+global.URL.revokeObjectURL = jest.fn()
 
 const makeStore = () =>
     configureStore({
@@ -67,6 +71,11 @@ const renderWithStore = (ui: React.ReactElement) => {
 }
 
 describe('PhotoUploader', () => {
+    beforeEach(() => {
+        mockUpload.mockReset()
+        mockUpload.mockImplementation(() => resolveWith({ id: 'uploaded' }))
+    })
+
     describe('rendering', () => {
         it('renders a hidden file input', () => {
             renderWithStore(<PhotoUploader />)
@@ -78,7 +87,7 @@ describe('PhotoUploader', () => {
         it('renders with accept attribute for image types', () => {
             renderWithStore(<PhotoUploader />)
             const input = document.querySelector('input[type="file"]')
-            expect(input).toHaveAttribute('accept', 'image/png, image/gif, image/jpeg')
+            expect(input).toHaveAttribute('accept', 'image/jpeg, image/png, image/gif, image/webp')
         })
 
         it('renders with multiple attribute', () => {
@@ -121,6 +130,80 @@ describe('PhotoUploader', () => {
             const calls = onSelectFiles.mock.calls
             const calledWithNonEmpty = calls.some((args: any[]) => Array.isArray(args[0]) && args[0].length > 0)
             expect(calledWithNonEmpty).toBe(false)
+        })
+    })
+
+    describe('upload queue', () => {
+        it('uploads files one by one and reports each uploaded photo', async () => {
+            const onUploadPhoto = jest.fn()
+            const uploaderRef = createRef<PhotoUploaderHandle>()
+            mockUpload
+                .mockImplementationOnce(() => resolveWith({ id: '1' }))
+                .mockImplementationOnce(() => resolveWith({ id: '2' }))
+
+            renderWithStore(
+                <PhotoUploader
+                    placeId={'place-1'}
+                    uploaderRef={uploaderRef}
+                    onUploadPhoto={onUploadPhoto}
+                />
+            )
+
+            act(() =>
+                uploaderRef.current?.upload([
+                    new File(['a'], 'a.jpg', { type: 'image/jpeg' }),
+                    new File(['b'], 'b.webp', { type: 'image/webp' })
+                ])
+            )
+
+            await waitFor(() => expect(onUploadPhoto).toHaveBeenCalledTimes(2))
+            expect(mockUpload).toHaveBeenCalledTimes(2)
+            expect(onUploadPhoto).toHaveBeenNthCalledWith(1, { id: '1' })
+            expect(onUploadPhoto).toHaveBeenNthCalledWith(2, { id: '2' })
+        })
+
+        it('skips a failed file and goes on with the rest', async () => {
+            const onUploadPhoto = jest.fn()
+            const uploaderRef = createRef<PhotoUploaderHandle>()
+            mockUpload
+                .mockImplementationOnce(() => rejectWith({ status: 500 }))
+                .mockImplementationOnce(() => resolveWith({ id: '2' }))
+
+            renderWithStore(
+                <PhotoUploader
+                    placeId={'place-1'}
+                    uploaderRef={uploaderRef}
+                    onUploadPhoto={onUploadPhoto}
+                />
+            )
+
+            act(() =>
+                uploaderRef.current?.upload([
+                    new File(['a'], 'a.jpg', { type: 'image/jpeg' }),
+                    new File(['b'], 'b.jpg', { type: 'image/jpeg' })
+                ])
+            )
+
+            await waitFor(() => expect(onUploadPhoto).toHaveBeenCalledWith({ id: '2' }))
+            expect(mockUpload).toHaveBeenCalledTimes(2)
+        })
+
+        it('does not upload files of other types or over the size limit', () => {
+            const uploaderRef = createRef<PhotoUploaderHandle>()
+
+            renderWithStore(
+                <PhotoUploader
+                    placeId={'place-1'}
+                    uploaderRef={uploaderRef}
+                />
+            )
+
+            const huge = new File(['x'], 'huge.jpg', { type: 'image/jpeg' })
+            Object.defineProperty(huge, 'size', { value: 11 * 1024 * 1024 })
+
+            act(() => uploaderRef.current?.upload([new File(['x'], 'doc.pdf', { type: 'application/pdf' }), huge]))
+
+            expect(mockUpload).not.toHaveBeenCalled()
         })
     })
 

@@ -20,7 +20,7 @@ export const ImageUploader: React.FC<PhotoGalleryProps> = ({ disabled, onClick }
         >
             <div className={styles.image} />
             <div>{t('click-here-upload-photos')}</div>
-            <div className={styles.hint}>{t('supported-formats')} JPG, JPEG, PNG</div>
+            <div className={styles.hint}>{t('supported-formats')} JPG, PNG, GIF, WEBP</div>
         </button>
     )
 }

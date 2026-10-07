@@ -9,6 +9,7 @@ import { API } from '@/api'
 import { toggleOverlay } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch } from '@/app/store'
+import { PLACE_COVER_ASPECT, PLACE_COVER_MIN_HEIGHT, PLACE_COVER_MIN_WIDTH } from '@/config/constants'
 import { IMG_HOST } from '@/config/env'
 import { getErrorMessage } from '@/utils/api'
 
@@ -78,7 +79,7 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
         setWidthRatio(ratioW)
         setHeightRatio(ratioH)
 
-        const newHeight = (width / 1024) * 350
+        const newHeight = width / PLACE_COVER_ASPECT
 
         setImageCropData({
             height: (newHeight / height) * 100,
@@ -156,9 +157,9 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
                     <div className={styles.innerContainer}>
                         <ReactCrop
                             crop={imageCropData}
-                            aspect={1024 / 350}
-                            minWidth={1024 / widthRatio}
-                            minHeight={350 / heightRatio}
+                            aspect={PLACE_COVER_ASPECT}
+                            minWidth={PLACE_COVER_MIN_WIDTH / widthRatio}
+                            minHeight={PLACE_COVER_MIN_HEIGHT / heightRatio}
                             onChange={(c, p) => setImageCropData(p)}
                         >
                             {/* eslint-disable-next-line next/no-img-element */}

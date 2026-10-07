@@ -29,3 +29,8 @@ export const LOCAL_STORAGE = {
     RETURN_PATH: 'returnPath',
     THEME: 'theme'
 }
+
+/** Place cover (the place page hero): 3:1, the smallest photo crop the API accepts as a cover, px */
+export const PLACE_COVER_ASPECT = 3
+export const PLACE_COVER_MIN_WIDTH = 1024
+export const PLACE_COVER_MIN_HEIGHT = 341
