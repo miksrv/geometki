@@ -430,7 +430,9 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         />
                     ) : (
                         <MarkerPoint
-                            key={`markerPoint${i}`}
+                            // By place: a marker keeps its loaded popup data, which must not move to
+                            // another place when the list changes order
+                            key={place.id ?? `markerPoint${i}`}
                             place={place}
                             keepInView={enableCenterPopup}
                         />

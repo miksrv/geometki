@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { getCookie } from 'cookies-next'
 
 import { API } from '@/api'
-import { login, logout, saveSession } from '@/app/authSlice'
+import { login, saveSession } from '@/app/authSlice'
+import { logoutUser } from '@/app/logoutUser'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import { AUTH_COOKIES } from '@/config/constants'
 
@@ -32,7 +33,7 @@ export const AppAuthChecker: React.FC = () => {
             if (meData.auth === true) {
                 dispatch(login(meData))
             } else if (meData.auth === false) {
-                dispatch(logout())
+                dispatch(logoutUser())
             }
         }
     }, [meData?.auth])
