@@ -198,6 +198,60 @@ describe('Autocomplete', () => {
             fireEvent.keyDown(input, { key: 'Enter' })
             expect(onSelect).toHaveBeenCalledWith(options[1])
         })
+
+        it('selects the highlighted option on Enter even when onEnterPress is set', () => {
+            const onSelect = jest.fn()
+            const onEnterPress = jest.fn()
+            const { rerender } = render(
+                <Autocomplete<string>
+                    options={[]}
+                    onSelect={onSelect}
+                    onEnterPress={onEnterPress}
+                    debouncing={false}
+                />
+            )
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'M' } })
+            rerender(
+                <Autocomplete<string>
+                    options={options}
+                    onSelect={onSelect}
+                    onEnterPress={onEnterPress}
+                    debouncing={false}
+                />
+            )
+            const input = screen.getByRole('combobox')
+            fireEvent.keyDown(input, { key: 'ArrowDown' })
+            fireEvent.keyDown(input, { key: 'ArrowDown' })
+            fireEvent.keyDown(input, { key: 'Enter' })
+            expect(onSelect).toHaveBeenCalledWith(options[1])
+            expect(onEnterPress).not.toHaveBeenCalled()
+        })
+
+        it('calls onEnterPress when nothing is highlighted', () => {
+            const onSelect = jest.fn()
+            const onEnterPress = jest.fn()
+            const { rerender } = render(
+                <Autocomplete<string>
+                    options={[]}
+                    onSelect={onSelect}
+                    onEnterPress={onEnterPress}
+                    debouncing={false}
+                />
+            )
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'M' } })
+            rerender(
+                <Autocomplete<string>
+                    options={options}
+                    onSelect={onSelect}
+                    onEnterPress={onEnterPress}
+                    debouncing={false}
+                />
+            )
+            const input = screen.getByRole('combobox')
+            fireEvent.keyDown(input, { key: 'Enter' })
+            expect(onEnterPress).toHaveBeenCalledWith('M')
+            expect(onSelect).not.toHaveBeenCalled()
+        })
     })
 
     describe('accessibility', () => {

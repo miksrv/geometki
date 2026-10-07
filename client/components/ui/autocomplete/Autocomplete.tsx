@@ -138,7 +138,12 @@ export const Autocomplete = <T,>({
 
         if (onEnterPress) {
             event.preventDefault()
-            onEnterPress(search ?? '')
+
+            if (isOpen && options?.length && highlightedIndex >= 0) {
+                handleSelect(options[highlightedIndex])
+            } else {
+                onEnterPress(search ?? '')
+            }
         } else if (options?.length && search) {
             handleSelect(options[highlightedIndex >= 0 ? highlightedIndex : 0])
         }

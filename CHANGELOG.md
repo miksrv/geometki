@@ -14,7 +14,7 @@
 
 ### Patch Changes
 
-- Fixed ru typo "Следущая страница" to "Следующая страница"
+- i18n: fixed a typo in the Russian "Next page" pagination label
 
 ## 1.10.0
 
