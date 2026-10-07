@@ -3,6 +3,7 @@ import React from 'react'
 import { fireEvent, screen } from '@testing-library/react'
 
 import { makeTestStore, renderWithStore } from '@/__mocks__/commonMocks'
+import { API } from '@/api'
 
 import { AppBar, isNavItemActive } from './AppBar'
 
@@ -68,7 +69,8 @@ jest.mock('react-hook-geolocation', () => () => ({ latitude: null, longitude: nu
 
 jest.mock('@/api', () => ({
     API: {
-        useLocationPutCoordinatesMutation: jest.fn().mockReturnValue([jest.fn()])
+        useLocationPutCoordinatesMutation: jest.fn().mockReturnValue([jest.fn()]),
+        util: { resetApiState: jest.fn(() => ({ type: 'api/resetApiState' })) }
     },
     ApiType: {}
 }))
@@ -235,6 +237,8 @@ describe('AppBar', () => {
             const { store } = renderWithStore(<AppBar />, { store: authenticatedStore() })
             fireEvent.click(screen.getByTestId('user-menu'))
             expect(store.getState().auth.isAuth).toBe(false)
+            // The cache holds the user's own state (bookmarks, visits)
+            expect(API.util.resetApiState).toHaveBeenCalled()
         })
     })
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Container } from 'simple-react-ui-kit'
+import { cn, Container } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
@@ -128,8 +128,10 @@ const SearchPage: NextPage<SearchPageProps> = ({ initialQuery, initialData }) =>
         return (locations?.count ?? 0) > 0 || coordinates != null || (places?.count ?? 0) > 0
     })()
 
+    const isEmpty = !hasResults && !isFetching
+
     return (
-        <AppLayout>
+        <AppLayout fitViewport={true}>
             <Head>
                 {generateNextSeo({
                     title: pageTitle,
@@ -148,43 +150,34 @@ const SearchPage: NextPage<SearchPageProps> = ({ initialQuery, initialData }) =>
                 />
             </Container>
 
-            <Container>
-                {isFetching && (
+            {/* Desktop: the container fills the rest of the viewport and the results scroll in
+                their own column next to the map; phones: a regular scrolling page with the map
+                under the results */}
+            <Container className={cn(styles.resultsContainer, isEmpty && styles.empty)}>
+                {isEmpty ? (
+                    <EmptyState />
+                ) : (
                     <div className={styles.layout}>
                         <div className={styles.resultsCol}>
-                            <SearchResultsSkeleton type={query.type} />
+                            {isFetching ? (
+                                <SearchResultsSkeleton type={query.type} />
+                            ) : (
+                                <SearchResults
+                                    data={mergedData}
+                                    type={query.type}
+                                    userLat={userLocation?.lat}
+                                    userLon={userLocation?.lon}
+                                    onLoadMore={() => void handleLoadMore()}
+                                    isLoadingMore={isLoadingMore}
+                                />
+                            )}
                         </div>
 
                         <div className={styles.mapCol}>
                             <SearchMap
-                                places={undefined}
-                                locations={undefined}
-                                coordinates={undefined}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {!hasResults && !isFetching && <EmptyState />}
-
-                {hasResults && !isFetching && (
-                    <div className={styles.layout}>
-                        <div className={styles.resultsCol}>
-                            <SearchResults
-                                data={mergedData}
-                                type={query.type}
-                                userLat={userLocation?.lat}
-                                userLon={userLocation?.lon}
-                                onLoadMore={() => void handleLoadMore()}
-                                isLoadingMore={isLoadingMore}
-                            />
-                        </div>
-
-                        <div className={styles.mapCol}>
-                            <SearchMap
-                                places={mergedData.places?.items}
-                                locations={mergedData.locations?.items}
-                                coordinates={mergedData.coordinates}
+                                places={isFetching ? undefined : mergedData.places?.items}
+                                locations={isFetching ? undefined : mergedData.locations?.items}
+                                coordinates={isFetching ? undefined : mergedData.coordinates}
                             />
                         </div>
                     </div>

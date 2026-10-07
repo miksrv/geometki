@@ -27,10 +27,16 @@ interface AppLayoutProps {
     className?: string
     /** Edge-to-edge layout without container paddings and footer (map page) */
     fullSize?: boolean
+    /**
+     * Desktop only: the page is exactly one viewport high and has no footer, so its own blocks
+     * scroll inside it (search page). Content width and paddings stay as on other pages;
+     * phones keep the regular scrolling page with the footer.
+     */
+    fitViewport?: boolean
     children?: React.ReactNode
 }
 
-export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, children }) => {
+export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, fitViewport, children }) => {
     const { t } = useTranslation('components.app-layout')
     const dispatch = useAppDispatch()
 
@@ -52,7 +58,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, child
     }, [application.showOverlay])
 
     return (
-        <div className={cn(styles.appLayout, fullSize && styles.fullSize, className)}>
+        <div
+            className={cn(styles.appLayout, fullSize && styles.fullSize, fitViewport && styles.fitViewport, className)}
+        >
             <a
                 href={'#main-content'}
                 className={styles.skipLink}
@@ -92,7 +100,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, child
                 {children}
             </main>
 
-            {!fullSize && <Footer />}
+            {!fullSize && <Footer className={fitViewport ? styles.desktopHidden : undefined} />}
 
             <BottomNav />
 

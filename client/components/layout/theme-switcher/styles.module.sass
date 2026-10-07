@@ -1,11 +1,18 @@
+// A bare icon in the footer row: `unstyled` drops the kit button chrome (border, padding,
+// control height), so the icon is as tall as the text next to it
 .themeSwitchButton
-    background: none !important
-    padding: 0 !important
-    min-height: auto
-    transition: opacity .3s
+    color: var(--text-color-secondary)
+    transition: color var(--duration-base) var(--ease)
 
     svg
-        margin-top: 0
+        width: 16px
+        height: 16px
+        fill: currentColor
 
     &:hover
-        opacity: .7
+        color: var(--text-color-primary)
+
+    &:focus-visible
+        outline: var(--focus-outline)
+        outline-offset: 2px
+        border-radius: var(--radius-sm)

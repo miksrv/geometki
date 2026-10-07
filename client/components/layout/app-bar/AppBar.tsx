@@ -64,6 +64,8 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
 
     const handleLogout = () => {
         dispatch(logout())
+        // Cached responses carry the user's own state (bookmarks, visits): the next user must not see it
+        dispatch(API.util.resetApiState())
     }
 
     useEffect(() => {

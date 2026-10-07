@@ -1,4 +1,5 @@
 import React from 'react'
+import { cn } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 
@@ -11,8 +12,8 @@ import { ThemeSwitcher } from '../theme-switcher'
 
 import styles from './styles.module.sass'
 
-export const Footer: React.FC = () => (
-    <footer className={styles.footer}>
+export const Footer: React.FC<{ className?: string }> = ({ className }) => (
+    <footer className={cn(styles.footer, className)}>
         <div className={styles.inner}>
             <div className={styles.copyright}>
                 <span>
