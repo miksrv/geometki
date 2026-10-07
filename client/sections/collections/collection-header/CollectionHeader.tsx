@@ -145,7 +145,7 @@ export const CollectionHeader: React.FC<CollectionHeaderProps> = ({
                                     icon={'VerticalDots'}
                                     size={'medium'}
                                     mode={'secondary'}
-                                    aria-label={t('collections_menu', { defaultValue: 'Действия с коллекцией' })}
+                                    tooltip={t('collections_menu', { defaultValue: 'Действия с коллекцией' })}
                                 />
                             }
                         >

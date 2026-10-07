@@ -129,15 +129,13 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                                 icon={'VerticalDots'}
                                 size={'medium'}
                                 mode={'secondary'}
+                                tooltip={t('place_menu', { defaultValue: 'Действия с местом' })}
                             />
                         }
                     >
                         <ul className={'contextListMenu'}>
                             <li>
-                                <Link
-                                    href={`/map#${place?.lat},${place?.lon},14`}
-                                    title={t('open-on-map')}
-                                >
+                                <Link href={`/map#${place?.lat},${place?.lon},14`}>
                                     {/* eslint-disable-next-line react/jsx-max-depth */}
                                     <Icon name={'Map'} />
                                     {t('open-on-map')}
@@ -146,7 +144,6 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                             <li>
                                 <Link
                                     href={'#'}
-                                    title={t('upload-photo')}
                                     onClick={(e) => {
                                         e.preventDefault()
                                         onPhotoUploadClick?.(e)
@@ -160,7 +157,6 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                             <li>
                                 <Link
                                     href={'#'}
-                                    title={t('change-cover')}
                                     onClick={(e) => {
                                         e.preventDefault()
                                         onChangePlaceCoverClick?.(e)
@@ -175,7 +171,6 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                                 <Link
                                     href={isAuth ? `/places/${place?.id}/edit` : '#'}
                                     onClick={handleEditPlaceClick}
-                                    title={t('edit')}
                                 >
                                     {/* eslint-disable-next-line react/jsx-max-depth */}
                                     <Icon name={'EditLocation'} />
@@ -187,7 +182,6 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                                     <Link
                                         href={'#'}
                                         onClick={handleRemovePlaceClick}
-                                        title={t('delete')}
                                     >
                                         <Icon name={'Close'} />
                                         {t('delete')}

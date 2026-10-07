@@ -73,6 +73,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                         mode={'link'}
                         icon={'Close'}
                         className={styles.replyingToCancel}
+                        tooltip={t('comment-reply-cancel', { defaultValue: 'Отменить ответ' })}
                         onClick={onCancelReply}
                     />
                 </div>
@@ -104,6 +105,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                     icon={'KeyboardRight'}
                     mode={'secondary'}
                     className={styles.submitButton}
+                    tooltip={t('comment-submit', { defaultValue: 'Отправить отзыв' })}
                     loading={isLoading}
                     disabled={isLoading || !comment}
                     onClick={handleSubmit}

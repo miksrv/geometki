@@ -2,6 +2,7 @@ import React from 'react'
 import { Badge, Button, cn, Container, Table, TableColumnProps } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
+import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
@@ -11,13 +12,17 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, ConfirmationDialog, PageHeader } from '@/components/shared'
+import { AppLayout, PageHeader } from '@/components/shared'
 import { AchievementTierBadge } from '@/components/shared/achievement-card/AchievementTierBadge'
 import { AchievementIcon } from '@/components/shared/achievement-icon'
 import { formatDate } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 import styles from './styles.module.sass'
+
+const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
+    ssr: false
+})
 
 interface AdminAchievementsPageProps {
     locale: ApiType.Locale
@@ -120,6 +125,7 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
                     variant={'negative'}
                     size={'small'}
                     className={`${styles.actionBtn} ${styles.danger}`}
+                    tooltip={t('delete', { defaultValue: 'Удалить' })}
                     onClick={() => setDeleteTarget(sortedData[rowIndex])}
                 />
             )

@@ -214,11 +214,12 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                             accept={'image/png,image/svg+xml'}
                             onChange={onImageUpload}
                             disabled={isUploading}
-                            style={{ flex: 1 }}
+                            className={styles.fileInput}
                         />
                         {imageUrl && (
                             <AchievementIcon
                                 image={imageUrl}
+                                alt={form.title_ru || form.title_en || ''}
                                 size={36}
                             />
                         )}
@@ -244,7 +245,7 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                             value={String(rule.value)}
                             onChange={(e) => updateRule(idx, { value: parseInt(e.target.value, 10) || 0 })}
                             size={'medium'}
-                            style={{ width: '70px' }}
+                            className={styles.ruleValueInput}
                         />
 
                         <Select
@@ -254,7 +255,7 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                                 const val = opts?.[0]?.key ?? ''
                                 updateRule(idx, { filter: val ? { category_id: val } : undefined })
                             }}
-                            style={{ flex: 1 }}
+                            className={styles.ruleCategorySelect}
                         />
 
                         <Button
@@ -262,6 +263,7 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                             variant={'negative'}
                             size={'medium'}
                             icon={'Close'}
+                            tooltip={t('delete', { defaultValue: 'Удалить' })}
                             onClick={() => removeRule(idx)}
                         />
                     </div>
@@ -283,7 +285,7 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                 rows={Math.min(form.rules.length * 6 + 2, 16)}
             />
 
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
+            <div className={styles.formActions}>
                 <Button
                     mode={'secondary'}
                     size={'medium'}
