@@ -48,6 +48,7 @@ export const TagsControls: React.FC<TagsControlsProps> = ({ searchQuery, sortMod
                             size='small'
                             icon='Tune'
                             aria-label={t('sort', { defaultValue: 'Сортировка' })}
+                            tooltip={t('tags-sort_title', { defaultValue: 'Сортировка тегов' })}
                         />
                     }
                 >

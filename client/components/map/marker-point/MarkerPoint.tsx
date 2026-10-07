@@ -20,7 +20,7 @@ interface MarkerPointProps {
     keepInView?: boolean
 }
 
-export const MarkerPoint: React.FC<MarkerPointProps> = ({ place, keepInView }) => {
+const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView }) => {
     const { t } = useTranslation('common')
 
     const [getPlaceItem, { isLoading, data: poiData }] = API.usePoiGetItemMutation()
@@ -90,7 +90,6 @@ export const MarkerPoint: React.FC<MarkerPointProps> = ({ place, keepInView }) =
                                 placeId={poiData?.id}
                                 size={'small'}
                                 hideLabel={true}
-                                aria-label={t('bookmark_add', { defaultValue: 'В закладки' })}
                             />
                         </div>
 
@@ -104,6 +103,7 @@ export const MarkerPoint: React.FC<MarkerPointProps> = ({ place, keepInView }) =
                                 {!!poiData?.rating && (
                                     <PlacePlate
                                         icon={'StarEmpty'}
+                                        tooltip={t('rating', { defaultValue: 'Рейтинг' })}
                                         content={addDecimalPoint(poiData.rating)}
                                     />
                                 )}
@@ -111,6 +111,7 @@ export const MarkerPoint: React.FC<MarkerPointProps> = ({ place, keepInView }) =
                                 {!!poiData?.comments && (
                                     <PlacePlate
                                         icon={'Comment'}
+                                        tooltip={t('comments-title', { defaultValue: 'Отзывы' })}
                                         content={poiData.comments}
                                     />
                                 )}
@@ -118,6 +119,7 @@ export const MarkerPoint: React.FC<MarkerPointProps> = ({ place, keepInView }) =
                                 {!!poiData?.bookmarks && (
                                     <PlacePlate
                                         icon={'HeartEmpty'}
+                                        tooltip={t('in-bookmarks', { defaultValue: 'В закладках' })}
                                         content={poiData.bookmarks}
                                     />
                                 )}
@@ -125,6 +127,7 @@ export const MarkerPoint: React.FC<MarkerPointProps> = ({ place, keepInView }) =
                                 {!!poiData?.distance && (
                                     <PlacePlate
                                         icon={'Ruler'}
+                                        tooltip={t('sort_distance', { defaultValue: 'Расстояние' })}
                                         content={
                                             numberFormatter(poiData.distance) + ' ' + t('km', { defaultValue: 'км' })
                                         }
@@ -140,3 +143,6 @@ export const MarkerPoint: React.FC<MarkerPointProps> = ({ place, keepInView }) =
         </Marker>
     )
 }
+
+/** Memoized: markers don't re-render just because the map's own state changed. */
+export const MarkerPoint = React.memo(MarkerPointComponent)

@@ -126,9 +126,6 @@ export const ContextMenu: React.FC = () => {
                         <li className={styles.divider}>
                             <Link
                                 href={'/places/create'}
-                                title={t('create-geotag', {
-                                    defaultValue: 'Создать геометку'
-                                })}
                                 onClick={() => {
                                     setCoordinates({
                                         lat: pointCords?.lat ?? 0,

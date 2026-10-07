@@ -1,6 +1,6 @@
 import React from 'react'
 import { TFunction } from 'i18next'
-import { Dialog, Icon } from 'simple-react-ui-kit'
+import { Dialog, Icon, Tooltip } from 'simple-react-ui-kit'
 
 import { ApiType } from '@/api'
 import { AchievementTierBadge } from '@/components/shared/achievement-card/AchievementTierBadge'
@@ -24,13 +24,15 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({ 
         contentClassName={styles[`modalContent--${achievement.tier}`]}
         onCloseDialog={onClose}
     >
-        <button
-            className={styles.closeBtn}
-            onClick={onClose}
-            aria-label={t('cancel')}
-        >
-            <Icon name={'Close'} />
-        </button>
+        <Tooltip content={t('close', { defaultValue: 'Закрыть' })}>
+            <button
+                className={styles.closeBtn}
+                onClick={onClose}
+                aria-label={t('close', { defaultValue: 'Закрыть' })}
+            >
+                <Icon name={'Close'} />
+            </button>
+        </Tooltip>
 
         <div className={styles.modalBody}>
             <div className={styles.modalImageCol}>

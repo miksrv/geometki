@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.11.0
+
+### Minor Changes
+
+- UI: tooltips added across the app bar, map controls, cards, photos, collections, users list, auth and admin controls
+- Accessibility: keyboard navigation and ARIA roles for the autocomplete dropdown
+- Accessibility: skip-to-content link, focus returned to triggers after closing overlays, auth forms focus the first invalid field
+- Performance: auth forms, confirmation dialogs, the photo lightbox and the avatar editor are lazy-loaded; map markers are memoized
+- Performance: modern image formats (AVIF/WebP) and recompressed 404/no-results illustrations
+- SEO: place and collection canonical URL redirects are now permanent (301) instead of temporary
+- Server: removed unused Cities/Countries/Districts/Regions controllers and maintenance console commands
+
+### Patch Changes
+
+- i18n: fixed a typo in the Russian "Next page" pagination label
+
 ## 1.10.0
 
 ### Minor Changes

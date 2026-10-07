@@ -61,8 +61,8 @@ jest.mock('@/components/shared', () => ({
     )
 }))
 
-jest.mock('@/components/shared/confirmation-dialog', () => ({
-    ConfirmationDialog: ({ open, message, onConfirm, onCancel }: any) =>
+jest.mock('next/dynamic', () => () => {
+    const MockConfirmationDialog = ({ open, message, onConfirm, onCancel }: any) =>
         open ? (
             <div role={'dialog'}>
                 <p>{message}</p>
@@ -70,7 +70,9 @@ jest.mock('@/components/shared/confirmation-dialog', () => ({
                 <button onClick={onCancel}>dismiss</button>
             </div>
         ) : null
-}))
+    MockConfirmationDialog.displayName = 'MockConfirmationDialog'
+    return MockConfirmationDialog
+})
 
 jest.mock('@/config/env', () => ({ IMG_HOST: 'https://img.test/' }))
 

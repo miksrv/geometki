@@ -116,7 +116,7 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
                         icon={'PlusCircle'}
                         link={'/places/create'}
                         label={t('add-place_button', { defaultValue: 'Добавить место' })}
-                        title={t('add-place_title', { defaultValue: 'Добавить новое место на карту' })}
+                        tooltip={t('add-place_title', { defaultValue: 'Добавить новое место на карту' })}
                         className={styles.addButton}
                         onClick={handleAddPlaceClick}
                     />
@@ -135,7 +135,7 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
                         <Button
                             mode={'secondary'}
                             size={'medium'}
-                            title={t('authorization-on-site_title', {
+                            tooltip={t('authorization-on-site_title', {
                                 defaultValue: 'Авторизация на сайте'
                             })}
                             label={t('sign-in_button', { defaultValue: 'Войти' })}

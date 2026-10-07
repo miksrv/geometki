@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { cn, Icon } from 'simple-react-ui-kit'
+import { cn, Icon, Tooltip } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
 
@@ -61,55 +61,62 @@ export const Pagination = <T,>({
         >
             {fetchPageNumbers
                 .filter((page) => (!hideArrows ? true : page !== RIGHT_PAGE && page !== LEFT_PAGE))
-                .map((page) => (
-                    <Link
-                        scroll={!disableScroll}
-                        className={cn(styles.item, currentPage === page ? styles.active : undefined)}
-                        href={
-                            page === RIGHT_PAGE
-                                ? `${link}${encodeQueryData({
-                                      ...urlParam,
-                                      page: currentPage + 1
-                                  })}`
-                                : page === LEFT_PAGE
-                                  ? `${link}${encodeQueryData({
-                                        ...urlParam,
-                                        page: currentPage - 1
-                                    })}`
-                                  : page === 1
-                                    ? `${link}${encodeQueryData({
-                                          ...urlParam,
-                                          page: undefined
-                                      })}`
-                                    : `${link}${encodeQueryData({
-                                          ...urlParam,
-                                          page
-                                      })}`
-                        }
-                        title={
-                            page === RIGHT_PAGE
-                                ? (captionNextPage ?? 'Next page')
-                                : page === LEFT_PAGE
-                                  ? (captionPrevPage ?? 'Previous page')
-                                  : `${captionPage ?? 'Page'} - ${page}`
-                        }
-                        key={page}
-                        onClick={(event) => {
-                            if (onChangePage) {
-                                event.preventDefault()
-                                onChangePage(Number(page))
-                            }
-                        }}
-                    >
-                        {page === RIGHT_PAGE ? (
-                            <Icon name={'KeyboardRight'} />
-                        ) : page === LEFT_PAGE ? (
-                            <Icon name={'KeyboardLeft'} />
-                        ) : (
-                            <>{page}</>
-                        )}
-                    </Link>
-                ))}
+                .map((page) => {
+                    const caption =
+                        page === RIGHT_PAGE
+                            ? (captionNextPage ?? 'Next page')
+                            : page === LEFT_PAGE
+                              ? (captionPrevPage ?? 'Previous page')
+                              : `${captionPage ?? 'Page'} - ${page}`
+
+                    return (
+                        <Tooltip
+                            key={page}
+                            content={caption}
+                        >
+                            <Link
+                                scroll={!disableScroll}
+                                className={cn(styles.item, currentPage === page ? styles.active : undefined)}
+                                href={
+                                    page === RIGHT_PAGE
+                                        ? `${link}${encodeQueryData({
+                                              ...urlParam,
+                                              page: currentPage + 1
+                                          })}`
+                                        : page === LEFT_PAGE
+                                          ? `${link}${encodeQueryData({
+                                                ...urlParam,
+                                                page: currentPage - 1
+                                            })}`
+                                          : page === 1
+                                            ? `${link}${encodeQueryData({
+                                                  ...urlParam,
+                                                  page: undefined
+                                              })}`
+                                            : `${link}${encodeQueryData({
+                                                  ...urlParam,
+                                                  page
+                                              })}`
+                                }
+                                aria-label={caption}
+                                onClick={(event) => {
+                                    if (onChangePage) {
+                                        event.preventDefault()
+                                        onChangePage(Number(page))
+                                    }
+                                }}
+                            >
+                                {page === RIGHT_PAGE ? (
+                                    <Icon name={'KeyboardRight'} />
+                                ) : page === LEFT_PAGE ? (
+                                    <Icon name={'KeyboardLeft'} />
+                                ) : (
+                                    <>{page}</>
+                                )}
+                            </Link>
+                        </Tooltip>
+                    )
+                })}
         </nav>
     )
 }

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Container, ContainerProps, Icon } from 'simple-react-ui-kit'
+import { Container, ContainerProps, Icon, Tooltip } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
@@ -71,22 +71,33 @@ export const UsersList: React.FC<UsersListProps> = ({ users, scrollable, compact
 
                 {/* Reputation (desktop) */}
                 <div className={styles.reputationCol}>
-                    <Reputation value={user.reputation ?? 0} />
+                    <Tooltip content={t('reputation', { defaultValue: 'Репутация' })}>
+                        <Reputation value={user.reputation ?? 0} />
+                    </Tooltip>
                 </div>
 
                 {/* Stats (hidden in compact) */}
                 {!compact && (
                     <div className={styles.statsCol}>
                         <div className={styles.stat}>
-                            <Icon name={'Camera'} />
+                            <Icon
+                                name={'Camera'}
+                                tooltip={t('photos-uploaded', { defaultValue: 'Фотографий' })}
+                            />
                             {user.statistic?.photo ?? 0}
                         </div>
                         <div className={styles.stat}>
-                            <Icon name={'Point'} />
+                            <Icon
+                                name={'Point'}
+                                tooltip={t('geotags_count', { defaultValue: 'Геометок' })}
+                            />
                             {user.statistic?.place ?? 0}
                         </div>
                         <div className={styles.stat}>
-                            <Icon name={'Bookmark'} />
+                            <Icon
+                                name={'CheckCircle'}
+                                tooltip={t('places-visited', { defaultValue: 'Посещено мест' })}
+                            />
                             {user.statistic?.visited ?? 0}
                         </div>
                     </div>

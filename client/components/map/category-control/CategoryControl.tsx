@@ -62,6 +62,7 @@ export const CategoryControl: React.FC<CategoryControlProps> = ({ categories, on
         <Button
             mode={'secondary'}
             icon={'Tune'}
+            tooltip={t('map-category-filter', { defaultValue: 'Фильтр по категориям' })}
             onClick={handleToggleOpen}
         />
     ) : (

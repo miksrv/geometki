@@ -16,6 +16,9 @@ interface CategoryBadgeProps {
 }
 
 export const CategoryBadge: React.FC<CategoryBadgeProps> = ({ category, className }) => {
+    // Per-category colors (including the "unknown category" fallback) are a fixed
+    // data palette, one hue per category, like the map heatmap/rating colors — the
+    // hex value is also combined with an alpha suffix below, so it must stay hex.
     const color = CATEGORY_COLORS[category.name] ?? '#6B7280'
 
     return (

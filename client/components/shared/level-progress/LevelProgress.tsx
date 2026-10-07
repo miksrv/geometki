@@ -25,6 +25,7 @@ export const LevelProgress: React.FC<LevelProgressProps> = ({ levelData, badgeSi
             <LevelBadge
                 level={level}
                 size={badgeSize}
+                showTooltip={true}
             />
             <div className={styles.levelInfo}>
                 <div className={styles.progressBar}>

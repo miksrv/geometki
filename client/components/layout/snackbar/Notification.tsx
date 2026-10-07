@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { cn, Icon } from 'simple-react-ui-kit'
+import { cn, Icon, Tooltip } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
@@ -99,13 +99,15 @@ export const Notification: React.FC<NotificationProps> = ({ showDate, onClose, o
                 )}
             </div>
             {onClose && (
-                <button
-                    className={styles.closeButton}
-                    aria-label={t('close')}
-                    onClick={() => onClose(props.id)}
-                >
-                    <Icon name={'Close'} />
-                </button>
+                <Tooltip content={t('close', { defaultValue: 'Закрыть' })}>
+                    <button
+                        className={styles.closeButton}
+                        aria-label={t('close')}
+                        onClick={() => onClose(props.id)}
+                    >
+                        <Icon name={'Close'} />
+                    </button>
+                </Tooltip>
             )}
         </div>
     )

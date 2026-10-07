@@ -159,10 +159,12 @@ describe('AppLayout', () => {
             expect(screen.getByTestId('login-form')).toBeInTheDocument()
         })
 
-        it('switches to RegistrationForm when onClickRegistration is called', () => {
+        it('switches to RegistrationForm when onClickRegistration is called', async () => {
             renderWithStore(<AppLayout />, authDialogState)
             fireEvent.click(screen.getByText('Go to registration'))
-            expect(screen.getByTestId('registration-form')).toBeInTheDocument()
+            // RegistrationForm is loaded via next/dynamic, so it may not be mounted
+            // synchronously the first time it is rendered.
+            expect(await screen.findByTestId('registration-form')).toBeInTheDocument()
         })
 
         it('switches back to LoginForm when onClickLogin is called from RegistrationForm', () => {

@@ -139,14 +139,14 @@ describe('ContextMenu', () => {
         renderWithStore(<ContextMenu />, {
             auth: { isAuth: true, user: { id: 'u1', name: 'Alice' } }
         })
-        expect(screen.getByTitle('Создать геометку')).toBeInTheDocument()
+        expect(screen.getByText('Создать геометку')).toBeInTheDocument()
     })
 
     it('does not render create place link when not authenticated', () => {
         renderWithStore(<ContextMenu />, {
             auth: { isAuth: false, user: undefined }
         })
-        expect(screen.queryByTitle('Создать геометку')).not.toBeInTheDocument()
+        expect(screen.queryByText('Создать геометку')).not.toBeInTheDocument()
     })
 
     it('renders hidden by default (isShowMenu is false)', () => {

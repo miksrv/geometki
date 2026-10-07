@@ -61,10 +61,11 @@ const CollectionsPage: NextPage<CollectionsPageProps> = ({ region, currentPage, 
 
             {items.length ? (
                 <MediaTileGrid>
-                    {items.map((collection) => (
+                    {items.map((collection, index) => (
                         <CollectionCard
                             key={collection.id}
                             collection={collection}
+                            priority={index < 3}
                         />
                     ))}
                 </MediaTileGrid>

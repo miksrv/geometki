@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Input, Message } from 'simple-react-ui-kit'
 
 import { useRouter } from 'next/dist/client/router'
@@ -28,6 +28,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClickLogin
 
     const [formData, setFormData] = useState<FormDataType>()
     const [formErrors, setFormErrors] = useState<FormDataType>()
+
+    const nameFieldRef = useRef<HTMLDivElement>(null)
+    const emailFieldRef = useRef<HTMLDivElement>(null)
+    const passwordFieldRef = useRef<HTMLDivElement>(null)
+    const repeatPasswordFieldRef = useRef<HTMLDivElement>(null)
 
     const [registration, { data, error, isLoading }] = API.useAuthPostRegistrationMutation()
 
@@ -60,6 +65,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClickLogin
         }
 
         setFormErrors(errors)
+
+        if (errors.name) {
+            nameFieldRef.current?.querySelector('input')?.focus()
+        } else if (errors.email) {
+            emailFieldRef.current?.querySelector('input')?.focus()
+        } else if (errors.password) {
+            passwordFieldRef.current?.querySelector('input')?.focus()
+        } else if (errors.repeat_password) {
+            repeatPasswordFieldRef.current?.querySelector('input')?.focus()
+        }
 
         return !Object.keys(errors).length
     }, [formData])
@@ -107,12 +122,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClickLogin
                 </Message>
             )}
 
-            <div className={styles.formElement}>
+            <div
+                className={styles.formElement}
+                ref={nameFieldRef}
+            >
                 <Input
                     tabIndex={0}
                     autoFocus={true}
                     label={t('input_name', { defaultValue: 'Имя' })}
                     name={'name'}
+                    autoComplete={'name'}
                     disabled={isLoading}
                     value={formData?.name}
                     error={formErrors?.name}
@@ -121,10 +140,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClickLogin
                 />
             </div>
 
-            <div className={styles.formElement}>
+            <div
+                className={styles.formElement}
+                ref={emailFieldRef}
+            >
                 <Input
                     label={t('input_email', { defaultValue: 'Email адрес' })}
                     name={'email'}
+                    type={'email'}
+                    autoComplete={'email'}
+                    inputMode={'email'}
                     disabled={isLoading}
                     value={formData?.email}
                     error={formErrors?.email}
@@ -133,11 +158,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClickLogin
                 />
             </div>
 
-            <div className={styles.formElement}>
+            <div
+                className={styles.formElement}
+                ref={passwordFieldRef}
+            >
                 <Input
                     label={t('input_password', { defaultValue: 'Пароль' })}
                     name={'password'}
                     type={'password'}
+                    autoComplete={'new-password'}
                     disabled={isLoading}
                     value={formData?.password}
                     error={formErrors?.password}
@@ -146,11 +175,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClickLogin
                 />
             </div>
 
-            <div className={styles.formElement}>
+            <div
+                className={styles.formElement}
+                ref={repeatPasswordFieldRef}
+            >
                 <Input
                     label={t('input_password-repeat', { defaultValue: 'Повторите пароль' })}
                     name={'repeat_password'}
                     type={'password'}
+                    autoComplete={'new-password'}
                     disabled={isLoading}
                     value={formData?.repeat_password}
                     error={formErrors?.repeat_password}

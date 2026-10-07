@@ -3,6 +3,7 @@ import { Container, Message } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
+import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
 import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
@@ -12,12 +13,15 @@ import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, PageHeader } from '@/components/shared'
-import { ConfirmationDialog } from '@/components/shared/confirmation-dialog'
 import { useConfirmLeave } from '@/hooks/useConfirmLeave'
 import { PlaceForm } from '@/sections/place'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
 import { buildPlaceUrl } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+
+const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
+    ssr: false
+})
 
 const CreatePlacePage: NextPage<object> = () => {
     const { t } = useTranslation()

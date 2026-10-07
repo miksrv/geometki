@@ -113,6 +113,7 @@ export const NotificationList: React.FC = () => {
             trigger={
                 <Button
                     aria-label={t('notifications', { defaultValue: 'Уведомления' })}
+                    tooltip={t('notifications', { defaultValue: 'Уведомления' })}
                     mode={'outline'}
                     icon={'Bell'}
                     size={'medium'}

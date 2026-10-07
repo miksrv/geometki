@@ -73,10 +73,11 @@ const UserCollectionsPage: React.FC<UserCollectionsPageProps> = ({ id, user, cur
 
             {items.length ? (
                 <MediaTileGrid>
-                    {items.map((collection) => (
+                    {items.map((collection, index) => (
                         <CollectionCard
                             key={collection.id}
                             collection={collection}
+                            priority={index < 3}
                         />
                     ))}
                 </MediaTileGrid>

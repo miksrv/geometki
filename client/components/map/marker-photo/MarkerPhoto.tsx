@@ -9,10 +9,12 @@ import styles from './styles.module.sass'
 
 interface MarkerPhotoProps {
     photo: ApiModel.PhotoMark
-    onPhotoClick?: (photos?: ApiModel.PhotoMark[], index?: number) => void
+    /** This marker's position in the parent's photo list, passed back to `onPhotoClick` as-is */
+    index?: number
+    onPhotoClick?: (index?: number) => void
 }
 
-export const MarkerPhoto: React.FC<MarkerPhotoProps> = ({ photo, onPhotoClick }) => {
+export const MarkerPhotoComponent: React.FC<MarkerPhotoProps> = ({ photo, index, onPhotoClick }) => {
     const photoMarkerIcon = useMemo(
         () =>
             new Leaflet.Icon({
@@ -32,9 +34,12 @@ export const MarkerPhoto: React.FC<MarkerPhotoProps> = ({ photo, onPhotoClick })
             alt={photo.title}
             eventHandlers={{
                 click: () => {
-                    onPhotoClick?.([])
+                    onPhotoClick?.(index)
                 }
             }}
         />
     )
 }
+
+/** Memoized: markers don't re-render just because the map's own state changed. */
+export const MarkerPhoto = React.memo(MarkerPhotoComponent)

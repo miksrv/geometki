@@ -121,6 +121,7 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
         <Button
             mode={'secondary'}
             icon={'Layers'}
+            tooltip={t('map-layers', { defaultValue: 'Слои карты' })}
             onClick={handleToggleOpen}
         />
     ) : (

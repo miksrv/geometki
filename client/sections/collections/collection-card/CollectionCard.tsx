@@ -12,13 +12,15 @@ import { buildCollectionUrl, numberFormatter, timeAgo } from '@/utils/helpers'
 
 interface CollectionCardProps {
     collection: ApiModel.Collection
+    /** Preload the cover (above-the-fold tiles only) */
+    priority?: boolean
 }
 
 /**
  * Collection tile: MediaTile chrome with a cover mosaic of the first places (what tells a
  * collection from a place at a glance), the author on top and collection facts below.
  */
-export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) => {
+export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, priority }) => {
     const { t, i18n } = useTranslation()
 
     const href = buildCollectionUrl(collection.id, collection.slug)
@@ -33,6 +35,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
             href={href}
             title={collection.title}
             covers={covers}
+            priority={priority}
             top={
                 <UserAvatar
                     user={{
@@ -79,7 +82,10 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
 
                 {!!collection.views && (
                     <span className={mediaTileStyles.stat}>
-                        <Icon name={'Eye'} />
+                        <Icon
+                            name={'Eye'}
+                            tooltip={t('views', { defaultValue: 'Просмотров' })}
+                        />
                         {numberFormatter(collection.views)}
                     </span>
                 )}

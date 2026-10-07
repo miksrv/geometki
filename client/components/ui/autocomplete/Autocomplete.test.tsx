@@ -30,7 +30,7 @@ describe('Autocomplete', () => {
     describe('rendering', () => {
         it('renders the text input', () => {
             render(<Autocomplete<string> />)
-            expect(screen.getByRole('textbox')).toBeInTheDocument()
+            expect(screen.getByRole('combobox')).toBeInTheDocument()
         })
 
         it('renders a label when provided', () => {
@@ -40,7 +40,7 @@ describe('Autocomplete', () => {
 
         it('renders the placeholder', () => {
             render(<Autocomplete<string> placeholder={'Search...'} />)
-            expect(screen.getByRole('textbox')).toHaveAttribute('placeholder', 'Search...')
+            expect(screen.getByRole('combobox')).toHaveAttribute('placeholder', 'Search...')
         })
     })
 
@@ -48,7 +48,7 @@ describe('Autocomplete', () => {
         it('calls onSearch when the input changes', () => {
             const onSearch = jest.fn()
             render(<Autocomplete<string> onSearch={onSearch} />)
-            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Mos' } })
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Mos' } })
             expect(onSearch).toHaveBeenCalledWith('Mos')
         })
 
@@ -60,7 +60,7 @@ describe('Autocomplete', () => {
                     debouncing={false}
                 />
             )
-            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Ka' } })
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Ka' } })
             expect(onSearch).toHaveBeenCalledWith('Ka')
         })
     })
@@ -75,7 +75,7 @@ describe('Autocomplete', () => {
                     debouncing={false}
                 />
             )
-            const input = screen.getByRole('textbox')
+            const input = screen.getByRole('combobox')
             fireEvent.change(input, { target: { value: 'M' } })
             rerender(
                 <Autocomplete<string>
@@ -94,7 +94,7 @@ describe('Autocomplete', () => {
                     debouncing={false}
                 />
             )
-            const input = screen.getByRole('textbox')
+            const input = screen.getByRole('combobox')
             fireEvent.change(input, { target: { value: 'xyz' } })
             // Rerender with still-empty options to trigger the isOpen check
             rerender(
@@ -122,7 +122,7 @@ describe('Autocomplete', () => {
                     debouncing={false}
                 />
             )
-            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'M' } })
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'M' } })
             rerender(
                 <Autocomplete<string>
                     options={options}
@@ -141,7 +141,7 @@ describe('Autocomplete', () => {
                     debouncing={false}
                 />
             )
-            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'M' } })
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'M' } })
             rerender(
                 <Autocomplete<string>
                     options={options}
@@ -149,7 +149,7 @@ describe('Autocomplete', () => {
                 />
             )
             fireEvent.click(screen.getByText('Moscow').closest('button')!)
-            expect(screen.getByRole('textbox')).toHaveValue('Moscow')
+            expect(screen.getByRole('combobox')).toHaveValue('Moscow')
         })
     })
 
@@ -163,7 +163,7 @@ describe('Autocomplete', () => {
                     debouncing={false}
                 />
             )
-            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'M' } })
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'M' } })
             rerender(
                 <Autocomplete<string>
                     options={options}
@@ -171,8 +171,116 @@ describe('Autocomplete', () => {
                     debouncing={false}
                 />
             )
-            fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+            fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' })
             expect(onSelect).toHaveBeenCalledWith(options[0])
+        })
+
+        it('selects the option highlighted via ArrowDown when Enter is pressed', () => {
+            const onSelect = jest.fn()
+            const { rerender } = render(
+                <Autocomplete<string>
+                    options={[]}
+                    onSelect={onSelect}
+                    debouncing={false}
+                />
+            )
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'M' } })
+            rerender(
+                <Autocomplete<string>
+                    options={options}
+                    onSelect={onSelect}
+                    debouncing={false}
+                />
+            )
+            const input = screen.getByRole('combobox')
+            fireEvent.keyDown(input, { key: 'ArrowDown' })
+            fireEvent.keyDown(input, { key: 'ArrowDown' })
+            fireEvent.keyDown(input, { key: 'Enter' })
+            expect(onSelect).toHaveBeenCalledWith(options[1])
+        })
+
+        it('selects the highlighted option on Enter even when onEnterPress is set', () => {
+            const onSelect = jest.fn()
+            const onEnterPress = jest.fn()
+            const { rerender } = render(
+                <Autocomplete<string>
+                    options={[]}
+                    onSelect={onSelect}
+                    onEnterPress={onEnterPress}
+                    debouncing={false}
+                />
+            )
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'M' } })
+            rerender(
+                <Autocomplete<string>
+                    options={options}
+                    onSelect={onSelect}
+                    onEnterPress={onEnterPress}
+                    debouncing={false}
+                />
+            )
+            const input = screen.getByRole('combobox')
+            fireEvent.keyDown(input, { key: 'ArrowDown' })
+            fireEvent.keyDown(input, { key: 'ArrowDown' })
+            fireEvent.keyDown(input, { key: 'Enter' })
+            expect(onSelect).toHaveBeenCalledWith(options[1])
+            expect(onEnterPress).not.toHaveBeenCalled()
+        })
+
+        it('calls onEnterPress when nothing is highlighted', () => {
+            const onSelect = jest.fn()
+            const onEnterPress = jest.fn()
+            const { rerender } = render(
+                <Autocomplete<string>
+                    options={[]}
+                    onSelect={onSelect}
+                    onEnterPress={onEnterPress}
+                    debouncing={false}
+                />
+            )
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'M' } })
+            rerender(
+                <Autocomplete<string>
+                    options={options}
+                    onSelect={onSelect}
+                    onEnterPress={onEnterPress}
+                    debouncing={false}
+                />
+            )
+            const input = screen.getByRole('combobox')
+            fireEvent.keyDown(input, { key: 'Enter' })
+            expect(onEnterPress).toHaveBeenCalledWith('M')
+            expect(onSelect).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('accessibility', () => {
+        it('exposes combobox ARIA attributes and links the listbox', () => {
+            const { rerender } = render(
+                <Autocomplete<string>
+                    options={[]}
+                    debouncing={false}
+                />
+            )
+            const input = screen.getByRole('combobox')
+            expect(input).toHaveAttribute('role', 'combobox')
+            expect(input).toHaveAttribute('aria-autocomplete', 'list')
+            expect(input).toHaveAttribute('aria-expanded', 'false')
+
+            fireEvent.change(input, { target: { value: 'M' } })
+            rerender(
+                <Autocomplete<string>
+                    options={options}
+                    debouncing={false}
+                />
+            )
+
+            expect(input).toHaveAttribute('aria-expanded', 'true')
+            expect(input).toHaveAttribute('aria-controls', screen.getByRole('listbox').id)
+            expect(screen.getAllByRole('option')).toHaveLength(options.length)
+
+            fireEvent.keyDown(input, { key: 'ArrowDown' })
+            expect(input).toHaveAttribute('aria-activedescendant', screen.getAllByRole('option')[0].id)
         })
     })
 
@@ -187,7 +295,7 @@ describe('Autocomplete', () => {
                     debouncing={false}
                 />
             )
-            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'M' } })
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'M' } })
             rerender(
                 <Autocomplete<string>
                     options={options}
@@ -205,6 +313,34 @@ describe('Autocomplete', () => {
             }
             // onClear might have been called
         })
+
+        it('gives the clear button an accessible name', () => {
+            const { rerender } = render(
+                <Autocomplete<string>
+                    options={[]}
+                    clearable
+                    debouncing={false}
+                />
+            )
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'M' } })
+            rerender(
+                <Autocomplete<string>
+                    options={options}
+                    clearable
+                    debouncing={false}
+                />
+            )
+            fireEvent.click(screen.getByText('Moscow').closest('button')!)
+
+            expect(screen.getByRole('button', { name: 'Очистить' })).toBeInTheDocument()
+        })
+    })
+
+    describe('toggle button', () => {
+        it('gives the dropdown toggle an accessible name', () => {
+            render(<Autocomplete<string> options={options} />)
+            expect(screen.getByRole('button', { name: 'Развернуть список' })).toBeInTheDocument()
+        })
     })
 
     describe('description', () => {
@@ -215,7 +351,7 @@ describe('Autocomplete', () => {
                     debouncing={false}
                 />
             )
-            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'K' } })
+            fireEvent.change(screen.getByRole('combobox'), { target: { value: 'K' } })
             rerender(
                 <Autocomplete<string>
                     options={options}

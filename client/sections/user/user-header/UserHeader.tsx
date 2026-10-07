@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { Button, Icon, Progress } from 'simple-react-ui-kit'
 
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
@@ -14,9 +15,11 @@ import defaultAvatar from '@/public/images/no-avatar.png'
 import { formatDate, makeActiveLink, minutesAgo, removeProtocolFromUrl, timeAgo } from '@/utils/helpers'
 import { nextLevelPercentage } from '@/utils/levels'
 
-import { UserAvatarEditor } from '../user-avatar-editor'
-
 import styles from './styles.module.sass'
+
+const UserAvatarEditor = dynamic(() => import('../user-avatar-editor').then((m) => ({ default: m.UserAvatarEditor })), {
+    ssr: false
+})
 
 interface UserHeaderProps {
     user?: ApiModel.User

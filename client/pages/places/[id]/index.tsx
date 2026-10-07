@@ -13,7 +13,6 @@ import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, PhotoGallery, PlaceCard } from '@/components/shared'
-import { ConfirmationDialog } from '@/components/shared/confirmation-dialog'
 import { Carousel } from '@/components/ui'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { useConfirmLeave } from '@/hooks/useConfirmLeave'
@@ -53,6 +52,10 @@ const PhotoUploader = dynamic(
     () => import('@/components/shared/photo-uploader/PhotoUploader').then((m) => ({ default: m.PhotoUploader })),
     { ssr: false }
 )
+
+const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
+    ssr: false
+})
 
 const NEAR_PLACES_COUNT = 10
 
@@ -401,8 +404,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return {
                     redirect: {
                         destination: `${localePrefix}${buildPlaceUrl(id, placeData?.slug)}${queryString}`,
-                        // TODO: flip to a permanent (301) redirect once the slug rollout is confirmed stable
-                        permanent: false
+                        // Permanent (301) redirect: the canonical `{id}-{slug}` URL never changes for a
+                        // given place, so search engines (Yandex in particular) should consolidate
+                        // ranking signals onto it instead of re-crawling the old URL as a separate page.
+                        statusCode: 301
                     }
                 }
             }
