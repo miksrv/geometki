@@ -3,7 +3,10 @@ import { ApiModel } from '@/api'
 export type PoiItemResponse = Pick<
     ApiModel.Place,
     'id' | 'slug' | 'rating' | 'title' | 'views' | 'photos' | 'cover' | 'comments' | 'bookmarks' | 'distance'
->
+> & {
+    /** Present only for signed-in users: whether the place is in their bookmarks */
+    bookmarked?: boolean
+}
 
 export interface ListRequest {
     bounds?: string

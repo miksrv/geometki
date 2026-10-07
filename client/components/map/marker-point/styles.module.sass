@@ -12,12 +12,14 @@
         background-size: cover
         position: relative
 
-        // Compact icon-only bookmark control in the corner of the popup cover
-        .bookmarkButton
+        // Compact icon-only place actions (bookmark, collection) in the corner of the popup cover
+        .actions
             position: absolute
             left: 8px
             top: 8px
             z-index: 1
+            display: flex
+            gap: 4px
 
         .bottomPanel
             @extend %placeBottomPanel

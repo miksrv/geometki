@@ -234,6 +234,8 @@ const MapPage: NextPage<object> = () => {
                     enableCenterPopup={true}
                     // enableSearch={true}
                     enableFullScreen={true}
+                    enableRuler={true}
+                    enableAreaMeasure={true}
                     enableCoordsControl={true}
                     enableLayersSwitcher={true}
                     enableContextMenu={true}

@@ -1,0 +1,104 @@
+@use '../../../styles/variables' as variables
+
+// Measuring mode on the map container: crosshair everywhere, and place markers, clusters
+// and popups let clicks through to the map so points can be put right on them
+.rulerActive
+    cursor: crosshair !important
+
+    :global(.leaflet-marker-pane), :global(.leaflet-popup-pane), :global(.leaflet-overlay-pane)
+        pointer-events: none
+
+        *
+            pointer-events: none !important
+
+    :global(.leaflet-interactive)
+        cursor: crosshair !important
+
+.line
+    stroke: var(--color-main)
+    stroke-width: 3px
+    stroke-linecap: round
+    stroke-linejoin: round
+    fill: none
+
+.rubberBand
+    stroke: var(--color-main)
+    stroke-width: 2px
+    stroke-dasharray: 4 6
+    stroke-linecap: round
+    fill: none
+
+.vertex
+    box-sizing: border-box
+    border: 2px solid var(--color-main)
+    border-radius: 50%
+    background: #fff
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .6)
+    cursor: grab !important
+
+    &:hover
+        background: var(--color-main-background)
+
+    &:active
+        cursor: grabbing !important
+
+// Labels: compact chips instead of Leaflet's tooltip bubbles
+.pointLabel, .totalLabel, .cursorLabel
+    padding: 1px 6px !important
+    border: none !important
+    border-radius: var(--radius-sm) !important
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .25) !important
+    font-size: var(--font-size-small) !important
+    font-variant-numeric: tabular-nums
+    white-space: nowrap
+
+    &::before
+        display: none
+
+.pointLabel
+    background: var(--surface-1) !important
+    color: var(--text-color-secondary) !important
+
+.totalLabel
+    background: var(--color-main) !important
+    color: #fff !important
+    font-weight: 600
+
+.cursorLabel
+    background: rgba(0, 0, 0, .75) !important
+    color: #fff !important
+
+.panel
+    position: absolute
+    z-index: 1000
+    top: 10px
+    left: 50%
+    transform: translateX(-50%)
+    display: flex
+    align-items: center
+    gap: 12px
+    max-width: calc(100% - 140px)
+    padding: 6px 12px
+    border: var(--input-border)
+    border-radius: var(--border-radius)
+    background: var(--surface-1)
+    color: var(--text-color-primary)
+    font-size: var(--font-size-small)
+    white-space: nowrap
+    cursor: default
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        top: auto
+        bottom: 46px
+        max-width: calc(100% - 20px)
+        // The area panel has four items: they wrap instead of running off a narrow screen
+        flex-wrap: wrap
+        justify-content: center
+        row-gap: 2px
+
+.total b
+    font-variant-numeric: tabular-nums
+
+.actions
+    display: flex
+    gap: 8px

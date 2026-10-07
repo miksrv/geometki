@@ -1,0 +1,26 @@
+// The rest (vertices, labels, panel, the measuring mode of the map) comes from the ruler styles
+
+.polygon, .draftPolygon
+    stroke: var(--color-main)
+    stroke-width: 3px
+    stroke-linecap: round
+    stroke-linejoin: round
+    fill: var(--color-main)
+    fill-opacity: .15
+
+.draftPolygon
+    stroke-width: 2px
+    fill-opacity: .08
+
+// Handle in the middle of an edge: click or drag it to add a point there
+.midpoint
+    box-sizing: border-box
+    border: 2px solid var(--color-main)
+    border-radius: 50%
+    background: #fff
+    opacity: .6
+    cursor: copy !important
+
+    &:hover
+        opacity: 1
+        background: var(--color-main-background)

@@ -146,12 +146,12 @@ describe('createWikipediaIcon', () => {
 
     it('calls divIcon with correct iconSize', () => {
         createWikipediaIcon()
-        expect(mockDivIcon).toHaveBeenCalledWith(expect.objectContaining({ iconSize: [28, 28] }))
+        expect(mockDivIcon).toHaveBeenCalledWith(expect.objectContaining({ iconSize: [20, 20] }))
     })
 
     it('calls divIcon with correct iconAnchor', () => {
         createWikipediaIcon()
-        expect(mockDivIcon).toHaveBeenCalledWith(expect.objectContaining({ iconAnchor: [14, 14] }))
+        expect(mockDivIcon).toHaveBeenCalledWith(expect.objectContaining({ iconAnchor: [10, 10] }))
     })
 
     it('uses WIKIPEDIA_COLOR when not loading', () => {
@@ -169,16 +169,14 @@ describe('createWikipediaIcon', () => {
         expect(String(mockDivIcon.mock.calls[0][0].html)).toContain(WIKIPEDIA_COLOR)
     })
 
-    it('includes book SVG structure — rect for cover', () => {
+    it('draws a rounded square background', () => {
         createWikipediaIcon()
         expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('<rect')
     })
 
-    it('includes book SVG structure — lines for pages', () => {
+    it('draws the "W" glyph', () => {
         createWikipediaIcon()
-        const html = String(mockDivIcon.mock.calls[0][0].html)
-        const rectCount = (html.match(/<rect/g) ?? []).length
-        expect(rectCount).toBeGreaterThan(1)
+        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('<polyline')
     })
 })
 

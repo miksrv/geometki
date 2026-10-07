@@ -1,70 +1,108 @@
 import React from 'react'
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 
 import { CoordinatesControl } from './CoordinatesControl'
 
+type Handlers = {
+    mousemove?: (event: { latlng: { lat: number; lng: number } }) => void
+    mouseout?: () => void
+}
+
+let mapHandlers: Handlers = {}
+
+jest.mock('react-leaflet', () => ({
+    useMapEvents: (handlers: Handlers) => {
+        mapHandlers = handlers
+        return {}
+    }
+}))
+
 jest.mock('simple-react-ui-kit', () => ({
-    Button: ({ icon, onClick, mode }: any) => (
-        <button
-            data-icon={icon}
-            data-mode={mode}
-            onClick={onClick}
-        />
-    ),
-    Container: ({ children, onClick, className }: any) => (
+    Container: ({ children, className }: { children?: React.ReactNode; className?: string }) => (
         <div
             className={className}
-            onClick={onClick}
+            data-testid={'coordinates'}
         >
             {children}
         </div>
     )
 }))
 
-describe('CoordinatesControl', () => {
-    describe('closed state (default)', () => {
-        it('renders the PinDrop button when closed', () => {
-            render(<CoordinatesControl />)
-            expect(screen.getByRole('button')).toHaveAttribute('data-icon', 'PinDrop')
-        })
+jest.mock('next-i18next/pages', () => ({
+    useTranslation: () => ({ t: (key: string, opts?: { defaultValue?: string }) => opts?.defaultValue ?? key })
+}))
 
-        it('does not show coordinates when closed', () => {
-            render(<CoordinatesControl coordinates={{ lat: 51.5, lon: 55.1 }} />)
-            expect(screen.queryByText('Lat:')).not.toBeInTheDocument()
-        })
+// Runs the scheduled frame right away
+const flushFrame = () => act(() => jest.runOnlyPendingTimers())
+
+describe('CoordinatesControl', () => {
+    beforeEach(() => {
+        jest.useFakeTimers()
+        mapHandlers = {}
     })
 
-    describe('open state', () => {
-        it('opens and shows coordinates when button is clicked', () => {
-            render(<CoordinatesControl coordinates={{ lat: 51.765, lon: 55.099 }} />)
-            fireEvent.click(screen.getByRole('button'))
-            expect(screen.getByText('Lat:')).toBeInTheDocument()
-            expect(screen.getByText('Lon:')).toBeInTheDocument()
+    afterEach(() => {
+        jest.useRealTimers()
+    })
+
+    it('is always visible, without a toggle button', () => {
+        render(<CoordinatesControl coordinates={{ lat: 51.765, lon: 55.099 }} />)
+
+        expect(screen.getByText('Lat:')).toBeInTheDocument()
+        expect(screen.getByText('Lon:')).toBeInTheDocument()
+        expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    })
+
+    it('shows the map center while there is no cursor over the map', () => {
+        render(<CoordinatesControl coordinates={{ lat: 51.765, lon: 55.099 }} />)
+
+        expect(screen.getByText('51.76500')).toBeInTheDocument()
+        expect(screen.getByText('55.09900')).toBeInTheDocument()
+    })
+
+    it('follows the cursor, updating once per animation frame', () => {
+        render(<CoordinatesControl coordinates={{ lat: 51.765, lon: 55.099 }} />)
+
+        act(() => {
+            mapHandlers.mousemove?.({ latlng: { lat: 10, lng: 20 } })
+            mapHandlers.mousemove?.({ latlng: { lat: 10.123456, lng: -20.654321 } })
         })
 
-        it('displays the lat/lon values', () => {
-            render(<CoordinatesControl coordinates={{ lat: 51.765, lon: 55.099 }} />)
-            fireEvent.click(screen.getByRole('button'))
-            expect(screen.getByText('51.765')).toBeInTheDocument()
-            expect(screen.getByText('55.099')).toBeInTheDocument()
-        })
+        // Nothing is written before the frame
+        expect(screen.getByText('51.76500')).toBeInTheDocument()
 
-        it('calls onChangeOpen with true when opening', () => {
-            const onChangeOpen = jest.fn()
-            render(<CoordinatesControl onChangeOpen={onChangeOpen} />)
-            fireEvent.click(screen.getByRole('button'))
-            expect(onChangeOpen).toHaveBeenCalledWith(true)
-        })
+        flushFrame()
 
-        it('calls onChangeOpen with false when closing', () => {
-            const onChangeOpen = jest.fn()
-            render(<CoordinatesControl onChangeOpen={onChangeOpen} />)
-            fireEvent.click(screen.getByRole('button'))
-            // Click the container to close
-            const container = screen.getByText('Lat:').closest('div')
-            fireEvent.click(container!)
-            expect(onChangeOpen).toHaveBeenCalledWith(false)
-        })
+        expect(screen.getByText('10.12346')).toBeInTheDocument()
+        expect(screen.getByText('-20.65432')).toBeInTheDocument()
+    })
+
+    it('goes back to the map center when the cursor leaves the map', () => {
+        render(<CoordinatesControl coordinates={{ lat: 51.765, lon: 55.099 }} />)
+
+        act(() => mapHandlers.mousemove?.({ latlng: { lat: 10, lng: 20 } }))
+        flushFrame()
+        act(() => mapHandlers.mouseout?.())
+        flushFrame()
+
+        expect(screen.getByText('51.76500')).toBeInTheDocument()
+    })
+
+    it('keeps the cursor position when the map center changes under it', () => {
+        const { rerender } = render(<CoordinatesControl coordinates={{ lat: 51.765, lon: 55.099 }} />)
+
+        act(() => mapHandlers.mousemove?.({ latlng: { lat: 10, lng: 20 } }))
+        flushFrame()
+
+        rerender(<CoordinatesControl coordinates={{ lat: 40, lon: 50 }} />)
+
+        expect(screen.getByText('10.00000')).toBeInTheDocument()
+    })
+
+    it('shows a dash when nothing is known yet', () => {
+        render(<CoordinatesControl />)
+
+        expect(screen.getAllByText('—')).toHaveLength(2)
     })
 })

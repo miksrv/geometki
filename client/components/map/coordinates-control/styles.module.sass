@@ -5,16 +5,20 @@
     box-shadow: none
     display: flex
     align-items: center
-    cursor: pointer
+    // A readout, not a control: the cursor over it stays "over the map", so the numbers keep
+    // following it and clicks reach the map underneath
+    pointer-events: none
+    user-select: none
 
     b
         font-weight: 700
         margin-right: 4px
 
         &:last-of-type
-            margin-left: 4px
+            margin-left: 8px
 
     span
         display: inline-block
-        width: 55px
-        overflow: hidden
+        // Fixed-width digits and room for "-179.12345": the box doesn't jitter as numbers change
+        min-width: 10ch
+        font-variant-numeric: tabular-nums

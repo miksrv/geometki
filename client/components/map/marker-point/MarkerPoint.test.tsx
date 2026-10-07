@@ -3,7 +3,7 @@ import { Provider } from 'react-redux'
 import * as Leaflet from 'leaflet'
 
 import { configureStore } from '@reduxjs/toolkit'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { API } from '@/api'
 import applicationReducer from '@/app/applicationSlice'
@@ -79,7 +79,10 @@ jest.mock('cookies-next', () => ({
 
 jest.mock('@/api', () => ({
     API: {
-        usePoiGetItemMutation: jest.fn().mockReturnValue([jest.fn(), { isLoading: false, data: undefined }])
+        useLazyPoiGetItemQuery: jest.fn().mockReturnValue([jest.fn(), { data: undefined }]),
+        util: {
+            upsertQueryData: jest.fn().mockReturnValue({ type: 'test/upsertQueryData' })
+        }
     },
     ApiModel: {
         Categories: {}
@@ -87,6 +90,7 @@ jest.mock('@/api', () => ({
 }))
 
 jest.mock('@/components/shared', () => ({
+    AddToCollectionButton: () => <div data-testid={'add-to-collection-button'} />,
     BookmarkButton: () => <div data-testid={'bookmark-button'} />,
     PlacePlate: ({ _icon, content }: any) => <div data-testid={'place-plate'}>{content}</div>
 }))
@@ -160,8 +164,45 @@ describe('MarkerPoint', () => {
         expect(screen.getByTestId('bookmark-button')).toBeInTheDocument()
     })
 
+    it('renders an AddToCollectionButton inside the popup', () => {
+        renderWithStore(<MarkerPoint place={mockPlace as any} />)
+        expect(screen.getByTestId('add-to-collection-button')).toBeInTheDocument()
+    })
+
+    it('requests the card with preferCacheValue and seeds the bookmark cache from it', async () => {
+        const data = { id: 'place-1', title: 'Place', bookmarked: true }
+        const getPlaceItem = jest.fn().mockResolvedValue({ data })
+        jest.mocked(API.useLazyPoiGetItemQuery).mockReturnValue([getPlaceItem, { data }] as any)
+
+        renderWithStore(<MarkerPoint place={mockPlace as any} />)
+        fireEvent.click(screen.getByTestId('point-marker'))
+
+        await waitFor(() =>
+            expect(API.util.upsertQueryData).toHaveBeenCalledWith(
+                'bookmarksGetPlace',
+                { placeId: 'place-1' },
+                { result: true }
+            )
+        )
+        expect(getPlaceItem).toHaveBeenCalledWith('place-1', true)
+        expect(screen.getByText('Place')).toBeInTheDocument()
+    })
+
+    it('does not seed the bookmark cache for guests', async () => {
+        jest.mocked(API.util.upsertQueryData).mockClear()
+        const data = { id: 'place-1', title: 'Place' }
+        const getPlaceItem = jest.fn().mockResolvedValue({ data })
+        jest.mocked(API.useLazyPoiGetItemQuery).mockReturnValue([getPlaceItem, { data }] as any)
+
+        renderWithStore(<MarkerPoint place={mockPlace as any} />)
+        fireEvent.click(screen.getByTestId('point-marker'))
+
+        await waitFor(() => expect(getPlaceItem).toHaveBeenCalled())
+        expect(API.util.upsertQueryData).not.toHaveBeenCalled()
+    })
+
     it('renders skeleton when loading', () => {
-        jest.mocked(API.usePoiGetItemMutation).mockReturnValue([jest.fn(), { isLoading: true, data: undefined }])
+        jest.mocked(API.useLazyPoiGetItemQuery).mockReturnValue([jest.fn(), { data: undefined }] as any)
         renderWithStore(<MarkerPoint place={mockPlace as any} />)
         expect(screen.getByTestId('skeleton')).toBeInTheDocument()
     })
