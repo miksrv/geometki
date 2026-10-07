@@ -55,7 +55,8 @@ function getPhotoLocation(string $file): ?object
             'lat' => round($lat, 7),
             'lon' => round($lng, 7)
         ];
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
+        // Throwable: an empty GPS fix (0/0 rationals) throws DivisionByZeroError, which is not an Exception
         log_message('error', '{exception}', ['exception' => $e]);
 
         return null;

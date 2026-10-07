@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-use App\Entities\PhotoEntity;
+use App\Libraries\PhotoLibrary;
 use App\Libraries\SessionLibrary;
 use CodeIgniter\Files\File;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -66,45 +66,24 @@ class PhotosTemporary extends ResourceController
             $newName = $photo->getRandomName();
             $photo->move(UPLOAD_TEMPORARY, $newName, true);
 
-            $file = new File(UPLOAD_TEMPORARY . $newName);
-            $name = pathinfo($file, PATHINFO_FILENAME);
-            $ext = $file->getExtension();
+            $photoLibrary = new PhotoLibrary();
+            $processed    = $photoLibrary->processFile(UPLOAD_TEMPORARY . $newName, UPLOAD_TEMPORARY);
 
-            list($width, $height) = getimagesize($file->getRealPath());
-
-            // Calculating Aspect Ratio
-            $orientation = $width > $height ? 'h' : 'v';
-            $width = $orientation === 'h' ? $width : $height;
-            $height = $orientation === 'h' ? $height : $width;
-
-            // If the uploaded image dimensions exceed the maximum
-            if ($width > PHOTO_MAX_WIDTH || $height > PHOTO_MAX_HEIGHT) {
-                $image = Services::image('gd');
-                $image->withFile($file->getRealPath())
-                    ->fit(PHOTO_MAX_WIDTH, PHOTO_MAX_HEIGHT)
-                    ->reorient(true)
-                    ->save(UPLOAD_TEMPORARY . $name . '.' . $ext);
-
-                list($width, $height) = getimagesize($file->getRealPath());
+            // GD drops the EXIF data, so the photo's GPS position is kept next to the file
+            // until the place is created (see Places::savePhotos)
+            if ($processed->coordinates) {
+                file_put_contents(
+                    UPLOAD_TEMPORARY . $processed->name . '.json',
+                    json_encode($processed->coordinates)
+                );
             }
-
-            $image = Services::image('gd'); // imagick
-            $image->withFile($file->getRealPath())
-                ->fit(PHOTO_PREVIEW_WIDTH, PHOTO_PREVIEW_HEIGHT)
-                ->save(UPLOAD_TEMPORARY . $name . '_preview.' . $ext);
-
-            $photo = new PhotoEntity();
-            $photo->filename  = $name;
-            $photo->extension = $ext;
-            $photo->width     = $width;
-            $photo->height    = $height;
 
             return $this->respondCreated((object)[
                 'id'      => $newName,
-                'full'    => PATH_TEMPORARY . $name . '.' . $ext,
-                'preview' => PATH_TEMPORARY . $name . '.' . $ext,
-                'width'   => $photo->width,
-                'height'  => $photo->height,
+                'full'    => PATH_TEMPORARY . $processed->name . '.' . $processed->ext,
+                'preview' => PATH_TEMPORARY . $processed->name . '_preview.' . $processed->ext,
+                'width'   => $processed->width,
+                'height'  => $processed->height,
                 'placeId' => 'temporary'
             ]);
 
@@ -131,8 +110,7 @@ class PhotosTemporary extends ResourceController
             return $this->failUnauthorized();
         }
 
-        $realPath = realpath(UPLOAD_TEMPORARY . $id);
-        if (!$realPath || strpos($realPath, realpath(UPLOAD_TEMPORARY)) !== 0) {
+        if (!$this->isValidReference($id)) {
             return $this->failValidationErrors(lang('Photos.temporaryInvalidReference'));
         }
 
@@ -140,10 +118,12 @@ class PhotosTemporary extends ResourceController
             return $this->failValidationErrors(lang('Photos.temporaryPhotoNotFound'));
         }
 
-        $originalFile = explode('.', $id);
+        $name = pathinfo($id, PATHINFO_FILENAME);
+        $ext  = pathinfo($id, PATHINFO_EXTENSION);
 
-        unlink(UPLOAD_TEMPORARY . $originalFile[0] . '.' . $originalFile[1]);
-        unlink(UPLOAD_TEMPORARY . $originalFile[0] . '_preview.' . $originalFile[1]);
+        PhotoLibrary::removeFile(UPLOAD_TEMPORARY . $name . '.' . $ext);
+        PhotoLibrary::removeFile(UPLOAD_TEMPORARY . $name . '_preview.' . $ext);
+        PhotoLibrary::removeFile(UPLOAD_TEMPORARY . $name . '.json');
 
         return $this->respondDeleted(['id' => $id]);
     }
@@ -165,8 +145,7 @@ class PhotosTemporary extends ResourceController
             return $this->failUnauthorized();
         }
 
-        $realPath = realpath(UPLOAD_TEMPORARY . $id);
-        if (!$realPath || strpos($realPath, realpath(UPLOAD_TEMPORARY)) !== 0) {
+        if (!$this->isValidReference($id)) {
             return $this->failValidationErrors(lang('Photos.temporaryInvalidReference'));
         }
 
@@ -174,7 +153,7 @@ class PhotosTemporary extends ResourceController
             return $this->failValidationErrors(lang('Photos.temporaryPhotoNotFound'));
         }
 
-        $originalFile = explode('.', $id);
+        $originalFile = [pathinfo($id, PATHINFO_FILENAME)];
 
         $file  = new File(UPLOAD_TEMPORARY . $id);
         $ext   = $file->getExtension();
@@ -192,5 +171,16 @@ class PhotosTemporary extends ResourceController
             'full'    => PATH_TEMPORARY . $originalFile[0] . '.' . $ext,
             'preview' => PATH_TEMPORARY . $originalFile[0] . '_preview.' . $ext,
         ]);
+    }
+
+    /**
+     * A temporary photo is referenced by its bare stored file name; anything else (paths,
+     * `../`) is rejected so a request can't reach files outside the temporary directory.
+     *
+     * @param string|null $id Filename of the temporary photo (e.g. 1696000000_abc123.jpg).
+     */
+    protected function isValidReference(?string $id): bool
+    {
+        return $id !== null && preg_match(PhotoLibrary::FILENAME_PATTERN, $id) === 1;
     }
 }

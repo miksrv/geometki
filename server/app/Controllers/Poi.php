@@ -9,6 +9,7 @@ use App\Libraries\SessionLibrary;
 use App\Models\PhotosModel;
 use App\Models\PlacesModel;
 use App\Models\SessionsModel;
+use App\Models\UsersBookmarksModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
@@ -173,6 +174,14 @@ class Poi extends ResourceController
         $cover     = $formatter->formatCover($id, (int) $placeData->photos);
         if ($cover) {
             $placeData->cover = $cover;
+        }
+
+        // Bookmark state for the signed-in user, so the map popup does not need a separate check request
+        if ($sessionLib->isAuth && $sessionLib->user) {
+            $placeData->bookmarked = (new UsersBookmarksModel())
+                ->select('id')
+                ->where(['user_id' => $sessionLib->user->id, 'place_id' => $id])
+                ->first() !== null;
         }
 
         return $this->respond($placeData);
