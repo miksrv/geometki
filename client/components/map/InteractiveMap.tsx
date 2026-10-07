@@ -5,6 +5,7 @@ import isEqual from 'lodash-es/isEqual'
 import { Button, cn, Spinner } from 'simple-react-ui-kit'
 
 import { useRouter } from 'next/dist/client/router'
+import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
 import { LOCAL_STORAGE } from '@/config/constants'
@@ -125,6 +126,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
     controlsSize = 'medium',
     ...props
 }) => {
+    const { t } = useTranslation()
     const router = useRouter()
     const mapRef = useRef<Map>(null)
 
@@ -181,6 +183,25 @@ export const InteractiveMap: React.FC<MapProps> = ({
             await router.replace(url.toString())
         }
     }
+
+    // Stable reference shared by every cluster marker (place or photo) so memoized
+    // markers don't re-render just because the map position state changed.
+    const handleClusterClick = useCallback((coords: ApiType.Coordinates) => {
+        const zoom = (mapRef.current?.getZoom() ?? 16) + 2
+        mapRef.current?.setView([coords.lat, coords.lon], zoom)
+    }, [])
+
+    // Stable reference for photo markers: the clicked marker's index is passed back as
+    // plain data (not baked into a per-item closure), the current `photos` list comes
+    // from the ref-free dependency array.
+    const handlePhotoMarkerClick = useCallback(
+        (index?: number) => {
+            if (typeof index === 'number' && photos) {
+                onPhotoClick?.(photos, index)
+            }
+        },
+        [photos, onPhotoClick]
+    )
 
     const handleToggleFullscreen = async () => {
         const mapElement = mapRef?.current?.getContainer()
@@ -389,9 +410,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         <MarkerPointCluster
                             key={`markerPointCluster${i}`}
                             marker={place}
-                            onClick={(coords) =>
-                                mapRef.current?.setView([coords.lat, coords.lon], (mapPosition?.zoom ?? 16) + 2)
-                            }
+                            onClick={handleClusterClick}
                         />
                     ) : (
                         <MarkerPoint
@@ -407,15 +426,14 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         <MarkerPhotoCluster
                             key={`markerPhotoCluster${i}`}
                             marker={photo}
-                            onClick={(coords) =>
-                                mapRef.current?.setView([coords.lat, coords.lon], (mapPosition?.zoom ?? 16) + 2)
-                            }
+                            onClick={handleClusterClick}
                         />
                     ) : (
                         <MarkerPhoto
                             key={`markerPhoto${i}`}
                             photo={photo}
-                            onPhotoClick={() => onPhotoClick?.(photos, i)}
+                            index={i}
+                            onPhotoClick={handlePhotoMarkerClick}
                         />
                     )
                 )}
@@ -435,6 +453,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                             size={controlsSize}
                             mode={'secondary'}
                             icon={'PlusCircle'}
+                            tooltip={t('create-geotag', { defaultValue: 'Добавить геометку' })}
                             onClick={onClickCreatePlace}
                         />
                     )}
@@ -444,6 +463,11 @@ export const InteractiveMap: React.FC<MapProps> = ({
                             size={controlsSize}
                             mode={'secondary'}
                             icon={isFullscreen ? 'FullscreenOut' : 'FullscreenIn'}
+                            tooltip={
+                                isFullscreen
+                                    ? t('fullscreen-exit', { defaultValue: 'Выйти из полноэкранного режима' })
+                                    : t('fullscreen-enter', { defaultValue: 'Во весь экран' })
+                            }
                             onClick={handleToggleFullscreen}
                         />
                     )}
@@ -453,6 +477,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                             size={controlsSize}
                             mode={'secondary'}
                             icon={'Position'}
+                            tooltip={t('my-location', { defaultValue: 'Моё местоположение' })}
                             onClick={handleUserPosition}
                         />
                     )}
@@ -463,6 +488,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                             noIndex={true}
                             mode={'secondary'}
                             icon={'External'}
+                            tooltip={t('open-on-map', { defaultValue: 'Открыть на карте' })}
                             link={fullMapLink}
                         />
                     )}

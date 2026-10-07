@@ -12,14 +12,14 @@ interface MarkerPhotoClusterProps {
     onClick?: (coords: ApiType.Coordinates) => void
 }
 
-export const MarkerPhotoCluster: React.FC<MarkerPhotoClusterProps> = ({ marker, onClick }) => {
+const MarkerPhotoClusterComponent: React.FC<MarkerPhotoClusterProps> = ({ marker, onClick }) => {
     const clusterMarkerIcon = new Leaflet.DivIcon({
         className: styles.markerPhotoCluster,
         html:
             '<img src="' +
             IMG_HOST +
             marker.preview +
-            '" alt="" /><div class="map-placemark-cluster-count">' +
+            '" alt="" loading="lazy" /><div class="map-placemark-cluster-count">' +
             marker.count +
             '</div></div>'
     })
@@ -34,3 +34,6 @@ export const MarkerPhotoCluster: React.FC<MarkerPhotoClusterProps> = ({ marker, 
         />
     )
 }
+
+/** Memoized: markers don't re-render just because the map's own state changed. */
+export const MarkerPhotoCluster = React.memo(MarkerPhotoClusterComponent)

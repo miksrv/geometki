@@ -8,12 +8,12 @@ import styles from './styles.module.sass'
 
 const PIN_CONFIG: Record<MarkerPinType, { color: string; path: string }> = {
     location: {
-        color: '#2688eb',
+        color: 'var(--color-main)',
         // PinDrop icon path
         path: 'M18 8c0-3.31-2.69-6-6-6S6 4.69 6 8c0 4.5 6 11 6 11s6-6.5 6-11m-8 0c0-1.1.9-2 2-2s2 .9 2 2-.89 2-2 2c-1.1 0-2-.9-2-2M5 20v2h14v-2z'
     },
     coordinates: {
-        color: '#F8A01C',
+        color: 'var(--color-orange)',
         // Position (crosshair) icon path
         path: 'M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4m8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z'
     }

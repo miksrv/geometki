@@ -60,7 +60,20 @@ describe('MarkerPhoto', () => {
         )
     })
 
-    it('calls onPhotoClick when marker is clicked', () => {
+    it('calls onPhotoClick with its index when marker is clicked', () => {
+        const onPhotoClick = jest.fn()
+        render(
+            <MarkerPhoto
+                photo={mockPhoto as any}
+                index={2}
+                onPhotoClick={onPhotoClick}
+            />
+        )
+        screen.getByTestId('photo-marker').click()
+        expect(onPhotoClick).toHaveBeenCalledWith(2)
+    })
+
+    it('calls onPhotoClick with undefined when no index is given', () => {
         const onPhotoClick = jest.fn()
         render(
             <MarkerPhoto
@@ -69,6 +82,6 @@ describe('MarkerPhoto', () => {
             />
         )
         screen.getByTestId('photo-marker').click()
-        expect(onPhotoClick).toHaveBeenCalledWith([])
+        expect(onPhotoClick).toHaveBeenCalledWith(undefined)
     })
 })

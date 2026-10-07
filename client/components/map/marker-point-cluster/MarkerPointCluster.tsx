@@ -11,7 +11,7 @@ interface MarkerPointClusterProps {
     onClick?: (coords: ApiType.Coordinates) => void
 }
 
-export const MarkerPointCluster: React.FC<MarkerPointClusterProps> = ({ marker, onClick }) => {
+const MarkerPointClusterComponent: React.FC<MarkerPointClusterProps> = ({ marker, onClick }) => {
     const clusterMarkerIcon = new Leaflet.DivIcon({
         className: styles.mapPointCluster,
         html: '<div>' + marker.count + '</div>'
@@ -27,3 +27,6 @@ export const MarkerPointCluster: React.FC<MarkerPointClusterProps> = ({ marker, 
         />
     )
 }
+
+/** Memoized: markers don't re-render just because the map's own state changed. */
+export const MarkerPointCluster = React.memo(MarkerPointClusterComponent)

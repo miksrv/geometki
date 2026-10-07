@@ -24,10 +24,10 @@ export const MarkerUser: React.FC<MarkerUserProps> = ({ coordinates }) => {
             <Circle
                 center={[coordinates.lat, coordinates.lon]}
                 opacity={0.5} //Stroke opacity
-                color={'#227c23'} // Stroke color
+                color={'var(--color-green)'} // Stroke color
                 weight={1} // Stroke width in pixels
                 stroke={true} // Whether to draw stroke along the path
-                fillColor={'#227c23'}
+                fillColor={'var(--color-green)'}
                 radius={500}
             />
             <Marker
