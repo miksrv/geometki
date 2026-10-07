@@ -78,14 +78,7 @@ const CreatePlacePage: NextPage<object> = () => {
             </Head>
             <PageHeader
                 title={t('create-geotag')}
-                homePageTitle={t('geotags')}
-                currentPage={t('create-geotag')}
-                links={[
-                    {
-                        link: '/places/',
-                        text: t('interesting-places')
-                    }
-                ]}
+                breadcrumbs={[{ link: '/places', text: t('nav-places', { defaultValue: 'Места' }) }]}
             />
             <Container>
                 {serverError && <Message type={'error'}>{serverError}</Message>}

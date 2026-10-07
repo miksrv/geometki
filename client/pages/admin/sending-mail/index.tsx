@@ -11,7 +11,7 @@ import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
 import { SendingMailDetail } from '@/components/pages/sending-mail-detail/SendingMailDetail'
-import { AppLayout, Header, UserAvatar } from '@/components/shared'
+import { AppLayout, PageHeader, UserAvatar } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { SendingMailFilterPanel, SendingMailFilterType } from '@/sections/sending-mail'
 import { formatDate } from '@/utils/helpers'
@@ -166,11 +166,7 @@ const AdminSendingMailPage: React.FC<AdminSendingMailPageProps> = () => {
                 })}
             </Head>
 
-            <Header
-                title={pageTitle}
-                homePageTitle={t('geotags')}
-                currentPage={pageTitle}
-            />
+            <PageHeader title={pageTitle} />
 
             <Container style={{ padding: '10px' }}>
                 <SendingMailFilterPanel

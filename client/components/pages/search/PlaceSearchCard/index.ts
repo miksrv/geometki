@@ -1,1 +1,0 @@
-export { PlaceSearchCard } from './PlaceSearchCard'

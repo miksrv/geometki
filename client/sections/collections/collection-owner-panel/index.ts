@@ -1,1 +1,0 @@
-export { CollectionOwnerPanel } from './CollectionOwnerPanel'

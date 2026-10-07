@@ -12,7 +12,7 @@ import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
 import { AchievementForm } from '@/components/pages/achievement-form'
-import { AppLayout, Header } from '@/components/shared'
+import { AppLayout, PageHeader } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
@@ -109,11 +109,9 @@ const AdminAchievementsEdit: React.FC<AdminAchievementsEditProps> = () => {
                 })}
             </Head>
 
-            <Header
+            <PageHeader
                 title={pageTitle}
-                homePageTitle={t('geotags')}
-                currentPage={pageTitle}
-                links={[
+                breadcrumbs={[
                     { link: '/admin/achievements', text: t('achievements-admin-title', { defaultValue: 'Достижения' }) }
                 ]}
             />

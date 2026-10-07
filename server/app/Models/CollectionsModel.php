@@ -10,7 +10,7 @@ use Config\Database;
  * Model for the `collections` table.
  *
  * A collection is an author-curated, published-immediately list of places.
- * Indexability, places_count, slug, and the region/category "theme" are all
+ * Indexability, places_count, slug, and the region "theme" are all
  * maintained by the Collections controller as places and content change.
  *
  * @package App\Models
@@ -32,12 +32,10 @@ class CollectionsModel extends ApplicationBaseModel
         'user_id',
         'title',
         'description',
-        'meta_description',
         'title_en',
         'description_en',
         'region_id',
         'country_id',
-        'category',
         'cover_place_id',
         'cover_photo_id',
         'hidden',
@@ -58,7 +56,6 @@ class CollectionsModel extends ApplicationBaseModel
         'title'    => 'required|string|max_length[120]',
         'slug'     => 'permit_empty|string|max_length[120]',
         'user_id'  => 'required|string|min_length[3]|max_length[40]',
-        'category' => 'permit_empty|string|max_length[50]',
     ];
 
     protected $validationMessages = [];
@@ -106,9 +103,9 @@ class CollectionsModel extends ApplicationBaseModel
     }
 
     /**
-     * Fill region_id and/or category from the most common value among the
-     * collection's current places, but only when the field is still empty —
-     * once an owner sets the theme explicitly it is never auto-overwritten.
+     * Fill region_id from the most common value among the collection's
+     * current places, but only when the field is still empty — once an owner
+     * sets the region explicitly it is never auto-overwritten.
      *
      * @param string $collectionId
      * @return void
@@ -138,23 +135,6 @@ class CollectionsModel extends ApplicationBaseModel
 
             if ($row) {
                 $updates['region_id'] = $row->region_id;
-            }
-        }
-
-        if (empty($collection->category)) {
-            $row = $db->table('collections_places')
-                ->select('places.category, COUNT(*) as cnt')
-                ->join('places', 'places.id = collections_places.place_id')
-                ->where('collections_places.collection_id', $collectionId)
-                ->where('places.category IS NOT NULL', null, false)
-                ->where('places.deleted_at IS NULL', null, false)
-                ->groupBy('places.category')
-                ->orderBy('cnt', 'DESC')
-                ->get(1)
-                ->getRow();
-
-            if ($row) {
-                $updates['category'] = $row->category;
             }
         }
 
@@ -192,7 +172,7 @@ class CollectionsModel extends ApplicationBaseModel
 
     /**
      * Apply the standard SELECT columns and LEFT JOINs used to format a
-     * collection (author, region, category) for list/detail responses.
+     * collection (author, region) for list/detail responses.
      *
      * @return static
      */
@@ -200,17 +180,15 @@ class CollectionsModel extends ApplicationBaseModel
     {
         $this->select(
             'collections.id, collections.slug, collections.user_id as owner_id, collections.title,
-            collections.description, collections.meta_description, collections.region_id, collections.category,
+            collections.description, collections.region_id,
             collections.cover_place_id, collections.cover_photo_id, collections.hidden, collections.featured,
             collections.indexable, collections.places_count, collections.views, collections.saves,
             collections.updated_at as updated, collections.created_at as created,
             users.id as user_id, users.name as user_name, users.avatar as user_avatar,
-            location_regions.title_en as region_en, location_regions.title_ru as region_ru,
-            category.title_en as category_en, category.title_ru as category_ru'
+            location_regions.title_en as region_en, location_regions.title_ru as region_ru'
         )
         ->join('users', 'users.id = collections.user_id', 'left')
-        ->join('location_regions', 'location_regions.id = collections.region_id', 'left')
-        ->join('category', 'category.name = collections.category', 'left');
+        ->join('location_regions', 'location_regions.id = collections.region_id', 'left');
 
         return $this;
     }

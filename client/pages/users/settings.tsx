@@ -12,7 +12,7 @@ import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, Header } from '@/components/shared'
+import { AppLayout, PageHeader } from '@/components/shared'
 import { ScreenSpinner } from '@/components/ui'
 import { UserForm } from '@/sections/user'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
@@ -91,20 +91,11 @@ const SettingsUserPage: NextPage<object> = () => {
                 })}
             </Head>
 
-            <Header
+            <PageHeader
                 title={t('settings')}
-                homePageTitle={t('geotags')}
-                currentPage={t('settings')}
-                backLink={`/users/${authSlice.user?.id}`}
-                links={[
-                    {
-                        link: '/users/',
-                        text: t('users')
-                    },
-                    {
-                        link: `/users/${authSlice.user?.id}`,
-                        text: authSlice.user?.name || t('my-page')
-                    }
+                breadcrumbs={[
+                    { link: '/users', text: t('users') },
+                    { link: `/users/${authSlice.user?.id}`, text: authSlice.user?.name || t('my-page') }
                 ]}
             />
 

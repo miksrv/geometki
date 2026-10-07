@@ -7,8 +7,8 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { AchievementBadge, Header, LevelBadge } from '@/components/shared'
-import { Reputation } from '@/components/ui'
+import { AchievementBadge, LevelBadge } from '@/components/shared'
+import { Breadcrumbs, Reputation } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
 import defaultAvatar from '@/public/images/no-avatar.png'
 import { formatDate, makeActiveLink, minutesAgo, removeProtocolFromUrl, timeAgo } from '@/utils/helpers'
@@ -47,6 +47,8 @@ export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
 
         return Array.from(best.values())
     }, [achievementsData])
+
+    const isOwner = appAuth.isAuth && appAuth.user?.id === user?.id
 
     return (
         <section className={styles.component}>
@@ -179,34 +181,28 @@ export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
                     )}
                 </div>
             </div>
-            <Header
-                title={user?.name}
-                homePageTitle={t('geotags')}
-                currentPage={user?.name}
-                attachedBottom={true}
-                links={[
-                    {
-                        link: '/users/',
-                        text: t('users')
-                    }
-                ]}
-                actions={
-                    appAuth.isAuth &&
-                    appAuth.user?.id === user?.id && (
-                        <>
-                            <UserAvatarEditor onSaveAvatar={setReplaceAvatar} />
 
-                            <Button
-                                size={'medium'}
-                                icon={'Pencil'}
-                                mode={'secondary'}
-                                label={t('settings')}
-                                link={'/users/settings'}
-                            />
-                        </>
-                    )
-                }
-            />
+            {/* Title row attached to the bottom of the card: name, trail, owner actions */}
+            <header className={styles.header}>
+                <div className={styles.headerText}>
+                    <h1 className={styles.headerTitle}>{user?.name}</h1>
+                    <Breadcrumbs links={[{ link: '/users', text: t('users') }]} />
+                </div>
+
+                {isOwner && (
+                    <div className={styles.headerActions}>
+                        <UserAvatarEditor onSaveAvatar={setReplaceAvatar} />
+
+                        <Button
+                            size={'medium'}
+                            icon={'Pencil'}
+                            mode={'secondary'}
+                            label={t('settings')}
+                            link={'/users/settings'}
+                        />
+                    </div>
+                )}
+            </header>
         </section>
     )
 }

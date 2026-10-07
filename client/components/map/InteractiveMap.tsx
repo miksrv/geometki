@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import * as ReactLeaflet from 'react-leaflet'
-import { LatLngBounds, LatLngExpression, Map, MapOptions } from 'leaflet'
+import { FitBoundsOptions, LatLngBounds, LatLngBoundsExpression, LatLngExpression, Map, MapOptions } from 'leaflet'
 import isEqual from 'lodash-es/isEqual'
 import { Button, cn, Spinner } from 'simple-react-ui-kit'
 
@@ -13,6 +13,7 @@ import useLocalStorage from '@/hooks/useLocalStorage'
 import { CategoryControl } from './category-control'
 import { ContextMenu } from './context-menu'
 import { CoordinatesControl } from './coordinates-control'
+import { FitBounds } from './fit-bounds'
 import { HeatmapLayer } from './heatmap-layer'
 import { HistoricalPhotos } from './historical-photos'
 import { LayerSwitcherControl } from './layer-switcher-control'
@@ -55,6 +56,9 @@ type MapProps = {
     onPhotoClick?: (photos: ApiModel.PhotoMark[], index?: number) => void
     onClickCreatePlace?: () => void
     controlsSize?: 'small' | 'medium'
+    /** Initial viewport that contains all of these bounds (MapContainer `bounds`); overrides center/zoom on mount */
+    bounds?: LatLngBoundsExpression
+    boundsOptions?: FitBoundsOptions
 } & MapOptions
 
 const DEFAULT_MAP_ZOOM = 12
@@ -239,13 +243,14 @@ export const InteractiveMap: React.FC<MapProps> = ({
     }, [props.center, readyStorage, coordinates, placeMark])
 
     useEffect(() => {
-        if (props.center || props.zoom) {
+        // With `bounds` the viewport is the fitted bounds, not center/zoom
+        if (!props.bounds && (props.center || props.zoom)) {
             mapRef.current?.setView(
                 props.center ?? DEFAULT_MAP_CENTER,
                 props.zoom ?? mapPosition?.zoom ?? DEFAULT_MAP_ZOOM
             )
         }
-    }, [props.center, props.zoom])
+    }, [props.center, props.zoom, props.bounds])
 
     useEffect(() => {
         onChangeMapType?.(mapType)
@@ -267,8 +272,10 @@ export const InteractiveMap: React.FC<MapProps> = ({
         <div className={cn(styles.mapContainer, controlsSize === 'small' && styles.compact)}>
             <ReactLeaflet.MapContainer
                 {...props}
-                center={props.center ?? DEFAULT_MAP_CENTER}
-                zoom={props.zoom ?? DEFAULT_MAP_ZOOM}
+                // MapContainer prefers center/zoom over bounds when both are set, so with
+                // `bounds` the viewport comes from them alone (see FitBounds below)
+                center={props.bounds ? undefined : (props.center ?? DEFAULT_MAP_CENTER)}
+                zoom={props.bounds ? undefined : (props.zoom ?? DEFAULT_MAP_ZOOM)}
                 minZoom={props.minZoom ?? 6}
                 style={{
                     cursor: enableCoordsControl ? 'crosshair' : props.dragging ? 'pointer' : 'default',
@@ -278,6 +285,11 @@ export const InteractiveMap: React.FC<MapProps> = ({
                 attributionControl={false}
                 ref={mapRef}
             >
+                <FitBounds
+                    bounds={props.bounds}
+                    options={props.boundsOptions}
+                />
+
                 {additionalLayers?.includes(MapAdditionalLayersEnum.HEATMAP) && <HeatmapLayer />}
 
                 {additionalLayers?.includes(MapAdditionalLayersEnum.HISTORICAL_PHOTOS) && (

@@ -181,7 +181,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         if (category || locationType || tag || currentPage > 1) {
             breadcrumbs.push({
                 link: '/places',
-                text: t('interesting-places')
+                text: t('nav-places', { defaultValue: 'Места' })
             })
         }
 
@@ -288,9 +288,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
 
             <PageHeader
                 title={title}
-                homePageTitle={t('geotags')}
-                links={breadcrumbsLinks || []}
-                currentPage={breadCrumbCurrent}
+                breadcrumbs={breadcrumbsLinks}
             />
 
             <Container style={{ padding: '10px' }}>

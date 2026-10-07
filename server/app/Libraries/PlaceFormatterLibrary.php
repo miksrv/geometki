@@ -92,7 +92,7 @@ class PlaceFormatterLibrary
      */
     public function formatCover(string $placeId, int $photosCount): ?array
     {
-        if ($photosCount && file_exists(UPLOAD_PHOTOS . $placeId . '/cover.jpg')) {
+        if ($photosCount && $this->coverExists($placeId)) {
             return [
                 'full'    => PATH_PHOTOS . $placeId . '/cover.jpg',
                 'preview' => PATH_PHOTOS . $placeId . '/cover_preview.jpg',
@@ -100,6 +100,22 @@ class PlaceFormatterLibrary
         }
 
         return null;
+    }
+
+    /**
+     * Whether the place's cover file is available. With Config\Uploads::$verifyFiles
+     * disabled (images served from another host) the file is assumed to exist.
+     *
+     * @param string $placeId
+     * @return bool
+     */
+    public function coverExists(string $placeId): bool
+    {
+        if (!config('Uploads')->verifyFiles) {
+            return true;
+        }
+
+        return file_exists(UPLOAD_PHOTOS . $placeId . '/cover.jpg');
     }
 
     /**

@@ -1,40 +1,45 @@
 import React, { useState } from 'react'
-import { Button, Icon, Input } from 'simple-react-ui-kit'
+import { Button } from 'simple-react-ui-kit'
 
-import Image from 'next/image'
-import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
+import { EmptyState } from '@/components/shared'
 import { ConfirmationDialog } from '@/components/shared/confirmation-dialog'
-import { IMG_HOST } from '@/config/env'
-import { addressToString } from '@/utils/address'
-import { haversineDistanceKm } from '@/utils/collectionFacts'
-import { buildPlaceUrl } from '@/utils/helpers'
+import { MediaTileGrid } from '@/components/shared/media-tile'
+import { PlaceCard } from '@/components/shared/place-card'
 
 import styles from '../styles.module.sass'
 
 interface CollectionPlacesListProps {
     places: ApiModel.CollectionPlace[]
-    /** Owner edit mode: shows remove/reorder/note controls. */
+    /** Owner edit mode: per-row move/remove controls */
     editable?: boolean
+    /** Owner: gets the "add places" call to action after the list and in the empty state */
+    canAdd?: boolean
     onRemove?: (placeId: string) => void
     onReorder?: (order: string[]) => void
-    onNoteChange?: (placeId: string, note: string | null) => void
+    onAddPlaces?: () => void
 }
 
+/**
+ * The places of a collection as the usual tile grid in the author's order. Readers see
+ * the same tiles as on every place list; the owner in edit mode gets move and remove
+ * controls over the top-right corner of each tile.
+ */
 export const CollectionPlacesList: React.FC<CollectionPlacesListProps> = ({
     places,
     editable,
+    canAdd,
     onRemove,
     onReorder,
-    onNoteChange
+    onAddPlaces
 }) => {
     const { t } = useTranslation()
 
-    const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
-    const [noteDraft, setNoteDraft] = useState('')
     const [removeCandidate, setRemoveCandidate] = useState<ApiModel.CollectionPlace | null>(null)
+
+    const isOwner = editable || canAdd
 
     const handleConfirmRemove = () => {
         if (removeCandidate) {
@@ -56,131 +61,93 @@ export const CollectionPlacesList: React.FC<CollectionPlacesListProps> = ({
         onReorder?.(order)
     }
 
-    const handleStartNote = (place: ApiModel.CollectionPlace) => {
-        setEditingNoteId(place.id)
-        setNoteDraft(place.note ?? '')
-    }
-
-    const handleSaveNote = (placeId: string) => {
-        onNoteChange?.(placeId, noteDraft.trim() || null)
-        setEditingNoteId(null)
+    if (!places.length) {
+        return (
+            <EmptyState
+                title={t('collections_no-places-title', { defaultValue: 'В коллекции пока нет мест' })}
+                description={
+                    isOwner
+                        ? t('collections_no-places-owner', {
+                              defaultValue: 'Добавьте первое место — через поиск или из рекомендаций по теме'
+                          })
+                        : t('collections_no-places-reader', {
+                              defaultValue: 'Автор ещё собирает подборку, загляните позже'
+                          })
+                }
+                action={
+                    isOwner ? (
+                        <Button
+                            mode={'primary'}
+                            size={'medium'}
+                            icon={'PlusCircle'}
+                            label={t('collections_add-places', { defaultValue: 'Добавить места' })}
+                            onClick={onAddPlaces}
+                        />
+                    ) : undefined
+                }
+            />
+        )
     }
 
     return (
         <>
-            <ol className={styles.placesList}>
-                {places.map((place, index) => {
-                    const distance = index > 0 ? haversineDistanceKm(places[index - 1], place) : undefined
-
-                    return (
-                        <li
-                            key={place.id}
-                            className={styles.placeItem}
-                        >
-                            <div className={styles.placeItemNumber}>{index + 1}</div>
-
-                            <div className={styles.placeItemCover}>
-                                {place.cover && (
-                                    <Image
-                                        src={`${IMG_HOST}${place.cover.preview}`}
-                                        alt={place.title ?? ''}
-                                        fill
-                                        sizes={'72px'}
-                                        style={{ objectFit: 'cover' }}
-                                    />
-                                )}
-                            </div>
-
-                            <div className={styles.placeItemBody}>
-                                <Link href={buildPlaceUrl(place.id, place.slug)}>
-                                    <strong>{place.title ?? place.id}</strong>
-                                </Link>
-
-                                <div className={styles.placeItemMeta}>
-                                    {place.category && <span>{place.category.title}</span>}
-                                    {!!addressToString(place.address)?.length && (
-                                        <span>
-                                            {addressToString(place.address)
-                                                ?.map((a) => a.name)
-                                                .join(', ')}
-                                        </span>
-                                    )}
-                                    {!!place.rating && (
-                                        <span>
-                                            <Icon name={'StarEmpty'} /> {place.rating}
-                                        </span>
-                                    )}
-                                    {distance !== undefined && (
-                                        <span>
-                                            {t('collections_distance-from-previous', {
-                                                defaultValue: '{{km}} км от предыдущего',
-                                                km: distance.toFixed(1)
-                                            })}
-                                        </span>
-                                    )}
-                                </div>
-
-                                {editable && editingNoteId === place.id ? (
-                                    <div className={styles.modalNewCollection}>
-                                        <Input
-                                            value={noteDraft}
-                                            placeholder={t('collections_note-placeholder', {
-                                                defaultValue: 'Короткая заметка об этом месте'
-                                            })}
-                                            onChange={(event) => setNoteDraft(event.target.value)}
-                                        />
-                                        <Button
-                                            mode={'primary'}
-                                            onClick={() => handleSaveNote(place.id)}
-                                        >
-                                            {t('save')}
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    place.note && <p className={styles.placeItemNote}>{place.note}</p>
-                                )}
-                            </div>
-
-                            {editable && (
-                                <div className={styles.placeItemActions}>
+            <MediaTileGrid>
+                {places.map((place, index) => (
+                    <PlaceCard
+                        key={place.id}
+                        place={place}
+                        actions={
+                            editable ? (
+                                <div
+                                    role={'group'}
+                                    aria-label={place.title}
+                                    className={styles.placeActions}
+                                >
                                     <Button
-                                        mode={'outline'}
-                                        size={'large'}
-                                        icon={'KeyboardUp'}
+                                        mode={'secondary'}
+                                        size={'small'}
+                                        icon={'KeyboardLeft'}
                                         disabled={index === 0}
-                                        tooltip={t('collections_move-up', { defaultValue: 'Переместить выше' })}
+                                        tooltip={t('collections_move-up', { defaultValue: 'Переместить раньше' })}
                                         onClick={() => handleMove(index, -1)}
                                     />
                                     <Button
-                                        mode={'outline'}
-                                        size={'large'}
-                                        icon={'KeyboardDown'}
+                                        mode={'secondary'}
+                                        size={'small'}
+                                        icon={'KeyboardRight'}
                                         disabled={index === places.length - 1}
-                                        tooltip={t('collections_move-down', { defaultValue: 'Переместить ниже' })}
+                                        tooltip={t('collections_move-down', { defaultValue: 'Переместить позже' })}
                                         onClick={() => handleMove(index, 1)}
                                     />
                                     <Button
-                                        mode={'outline'}
-                                        size={'large'}
-                                        icon={'Pencil'}
-                                        tooltip={t('collections_edit-note', { defaultValue: 'Заметка' })}
-                                        onClick={() => handleStartNote(place)}
-                                    />
-                                    <Button
-                                        mode={'outline'}
-                                        size={'large'}
+                                        mode={'secondary'}
+                                        size={'small'}
                                         icon={'Close'}
+                                        className={styles.placeItemRemove}
                                         tooltip={t('collections_remove-place', {
                                             defaultValue: 'Удалить из коллекции'
                                         })}
                                         onClick={() => setRemoveCandidate(place)}
                                     />
                                 </div>
-                            )}
-                        </li>
-                    )
-                })}
-            </ol>
+                            ) : undefined
+                        }
+                    />
+                ))}
+            </MediaTileGrid>
+
+            {isOwner && (
+                <div className={styles.placesFooter}>
+                    <Button
+                        mode={'secondary'}
+                        size={'medium'}
+                        stretched={true}
+                        icon={'PlusCircle'}
+                        label={t('collections_add-places', { defaultValue: 'Добавить места' })}
+                        onClick={onAddPlaces}
+                    />
+                </div>
+            )}
 
             <ConfirmationDialog
                 open={!!removeCandidate}
@@ -188,6 +155,7 @@ export const CollectionPlacesList: React.FC<CollectionPlacesListProps> = ({
                     defaultValue: 'Удалить «{{title}}» из коллекции?',
                     title: removeCandidate?.title ?? ''
                 })}
+                confirmLabel={t('collections_remove-place-short', { defaultValue: 'Удалить' })}
                 onConfirm={handleConfirmRemove}
                 onCancel={() => setRemoveCandidate(null)}
             />

@@ -32,9 +32,13 @@ use Throwable;
  */
 class Collections extends ResourceController
 {
+    /** How many place covers make up a collection card's mosaic */
+    public const COVERS_LIMIT = 4;
+
     protected SessionLibrary $session;
 
-    protected CollectionsModel $model;
+    /** @var CollectionsModel */
+    protected $model;
 
     public function __construct()
     {
@@ -45,7 +49,7 @@ class Collections extends ResourceController
     /**
      * Return a paginated, filterable list of collections.
      *
-     * GET /collections — optional query params: region, category, author,
+     * GET /collections — optional query params: region, author,
      * placeId, sort (updated|popular), limit, offset. Hidden collections are
      * always excluded.
      *
@@ -56,7 +60,6 @@ class Collections extends ResourceController
         $locale = $this->request->getLocale();
 
         $region   = $this->request->getGet('region', FILTER_SANITIZE_NUMBER_INT);
-        $category = $this->request->getGet('category', FILTER_SANITIZE_SPECIAL_CHARS);
         $author   = $this->request->getGet('author', FILTER_SANITIZE_SPECIAL_CHARS);
         $placeId  = $this->request->getGet('placeId', FILTER_SANITIZE_SPECIAL_CHARS);
         $sort     = $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS) ?? 'updated';
@@ -67,15 +70,11 @@ class Collections extends ResourceController
         $listModel  = (new CollectionsModel())->applyListSelect();
         $countModel->applyListSelect();
 
-        $apply = function (CollectionsModel $model) use ($region, $category, $author, $placeId) {
+        $apply = function (CollectionsModel $model) use ($region, $author, $placeId) {
             $model->where('collections.hidden', 0);
 
             if ($region) {
                 $model->where('collections.region_id', $region);
-            }
-
-            if ($category) {
-                $model->where('collections.category', $category);
             }
 
             if ($author) {
@@ -107,6 +106,8 @@ class Collections extends ResourceController
             unset($item->description, $item->indexable, $item->hidden);
         }
 
+        $this->attachCovers($items);
+
         return $this->respond([
             'items' => $items,
             'count' => $count,
@@ -128,8 +129,11 @@ class Collections extends ResourceController
     {
         $locale = $this->request->getLocale();
 
+        // decorate() replaces `region` with an array and adds fields the entity
+        // does not know about, so fetch a plain stdClass row (same as list()) — a
+        // CollectionEntity would try to cast the region array back to int on output.
         $model = (new CollectionsModel())->applyListSelect();
-        $collection = $model->find($id);
+        $collection = $model->asObject()->find($id);
 
         if (!$collection) {
             return $this->failNotFound();
@@ -157,6 +161,8 @@ class Collections extends ResourceController
 
             foreach ($placesList as $place) {
                 $place->address  = $formatter->formatAddress($place, $locale);
+                $place->lat      = (float) $place->lat;
+                $place->lon      = (float) $place->lon;
                 $place->rating   = (int) $place->rating;
                 $place->views    = (int) $place->views;
                 $place->photos   = (int) $place->photos;
@@ -164,7 +170,6 @@ class Collections extends ResourceController
                 $place->bookmarks = (int) $place->bookmarks;
                 $place->title    = $placeContent->title($place->id);
                 $place->category = $formatter->formatCategory($place, $locale);
-                $place->author   = $formatter->formatAuthor($place);
                 $place->note     = $notes[$place->id] ?? null;
 
                 $cover = $formatter->formatCover($place->id, (int) $place->photos);
@@ -188,13 +193,16 @@ class Collections extends ResourceController
         $collection->places    = $places;
         $collection->indexable = (bool) $collection->indexable;
 
-        if (empty($collection->cover) && !empty($places)) {
-            $formatter = new PlaceFormatterLibrary();
-            $cover = $formatter->formatCover($places[0]->id, 1);
-            if ($cover) {
-                $collection->cover = $cover;
-            }
-        }
+        // The mosaic is the covers of the first places in the author's order
+        $collection->covers = array_slice(
+            array_values(array_map(
+                static fn ($place) => $place->cover,
+                array_filter($places, static fn ($place) => !empty($place->cover))
+            )),
+            0,
+            self::COVERS_LIMIT
+        );
+        $collection->cover = $collection->covers[0] ?? null;
 
         $this->model->incrementViews($id);
 
@@ -218,11 +226,9 @@ class Collections extends ResourceController
         $input = $this->request->getJSON();
 
         $rules = [
-            'title'           => 'required|string|min_length[3]|max_length[' . COLLECTION_TITLE_MAX_LENGTH . ']',
-            'description'     => 'permit_empty|string|max_length[' . COLLECTION_DESCRIPTION_MAX_LENGTH . ']',
-            'metaDescription' => 'permit_empty|string|max_length[' . COLLECTION_META_DESCRIPTION_MAX_LENGTH . ']',
-            'region'          => 'permit_empty|integer|is_not_unique[location_regions.id]',
-            'category'        => 'permit_empty|string|is_not_unique[category.name]',
+            'title'       => 'required|string|min_length[3]|max_length[' . COLLECTION_TITLE_MAX_LENGTH . ']',
+            'description' => 'permit_empty|string|max_length[' . COLLECTION_DESCRIPTION_MAX_LENGTH . ']',
+            'region'      => 'permit_empty|integer|is_not_unique[location_regions.id]',
         ];
 
         if (!$this->validateData((array) $input, $rules)) {
@@ -242,15 +248,13 @@ class Collections extends ResourceController
             $title = strip_tags(html_entity_decode($input->title));
 
             $collection = new CollectionEntity();
-            $collection->user_id          = $userId;
-            $collection->title            = $title;
-            $collection->slug             = generateCollectionSlug($title);
-            $collection->description      = isset($input->description) ? strip_tags(html_entity_decode($input->description)) : null;
-            $collection->meta_description = $input->metaDescription ?? null;
-            $collection->region_id        = $input->region ?? null;
-            $collection->category         = $input->category ?? null;
-            $collection->places_count     = 0;
-            $collection->indexable        = (int) CollectionIndexability::isIndexable($collection->description, 0, false);
+            $collection->user_id      = $userId;
+            $collection->title        = $title;
+            $collection->slug         = generateCollectionSlug($title);
+            $collection->description  = isset($input->description) ? strip_tags(html_entity_decode($input->description)) : null;
+            $collection->region_id    = $input->region ?? null;
+            $collection->places_count = 0;
+            $collection->indexable    = (int) CollectionIndexability::isIndexable($collection->description, 0, false);
 
             $insertResult = $this->model->insert($collection);
 
@@ -268,8 +272,9 @@ class Collections extends ResourceController
     }
 
     /**
-     * Update a collection's title, description, meta description, theme
-     * (region/category), or cover. Owner or admin only.
+     * Update a collection's title, description, meta description, region,
+     * Owner or admin only. The cover is not editable: collection cards show a mosaic of
+     * the first places' covers, so the author changes it by reordering the places.
      *
      * @param string|null $id
      * @throws ReflectionException
@@ -294,13 +299,9 @@ class Collections extends ResourceController
         $input = $this->request->getJSON();
 
         $rules = [
-            'title'           => 'if_exist|required|string|min_length[3]|max_length[' . COLLECTION_TITLE_MAX_LENGTH . ']',
-            'description'     => 'if_exist|permit_empty|string|max_length[' . COLLECTION_DESCRIPTION_MAX_LENGTH . ']',
-            'metaDescription' => 'if_exist|permit_empty|string|max_length[' . COLLECTION_META_DESCRIPTION_MAX_LENGTH . ']',
-            'region'          => 'if_exist|permit_empty|integer|is_not_unique[location_regions.id]',
-            'category'        => 'if_exist|permit_empty|string|is_not_unique[category.name]',
-            'coverPlaceId'    => 'if_exist|permit_empty|string',
-            'coverPhotoId'    => 'if_exist|permit_empty|string',
+            'title'       => 'if_exist|required|string|min_length[3]|max_length[' . COLLECTION_TITLE_MAX_LENGTH . ']',
+            'description' => 'if_exist|permit_empty|string|max_length[' . COLLECTION_DESCRIPTION_MAX_LENGTH . ']',
+            'region'      => 'if_exist|permit_empty|integer|is_not_unique[location_regions.id]',
         ];
 
         if (!$this->validateData((array) $input, $rules)) {
@@ -326,24 +327,8 @@ class Collections extends ResourceController
                 $descriptionChanged = true;
             }
 
-            if (property_exists($input, 'metaDescription')) {
-                $update->meta_description = $input->metaDescription;
-            }
-
             if (property_exists($input, 'region')) {
                 $update->region_id = $input->region;
-            }
-
-            if (property_exists($input, 'category')) {
-                $update->category = $input->category;
-            }
-
-            if (property_exists($input, 'coverPlaceId')) {
-                $update->cover_place_id = $input->coverPlaceId;
-            }
-
-            if (property_exists($input, 'coverPhotoId')) {
-                $update->cover_photo_id = $input->coverPhotoId;
             }
 
             $this->model->update($id, $update);
@@ -523,15 +508,6 @@ class Collections extends ResourceController
 
         $newCount = $this->model->recalcPlacesCount($id);
 
-        $update = [];
-        if ($collection->cover_place_id === $placeId) {
-            $update['cover_place_id'] = null;
-            $update['cover_photo_id'] = null;
-        }
-        if (!empty($update)) {
-            $this->model->update($id, $update);
-        }
-
         $fresh = $this->model->find($id);
         $this->recalcIndexable($id, $fresh->description, $newCount, $fresh->hidden);
 
@@ -627,28 +603,34 @@ class Collections extends ResourceController
 
         $model = new CollectionsModel();
         $collections = $model
-            ->select('id, title, places_count, cover_place_id')
+            ->select('id, title, places_count')
             ->where('user_id', $userId)
             ->orderBy('updated_at', 'DESC')
             ->findAll();
 
+        $collectionsPlacesModel = new CollectionsPlacesModel();
+
         $containingIds = [];
         if ($placeId) {
-            $collectionsPlacesModel = new CollectionsPlacesModel();
             $containingIds = $collectionsPlacesModel->collectionIdsForUserAndPlace($userId, $placeId);
         }
+
+        $coverPlaceIds = $collectionsPlacesModel->getCoverPlaceIds(
+            array_map(static fn ($collection) => $collection->id, $collections),
+            1
+        );
 
         $formatter = new PlaceFormatterLibrary();
         $items = [];
 
         foreach ($collections as $collection) {
-            $cover = $collection->cover_place_id ? $formatter->formatCover($collection->cover_place_id, 1) : null;
+            $coverPlaceId = $coverPlaceIds[$collection->id][0] ?? null;
 
             $items[] = [
                 'id'          => $collection->id,
                 'title'       => $collection->title,
                 'placesCount' => (int) $collection->places_count,
-                'cover'       => $cover,
+                'cover'       => $coverPlaceId ? $formatter->formatCover($coverPlaceId, 1) : null,
                 'contains'    => in_array($collection->id, $containingIds, true),
             ];
         }
@@ -657,8 +639,8 @@ class Collections extends ResourceController
     }
 
     /**
-     * Return places in the collection's region and category that are not
-     * already in it, sorted by rating. Feeds the "Рекомендуем" add-places tab.
+     * Return places in the collection's region that are not already in it,
+     * sorted by rating. Feeds the "Рекомендуем" add-places tab.
      *
      * GET /collections/:id/recommended?limit=
      *
@@ -680,7 +662,7 @@ class Collections extends ResourceController
             return $this->failNotFound();
         }
 
-        if (empty($collection->region_id) && empty($collection->category)) {
+        if (empty($collection->region_id)) {
             return $this->respond(['items' => [], 'count' => 0]);
         }
 
@@ -689,13 +671,7 @@ class Collections extends ResourceController
 
         $placesModel = (new PlacesModel())->applyListSelect();
 
-        if (!empty($collection->region_id)) {
-            $placesModel->where('places.region_id', $collection->region_id);
-        }
-
-        if (!empty($collection->category)) {
-            $placesModel->where('places.category', $collection->category);
-        }
+        $placesModel->where('places.region_id', $collection->region_id);
 
         if (!empty($existingIds)) {
             $placesModel->whereNotIn('places.id', $existingIds);
@@ -710,6 +686,8 @@ class Collections extends ResourceController
         $formatter = new PlaceFormatterLibrary();
         foreach ($placesList as $place) {
             $place->address   = $formatter->formatAddress($place, $locale);
+            $place->lat       = (float) $place->lat;
+            $place->lon       = (float) $place->lon;
             $place->rating    = (int) $place->rating;
             $place->views     = (int) $place->views;
             $place->photos    = (int) $place->photos;
@@ -717,7 +695,6 @@ class Collections extends ResourceController
             $place->bookmarks = (int) $place->bookmarks;
             $place->title     = $placeContent->title($place->id);
             $place->category  = $formatter->formatCategory($place, $locale);
-            $place->author    = $formatter->formatAuthor($place);
 
             $cover = $formatter->formatCover($place->id, (int) $place->photos);
             if ($cover) {
@@ -833,8 +810,44 @@ class Collections extends ResourceController
     }
 
     /**
+     * Attach `covers` (up to COVERS_LIMIT covers of the first places with photos, in the
+     * author's order) and `cover` (the first of them, for OG images and pickers) to a
+     * list of decorated collection rows, with one membership query for all of them.
+     *
+     * @param array<int, object> $rows
+     * @return void
+     */
+    protected function attachCovers(array $rows): void
+    {
+        if (empty($rows)) {
+            return;
+        }
+
+        $coverPlaceIds = (new CollectionsPlacesModel())->getCoverPlaceIds(
+            array_map(static fn ($row) => $row->id, $rows),
+            self::COVERS_LIMIT
+        );
+
+        $formatter = new PlaceFormatterLibrary();
+
+        foreach ($rows as $row) {
+            $covers = [];
+            foreach ($coverPlaceIds[$row->id] ?? [] as $placeId) {
+                $cover = $formatter->formatCover($placeId, 1);
+                if ($cover) {
+                    $covers[] = $cover;
+                }
+            }
+
+            $row->covers = $covers;
+            $row->cover  = $covers[0] ?? null;
+        }
+    }
+
+    /**
      * Decorate a raw collection row (from applyListSelect()) with author,
-     * region, category, metaDescription, cover, and date objects, in place.
+     * region and date objects, in place. Covers are attached
+     * separately by attachCovers(), in one query for a whole list.
      *
      * @param object $row
      * @param string $locale
@@ -850,24 +863,10 @@ class Collections extends ResourceController
             ? ['id' => (int) $row->region_id, 'name' => $row->{"region_$locale"} ?? null]
             : null;
 
-        $row->category = !empty($row->category)
-            ? ['name' => $row->category, 'title' => $row->{"category_$locale"} ?? null]
-            : null;
-
-        $row->metaDescription = $row->meta_description
-            ?: mb_substr(CollectionIndexability::stripMarkdown((string) $row->description), 0, 160, 'UTF-8');
-
         $row->placesCount = (int) $row->places_count;
         $row->views       = (int) $row->views;
         $row->saves       = (int) $row->saves;
         $row->featured    = (bool) $row->featured;
-
-        if (!empty($row->cover_place_id)) {
-            $cover = $formatter->formatCover($row->cover_place_id, 1);
-            if ($cover) {
-                $row->cover = $cover;
-            }
-        }
 
         if (!empty($row->updated)) {
             $row->updated = new \DateTime((string) $row->updated);
@@ -879,9 +878,8 @@ class Collections extends ResourceController
 
         unset(
             $row->region_id, $row->region_en, $row->region_ru,
-            $row->category_en, $row->category_ru,
             $row->user_id, $row->user_name, $row->user_avatar,
-            $row->meta_description, $row->places_count,
+            $row->places_count,
             $row->cover_place_id, $row->cover_photo_id,
             $row->owner_id
         );

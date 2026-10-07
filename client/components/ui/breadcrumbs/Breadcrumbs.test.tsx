@@ -4,9 +4,12 @@ import { render, screen } from '@testing-library/react'
 
 import { Breadcrumbs } from './Breadcrumbs'
 
-// Mock next/link to render a simple anchor
+jest.mock('simple-react-ui-kit', () => ({
+    cn: (...args: unknown[]) => args.filter(Boolean).join(' ')
+}))
+
 jest.mock('next/link', () => {
-    const Link = ({ href, children, title }: any) => (
+    const Link = ({ href, title, children }: any) => (
         <a
             href={href}
             title={title}
@@ -19,66 +22,36 @@ jest.mock('next/link', () => {
 })
 
 describe('Breadcrumbs', () => {
-    describe('rendering', () => {
-        it('renders the nav list element', () => {
-            const { container } = render(<Breadcrumbs />)
-            expect(container.querySelector('ul')).toBeInTheDocument()
-        })
+    it('renders nothing without links', () => {
+        const { container } = render(<Breadcrumbs links={[]} />)
 
-        it('renders homePageTitle as a link when provided', () => {
-            render(<Breadcrumbs homePageTitle={'Home'} />)
-            expect(screen.getByText('Home')).toBeInTheDocument()
-            expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/')
-        })
-
-        it('does not render home link when homePageTitle is empty', () => {
-            render(<Breadcrumbs homePageTitle={''} />)
-            expect(screen.queryByRole('link')).not.toBeInTheDocument()
-        })
-
-        it('renders additional links', () => {
-            const links = [
-                { link: '/places', text: 'Places' },
-                { link: '/places/123', text: 'Some Place' }
-            ]
-            render(<Breadcrumbs links={links} />)
-            expect(screen.getByRole('link', { name: 'Places' })).toHaveAttribute('href', '/places')
-            expect(screen.getByRole('link', { name: 'Some Place' })).toHaveAttribute('href', '/places/123')
-        })
-
-        it('renders currentPage text without a link', () => {
-            render(<Breadcrumbs currentPage={'Current Page'} />)
-            expect(screen.getByText('Current Page')).toBeInTheDocument()
-            // It should be in a plain li, not an anchor
-            const currentItem = screen.getByText('Current Page')
-            expect(currentItem.tagName).not.toBe('A')
-        })
-
-        it('renders all sections together', () => {
-            render(
-                <Breadcrumbs
-                    homePageTitle={'Home'}
-                    links={[{ link: '/places', text: 'Places' }]}
-                    currentPage={'Details'}
-                />
-            )
-            expect(screen.getByText('Home')).toBeInTheDocument()
-            expect(screen.getByText('Places')).toBeInTheDocument()
-            expect(screen.getByText('Details')).toBeInTheDocument()
-        })
+        expect(container).toBeEmptyDOMElement()
     })
 
-    describe('accessibility', () => {
-        it('has aria-label="breadcrumb" on the nav element', () => {
-            render(<Breadcrumbs />)
-            expect(screen.getByRole('navigation', { name: 'breadcrumb' })).toBeInTheDocument()
-        })
+    it('renders the trail as links inside a breadcrumb landmark', () => {
+        render(
+            <Breadcrumbs
+                links={[
+                    { link: '/users', text: 'Люди' },
+                    { link: '/users/u1', text: 'Alice' }
+                ]}
+            />
+        )
+
+        expect(screen.getByRole('navigation', { name: 'breadcrumb' })).toBeInTheDocument()
+        expect(screen.getAllByRole('listitem')).toHaveLength(2)
+        expect(screen.getByRole('link', { name: 'Люди' })).toHaveAttribute('href', '/users')
+        expect(screen.getByRole('link', { name: 'Alice' })).toHaveAttribute('href', '/users/u1')
     })
 
-    describe('className prop', () => {
-        it('applies a custom className', () => {
-            const { container } = render(<Breadcrumbs className={'custom-class'} />)
-            expect(container.querySelector('ul')).toHaveClass('custom-class')
-        })
+    it('applies a custom className to the list', () => {
+        render(
+            <Breadcrumbs
+                className={'custom'}
+                links={[{ link: '/places', text: 'Места' }]}
+            />
+        )
+
+        expect(screen.getByRole('list')).toHaveClass('custom')
     })
 })

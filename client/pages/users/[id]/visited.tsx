@@ -11,7 +11,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, Header, PlacesList } from '@/components/shared'
+import { AppLayout, PageHeader, PlacesList, UserAvatar } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
@@ -70,22 +70,18 @@ const UserVisitedPage: React.FC<UserVisitedPageProps> = ({ id, user, currentPage
                 })}
             </Head>
 
-            <Header
-                title={`${user?.name} - ${title}${pageTitle}`}
-                homePageTitle={t('geotags')}
-                currentPage={title}
-                backLink={`/users/${id}`}
-                userData={user}
-                links={[
-                    {
-                        link: '/users/',
-                        text: t('users')
-                    },
-                    {
-                        link: `/users/${id}`,
-                        text: user?.name || ''
-                    }
+            <PageHeader
+                title={`${title}${pageTitle}`}
+                breadcrumbs={[
+                    { link: '/users', text: t('users') },
+                    { link: `/users/${id}`, text: user?.name || '' }
                 ]}
+                leading={
+                    <UserAvatar
+                        user={user}
+                        size={'medium'}
+                    />
+                }
             />
 
             {!!placeMarks.length && (

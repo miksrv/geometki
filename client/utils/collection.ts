@@ -2,7 +2,6 @@ import { buildSluggedUrl, parseSluggedId } from './slug'
 
 // Mirrors server/app/Config/Constants.php — keep in sync.
 export const COLLECTION_TITLE_MAX_LENGTH = 120
-export const COLLECTION_META_DESCRIPTION_MAX_LENGTH = 200
 
 /**
  * Builds the SEO-friendly URL for a collection page: `/collections/{id}-{slug}`, or

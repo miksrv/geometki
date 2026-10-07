@@ -3,26 +3,30 @@
 .pageHeader
     display: flex
     align-items: center
-    justify-content: flex-start
-    gap: 8px
+    flex-wrap: wrap
+    gap: 8px 12px
     margin-top: 15px
 
-    & > a, & > a > button
-        height: 100% !important
+.leading
+    flex-shrink: 0
+    display: flex
+    align-items: center
 
-.left
+.main
+    flex: 1
+    min-width: 0
     display: flex
     flex-direction: column
     gap: 4px
-    min-width: 0
-    height: 100%
 
 .title
     margin: 0
-    font-size: 1.4em
+    font-size: var(--font-size-title-page)
     font-weight: 500
     line-height: 1.2
     color: var(--text-color-primary)
+    overflow: hidden
+    text-overflow: ellipsis
 
 .description
     margin: 0
@@ -30,11 +34,19 @@
     color: var(--text-color-secondary)
     line-height: 1.5
 
-.right
+.actions
     display: flex
     align-items: center
     gap: 8px
     flex-shrink: 0
+    margin-left: auto
+    // Fold the control height into the title's line box so the h1 sits at the same
+    // vertical position as on pages without actions (kit `medium` controls are taller
+    // than one line of the page title)
+    margin-block: calc((var(--font-size-title-page) * 1.2 - var(--size-control-medium, var(--size-medium))) / 2)
 
     @media (max-width: variables.$mobileMaxWidth)
-        width: 100%
+        // Under the title instead of squeezing it
+        flex-basis: 100%
+        margin-left: 0
+        margin-block: 0

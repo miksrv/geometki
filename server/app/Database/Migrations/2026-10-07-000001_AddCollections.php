@@ -40,11 +40,6 @@ class AddCollections extends Migration {
                 'type' => 'TEXT',
                 'null' => true,
             ],
-            'meta_description' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 200,
-                'null'       => true,
-            ],
             'title_en' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 120,
@@ -62,11 +57,6 @@ class AddCollections extends Migration {
             'country_id' => [
                 'type'       => 'SMALLINT',
                 'constraint' => 5,
-                'null'       => true,
-            ],
-            'category' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 50,
                 'null'       => true,
             ],
             'cover_place_id' => [
@@ -125,10 +115,9 @@ class AddCollections extends Migration {
 
         $this->forge->addPrimaryKey('id');
         $this->forge->addKey(['hidden', 'indexable', 'updated_at']);
-        $this->forge->addKey(['region_id', 'category']);
+        $this->forge->addKey('region_id');
         $this->forge->addKey('user_id');
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->addForeignKey('category', 'category', 'name', 'CASCADE', 'SET NULL');
         $this->forge->addForeignKey('country_id', 'location_countries', 'id', 'CASCADE', 'SET NULL');
         $this->forge->addForeignKey('region_id', 'location_regions', 'id', 'CASCADE', 'SET NULL');
         $this->forge->addForeignKey('cover_place_id', 'places', 'id', 'CASCADE', 'SET NULL');

@@ -170,6 +170,7 @@ class PlacesModel extends ApplicationBaseModel
                 category.title_ru as category_ru, category.title_en as category_en,
                 places.visit_radius_m, places.verification_exempt' . $distanceSQL
             )
+            // The place page is the only reader that needs the author — list rows do not
             ->join('users', 'places.user_id = users.id', 'left')
             ->join('category', 'places.category = category.name', 'left')
             ->join('location_countries', 'location_countries.id = places.country_id', 'left')
@@ -196,7 +197,6 @@ class PlacesModel extends ApplicationBaseModel
             places.updated_at as updated,
             places.country_id, places.region_id, places.district_id, places.locality_id,
             places.address_ru, places.address_en,
-            users.id as user_id, users.name as user_name, users.avatar as user_avatar,
             location_countries.title_en as country_en, location_countries.title_ru as country_ru,
             location_regions.title_en as region_en, location_regions.title_ru as region_ru,
             location_districts.title_en as district_en, location_districts.title_ru as district_ru,

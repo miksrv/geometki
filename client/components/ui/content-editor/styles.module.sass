@@ -1,109 +1,173 @@
+// Markdown editor dressed as a kit TextArea: one outlined field with a compact toolbar
+// row on top. Everything comes from the kit's input/button tokens so the control
+// matches Input/TextArea in both themes. Heights come from the --editor-* custom
+// properties set by the component.
+
 .contentEditor
-    &.disabled *
-        cursor: default
-        opacity: .6
-        pointer-events: none
+    position: relative
+    width: 100%
+    border: var(--input-border)
+    border-radius: var(--input-radius)
+    background: var(--input-background-color)
+    color: var(--text-color-primary)
+    font-family: var(--font-family), sans-serif
+    font-size: var(--font-size)
+    line-height: var(--line-height)
+    letter-spacing: var(--letter-spacing)
+    overflow: hidden
+    transition: border-color var(--duration-base) var(--ease), background-color var(--duration-base) var(--ease), box-shadow var(--duration-base) var(--ease)
+
+    &:focus-within
+        border-color: var(--input-border-focus-color)
+        box-shadow: var(--focus-ring)
+
+    &.disabled
+        background: var(--input-disabled-background-color)
+        color: var(--text-color-disabled)
+        cursor: not-allowed
+
+        &:focus-within
+            border-color: var(--input-border-color)
+            box-shadow: none
+
+        :global(.md-editor)
+            pointer-events: none
 
     .loader
-        width: 100%
-        height: 64px
         display: flex
-        justify-content: center
         align-items: center
+        justify-content: center
+        width: 100%
+        min-height: calc(var(--editor-min-height) + var(--size-control-medium))
 
         svg
-            height: 28px
             width: 28px
+            height: 28px
+
+    // --- Library chrome reset ---
 
     :global(.md-editor)
-        border: var(--input-border) !important
-        box-shadow: none !important
-        font-size: var(--font-size)
-        letter-spacing: var(--letter-spacing)
-        font-family: var(--font-family)
+        border-radius: 0
+        box-shadow: none
+        background: transparent
+        color: inherit
+        font: inherit
 
-    :global(.md-editor-preview *)
-        font-size: var(--font-size)
-        letter-spacing: var(--letter-spacing)
-        font-family: var(--font-family)
+    :global(.md-editor *)
+        font-family: inherit
+        letter-spacing: inherit
+
+    // --- Toolbar: one 36px row of small icon buttons, divider below ---
 
     :global(.md-editor-toolbar-warp)
-        padding: 4px 6px
+        min-height: var(--size-control-medium)
+        padding: 0 var(--space-1)
+        border-bottom: 1px solid var(--border)
+        background: transparent
 
-    :global(.md-editor-toolbar-warp svg)
+    :global(.md-editor-toolbar)
+        gap: 2px
+        padding: 0
+
+    :global(.md-editor-toolbar-mode)
+        padding: 0
+
+    :global(.md-editor-toolbar button)
+        width: var(--size-control-small)
+        height: var(--size-control-small)
+        border-radius: var(--radius-sm)
         color: var(--text-color-secondary)
+        transition: color var(--duration-base) var(--ease), background-color var(--duration-base) var(--ease)
+
+        &:hover
+            color: var(--text-color-primary)
+            background: var(--button-default-background-hover)
+
+        &:active
+            color: var(--text-color-primary)
+            background: var(--button-default-background-active)
+
+        &:global(.active)
+            color: var(--color-main)
+            background: var(--color-main-background)
+
+        &:focus-visible
+            outline: var(--focus-outline)
+            outline-offset: -2px
+
+        svg
+            width: 16px
+            height: 16px
+            fill: currentColor
+
+    // --- Text area: TextArea paddings, grows from min to max height ---
+
+    :global(.md-editor-content)
+        min-height: var(--editor-min-height)
+        max-height: var(--editor-max-height)
+        display: flex
+
+    :global(.cm-editor)
+        flex: 1
+        min-width: 0
+        background: transparent
+        color: inherit
+
+        &:global(.cm-focused)
+            outline: none
 
     :global(.cm-scroller)
-        overflow-x: unset
-        width: 100%
-
-    :global(.cm-content)
-        width: 100%
-        white-space: break-spaces
+        overflow-x: hidden
+        font: inherit
+        line-height: inherit
 
     :global(.cm-gutters)
         display: none
 
-    :global(.cm-editor)
-        background-color: transparent
-        border-bottom-right-radius: var(--border-radius)
-        border-bottom-left-radius: var(--border-radius)
+    :global(.cm-content)
+        width: 100%
+        padding: var(--space-2) 0
+        white-space: break-spaces
+        word-break: break-word
+        caret-color: var(--text-color-primary)
 
-    :global(.cm-editor.cm-focused)
-        outline: none
-
-    :global(.cm-editor *)
-        font-size: var(--font-size)
-        letter-spacing: var(--letter-spacing)
-        font-family: var(--font-family)
+    :global(.cm-line)
+        padding: 0 var(--space-3)
 
     :global(.cm-activeLine)
-        background-color: transparent
+        background: transparent
+
+    :global(.cm-placeholder)
+        color: var(--input-placeholder-color)
+
+    :global(.cm-cursor)
+        border-left-color: var(--text-color-primary)
+
+    :global(.cm-selectionBackground),
+    :global(.cm-editor.cm-focused .cm-selectionBackground),
+    :global(.cm-editor .cm-selectionLayer .cm-selectionBackground)
+        background: var(--color-main-background) !important
+
+    // --- Preview pane (toggle in the toolbar): same surface and typography ---
+
+    :global(.md-editor-preview)
+        padding: var(--space-2) var(--space-3)
+        background: transparent
 
     :global(.wmde-markdown)
-        background-color: var(--container-background)
+        background: transparent
         color: var(--text-color-primary)
+        font-size: inherit
 
     :global(.wmde-markdown-var)
-        --color-prettylights-syntax-comment: #8b949e
-        --color-prettylights-syntax-constant: #79c0ff
-        --color-prettylights-syntax-entity: #d2a8ff
-        --color-prettylights-syntax-storage-modifier-import: #c9d1d9
-        --color-prettylights-syntax-entity-tag: #7ee787
-        --color-prettylights-syntax-keyword: #ff7b72
-        --color-prettylights-syntax-string: #a5d6ff
-        --color-prettylights-syntax-variable: #ffa657
-        --color-prettylights-syntax-brackethighlighter-unmatched: #f85149
-        --color-prettylights-syntax-invalid-illegal-text: #f0f6fc
-        --color-prettylights-syntax-invalid-illegal-bg: #8e1519
-        --color-prettylights-syntax-carriage-return-text: #f0f6fc
-        --color-prettylights-syntax-carriage-return-bg: #b62324
-        --color-prettylights-syntax-string-regexp: #7ee787
-        --color-prettylights-syntax-markup-list: #f2cc60
-        --color-prettylights-syntax-markup-heading: #1f6feb
-        --color-prettylights-syntax-markup-italic: #c9d1d9
-        --color-prettylights-syntax-markup-bold: #c9d1d9
-        --color-prettylights-syntax-markup-deleted-text: #ffdcd7
-        --color-prettylights-syntax-markup-deleted-bg: #67060c
-        --color-prettylights-syntax-markup-inserted-text: #aff5b4
-        --color-prettylights-syntax-markup-inserted-bg: #033a16
-        --color-prettylights-syntax-markup-changed-text: #ffdfb6
-        --color-prettylights-syntax-markup-changed-bg: #5a1e02
-        --color-prettylights-syntax-markup-ignored-text: #c9d1d9
-        --color-prettylights-syntax-markup-ignored-bg: #1158c7
-        --color-prettylights-syntax-meta-diff-range: #d2a8ff
-        --color-prettylights-syntax-brackethighlighter-angle: #8b949e
-        --color-prettylights-syntax-sublimelinter-gutter-mark: #484f58
-        --color-prettylights-syntax-constant-other-reference-link: #a5d6ff
         --color-fg-default: var(--text-color-primary)
-        --color-fg-muted: #8b949e
-        --color-fg-subtle: #484f58
-        --color-canvas-default: var(--container-background)
-        --color-canvas-subtle: var(--input-background-color)
-        --color-border-default: var(--input-border-color)
-        --color-border-muted: var(--input-border-color)
-        --color-neutral-muted: rgba(110, 118, 129, 0.4)
-        --color-accent-fg: #58a6ff
-        --color-accent-emphasis: #1f6feb
-        --color-attention-subtle: rgba(187, 128, 9, 0.15)
-        --color-danger-fg: #f85149
+        --color-fg-muted: var(--text-color-secondary)
+        --color-fg-subtle: var(--text-color-secondary)
+        --color-canvas-default: var(--input-background-color)
+        --color-canvas-subtle: var(--surface-2)
+        --color-border-default: var(--border)
+        --color-border-muted: var(--border)
+        --color-neutral-muted: var(--surface-3)
+        --color-accent-fg: var(--link-color)
+        --color-accent-emphasis: var(--color-main)
+        --color-danger-fg: var(--color-red)

@@ -24,6 +24,14 @@ app.geocoder.yandexKey = ''
 app.baseURL = ''
 app.siteUrl = 'http://localhost:3000'
 
+#--------------------------------------------------------------------
+# UPLOADS
+#--------------------------------------------------------------------
+# Set to false on a local stand that serves images from another host
+# (client NEXT_PUBLIC_IMG_HOST), otherwise covers are dropped from API
+# responses because the files are not on the local disk.
+# uploads.verifyFiles = true
+
 # app.forceGlobalSecureRequests = false
 # app.CSPEnabled = false
 

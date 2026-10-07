@@ -12,7 +12,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, PhotoGallery, PlacesListItem } from '@/components/shared'
+import { AppLayout, PhotoGallery, PlaceCard } from '@/components/shared'
 import { ConfirmationDialog } from '@/components/shared/confirmation-dialog'
 import { Carousel } from '@/components/ui'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
@@ -303,18 +303,16 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
 
                 <aside className={styles.sidebar}>
                     <PlaceInfoSidebar place={place} />
+                    <PlaceCollections placeId={place?.id} />
                     <PlaceVisited place={place} />
                 </aside>
             </div>
-
-            <PlaceCollections placeId={place?.id} />
 
             {!!nearPlaces?.length && (
                 <div className={styles.nearPlaces}>
                     <Carousel options={{ dragFree: true, loop: true }}>
                         {nearPlaces.map((nearPlace) => (
-                            <PlacesListItem
-                                t={t}
+                            <PlaceCard
                                 key={nearPlace.id}
                                 place={nearPlace}
                             />

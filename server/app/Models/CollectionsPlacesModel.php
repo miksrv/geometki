@@ -149,6 +149,43 @@ class CollectionsPlacesModel extends ApplicationBaseModel
     }
 
     /**
+     * For each collection, the IDs of its first places (in the author's order) that
+     * have a cover photo — at most $limit per collection. Feeds the cover mosaic of
+     * collection cards, so the mosaic follows the membership and order automatically.
+     *
+     * @param array<int, string> $collectionIds
+     * @param int $limit
+     * @return array<string, array<int, string>> collectionId => [placeId, ...]
+     */
+    public function getCoverPlaceIds(array $collectionIds, int $limit = 4): array
+    {
+        if (empty($collectionIds)) {
+            return [];
+        }
+
+        $rows = $this->builder()
+            ->select('collections_places.collection_id, collections_places.place_id')
+            ->join('places', 'places.id = collections_places.place_id')
+            ->whereIn('collections_places.collection_id', $collectionIds)
+            ->where('places.deleted_at IS NULL', null, false)
+            ->where('places.photos >', 0)
+            ->orderBy('collections_places.collection_id', 'ASC')
+            ->orderBy('collections_places.position', 'ASC')
+            ->get()
+            ->getResult();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[$row->collection_id] ??= [];
+            if (count($result[$row->collection_id]) < $limit) {
+                $result[$row->collection_id][] = $row->place_id;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Return a placeId => note map for a collection.
      *
      * @param string $collectionId

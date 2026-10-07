@@ -15,4 +15,8 @@ return [
     'sorryCannotFind' => 'Сожалеем! Не удаётся найти страницу, которую вы искали.',
     'whoops'          => 'Ой!',
     'weHitASnag'      => 'Кажется, мы столкнулись с препятствием. Пожалуйста, повторите попытку позже...',
+
+    // Generic API error envelope messages (App\Libraries\ApiExceptionHandler)
+    'apiInternalError' => 'На сервере произошла ошибка, попробуйте ещё раз позже',
+    'apiNotFound'      => 'Запрошенный ресурс не найден',
 ];

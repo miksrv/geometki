@@ -1,8 +1,10 @@
-$fontSizeTitleH1: 1.2em
-$fontSizeTitleH2: 1.1em
-$fontSizeHeadline: 0.9em
-$fontSizeParagraph: 0.95em
-$fontSizeCaption: 0.8em
+// Type scale aliases — the values live in styles/theme.css (see the comment there).
+// Fixed pixels, not em: a size must not drift with the parent's font size.
+$fontSizeTitleH1: var(--font-size-title-section)   // 18px: section titles, h1 inside blocks
+$fontSizeTitleH2: var(--font-size-large)           // 16px: block / card titles
+$fontSizeHeadline: var(--font-size-secondary)      // 13px: secondary lines (address, sidebar values)
+$fontSizeParagraph: var(--font-size)               // 14px: UI text
+$fontSizeCaption: var(--font-size-small)           // 12px: captions, stats, breadcrumbs
 
 $mobileMaxWidth: 768px
 

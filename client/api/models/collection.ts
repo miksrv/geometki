@@ -1,7 +1,6 @@
 import { DateTime } from '@/api/types'
 
-import { Category } from './category'
-import { Place } from './place'
+import { PlaceListItem } from './place'
 
 export type CollectionAuthor = {
     id: string
@@ -19,7 +18,7 @@ export type CollectionRegion = {
  * list fields (including `title`, translated server-side the same way as
  * other place lists) plus the author's optional short note for that place.
  */
-export type CollectionPlace = Place & {
+export type CollectionPlace = PlaceListItem & {
     note?: string | null
 }
 
@@ -28,14 +27,21 @@ export type Collection = {
     slug?: string | null
     title: string
     description?: string | null
-    metaDescription?: string | null
     author: CollectionAuthor
     region?: CollectionRegion | null
-    category?: Category | null
+    /** First cover of the mosaic: OG image, pickers. Derived on the server from `covers`. */
     cover?: {
         full?: string
         preview: string
-    }
+    } | null
+    /**
+     * Covers of the first places (author's order) that have photos, up to four. Collection
+     * cards draw them as a mosaic; the set follows the membership automatically.
+     */
+    covers?: Array<{
+        full?: string
+        preview: string
+    }>
     placesCount: number
     views: number
     saves: number

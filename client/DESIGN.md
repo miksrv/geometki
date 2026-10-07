@@ -1,0 +1,203 @@
+# Geometki design system
+
+How the client UI is built and where each piece lives. Read this before adding or
+changing any user-facing component; `CLAUDE.md` points here for the same reason.
+
+## 1. Principles
+
+- **One component per entity, variants for layout.** A place is always a `PlaceCard`, a
+  collection is always a `CollectionCard`. Density and orientation are props, never a
+  second component. Recognisability comes from the invariant parts, not from the layout.
+- **Three entities, three page archetypes.** A place, a person and a collection must not
+  look alike, so each entity page has its own skeleton and the reader always knows where
+  they are. Place: a detail page (cover hero → content + sticky facts sidebar). Person: a
+  profile (card with the avatar → tabs). Collection: an article (title with a byline → the
+  map → prose → a flow of large place cards). New entity pages pick one of these or get a
+  new archetype; they never borrow another entity's hero or sidebar.
+- **Kit first.** Primitives (buttons, inputs, dialogs, containers, icons, tokens) come
+  from `simple-react-ui-kit`. A missing primitive or variant is added to the kit, not
+  hand-rolled in the app.
+- **Tokens, not values.** Colours, radii, spacing and font sizes come from CSS variables
+  (`styles/theme.css` on top of the kit's `theme.css`) and the Sass variables in
+  `styles/variables.sass`. No raw hex colours or pixel sizes for things a token covers.
+- **Edit mode is explicit.** Owners get the same read view as everyone and switch to
+  editing with one visible control; controls appear only in that mode.
+
+## 1a. Type scale
+
+One scale for the whole client, in pixels (sizes never drift with the parent). Kit tokens
+give 12 / 14 / 16, `styles/theme.css` adds the rest, `styles/variables.sass` aliases them:
+
+| px  | Token                       | Sass alias           | Use                                                  |
+| --- | --------------------------- | -------------------- | ---------------------------------------------------- |
+| 12  | `--font-size-small`         | `$fontSizeCaption`   | captions, stats, breadcrumbs, badges                 |
+| 13  | `--font-size-secondary`     | `$fontSizeHeadline`  | secondary lines: address, byline, sidebar values     |
+| 14  | `--font-size`               | `$fontSizeParagraph` | UI text, controls, card text                         |
+| 15  | `--font-size-prose`         | —                    | long-form markdown body (`prose` mixin)              |
+| 16  | `--font-size-large`         | `$fontSizeTitleH2`   | block and card titles, `Container` title, prose `h3` |
+| 18  | `--font-size-title-section` | `$fontSizeTitleH1`   | section titles, prose `h2`                           |
+| 22  | `--font-size-title-page`    | —                    | the page `h1` (`PageHeader`, heroes)                 |
+
+Pick from the table; no ad-hoc `em` or odd pixel sizes.
+
+## 2. Two layers
+
+| Layer             | Lives in                                               | Knows about                    | Examples                                                                                 |
+| ----------------- | ------------------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------------------------- |
+| Primitives        | `simple-react-ui-kit` (separate repo, Storybook there) | Nothing domain-specific        | `Button`, `Input`, `Select`, `Dialog`, `Container`, `Popout`, `Icon`, `Skeleton`, tokens |
+| Domain components | `client/components/shared`                             | `ApiModel` types, routes, i18n | `PlaceCard`, `CollectionCard`, `MediaTile`, `UserAvatar`, `CategoryBadge`, `EmptyState`  |
+
+Page-specific composition lives in `client/sections/<area>` (e.g. `sections/collections`),
+pages themselves in `client/pages`. Sections may compose domain components; they must not
+re-implement them.
+
+## 3. Layout
+
+- **Width.** Content is capped by `--width-max` (1260px); the app bar is the only global
+  chrome, there is no permanent sidebar.
+- **Lists** are a flow of tiles on the page background, three columns on desktop and one
+  on phones (`MediaTileGrid`). Lists never sit inside a `Container`.
+- **Place page** (`pages/places/[id]`): `PlaceHero` → `.pageLayout` grid `1fr 300px` → main
+  column of `Container` blocks with 8px gaps, sticky sidebar (`top: 60px`) with the map and
+  key/value facts, then the "В коллекциях" rows (`PlaceCollections`, picker-style rows:
+  40px cover, title, places count) and the "Здесь были" avatars → "nearby" tiles below.
+- **Collection page** (`pages/collections/[id]`): `CollectionHeader` (a `PageHeader` with a
+  byline) → the map (`CollectionMap`, 360px / 220px on phones, in a `Container` with a 3px frame) on the full content width →
+  the description as article prose on the full content width (`prose` mixin) → the places as the usual
+  `MediaTileGrid` of `PlaceCard` tiles. No cover, no sidebar, no facts block and no
+  containers: the map is the visual of a collection, the title is its only heading. Order
+  is the author's, but it is not numbered — numbers would read as a route. In edit mode
+  the same tiles get small move/remove buttons over the top-right corner of the cover
+  (`PlaceCard` `actions`), and a full-width "Добавить места" button follows the grid.
+- **Containers** (`Container` from the kit) are for content blocks with a heading inside
+  the page body: description, comments, places of a collection, a form. They carry a
+  `title` and an optional `action` (`mode="link"` buttons). Page chrome — the page header,
+  filters, lists, pagination — sits on the page background, never in a `Container`.
+- **Breakpoint.** One: `$mobileMaxWidth` (768px). Below it columns stack and side action
+  groups wrap under the content.
+
+## 4. Page header and breadcrumbs
+
+`PageHeader` (`components/shared/page-header`) is the one header for list, form, admin and
+collection pages: breadcrumbs above the h1, an optional one-line `description` (a string, or
+a node for the collection byline: author avatar, places count, region, update time),
+`leading` for an avatar, `actions` on the right (`medium` buttons, wrapping under the title
+on phones). The place page and the user profile use a hero instead: the same `Breadcrumbs`,
+h1 and actions sit on the cover (`PlaceHero`) or in the title row attached to the bottom of
+the profile card (`UserHeader`). The h1 size is one token everywhere (`--font-size-title-page` in `styles/theme.css`, 22px), so a
+list title and a hero title read as the same level, above the prose headings and container titles.
+
+Breadcrumbs appear only on nested pages, where the app bar cannot show where you are:
+
+| Page                                                                                | Breadcrumbs            |
+| ----------------------------------------------------------------------------------- | ---------------------- |
+| Section roots: places, collections, people, map, activity, categories, tags, search | none                   |
+| Filtered places list (`/places?category=…`)                                         | Места › parent filters |
+| Place page                                                                          | Места › category       |
+| Collection page                                                                     | Коллекции              |
+| Create / edit place                                                                 | Места (› place)        |
+| User sub-pages (places, photos, bookmarks, …), settings                             | Люди › name            |
+| Admin sub-pages                                                                     | admin section          |
+
+The trail starts at the section (the logo is the way home) and stops at the parent; the
+current page is the h1 next to it, so it is not repeated. There is no "back" button: the
+last crumb is the way back. Schema.org `BreadcrumbList` is separate data and keeps the
+full chain from the home page.
+
+## 5. Cards
+
+### `MediaTile` — photo tile primitive (`components/shared/media-tile`)
+
+Cover filling the card, an optional gradient band at the top (collections put the author
+there, place tiles leave it empty) and one at the bottom (badge, title, subline, stats). 260px high, `--border-radius`, `--container-shadow`, hover zoom.
+Every "entity on a cover" tile is built on it. `coverSrc` draws one cover, `covers` a
+mosaic of up to four (see `CollectionCard`). Overlay content uses `mediaTileStyles`
+(`author`, `badge`, `title`, `subline`, `stats`, `stat`) so the typography and colours are
+the same for every entity. `MediaTileGrid` is the 3-column flow.
+
+### `PlaceCard` (`components/shared/place-card`)
+
+The one card for a place.
+
+| Variant                 | Use                                                                            | Thumb                      | Heading                        |
+| ----------------------- | ------------------------------------------------------------------------------ | -------------------------- | ------------------------------ |
+| `tile` (default)        | `/places`, user places / bookmarks / visited, home carousel, "nearby" carousel | cover fills the tile       | `h2`                           |
+| `row` + `size="large"`  | places on the collection page                                                  | 200×140 (120×84 on phones) | `h2`                           |
+| `row` + `size="medium"` | search results                                                                 | 120×80                     | `h3` (inside a titled section) |
+| `row` + `size="small"`  | dense pickers and popups (map popup, planned)                                  | 96×72                      | `h3`                           |
+
+Invariant order of parts in both variants: cover → category badge → title → address →
+stats row. Stats order is fixed: rating, distance, views, photos. A card is about the place:
+it never shows who added it or when, and list responses (`ApiModel.PlaceListItem`) do not
+even carry `author`. Props: `distanceKm` / `distanceLabel` override the API distance;
+`actions` puts controls on the right of a row or over the top-right corner of a tile (edit
+mode on the collection page); the row variant also has `leading` and `footer` slots for a
+marker and extra text. `PlaceCardLoader` is the matching skeleton.
+
+Known deviations / follow-ups:
+
+- The map popup in `components/map/marker-point` still has its own markup; it should
+  become `PlaceCard` `row` with a bookmark action.
+- `updated` is still returned in lists only to version the cover URL (`?d=`), because the
+  cover file path does not change when the cover is replaced. Move the version into the
+  `cover` object on the server (e.g. a versioned `preview` URL) and drop `updated` from
+  `PlaceListItem`.
+
+### `CollectionCard` (`sections/collections/collection-card`)
+
+`MediaTile` with a **cover mosaic** instead of one cover: the covers of the first places
+in the author's order that have photos, up to four (`collection.covers` from the API).
+One cover fills the tile, two make two columns, three put a tall one on the left and two
+stacked on the right, four make a 2×2 grid. The mosaic is what tells a collection tile from
+a place tile at a glance; it is derived on the server and follows the membership and order
+automatically, so there is no cover setting — the author changes it by reordering the
+places. On top: author + update time; below: title, region link and a stats row (places,
+views).
+
+## 6. Patterns
+
+- **Dialogs.** `Dialog` with a `title`, body, and an actions row aligned right, secondary
+  action first and the primary action last, both `size="medium"`. A destructive action in a
+  settings dialog sits on the left of the footer as a `mode="link"` `variant="negative"`
+  button and always asks for confirmation (`ConfirmationDialog`) naming what is deleted.
+- **Prose.** Rendered markdown (place description, collection article) uses the `prose`
+  mixin from `styles/mixins.sass`: 15px body (`--font-size-prose`) on a 1.55 line height, semibold `h2` 18px / `h3` 16px with
+  more space above than below, disc/decimal lists, a left-bordered quote, rounded images,
+  code on `--surface-2`. The place page keeps it inside the "Описание" `Container`, the
+  collection page shows it bare on the page background; the text itself looks the same.
+- **Form fields.** Kit `Input`, `Select`, `TextArea` and the project's `ContentEditor`
+  (`components/ui/content-editor`, the markdown editor for descriptions) are outlined:
+  `--input-background-color` (surface-1) with `--input-border` and the kit focus ring, so a
+  field reads as a field on the page background and inside a `Container` alike. Grey
+  surfaces — markers, snackbars, hover rows, badges — use `--surface-2`, never input tokens.
+  `ContentEditor` is dressed as a `TextArea`: one bordered box, a 36px toolbar row of
+  small icon buttons with a divider, text area of at least 120px (`minHeight`) that grows
+  with the content; it has no save/cancel buttons of its own.
+- **Forms in dialogs.** `Input`/`Select` `size="medium"`, labels above, character counters
+  under limited fields, hints in `$fontSizeCaption` secondary text. Save is disabled until
+  something changed.
+- **Pickers** ("В коллекцию", "Добавить места"): a search input only when the list is
+  long, rows of 40px thumbnail + title + caption + control, a single collapsed "create"
+  affordance at the bottom.
+- **Empty states.** `EmptyState` with a title, one sentence and at most one action; copy
+  differs for owners (what to do) and readers (what to expect).
+- **Notifications.** Success and error toasts via `Notify`; an entity link in the toast is
+  passed as `place` / `collection`, never embedded in the text. Raw API bodies are never
+  shown (see `app/errorMiddleware.ts`).
+- **Edit mode.** "Редактировать" in the page header or hero; in edit mode it becomes
+  "Отмена" + "Готово" — the one place where text edits are confirmed or dropped (inline
+  editors have no buttons of their own; list edits save as they happen). In edit mode lists show
+  compact `size="small"` `mode="outline"` icon buttons grouped on the right, inline forms use
+  `size="small"` controls of one height, Enter saves and Escape cancels.
+- **Labels.** Actions are verbs that name the result ("В закладки", "В коллекцию",
+  "Добавить места"), never generic "Сохранить" for a toggle. Icons are not reused across
+  unrelated actions (the plus circle means "add place" in the app bar only).
+
+## 7. Adding a component — checklist
+
+1. Is it a primitive? Add it to `simple-react-ui-kit` and release the kit first.
+2. Does an entity component already exist? Extend it with a variant or slot instead.
+3. Put domain components in `components/shared/<name>` with `index.ts`, styles module and
+   a test; sections only compose them.
+4. Use tokens and `$mobileMaxWidth`; check the phone layout.
+5. Add the component to the table in section 5 (or a new section) of this file.

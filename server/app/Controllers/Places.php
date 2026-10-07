@@ -190,7 +190,6 @@ class Places extends ResourceController
             $place->bookmarks = (int) $place->bookmarks;
             $place->title     = $placeContent->title($place->id);
             $place->category  = $formatter->formatCategory($place, $locale);
-            $place->author    = $formatter->formatAuthor($place);
 
             if ($coordinates && $place->distance) {
                 $place->distance = $formatter->formatDistance($place->distance);

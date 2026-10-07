@@ -156,10 +156,16 @@ describe('AppBar', () => {
             renderWithStore(<AppBar />)
             const nav = screen.getByRole('navigation', { name: 'Основная навигация' })
             expect(nav).toBeInTheDocument()
-            expect(screen.getByRole('link', { name: 'Лента' })).toHaveAttribute('href', '/activity')
             expect(screen.getByRole('link', { name: 'Карта' })).toHaveAttribute('href', '/map')
             expect(screen.getByRole('link', { name: 'Места' })).toHaveAttribute('href', '/places')
-            expect(screen.getByRole('link', { name: 'Пользователи' })).toHaveAttribute('href', '/users')
+            expect(screen.getByRole('link', { name: 'Коллекции' })).toHaveAttribute('href', '/collections')
+            expect(screen.getByRole('link', { name: 'Люди' })).toHaveAttribute('href', '/users')
+            expect(nav.querySelectorAll('a')).toHaveLength(4)
+        })
+
+        it('does not render the activity feed link (reachable from the home page widget)', () => {
+            renderWithStore(<AppBar />)
+            expect(screen.queryByRole('link', { name: 'Лента' })).not.toBeInTheDocument()
         })
 
         it('does not render a hamburger button', () => {

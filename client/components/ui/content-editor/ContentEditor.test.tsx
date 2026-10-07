@@ -36,10 +36,36 @@ describe('ContentEditor', () => {
         })
     })
 
+    describe('sizing', () => {
+        it('sets the default minimum height and no maximum as custom properties', () => {
+            const { container } = render(<ContentEditor />)
+            const wrapper = container.firstChild as HTMLElement
+
+            expect(wrapper.style.getPropertyValue('--editor-min-height')).toBe('120px')
+            expect(wrapper.style.getPropertyValue('--editor-max-height')).toBe('none')
+        })
+
+        it('passes custom heights and the class name to the wrapper', () => {
+            const { container } = render(
+                <ContentEditor
+                    minHeight={80}
+                    maxHeight={400}
+                    className={'custom'}
+                />
+            )
+            const wrapper = container.firstChild as HTMLElement
+
+            expect(wrapper.style.getPropertyValue('--editor-min-height')).toBe('80px')
+            expect(wrapper.style.getPropertyValue('--editor-max-height')).toBe('400px')
+            expect(wrapper).toHaveClass('custom')
+        })
+    })
+
     describe('disabled prop', () => {
-        it('applies disabled class when disabled is true', () => {
+        it('applies disabled class and aria-disabled when disabled is true', () => {
             const { container } = render(<ContentEditor disabled />)
             expect(container.firstChild).toHaveClass('disabled')
+            expect(container.firstChild).toHaveAttribute('aria-disabled', 'true')
         })
 
         it('does not apply disabled class when disabled is false', () => {

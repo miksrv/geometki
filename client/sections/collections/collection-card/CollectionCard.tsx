@@ -1,58 +1,89 @@
 import React from 'react'
 import { Icon } from 'simple-react-ui-kit'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
+import { MediaTile, mediaTileStyles } from '@/components/shared/media-tile'
+import { UserAvatar } from '@/components/shared/user-avatar'
 import { IMG_HOST } from '@/config/env'
-import { buildCollectionUrl } from '@/utils/helpers'
-
-import styles from '../styles.module.sass'
+import { buildCollectionUrl, numberFormatter, timeAgo } from '@/utils/helpers'
 
 interface CollectionCardProps {
     collection: ApiModel.Collection
 }
 
+/**
+ * Collection tile: MediaTile chrome with a cover mosaic of the first places (what tells a
+ * collection from a place at a glance), the author on top and collection facts below.
+ */
 export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) => {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
 
     const href = buildCollectionUrl(collection.id, collection.slug)
 
+    // Mosaic of the first places' covers; older responses carry only `cover`
+    const covers = (collection.covers ?? (collection.cover ? [collection.cover] : [])).map(
+        (cover) => `${IMG_HOST}${cover.preview}`
+    )
+
     return (
-        <Link
+        <MediaTile
             href={href}
-            className={styles.card}
             title={collection.title}
+            covers={covers}
+            top={
+                <UserAvatar
+                    user={{
+                        id: collection.author.id,
+                        name: collection.author.name,
+                        avatar: collection.author.avatar ?? undefined
+                    }}
+                    size={'tiny'}
+                    showName={true}
+                    hideOnlineIcon={true}
+                    caption={timeAgo(collection.updated?.date, undefined, i18n.language)}
+                    className={mediaTileStyles.author}
+                />
+            }
         >
-            <div className={styles.cardCover}>
-                {collection.cover && (
-                    <Image
-                        src={`${IMG_HOST}${collection.cover.preview}`}
-                        alt={collection.title}
-                        fill
-                        sizes={'(max-width: 768px) 100vw, 33vw'}
-                        style={{ objectFit: 'cover' }}
-                    />
+            <h2 className={mediaTileStyles.title}>
+                <Link
+                    href={href}
+                    title={collection.title}
+                >
+                    {collection.title}
+                </Link>
+            </h2>
+
+            {collection.region && (
+                <div className={mediaTileStyles.subline}>
+                    <Link
+                        href={`/collections?region=${collection.region.id}`}
+                        title={`${t('collections_all-in-region', { defaultValue: 'Все коллекции в регионе' })} ${collection.region.name}`}
+                    >
+                        {collection.region.name}
+                    </Link>
+                </div>
+            )}
+
+            <div className={mediaTileStyles.stats}>
+                <span className={mediaTileStyles.stat}>
+                    <Icon name={'Point'} />
+                    {t('collections_places-count', {
+                        count: collection.placesCount,
+                        defaultValue: '{{count}} мест'
+                    })}
+                </span>
+
+                {!!collection.views && (
+                    <span className={mediaTileStyles.stat}>
+                        <Icon name={'Eye'} />
+                        {numberFormatter(collection.views)}
+                    </span>
                 )}
             </div>
-
-            <div className={styles.cardBody}>
-                <h2 className={styles.cardTitle}>{collection.title}</h2>
-
-                <div className={styles.cardMeta}>
-                    <span>
-                        <Icon name={'Point'} />{' '}
-                        {t('collections_places-count', {
-                            count: collection.placesCount,
-                            defaultValue: '{{count}} мест'
-                        })}
-                    </span>
-                    {collection.region && <span>{collection.region.name}</span>}
-                    {collection.category && <span>{collection.category.title}</span>}
-                </div>
-            </div>
-        </Link>
+        </MediaTile>
     )
 }

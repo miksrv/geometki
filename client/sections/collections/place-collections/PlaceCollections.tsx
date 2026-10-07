@@ -1,23 +1,26 @@
 import React from 'react'
-import { Container } from 'simple-react-ui-kit'
+import { cn, Container, Icon } from 'simple-react-ui-kit'
 
+import Image from 'next/image'
+import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
-
-import { CollectionCard } from '../collection-card'
+import { IMG_HOST } from '@/config/env'
+import { buildCollectionUrl } from '@/utils/helpers'
 
 import styles from '../styles.module.sass'
 
-const IN_COLLECTIONS_LIMIT = 6
+const IN_COLLECTIONS_LIMIT = 5
 
 interface PlaceCollectionsProps {
     placeId?: string
 }
 
 /**
- * "Это место в коллекциях" block on the place page: up to 6 published collections
- * containing this place. Skipped entirely while empty — no empty-state noise on every place.
+ * "В коллекциях" block in the place page sidebar: compact rows (cover, title, places
+ * count) for the published collections containing this place, like the "visited here"
+ * block next to it. Skipped entirely while empty — no empty-state noise on every place.
  */
 export const PlaceCollections: React.FC<PlaceCollectionsProps> = ({ placeId }) => {
     const { t } = useTranslation()
@@ -28,16 +31,47 @@ export const PlaceCollections: React.FC<PlaceCollectionsProps> = ({ placeId }) =
         return null
     }
 
+    const count = data.count ?? data.items.length
+
     return (
-        <Container title={t('collections_place-in-collections', { defaultValue: 'Это место в коллекциях' })}>
-            <div className={styles.grid}>
+        <Container
+            title={`${t('collections_place-in-collections-short', { defaultValue: 'В коллекциях' })} (${count})`}
+        >
+            <ul className={styles.sidebarRows}>
                 {data.items.map((collection) => (
-                    <CollectionCard
-                        key={collection.id}
-                        collection={collection}
-                    />
+                    <li key={collection.id}>
+                        <Link
+                            href={buildCollectionUrl(collection.id, collection.slug)}
+                            className={cn(styles.pickerRow, styles.sidebarRow)}
+                            title={collection.title}
+                        >
+                            <span className={styles.pickerCover}>
+                                {collection.cover?.preview ? (
+                                    <Image
+                                        src={`${IMG_HOST}${collection.cover.preview}`}
+                                        alt={''}
+                                        fill
+                                        sizes={'40px'}
+                                        style={{ objectFit: 'cover' }}
+                                    />
+                                ) : (
+                                    <Icon name={'Layers'} />
+                                )}
+                            </span>
+                            <span className={styles.pickerBody}>
+                                <strong>{collection.title}</strong>
+                                <span>
+                                    {t('collections_places-count', {
+                                        count: collection.placesCount,
+                                        defaultValue: '{{count}} мест'
+                                    })}
+                                    {collection.author?.name ? ` · ${collection.author.name}` : ''}
+                                </span>
+                            </span>
+                        </Link>
+                    </li>
                 ))}
-            </div>
+            </ul>
         </Container>
     )
 }

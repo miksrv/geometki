@@ -7,7 +7,8 @@ import { useTranslation } from 'next-i18next/pages'
 import { ApiModel, ApiType } from '@/api'
 import { CoordinatesItem } from '@/components/pages/search/CoordinatesItem'
 import { LocationItem } from '@/components/pages/search/LocationItem'
-import { PlaceSearchCard } from '@/components/pages/search/PlaceSearchCard'
+import { PlaceCard } from '@/components/shared/place-card'
+import { haversineDistanceKm } from '@/utils/geo'
 
 import styles from './styles.module.sass'
 
@@ -122,11 +123,16 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
                     <div className={styles.placeList}>
                         {places.map((place) => (
-                            <PlaceSearchCard
+                            <PlaceCard
                                 key={place.id}
+                                variant={'row'}
+                                headingLevel={3}
                                 place={place}
-                                userLat={userLat}
-                                userLon={userLon}
+                                distanceKm={
+                                    userLat != null && userLon != null && place.lat && place.lon
+                                        ? haversineDistanceKm({ lat: userLat, lon: userLon }, place)
+                                        : undefined
+                                }
                             />
                         ))}
                     </div>

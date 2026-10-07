@@ -26,8 +26,9 @@ export const isBottomNavItemActive = (pathname: string, match: string): boolean 
     pathname === match || pathname.startsWith(`${match}/`)
 
 /**
- * Mobile-only bottom navigation. Mirrors the desktop app bar links and
- * exposes the primary "add place" action in the center, within thumb reach.
+ * Mobile-only bottom navigation: the same four sections as the desktop app bar with
+ * the primary "add place" action in the center, within thumb reach. The profile lives
+ * behind the avatar in the app bar, the activity feed behind the home page widget.
  */
 export const BottomNav: React.FC = () => {
     const { t } = useTranslation('components.bottom-nav')
@@ -35,7 +36,6 @@ export const BottomNav: React.FC = () => {
     const dispatch = useAppDispatch()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
-    const userId = useAppSelector((state) => state.auth.user?.id)
 
     // Kept strictly symmetric: 2 items, the primary "add place" action in the
     // center, 2 items — so the center button is visually centered on all widths.
@@ -50,13 +50,7 @@ export const BottomNav: React.FC = () => {
             primary: true
         },
         { href: '/collections', icon: 'Layers', label: t('nav-collections', { defaultValue: 'Коллекции' }) },
-        {
-            auth: true,
-            href: userId ? `/users/${userId}` : '/users',
-            icon: 'User',
-            label: t('nav-profile', { defaultValue: 'Профиль' }),
-            match: '/users'
-        }
+        { href: '/users', icon: 'Users', label: t('nav-users', { defaultValue: 'Люди' }) }
     ]
 
     const handleClick = (event: React.MouseEvent, item: BottomNavItem) => {

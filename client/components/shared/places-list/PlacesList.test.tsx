@@ -16,12 +16,13 @@ jest.mock('next-i18next', () => ({
     })
 }))
 
-jest.mock('./PlacesListItem', () => ({
-    PlacesListItem: ({ place }: any) => <div data-testid={'places-list-item'}>{place.title}</div>
+jest.mock('@/components/shared/media-tile', () => ({
+    MediaTileGrid: ({ children }: any) => <section>{children}</section>
 }))
 
-jest.mock('./PlacesListItemLoader', () => ({
-    PlacesListItemLoader: () => <div data-testid={'places-loader'} />
+jest.mock('@/components/shared/place-card', () => ({
+    PlaceCard: ({ place }: any) => <div data-testid={'places-list-item'}>{place.title}</div>,
+    PlaceCardLoader: () => <div data-testid={'places-loader'} />
 }))
 
 const mockPlaces: ApiModel.Place[] = [

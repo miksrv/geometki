@@ -56,6 +56,7 @@ Uses **Next.js Pages Router** (not App Router) with **Redux Toolkit + RTK Query*
 - `functions/` — Pure utilities: `helpers.ts`, `coordinates.ts`, `validators.ts`; unit tests co-located as `*.test.ts`
 - `proxy.ts` — Next.js proxy (formerly middleware); protects `/places/create` and `/users/settings` routes; redirects unauthenticated users
 - `styles/` — Global SASS; `theme.css` holds project token overrides on top of `simple-react-ui-kit/theme.css` (imported first in `pages/_app.tsx`)
+- `DESIGN.md` — the client design system: layers (kit primitives vs domain components), layouts, the `MediaTile` / `PlaceCard` / `CollectionCard` rules and UI patterns. Read it before adding or changing any user-facing component; one component per entity, variants for layout.
 
 **i18n:** `next-i18next` with Russian (default, `/`) and English (`/en`) locales. Translation files are in `public/locales/`. Run `yarn locales:build` after adding new translation keys.
 
@@ -89,7 +90,7 @@ NEXT_PUBLIC_MAPBOX_TOKEN     # Optional
 NEXT_PUBLIC_CYCLEMAP_TOKEN   # Optional
 ```
 
-**Server** (`.env` in `server/`): Configure database credentials, `app.baseURL`, and JWT secret. Use `cp env .env` as starting point.
+**Server** (`.env` in `server/`): Configure database credentials, `app.baseURL`, and JWT secret. Use `cp env .env` as starting point. For a local stand that uses a production database with images served from production (client `NEXT_PUBLIC_IMG_HOST=https://api.geometki.com/`), set `uploads.verifyFiles = false`, otherwise the API drops covers whose files are not on the local disk.
 
 ## Tech Stack
 

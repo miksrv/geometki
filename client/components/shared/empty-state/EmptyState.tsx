@@ -8,9 +8,11 @@ import styles from './styles.module.sass'
 interface EmptyStateProps {
     title?: string
     description?: string
+    /** Primary action under the text, e.g. a "create" button */
+    action?: React.ReactNode
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({ title, description }) => {
+export const EmptyState: React.FC<EmptyStateProps> = ({ title, description, action }) => {
     const { t } = useTranslation()
 
     return (
@@ -25,6 +27,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ title, description }) =>
             />
             <p className={styles.title}>{title ?? t('nothing-found')}</p>
             <p className={styles.description}>{description ?? t('nothing-found-description')}</p>
+            {action && <div className={styles.action}>{action}</div>}
         </div>
     )
 }

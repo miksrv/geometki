@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { API } from '@/api'
 
@@ -25,16 +25,19 @@ jest.mock('simple-react-ui-kit', () => ({
         />
     ),
     Dialog: ({ open, children }: any) => (open ? <div role={'dialog'}>{children}</div> : null),
-    Input: ({ placeholder, value, onChange, onKeyDown, maxLength }: any) => (
+    Icon: ({ name }: { name: string }) => <i data-testid={`icon-${name}`} />,
+    Input: ({ placeholder, value, onChange, onKeyDown, maxLength, disabled }: any) => (
         <input
             placeholder={placeholder}
             value={value}
             maxLength={maxLength}
+            disabled={disabled}
             onChange={onChange}
             onKeyDown={onKeyDown}
         />
     ),
-    Skeleton: () => <div data-testid={'skeleton'} />
+    Skeleton: () => <div data-testid={'skeleton'} />,
+    cn: (...args: unknown[]) => args.filter(Boolean).join(' ')
 }))
 
 jest.mock('next/image', () => {
@@ -46,12 +49,6 @@ jest.mock('next/image', () => {
     )
     Image.displayName = 'Image'
     return Image
-})
-
-jest.mock('next/link', () => {
-    const Link = ({ href, children }: any) => <a href={href}>{children}</a>
-    Link.displayName = 'Link'
-    return Link
 })
 
 jest.mock('next-i18next/pages', () => ({
@@ -69,8 +66,10 @@ jest.mock('@/api', () => ({
     }
 }))
 
+const mockDispatch = jest.fn()
+
 jest.mock('@/app/store', () => ({
-    useAppDispatch: () => jest.fn()
+    useAppDispatch: () => mockDispatch
 }))
 
 jest.mock('@/app/notificationSlice', () => ({
@@ -82,10 +81,30 @@ const membershipItems = [
     { id: 'col-2', title: 'Пещеры', placesCount: 1, cover: null, contains: true }
 ]
 
+const manyItems = Array.from({ length: 8 }, (_, i) => ({
+    id: `col-${i}`,
+    title: `Коллекция ${i}`,
+    placesCount: i,
+    cover: null,
+    contains: false
+}))
+
+const SEARCH_PLACEHOLDER = 'Поиск по вашим коллекциям'
+const TITLE_PLACEHOLDER = 'Например, Водопады Карелии'
+
+const renderModal = (open = true) =>
+    render(
+        <AddToCollectionModal
+            placeId={'place-1'}
+            open={open}
+            onClose={jest.fn()}
+        />
+    )
+
 describe('AddToCollectionModal', () => {
-    const addPlaces = jest.fn().mockResolvedValue({ data: {} })
-    const removePlace = jest.fn().mockResolvedValue({ data: {} })
-    const createCollection = jest.fn().mockResolvedValue({ data: { id: 'col-new', slug: 'new' } })
+    const addPlaces = jest.fn()
+    const removePlace = jest.fn()
+    const createCollection = jest.fn()
 
     beforeEach(() => {
         jest.clearAllMocks()
@@ -113,25 +132,13 @@ describe('AddToCollectionModal', () => {
     })
 
     it('does not render when closed', () => {
-        render(
-            <AddToCollectionModal
-                placeId={'place-1'}
-                open={false}
-                onClose={jest.fn()}
-            />
-        )
+        renderModal(false)
 
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
 
     it('renders the user collections with their checked state', () => {
-        render(
-            <AddToCollectionModal
-                placeId={'place-1'}
-                open={true}
-                onClose={jest.fn()}
-            />
-        )
+        renderModal()
 
         expect(screen.getByText('Водопады')).toBeInTheDocument()
         expect(screen.getByText('Пещеры')).toBeInTheDocument()
@@ -148,40 +155,21 @@ describe('AddToCollectionModal', () => {
             refetch: jest.fn()
         })
 
-        render(
-            <AddToCollectionModal
-                placeId={'place-1'}
-                open={true}
-                onClose={jest.fn()}
-            />
-        )
+        renderModal()
 
         expect(screen.getAllByTestId('skeleton').length).toBeGreaterThan(0)
     })
 
     it('adds the place to a collection that does not contain it yet', () => {
-        render(
-            <AddToCollectionModal
-                placeId={'place-1'}
-                open={true}
-                onClose={jest.fn()}
-            />
-        )
+        renderModal()
 
-        const checkboxes = screen.getAllByRole('checkbox')
-        fireEvent.click(checkboxes[0])
+        fireEvent.click(screen.getAllByRole('checkbox')[0])
 
         expect(addPlaces).toHaveBeenCalledWith({ id: 'col-1', placeIds: ['place-1'] })
     })
 
-    it('toggles the collection when clicking anywhere in the row (44px touch target)', () => {
-        render(
-            <AddToCollectionModal
-                placeId={'place-1'}
-                open={true}
-                onClose={jest.fn()}
-            />
-        )
+    it('toggles the collection when clicking anywhere in the row', () => {
+        renderModal()
 
         fireEvent.click(screen.getByText('Водопады'))
 
@@ -189,77 +177,106 @@ describe('AddToCollectionModal', () => {
     })
 
     it('removes the place from a collection that already contains it', () => {
-        render(
-            <AddToCollectionModal
-                placeId={'place-1'}
-                open={true}
-                onClose={jest.fn()}
-            />
-        )
+        renderModal()
 
-        const checkboxes = screen.getAllByRole('checkbox')
-        fireEvent.click(checkboxes[1])
+        fireEvent.click(screen.getAllByRole('checkbox')[1])
 
         expect(removePlace).toHaveBeenCalledWith({ id: 'col-2', placeId: 'place-1' })
     })
 
-    it('filters the list by the search input', () => {
-        render(
-            <AddToCollectionModal
-                placeId={'place-1'}
-                open={true}
-                onClose={jest.fn()}
-            />
-        )
+    it('hides the search for a short list', () => {
+        renderModal()
 
-        fireEvent.change(screen.getByPlaceholderText('Поиск по вашим коллекциям'), {
-            target: { value: 'пещер' }
-        })
-
-        expect(screen.queryByText('Водопады')).not.toBeInTheDocument()
-        expect(screen.getByText('Пещеры')).toBeInTheDocument()
+        expect(screen.queryByPlaceholderText(SEARCH_PLACEHOLDER)).not.toBeInTheDocument()
     })
 
-    it('creates a new collection and adds the place to it', async () => {
-        render(
-            <AddToCollectionModal
-                placeId={'place-1'}
-                open={true}
-                onClose={jest.fn()}
-            />
-        )
-
-        fireEvent.change(screen.getByPlaceholderText('+ Новая коллекция'), {
-            target: { value: 'Новая коллекция' }
+    it('filters a long list by the search input', () => {
+        jest.mocked(API.useCollectionsGetMembershipQuery).mockReturnValue({
+            data: { items: manyItems },
+            isLoading: false,
+            refetch: jest.fn()
         })
-        fireEvent.click(screen.getByText('Создать'))
 
-        await Promise.resolve()
-        await Promise.resolve()
+        renderModal()
 
-        expect(createCollection).toHaveBeenCalledWith({ title: 'Новая коллекция' })
-        expect(addPlaces).toHaveBeenCalledWith({ id: 'col-new', placeIds: ['place-1'] })
+        fireEvent.change(screen.getByPlaceholderText(SEARCH_PLACEHOLDER), { target: { value: 'коллекция 7' } })
+
+        expect(screen.getByText('Коллекция 7')).toBeInTheDocument()
+        expect(screen.queryByText('Коллекция 1')).not.toBeInTheDocument()
     })
 
-    it('shows a link to the newly created collection only after creating it', async () => {
-        render(
-            <AddToCollectionModal
-                placeId={'place-1'}
-                open={true}
-                onClose={jest.fn()}
-            />
-        )
-
-        expect(screen.queryByText('Открыть и дописать описание')).not.toBeInTheDocument()
-
-        fireEvent.change(screen.getByPlaceholderText('+ Новая коллекция'), {
-            target: { value: 'Новая коллекция' }
+    it('shows "nothing found" when the search has no matches', () => {
+        jest.mocked(API.useCollectionsGetMembershipQuery).mockReturnValue({
+            data: { items: manyItems },
+            isLoading: false,
+            refetch: jest.fn()
         })
+
+        renderModal()
+
+        fireEvent.change(screen.getByPlaceholderText(SEARCH_PLACEHOLDER), { target: { value: 'зомби' } })
+
+        expect(screen.getByText('Ничего не найдено')).toBeInTheDocument()
+    })
+
+    it('keeps the create form collapsed behind a single button', () => {
+        renderModal()
+
+        expect(screen.queryByPlaceholderText(TITLE_PLACEHOLDER)).not.toBeInTheDocument()
+
+        fireEvent.click(screen.getByText('Новая коллекция'))
+
+        expect(screen.getByPlaceholderText(TITLE_PLACEHOLDER)).toBeInTheDocument()
+        expect(screen.getByText('Создать')).toBeDisabled()
+
+        fireEvent.click(screen.getByText('cancel'))
+
+        expect(screen.queryByPlaceholderText(TITLE_PLACEHOLDER)).not.toBeInTheDocument()
+    })
+
+    it('creates a new collection, adds the place to it and collapses the form', async () => {
+        renderModal()
+
+        fireEvent.click(screen.getByText('Новая коллекция'))
+        fireEvent.change(screen.getByPlaceholderText(TITLE_PLACEHOLDER), { target: { value: '  Горы  ' } })
         fireEvent.click(screen.getByText('Создать'))
 
-        expect(await screen.findByText('Открыть и дописать описание')).toHaveAttribute(
-            'href',
-            '/collections/col-new-new'
+        await waitFor(() => expect(addPlaces).toHaveBeenCalledWith({ id: 'col-new', placeIds: ['place-1'] }))
+
+        expect(createCollection).toHaveBeenCalledWith({ title: 'Горы' })
+        await waitFor(() => expect(screen.queryByPlaceholderText(TITLE_PLACEHOLDER)).not.toBeInTheDocument())
+
+        expect(mockDispatch).toHaveBeenCalledWith(
+            expect.objectContaining({
+                payload: expect.objectContaining({
+                    type: 'success',
+                    collection: { id: 'col-new', slug: 'new', title: 'Горы' }
+                })
+            })
         )
+    })
+
+    it('submits the new collection on Enter', async () => {
+        renderModal()
+
+        fireEvent.click(screen.getByText('Новая коллекция'))
+        fireEvent.change(screen.getByPlaceholderText(TITLE_PLACEHOLDER), { target: { value: 'Горы' } })
+        fireEvent.keyDown(screen.getByPlaceholderText(TITLE_PLACEHOLDER), { key: 'Enter' })
+
+        await waitFor(() => expect(createCollection).toHaveBeenCalledWith({ title: 'Горы' }))
+    })
+
+    it('opens the create form right away when the user has no collections', () => {
+        jest.mocked(API.useCollectionsGetMembershipQuery).mockReturnValue({
+            data: { items: [] },
+            isLoading: false,
+            refetch: jest.fn()
+        })
+
+        renderModal()
+
+        expect(screen.getByText('У вас пока нет коллекций')).toBeInTheDocument()
+        expect(screen.getByPlaceholderText(TITLE_PLACEHOLDER)).toBeInTheDocument()
+        expect(screen.queryByText('cancel')).not.toBeInTheDocument()
     })
 })

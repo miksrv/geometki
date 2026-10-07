@@ -10,10 +10,10 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, EmptyState, Header } from '@/components/shared'
+import { AppLayout, EmptyState, MediaTileGrid, PageHeader, UserAvatar } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
-import { CollectionCard } from '@/sections/collections'
+import { CollectionCard, CreateCollectionButton } from '@/sections/collections'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
 import { buildHreflangTags } from '@/utils/seo'
 
@@ -51,16 +51,19 @@ const UserCollectionsPage: React.FC<UserCollectionsPageProps> = ({ id, user, cur
                 })}
             </Head>
 
-            <Header
-                title={`${user?.name} - ${title}`}
-                homePageTitle={t('geotags')}
-                currentPage={title}
-                backLink={`/users/${id}`}
-                userData={user}
-                links={[
-                    { link: '/users/', text: t('users') },
+            <PageHeader
+                title={`${title}`}
+                breadcrumbs={[
+                    { link: '/users', text: t('users') },
                     { link: `/users/${id}`, text: user?.name || '' }
                 ]}
+                leading={
+                    <UserAvatar
+                        user={user}
+                        size={'medium'}
+                    />
+                }
+                actions={isOwnProfile && <CreateCollectionButton />}
             />
 
             <UserTabs
@@ -69,16 +72,14 @@ const UserCollectionsPage: React.FC<UserCollectionsPageProps> = ({ id, user, cur
             />
 
             {items.length ? (
-                <Container>
-                    <div className={styles.grid}>
-                        {items.map((collection) => (
-                            <CollectionCard
-                                key={collection.id}
-                                collection={collection}
-                            />
-                        ))}
-                    </div>
-                </Container>
+                <MediaTileGrid>
+                    {items.map((collection) => (
+                        <CollectionCard
+                            key={collection.id}
+                            collection={collection}
+                        />
+                    ))}
+                </MediaTileGrid>
             ) : (
                 <Container>
                     <EmptyState
@@ -98,6 +99,7 @@ const UserCollectionsPage: React.FC<UserCollectionsPageProps> = ({ id, user, cur
                                       defaultValue: 'Загляните сюда позже — возможно, он ещё соберёт первую подборку'
                                   })
                         }
+                        action={isOwnProfile && <CreateCollectionButton />}
                     />
                 </Container>
             )}

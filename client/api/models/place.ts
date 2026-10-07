@@ -32,3 +32,11 @@ export type Place = {
     visitRadiusM?: number
     verificationExempt?: boolean
 }
+
+/**
+ * A place as returned in lists (places list, search, collection places, recommendations,
+ * visited): the card data only. Who added the place does not belong on a card, so lists
+ * never carry `author`/`editors`; the place page fetches the full `Place`.
+ * `updated` stays only as the cover version source (see DESIGN.md).
+ */
+export type PlaceListItem = Omit<Place, 'author' | 'editors'>

@@ -1,0 +1,1 @@
+export { AddToCollectionButton } from './AddToCollectionButton'

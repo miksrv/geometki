@@ -4,7 +4,6 @@ export type SortType = 'updated' | 'popular'
 
 export interface ListRequest {
     region?: number
-    category?: string
     author?: string
     placeId?: string
     sort?: SortType
@@ -22,9 +21,7 @@ export type ItemResponse = ApiModel.Collection
 export interface CreateRequest {
     title: string
     description?: string
-    metaDescription?: string
     region?: number
-    category?: string
 }
 
 export interface CreateResponse {
@@ -36,11 +33,7 @@ export interface PatchRequest {
     id: string
     title?: string
     description?: string | null
-    metaDescription?: string | null
     region?: number | null
-    category?: string | null
-    coverPlaceId?: string | null
-    coverPhotoId?: string | null
 }
 
 export interface AddPlacesRequest {
@@ -63,7 +56,6 @@ export interface ReorderRequest {
     id: string
     order?: string[]
     placeId?: string
-    note?: string | null
 }
 
 export interface MembershipRequest {
@@ -88,7 +80,7 @@ export interface RecommendedRequest {
 }
 
 export interface RecommendedResponse {
-    items: ApiModel.Place[]
+    items: ApiModel.PlaceListItem[]
     count: number
 }
 

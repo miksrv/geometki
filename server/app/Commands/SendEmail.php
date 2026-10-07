@@ -10,6 +10,7 @@
 
 namespace App\Commands;
 
+use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\EmailLibrary;
 use App\Libraries\PlacesContent;
 use App\Models\PlacesModel;
@@ -125,7 +126,7 @@ class SendEmail extends BaseCommand
                 $placeId    = $placesData[$findPlace]->id;
                 $placeSlug  = $placesData[$findPlace]->slug;
                 $placeTitle = $placeContent->title($placeId);
-                $placeCover = $placesData[$findPlace]->photos && file_exists(UPLOAD_PHOTOS . $placeId . '/cover.jpg')
+                $placeCover = $placesData[$findPlace]->photos && (new PlaceFormatterLibrary())->coverExists($placeId)
                     ? PATH_PHOTOS . $placeId . '/cover.jpg'
                     : null;
 

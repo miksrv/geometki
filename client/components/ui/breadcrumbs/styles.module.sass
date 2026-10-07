@@ -2,16 +2,26 @@
 
 .breadcrumbs
     display: flex
+    flex-wrap: wrap
+    align-items: center
+    margin: 0
+    padding: 0
+    list-style: none
     line-height: normal
 
     li
-        font-size: variables.$fontSizeHeadline
+        font-size: variables.$fontSizeCaption
         color: var(--text-color-secondary)
+        min-width: 0
+        overflow: hidden
+        text-overflow: ellipsis
+        white-space: nowrap
+
+        a
+            color: inherit
 
         &:not(:last-of-type)
             &:after
                 content: '/'
                 user-select: none
-                margin-left: 8px
-                margin-right: 8px
-
+                margin: 0 6px

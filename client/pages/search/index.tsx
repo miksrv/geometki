@@ -139,12 +139,7 @@ const SearchPage: NextPage<SearchPageProps> = ({ initialQuery, initialData }) =>
                 })}
             </Head>
 
-            <PageHeader
-                title={pageTitle}
-                homePageTitle={t('geotags')}
-                links={[]}
-                currentPage={pageTitle}
-            />
+            <PageHeader title={pageTitle} />
 
             <Container>
                 <SearchFilters
