@@ -1,15 +1,19 @@
 import React, { useState } from 'react'
 import { Button } from 'simple-react-ui-kit'
 
+import dynamic from 'next/dynamic'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { EmptyState } from '@/components/shared'
-import { ConfirmationDialog } from '@/components/shared/confirmation-dialog'
 import { MediaTileGrid } from '@/components/shared/media-tile'
 import { PlaceCard } from '@/components/shared/place-card'
 
 import styles from '../styles.module.sass'
+
+const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
+    ssr: false
+})
 
 interface CollectionPlacesListProps {
     places: ApiModel.CollectionPlace[]

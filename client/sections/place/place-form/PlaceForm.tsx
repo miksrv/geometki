@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { LatLngBounds } from 'leaflet'
+import type { LatLngBounds } from 'leaflet'
 import debounce from 'lodash-es/debounce'
 import { Button, Input, Message, Select, SelectOptionType } from 'simple-react-ui-kit'
 

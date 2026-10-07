@@ -12,6 +12,20 @@ $bottomNavHeight: 56px
     display: flex
     flex-direction: column
 
+    .skipLink
+        position: absolute
+        top: -40px
+        left: 0
+        z-index: 1000
+        padding: 8px 16px
+        background: var(--surface-1)
+        color: var(--text-color-primary)
+        border-radius: 0 0 var(--border-radius) 0
+        transition: top 167ms ease-out
+
+        &:focus
+            top: 0
+
     .main
         width: 100%
         max-width: var(--width-max)

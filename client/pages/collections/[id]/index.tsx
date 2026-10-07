@@ -15,7 +15,6 @@ import { setLocale } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { AppLayout } from '@/components/shared'
-import { ConfirmationDialog } from '@/components/shared/confirmation-dialog'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import {
     CollectionDescription,
@@ -45,6 +44,10 @@ const AddPlacesDialog = dynamic(
         })),
     { ssr: false }
 )
+
+const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
+    ssr: false
+})
 
 interface CollectionPageProps {
     id: string

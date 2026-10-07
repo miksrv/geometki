@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { LatLngBounds, LatLngExpression } from 'leaflet'
+import type { LatLngBounds, LatLngExpression } from 'leaflet'
 import debounce from 'lodash-es/debounce'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
@@ -14,7 +14,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, MapObjectsTypeEnum, PhotoLightbox } from '@/components/shared'
+import { AppLayout, MapObjectsTypeEnum } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { round } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
@@ -23,6 +23,11 @@ import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), {
     ssr: false
 })
+
+const PhotoLightbox = dynamic(
+    () => import('@/components/shared/photo-lightbox/PhotoLightbox').then((m) => ({ default: m.PhotoLightbox })),
+    { ssr: false }
+)
 
 // Experiment to enable/disable POI clusterization on the map
 const ENABLE_POI_CLUSTERIZATION = false
@@ -210,12 +215,14 @@ const MapPage: NextPage<object> = () => {
                 }}
             />
 
-            <PhotoLightbox
-                photos={photoLightbox}
-                photoIndex={photoIndex}
-                showLightbox={showLightbox}
-                onCloseLightBox={handleCloseLightbox}
-            />
+            {showLightbox && (
+                <PhotoLightbox
+                    photos={photoLightbox}
+                    photoIndex={photoIndex}
+                    showLightbox={showLightbox}
+                    onCloseLightBox={handleCloseLightbox}
+                />
+            )}
 
             <div className={'mapContainer'}>
                 <InteractiveMap
