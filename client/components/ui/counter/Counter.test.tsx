@@ -28,6 +28,28 @@ describe('Counter', () => {
         })
     })
 
+    describe('max prop', () => {
+        it('shows values above max as "max+"', () => {
+            render(
+                <Counter
+                    value={150}
+                    max={99}
+                />
+            )
+            expect(screen.getByText('99+')).toBeInTheDocument()
+        })
+
+        it('shows values up to max as they are', () => {
+            render(
+                <Counter
+                    value={99}
+                    max={99}
+                />
+            )
+            expect(screen.getByText('99')).toBeInTheDocument()
+        })
+    })
+
     describe('className prop', () => {
         it('applies custom className when provided', () => {
             const { container } = render(

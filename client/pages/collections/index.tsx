@@ -116,7 +116,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     limit: COLLECTIONS_PER_PAGE,
                     offset: (currentPage - 1) * COLLECTIONS_PER_PAGE,
                     region: region ?? undefined,
-                    sort: 'popular'
+                    sort: 'updated'
                 })
             )
 

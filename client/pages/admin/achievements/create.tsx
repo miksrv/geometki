@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Container } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
+import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
@@ -13,6 +14,7 @@ import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
 import { AchievementForm } from '@/components/pages/achievement-form'
 import { AppLayout, PageHeader } from '@/components/shared'
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 type AchievementInput = ApiType.Achievements.AchievementInput
@@ -34,6 +36,10 @@ const defaultForm: AchievementInput = {
     xp_bonus: 0
 }
 
+const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
+    ssr: false
+})
+
 interface AdminAchievementsCreateProps {
     locale: ApiType.Locale
 }
@@ -45,18 +51,17 @@ const AdminAchievementsCreate: React.FC<AdminAchievementsCreateProps> = () => {
     const userRole = useAppSelector((state) => state.auth.user?.role)
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
-    const [form, setForm] = useState<AchievementInput>({ ...defaultForm })
+    const [isDirty, setIsDirty] = useState(false)
+    const { allowNavigation, dialogProps: leaveDialogProps } = useUnsavedChangesGuard(isDirty)
+
     const [createAchievement, { isLoading }] = API.useCreateAchievementMutation()
 
     const pageTitle = t('achievements-admin-add', { defaultValue: 'Добавить достижение' })
 
-    const setField = <K extends keyof AchievementInput>(key: K, value: AchievementInput[K]) => {
-        setForm((prev) => ({ ...prev, [key]: value }))
-    }
-
-    const handleSubmit = async () => {
+    const handleSubmit = async (values: AchievementInput) => {
         try {
-            await createAchievement(form).unwrap()
+            await createAchievement(values).unwrap()
+            allowNavigation()
             void router.push('/admin/achievements')
         } catch {
             // errors handled by error middleware
@@ -87,11 +92,13 @@ const AdminAchievementsCreate: React.FC<AdminAchievementsCreateProps> = () => {
 
             <Container>
                 <AchievementForm
-                    form={form}
+                    defaultValues={defaultForm}
                     isLoading={isLoading}
-                    onFieldChange={setField}
                     onSubmit={handleSubmit}
+                    onDirtyChange={setIsDirty}
                 />
+
+                <ConfirmationDialog {...leaveDialogProps} />
             </Container>
         </AppLayout>
     )

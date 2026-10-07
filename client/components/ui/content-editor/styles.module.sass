@@ -154,6 +154,19 @@
         padding: var(--space-2) var(--space-3)
         background: transparent
 
+    // The library keeps the preview absolutely positioned over the editor; in preview mode
+    // the editor is hidden and the preview takes its place in the flow, so the field is as
+    // tall as the rendered text (between the same min and max heights)
+    &.preview
+        :global(.md-editor-content-editor)
+            display: none
+
+        :global(.md-editor-preview)
+            position: static
+            width: 100% !important
+            min-height: var(--editor-min-height)
+            padding: var(--space-2) var(--space-3) !important
+
     :global(.wmde-markdown)
         background: transparent
         color: var(--text-color-primary)

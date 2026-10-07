@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import type { LatLngBounds } from 'leaflet'
 import debounce from 'lodash-es/debounce'
 import { Button, Input, Message, Select, SelectOptionType } from 'simple-react-ui-kit'
@@ -11,7 +12,8 @@ import { API, ApiModel, ApiType } from '@/api'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import { PhotoGallery, PhotoUploader } from '@/components/shared'
-import { ContentEditor, ImageUploader, ScreenSpinner } from '@/components/ui'
+import type { PhotoUploaderHandle } from '@/components/shared/photo-uploader'
+import { ContentEditor, FileDropZone, ImageUploader, ScreenSpinner } from '@/components/ui'
 import { categoryImage } from '@/utils/categories'
 
 import styles from './styles.module.sass'
@@ -20,14 +22,35 @@ const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), 
     ssr: false
 })
 
+type PlaceFormValues = Required<Pick<ApiType.Places.PostItemRequest, 'title' | 'category' | 'content' | 'tags'>> &
+    Pick<ApiType.Places.PostItemRequest, 'lat' | 'lon'>
+
+type PlaceFormErrors = Partial<Record<keyof ApiType.Places.PostItemRequest, string>>
+
+const FIELDS: Array<keyof PlaceFormValues> = ['title', 'category', 'tags', 'lat', 'lon', 'content']
+
+// Map center differences below this are float noise of the bounds → center round trip, not a move
+const COORDS_EPSILON = 0.000001
+
+const toFormValues = (values?: ApiType.Places.PostItemRequest): PlaceFormValues => ({
+    category: values?.category ?? '',
+    content: values?.content ?? '',
+    lat: values?.lat,
+    lon: values?.lon,
+    tags: values?.tags ?? [],
+    title: values?.title ?? ''
+})
+
 interface PlaceFormProps {
     placeId?: string
     loading?: boolean
     values?: ApiType.Places.PostItemRequest
-    errors?: ApiType.Places.PostItemRequest
+    /** Server-side validation errors, shown on their fields */
+    errors?: PlaceFormErrors
     onSubmit?: (formData?: ApiType.Places.PostItemRequest) => void
     onCancel?: () => void
-    onDirtyChange?: () => void
+    /** Reports whether the form holds changes that would be lost on leaving */
+    onDirtyChange?: (isDirty: boolean) => void
 }
 
 export const PlaceForm: React.FC<PlaceFormProps> = ({
@@ -43,11 +66,22 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
     const { t } = useTranslation()
 
     const inputFileRef = useRef<HTMLInputElement>(null)
+    const uploaderRef = useRef<PhotoUploaderHandle>(null)
 
     const location = useAppSelector((state) => state.application.userLocation)
 
-    const [formData, setFormData] = useState<ApiType.Places.PostItemRequest>()
-    const [formErrors, setFormErrors] = useState<ApiType.Places.PostItemRequest>()
+    const {
+        control,
+        formState: { errors: formErrors, isDirty },
+        handleSubmit,
+        register,
+        reset,
+        resetField,
+        setError,
+        setValue,
+        watch
+    } = useForm<PlaceFormValues>({ defaultValues: toFormValues(values) })
+
     const [uploadingPhotos, setUploadingPhotos] = useState<string[]>()
     const [localPhotos, setLocalPhotos] = useState<ApiModel.Photo[]>([])
     const [tagSearch, setTagSearch] = useState('')
@@ -58,67 +92,36 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
         return undefined
     })
 
+    const category = watch('category')
+    const tags = watch('tags')
+
     const { data: poiListData } = API.usePoiGetListQuery()
     const { data: categoryData } = API.useCategoriesGetListQuery()
 
     const [searchTags, { data: searchResult, isLoading: searchLoading }] = API.useTagsGetSearchMutation()
 
-    const handleChange = ({ target: { name, value } }: React.ChangeEvent<HTMLInputElement>) => {
-        onDirtyChange?.()
-        setFormData({ ...formData, [name]: value })
+    const onValid = (data: PlaceFormValues) => {
+        onSubmit?.({
+            ...data,
+            photos: !placeId && !!localPhotos?.length ? localPhotos?.map(({ id }) => id) : undefined
+        })
     }
 
-    const handleChangeCategory = (category?: string) => {
-        onDirtyChange?.()
-        setFormData({ ...formData, category })
-    }
-
-    const handleSelectTags = (selected?: Array<SelectOptionType<string>>) => {
-        onDirtyChange?.()
-        setFormData({ ...formData, tags: selected?.map((opt) => opt.key) })
-    }
-
-    const handleContentChange = (text?: string) => {
-        onDirtyChange?.()
-        setFormData({ ...formData, content: text || '' })
-    }
-
-    const validateForm = useCallback(() => {
-        const errors: ApiType.Places.PostItemRequest = {}
-
-        if (!formData?.title) {
-            errors.title = t('error_title-required')
-        }
-
-        if (!formData?.category) {
-            errors.category = t('error_category-required')
-        }
-
-        setFormErrors(errors)
-
-        return !Object.keys(errors).length
-    }, [formData])
-
-    const handleSubmit = async () => {
-        if (validateForm()) {
-            onSubmit?.({
-                ...formData,
-                photos: !placeId && !!localPhotos?.length ? localPhotos?.map(({ id }) => id) : undefined
+    const onInvalid = () => {
+        void dispatch(
+            Notify({
+                id: 'placeFormError',
+                message: t('correct-errors-on-form'),
+                type: 'error'
             })
-        } else {
-            await dispatch(
-                Notify({
-                    id: 'placeFormError',
-                    message: t('correct-errors-on-form'),
-                    type: 'error'
-                })
-            )
-        }
+        )
     }
 
-    const handleKeyPress = async (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const submit = handleSubmit(onValid, onInvalid)
+
+    const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
-            await handleSubmit()
+            void submit()
         }
     }
 
@@ -147,10 +150,10 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
         [categoryData?.items]
     )
 
-    const selectedCategory = categoryOptions?.find(({ key }) => key === formData?.category)
+    const selectedCategory = categoryOptions?.find(({ key }) => key === category)
 
     const tagOptions = useMemo<Array<SelectOptionType<string>>>(() => {
-        const selected = (formData?.tags ?? []).map((tag) => ({ key: tag, value: tag }))
+        const selected = (tags ?? []).map((tag) => ({ key: tag, value: tag }))
         const results = (searchResult?.items ?? []).map((tag) => ({ key: tag, value: tag }))
         const merged = [...selected]
         for (const opt of results) {
@@ -159,7 +162,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
             }
         }
         return merged
-    }, [formData?.tags, searchResult?.items])
+    }, [tags, searchResult?.items])
 
     const tagsWithCustom = useMemo<Array<SelectOptionType<string>>>(() => {
         if (!tagSearch || tagOptions.find((opt) => opt.key.toLowerCase() === tagSearch.toLowerCase())) {
@@ -168,27 +171,40 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
         return [{ key: tagSearch, value: tagSearch }, ...tagOptions]
     }, [tagOptions, tagSearch])
 
+    // The map center is the place's position. Only a real move on the edit page counts as a
+    // change: on the create page the map just starts wherever it was last left, so its center
+    // becomes the baseline instead.
     const debounceSetMapBounds = useCallback(
         debounce((bounds: LatLngBounds) => {
-            const mapCenter = bounds.getCenter()
+            const { lat, lng } = bounds.getCenter()
 
-            if (
-                !placeId ||
-                (placeId && (formData?.lat || formData?.lat === 0) && (formData.lon || formData.lon === 0))
-            ) {
-                setFormData({
-                    ...formData,
-                    lat: mapCenter.lat,
-                    lon: mapCenter.lng
-                })
+            if (!placeId) {
+                resetField('lat', { defaultValue: lat })
+                resetField('lon', { defaultValue: lng })
+                return
             }
+
+            const initial = toFormValues(values)
+            const moved =
+                Math.abs(lat - (initial.lat ?? 0)) > COORDS_EPSILON ||
+                Math.abs(lng - (initial.lon ?? 0)) > COORDS_EPSILON
+
+            setValue('lat', moved ? lat : initial.lat, { shouldDirty: true })
+            setValue('lon', moved ? lng : initial.lon, { shouldDirty: true })
         }, 100),
-        [formData]
+        [placeId, values]
     )
+
+    // The coordinates have no input of their own (the map sets them), but they must be registered:
+    // `resetField` ignores unregistered fields, and `handleSubmit` only clears errors of registered ones
+    useEffect(() => {
+        register('lat')
+        register('lon')
+    }, [register])
 
     useEffect(() => {
         if (values) {
-            setFormData(values)
+            reset(toFormValues(values))
             if (placeId && values.lat != null && values.lon != null) {
                 setMapCenter([values.lat, values.lon])
             }
@@ -196,69 +212,103 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
     }, [placeId])
 
     useEffect(() => {
-        setFormErrors(errors)
+        Object.entries(errors ?? {}).forEach(([field, message]) => {
+            if (message && FIELDS.includes(field as keyof PlaceFormValues)) {
+                setError(field as keyof PlaceFormValues, { message, type: 'server' })
+            }
+        })
     }, [errors])
+
+    // Photos uploaded to a new place are temporary and lost on leaving, so they count too
+    useEffect(() => {
+        onDirtyChange?.(isDirty || localPhotos.length > 0)
+    }, [isDirty, localPhotos.length])
+
+    const errorMessages = Object.values(formErrors)
+        .map((error) => error?.message)
+        .filter((message): message is string => !!message)
 
     return (
         <section className={styles.component}>
             {loading && <ScreenSpinner />}
 
-            {!!Object.values(formErrors || {})?.length && (
+            {!!errorMessages.length && (
                 <Message
                     type={'error'}
                     title={t('correct-errors-on-form')}
                 >
                     <ul className={'errorMessageList'}>
-                        {Object.values(formErrors || {}).map((item: string) =>
-                            item.length ? <li key={`item${item}`}>{item}</li> : ''
-                        )}
+                        {errorMessages.map((item) => (
+                            <li key={`item${item}`}>{item}</li>
+                        ))}
                     </ul>
                 </Message>
             )}
 
             <div className={styles.formElement}>
-                <Input
-                    tabIndex={0}
-                    required={true}
-                    autoFocus={true}
+                <Controller
                     name={'title'}
-                    label={t('input_geotag-label')}
-                    placeholder={t('input_geotag-placeholder')}
-                    disabled={loading}
-                    value={formData?.title}
-                    error={formErrors?.title}
-                    onKeyDown={handleKeyPress}
-                    onChange={handleChange}
+                    control={control}
+                    rules={{ validate: (value) => !!value.trim() || t('error_title-required') }}
+                    render={({ field, fieldState }) => (
+                        <Input
+                            tabIndex={0}
+                            required={true}
+                            autoFocus={true}
+                            name={field.name}
+                            label={t('input_geotag-label')}
+                            placeholder={t('input_geotag-placeholder')}
+                            disabled={loading}
+                            value={field.value}
+                            error={fieldState.error?.message}
+                            onKeyDown={handleKeyPress}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                        />
+                    )}
                 />
             </div>
 
             <div className={styles.formElement}>
-                <Select<string>
-                    required={true}
-                    label={t('input_category-label')}
-                    placeholder={t('input_category-placeholder')}
-                    disabled={loading}
-                    error={formErrors?.category}
-                    value={categoryOptions?.find(({ key }) => key === formData?.category)?.key}
-                    options={categoryOptions}
-                    onSelect={(option) => handleChangeCategory(option?.[0]?.key)}
+                <Controller
+                    name={'category'}
+                    control={control}
+                    rules={{ required: t('error_category-required') }}
+                    render={({ field, fieldState }) => (
+                        <Select<string>
+                            required={true}
+                            label={t('input_category-label')}
+                            placeholder={t('input_category-placeholder')}
+                            disabled={loading}
+                            error={fieldState.error?.message}
+                            value={selectedCategory?.key}
+                            options={categoryOptions}
+                            onSelect={(option) => field.onChange(option?.[0]?.key ?? '')}
+                        />
+                    )}
                 />
             </div>
 
             <div className={styles.formElement}>
-                <Select<string>
-                    multiple
-                    searchable
-                    closeOnSelect={false}
-                    label={t('input_tags-label')}
-                    placeholder={t('input_tags-placeholder')}
-                    notFoundCaption={t('nothing-found')}
-                    disabled={loading}
-                    value={formData?.tags}
-                    loading={searchLoading}
-                    options={tagsWithCustom}
-                    onSearch={handleSearchTags}
-                    onSelect={handleSelectTags}
+                <Controller
+                    name={'tags'}
+                    control={control}
+                    render={({ field }) => (
+                        <Select<string>
+                            multiple
+                            searchable
+                            closeOnSelect={false}
+                            label={t('input_tags-label')}
+                            placeholder={t('input_tags-placeholder')}
+                            notFoundCaption={t('nothing-found')}
+                            disabled={loading}
+                            value={field.value}
+                            loading={searchLoading}
+                            options={tagsWithCustom}
+                            onSearch={handleSearchTags}
+                            onSelect={(selected) => field.onChange(selected?.map((opt) => opt.key) ?? [])}
+                        />
+                    )}
                 />
             </div>
 
@@ -291,16 +341,28 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
 
             <div className={styles.formElement}>
                 <label>{t('description')}</label>
-                <ContentEditor
-                    disabled={loading}
-                    value={formData?.content ?? ''}
-                    onChange={handleContentChange}
+                <Controller
+                    name={'content'}
+                    control={control}
+                    render={({ field }) => (
+                        <ContentEditor
+                            disabled={loading}
+                            value={field.value}
+                            onChange={(text) => field.onChange(text || '')}
+                        />
+                    )}
                 />
             </div>
 
             {!placeId && (
-                <div className={styles.formElement}>
-                    {localPhotos?.length ? (
+                <FileDropZone
+                    className={styles.formElement}
+                    label={t('photo-drop-label', { defaultValue: 'Перетащите фотографии сюда, чтобы загрузить' })}
+                    hint={t('photo-drop-hint', { defaultValue: 'JPG, PNG, GIF или WEBP, до 10 МБ' })}
+                    disabled={loading}
+                    onDrop={(files) => uploaderRef.current?.upload(files)}
+                >
+                    {localPhotos.length || uploadingPhotos?.length ? (
                         <div className={styles.formElement}>
                             <PhotoGallery
                                 photos={localPhotos}
@@ -316,7 +378,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                             onClick={() => inputFileRef?.current?.click()}
                         />
                     )}
-                </div>
+                </FileDropZone>
             )}
 
             <div className={styles.actions}>
@@ -324,8 +386,9 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                     size={'medium'}
                     mode={'primary'}
                     label={t('save')}
-                    disabled={loading}
-                    onClick={handleSubmit}
+                    // Photos still uploading would not be attached to the new place
+                    disabled={loading || !!uploadingPhotos?.length}
+                    onClick={() => void submit()}
                 />
 
                 <Button
@@ -341,10 +404,9 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                 <PhotoUploader
                     placeId={'temporary'}
                     fileInputRef={inputFileRef}
+                    uploaderRef={uploaderRef}
                     onSelectFiles={setUploadingPhotos}
-                    onUploadPhoto={(photo) => {
-                        setLocalPhotos([photo, ...localPhotos])
-                    }}
+                    onUploadPhoto={(photo) => setLocalPhotos((prev) => [photo, ...prev])}
                 />
             )}
         </section>

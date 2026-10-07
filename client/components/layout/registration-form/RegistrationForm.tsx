@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
+import { Controller, FieldErrors, useForm } from 'react-hook-form'
 import { Button, Input, Message } from 'simple-react-ui-kit'
 
 import { useRouter } from 'next/dist/client/router'
@@ -13,9 +14,11 @@ import { validateEmail } from '@/utils/validators'
 
 import styles from './styles.module.sass'
 
-type FormDataType = ApiType.Auth.PostRegistrationRequest & {
-    repeat_password?: string
+type FormDataType = Required<ApiType.Auth.PostRegistrationRequest> & {
+    repeat_password: string
 }
+
+const FIELDS = ['name', 'email', 'password', 'repeat_password'] as const
 
 interface RegistrationFormProps {
     onClickLogin?: () => void
@@ -26,13 +29,22 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClickLogin
     const dispatch = useAppDispatch()
     const router = useRouter()
 
-    const [formData, setFormData] = useState<FormDataType>()
-    const [formErrors, setFormErrors] = useState<FormDataType>()
+    const {
+        control,
+        formState: { errors: formErrors },
+        getValues,
+        handleSubmit,
+        setError
+    } = useForm<FormDataType>({ defaultValues: { email: '', name: '', password: '', repeat_password: '' } })
 
-    const nameFieldRef = useRef<HTMLDivElement>(null)
-    const emailFieldRef = useRef<HTMLDivElement>(null)
-    const passwordFieldRef = useRef<HTMLDivElement>(null)
-    const repeatPasswordFieldRef = useRef<HTMLDivElement>(null)
+    // Input (simple-react-ui-kit) doesn't forward a ref to the underlying <input>, so the
+    // wrapping element is used to find and focus it after a failed validation.
+    const fieldRefs = {
+        email: useRef<HTMLDivElement>(null),
+        name: useRef<HTMLDivElement>(null),
+        password: useRef<HTMLDivElement>(null),
+        repeat_password: useRef<HTMLDivElement>(null)
+    }
 
     const [registration, { data, error, isLoading }] = API.useAuthPostRegistrationMutation()
 
@@ -41,63 +53,82 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClickLogin
         [error]
     )
 
-    const validateForm = useCallback(() => {
-        const errors: FormDataType = {}
-
-        if (!formData?.name) {
-            errors.name = t('error_name-required', { defaultValue: 'Имя обязательно' })
-        }
-
-        if (!validateEmail(formData?.email)) {
-            errors.email = t('error_email-incorrect', { defaultValue: 'Некорректный email' })
-        }
-
-        if (!formData?.password) {
-            errors.password = t('error_password-required', { defaultValue: 'Пароль обязателен' })
-        }
-
-        if (formData?.password && formData.password.length < 8) {
-            errors.password = t('error_password-length', { defaultValue: 'Пароль должен быть не менее 8 символов' })
-        }
-
-        if (!formData?.repeat_password || formData.repeat_password !== formData.password) {
-            errors.repeat_password = t('error_password-mismatch', { defaultValue: 'Пароли не совпадают' })
-        }
-
-        setFormErrors(errors)
-
-        if (errors.name) {
-            nameFieldRef.current?.querySelector('input')?.focus()
-        } else if (errors.email) {
-            emailFieldRef.current?.querySelector('input')?.focus()
-        } else if (errors.password) {
-            passwordFieldRef.current?.querySelector('input')?.focus()
-        } else if (errors.repeat_password) {
-            repeatPasswordFieldRef.current?.querySelector('input')?.focus()
-        }
-
-        return !Object.keys(errors).length
-    }, [formData])
-
-    const handleChange = ({ target: { name, value } }: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [name]: value })
-    }
-
-    const handleSubmit = async () => {
-        if (validateForm() && formData) {
-            void registration(formData)
+    const focusFirstError = (errors: FieldErrors<FormDataType>) => {
+        const field = FIELDS.find((name) => errors[name])
+        if (field) {
+            fieldRefs[field].current?.querySelector('input')?.focus()
         }
     }
 
-    const handleKeyPress = async (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const submit = handleSubmit((values) => {
+        void registration(values)
+    }, focusFirstError)
+
+    const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
-            await handleSubmit()
+            void submit()
         }
     }
 
     useEffect(() => {
-        setFormErrors(validationErrors)
+        FIELDS.forEach((field) => {
+            const message = validationErrors?.[field as keyof ApiType.Auth.PostRegistrationRequest]
+            if (message) {
+                setError(field, { message, type: 'server' })
+            }
+        })
     }, [error])
+
+    const errorMessages = FIELDS.map((field) => formErrors[field]?.message).filter(
+        (message): message is string => !!message
+    )
+
+    const rules: Record<(typeof FIELDS)[number], React.ComponentProps<typeof Controller<FormDataType>>['rules']> = {
+        email: {
+            validate: (value) =>
+                validateEmail(value) || t('error_email-incorrect', { defaultValue: 'Некорректный email' })
+        },
+        name: {
+            validate: (value) => !!value?.trim() || t('error_name-required', { defaultValue: 'Имя обязательно' })
+        },
+        password: {
+            minLength: {
+                message: t('error_password-length', { defaultValue: 'Пароль должен быть не менее 8 символов' }),
+                value: 8
+            },
+            required: t('error_password-required', { defaultValue: 'Пароль обязателен' })
+        },
+        repeat_password: {
+            validate: (value) =>
+                (!!value && value === getValues('password')) ||
+                t('error_password-mismatch', { defaultValue: 'Пароли не совпадают' })
+        }
+    }
+
+    const renderInput = (name: (typeof FIELDS)[number], props: React.ComponentProps<typeof Input>) => (
+        <div
+            className={styles.formElement}
+            ref={fieldRefs[name]}
+        >
+            <Controller
+                name={name}
+                control={control}
+                rules={rules[name]}
+                render={({ field, fieldState }) => (
+                    <Input
+                        {...props}
+                        name={field.name}
+                        disabled={isLoading}
+                        value={field.value}
+                        error={fieldState.error?.message}
+                        onKeyDown={handleKeyPress}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                    />
+                )}
+            />
+        </div>
+    )
 
     useEffect(() => {
         if (data?.auth) {
@@ -109,95 +140,51 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClickLogin
 
     return (
         <div className={styles.registrationForm}>
-            {!!Object.values(formErrors || {}).length && (
+            {!!errorMessages.length && (
                 <Message
                     type={'error'}
                     title={t('correct-errors-on-form', { defaultValue: 'Исправьте ошибки в форме' })}
                 >
                     <ul className={'errorMessageList'}>
-                        {Object.values(formErrors || {}).map((item: string) =>
-                            item.length ? <li key={`item${item}`}>{item}</li> : ''
-                        )}
+                        {errorMessages.map((item) => (
+                            <li key={`item${item}`}>{item}</li>
+                        ))}
                     </ul>
                 </Message>
             )}
 
-            <div
-                className={styles.formElement}
-                ref={nameFieldRef}
-            >
-                <Input
-                    tabIndex={0}
-                    autoFocus={true}
-                    label={t('input_name', { defaultValue: 'Имя' })}
-                    name={'name'}
-                    autoComplete={'name'}
-                    disabled={isLoading}
-                    value={formData?.name}
-                    error={formErrors?.name}
-                    onKeyDown={handleKeyPress}
-                    onChange={handleChange}
-                />
-            </div>
+            {renderInput('name', {
+                autoComplete: 'name',
+                autoFocus: true,
+                label: t('input_name', { defaultValue: 'Имя' }),
+                tabIndex: 0
+            })}
 
-            <div
-                className={styles.formElement}
-                ref={emailFieldRef}
-            >
-                <Input
-                    label={t('input_email', { defaultValue: 'Email адрес' })}
-                    name={'email'}
-                    type={'email'}
-                    autoComplete={'email'}
-                    inputMode={'email'}
-                    disabled={isLoading}
-                    value={formData?.email}
-                    error={formErrors?.email}
-                    onKeyDown={handleKeyPress}
-                    onChange={handleChange}
-                />
-            </div>
+            {renderInput('email', {
+                autoComplete: 'email',
+                inputMode: 'email',
+                label: t('input_email', { defaultValue: 'Email адрес' }),
+                type: 'email'
+            })}
 
-            <div
-                className={styles.formElement}
-                ref={passwordFieldRef}
-            >
-                <Input
-                    label={t('input_password', { defaultValue: 'Пароль' })}
-                    name={'password'}
-                    type={'password'}
-                    autoComplete={'new-password'}
-                    disabled={isLoading}
-                    value={formData?.password}
-                    error={formErrors?.password}
-                    onKeyDown={handleKeyPress}
-                    onChange={handleChange}
-                />
-            </div>
+            {renderInput('password', {
+                autoComplete: 'new-password',
+                label: t('input_password', { defaultValue: 'Пароль' }),
+                type: 'password'
+            })}
 
-            <div
-                className={styles.formElement}
-                ref={repeatPasswordFieldRef}
-            >
-                <Input
-                    label={t('input_password-repeat', { defaultValue: 'Повторите пароль' })}
-                    name={'repeat_password'}
-                    type={'password'}
-                    autoComplete={'new-password'}
-                    disabled={isLoading}
-                    value={formData?.repeat_password}
-                    error={formErrors?.repeat_password}
-                    onKeyDown={handleKeyPress}
-                    onChange={handleChange}
-                />
-            </div>
+            {renderInput('repeat_password', {
+                autoComplete: 'new-password',
+                label: t('input_password-repeat', { defaultValue: 'Повторите пароль' }),
+                type: 'password'
+            })}
 
             <div className={styles.actions}>
                 <Button
                     mode={'primary'}
                     label={t('register', { defaultValue: 'Зарегистрироваться' })}
                     disabled={isLoading}
-                    onClick={handleSubmit}
+                    onClick={() => void submit()}
                 />
 
                 <Button

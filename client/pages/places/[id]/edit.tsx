@@ -14,7 +14,7 @@ import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, PageHeader } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
-import { useConfirmLeave } from '@/hooks/useConfirmLeave'
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import { PlaceForm } from '@/sections/place'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
 import { equalsArrays, parsePlaceId } from '@/utils/helpers'
@@ -36,12 +36,7 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
 
     const [isDirty, setIsDirty] = useState(false)
-    const {
-        isOpen: leaveDialogOpen,
-        handleConfirm: handleLeaveConfirm,
-        handleCancel: handleLeaveCancel,
-        allowNavigation: allowLeaveNavigation
-    } = useConfirmLeave(isDirty)
+    const { allowNavigation, dialogProps: leaveDialogProps } = useUnsavedChangesGuard(isDirty)
 
     const [updatePlace, { error, isLoading, isSuccess }] = API.usePlacesPatchItemMutation()
 
@@ -64,6 +59,7 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
 
     const serverError = useMemo(() => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined), [error])
 
+    // Leaving by Cancel goes through the same unsaved-changes guard as any other navigation
     const handleCancel = () => router.back()
 
     const handleSubmit = async (formData?: ApiType.Places.PostItemRequest) => {
@@ -83,7 +79,7 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
     useEffect(() => {
         if (isSuccess) {
             setIsDirty(false)
-            allowLeaveNavigation()
+            allowNavigation()
             void router.push(`/places/${place?.id}`)
         }
     }, [isSuccess])
@@ -119,16 +115,10 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
                     errors={validationErrors as any}
                     onSubmit={handleSubmit}
                     onCancel={handleCancel}
-                    onDirtyChange={() => setIsDirty(true)}
+                    onDirtyChange={setIsDirty}
                 />
 
-                <ConfirmationDialog
-                    open={leaveDialogOpen}
-                    message={t('unsaved-changes-message')}
-                    confirmLabel={t('leave-without-saving')}
-                    onConfirm={handleLeaveConfirm}
-                    onCancel={handleLeaveCancel}
-                />
+                <ConfirmationDialog {...leaveDialogProps} />
             </Container>
         </AppLayout>
     )

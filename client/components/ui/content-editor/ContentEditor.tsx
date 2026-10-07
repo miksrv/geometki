@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { cn, Spinner } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
@@ -48,25 +48,39 @@ export const ContentEditor: React.FC<ContentEditorProps> = ({
     minHeight = 120,
     maxHeight,
     className,
+    onPreviewMode,
     ...props
-}) => (
-    <div
-        className={cn(styles.contentEditor, disabled && styles.disabled, className)}
-        style={
-            {
-                '--editor-min-height': `${minHeight}px`,
-                '--editor-max-height': maxHeight ? `${maxHeight}px` : 'none'
-            } as React.CSSProperties
-        }
-        aria-disabled={disabled || undefined}
-    >
-        <MarkdownEditor
-            {...props}
-            toolbars={TOOLBAR}
-            toolbarsMode={['preview']}
-            value={props.value || ''}
-            previewWidth={'100%'}
-            enableScroll={true}
-        />
-    </div>
-)
+}) => {
+    // The library only narrows the editor to `100% - previewWidth` in preview mode; at a full
+    // width preview that is a zero-width CodeMirror wrapping every character onto its own line
+    // and growing without end. The editor is hidden in preview mode instead (see styles).
+    const [preview, setPreview] = useState(false)
+
+    const handlePreviewMode = (isPreview: boolean) => {
+        setPreview(isPreview)
+        onPreviewMode?.(isPreview)
+    }
+
+    return (
+        <div
+            className={cn(styles.contentEditor, disabled && styles.disabled, preview && styles.preview, className)}
+            style={
+                {
+                    '--editor-min-height': `${minHeight}px`,
+                    '--editor-max-height': maxHeight ? `${maxHeight}px` : 'none'
+                } as React.CSSProperties
+            }
+            aria-disabled={disabled || undefined}
+        >
+            <MarkdownEditor
+                {...props}
+                toolbars={TOOLBAR}
+                toolbarsMode={['preview']}
+                value={props.value || ''}
+                previewWidth={'100%'}
+                enableScroll={!preview}
+                onPreviewMode={handlePreviewMode}
+            />
+        </div>
+    )
+}

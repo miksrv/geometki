@@ -1,15 +1,16 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
+import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { Button, Input, Select, TextArea } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
 import { AchievementIcon } from '@/components/shared'
+import { IMG_HOST } from '@/config/env'
 
 import styles from './styles.module.sass'
 
 type AchievementInput = ApiType.Achievements.AchievementInput
-type AchievementRule = ApiType.Achievements.AchievementRule
 
 const METRICS = [
     'places_created',
@@ -36,28 +37,44 @@ const TIERS: ApiType.Achievements.AchievementTier[] = ['none', 'bronze', 'silver
 const TYPES: ApiType.Achievements.AchievementType[] = ['base', 'seasonal']
 
 interface AchievementFormProps {
-    form: AchievementInput
+    defaultValues: AchievementInput
     isLoading: boolean
-    /** Current image URL — only passed from the edit page */
-    imageUrl?: string | null
     /** Whether an image upload is in progress — only relevant when onImageUpload is provided */
     isUploading?: boolean
-    onFieldChange: <K extends keyof AchievementInput>(key: K, value: AchievementInput[K]) => void
-    onSubmit: () => void
-    /** If provided, the image upload block is rendered */
-    onImageUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void
+    onSubmit: (values: AchievementInput) => void
+    /** If provided, the image upload block is rendered; resolves to the uploaded image path */
+    onImageUpload?: (file: File) => Promise<string | undefined>
+    /** Reports whether the form holds changes that would be lost on leaving */
+    onDirtyChange?: (isDirty: boolean) => void
 }
 
+const toNumber = (value: string) => parseInt(value, 10) || 0
+
 const AchievementForm: React.FC<AchievementFormProps> = ({
-    form,
+    defaultValues,
     isLoading,
-    imageUrl,
     isUploading,
-    onFieldChange,
     onSubmit,
-    onImageUpload
+    onImageUpload,
+    onDirtyChange
 }) => {
     const { t } = useTranslation()
+
+    const {
+        control,
+        formState: { isDirty },
+        handleSubmit,
+        setValue,
+        watch
+    } = useForm<AchievementInput>({ defaultValues })
+
+    const { fields: ruleFields, append, remove } = useFieldArray({ control, name: 'rules' })
+
+    const type = watch('type')
+    const image = watch('image')
+    const rules = watch('rules')
+    const titleRu = watch('title_ru')
+    const titleEn = watch('title_en')
 
     const { data: categoryData } = API.useCategoriesGetListQuery()
     const categoryOptions = useMemo(
@@ -68,137 +85,205 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
         [categoryData?.items, t]
     )
 
-    const addRule = () => {
-        onFieldChange('rules', [...form.rules, { metric: 'places_created', operator: '>=', value: 1 }])
+    const rulesJson = useMemo(() => JSON.stringify(rules, null, 2), [JSON.stringify(rules)])
+
+    const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (!file || !onImageUpload) {
+            return
+        }
+        const uploaded = await onImageUpload(file)
+        if (uploaded) {
+            setValue('image', uploaded, { shouldDirty: true })
+        }
     }
 
-    const removeRule = (index: number) => {
-        onFieldChange(
-            'rules',
-            form.rules.filter((_, i) => i !== index)
-        )
-    }
-
-    const updateRule = (index: number, partial: Partial<AchievementRule>) => {
-        onFieldChange(
-            'rules',
-            form.rules.map((r, i) => (i === index ? { ...r, ...partial } : r))
-        )
-    }
-
-    const rulesJson = useMemo(() => JSON.stringify(form.rules, null, 2), [form.rules])
+    useEffect(() => {
+        onDirtyChange?.(isDirty)
+    }, [isDirty])
 
     return (
         <div className={styles.formGrid}>
-            <Input
-                label={t('achievements-admin-group-slug')}
-                value={form.group_slug ?? ''}
-                onChange={(e) => onFieldChange('group_slug', e.target.value)}
-                placeholder={'explorer'}
-                size={'medium'}
+            <Controller
+                name={'group_slug'}
+                control={control}
+                render={({ field }) => (
+                    <Input
+                        label={t('achievements-admin-group-slug')}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        placeholder={'explorer'}
+                        size={'medium'}
+                    />
+                )}
             />
 
             <div className={styles.formRow}>
-                <Input
-                    required={true}
-                    label={`${t('achievements-admin-name')} 🇷🇺`}
-                    value={form.title_ru}
-                    onChange={(e) => onFieldChange('title_ru', e.target.value)}
-                    size={'medium'}
+                <Controller
+                    name={'title_ru'}
+                    control={control}
+                    render={({ field }) => (
+                        <Input
+                            required={true}
+                            label={`${t('achievements-admin-name')} 🇷🇺`}
+                            value={field.value}
+                            onChange={field.onChange}
+                            size={'medium'}
+                        />
+                    )}
                 />
-                <Input
-                    required={true}
-                    label={`${t('achievements-admin-name')} 🇬🇧`}
-                    value={form.title_en}
-                    onChange={(e) => onFieldChange('title_en', e.target.value)}
-                    size={'medium'}
-                />
-            </div>
-
-            <div className={styles.formRow}>
-                <TextArea
-                    label={`${t('description')} 🇷🇺`}
-                    value={form.description_ru ?? ''}
-                    onChange={(e) => onFieldChange('description_ru', e.target.value)}
-                    rows={2}
-                />
-                <TextArea
-                    label={`${t('description')} 🇬🇧`}
-                    value={form.description_en ?? ''}
-                    onChange={(e) => onFieldChange('description_en', e.target.value)}
-                    rows={2}
+                <Controller
+                    name={'title_en'}
+                    control={control}
+                    render={({ field }) => (
+                        <Input
+                            required={true}
+                            label={`${t('achievements-admin-name')} 🇬🇧`}
+                            value={field.value}
+                            onChange={field.onChange}
+                            size={'medium'}
+                        />
+                    )}
                 />
             </div>
 
             <div className={styles.formRow}>
-                <Select
-                    label={t('achievements-admin-category')}
-                    options={CATEGORIES.map((c) => ({ key: c, value: t(`achievements-category-${c}`) }))}
-                    value={form.category}
-                    onSelect={(opts) =>
-                        onFieldChange(
-                            'category',
-                            (opts?.[0]?.key ?? 'exploration') as ApiType.Achievements.AchievementCategory
-                        )
-                    }
+                <Controller
+                    name={'description_ru'}
+                    control={control}
+                    render={({ field }) => (
+                        <TextArea
+                            label={`${t('description')} 🇷🇺`}
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            rows={2}
+                        />
+                    )}
                 />
-
-                <Select
-                    label={t('achievements-admin-tier')}
-                    options={TIERS.map((tier) => ({
-                        key: tier,
-                        value: t(`achievements-tier-${tier}`, { defaultValue: tier })
-                    }))}
-                    value={form.tier}
-                    onSelect={(opts) =>
-                        onFieldChange('tier', (opts?.[0]?.key ?? 'none') as ApiType.Achievements.AchievementTier)
-                    }
-                />
-
-                <Select
-                    label={t('achievements-admin-type')}
-                    options={TYPES.map((type) => ({ key: type, value: t(`achievements-${type}`) }))}
-                    value={form.type}
-                    onSelect={(opts) =>
-                        onFieldChange('type', (opts?.[0]?.key ?? 'base') as ApiType.Achievements.AchievementType)
-                    }
+                <Controller
+                    name={'description_en'}
+                    control={control}
+                    render={({ field }) => (
+                        <TextArea
+                            label={`${t('description')} 🇬🇧`}
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            rows={2}
+                        />
+                    )}
                 />
             </div>
 
-            {form.type === 'seasonal' && (
+            <div className={styles.formRow}>
+                <Controller
+                    name={'category'}
+                    control={control}
+                    render={({ field }) => (
+                        <Select
+                            label={t('achievements-admin-category')}
+                            options={CATEGORIES.map((c) => ({ key: c, value: t(`achievements-category-${c}`) }))}
+                            value={field.value}
+                            onSelect={(opts) =>
+                                field.onChange(
+                                    (opts?.[0]?.key ?? 'exploration') as ApiType.Achievements.AchievementCategory
+                                )
+                            }
+                        />
+                    )}
+                />
+
+                <Controller
+                    name={'tier'}
+                    control={control}
+                    render={({ field }) => (
+                        <Select
+                            label={t('achievements-admin-tier')}
+                            options={TIERS.map((tier) => ({
+                                key: tier,
+                                value: t(`achievements-tier-${tier}`, { defaultValue: tier })
+                            }))}
+                            value={field.value}
+                            onSelect={(opts) =>
+                                field.onChange((opts?.[0]?.key ?? 'none') as ApiType.Achievements.AchievementTier)
+                            }
+                        />
+                    )}
+                />
+
+                <Controller
+                    name={'type'}
+                    control={control}
+                    render={({ field }) => (
+                        <Select
+                            label={t('achievements-admin-type')}
+                            options={TYPES.map((item) => ({ key: item, value: t(`achievements-${item}`) }))}
+                            value={field.value}
+                            onSelect={(opts) =>
+                                field.onChange((opts?.[0]?.key ?? 'base') as ApiType.Achievements.AchievementType)
+                            }
+                        />
+                    )}
+                />
+            </div>
+
+            {type === 'seasonal' && (
                 <div className={styles.formRow}>
-                    <Input
-                        label={t('achievements-admin-season-start')}
-                        type={'date'}
-                        value={form.season_start ?? ''}
-                        onChange={(e) => onFieldChange('season_start', e.target.value || null)}
-                        size={'medium'}
+                    <Controller
+                        name={'season_start'}
+                        control={control}
+                        render={({ field }) => (
+                            <Input
+                                label={t('achievements-admin-season-start')}
+                                type={'date'}
+                                value={field.value ?? ''}
+                                onChange={(e) => field.onChange(e.target.value || null)}
+                                size={'medium'}
+                            />
+                        )}
                     />
-                    <Input
-                        label={t('achievements-admin-season-end')}
-                        type={'date'}
-                        value={form.season_end ?? ''}
-                        onChange={(e) => onFieldChange('season_end', e.target.value || null)}
-                        size={'medium'}
+                    <Controller
+                        name={'season_end'}
+                        control={control}
+                        render={({ field }) => (
+                            <Input
+                                label={t('achievements-admin-season-end')}
+                                type={'date'}
+                                value={field.value ?? ''}
+                                onChange={(e) => field.onChange(e.target.value || null)}
+                                size={'medium'}
+                            />
+                        )}
                     />
                 </div>
             )}
 
             <div className={styles.formRow}>
-                <Input
-                    label={t('achievements-admin-xp-bonus')}
-                    type={'number'}
-                    value={String(form.xp_bonus ?? 0)}
-                    onChange={(e) => onFieldChange('xp_bonus', parseInt(e.target.value, 10) || 0)}
-                    size={'medium'}
+                <Controller
+                    name={'xp_bonus'}
+                    control={control}
+                    render={({ field }) => (
+                        <Input
+                            label={t('achievements-admin-xp-bonus')}
+                            type={'number'}
+                            value={String(field.value ?? 0)}
+                            onChange={(e) => field.onChange(toNumber(e.target.value))}
+                            size={'medium'}
+                        />
+                    )}
                 />
 
-                <Input
-                    label={t('achievements-admin-sort-order')}
-                    type={'number'}
-                    value={String(form.sort_order ?? 0)}
-                    onChange={(e) => onFieldChange('sort_order', parseInt(e.target.value, 10) || 0)}
-                    size={'medium'}
+                <Controller
+                    name={'sort_order'}
+                    control={control}
+                    render={({ field }) => (
+                        <Input
+                            label={t('achievements-admin-sort-order')}
+                            type={'number'}
+                            value={String(field.value ?? 0)}
+                            onChange={(e) => field.onChange(toNumber(e.target.value))}
+                            size={'medium'}
+                        />
+                    )}
                 />
             </div>
 
@@ -212,14 +297,14 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                         <input
                             type={'file'}
                             accept={'image/png,image/svg+xml'}
-                            onChange={onImageUpload}
+                            onChange={(event) => void handleImageChange(event)}
                             disabled={isUploading}
                             className={styles.fileInput}
                         />
-                        {imageUrl && (
+                        {image && (
                             <AchievementIcon
-                                image={imageUrl}
-                                alt={form.title_ru || form.title_en || ''}
+                                image={`${IMG_HOST}${image}`}
+                                alt={titleRu || titleEn || ''}
                                 size={36}
                             />
                         )}
@@ -229,33 +314,51 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
 
             <div className={styles.formField}>
                 <label className={styles.label}>{t('achievements-admin-rules')}</label>
-                {form.rules.map((rule, idx) => (
+                {ruleFields.map((rule, idx) => (
                     <div
-                        key={idx}
+                        key={rule.id}
                         className={styles.ruleRow}
                     >
-                        <Select
-                            options={METRICS.map((m) => ({ key: m, value: m }))}
-                            value={rule.metric}
-                            onSelect={(opts) => updateRule(idx, { metric: opts?.[0]?.key ?? 'places_created' })}
+                        <Controller
+                            name={`rules.${idx}.metric`}
+                            control={control}
+                            render={({ field }) => (
+                                <Select
+                                    options={METRICS.map((m) => ({ key: m, value: m }))}
+                                    value={field.value}
+                                    onSelect={(opts) => field.onChange(opts?.[0]?.key ?? 'places_created')}
+                                />
+                            )}
                         />
 
-                        <Input
-                            type={'number'}
-                            value={String(rule.value)}
-                            onChange={(e) => updateRule(idx, { value: parseInt(e.target.value, 10) || 0 })}
-                            size={'medium'}
-                            className={styles.ruleValueInput}
+                        <Controller
+                            name={`rules.${idx}.value`}
+                            control={control}
+                            render={({ field }) => (
+                                <Input
+                                    type={'number'}
+                                    value={String(field.value)}
+                                    onChange={(e) => field.onChange(toNumber(e.target.value))}
+                                    size={'medium'}
+                                    className={styles.ruleValueInput}
+                                />
+                            )}
                         />
 
-                        <Select
-                            options={categoryOptions}
-                            value={rule.filter?.category_id ?? ''}
-                            onSelect={(opts) => {
-                                const val = opts?.[0]?.key ?? ''
-                                updateRule(idx, { filter: val ? { category_id: val } : undefined })
-                            }}
-                            className={styles.ruleCategorySelect}
+                        <Controller
+                            name={`rules.${idx}.filter`}
+                            control={control}
+                            render={({ field }) => (
+                                <Select
+                                    options={categoryOptions}
+                                    value={field.value?.category_id ?? ''}
+                                    onSelect={(opts) => {
+                                        const val = opts?.[0]?.key ?? ''
+                                        field.onChange(val ? { category_id: val } : undefined)
+                                    }}
+                                    className={styles.ruleCategorySelect}
+                                />
+                            )}
                         />
 
                         <Button
@@ -264,7 +367,7 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                             size={'medium'}
                             icon={'Close'}
                             tooltip={t('delete', { defaultValue: 'Удалить' })}
-                            onClick={() => removeRule(idx)}
+                            onClick={() => remove(idx)}
                         />
                     </div>
                 ))}
@@ -272,7 +375,7 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                     mode={'outline'}
                     size={'medium'}
                     icon={'PlusCircle'}
-                    onClick={addRule}
+                    onClick={() => append({ metric: 'places_created', operator: '>=', value: 1 })}
                 >
                     {t('achievements-admin-add-rule')}
                 </Button>
@@ -282,7 +385,7 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                 label={t('achievements-admin-rules-json')}
                 value={rulesJson}
                 readOnly
-                rows={Math.min(form.rules.length * 6 + 2, 16)}
+                rows={Math.min(rules.length * 6 + 2, 16)}
             />
 
             <div className={styles.formActions}>
@@ -297,7 +400,7 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
                     mode={'primary'}
                     size={'medium'}
                     disabled={isLoading || isUploading}
-                    onClick={onSubmit}
+                    onClick={() => void handleSubmit(onSubmit)()}
                 >
                     {t('save')}
                 </Button>

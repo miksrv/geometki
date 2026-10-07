@@ -187,15 +187,13 @@ describe('RegistrationForm', () => {
         it('shows validation errors when submitting without filling fields', async () => {
             renderWithStore(<RegistrationForm />)
             fireEvent.click(screen.getByText('Зарегистрироваться'))
-            await Promise.resolve()
-            expect(screen.queryAllByRole('alert').length).toBeGreaterThan(0)
+            expect((await screen.findAllByRole('alert')).length).toBeGreaterThan(0)
         })
 
         it('shows name required error when name is empty', async () => {
             renderWithStore(<RegistrationForm />)
             fireEvent.click(screen.getByText('Зарегистрироваться'))
-            await Promise.resolve()
-            expect(screen.getAllByText('Имя обязательно').length).toBeGreaterThan(0)
+            expect((await screen.findAllByText('Имя обязательно')).length).toBeGreaterThan(0)
         })
 
         it('shows email error when email is invalid', async () => {
@@ -203,8 +201,7 @@ describe('RegistrationForm', () => {
             const nameInput = screen.getByLabelText('Имя')
             fireEvent.change(nameInput, { target: { name: 'name', value: 'John' } })
             fireEvent.click(screen.getByText('Зарегистрироваться'))
-            await Promise.resolve()
-            expect(screen.getAllByText('Некорректный email').length).toBeGreaterThan(0)
+            expect((await screen.findAllByText('Некорректный email')).length).toBeGreaterThan(0)
         })
     })
 
