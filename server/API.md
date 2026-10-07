@@ -816,21 +816,6 @@ Upload a photo directly to an existing place.
 
 ---
 
-#### `POST /photos`
-
-Attach previously uploaded temporary photos to a place (batch operation).
-
-**Auth required:** Yes
-
-**Request body (JSON):**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| placeId | string | Yes | Target place ID |
-| photos | array | Yes | Array of temporary filenames |
-
----
-
 #### `PATCH /photos/rotate/temporary/:id`
 
 Rotate a temporary photo 90 degrees counter-clockwise and regenerate its preview.
@@ -1388,20 +1373,6 @@ List site-wide activity feed, grouped by user and place. Results are paginated a
 ```
 
 Activity `type` values: `place` (new place created), `edit` (place content updated), `photo` (photo uploaded), `rating` (place rated), `comment` (comment posted), `cover` (cover image set).
-
----
-
-#### `GET /activity/:id`
-
-Get activity details for a specific activity record. (Route exists but no dedicated `show` method was implemented in the Activity controller; the base ResourceController behavior applies.)
-
-**Auth required:** No
-
-**Path parameters:**
-
-| Name | Type | Description |
-|------|------|-------------|
-| id | string (alphanum) | Activity ID |
 
 ---
 

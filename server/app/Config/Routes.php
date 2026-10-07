@@ -43,7 +43,6 @@ $routes->group('places', static function ($routes) {
 /** Photos Controller **/
 $routes->group('photos', static function ($routes) {
     $routes->get('/', 'Photos::list');
-    $routes->post('/', 'Photos::create');
     $routes->post('upload/temporary', 'PhotosTemporary::upload');
     $routes->post('upload/(:alphanum)', 'Photos::upload/$1');
     $routes->patch('rotate/temporary/(:any)', 'PhotosTemporary::rotate/$1');
@@ -107,10 +106,8 @@ $routes->group('rating', static function ($routes) {
 /** Activity Controller **/
 $routes->group('activity', static function ($routes) {
     $routes->get('/', 'Activity::list');
-    $routes->get('(:alphanum)', 'Activity::show/$1');
 
     $routes->options('/', static function () {});
-    $routes->options('(:alphanum)', static function () {});
 });
 
 /** Users Controller **/
