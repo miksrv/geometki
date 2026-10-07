@@ -9,6 +9,9 @@ import { computeMapView } from './utils'
 
 const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), { ssr: false })
 
+// Stable reference: the map refits when this object changes
+const BOUNDS_OPTIONS = { padding: [32, 32] as [number, number] }
+
 export interface SearchMapProps {
     places?: ApiModel.Place[]
     locations?: ApiModel.GeoSearchLocation[]
@@ -59,7 +62,7 @@ export const SearchMap: React.FC<SearchMapProps> = ({ places, locations, coordin
         return result
     }, [locations, coordinates])
 
-    const { center, zoom } = useMemo(() => {
+    const { center, zoom, bounds } = useMemo(() => {
         const points = [
             ...(places
                 ?.filter((p): p is ApiModel.Place & { lat: number; lon: number } => p.lat != null && p.lon != null)
@@ -74,8 +77,11 @@ export const SearchMap: React.FC<SearchMapProps> = ({ places, locations, coordin
 
     return (
         <InteractiveMap
-            center={center}
-            zoom={zoom}
+            // Several results: fit them all; one or none: centre and zoom
+            center={bounds ? undefined : center}
+            zoom={bounds ? undefined : zoom}
+            bounds={bounds}
+            boundsOptions={BOUNDS_OPTIONS}
             minZoom={2}
             places={placeMarks}
             pins={pins}

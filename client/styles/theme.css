@@ -18,6 +18,15 @@
     --letter-spacing: 0.00938em;
     --width-max: 1260px;
 
+    /* Type scale. The kit gives 12 / 14 / 16px (--font-size-small / --font-size /
+       --font-size-large); the project adds the levels in between and above. The Sass
+       variables in styles/variables.sass alias these, so every size is one of:
+         12 caption · 13 secondary · 14 UI text · 15 prose · 16 block title · 18 section title · 22 page title */
+    --font-size-secondary: 13px;
+    --font-size-prose: 15px;
+    --font-size-title-section: 18px;
+    --font-size-title-page: 22px;
+
     /* Achievement tiers */
     --color-tier-bronze: #cd7f32;
     --color-tier-silver: #c0c0c0;
@@ -53,9 +62,9 @@
     --icon-color-secondary: #818c99;
     --icon-color-secondary-hover: #6b7580;
 
-    /* Filled form fields: the project also uses this token as the grey
-       surface of markers, snackbars and hover rows */
-    --input-background-color: var(--surface-2);
+    /* Form fields keep the kit's outlined look (surface-1 + border-strong) so they
+       stand out on the page background and inside containers alike. Grey surfaces
+       (markers, snackbars, hover rows, badges) use --surface-2, never input tokens. */
     --input-background-content: var(--surface-1);
 
     /* Secondary buttons tinted with the brand blue */

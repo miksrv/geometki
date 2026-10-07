@@ -26,12 +26,16 @@ export const PlaceSchema = (place: ApiModel.Place, canonicalUrl?: string): unkno
         addressRegion: place.address?.region?.name,
         streetAddress: place.address?.street
     },
-    author: {
-        '@type': 'Person',
-        image: place?.author?.avatar ? `${IMG_HOST}${place?.author?.avatar}` : undefined,
-        name: place?.author?.name,
-        url: canonicalUrl ? `${canonicalUrl}users/${place?.author?.id}` : undefined
-    },
+    ...(place.author
+        ? {
+              author: {
+                  '@type': 'Person',
+                  image: place.author.avatar ? `${IMG_HOST}${place.author.avatar}` : undefined,
+                  name: place.author.name,
+                  url: canonicalUrl ? `${canonicalUrl}users/${place.author.id}` : undefined
+              }
+          }
+        : {}),
     dateModified: formatDateISO(place?.updated?.date),
     datePublished: formatDateISO(place?.created?.date),
     description: removeMarkdown(place.content),

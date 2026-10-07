@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
+use App\Models\CollectionsModel;
 use App\Models\PlacesModel;
 use App\Models\UsersNotificationsModel;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -139,15 +140,21 @@ class Notifications extends ResourceController
 
         $locale       = $this->request->getLocale();
         $placeContent = new PlacesContent(350);
-        $placesData = [];
-        $placesIds  = [];
-        $result     = [];
-        $unread     = [];
+        $placesData      = [];
+        $placesIds       = [];
+        $collectionsData = [];
+        $collectionsIds  = [];
+        $result          = [];
+        $unread          = [];
 
         // In the adjacent activity table we will collect ID place, if the current notification is about a change in content
         foreach ($notifyData as $notify) {
             if ($notify->place_id && $notify->type !== 'level' && $notify->type !== 'achievements') {
                 $placesIds[] = $notify->place_id;
+            }
+
+            if (!empty($notify->collection_id)) {
+                $collectionsIds[] = $notify->collection_id;
             }
         }
 
@@ -158,6 +165,12 @@ class Notifications extends ResourceController
             $placeContent->translate($placesIds);
         }
 
+        // If we have collected IDs of collections (collection / collection_place notifications), fetch their id/slug/title
+        if ($collectionsIds) {
+            $collectionsModel = new CollectionsModel();
+            $collectionsData  = $collectionsModel->select('id, slug, title')->whereIn('id', $collectionsIds)->findAll();
+        }
+
         foreach ($notifyData as $notify) {
             // If the notification has not been read, add its ID to the array of unread notifications
             if (!$notify->read) {
@@ -166,6 +179,9 @@ class Notifications extends ResourceController
 
             $findPlace = array_search($notify->place_id, array_column($placesData, 'id'));
             $placeData = $findPlace !== false ? $placesData[$findPlace] : null;
+
+            $findCollection = array_search($notify->collection_id ?? null, array_column($collectionsData, 'id'));
+            $collectionData = $findCollection !== false ? $collectionsData[$findCollection] : null;
             $meta = $notify->meta;
             if ($meta) {
                 if ($notify->type === 'achievements') {
@@ -205,6 +221,14 @@ class Notifications extends ResourceController
                     'cover' => $placeData->photos && file_exists(UPLOAD_PHOTOS . $placeData->id . '/cover.jpg') ? [
                         'preview' => PATH_PHOTOS . $placeData->id . '/cover_preview.jpg',
                     ] : null
+                ];
+            }
+
+            if ($collectionData && $collectionData->id) {
+                $tempData['collection'] = [
+                    'id'    => $collectionData->id,
+                    'slug'  => $collectionData->slug,
+                    'title' => $collectionData->title,
                 ];
             }
 

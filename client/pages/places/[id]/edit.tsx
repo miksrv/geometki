@@ -97,19 +97,10 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
             </Head>
 
             <PageHeader
-                title={`${place?.title} - ${t('editing')}`}
-                homePageTitle={t('geotags')}
-                currentPage={t('editing')}
-                backLink={`/places/${place?.id}`}
-                links={[
-                    {
-                        link: '/places/',
-                        text: t('geotags')
-                    },
-                    {
-                        link: `/places/${place?.id}`,
-                        text: place?.title || ''
-                    }
+                title={t('editing')}
+                breadcrumbs={[
+                    { link: '/places', text: t('nav-places', { defaultValue: 'Места' }) },
+                    { link: `/places/${place?.id}`, text: place?.title || '' }
                 ]}
             />
 

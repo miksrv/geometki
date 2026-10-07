@@ -11,7 +11,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, ConfirmationDialog, Header } from '@/components/shared'
+import { AppLayout, ConfirmationDialog, PageHeader } from '@/components/shared'
 import { AchievementTierBadge } from '@/components/shared/achievement-card/AchievementTierBadge'
 import { AchievementIcon } from '@/components/shared/achievement-icon'
 import { formatDate } from '@/utils/helpers'
@@ -139,10 +139,8 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
                 })}
             </Head>
 
-            <Header
+            <PageHeader
                 title={pageTitle}
-                homePageTitle={t('geotags')}
-                currentPage={pageTitle}
                 actions={
                     <Button
                         mode={'primary'}

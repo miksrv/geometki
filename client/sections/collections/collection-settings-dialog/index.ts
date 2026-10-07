@@ -1,0 +1,1 @@
+export { CollectionSettingsDialog } from './CollectionSettingsDialog'

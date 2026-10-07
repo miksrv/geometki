@@ -11,6 +11,7 @@ export enum UserPagesEnum {
     PLACES = 'places',
     BOOKMARKS = 'bookmarks',
     VISITED = 'visited',
+    COLLECTIONS = 'collections',
     PHOTOS = 'photos',
     ACHIEVEMENTS = 'achievements'
 }
@@ -39,6 +40,7 @@ export const UserTabs: React.FC<UserTabsProps> = ({ user, currentPage }) => {
                 { key: UserPagesEnum.PLACES, label: t('geotags') },
                 { key: UserPagesEnum.BOOKMARKS, label: t('favorites') },
                 { key: UserPagesEnum.VISITED, label: t('visited-places') },
+                { key: UserPagesEnum.COLLECTIONS, label: t('nav-collections', { defaultValue: 'Коллекции' }) },
                 { key: UserPagesEnum.PHOTOS, label: t('photos') },
                 { key: UserPagesEnum.ACHIEVEMENTS, label: t('achievements-title') }
             ]}

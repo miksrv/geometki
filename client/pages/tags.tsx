@@ -9,7 +9,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, Header } from '@/components/shared'
+import { AppLayout, PageHeader } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { SortMode, TagsAlphabetBar, TagsControls, TagsGrid, TagsStats, TagsTrending } from '@/sections/tags'
 import { buildHreflangTags } from '@/utils/seo'
@@ -58,11 +58,7 @@ const TagsPage: NextPage<TagsPageProps> = ({ tags }) => {
                 })}
             </Head>
 
-            <Header
-                title={t('features-of-places')}
-                homePageTitle={t('geotags')}
-                currentPage={t('features-of-places')}
-            />
+            <PageHeader title={t('features-of-places')} />
 
             <TagsStats tags={tagsList} />
 

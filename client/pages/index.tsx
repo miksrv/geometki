@@ -12,7 +12,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { ActivityList, AppLayout, PlacesListItem, UsersList } from '@/components/shared'
+import { ActivityList, AppLayout, PlaceCard, UsersList } from '@/components/shared'
 import { Carousel } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
 import { MapHero, PopularCategories } from '@/sections/home'
@@ -104,8 +104,7 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList, activityLi
 
             <Carousel options={{ dragFree: true, loop: true }}>
                 {placesList.map((place) => (
-                    <PlacesListItem
-                        t={t}
+                    <PlaceCard
                         key={place.id}
                         place={place}
                     />

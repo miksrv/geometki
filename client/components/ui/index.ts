@@ -1,5 +1,5 @@
 export { Autocomplete, type AutocompleteOption } from './autocomplete'
-export { Breadcrumbs, type BreadcrumbsProps } from './breadcrumbs'
+export { type BreadcrumbLink, Breadcrumbs, type BreadcrumbsProps } from './breadcrumbs'
 export { Carousel } from './carousel'
 export { ContentEditor } from './content-editor'
 export { Counter } from './counter'

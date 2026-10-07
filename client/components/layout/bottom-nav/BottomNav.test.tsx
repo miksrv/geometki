@@ -80,10 +80,26 @@ describe('BottomNav', () => {
 
     it('renders section links', () => {
         renderWithStore(<BottomNav />)
-        expect(screen.getByRole('link', { name: 'Лента' })).toHaveAttribute('href', '/activity')
         expect(screen.getByRole('link', { name: 'Карта' })).toHaveAttribute('href', '/map')
         expect(screen.getByRole('link', { name: 'Места' })).toHaveAttribute('href', '/places')
+        expect(screen.getByRole('link', { name: 'Коллекции' })).toHaveAttribute('href', '/collections')
+        expect(screen.getByRole('link', { name: 'Люди' })).toHaveAttribute('href', '/users')
         expect(screen.getByRole('link', { name: 'Добавить' })).toHaveAttribute('href', '/places/create')
+    })
+
+    it('does not render the activity feed link (moved out of the bottom nav)', () => {
+        renderWithStore(<BottomNav />)
+        expect(screen.queryByRole('link', { name: 'Лента' })).not.toBeInTheDocument()
+    })
+
+    it('keeps the primary add-place action exactly in the center, two items on each side', () => {
+        renderWithStore(<BottomNav />, { store: authenticatedStore() })
+        const nav = screen.getByRole('navigation', { name: 'Основная навигация' })
+        const links = Array.from(nav.querySelectorAll('a'))
+        expect(links).toHaveLength(5)
+        expect(links[2]).toHaveAttribute('href', '/places/create')
+        expect(links.slice(0, 2).map((link) => link.getAttribute('href'))).toEqual(['/map', '/places'])
+        expect(links.slice(3).map((link) => link.getAttribute('href'))).toEqual(['/collections', '/users'])
     })
 
     it('marks the current section with aria-current', () => {
@@ -93,16 +109,23 @@ describe('BottomNav', () => {
         expect(screen.getByRole('link', { name: 'Места' })).not.toHaveAttribute('aria-current')
     })
 
-    it('links the profile item to the current user page when authenticated', () => {
+    it('does not render a profile item (the profile is behind the app bar avatar)', () => {
         renderWithStore(<BottomNav />, { store: authenticatedStore() })
-        expect(screen.getByRole('link', { name: 'Профиль' })).toHaveAttribute('href', '/users/u1')
+        expect(screen.queryByRole('link', { name: 'Профиль' })).not.toBeInTheDocument()
     })
 
-    it('opens the auth dialog when a guest taps profile or add', () => {
+    it('opens the auth dialog when a guest taps add', () => {
         const { store } = renderWithStore(<BottomNav />, { store: guestStore() })
 
-        fireEvent.click(screen.getByRole('link', { name: 'Профиль' }))
+        fireEvent.click(screen.getByRole('link', { name: 'Добавить' }))
         expect(store.getState().application.showAuthDialog).toBe(true)
+    })
+
+    it('lets a guest open the users section without the auth dialog', () => {
+        const { store } = renderWithStore(<BottomNav />, { store: guestStore() })
+
+        fireEvent.click(screen.getByRole('link', { name: 'Люди' }))
+        expect(store.getState().application.showAuthDialog).toBe(false)
     })
 
     it('does not open the auth dialog for public sections', () => {

@@ -11,28 +11,21 @@ export type BreadcrumbLink = {
 }
 
 export interface BreadcrumbsProps {
-    homePageTitle?: string
-    currentPage?: string
-    className?: string
+    /** Path to the parent of the current page: section first, no home, no current page */
     links?: BreadcrumbLink[]
+    className?: string
 }
 
-export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ homePageTitle, links, className, currentPage }) => (
-    <nav aria-label={'breadcrumb'}>
-        <ul className={cn(className, styles.breadcrumbs)}>
-            {!!homePageTitle?.length && (
-                <li>
-                    <Link
-                        href={'/'}
-                        title={homePageTitle}
-                    >
-                        {homePageTitle}
-                    </Link>
-                </li>
-            )}
-
-            {!!links?.length &&
-                links.map(({ link, text }) => (
+/**
+ * Breadcrumb trail. Shown only on nested pages (see DESIGN.md): the trail starts at the
+ * site section (the logo is the way home) and stops at the parent — the current page is
+ * already the heading next to it. Renders nothing without links.
+ */
+export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ links, className }) =>
+    links?.length ? (
+        <nav aria-label={'breadcrumb'}>
+            <ul className={cn(className, styles.breadcrumbs)}>
+                {links.map(({ link, text }) => (
                     <li key={link}>
                         <Link
                             href={link}
@@ -42,8 +35,6 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ homePageTitle, links, 
                         </Link>
                     </li>
                 ))}
-
-            {currentPage && <li>{currentPage}</li>}
-        </ul>
-    </nav>
-)
+            </ul>
+        </nav>
+    ) : null

@@ -44,10 +44,10 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
     const [updateLocation] = API.useLocationPutCoordinatesMutation()
 
     const navItems: NavItem[] = [
-        { href: '/activity', label: t('nav-activity', { defaultValue: 'Лента' }) },
         { href: '/map', label: t('nav-map', { defaultValue: 'Карта' }) },
         { href: '/places', label: t('nav-places', { defaultValue: 'Места' }) },
-        { href: '/users', label: t('nav-users', { defaultValue: 'Пользователи' }) }
+        { href: '/collections', label: t('nav-collections', { defaultValue: 'Коллекции' }) },
+        { href: '/users', label: t('nav-users', { defaultValue: 'Люди' }) }
     ]
 
     const handleLoginClick = (event: React.MouseEvent) => {

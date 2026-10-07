@@ -7,7 +7,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { ApiModel } from '@/api'
 import { PhotoLightbox, Rating, UserAvatar } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
-import { buildPlaceUrl, formatDate, removeMarkdown, timeAgo } from '@/utils/helpers'
+import { buildCollectionUrl, buildPlaceUrl, formatDate, removeMarkdown, timeAgo } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -26,6 +26,12 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
 
     const actionText = {
         [ApiModel.ActivityTypes.Bookmark]: t('activity-bookmark', { defaultValue: 'добавил(-а) место в закладки' }),
+        [ApiModel.ActivityTypes.Collection]: t('activity-collection-created', {
+            defaultValue: 'создал(-а) новую коллекцию'
+        }),
+        [ApiModel.ActivityTypes.CollectionPlace]: t('activity-collection-place', {
+            defaultValue: 'добавил(-а) место в коллекцию'
+        }),
         [ApiModel.ActivityTypes.Comment]: t('activity-comment', { defaultValue: 'оставил(-а) отзыв на место' }),
         [ApiModel.ActivityTypes.Cover]: t('activity-cover', { defaultValue: 'обновил(-а) обложку' }),
         [ApiModel.ActivityTypes.Edit]: t('activity-editing', { defaultValue: 'отредактировал(-а) место' }),
@@ -34,6 +40,16 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
         [ApiModel.ActivityTypes.Rating]: t('activity-rating', { defaultValue: 'оценил(-а) место' }),
         [ApiModel.ActivityTypes.Visit]: t('activity-visit', { defaultValue: 'посетил(-а) место' })
     }[item.type]
+
+    const collectionLink = item.collection?.id ? (
+        <Link
+            href={buildCollectionUrl(item.collection.id, item.collection.slug)}
+            title={item.collection.title}
+            className={styles.pointLink}
+        >
+            {item.collection.title}
+        </Link>
+    ) : null
 
     const coverPreview = item.place?.cover?.preview
     const isCoverRelevant =
@@ -100,19 +116,21 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
         </div>
     )
 
-    const hasBottomBar = !hidePlaceName || (!compact && !!item.views)
+    const hasBottomBar = !hidePlaceName || !!collectionLink || (!compact && !!item.views)
 
     const bottomBar = hasBottomBar ? (
         <div className={styles.bottomBar}>
-            {!hidePlaceName && (
+            {!hidePlaceName && item.place && (
                 <Link
-                    href={buildPlaceUrl(item.place?.id ?? '', item.place?.slug)}
-                    title={item.place?.title}
+                    href={buildPlaceUrl(item.place.id, item.place.slug)}
+                    title={item.place.title}
                     className={styles.pointLink}
                 >
-                    {item.place?.title}
+                    {item.place.title}
                 </Link>
             )}
+
+            {collectionLink}
 
             {!compact && !!item.views && (
                 <div className={styles.viewCounter}>

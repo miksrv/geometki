@@ -2,8 +2,8 @@
 
 namespace Config;
 
+use App\Libraries\ApiExceptionHandler;
 use CodeIgniter\Config\BaseConfig;
-use CodeIgniter\Debug\ExceptionHandler;
 use CodeIgniter\Debug\ExceptionHandlerInterface;
 use Psr\Log\LogLevel;
 use Throwable;
@@ -106,6 +106,8 @@ class Exceptions extends BaseConfig
      */
     public function handler(int $statusCode, Throwable $exception): ExceptionHandlerInterface
     {
-        return new ExceptionHandler($this);
+        // This is a JSON-only REST API: every uncaught error becomes a generic
+        // JSON error envelope, details go to the log only. See the handler class.
+        return new ApiExceptionHandler($this);
     }
 }

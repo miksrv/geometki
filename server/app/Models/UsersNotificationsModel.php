@@ -62,7 +62,7 @@ class UsersNotificationsModel extends ApplicationBaseModel
     public function getRecentUnread(string $userId, int $limit = 10): array
     {
         return $this
-            ->select('users_notifications.*, activity.type as activity_type, activity.place_id')
+            ->select('users_notifications.*, activity.type as activity_type, activity.place_id, activity.collection_id')
             ->join('activity', 'activity.id = users_notifications.activity_id', 'left')
             ->where('read', false)
             ->where('users_notifications.user_id', $userId)
@@ -98,7 +98,7 @@ class UsersNotificationsModel extends ApplicationBaseModel
     public function getPaginatedByUser(string $userId, int $limit, int $offset): array
     {
         return $this
-            ->select('users_notifications.*, activity.type as activity_type, activity.place_id')
+            ->select('users_notifications.*, activity.type as activity_type, activity.place_id, activity.collection_id')
             ->join('activity', 'activity.id = users_notifications.activity_id', 'left')
             ->where('users_notifications.user_id', $userId)
             ->orderBy('created_at', 'DESC')

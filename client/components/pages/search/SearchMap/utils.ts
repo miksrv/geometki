@@ -3,13 +3,22 @@ export interface MapPoint {
     lon: number
 }
 
+export type MapBounds = [[number, number], [number, number]]
+
 interface MapView {
     center: [number, number]
     zoom: number
+    /** Set for two or more points: the map fits them exactly instead of using center/zoom */
+    bounds?: MapBounds
 }
 
 const DEFAULT_VIEW: MapView = { center: [55.751244, 37.618423], zoom: 5 }
 
+/**
+ * Initial viewport of the search map. No points: the default view; one point: centred
+ * on it at street level; several: their bounding box, fitted by Leaflet (`fitBounds`), so
+ * every result is in the frame whatever the map size.
+ */
 export const computeMapView = (points: MapPoint[]): MapView => {
     const valid = points.filter((p) => p.lat != null && p.lon != null)
 
@@ -28,29 +37,12 @@ export const computeMapView = (points: MapPoint[]): MapView => {
     const minLon = Math.min(...lons)
     const maxLon = Math.max(...lons)
 
-    const center: [number, number] = [(minLat + maxLat) / 2, (minLon + maxLon) / 2]
-    const span = Math.max(maxLat - minLat, maxLon - minLon)
-
-    const zoom =
-        span < 0.01
-            ? 14
-            : span < 0.05
-              ? 13
-              : span < 0.1
-                ? 12
-                : span < 0.5
-                  ? 11
-                  : span < 1
-                    ? 10
-                    : span < 3
-                      ? 9
-                      : span < 5
-                        ? 8
-                        : span < 10
-                          ? 7
-                          : span < 20
-                            ? 6
-                            : 5
-
-    return { center, zoom }
+    return {
+        bounds: [
+            [minLat, minLon],
+            [maxLat, maxLon]
+        ],
+        center: [(minLat + maxLat) / 2, (minLon + maxLon) / 2],
+        zoom: 13
+    }
 }

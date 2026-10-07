@@ -43,36 +43,15 @@ $inlineSearchMinWidth: 1024px
     height: 100%
     margin-right: 8px
 
-    .logoMark,
-    .logoWordmark
-        display: block
-        background-repeat: no-repeat
-        background-position: center left
-        background-size: contain
-
-    // Square tile cropped from the full wordmark logo
+    // Square mark, the same in both themes
     .logoMark
-        display: none
+        display: block
         width: 30px
         height: 30px
-        background-image: url(/images/geometki-icon.png)
-
-    .logoWordmark
-        width: 148px
-        height: 30px
-        background-image: url(/images/geometki-light.png)
-
-    &.dark .logoWordmark
-        background-image: url(/images/geometki-dark.png)
+        background: url(/images/geometki-icon.png) center / contain no-repeat
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
         margin-right: 0
-
-        .logoMark
-            display: block
-
-        .logoWordmark
-            display: none
 
 // --- Navigation ---
 
@@ -101,7 +80,7 @@ $inlineSearchMinWidth: 1024px
     &:hover,
     &:focus
         color: var(--text-color-primary)
-        background-color: var(--input-background-color)
+        background-color: var(--surface-2)
         text-decoration: none
 
     &:focus-visible
@@ -244,7 +223,7 @@ $inlineSearchMinWidth: 1024px
         border-bottom: none
 
     &.notifyItemUnread
-        background-color: var(--input-background-color)
+        background-color: var(--surface-2)
 
 .notifyItemIcon
     flex-shrink: 0

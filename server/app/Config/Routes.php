@@ -218,6 +218,27 @@ $routes->group('visited', static function ($routes) {
     $routes->options('(:alphanum)', static function () {});
 });
 
+/** Collections Controller **/
+$routes->group('collections', static function ($routes) {
+    $routes->get('/', 'Collections::list');
+    $routes->get('membership', 'Collections::membership');
+    $routes->get('(:alphanum)/recommended', 'Collections::recommended/$1');
+    $routes->get('(:alphanum)', 'Collections::show/$1');
+    $routes->post('/', 'Collections::create');
+    $routes->patch('(:alphanum)/moderation', 'Collections::moderation/$1');
+    $routes->patch('(:alphanum)/places', 'Collections::updatePlaces/$1');
+    $routes->patch('(:alphanum)', 'Collections::update/$1');
+    $routes->put('(:alphanum)/places', 'Collections::addPlaces/$1');
+    $routes->delete('(:alphanum)/places/(:alphanum)', 'Collections::removePlace/$1/$2');
+    $routes->delete('(:alphanum)', 'Collections::delete/$1');
+
+    $routes->options('/', static function () {});
+    $routes->options('membership', static function () {});
+    $routes->options('(:alphanum)', static function () {});
+    $routes->options('(:alphanum)/(:segment)', static function () {});
+    $routes->options('(:alphanum)/places/(:alphanum)', static function () {});
+});
+
 /** Sitemap Controller **/
 $routes->group('sitemap', static function ($routes) {
     $routes->get('/', 'Sitemap::index');

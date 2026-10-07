@@ -14,6 +14,7 @@ class ActivityEntity extends Entity {
         'place_id'   => null,
         'rating_id'  => null,
         'comment_id' => null,
+        'collection_id' => null,
     ];
 
     protected $dates = [
@@ -31,5 +32,6 @@ class ActivityEntity extends Entity {
         'place_id'   => 'string',
         'rating_id'  => 'string',
         'comment_id' => 'string',
+        'collection_id' => '?string',
     ];
 }

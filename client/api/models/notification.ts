@@ -1,5 +1,6 @@
 import { ActivityType, DateTime } from '@/api/types'
 
+import { Collection } from './collection'
 import { Place } from './place'
 
 export type Notification = {
@@ -18,5 +19,6 @@ export type Notification = {
     }
     activity?: ActivityType
     place?: Pick<Place, 'id' | 'slug' | 'title' | 'cover'>
+    collection?: Pick<Collection, 'id' | 'slug' | 'title'>
     created?: DateTime
 }

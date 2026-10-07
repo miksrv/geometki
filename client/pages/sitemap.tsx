@@ -5,7 +5,7 @@ import { GetServerSidePropsResult, NextPage } from 'next'
 import { API } from '@/api'
 import { wrapper } from '@/app/store'
 import { SITE_LINK } from '@/config/env'
-import { buildPlaceUrl } from '@/utils/helpers'
+import { buildCollectionUrl, buildPlaceUrl } from '@/utils/helpers'
 
 type SitemapDynamicPage = {
     link: string
@@ -37,6 +37,12 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 data?.users?.map((user) => ({
                     link: `users/${user.id}`,
                     update: new Date(user.updated.date).toISOString()
+                })) || []
+
+            const collectionsPages: SitemapDynamicPage[] =
+                data?.collections?.map((collection) => ({
+                    link: buildCollectionUrl(collection.id, collection.slug).replace(/^\//, ''),
+                    update: new Date(collection.updated.date).toISOString()
                 })) || []
 
             // Normalize base URL to always have a trailing slash
@@ -91,6 +97,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     makeUrlNode(page.link, page.update, 'daily', '0.7', makeHreflang(page.link, `en/${page.link}`))
                 )
                 .join('')
+
+            // Collections: RU only — the /en page stays noindex until an English title exists (phase 3)
+            sitemap += collectionsPages.map((page) => makeUrlNode(page.link, page.update, 'daily', '0.7')).join('')
 
             sitemap += [...placesPages, ...usersPages]
                 .map((page) =>

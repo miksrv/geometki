@@ -67,7 +67,13 @@ export const BookmarkButton: React.FC<BookmarkButtonProps> = ({ placeId, classNa
             {...props}
             mode={bookmarkData?.result ? 'primary' : (props?.mode ?? 'secondary')}
             icon={'Bookmark'}
-            label={hideLabel ? undefined : bookmarkData?.result ? t('saved') : t('save')}
+            label={
+                hideLabel
+                    ? undefined
+                    : bookmarkData?.result
+                      ? t('bookmark_added', { defaultValue: 'В закладках' })
+                      : t('bookmark_add', { defaultValue: 'В закладки' })
+            }
             className={className}
             disabled={!placeId || loading}
             loading={loading}

@@ -1,5 +1,6 @@
 import { DateTime } from '@/api/types'
 
+import { Collection } from './collection'
 import { Comment } from './comment'
 import { Photo } from './photo'
 import { Place } from './place'
@@ -10,6 +11,7 @@ export type Activity = {
     type: ActivityEnum
     views?: number
     place?: Place
+    collection?: Pick<Collection, 'id' | 'slug' | 'title'>
     photos?: Photo[]
     rating?: Rating
     author?: User
@@ -19,6 +21,8 @@ export type Activity = {
 
 export const ActivityTypes = {
     Bookmark: 'bookmark',
+    Collection: 'collection',
+    CollectionPlace: 'collection_place',
     Comment: 'comment',
     Cover: 'cover',
     Edit: 'edit',

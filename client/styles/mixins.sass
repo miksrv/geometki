@@ -18,3 +18,118 @@
     background: transparent
     cursor: pointer
     padding: 0
+
+// Long-form markdown text (place description, collection article). One rhythm for both:
+// 15px body on a 1.55 line height, headings with more air above than below, lists,
+// quotes, images and code on the kit tokens. Apply to the element that wraps the
+// rendered markdown; the first and last children lose their outer margins so the block
+// sits flush in its parent.
+@mixin prose
+    color: var(--text-color-primary)
+    font-size: var(--font-size-prose)
+    line-height: 1.55
+    overflow-wrap: break-word
+
+    & > :first-child
+        margin-top: 0
+
+    & > :last-child
+        margin-bottom: 0
+
+    p
+        margin: 0 0 0.8em
+        font-size: inherit
+
+    h1, h2, h3, h4, h5, h6
+        margin: 1.4em 0 0.4em
+        color: var(--text-color-primary)
+        font-weight: var(--font-weight-semibold)
+        line-height: 1.3
+
+    // Section title (18px) and block title (16px) levels of the type scale, then body size
+    h1, h2
+        font-size: var(--font-size-title-section)
+
+    h3
+        font-size: var(--font-size-large)
+
+    h4, h5, h6
+        font-size: inherit
+
+    ul, ol
+        margin: 0 0 0.8em
+        padding-left: 1.5em
+
+    ul
+        list-style: disc
+
+    ol
+        list-style: decimal
+
+    li
+        margin: 0.2em 0
+
+        & > ul, & > ol
+            margin-bottom: 0
+
+    blockquote
+        margin: 0 0 0.8em
+        padding: 0.25em 0 0.25em 1em
+        border-left: 3px solid var(--border-strong)
+        color: var(--text-color-secondary)
+
+        p:last-child
+            margin-bottom: 0
+
+    a
+        color: var(--link-color)
+        text-decoration: none
+
+        &:hover
+            color: var(--link-color-hover)
+            text-decoration: underline
+
+    strong
+        font-weight: var(--font-weight-semibold)
+
+    img
+        display: block
+        max-width: 100%
+        height: auto
+        margin: 0 0 1em
+        border-radius: var(--border-radius)
+
+    hr
+        margin: 1.5em 0
+        border: 0
+        border-top: 1px solid var(--border)
+
+    code
+        padding: 0.1em 0.35em
+        border-radius: var(--radius-sm)
+        background: var(--surface-2)
+        font-size: 0.9em
+
+    pre
+        margin: 0 0 1em
+        padding: var(--space-3)
+        border-radius: var(--border-radius)
+        background: var(--surface-2)
+        overflow-x: auto
+
+        code
+            padding: 0
+            background: none
+
+    table
+        width: 100%
+        margin: 0 0 1em
+        border-collapse: collapse
+
+        th, td
+            padding: 0.4em 0.6em
+            border-bottom: 1px solid var(--border)
+            text-align: left
+
+        th
+            font-weight: var(--font-weight-semibold)

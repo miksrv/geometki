@@ -1,6 +1,7 @@
 export * from './activity'
 export * from './address'
 export * from './category'
+export * from './collection'
 export * from './comment'
 export * from './geoSearchLocation'
 export * from './notification'

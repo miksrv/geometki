@@ -23,7 +23,7 @@ export interface Response {
         secondary?: string
     }
     places?: {
-        items: ApiModel.Place[]
+        items: ApiModel.PlaceListItem[]
         count: number
     }
 }

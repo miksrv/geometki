@@ -28,7 +28,7 @@ export interface ListRequest {
 }
 
 export interface ListResponse {
-    items?: ApiModel.Place[]
+    items?: ApiModel.PlaceListItem[]
     count?: number
 }
 

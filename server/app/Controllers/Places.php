@@ -12,6 +12,8 @@ use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
 use App\Models\ActivityModel;
+use App\Models\CollectionsModel;
+use App\Models\CollectionsPlacesModel;
 use App\Models\PhotosModel;
 use App\Models\PlacesModel;
 use App\Models\PlacesTagsModel;
@@ -188,7 +190,6 @@ class Places extends ResourceController
             $place->bookmarks = (int) $place->bookmarks;
             $place->title     = $placeContent->title($place->id);
             $place->category  = $formatter->formatCategory($place, $locale);
-            $place->author    = $formatter->formatAuthor($place);
 
             if ($coordinates && $place->distance) {
                 $place->distance = $formatter->formatDistance($place->distance);
@@ -604,6 +605,12 @@ class Places extends ResourceController
 
         helper('filesystem');
 
+        // Collections containing this place: captured before the hard delete
+        // below cascades away their collections_places rows, so places_count
+        // and the indexable flag can be recalculated afterwards.
+        $collectionsPlacesModel = new CollectionsPlacesModel();
+        $affectedCollectionIds  = $collectionsPlacesModel->collectionIdsForPlace($id);
+
         // Remove all photos
         $photosModel = new PhotosModel();
         $photosModel->where('place_id', $id)->delete(null, true);
@@ -613,6 +620,14 @@ class Places extends ResourceController
 
         // Remove place and all DB entitles such as activity, rating, bookmarks etc.
         $this->model->delete($id, true);
+
+        if (!empty($affectedCollectionIds)) {
+            $collectionsModel = new CollectionsModel();
+            foreach (array_unique($affectedCollectionIds) as $collectionId) {
+                $collectionsModel->recalcPlacesCount($collectionId);
+                $collectionsModel->recalcIndexable($collectionId);
+            }
+        }
 
         return $this->respondDeleted();
     }

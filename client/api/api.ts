@@ -201,6 +201,98 @@ export const API = createApi({
             transformErrorResponse: extractErrorData
         }),
 
+        /** Controller: Collections **/
+        collectionsGetList: builder.query<ApiType.Collections.ListResponse, Maybe<ApiType.Collections.ListRequest>>({
+            providesTags: ['Collections'],
+            query: (params) => `collections${encodeQueryData(params)}`
+        }),
+        collectionsGetItem: builder.query<ApiType.Collections.ItemResponse, string>({
+            providesTags: (result, error, id) => [{ id, type: 'Collections' }],
+            query: (id) => `collections/${id}`
+        }),
+        collectionsPost: builder.mutation<ApiType.Collections.CreateResponse, ApiType.Collections.CreateRequest>({
+            invalidatesTags: ['Collections', 'CollectionMembership'],
+            query: (data) => ({
+                body: data,
+                method: 'POST',
+                url: 'collections'
+            }),
+            transformErrorResponse: extractErrorData
+        }),
+        collectionsPatch: builder.mutation<void, ApiType.Collections.PatchRequest>({
+            invalidatesTags: (res, err, arg) => [{ id: arg.id, type: 'Collections' }],
+            query: ({ id, ...body }) => ({
+                body,
+                method: 'PATCH',
+                url: `collections/${id}`
+            }),
+            transformErrorResponse: extractErrorData
+        }),
+        collectionsDelete: builder.mutation<void, string>({
+            invalidatesTags: ['Collections'],
+            query: (id) => ({
+                method: 'DELETE',
+                url: `collections/${id}`
+            }),
+            transformErrorResponse: extractErrorMessage
+        }),
+        collectionsAddPlaces: builder.mutation<
+            ApiType.Collections.AddPlacesResponse,
+            ApiType.Collections.AddPlacesRequest
+        >({
+            invalidatesTags: (res, err, arg) => [
+                { id: arg.id, type: 'Collections' },
+                { type: 'CollectionMembership' },
+                { type: 'Notifications' }
+            ],
+            query: ({ id, placeIds }) => ({
+                body: { placeIds },
+                method: 'PUT',
+                url: `collections/${id}/places`
+            }),
+            transformErrorResponse: extractErrorData
+        }),
+        collectionsRemovePlace: builder.mutation<void, ApiType.Collections.RemovePlaceRequest>({
+            invalidatesTags: (res, err, arg) => [{ id: arg.id, type: 'Collections' }, { type: 'CollectionMembership' }],
+            query: ({ id, placeId }) => ({
+                method: 'DELETE',
+                url: `collections/${id}/places/${placeId}`
+            }),
+            transformErrorResponse: extractErrorMessage
+        }),
+        collectionsReorderPlaces: builder.mutation<void, ApiType.Collections.ReorderRequest>({
+            invalidatesTags: (res, err, arg) => [{ id: arg.id, type: 'Collections' }],
+            query: ({ id, ...body }) => ({
+                body,
+                method: 'PATCH',
+                url: `collections/${id}/places`
+            }),
+            transformErrorResponse: extractErrorData
+        }),
+        collectionsGetMembership: builder.query<
+            ApiType.Collections.MembershipResponse,
+            Maybe<ApiType.Collections.MembershipRequest>
+        >({
+            providesTags: (result, error, arg) => [{ id: arg?.placeId ?? 'LIST', type: 'CollectionMembership' }],
+            query: (params) => `collections/membership${encodeQueryData(params)}`
+        }),
+        collectionsGetRecommended: builder.query<
+            ApiType.Collections.RecommendedResponse,
+            ApiType.Collections.RecommendedRequest
+        >({
+            providesTags: (result, error, arg) => [{ id: arg.id, type: 'Collections' }],
+            query: ({ id, limit }) => `collections/${id}/recommended${encodeQueryData({ limit })}`
+        }),
+        collectionsPatchModeration: builder.mutation<void, ApiType.Collections.ModerationRequest>({
+            invalidatesTags: (res, err, arg) => [{ id: arg.id, type: 'Collections' }],
+            query: ({ id, ...body }) => ({
+                body,
+                method: 'PATCH',
+                url: `collections/${id}/moderation`
+            }),
+            transformErrorResponse: extractErrorData
+        }),
+
         /** Controller: Categories v*/
         categoriesGetList: builder.query<ApiType.Categories.Response, Maybe<ApiType.Categories.Request>>({
             query: (params) => `categories${encodeQueryData(params)}`
@@ -517,6 +609,8 @@ export const API = createApi({
         'AchievementsProgress',
         'Activity',
         'Bookmarks',
+        'CollectionMembership',
+        'Collections',
         'Comments',
         'Notifications',
         'Photos',

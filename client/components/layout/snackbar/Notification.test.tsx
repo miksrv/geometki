@@ -152,6 +152,44 @@ describe('Notification', () => {
         })
     })
 
+    describe('collection link', () => {
+        it('renders a link to the collection, taking priority over a place link', () => {
+            const notification = {
+                ...baseNotification,
+                type: 'collection_place' as const,
+                place: { id: 'p1', title: 'Cool Spot', cover: undefined },
+                collection: { id: 'c1', slug: 'waterfalls', title: 'Waterfalls' }
+            }
+            render(<Notification {...notification} />)
+            expect(screen.getByRole('link', { name: 'Waterfalls' })).toHaveAttribute(
+                'href',
+                '/collections/c1-waterfalls'
+            )
+            expect(screen.queryByRole('link', { name: 'Cool Spot' })).not.toBeInTheDocument()
+        })
+    })
+
+    describe('collection and collection_place types', () => {
+        it('renders the collection notification title', () => {
+            const notification = {
+                ...baseNotification,
+                type: 'collection' as const
+            }
+            render(<Notification {...notification} />)
+            expect(screen.getByText('Создана новая коллекция')).toBeInTheDocument()
+        })
+
+        it('renders the collection_place notification title', () => {
+            const notification = {
+                ...baseNotification,
+                type: 'collection_place' as const,
+                collection: { id: 'c1', slug: 'waterfalls', title: 'Waterfalls' }
+            }
+            render(<Notification {...notification} />)
+            expect(screen.getByText('Ваше место добавлено в коллекцию')).toBeInTheDocument()
+        })
+    })
+
     describe('bookmark and visit types', () => {
         it('renders the bookmark notification title', () => {
             const notification = {

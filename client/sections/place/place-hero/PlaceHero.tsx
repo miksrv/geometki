@@ -13,6 +13,7 @@ import { useAppDispatch, useAppSelector } from '@/app/store'
 import { BookmarkButton } from '@/components/shared'
 import { Breadcrumbs } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
+import { AddToCollectionButton } from '@/sections/collections'
 import { dateToUnixTime } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
@@ -111,9 +112,8 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
             <div className={styles.topPanel}>
                 <Breadcrumbs
                     className={styles.breadcrumbs}
-                    homePageTitle={t('geotags')}
                     links={[
-                        { link: '/places', text: t('interesting-places') },
+                        { link: '/places', text: t('nav-places', { defaultValue: 'Места' }) },
                         ...(place?.category
                             ? [{ link: `/places?category=${place.category.name}`, text: place.category.title ?? '' }]
                             : [])
@@ -219,11 +219,16 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                     </div>
                 </div>
 
-                <BookmarkButton
-                    size={'medium'}
-                    placeId={place?.id}
-                    className={styles.bookmarkButton}
-                />
+                <div className={styles.actions}>
+                    <BookmarkButton
+                        size={'medium'}
+                        placeId={place?.id}
+                    />
+                    <AddToCollectionButton
+                        size={'medium'}
+                        placeId={place?.id}
+                    />
+                </div>
             </div>
 
             {showRemoveDialog && (

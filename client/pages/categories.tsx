@@ -56,8 +56,6 @@ const CategoriesPage: NextPage<CategoriesPageProps> = ({ categories, topCategori
             <PageHeader
                 title={t('categories-places')}
                 description={t('categories-places-description')}
-                homePageTitle={t('geotags')}
-                currentPage={t('categories-places')}
             />
 
             <CategoriesList

@@ -65,11 +65,7 @@ const ActivityPage: NextPage<object> = () => {
                 })}
             </Head>
 
-            <PageHeader
-                title={t('news-feed')}
-                homePageTitle={t('geotags')}
-                currentPage={t('news-feed')}
-            />
+            <PageHeader title={t('news-feed')} />
 
             <ActivityList
                 activities={data?.items}

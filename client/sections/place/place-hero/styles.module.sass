@@ -111,7 +111,7 @@
             min-width: 0
 
         h1
-            font-size: 20px
+            font-size: var(--font-size-title-page)
             text-overflow: ellipsis
             overflow: hidden
             color: #FFF
@@ -126,7 +126,12 @@
             a
                 color: inherit
 
-        .bookmarkButton
+        // Bookmark + "В коллекцию": same size, same mode, one row
+        .actions
+            display: flex
+            align-items: center
+            flex-wrap: wrap
+            gap: 8px
             flex-shrink: 0
             margin: 0 10px 10px
 

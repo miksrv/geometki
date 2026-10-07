@@ -19,6 +19,10 @@ jest.mock('react-leaflet', () => ({
             data-attribution={attribution}
         />
     ),
+    useMap: jest.fn().mockReturnValue({
+        fitBounds: jest.fn(),
+        invalidateSize: jest.fn()
+    }),
     useMapEvents: jest.fn().mockReturnValue({
         closePopup: jest.fn(),
         getBounds: jest.fn().mockReturnValue({}),

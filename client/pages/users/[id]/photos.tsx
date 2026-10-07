@@ -10,7 +10,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, Header, PhotoGallery } from '@/components/shared'
+import { AppLayout, PageHeader, PhotoGallery, UserAvatar } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
@@ -60,22 +60,18 @@ const UserPhotosPage: React.FC<UserPhotosPageProps> = ({ id, user, photosList, p
                 })}
             </Head>
 
-            <Header
-                title={`${user?.name} - ${t('photos')}${pageTitle}`}
-                homePageTitle={t('geotags')}
-                currentPage={t('photos')}
-                backLink={`/users/${id}`}
-                userData={user}
-                links={[
-                    {
-                        link: '/users/',
-                        text: t('users')
-                    },
-                    {
-                        link: `/users/${id}`,
-                        text: user?.name || ''
-                    }
+            <PageHeader
+                title={`${t('photos')}${pageTitle}`}
+                breadcrumbs={[
+                    { link: '/users', text: t('users') },
+                    { link: `/users/${id}`, text: user?.name || '' }
                 ]}
+                leading={
+                    <UserAvatar
+                        user={user}
+                        size={'medium'}
+                    />
+                }
             />
 
             <UserTabs

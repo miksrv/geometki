@@ -1,0 +1,276 @@
+@use '../../styles/variables' as variables
+@use '../../styles/mixins' as *
+
+// Pagination counter row (/collections, /users/[id]/collections)
+.countContainer
+    display: flex
+    align-items: center
+
+    strong
+        margin-left: 5px
+
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            min-width: 100%
+
+// --- "В коллекцию" picker (AddToCollectionModal) ---
+
+.picker
+    display: flex
+    flex-direction: column
+    width: 100%
+
+.pickerSearch
+    margin-bottom: 8px
+
+// Fixed-height viewport for rows / skeletons / empty states, so the dialog keeps one
+// height while typing and when switching tabs
+.pickerResults
+    display: flex
+    flex-direction: column
+    height: 320px
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        height: 45vh
+
+.pickerList
+    list-style: none
+    margin: 0 -8px
+    padding: 0
+    flex: 1
+    min-height: 0
+    overflow-y: auto
+    transition: opacity .15s
+
+    &.pickerListFetching
+        opacity: .6
+
+.pickerRow
+    display: flex
+    align-items: center
+    gap: 12px
+    min-height: 52px
+    padding: 6px 8px
+    border-radius: var(--border-radius)
+    cursor: pointer
+    transition: background-color .15s
+
+    &:hover,
+    &:focus-within
+        background-color: var(--surface-2)
+
+    &.pickerRowPending
+        opacity: .6
+        pointer-events: none
+
+.pickerCover
+    position: relative
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 40px
+    height: 40px
+    border-radius: var(--radius-sm)
+    overflow: hidden
+    flex-shrink: 0
+    background: var(--surface-2)
+    color: var(--text-color-secondary)
+
+    img
+        border-radius: inherit
+
+    svg
+        width: 18px
+        height: 18px
+        fill: currentColor
+
+.pickerBody
+    flex-grow: 1
+    min-width: 0
+    overflow: hidden
+
+    strong
+        display: block
+        font-weight: 600
+        +truncate
+
+    span
+        display: block
+        color: var(--text-color-secondary)
+        font-size: variables.$fontSizeCaption
+
+.pickerEmpty
+    flex: 1
+    display: flex
+    flex-direction: column
+    justify-content: center
+    gap: 4px
+    padding: 20px 8px
+    text-align: center
+    color: var(--text-color-secondary)
+
+    strong
+        color: var(--text-color-primary)
+        font-weight: 600
+
+.pickerFooter
+    margin-top: 8px
+    padding-top: 12px
+    border-top: 1px solid var(--divider-color)
+
+    &.pickerFooterBare
+        margin-top: 0
+        padding-top: 0
+        border-top: none
+
+.pickerCreate
+    display: flex
+    flex-direction: column
+    gap: 8px
+
+.pickerCreateActions
+    display: flex
+    align-items: center
+    justify-content: space-between
+    gap: 8px
+
+.charCounter
+    display: block
+    text-align: right
+    margin-top: 4px
+    color: var(--text-color-secondary)
+    font-size: variables.$fontSizeCaption
+
+// Shared "Cancel / Confirm" row for dialogs in this section
+.dialogActions
+    display: flex
+    justify-content: flex-end
+    gap: 8px
+
+// --- "Создать коллекцию" dialog (CreateCollectionDialog) ---
+
+.createDialog
+    display: flex
+    flex-direction: column
+    width: 100%
+
+.createDialogMeta
+    display: flex
+    align-items: flex-start
+    justify-content: space-between
+    gap: 12px
+    margin: 6px 0 16px
+
+.createDialogHint
+    color: var(--text-color-secondary)
+    font-size: variables.$fontSizeCaption
+
+// --- "В коллекциях" rows in the place page sidebar (PlaceCollections) ---
+
+.sidebarRows
+    list-style: none
+    margin: 0 -8px
+    padding: 0
+
+// Picker row chrome as a link: no pointer cursor override, the text stays primary
+.sidebarRow
+    text-decoration: none
+    color: inherit
+    min-height: 48px
+
+    &:hover
+        text-decoration: none
+
+    strong
+        color: var(--text-color-primary)
+
+// --- Collection page: article layout ---
+// Header and map take the full content width; the text and the place cards sit in a
+// centred reading column so a line of the description stays readable.
+
+// Map in a Container with a thin 3px frame between the container edge and the map.
+// Vertical spacing between the header, the map, the description and the grid comes from
+// the AppLayout column gap (15px), the same as on every list page — no own margins here.
+.articleMap
+    padding: 3px !important
+
+.articleMapInner
+    position: relative
+    height: 360px
+    border-radius: calc(var(--border-radius) - 3px)
+    overflow: hidden
+
+    & > div
+        height: 100%
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        height: 220px
+
+// Byline under the title: avatar + name, places count, region, update time
+.byline
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: 4px 6px
+
+.bylineDot
+    color: var(--text-color-secondary)
+
+// Description as article prose on the page background, full content width
+.description
+    +prose
+
+.descriptionEditor
+    display: flex
+    flex-direction: column
+    gap: 12px
+
+// Edit mode: move/remove controls over the tile (PlaceCard `actions`)
+.placeActions
+    display: flex
+    gap: 4px
+
+.placeItemRemove
+    color: var(--color-negative, #e64646)
+
+// "Add places" after the list for the owner
+// Matches the layout gap minus the tile grid's 5px outer margin, so the button sits as
+// far from the tiles as the pagination does on /places
+.placesFooter
+    margin-top: 15px
+
+// --- Dialog helpers shared by AddPlacesDialog / CollectionSettingsDialog ---
+
+.segmented
+    display: flex
+    gap: 6px
+    margin-bottom: 10px
+
+.pickerRowStatic
+    cursor: default
+
+    &:hover
+        background-color: transparent
+
+.settings
+    display: flex
+    flex-direction: column
+    width: 100%
+
+.settingsField
+    margin-bottom: 12px
+    min-width: 0
+
+.settingsHint
+    margin: 6px 0 0
+    color: var(--text-color-secondary)
+    font-size: variables.$fontSizeCaption
+
+.settingsFooter
+    display: flex
+    align-items: center
+    justify-content: space-between
+    flex-wrap: wrap
+    gap: 8px
+    margin-top: 8px
+    padding-top: 12px
+    border-top: 1px solid var(--divider-color)

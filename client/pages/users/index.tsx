@@ -90,11 +90,7 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
                 })}
             </Head>
 
-            <PageHeader
-                title={title}
-                homePageTitle={t('geotags')}
-                currentPage={t('users')}
-            />
+            <PageHeader title={title} />
 
             <Container style={{ padding: '10px' }}>
                 <UsersFilterPanel

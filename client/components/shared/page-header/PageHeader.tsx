@@ -1,39 +1,44 @@
 import React from 'react'
-import { Button } from 'simple-react-ui-kit'
+import { cn } from 'simple-react-ui-kit'
 
-import { Breadcrumbs, BreadcrumbsProps } from '@/components/ui'
+import { BreadcrumbLink, Breadcrumbs } from '@/components/ui'
 
 import styles from './styles.module.sass'
 
-interface PageHeaderProps extends BreadcrumbsProps {
+interface PageHeaderProps {
     title?: string
-    description?: string
-    backLink?: string
-    children?: React.ReactNode
+    /** One line under the title, secondary text; a node for a byline with links and an avatar */
+    description?: React.ReactNode
+    /** Path to the parent page — only nested pages have one (see DESIGN.md) */
+    breadcrumbs?: BreadcrumbLink[]
+    /** Element before the text, e.g. the avatar on a user's sub-page */
+    leading?: React.ReactNode
+    /** Page-level actions, `medium` buttons; wrap under the title on phones */
+    actions?: React.ReactNode
+    className?: string
 }
 
+/**
+ * The page header: breadcrumbs above the h1, optional description, actions on the right.
+ * Sits on the page background like the rest of the page chrome — never inside a Container.
+ */
 export const PageHeader: React.FC<PageHeaderProps> = ({
     title,
     description,
-    backLink,
-    children,
-    ...breadcrumbsProps
+    breadcrumbs,
+    leading,
+    actions,
+    className
 }) => (
-    <div className={styles.pageHeader}>
-        {backLink && (
-            <Button
-                mode={'outline'}
-                icon={'KeyboardLeft'}
-                link={backLink}
-            />
-        )}
+    <div className={cn(styles.pageHeader, className)}>
+        {leading && <div className={styles.leading}>{leading}</div>}
 
-        <div className={styles.left}>
+        <div className={styles.main}>
+            <Breadcrumbs links={breadcrumbs} />
             {title && <h1 className={styles.title}>{title}</h1>}
-            {description && <p className={styles.description}>{description}</p>}
-            <Breadcrumbs {...breadcrumbsProps} />
+            {description && <div className={styles.description}>{description}</div>}
         </div>
 
-        {children && <div className={styles.right}>{children}</div>}
+        {actions && <div className={styles.actions}>{actions}</div>}
     </div>
 )

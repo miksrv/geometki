@@ -88,7 +88,9 @@ export const MarkerPoint: React.FC<MarkerPointProps> = ({ place, keepInView }) =
                         <div className={styles.bookmarkButton}>
                             <BookmarkButton
                                 placeId={poiData?.id}
+                                size={'small'}
                                 hideLabel={true}
+                                aria-label={t('bookmark_add', { defaultValue: 'В закладки' })}
                             />
                         </div>
 

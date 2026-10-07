@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.10.0
+
+### Minor Changes
+
+- Collections: new `/collections` section — themed lists of places with a description, a map and place cards; catalogue with a region filter; "Collections" tab on user profiles; entries in the main and mobile navigation
+- Collection page: an article layout — title with an author byline, full-width map, markdown description, place tiles; SEO title, description, Open Graph image, JSON-LD (`CollectionPage` + `ItemList`) and breadcrumbs; indexed and listed in the sitemap only when it has enough places and text (the `/en` page is noindex)
+- Collections: owner edit mode — inline description editor, "Search" / "Recommended" tabs to add places, drag-and-drop reorder, removal; settings dialog with the title and region; deletion
+- Collections: "Add to collection" button and dialog on the place page with inline creation; "In collections" rows in the place sidebar
+- Collections: cards show a mosaic of up to four place covers, derived from the places and their order
+- Collections: activity feed entries and notifications for collections; places count and indexability recalculated when a place is deleted
+- Navigation: mobile bottom bar has Places, Collections and People around the "add place" button; the profile lives behind the avatar in the app bar
+- App bar: the square mark is the only logo at every width; the light/dark wordmark images are removed
+- Place cards: one `PlaceCard` (tile and row variants) replaces the home, list and search cards; `PageHeader` with breadcrumbs replaces the old `Header` on all pages
+- Content editor: redesigned on the UI kit field tokens — outlined box, compact icon toolbar, auto-growing text area, preview toggle
+- Typography: one pixel type scale for the whole client (12 / 13 / 14 / 15 / 16 / 18 / 22) and a single `prose` style for rendered markdown
+- Form fields: inputs, selects and text areas are outlined instead of grey-filled; grey surfaces moved to `--surface-2`
+- Design: `client/DESIGN.md` describes the design system (layers, page archetypes, card rules)
+
+### Patch Changes
+
+- Map: `bounds` now really fit the viewport; the search map fits all results exactly
+- Errors: the API returns a generic JSON envelope for uncaught errors; the client shows only envelope messages and a generic toast for server failures
+- Server: `uploads.verifyFiles` option for a local stand that serves images from another host
+- Bookmarks: button labels are "Add to bookmarks" / "Bookmarked"
+
 ## 1.9.0
 
 ### Minor Changes
