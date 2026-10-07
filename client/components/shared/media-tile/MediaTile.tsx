@@ -23,9 +23,9 @@ export interface MediaTileProps {
     covers?: string[]
     /** Preload the cover (above-the-fold tiles only) */
     priority?: boolean
-    /** Content of the top gradient band (collections show the author there; place tiles leave it empty) */
+    /** Content of the top gradient band (collections show the author there, places the category icon) */
     top?: React.ReactNode
-    /** Content of the bottom gradient band: badge, title, subline, stats */
+    /** Content of the bottom gradient band: title, subline, stats */
     children?: React.ReactNode
     className?: string
 }
@@ -36,7 +36,7 @@ export interface MediaTileProps {
  * is built on it, so the chrome — size, radius, gradients, hover zoom — is defined once.
  *
  * Overlay content uses the exported `mediaTileStyles` helpers (`title`, `subline`, `stats`,
- * `stat`, `badge`, `author`) to stay white-on-gradient and consistent between entities.
+ * `stat`, `author`) to stay white-on-gradient and consistent between entities.
  */
 export const MediaTile: React.FC<MediaTileProps> = ({
     href,
@@ -120,7 +120,6 @@ export const MediaTileGrid: React.FC<MediaTileGridProps> = ({ className, childre
 /** Overlay content classes for tiles — see MediaTile */
 export const mediaTileStyles = {
     author: styles.author,
-    badge: styles.badge,
     stat: styles.stat,
     stats: styles.stats,
     subline: styles.subline,

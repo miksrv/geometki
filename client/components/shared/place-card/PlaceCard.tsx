@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
-import { CategoryBadge } from '@/components/shared/category-badge'
+import { CategoryIcon } from '@/components/shared/category-icon'
 import { MediaTile, mediaTileStyles } from '@/components/shared/media-tile'
 import { IMG_HOST } from '@/config/env'
 import { addressToString } from '@/utils/address'
@@ -41,8 +41,9 @@ export interface PlaceCardProps {
 
 /**
  * The one card for a place. Both variants keep the same recognisable parts in the same
- * order: cover, category badge, title, address, then the stats row (rating, distance,
- * views, photos). Only the geometry changes between `tile` and `row`. A card is about the
+ * order: cover, category icon, title, address, then the stats row (rating, distance,
+ * views, photos). The category is shown as its icon only (top-left over a tile's cover,
+ * before the title in a row); its name is in the tooltip. Only the geometry changes between `tile` and `row`. A card is about the
  * place, so it never shows who added it or when.
  */
 export const PlaceCard: React.FC<PlaceCardProps> = ({
@@ -135,21 +136,24 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                 </Link>
 
                 <div className={styles.body}>
-                    <Heading className={styles.rowTitle}>
-                        <Link
-                            href={href}
-                            title={place.title}
-                        >
-                            {place.title}
-                        </Link>
-                    </Heading>
+                    <div className={styles.rowHeading}>
+                        {place.category && (
+                            <CategoryIcon
+                                category={place.category}
+                                size={16}
+                                className={styles.rowCategory}
+                            />
+                        )}
 
-                    {place.category && (
-                        <CategoryBadge
-                            category={place.category}
-                            className={styles.rowBadge}
-                        />
-                    )}
+                        <Heading className={styles.rowTitle}>
+                            <Link
+                                href={href}
+                                title={place.title}
+                            >
+                                {place.title}
+                            </Link>
+                        </Heading>
+                    </div>
 
                     <div className={styles.rowMeta}>
                         {!!address?.length && (
@@ -172,7 +176,20 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
             title={place.title ?? ''}
             priority={priority}
             className={className}
-            top={actions ? <div className={styles.tileActions}>{actions}</div> : undefined}
+            top={
+                place.category || actions ? (
+                    <div className={styles.tileTop}>
+                        {place.category && (
+                            <CategoryIcon
+                                category={place.category}
+                                size={16}
+                                className={styles.tileCategory}
+                            />
+                        )}
+                        {actions && <div className={styles.tileActions}>{actions}</div>}
+                    </div>
+                ) : undefined
+            }
             // `updated` only versions the cover URL: the preview path stays the same when the cover changes
             coverSrc={
                 place.cover?.preview
@@ -180,13 +197,6 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                     : undefined
             }
         >
-            {place.category && (
-                <CategoryBadge
-                    category={place.category}
-                    className={mediaTileStyles.badge}
-                />
-            )}
-
             <Heading className={mediaTileStyles.title}>
                 <Link
                     href={href}

@@ -45,7 +45,7 @@ Pick from the table; no ad-hoc `em` or odd pixel sizes.
 | Layer             | Lives in                                               | Knows about                    | Examples                                                                                 |
 | ----------------- | ------------------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------------------------- |
 | Primitives        | `simple-react-ui-kit` (separate repo, Storybook there) | Nothing domain-specific        | `Button`, `Input`, `Select`, `Dialog`, `Container`, `Popout`, `Icon`, `Skeleton`, tokens |
-| Domain components | `client/components/shared`                             | `ApiModel` types, routes, i18n | `PlaceCard`, `CollectionCard`, `MediaTile`, `UserAvatar`, `CategoryBadge`, `EmptyState`  |
+| Domain components | `client/components/shared`                             | `ApiModel` types, routes, i18n | `PlaceCard`, `CollectionCard`, `MediaTile`, `UserAvatar`, `CategoryIcon`, `EmptyState`   |
 
 Page-specific composition lives in `client/sections/<area>` (e.g. `sections/collections`),
 pages themselves in `client/pages`. Sections may compose domain components; they must not
@@ -57,7 +57,8 @@ re-implement them.
   chrome, there is no permanent sidebar.
 - **Lists** are a flow of tiles on the page background, three columns on desktop and one
   on phones (`MediaTileGrid`). Lists never sit inside a `Container`.
-- **Place page** (`pages/places/[id]`): `PlaceHero` → `.pageLayout` grid `1fr 300px` → main
+- **Place page** (`pages/places/[id]`): `PlaceHero` (the cover at 3:1, at least 240px tall on
+  phones; cover files are 1800×600) → `.pageLayout` grid `1fr 300px` → main
   column of `Container` blocks with 8px gaps, sticky sidebar (`top: 60px`) with the map and
   key/value facts, then the "В коллекциях" rows (`PlaceCollections`, picker-style rows:
   40px cover, title, places count) and the "Здесь были" avatars → "nearby" tiles below.
@@ -109,10 +110,10 @@ full chain from the home page.
 ### `MediaTile` — photo tile primitive (`components/shared/media-tile`)
 
 Cover filling the card, an optional gradient band at the top (collections put the author
-there, place tiles leave it empty) and one at the bottom (badge, title, subline, stats). 260px high, `--border-radius`, `--container-shadow`, hover zoom.
+there, place tiles the category icon) and one at the bottom (title, subline, stats). 260px high, `--border-radius`, `--container-shadow`, hover zoom.
 Every "entity on a cover" tile is built on it. `coverSrc` draws one cover, `covers` a
 mosaic of up to four (see `CollectionCard`). Overlay content uses `mediaTileStyles`
-(`author`, `badge`, `title`, `subline`, `stats`, `stat`) so the typography and colours are
+(`author`, `title`, `subline`, `stats`, `stat`) so the typography and colours are
 the same for every entity. `MediaTileGrid` is the 3-column flow.
 
 ### `PlaceCard` (`components/shared/place-card`)
@@ -126,8 +127,10 @@ The one card for a place.
 | `row` + `size="medium"` | search results                                                                 | 120×80                     | `h3` (inside a titled section) |
 | `row` + `size="small"`  | dense pickers and popups (map popup, planned)                                  | 96×72                      | `h3`                           |
 
-Invariant order of parts in both variants: cover → category badge → title → address →
-stats row. Stats order is fixed: rating, distance, views, photos. A card is about the place:
+Invariant order of parts in both variants: cover → category icon → title → address →
+stats row. The category is never a text label on a card: a tile shows its icon (16px) in
+the top-left corner over the cover, a row puts it (16px) before the title; the name is the
+icon's tooltip and accessible name (see `CategoryIcon`). Stats order is fixed: rating, distance, views, photos. A card is about the place:
 it never shows who added it or when, and list responses (`ApiModel.PlaceListItem`) do not
 even carry `author`. Props: `distanceKm` / `distanceLabel` override the API distance;
 `actions` puts controls on the right of a row or over the top-right corner of a tile (edit
@@ -142,6 +145,18 @@ Known deviations / follow-ups:
   cover file path does not change when the cover is replaced. Move the version into the
   `cover` object on the server (e.g. a versioned `preview` URL) and drop `updated` from
   `PlaceListItem`.
+
+### `CategoryIcon` (`components/shared/category-icon`)
+
+A place's category as its square icon (`public/images/poi/<category>.png`: a flat
+rounded square, 12% corner radius like the logo, white pictogram, no border), linking to
+`/places?category=…` with the category name in a kit `Tooltip` and as the link's name.
+One colour per category (`CATEGORY_COLORS`, the same hex as the icon background) also
+tints category blocks on the home and categories pages. Sizes in use: 16 (cards, search
+suggestions; small on purpose, so the category does not outweigh the cover and title),
+40 (place hero, next to the h1). The place page shows the icon once, in the hero; the
+breadcrumbs name the category in text (and the schema.org `BreadcrumbList` has the same
+category level), so the sidebar facts have no category row.
 
 ### `CollectionCard` (`sections/collections/collection-card`)
 
@@ -176,9 +191,20 @@ views).
 - **Forms in dialogs.** `Input`/`Select` `size="medium"`, labels above, character counters
   under limited fields, hints in `$fontSizeCaption` secondary text. Save is disabled until
   something changed.
+- **Form state and unsaved changes.** Forms are built on `react-hook-form` (`useForm` +
+  `Controller`, since kit fields don't forward refs); validation messages come from `rules`
+  and server errors are put on their fields with `setError`. Anything the user can lose —
+  a page form, an inline editor, a dialog, a comment draft — is wrapped in
+  `useUnsavedChangesGuard(isDirty)` (`hooks/`): links, Back/Forward and router pushes open
+  `<ConfirmationDialog {...dialogProps} />`, closing the tab gets the browser prompt.
+  In-page discards (Cancel, closing a dialog) go through `confirmDiscard`; call
+  `allowNavigation()` before navigating away after a successful save.
 - **Pickers** ("В коллекцию", "Добавить места"): a search input only when the list is
   long, rows of 40px thumbnail + title + caption + control, a single collapsed "create"
-  affordance at the bottom.
+  affordance at the bottom. "В коллекцию" is a domain component
+  (`components/shared/add-to-collection`: `AddToCollectionButton` + `AddToCollectionModal`,
+  used on the place page and in the map popup, `hideLabel` for the icon-only variant); other
+  picker-style rows reuse its `collectionPickerStyles` instead of copying them.
 - **Empty states.** `EmptyState` with a title, one sentence and at most one action; copy
   differs for owners (what to do) and readers (what to expect).
 - **Notifications.** Success and error toasts via `Notify`; an entity link in the toast is

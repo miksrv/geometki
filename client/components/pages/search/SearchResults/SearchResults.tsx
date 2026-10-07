@@ -139,9 +139,11 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
                     {(data.places?.count ?? 0) > places.length && (
                         <Button
-                            mode={'link'}
-                            size={'small'}
+                            mode={'secondary'}
+                            size={'medium'}
+                            stretched={true}
                             loading={isLoadingMore}
+                            disabled={isLoadingMore}
                             label={t('search-load-more', { defaultValue: 'Загрузить ещё' })}
                             onClick={onLoadMore}
                         />

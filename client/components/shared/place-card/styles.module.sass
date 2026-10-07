@@ -42,7 +42,18 @@
     flex-direction: column
     gap: 4px
 
+// Category icon before the title, aligned with its first line
+.rowHeading
+    display: flex
+    align-items: flex-start
+    gap: 6px
+    min-width: 0
+
+.rowCategory
+    margin-top: 1px
+
 .rowTitle
+    min-width: 0
     margin: 0
     font-size: variables.$fontSizeParagraph
     font-weight: 600
@@ -59,9 +70,6 @@
         &:hover
             color: var(--link-color-hover)
             text-decoration: none
-
-.rowBadge
-    align-self: flex-start
 
 .rowMeta
     display: flex
@@ -111,8 +119,19 @@
     @media only screen and (max-width: variables.$mobileMaxWidth)
         flex-wrap: wrap
 
-// Tile variant: owner controls over the cover, top-right (MediaTile `top` band)
+// Tile variant, MediaTile `top` band: the category icon top-left, owner controls top-right
+.tileTop
+    display: flex
+    align-items: flex-start
+    gap: 8px
+
+.tileCategory
+    pointer-events: auto
+    // Lifts the icon off light covers
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3)
+
 .tileActions
     display: flex
     justify-content: flex-end
     gap: 4px
+    margin-left: auto
