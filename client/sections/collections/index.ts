@@ -1,6 +1,4 @@
 export { AddPlacesDialog } from './add-places-dialog'
-export { AddToCollectionButton } from './add-to-collection-button'
-export { AddToCollectionModal } from './add-to-collection-modal'
 export { CollectionCard } from './collection-card'
 export { CollectionDescription } from './collection-description'
 export { CollectionHeader } from './collection-header'

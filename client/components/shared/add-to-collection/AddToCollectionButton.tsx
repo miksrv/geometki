@@ -6,10 +6,11 @@ import { useTranslation } from 'next-i18next/pages'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 
-import { AddToCollectionModal } from '../add-to-collection-modal'
+import { AddToCollectionModal } from './AddToCollectionModal'
 
 interface AddToCollectionButtonProps extends Omit<ButtonProps, 'onClick' | 'label' | 'icon'> {
     placeId?: string
+    hideLabel?: boolean
 }
 
 /**
@@ -18,6 +19,7 @@ interface AddToCollectionButtonProps extends Omit<ButtonProps, 'onClick' | 'labe
  */
 export const AddToCollectionButton: React.FC<AddToCollectionButtonProps> = ({
     placeId,
+    hideLabel,
     mode = 'secondary',
     size = 'medium',
     ...props
@@ -28,6 +30,8 @@ export const AddToCollectionButton: React.FC<AddToCollectionButtonProps> = ({
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const [open, setOpen] = useState(false)
+
+    const label = t('collections_add-to-collection-button', { defaultValue: 'В коллекцию' })
 
     const handleClick = (event: React.MouseEvent) => {
         event.stopPropagation()
@@ -46,7 +50,8 @@ export const AddToCollectionButton: React.FC<AddToCollectionButtonProps> = ({
                 mode={mode}
                 size={size}
                 icon={'Layers'}
-                label={t('collections_add-to-collection-button', { defaultValue: 'В коллекцию' })}
+                label={hideLabel ? undefined : label}
+                tooltip={hideLabel ? label : props.tooltip}
                 disabled={!placeId || props.disabled}
                 onClick={handleClick}
             />

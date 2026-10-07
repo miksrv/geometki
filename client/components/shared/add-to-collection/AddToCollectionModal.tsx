@@ -11,7 +11,7 @@ import { IMG_HOST } from '@/config/env'
 import { getErrorMessage } from '@/utils/api'
 import { COLLECTION_TITLE_MAX_LENGTH } from '@/utils/helpers'
 
-import styles from '../styles.module.sass'
+import styles from './styles.module.sass'
 
 interface AddToCollectionModalProps {
     placeId?: string
