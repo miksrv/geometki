@@ -1,4 +1,5 @@
 import React from 'react'
+import { Tooltip } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
@@ -32,13 +33,14 @@ export const CopyCoordinates: React.FC<CopyCoordinatesProps> = ({ lat, lon, onCo
     }
 
     return (
-        <a
-            href={'#'}
-            rel={'nofollow'}
-            title={t('copy-to-clipboard')}
-            onClick={handleClick}
-        >
-            {convertDMS(lat, lon)}
-        </a>
+        <Tooltip content={t('copy-to-clipboard')}>
+            <a
+                href={'#'}
+                rel={'nofollow'}
+                onClick={handleClick}
+            >
+                {convertDMS(lat, lon)}
+            </a>
+        </Tooltip>
     )
 }

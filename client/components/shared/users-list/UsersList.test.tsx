@@ -25,7 +25,9 @@ jest.mock('simple-react-ui-kit', () => ({
             {children}
         </div>
     ),
-    Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
+    Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Tooltip: ({ children }: any) => children
 }))
 
 jest.mock('next/image', () => {

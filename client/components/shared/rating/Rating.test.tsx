@@ -6,7 +6,9 @@ import { Rating } from './Rating'
 
 jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: string[]) => args.filter(Boolean).join(' '),
-    Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
+    Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Tooltip: ({ children }: any) => children
 }))
 
 describe('Rating', () => {

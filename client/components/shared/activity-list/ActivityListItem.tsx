@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { cn, Icon } from 'simple-react-ui-kit'
+import { cn, Icon, Tooltip } from 'simple-react-ui-kit'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
@@ -83,15 +84,16 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
                     )}
                     {actionText && <span className={styles.actionText}>{actionText}</span>}
                     {item.type === ApiModel.ActivityTypes.Edit && !!item.place?.difference && (
-                        <span
-                            className={cn(
-                                styles.diffBadge,
-                                item.place.difference > 0 ? styles.diffPos : styles.diffNeg
-                            )}
-                            title={t('activity-diff-chars', { defaultValue: 'Изменено символов' })}
-                        >
-                            {item.place.difference > 0 ? `+${item.place.difference}` : item.place.difference}
-                        </span>
+                        <Tooltip content={t('activity-diff-chars', { defaultValue: 'Изменено символов' })}>
+                            <span
+                                className={cn(
+                                    styles.diffBadge,
+                                    item.place.difference > 0 ? styles.diffPos : styles.diffNeg
+                                )}
+                            >
+                                {item.place.difference > 0 ? `+${item.place.difference}` : item.place.difference}
+                            </span>
+                        </Tooltip>
                     )}
                     {item.type === ApiModel.ActivityTypes.Rating && !!item.rating?.value && (
                         <Rating
@@ -134,7 +136,10 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
 
             {!compact && !!item.views && (
                 <div className={styles.viewCounter}>
-                    <Icon name={'Eye'} />
+                    <Icon
+                        name={'Eye'}
+                        tooltip={t('views', { defaultValue: 'Просмотров' })}
+                    />
                     {item.views}
                 </div>
             )}
@@ -165,9 +170,11 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
                                         }}
                                         aria-label={`${t('photo', { defaultValue: 'Фото' })} ${i + 1}`}
                                     >
-                                        <img
+                                        <Image
                                             src={`${IMG_HOST}${photo.preview}`}
                                             alt={''}
+                                            width={64}
+                                            height={64}
                                             className={styles.photoThumb}
                                         />
                                         {i === 2 && extraCount > 0 && (
@@ -189,9 +196,11 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
                                 className={styles.photoThumbBtn}
                                 title={item.place?.title}
                             >
-                                <img
+                                <Image
                                     src={`${IMG_HOST}${coverPreview}`}
                                     alt={item.place?.title ?? ''}
+                                    width={64}
+                                    height={64}
                                     className={styles.photoThumb}
                                     onError={(e) => {
                                         e.currentTarget.parentElement?.setAttribute('style', 'display:none')
@@ -236,9 +245,11 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
                                 }}
                                 aria-label={`${t('photo', { defaultValue: 'Фото' })} ${i + 1}`}
                             >
-                                <img
+                                <Image
                                     src={`${IMG_HOST}${photo.preview}`}
                                     alt={''}
+                                    width={80}
+                                    height={80}
                                     className={styles.photoThumb}
                                 />
                             </button>
@@ -261,9 +272,11 @@ export const ActivityListItem: React.FC<ActivityListItemProps> = ({ item, compac
                         className={styles.photoThumbBtn}
                         title={item.place?.title}
                     >
-                        <img
+                        <Image
                             src={`${IMG_HOST}${coverPreview}`}
                             alt={item.place?.title ?? ''}
+                            width={80}
+                            height={80}
                             className={styles.photoThumb}
                             onError={(e) => {
                                 e.currentTarget.closest('div')!.style.display = 'none'

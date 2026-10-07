@@ -41,7 +41,7 @@ export const ImageSlide: React.FC<ImageSlideProps> = ({ slide, offset, rect }) =
                 fill
                 alt=''
                 src={slide.src}
-                loading='eager'
+                loading={offset === 0 ? 'eager' : 'lazy'}
                 draggable={false}
                 placeholder={slide.blurDataURL ? 'blur' : undefined}
                 style={{

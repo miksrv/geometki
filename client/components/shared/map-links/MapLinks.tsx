@@ -1,4 +1,5 @@
 import React from 'react'
+import { Tooltip } from 'simple-react-ui-kit'
 
 import Image, { StaticImageData } from 'next/image'
 import Link from 'next/link'
@@ -89,21 +90,25 @@ interface ServiceMapLinkProps {
 }
 
 const ServiceMapLink: React.FC<ServiceMapLinkProps> = ({ link, image, title, caption, showTitle }) => (
-    <Link
-        className={styles.mapLink}
-        color={'inherit'}
-        target={'_blank'}
-        title={`${title ? `${title} ` : ''}${caption}`}
-        href={link}
+    <Tooltip
+        content={`${title ? `${title} ` : ''}${caption}`}
+        disabled={showTitle}
     >
-        {image && (
-            <Image
-                src={image.src}
-                width={14}
-                height={14}
-                alt={caption || ''}
-            />
-        )}
-        {showTitle && caption}
-    </Link>
+        <Link
+            className={styles.mapLink}
+            color={'inherit'}
+            target={'_blank'}
+            href={link}
+        >
+            {image && (
+                <Image
+                    src={image.src}
+                    width={14}
+                    height={14}
+                    alt={caption || ''}
+                />
+            )}
+            {showTitle && caption}
+        </Link>
+    </Tooltip>
 )

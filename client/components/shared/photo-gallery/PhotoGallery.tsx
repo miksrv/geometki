@@ -157,6 +157,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                             mode={'secondary'}
                             size={'small'}
                             icon={'VerticalDots'}
+                            tooltip={t('photo-actions', { defaultValue: 'Действия с фотографией' })}
                         />
                     }
                 >

@@ -72,28 +72,40 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
         <>
             {!!place.rating && (
                 <span className={statClassName}>
-                    <Icon name={'StarEmpty'} />
+                    <Icon
+                        name={'StarEmpty'}
+                        tooltip={t('rating', { defaultValue: 'Рейтинг' })}
+                    />
                     {addDecimalPoint(place.rating)}
                 </span>
             )}
 
             {distanceText && (
                 <span className={statClassName}>
-                    <Icon name={'Ruler'} />
+                    <Icon
+                        name={'Ruler'}
+                        tooltip={t('sort_distance', { defaultValue: 'Расстояние' })}
+                    />
                     {distanceText}
                 </span>
             )}
 
             {!!place.views && (
                 <span className={statClassName}>
-                    <Icon name={'Eye'} />
+                    <Icon
+                        name={'Eye'}
+                        tooltip={t('views', { defaultValue: 'Просмотров' })}
+                    />
                     {numberFormatter(place.views)}
                 </span>
             )}
 
             {!!place.photos && (
                 <span className={statClassName}>
-                    <Icon name={'Camera'} />
+                    <Icon
+                        name={'Camera'}
+                        tooltip={t('photos-uploaded', { defaultValue: 'Фотографий' })}
+                    />
                     {place.photos}
                 </span>
             )}

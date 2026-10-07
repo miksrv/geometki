@@ -20,10 +20,11 @@ export const PlacesList: React.FC<PlacesListProps> = ({ places, loading }) => {
         <>
             {!!places?.length && (
                 <MediaTileGrid>
-                    {places.map((place) => (
+                    {places.map((place, index) => (
                         <PlaceCard
                             key={place.id}
                             place={place}
+                            priority={index < 3}
                         />
                     ))}
                 </MediaTileGrid>
