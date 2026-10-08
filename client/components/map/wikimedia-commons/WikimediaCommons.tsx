@@ -1,10 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Marker, Tooltip, useMapEvents } from 'react-leaflet'
 
+import { useTranslation } from 'next-i18next/pages'
+
 import { ApiModel } from '@/api'
 import { APIWikimediaCommons, RequestGetByBounds } from '@/api/apiWikimediaCommons'
+import { externalKey } from '@/components/shared/nearby-photos/utils'
 
 import { useReportLayerStatus } from '../layers-status'
+import { linkedPhotoStyles, linkedPlacesTitle, useLinkedExternalPhotos } from '../linked-photos'
 import { MapAdditionalLayersEnum } from '../types'
 
 import { WIKIMEDIA_COMMONS_LIMIT } from './constants'
@@ -15,6 +19,7 @@ interface WikimediaCommonsProps {
 }
 
 export const WikimediaCommons: React.FC<WikimediaCommonsProps> = ({ onPhotoClick }) => {
+    const { t } = useTranslation()
     const [params, setParams] = useState<RequestGetByBounds | null>(null)
 
     const map = useMapEvents({
@@ -39,6 +44,8 @@ export const WikimediaCommons: React.FC<WikimediaCommonsProps> = ({ onPhotoClick
         loading: !params || isFetching
     })
     const icon = useMemo(() => createWikimediaIcon(), [])
+    const linkedIcon = useMemo(() => createWikimediaIcon(linkedPhotoStyles.linked), [])
+    const linked = useLinkedExternalPhotos('wikimedia')
 
     if (!photos.length) {
         return null
@@ -46,22 +53,35 @@ export const WikimediaCommons: React.FC<WikimediaCommonsProps> = ({ onPhotoClick
 
     return (
         <>
-            {photos.map((photo, index) => (
-                <Marker
-                    key={photo.pageid}
-                    position={[photo.lat, photo.lon]}
-                    icon={icon}
-                    // Every photo of the visible area goes to the lightbox, starting from the clicked one
-                    eventHandlers={{ click: () => onPhotoClick?.(photos, index) }}
-                >
-                    <Tooltip
-                        direction={'top'}
-                        offset={[0, -12]}
+            {photos.map((photo, index) => {
+                const link = linked.get(externalKey('wikimedia', photo.pageid))
+
+                return (
+                    <Marker
+                        key={`${photo.pageid}${link ? '-linked' : ''}`}
+                        position={[photo.lat, photo.lon]}
+                        icon={link ? linkedIcon : icon}
+                        // Every photo of the visible area goes to the lightbox, starting from the clicked one
+                        eventHandlers={{ click: () => onPhotoClick?.(photos, index) }}
                     >
-                        {photo.title}
-                    </Tooltip>
-                </Marker>
-            ))}
+                        <Tooltip
+                            direction={'top'}
+                            offset={[0, -12]}
+                        >
+                            {photo.title}
+                            {link && (
+                                <>
+                                    <br />
+                                    {t('linked-to', {
+                                        defaultValue: 'Добавлено к: {{places}}',
+                                        places: linkedPlacesTitle(link)
+                                    })}
+                                </>
+                            )}
+                        </Tooltip>
+                    </Marker>
+                )
+            })}
         </>
     )
 }

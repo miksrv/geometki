@@ -572,5 +572,14 @@
     "osm-candidates_unlinked": "Связь с геометкой удалена",
     "osm-candidates_rejected": "Объект скрыт с карты",
     "osm-candidates_reject-confirm": "Скрыть «{{title}}» с карты навсегда? Повторный сбор данных его не вернёт.",
-    "osm-candidates_reject-action": "Скрыть"
+    "osm-candidates_reject-action": "Скрыть",
+    "linked-to": "Добавлено к: {{places}}",
+    "nearby-photos_all": "Все",
+    "nearby-photos_empty": "Рядом с этим местом фотографий не нашлось",
+    "nearby-photos_link": "Добавить в фотографии места",
+    "nearby-photos_summary": "Добавлено: {{count}} · до {{radius}}",
+    "nearby-photos_title": "Фото рядом",
+    "nearby-photos_unlink": "Убрать из фотографий места",
+    "nearby-photos_wider": "Искать дальше (до {{radius}})",
+    "nearby-photos_zoom": "Посмотреть"
 }

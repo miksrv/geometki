@@ -113,6 +113,9 @@ jest.mock('@/api', () => ({
             .mockReturnValue([jest.fn(), { data: undefined, isLoading: false, error: undefined }]),
         usePhotoRotateItemMutation: jest
             .fn()
+            .mockReturnValue([jest.fn(), { data: undefined, isLoading: false, error: undefined }]),
+        useExternalPhotosDeleteLinkMutation: jest
+            .fn()
             .mockReturnValue([jest.fn(), { data: undefined, isLoading: false, error: undefined }])
     },
     ApiModel: {}
@@ -288,6 +291,30 @@ describe('PhotoGallery', () => {
             expect(menu).toBeInTheDocument()
             expect(screen.getByRole('button', { name: 'Повернуть' })).toHaveAttribute('type', 'button')
             expect(screen.getByRole('button', { name: 'Удалить' })).toHaveAttribute('type', 'button')
+        })
+
+        it('offers only removal for a linked Wikimedia Commons photo, which cannot be rotated', () => {
+            const linked: ApiModel.Photo = {
+                external: {
+                    externalId: '10',
+                    source: 'wikimedia',
+                    url: 'https://commons.wikimedia.org/wiki/File:A.jpg'
+                },
+                full: 'https://upload.wikimedia.org/a.jpg',
+                height: 600,
+                id: 'ext1',
+                preview: 'https://upload.wikimedia.org/a_preview.jpg',
+                width: 800
+            }
+
+            renderWithStore(<PhotoGallery photos={[linked]} />, {
+                auth: { isAuth: true, user: { id: 'u1', name: 'Alice' } }
+            })
+
+            expect(screen.queryByRole('button', { name: 'Повернуть' })).not.toBeInTheDocument()
+            expect(screen.getByRole('button', { name: 'Удалить' })).toBeInTheDocument()
+            // An external image is linked as is, without our image host
+            expect(screen.getByRole('link')).toHaveAttribute('href', 'https://upload.wikimedia.org/a.jpg')
         })
 
         it('does not render action buttons when hideActions is true', () => {

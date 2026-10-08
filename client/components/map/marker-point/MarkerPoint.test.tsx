@@ -110,8 +110,17 @@ jest.mock('@/utils/helpers', () => ({
 }))
 
 jest.mock('simple-react-ui-kit', () => ({
+    Button: ({ tooltip, onClick, disabled }: any) => (
+        <button
+            title={tooltip}
+            disabled={disabled}
+            onClick={onClick}
+        />
+    ),
     Skeleton: () => <div data-testid={'skeleton'} />
 }))
+
+jest.mock('next/dynamic', () => () => () => null)
 
 jest.mock('@/config/constants', () => ({
     LOCAL_STORAGE: {

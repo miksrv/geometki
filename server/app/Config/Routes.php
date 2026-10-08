@@ -69,6 +69,16 @@ $routes->group('photos', static function ($routes) {
     $routes->options('rotate/temporary/(:any)', static function () {});
 });
 
+/** External Photos Controller: Wikimedia Commons and PastVu photos linked to places **/
+$routes->group('external-photos', static function ($routes) {
+    $routes->get('/', 'ExternalPhotos::list');
+    $routes->post('/', 'ExternalPhotos::create');
+    $routes->delete('(:alphanum)', 'ExternalPhotos::delete/$1');
+
+    $routes->options('/', static function () {});
+    $routes->options('(:alphanum)', static function () {});
+});
+
 /** Notifications Controller **/
 $routes->group('notifications', static function ($routes) {
     $routes->get('updates', 'Notifications::updates');

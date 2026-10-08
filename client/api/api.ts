@@ -417,6 +417,36 @@ export const API = createApi({
             transformErrorResponse: extractErrorMessage
         }),
 
+        /** Controller: ExternalPhotos (Wikimedia Commons and PastVu photos linked to places) **/
+        externalPhotosGetList: builder.query<ApiType.ExternalPhotos.ListResponse, ApiType.ExternalPhotos.ListRequest>({
+            providesTags: (result, error, arg) => [{ id: arg.place ?? 'bounds', type: 'ExternalPhotos' }],
+            query: (params) => `external-photos${encodeQueryData(params)}`
+        }),
+        externalPhotosPostLink: builder.mutation<
+            ApiType.ExternalPhotos.CreateResponse,
+            ApiType.ExternalPhotos.CreateRequest
+        >({
+            invalidatesTags: (res, err, arg) => [
+                { id: arg.placeId, type: 'ExternalPhotos' },
+                { id: 'bounds', type: 'ExternalPhotos' },
+                { id: arg.placeId, type: 'Photos' }
+            ],
+            query: (body) => ({ body, method: 'POST', url: 'external-photos' }),
+            transformErrorResponse: extractErrorMessage
+        }),
+        externalPhotosDeleteLink: builder.mutation<
+            ApiType.ExternalPhotos.DeleteResponse,
+            ApiType.ExternalPhotos.DeleteRequest
+        >({
+            invalidatesTags: (res, err, arg) => [
+                { id: arg.placeId, type: 'ExternalPhotos' },
+                { id: 'bounds', type: 'ExternalPhotos' },
+                { id: arg.placeId, type: 'Photos' }
+            ],
+            query: ({ id }) => ({ method: 'DELETE', url: `external-photos/${id}` }),
+            transformErrorResponse: extractErrorMessage
+        }),
+
         /** Controller: Photos **/
         photoDeleteItem: builder.mutation<ApiType.Photos.DeleteResponse, ApiType.Photos.DeleteRequest>({
             query: (params) => ({
@@ -644,6 +674,7 @@ export const API = createApi({
         'CollectionMembership',
         'Collections',
         'Comments',
+        'ExternalPhotos',
         'Notifications',
         'OsmCandidates',
         'Photos',

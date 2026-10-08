@@ -38,13 +38,17 @@ export const yearToColor = (year?: number): string => {
     return `hsl(${hue}, 75%, 50%)`
 }
 
-export const createDirectionIcon = (dir?: string, year?: number): Leaflet.DivIcon => {
+const markerClass = (className?: string): string =>
+    className ? `${styles.pastuvMarker} ${className}` : styles.pastuvMarker
+
+/** @param className marks the photos linked to our places */
+export const createDirectionIcon = (dir?: string, year?: number, className?: string): Leaflet.DivIcon => {
     const degrees = dir ? (DIR_TO_DEGREES[dir.toLowerCase()] ?? undefined) : undefined
     const hasDir = degrees !== undefined
     const color = yearToColor(year)
 
     return Leaflet.divIcon({
-        className: styles.pastuvMarker,
+        className: markerClass(className),
         html: `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
             ${hasDir ? `<g transform="rotate(${degrees}, 16, 16)"><polygon points="16,2 12,14 20,14" fill="${color}" fill-opacity="0.9" stroke="white" stroke-width="1"/></g>` : ''}
             <circle cx="16" cy="16" r="5" fill="${color}" stroke="white" stroke-width="1.5"/>
@@ -54,9 +58,9 @@ export const createDirectionIcon = (dir?: string, year?: number): Leaflet.DivIco
     })
 }
 
-export const createThumbnailIcon = (file: string, year?: number): Leaflet.DivIcon =>
+export const createThumbnailIcon = (file: string, year?: number, className?: string): Leaflet.DivIcon =>
     Leaflet.divIcon({
-        className: styles.pastuvMarker,
+        className: markerClass(className),
         html: `<img src="${IMG_HOST}/h/${file}" class="${styles.historicalPhoto}" style="border-color:${yearToColor(year)}" />`,
         iconAnchor: [25, 16],
         iconSize: [50, 32]

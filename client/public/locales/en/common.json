@@ -571,5 +571,14 @@
     "osm-candidates_unlinked": "The link to the geotag is removed",
     "osm-candidates_rejected": "The object is hidden from the map",
     "osm-candidates_reject-confirm": "Hide “{{title}}” from the map for good? Collecting the data again will not bring it back.",
-    "osm-candidates_reject-action": "Hide"
+    "osm-candidates_reject-action": "Hide",
+    "linked-to": "Added to: {{places}}",
+    "nearby-photos_all": "All",
+    "nearby-photos_empty": "No photos found near this place",
+    "nearby-photos_link": "Add to the place photos",
+    "nearby-photos_summary": "Added: {{count}} · within {{radius}}",
+    "nearby-photos_title": "Photos nearby",
+    "nearby-photos_unlink": "Remove from the place photos",
+    "nearby-photos_wider": "Search farther (within {{radius}})",
+    "nearby-photos_zoom": "View"
 }

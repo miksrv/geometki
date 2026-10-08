@@ -9,6 +9,8 @@ export type WikimediaImageInfo = {
     thumbwidth?: number
     thumbheight?: number
     descriptionurl?: string
+    /** BITMAP and DRAWING are pictures; AUDIO, VIDEO, OFFICE and others are not */
+    mediatype?: string
 }
 
 export type WikimediaPage = {
@@ -33,6 +35,13 @@ export type RequestGetByBounds = {
     west: number
 }
 
+export type RequestGetNearby = {
+    lat: number
+    lon: number
+    /** Meters, up to 10 000 */
+    radius: number
+}
+
 export const APIWikimediaCommons = createApi({
     baseQuery: fetchBaseQuery({
         baseUrl: 'https://commons.wikimedia.org/w/api.php'
@@ -51,6 +60,26 @@ export const APIWikimediaCommons = createApi({
                     ggslimit: 50,
                     ggsnamespace: 6,
                     iiprop: 'url|size',
+                    iiurlwidth: 1280,
+                    origin: '*',
+                    prop: 'imageinfo|coordinates'
+                },
+                url: ''
+            })
+        }),
+        // The files around a point, nearest first: the photos that can be linked to a place
+        getNearby: builder.query<ResponseGetByBounds, RequestGetNearby>({
+            query: ({ lat, lon, radius }) => ({
+                params: {
+                    action: 'query',
+                    colimit: 'max',
+                    format: 'json',
+                    generator: 'geosearch',
+                    ggscoord: `${lat}|${lon}`,
+                    ggslimit: 50,
+                    ggsnamespace: 6,
+                    ggsradius: radius,
+                    iiprop: 'url|size|mediatype',
                     iiurlwidth: 1280,
                     origin: '*',
                     prop: 'imageinfo|coordinates'

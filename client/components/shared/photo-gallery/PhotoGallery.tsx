@@ -10,8 +10,9 @@ import { API, ApiModel } from '@/api'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import { ImageUploader } from '@/components/ui'
-import { IMG_HOST } from '@/config/env'
 import { getErrorMessage } from '@/utils/api'
+
+import { isAbsoluteUrl, resolveImageUrl } from '../photo-lightbox/utils'
 
 import styles from './styles.module.sass'
 
@@ -57,6 +58,9 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         API.usePhotoDeleteItemMutation()
     const [rotatePhoto, { data: rotateData, isLoading: rotateLoading, error: rotateError }] =
         API.usePhotoRotateItemMutation()
+    // Linked Wikimedia Commons and PastVu photos are removed from the place, the images stay in the source
+    const [unlinkPhoto, { data: unlinkData, isLoading: unlinkLoading, error: unlinkError }] =
+        API.useExternalPhotosDeleteLinkMutation()
 
     const [localPhotos, setLocalPhotos] = useState<ApiModel.Photo[]>(photos ?? [])
     const [photoLoadingID, setPhotoLoadingID] = useState<string>()
@@ -72,7 +76,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     const isEmptyPhotoList = !localPhotos.length && !uploadingPhotos?.length
 
     const handleRemoveClick = (photoId: string) => {
-        if (isAuth && !deleteLoading && !hideActions) {
+        if (isAuth && !deleteLoading && !unlinkLoading && !hideActions) {
             setPhotoLoadingID(photoId)
             setPhotoDeleteID(photoId)
         }
@@ -100,24 +104,35 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     }, [rotateData])
 
     useEffect(() => {
-        if (deleteError || rotateError) {
+        if (deleteError || rotateError || unlinkError) {
             void dispatch(
                 Notify({
                     id: 'actionPhotoError',
                     title: '',
-                    message: getErrorMessage(deleteError) || getErrorMessage(rotateError),
+                    message:
+                        getErrorMessage(deleteError) || getErrorMessage(rotateError) || getErrorMessage(unlinkError),
                     type: 'error'
                 })
             )
         }
-    }, [deleteError, rotateError])
+    }, [deleteError, rotateError, unlinkError])
 
-    useEffect(() => {
-        const updatedLocalPhotos = localPhotos.filter(({ id }) => id !== deleteData?.id)
+    const removeLocalPhoto = (photoId?: string) => {
+        if (!photoId) {
+            return
+        }
+
+        const updatedLocalPhotos = localPhotos.filter(({ id }) => id !== photoId)
 
         setLocalPhotos(updatedLocalPhotos)
         onPhotoDelete?.(updatedLocalPhotos)
-    }, [deleteData])
+    }
+
+    // Separate effects: a mutation keeps its last result, so one shared id would repeat
+    // the previous deletion instead of the new unlink
+    useEffect(() => removeLocalPhoto(deleteData?.id), [deleteData])
+
+    useEffect(() => removeLocalPhoto(unlinkData?.id), [unlinkData])
 
     useEffect(() => {
         setLocalPhotos(photos ?? [])
@@ -136,7 +151,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
 
             <Link
                 className={styles.link}
-                href={`${IMG_HOST}${photo.full}`}
+                href={resolveImageUrl(photo.full) ?? ''}
                 title={`${photo.title}. ${t('photo', { defaultValue: 'Фотография' })} ${listIndex + 1}`}
                 onClick={(event) => {
                     event.preventDefault()
@@ -144,7 +159,9 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 }}
             >
                 <Image
-                    src={`${IMG_HOST}${photo.preview}`}
+                    src={resolveImageUrl(photo.preview) ?? ''}
+                    // External hosts (Wikimedia Commons, PastVu) are not allowed for the image optimizer
+                    unoptimized={isAbsoluteUrl(photo.preview)}
                     alt={`${photo.title}. ${t('photo', { defaultValue: 'Фотография' })} ${listIndex + 1}`}
                     quality={75}
                     width={700}
@@ -169,16 +186,18 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                     }
                 >
                     <ul className={'contextListMenu'}>
-                        <li>
-                            <button
-                                type={'button'}
-                                disabled={!!photoLoadingID}
-                                onClick={() => handleRotateClick(photo.id, photo?.placeId === 'temporary')}
-                            >
-                                <Icon name={'Rotate'} />
-                                {t('to-turn', { defaultValue: 'Повернуть' })}
-                            </button>
-                        </li>
+                        {!photo.external && (
+                            <li>
+                                <button
+                                    type={'button'}
+                                    disabled={!!photoLoadingID}
+                                    onClick={() => handleRotateClick(photo.id, photo?.placeId === 'temporary')}
+                                >
+                                    <Icon name={'Rotate'} />
+                                    {t('to-turn', { defaultValue: 'Повернуть' })}
+                                </button>
+                            </li>
+                        )}
                         <li>
                             <button
                                 type={'button'}
@@ -291,9 +310,13 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                         setPhotoLoadingID(undefined)
                     }}
                     onConfirm={async () => {
-                        const photo = photos?.find(({ id }) => id === photoDeleteID)
+                        const photo = localPhotos.find(({ id }) => id === photoDeleteID)
 
-                        if (photo) {
+                        if (photo?.external) {
+                            await unlinkPhoto({ id: photo.id, placeId: photo.placeId })
+                            setPhotoDeleteID(undefined)
+                            setPhotoLoadingID(undefined)
+                        } else if (photo) {
                             await deletePhoto({ id: photo?.id, temporary: photo?.placeId === 'temporary' })
                             setPhotoDeleteID(undefined)
                             setPhotoLoadingID(undefined)

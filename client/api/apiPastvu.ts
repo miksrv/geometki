@@ -34,6 +34,19 @@ export type ResponseGetByBounds = {
     }
 }
 
+export type RequestGetNearest = {
+    geo: [number, number]
+    /** Meters */
+    distance: number
+    limit?: number
+}
+
+export type ResponseGetNearest = {
+    result: {
+        photos: PastvuPhoto[]
+    }
+}
+
 export const APIPastvu = createApi({
     baseQuery: fetchBaseQuery({
         baseUrl: 'https://api.pastvu.com/api2'
@@ -41,6 +54,10 @@ export const APIPastvu = createApi({
     endpoints: (builder) => ({
         getByBounds: builder.query<ResponseGetByBounds, RequestGetByBounds>({
             query: (params) => `?method=photo.getByBounds&params=${encodeURIComponent(JSON.stringify(params))}`
+        }),
+        // The photos around a point, nearest first: the photos that can be linked to a place
+        getNearest: builder.query<ResponseGetNearest, RequestGetNearest>({
+            query: (params) => `?method=photo.giveNearestPhotos&params=${encodeURIComponent(JSON.stringify(params))}`
         })
     }),
     reducerPath: 'APIPastvu'

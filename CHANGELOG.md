@@ -10,6 +10,7 @@
 - Map: remembers the map style, layers, category filter and the "Places to explore" panel between visits
 - Map: zoom level between the zoom buttons; the category filter button shows how many categories are selected
 - Map: a status panel for the PastVu, Wikimedia and Wikipedia layers shows whether each is loading and how many objects it has in the area
+- Places: add Wikimedia Commons and PastVu photos to a place with "Photos nearby"; they appear in the place photos with the author and licence, and the map marks the ones already added
 
 ### Patch Changes
 

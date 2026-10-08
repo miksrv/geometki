@@ -44,6 +44,12 @@ jest.mock('leaflet', () => ({
     divIcon: jest.fn().mockReturnValue({})
 }))
 
+jest.mock('../linked-photos', () => ({
+    linkedPhotoStyles: { linked: 'linked' },
+    linkedPlacesTitle: jest.fn(),
+    useLinkedExternalPhotos: jest.fn().mockReturnValue(new Map())
+}))
+
 jest.mock('@/api/apiPastvu', () => ({
     APIPastvu: {
         useGetByBoundsQuery: jest.fn().mockReturnValue({ data: undefined })

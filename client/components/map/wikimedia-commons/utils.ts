@@ -16,11 +16,12 @@ export const buildParams = (bounds: LatLngBounds): RequestGetByBounds => ({
 
 export const cleanTitle = (title: string): string => title.replace(/^File:/, '').replace(/_/g, ' ')
 
-export const createWikimediaIcon = (): Leaflet.DivIcon => {
+/** @param className marks the photos linked to our places */
+export const createWikimediaIcon = (className?: string): Leaflet.DivIcon => {
     const color = WIKIMEDIA_COMMONS_COLOR
 
     return Leaflet.divIcon({
-        className: styles.wikimediaMarker,
+        className: className ? `${styles.wikimediaMarker} ${className}` : styles.wikimediaMarker,
         // Same look as the category icons: a rounded square with a white glyph (a camera here)
         html: `<svg width="20" height="20" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
             <rect width="128" height="128" rx="14" fill="${color}"/>

@@ -10,6 +10,7 @@ use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
 use App\Models\PhotosModel;
+use App\Models\PlacesExternalPhotosModel;
 use App\Models\PlacesModel;
 use App\Models\UsersModel;
 use CodeIgniter\Files\File;
@@ -52,10 +53,16 @@ class Photos extends ResourceController
 
         $photosData = $this->makeListFilters()->orderBy('photos.created_at')->findAll(min($limit, 40), $offset);
 
+        // The gallery of a place also shows the Wikimedia Commons and PastVu photos linked to it.
+        // All of them come with the first page (the place page loads one page): `count` includes them
+        // on every page, the later pages hold uploaded photos only
+        $externalPhotos = $this->placeExternalPhotos($offset, $locale);
+        $externalCount  = $this->placeExternalPhotosCount();
+
         if (empty($photosData)) {
             return $this->respond([
-                'items' => $photosData,
-                'count' => 0
+                'items' => $externalPhotos,
+                'count' => $this->makeListFilters()->countAllResults() + $externalCount
             ]);
         }
 
@@ -85,10 +92,65 @@ class Photos extends ResourceController
             );
         }
 
+        $items = $photosData;
+
+        if ($externalPhotos) {
+            $items = array_merge(array_map(static fn ($photo) => $photo->toArray(), $photosData), $externalPhotos);
+
+            // Newest first, the same order as the uploaded photos
+            usort($items, static fn ($a, $b) => $b['created'] <=> $a['created']);
+        }
+
         return $this->respond([
-            'items' => $photosData,
-            'count' => $this->makeListFilters()->countAllResults()
+            'items' => $items,
+            'count' => $this->makeListFilters()->countAllResults() + $externalCount
         ]);
+    }
+
+    /**
+     * How many photos are linked to the place from the `place` filter
+     *
+     * @return int
+     */
+    protected function placeExternalPhotosCount(): int
+    {
+        $place  = $this->request->getGet('place', FILTER_SANITIZE_SPECIAL_CHARS);
+        $author = $this->request->getGet('author', FILTER_SANITIZE_SPECIAL_CHARS);
+
+        if (!$place || $author) {
+            return 0;
+        }
+
+        return (new PlacesExternalPhotosModel())->where('place_id', $place)->countAllResults();
+    }
+
+    /**
+     * Linked photos of the place from the `place` filter, for the first page of its gallery
+     *
+     * @param int $offset
+     * @param string $locale
+     * @return array
+     */
+    protected function placeExternalPhotos(int $offset, string $locale): array
+    {
+        $place  = $this->request->getGet('place', FILTER_SANITIZE_SPECIAL_CHARS);
+        $author = $this->request->getGet('author', FILTER_SANITIZE_SPECIAL_CHARS);
+
+        if (!$place || $author || $offset > 0) {
+            return [];
+        }
+
+        $rows = (new PlacesExternalPhotosModel())->where('place_id', $place)->orderBy('created_at', 'DESC')->findAll();
+
+        if (!$rows) {
+            return [];
+        }
+
+        $content = new PlacesContent();
+        $content->translate([$place]);
+        $title = $content->title($place);
+
+        return array_map(static fn ($row) => PlacesExternalPhotosModel::formatAsPhoto($row, $title), $rows);
     }
 
     /**

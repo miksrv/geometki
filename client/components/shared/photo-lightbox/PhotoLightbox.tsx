@@ -25,6 +25,45 @@ declare module 'yet-another-react-lightbox' {
     }
 }
 
+const SOURCE_NAMES: Record<ApiModel.PhotoExternalSource, string> = {
+    pastvu: 'PastVu',
+    wikimedia: 'Wikimedia Commons'
+}
+
+/** Credits of a linked Wikimedia Commons or PastVu photo: the author, the licence and the source page */
+const ExternalCredit: React.FC<{ external: ApiModel.PhotoExternal }> = ({ external }) => (
+    <div className={styles.credit}>
+        {(external.title || external.year) && (
+            <div className={styles.creditTitle}>
+                {external.title}
+                {external.year && !external.title?.includes(String(external.year)) ? ` (${external.year})` : ''}
+            </div>
+        )}
+        <div className={styles.creditLine}>
+            {external.author && <span>© {external.author}</span>}
+            {external.license &&
+                (external.licenseUrl ? (
+                    <a
+                        href={external.licenseUrl}
+                        target={'_blank'}
+                        rel={'noopener noreferrer'}
+                    >
+                        {external.license}
+                    </a>
+                ) : (
+                    <span>{external.license}</span>
+                ))}
+            <a
+                href={external.url}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+            >
+                {SOURCE_NAMES[external.source]}
+            </a>
+        </div>
+    </div>
+)
+
 interface PhotoLightboxProps {
     photos?: ApiModel.Photo[] | ApiModel.PhotoMark[]
     photoIndex?: number
@@ -51,18 +90,23 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
 
                 return {
                     alt: photo.title,
-                    description: photo.author && (
-                        <UserAvatar
-                            size={'medium'}
-                            showName={true}
-                            user={photo.author}
-                            className={styles.caption}
-                            caption={formatDate(
-                                photo.created?.date,
-                                t('date_time_format', { defaultValue: 'D MMMM YYYY, HH:mm' })
-                            )}
-                        />
-                    ),
+                    description:
+                        'external' in photo && photo.external ? (
+                            <ExternalCredit external={photo.external} />
+                        ) : (
+                            photo.author && (
+                                <UserAvatar
+                                    size={'medium'}
+                                    showName={true}
+                                    user={photo.author}
+                                    className={styles.caption}
+                                    caption={formatDate(
+                                        photo.created?.date,
+                                        t('date_time_format', { defaultValue: 'D MMMM YYYY, HH:mm' })
+                                    )}
+                                />
+                            )
+                        ),
                     height,
                     preview: resolveImageUrl(photo.preview),
                     src,

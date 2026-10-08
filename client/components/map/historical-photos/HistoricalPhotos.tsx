@@ -3,8 +3,10 @@ import { Marker, useMapEvents } from 'react-leaflet'
 
 import { ApiModel } from '@/api'
 import { APIPastvu, PastvuCluster, PastvuPhoto, RequestGetByBounds } from '@/api/apiPastvu'
+import { externalKey } from '@/components/shared/nearby-photos/utils'
 
 import { useReportLayerStatus } from '../layers-status'
+import { linkedPhotoStyles, linkedPlacesTitle, useLinkedExternalPhotos } from '../linked-photos'
 import { MapAdditionalLayersEnum } from '../types'
 
 import { THUMBNAIL_ZOOM } from './constants'
@@ -28,6 +30,7 @@ export const HistoricalPhotos: React.FC<HistoricalPhotosProps> = ({ onPhotoClick
     }, [])
 
     const { data, isFetching, isError } = APIPastvu.useGetByBoundsQuery(params!, { skip: !params })
+    const linked = useLinkedExternalPhotos('pastvu')
 
     // A cluster stands for several photos
     const photosCount =
@@ -66,22 +69,28 @@ export const HistoricalPhotos: React.FC<HistoricalPhotosProps> = ({ onPhotoClick
                 />
             ))}
 
-            {photos.map((photo, index) => (
-                <Marker
-                    key={`pastvu-photo-${photo.cid}`}
-                    position={[photo.geo[0], photo.geo[1]]}
-                    icon={
-                        zoom >= THUMBNAIL_ZOOM
-                            ? createThumbnailIcon(photo.file, photo.year)
-                            : createDirectionIcon(photo.dir, photo.year)
-                    }
-                    title={photo.title}
-                    alt={photo.title}
-                    eventHandlers={{
-                        click: () => onPhotoClick?.(allPhotoMarks, index)
-                    }}
-                />
-            ))}
+            {photos.map((photo, index) => {
+                const link = linked.get(externalKey('pastvu', photo.cid))
+                const className = link ? linkedPhotoStyles.linked : undefined
+                const places = linkedPlacesTitle(link)
+
+                return (
+                    <Marker
+                        key={`pastvu-photo-${photo.cid}${link ? '-linked' : ''}`}
+                        position={[photo.geo[0], photo.geo[1]]}
+                        icon={
+                            zoom >= THUMBNAIL_ZOOM
+                                ? createThumbnailIcon(photo.file, photo.year, className)
+                                : createDirectionIcon(photo.dir, photo.year, className)
+                        }
+                        title={places ? `${photo.title} → ${places}` : photo.title}
+                        alt={photo.title}
+                        eventHandlers={{
+                            click: () => onPhotoClick?.(allPhotoMarks, index)
+                        }}
+                    />
+                )
+            })}
         </>
     )
 }
