@@ -1,20 +1,26 @@
 import React, { useMemo, useState } from 'react'
 import { Marker, Popup } from 'react-leaflet'
 import Leaflet from 'leaflet'
-import { Skeleton } from 'simple-react-ui-kit'
+import { Button, Skeleton } from 'simple-react-ui-kit'
 
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
-import { useAppDispatch } from '@/app/store'
+import { useAppDispatch, useAppSelector } from '@/app/store'
 import { AddToCollectionButton, BookmarkButton, PlacePlate } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
 import { categoryImage } from '@/utils/categories'
 import { addDecimalPoint, buildPlaceUrl, numberFormatter } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
+
+const NearbyPhotosDialog = dynamic(
+    () => import('@/components/shared/nearby-photos').then((m) => ({ default: m.NearbyPhotosDialog })),
+    { ssr: false }
+)
 
 interface MarkerPointProps {
     place: ApiModel.PlaceMark
@@ -28,6 +34,9 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
     // Cached per place: reopening the same popup does not refetch the card
     const [getPlaceItem, { data: poiData }] = API.useLazyPoiGetItemQuery()
     const [bookmarkReady, setBookmarkReady] = useState(false)
+    const [nearbyPhotosOpen, setNearbyPhotosOpen] = useState(false)
+
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const placeMarkerIcon = useMemo(
         () =>
@@ -59,110 +68,133 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
     }
 
     return (
-        <Marker
-            position={[place.lat, place.lon]}
-            icon={placeMarkerIcon}
-            eventHandlers={{
-                click: placeClickHandler
-            }}
-        >
-            {place.id && (
-                <Popup
-                    autoClose={true}
-                    closeOnEscapeKey={true}
-                    autoPan={keepInView}
-                    keepInView={keepInView}
-                    className={styles.markerPointPopup}
-                >
-                    <div className={styles.content}>
-                        <Link
-                            href={buildPlaceUrl(place.id!, poiData?.slug)}
-                            title={poiData?.title}
-                        >
-                            {!poiData && <Skeleton />}
+        <>
+            <Marker
+                position={[place.lat, place.lon]}
+                icon={placeMarkerIcon}
+                eventHandlers={{
+                    click: placeClickHandler
+                }}
+            >
+                {place.id && (
+                    <Popup
+                        autoClose={true}
+                        closeOnEscapeKey={true}
+                        autoPan={keepInView}
+                        keepInView={keepInView}
+                        className={styles.markerPointPopup}
+                    >
+                        <div className={styles.content}>
+                            <Link
+                                href={buildPlaceUrl(place.id!, poiData?.slug)}
+                                title={poiData?.title}
+                            >
+                                {!poiData && <Skeleton />}
 
-                            {poiData?.cover && (
-                                <Image
-                                    className={styles.image}
-                                    src={`${IMG_HOST}${poiData.cover.preview}`}
-                                    alt={poiData.title || ''}
-                                    width={300}
-                                    height={220}
+                                {poiData?.cover && (
+                                    <Image
+                                        className={styles.image}
+                                        src={`${IMG_HOST}${poiData.cover.preview}`}
+                                        alt={poiData.title || ''}
+                                        width={300}
+                                        height={220}
+                                    />
+                                )}
+
+                                {poiData && !poiData.cover && (
+                                    <Image
+                                        className={styles.image}
+                                        src={'/images/no-image.svg'}
+                                        alt={poiData.title || ''}
+                                        width={300}
+                                        height={220}
+                                    />
+                                )}
+                            </Link>
+
+                            <div className={styles.actions}>
+                                <BookmarkButton
+                                    placeId={bookmarkReady ? poiData?.id : undefined}
+                                    size={'small'}
+                                    hideLabel={true}
                                 />
-                            )}
-
-                            {poiData && !poiData.cover && (
-                                <Image
-                                    className={styles.image}
-                                    src={'/images/no-image.svg'}
-                                    alt={poiData.title || ''}
-                                    width={300}
-                                    height={220}
+                                <AddToCollectionButton
+                                    placeId={poiData?.id}
+                                    size={'small'}
+                                    hideLabel={true}
                                 />
-                            )}
-                        </Link>
-
-                        <div className={styles.actions}>
-                            <BookmarkButton
-                                placeId={bookmarkReady ? poiData?.id : undefined}
-                                size={'small'}
-                                hideLabel={true}
-                            />
-                            <AddToCollectionButton
-                                placeId={poiData?.id}
-                                size={'small'}
-                                hideLabel={true}
-                            />
-                        </div>
-
-                        <div
-                            className={styles.bottomPanel}
-                            style={{
-                                opacity: poiData ? 1 : 0
-                            }}
-                        >
-                            <div className={styles.iconsPanel}>
-                                {!!poiData?.rating && (
-                                    <PlacePlate
-                                        icon={'StarEmpty'}
-                                        tooltip={t('rating', { defaultValue: 'Рейтинг' })}
-                                        content={addDecimalPoint(poiData.rating)}
-                                    />
-                                )}
-
-                                {!!poiData?.comments && (
-                                    <PlacePlate
-                                        icon={'Comment'}
-                                        tooltip={t('comments-title', { defaultValue: 'Отзывы' })}
-                                        content={poiData.comments}
-                                    />
-                                )}
-
-                                {!!poiData?.bookmarks && (
-                                    <PlacePlate
-                                        icon={'HeartEmpty'}
-                                        tooltip={t('in-bookmarks', { defaultValue: 'В закладках' })}
-                                        content={poiData.bookmarks}
-                                    />
-                                )}
-
-                                {!!poiData?.distance && (
-                                    <PlacePlate
-                                        icon={'Ruler'}
-                                        tooltip={t('sort_distance', { defaultValue: 'Расстояние' })}
-                                        content={
-                                            numberFormatter(poiData.distance) + ' ' + t('km', { defaultValue: 'км' })
-                                        }
+                                {/* Linking photos is for signed-in users only */}
+                                {isAuth && (
+                                    <Button
+                                        mode={'secondary'}
+                                        size={'small'}
+                                        icon={'Photo'}
+                                        disabled={!poiData}
+                                        tooltip={t('nearby-photos_title', { defaultValue: 'Фото рядом' })}
+                                        onClick={() => setNearbyPhotosOpen(true)}
                                     />
                                 )}
                             </div>
 
-                            <h3 className={styles.title}>{poiData?.title}</h3>
+                            <div
+                                className={styles.bottomPanel}
+                                style={{
+                                    opacity: poiData ? 1 : 0
+                                }}
+                            >
+                                <div className={styles.iconsPanel}>
+                                    {!!poiData?.rating && (
+                                        <PlacePlate
+                                            icon={'StarEmpty'}
+                                            tooltip={t('rating', { defaultValue: 'Рейтинг' })}
+                                            content={addDecimalPoint(poiData.rating)}
+                                        />
+                                    )}
+
+                                    {!!poiData?.comments && (
+                                        <PlacePlate
+                                            icon={'Comment'}
+                                            tooltip={t('comments-title', { defaultValue: 'Отзывы' })}
+                                            content={poiData.comments}
+                                        />
+                                    )}
+
+                                    {!!poiData?.bookmarks && (
+                                        <PlacePlate
+                                            icon={'HeartEmpty'}
+                                            tooltip={t('in-bookmarks', { defaultValue: 'В закладках' })}
+                                            content={poiData.bookmarks}
+                                        />
+                                    )}
+
+                                    {!!poiData?.distance && (
+                                        <PlacePlate
+                                            icon={'Ruler'}
+                                            tooltip={t('sort_distance', { defaultValue: 'Расстояние' })}
+                                            content={
+                                                numberFormatter(poiData.distance) +
+                                                ' ' +
+                                                t('km', { defaultValue: 'км' })
+                                            }
+                                        />
+                                    )}
+                                </div>
+
+                                <h3 className={styles.title}>{poiData?.title}</h3>
+                            </div>
                         </div>
-                    </div>
-                </Popup>
+                    </Popup>
+                )}
+            </Marker>
+
+            {nearbyPhotosOpen && (
+                <NearbyPhotosDialog
+                    place={{ id: place.id!, lat: place.lat, lon: place.lon, title: poiData?.title }}
+                    open={nearbyPhotosOpen}
+                    onClose={() => setNearbyPhotosOpen(false)}
+                />
             )}
-        </Marker>
+        </>
     )
 }
 

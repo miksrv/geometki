@@ -48,6 +48,11 @@ const PlaceCoverEditor = dynamic(
     { ssr: false }
 )
 
+const NearbyPhotosDialog = dynamic(
+    () => import('@/components/shared/nearby-photos').then((m) => ({ default: m.NearbyPhotosDialog })),
+    { ssr: false }
+)
+
 const PhotoUploader = dynamic(
     () => import('@/components/shared/photo-uploader/PhotoUploader').then((m) => ({ default: m.PhotoUploader })),
     { ssr: false }
@@ -74,6 +79,10 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
     const [coverHash, setCoverHash] = useState<number | undefined>()
     const [localPhotos, setLocalPhotos] = useState<ApiModel.Photo[]>(photoList ?? [])
     const [uploadingPhotos, setUploadingPhotos] = useState<string[]>()
+    const [nearbyPhotosOpen, setNearbyPhotosOpen] = useState<boolean>(false)
+
+    // Only our own photos go to the structured data and the link previews, not the linked ones
+    const ownPhotos = useMemo(() => photoList?.filter(({ external }) => !external), [photoList])
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
@@ -101,6 +110,14 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             dispatch(openAuthDialog())
         } else {
             inputFileRef?.current?.click()
+        }
+    }
+
+    const handleNearbyPhotosClick = () => {
+        if (!isAuth) {
+            dispatch(openAuthDialog())
+        } else {
+            setNearbyPhotosOpen(true)
         }
     }
 
@@ -191,7 +208,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             image: (() => {
                 const imgs = [
                     ...(place?.cover ? [`${IMG_HOST}${place.cover.full}`] : []),
-                    ...(photoList?.map(({ full }) => `${IMG_HOST}${full}`) ?? [])
+                    ...(ownPhotos?.map(({ full }) => `${IMG_HOST}${full}`) ?? [])
                 ]
                 return imgs.length ? imgs : undefined
             })(),
@@ -203,7 +220,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
             name: place?.title,
             url: pagePlaceUrl
         }),
-        [canonicalUrl, pagePlaceUrl, photoList, place, ratingCount]
+        [canonicalUrl, pagePlaceUrl, ownPhotos, place, ratingCount]
     )
 
     useEffect(() => {
@@ -237,7 +254,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                                       }
                                   ]
                                 : []),
-                            ...(photoList?.slice(0, 3).map((photo, index) => ({
+                            ...(ownPhotos?.slice(0, 3).map((photo, index) => ({
                                 alt: `${photo.title} (${index + 1})`,
                                 height: photo.height,
                                 url: `${IMG_HOST}${photo.full}`,
@@ -295,13 +312,22 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                             title={t('photos')}
                             photos={localPhotos}
                             uploadingPhotos={uploadingPhotos}
+                            onPhotoDelete={setLocalPhotos}
                             action={
-                                <Button
-                                    mode={'link'}
-                                    onClick={handleUploadPhotoClick}
-                                >
-                                    {t('upload-photo')}
-                                </Button>
+                                <>
+                                    <Button
+                                        mode={'link'}
+                                        onClick={handleNearbyPhotosClick}
+                                    >
+                                        {t('nearby-photos_title', { defaultValue: 'Фото рядом' })}
+                                    </Button>
+                                    <Button
+                                        mode={'link'}
+                                        onClick={handleUploadPhotoClick}
+                                    >
+                                        {t('upload-photo')}
+                                    </Button>
+                                </>
                             }
                         />
                     </FileDropZone>
@@ -345,6 +371,17 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                         {t('all-places-nearby')}
                     </Button>
                 </div>
+            )}
+
+            {nearbyPhotosOpen && place?.id && (
+                <NearbyPhotosDialog
+                    place={{ id: place.id, lat: place.lat, lon: place.lon, title: place.title }}
+                    open={true}
+                    onClose={() => setNearbyPhotosOpen(false)}
+                    // Newest first, like the gallery from the server
+                    onLink={(photo) => setLocalPhotos((photos) => [photo, ...photos])}
+                    onUnlink={(linkId) => setLocalPhotos((photos) => photos.filter(({ id }) => id !== linkId))}
+                />
             )}
 
             <PlaceCoverEditor

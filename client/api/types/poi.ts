@@ -15,6 +15,8 @@ export interface ListRequest {
     categories?: ApiModel.Categories[]
     author?: string
     visited?: string
+    /** User ID: places in their bookmarks */
+    bookmarks?: string
 }
 
 export interface PlacesListResponse {

@@ -10,6 +10,7 @@ import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { ActivityList, AppLayout, PageHeader } from '@/components/shared'
+import { INFINITE_SCROLL_ROOT_MARGIN } from '@/config/constants'
 import { SITE_LINK } from '@/config/env'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
@@ -30,16 +31,19 @@ const ActivityPage: NextPage<object> = () => {
             return
         }
 
-        const observer = new IntersectionObserver(([entry]) => {
-            if (!entry.isIntersecting || isFetching) {
-                return
-            }
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (!entry.isIntersecting || isFetching) {
+                    return
+                }
 
-            const cursorDate = data?.items[data.items.length - 1]?.created?.date
-            if (cursorDate) {
-                setLastDate(cursorDate)
-            }
-        })
+                const cursorDate = data?.items[data.items.length - 1]?.created?.date
+                if (cursorDate) {
+                    setLastDate(cursorDate)
+                }
+            },
+            { rootMargin: INFINITE_SCROLL_ROOT_MARGIN }
+        )
 
         observer.observe(el)
         return () => observer.disconnect()

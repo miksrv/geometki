@@ -432,6 +432,7 @@ Create a new place.
 | content | string | No | Description text (HTML stripped) |
 | tags | array | No | Array of tag strings |
 | photos | array | No | Array of temporary photo filenames to attach |
+| candidate | string | No | OSM candidate id the place is created from: links the candidate to the new place and hides it from the map. Ignored (the place is still created) when the candidate is already taken, or the place is not the same object: it must stand within `linkRadius` (1 km) and have a similar title, or be of the same category within `sameCategoryRadius` (50 m) |
 
 ```json
 {
@@ -696,6 +697,109 @@ Get lightweight details for a single place (used as map popup data).
 **Error responses:**
 
 - `404` — Place not found
+
+---
+
+### OSM Candidates
+
+Interesting objects from OpenStreetMap and Wikidata that are not on Geometki yet. The map reads only our database: tiles of the requested area that were never collected are queued, and the background command `php spark osm:collect` (cron, every minute) collects them from Overpass and Wikidata SPARQL. A Wikidata item is glued to an OSM object when the OSM object refers to it, or has the same title within 300 m; the rest become Wikidata-only candidates (`source: "wikidata"`, no `osmType`/`osmId`). Photos come from Wikimedia Commons with their author and licence. Scoring rules live in `app/Config/OsmCandidates.php`; after changing them run `php spark osm:rescore`.
+
+#### `GET /osm-candidates`
+
+Candidates inside the map area. Objects already on Geometki (`status` `linked` or `duplicate`) are returned to admins only.
+
+**Auth required:** No (admin data needs auth)
+
+**Query params:**
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| bounds | string | Yes | `south,west,north,east`; areas over `maxRequestArea` square degrees, or covering more than `maxRequestTiles` (150) tiles of 0.1°, get `tooLarge` |
+| tiers | string | No | Comma separated: `known`, `explore`, `other` (default `known,explore`) |
+
+**Response:**
+
+```json
+{
+  "items": [
+    {
+      "id": "b3d62cac8fe30",
+      "source": "osm",
+      "osmType": "relation",
+      "osmId": 9640839,
+      "lat": 51.149669,
+      "lon": 55.001392,
+      "name": "Развал",
+      "typeTitle": "Озеро",
+      "osmTag": "natural=water",
+      "category": "water",
+      "tier": "known",
+      "score": 12,
+      "breakdown": [{ "code": "type", "points": 1, "value": "natural=water" }, { "code": "nearbyWiki", "points": 4, "value": "Развал (озеро)", "distance": 56 }],
+      "wikipedia": "ru:Развал (озеро)",
+      "wikidata": "Q2132225",
+      "photos": [
+        {
+          "file": "Salionka.jpg",
+          "url": "https://upload.wikimedia.org/wikipedia/commons/9/90/Salionka.jpg",
+          "page": "https://commons.wikimedia.org/wiki/File:Salionka.jpg",
+          "author": "Kagul",
+          "license": "Public domain",
+          "licenseUrl": null
+        }
+      ],
+      "image": null,
+      "heritage": null,
+      "ele": null,
+      "size": 411,
+      "settlement": { "name": "Соль-Илецк", "type": "town", "distance": 0 },
+      "status": "open",
+      "place": null
+    }
+  ],
+  "pendingTiles": 0
+}
+```
+
+`photos` — Commons photos, to be shown only with `author` and `license`. `image` — a photo link from OSM with an unknown licence, set only when there are no Commons photos. `heritage` — the Russian cultural heritage register code.
+
+Tiles are queued at most `queueRequestsPerMinute` times a minute per IP; above that the endpoint only reads the database.
+
+`pendingTiles` — tiles of the area that are queued or being collected now (a failed tile waits for its retry and is not counted).
+
+---
+
+#### `GET /osm-candidates/:id`
+
+One candidate in the same shape, e.g. to prefill the new place form.
+
+**Error responses:**
+
+- `404` — Not found, rejected or gone
+
+---
+
+#### `PATCH /osm-candidates/:id/link`
+
+Link a candidate to an existing place, the same link as when a place is created from it.
+
+**Auth required:** Yes (admin)
+
+**Request body (JSON):** `{ "placeId": "65cfaf32be69b" }`
+
+---
+
+#### `PATCH /osm-candidates/:id/unlink`
+
+Remove a wrong link: the candidate is open again. **Auth required:** Yes (admin)
+
+---
+
+#### `PATCH /osm-candidates/:id/reject`
+
+Hide a candidate for good; re-collection does not bring it back. **Auth required:** Yes (admin)
+
+Errors of the three admin endpoints: `401` not authenticated, `403` not an admin, `404` candidate not found.
 
 ---
 

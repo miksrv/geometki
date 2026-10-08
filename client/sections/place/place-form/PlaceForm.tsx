@@ -85,8 +85,9 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
     const [uploadingPhotos, setUploadingPhotos] = useState<string[]>()
     const [localPhotos, setLocalPhotos] = useState<ApiModel.Photo[]>([])
     const [tagSearch, setTagSearch] = useState('')
+    // Edit page, or a new place prefilled from an OSM candidate: the map starts at the given point
     const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(() => {
-        if (placeId && values?.lat != null && values?.lon != null) {
+        if (values?.lat != null && values?.lon != null) {
             return [values.lat, values.lon]
         }
         return undefined
@@ -205,7 +206,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
     useEffect(() => {
         if (values) {
             reset(toFormValues(values))
-            if (placeId && values.lat != null && values.lon != null) {
+            if (values.lat != null && values.lon != null) {
                 setMapCenter([values.lat, values.lon])
             }
         }
@@ -332,7 +333,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                     scrollWheelZoom={!placeId}
                     places={poiListData?.items}
                     storeMapPosition={!placeId}
-                    zoom={placeId ? 15 : undefined}
+                    zoom={mapCenter ? 15 : undefined}
                     center={mapCenter}
                     userLatLon={location}
                     onChangeBounds={debounceSetMapBounds}

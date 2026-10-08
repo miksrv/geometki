@@ -2,7 +2,6 @@ import React from 'react'
 import { cn, Container, Spinner } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
-import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
 import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
@@ -11,17 +10,13 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, PageHeader, PlacesList, UserAvatar } from '@/components/shared'
+import { AppLayout, PageHeader, PlacesList, PlacesMap, UserAvatar } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
 import { buildHreflangTags } from '@/utils/seo'
 
 import styles from '@/sections/user/styles.module.sass'
-
-const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap').then((m) => m.InteractiveMap), {
-    ssr: false
-})
 
 export const VISITED_PLACES_PER_PAGE = 21
 
@@ -40,9 +35,7 @@ const UserVisitedPage: React.FC<UserVisitedPageProps> = ({ id, user, currentPage
         offset: (currentPage - 1) * VISITED_PLACES_PER_PAGE
     })
 
-    const { data: marksData } = API.usePoiGetListQuery({ visited: id })
-
-    const placeMarks: ApiModel.PlaceMark[] = marksData?.items ?? []
+    const { data: marksData, isLoading: marksLoading } = API.usePoiGetListQuery({ visited: id })
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     const pageTitle = currentPage > 1 ? ` - ${t('page')} ${currentPage}` : ''
@@ -84,25 +77,15 @@ const UserVisitedPage: React.FC<UserVisitedPageProps> = ({ id, user, currentPage
                 }
             />
 
-            {!!placeMarks.length && (
-                <Container style={{ height: '350px', padding: '2px' }}>
-                    <InteractiveMap
-                        places={placeMarks}
-                        enableCenterPopup={false}
-                        enableContextMenu={false}
-                        enableFullScreen={false}
-                        enableCoordsControl={false}
-                        enableCategoryControl={false}
-                        enableLayersSwitcher={false}
-                        storeMapPosition={false}
-                        controlsSize={'small'}
-                    />
-                </Container>
-            )}
-
             <UserTabs
                 user={user}
                 currentPage={UserPagesEnum.VISITED}
+            />
+
+            <PlacesMap
+                places={marksData?.items}
+                // The list comes from the server with the count: no placeholder for a user without places
+                loading={marksLoading && !!data?.count}
             />
 
             <PlacesList
@@ -161,8 +144,6 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     offset: (currentPage - 1) * VISITED_PLACES_PER_PAGE
                 })
             )
-
-            await store.dispatch(API.endpoints.poiGetList.initiate({ visited: id }))
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 

@@ -9,6 +9,15 @@ export const proxy = (request: NextRequest) => {
         return Response.redirect(new URL('/places', request.url))
     }
 
+    // The edit link is a real link (it can be opened in a new tab), so guests are sent back to the place.
+    // nextUrl.pathname comes without the locale prefix; the clone keeps the locale (/en) in the redirect.
+    if (!currentUser && /^\/places\/[^/]+\/edit\/?$/.test(request.nextUrl.pathname)) {
+        const placeUrl = request.nextUrl.clone()
+        placeUrl.pathname = placeUrl.pathname.replace(/\/edit\/?$/, '')
+
+        return Response.redirect(placeUrl.toString())
+    }
+
     if (!currentUser && request.nextUrl.pathname.startsWith('/users/settings')) {
         return Response.redirect(new URL('/users', request.url))
     }

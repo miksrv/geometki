@@ -169,9 +169,6 @@ class Visited extends ResourceController
                 $place->cover = $cover;
             }
 
-            $place->visitRadiusM       = (int) $place->visit_radius_m;
-            $place->verificationExempt = (bool) $place->verification_exempt;
-
             $formatter->cleanupFields($place);
         }
 

@@ -54,7 +54,7 @@ Uses **Next.js Pages Router** (not App Router) with **Redux Toolkit + RTK Query*
 - `api/types/` — TypeScript interfaces for all API response shapes
 - `components/` — Split into `common/` (layout, header, shared UI) and `pages/` (page-specific)
 - `functions/` — Pure utilities: `helpers.ts`, `coordinates.ts`, `validators.ts`; unit tests co-located as `*.test.ts`
-- `proxy.ts` — Next.js proxy (formerly middleware); protects `/places/create` and `/users/settings` routes; redirects unauthenticated users
+- `proxy.ts` — Next.js proxy (formerly middleware); protects `/places/create`, `/places/:id/edit` and `/users/settings` routes; redirects unauthenticated users
 - `styles/` — Global SASS; `theme.css` holds project token overrides on top of `simple-react-ui-kit/theme.css` (imported first in `pages/_app.tsx`)
 - `DESIGN.md` — the client design system: layers (kit primitives vs domain components), layouts, the `MediaTile` / `PlaceCard` / `CollectionCard` rules and UI patterns. Read it before adding or changing any user-facing component; one component per entity, variants for layout.
 

@@ -141,7 +141,7 @@ The `rules` JSON column stores an array of metric conditions. **All conditions m
 | `days_active`       | COUNT(DISTINCT DATE) in `activity`              |
 | `login_streak`      | consecutive days in `sessions_history`          |
 | `level_reached`     | `users.level`                                   |
-| `ghost_captures`    | Feature 11 (future)                             |
+| `ghost_captures`    | Places created from the "Places to explore" layer (1.13.0, `osm_candidates.place_id`); the metric itself is not implemented yet |
 
 ---
 
@@ -326,7 +326,7 @@ All tiered achievements share a `group_slug` (e.g. `explorer`) so tiers upgrade 
 
 ## Notes & Future Considerations
 
-- **Ghost place captures** (Feature 11) introduce a `ghost_captures` metric — add it to `resolveMetric()` when that feature lands.
+- **Places created from the "Places to explore" layer** (1.13.0) can feed a `ghost_captures` metric (`osm_candidates` rows with `status = linked` and the user's `place_id`) — add it to `resolveMetric()` when the achievement is wanted.
 - **No revocation:** once earned, a badge is permanent. If an admin raises a threshold, existing earners keep their current tier.
 - **Progress caching:** if `getProgress()` query load becomes significant, cache per-user progress with a short TTL.
 - **Multi-locale admin titles:** if more languages are added later, migrate `title_en`/`title_ru` to a `achievement_translations` table.

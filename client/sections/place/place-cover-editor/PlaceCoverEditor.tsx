@@ -28,6 +28,8 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
     const { t } = useTranslation()
 
     const { data: photosData, isLoading: photoLoading } = API.usePhotosGetListQuery({ place: placeId })
+    // A cover is cut from our own files: the linked Wikimedia Commons and PastVu photos are not on our disk
+    const ownPhotos = useMemo(() => photosData?.items?.filter(({ external }) => !external), [photosData?.items])
 
     const [updateCover, { isLoading, isSuccess, isError, error }] = API.usePlacesPatchCoverMutation()
 
@@ -38,8 +40,8 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
     const [imageCropData, setImageCropData] = useState<Crop>()
 
     const selectedPhoto = useMemo(
-        () => photosData?.items?.find(({ id }) => id === selectedPhotoId),
-        [selectedPhotoId, photosData?.items]
+        () => ownPhotos?.find(({ id }) => id === selectedPhotoId),
+        [selectedPhotoId, ownPhotos]
     )
 
     const disabled = isLoading || !imageCropData?.width || !imageCropData.height
@@ -130,7 +132,7 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
             onCloseDialog={handleCoverDialogClose}
         >
             <>
-                {!photoLoading && !photosData?.items?.length && (
+                {!photoLoading && !ownPhotos?.length && (
                     <div className={styles.noPhotos}>
                         {t('no-photos-here-yet')}
                         <br />
@@ -139,7 +141,7 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
                 )}
                 {!selectedPhotoId ? (
                     <ul className={styles.coverPhotosList}>
-                        {photosData?.items?.map((photo) => (
+                        {ownPhotos?.map((photo) => (
                             <li key={`coverDialog${photo.id}`}>
                                 <Image
                                     src={`${IMG_HOST}${photo.preview}`}

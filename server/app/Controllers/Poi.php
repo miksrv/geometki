@@ -27,7 +27,7 @@ class Poi extends ResourceController
     /**
      * Return place markers for the map, optionally clustered.
      *
-     * GET /poi — optional query params: categories, zoom, author, cluster, bounds.
+     * GET /poi — optional query params: categories, zoom, author, visited, bookmarks (user ID), cluster, bounds.
      *
      * @return ResponseInterface
      */
@@ -37,6 +37,7 @@ class Poi extends ResourceController
         $zoom    = abs($this->request->getGet('zoom', FILTER_SANITIZE_NUMBER_INT) ?? 10);
         $author  = $this->request->getGet('author', FILTER_SANITIZE_SPECIAL_CHARS);
         $visited = $this->request->getGet('visited', FILTER_SANITIZE_SPECIAL_CHARS);
+        $bookmarks = $this->request->getGet('bookmarks', FILTER_SANITIZE_SPECIAL_CHARS);
         $cluster = $this->request->getGet('cluster', FILTER_VALIDATE_BOOL);
         $bounds  = $this->getBounds();
 
@@ -62,6 +63,10 @@ class Poi extends ResourceController
 
         if ($visited) {
             $placesData->filterByVisitedUser($visited);
+        }
+
+        if ($bookmarks) {
+            $placesData->filterByBookmarkUser($bookmarks);
         }
 
         $placesData  = $placesData->findAll();
@@ -95,7 +100,7 @@ class Poi extends ResourceController
         $bounds  = $this->getBounds();
 
         $photosModel = new PhotosModel();
-        $photosData  = $photosModel->select('place_id as placeId, lat, lon, filename, extension, title_en, title_ru');
+        $photosData  = $photosModel->select('place_id as placeId, lat, lon, filename, extension, width, height, title_en, title_ru');
 
         if ($bounds) {
             $photosData->where([

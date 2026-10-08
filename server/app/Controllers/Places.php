@@ -15,6 +15,7 @@ use App\Libraries\ActivityLibrary;
 use App\Models\ActivityModel;
 use App\Models\CollectionsModel;
 use App\Models\CollectionsPlacesModel;
+use App\Models\OsmCandidatesModel;
 use App\Models\PhotosModel;
 use App\Models\PlacesModel;
 use App\Models\PlacesTagsModel;
@@ -418,6 +419,20 @@ class Places extends ResourceController
 
             if (!empty($input->photos)) {
                 $this->savePhotos($input->photos, $newPlaceId, $place, $content);
+            }
+
+            // Created from an OSM candidate: the same link an admin sets by hand, hides it from the map.
+            // Only a similar place takes it, otherwise the candidate stays on the map
+            if (!empty($input->candidate) && is_string($input->candidate)) {
+                (new OsmCandidatesModel())->linkToNewPlace(
+                    $input->candidate,
+                    $newPlaceId,
+                    $this->session->user?->id,
+                    (float) $input->lat,
+                    (float) $input->lon,
+                    (string) $input->category,
+                    [$placeTitle]
+                );
             }
 
             $db->transComplete();

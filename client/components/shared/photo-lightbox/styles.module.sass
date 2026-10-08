@@ -10,3 +10,61 @@
     color: #FFFFFF
     text-decoration: none !important
     font-weight: normal
+
+.slide
+    position: relative
+    width: 100%
+    height: 100%
+    display: flex
+    align-items: center
+    justify-content: center
+
+.preview
+    position: absolute
+    top: 50%
+    left: 50%
+    transform: translate(-50%, -50%)
+    object-fit: cover
+    pointer-events: none
+    user-select: none
+    transition: opacity 0.3s ease
+
+// Positioned without a z-index: the photo is drawn over the preview (earlier in the markup) and
+// under the captions (later in it), a z-index would lift it over the title and the author
+.content
+    position: relative
+    width: 100%
+    height: 100%
+    display: flex
+    align-items: center
+    justify-content: center
+
+// The full photo has loaded (the lightbox drops its loading class): the preview is not needed
+.slide:has(:global(.yarl__slide_image):not(:global(.yarl__slide_image_loading))) .preview
+    opacity: 0
+
+// Credits of a linked Wikimedia Commons or PastVu photo, under it in place of the uploader
+.credit
+    display: flex
+    flex-direction: column
+    gap: 2px
+    font-size: 13px
+    line-height: 1.4
+    color: #fff
+
+.creditTitle
+    font-weight: 500
+
+.creditLine
+    display: flex
+    flex-wrap: wrap
+    gap: 0 var(--space-2)
+    color: rgba(255, 255, 255, .75)
+
+    a
+        color: inherit
+        text-decoration: underline
+        text-underline-offset: 2px
+
+        &:hover
+            color: #fff

@@ -13,6 +13,7 @@ import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { ActivityList, AppLayout, PhotoGallery } from '@/components/shared'
+import { INFINITE_SCROLL_ROOT_MARGIN } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
 import { formatDateISO } from '@/utils/helpers'
@@ -44,13 +45,16 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
             return
         }
 
-        const observer = new IntersectionObserver(([entry]) => {
-            if (!entry.isIntersecting || isFetching || !data?.items.length) {
-                return
-            }
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (!entry.isIntersecting || isFetching || !data?.items.length) {
+                    return
+                }
 
-            setLastDate(data.items[data.items.length - 1].created?.date)
-        })
+                setLastDate(data.items[data.items.length - 1].created?.date)
+            },
+            { rootMargin: INFINITE_SCROLL_ROOT_MARGIN }
+        )
 
         observer.observe(el)
         return () => observer.disconnect()
@@ -139,6 +143,11 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
 
             <UserHeader user={user} />
 
+            <UserTabs
+                user={user}
+                currentPage={UserPagesEnum.FEED}
+            />
+
             <PhotoGallery
                 title={t('photos')}
                 photos={photosList}
@@ -165,11 +174,6 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
                         </Button>
                     )
                 }
-            />
-
-            <UserTabs
-                user={user}
-                currentPage={UserPagesEnum.FEED}
             />
 
             <ActivityList

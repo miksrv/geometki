@@ -52,6 +52,7 @@ export default defineConfig([
             '**/next-i18next.config.js',
             '**/i18next-scanner.config.js',
             '**/next.config.js',
+            '**/scripts/**',
             '**/.next/**',
             '**/next-env.d.ts',
             '**/middleware.ts',

@@ -1,0 +1,147 @@
+@use '../../../styles/variables' as variables
+
+.toolbar
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-2) var(--space-3)
+    align-items: center
+    justify-content: space-between
+    margin-bottom: var(--space-3)
+
+.filters
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-1)
+
+.summary
+    color: var(--text-color-secondary)
+    font-size: 13px
+
+
+.empty
+    padding: var(--space-6) 0
+    text-align: center
+    color: var(--text-color-secondary)
+
+// The gallery look: 4:3 square tiles with 4px gaps and only the outer corners rounded
+.grid
+    display: grid
+    grid-template-columns: repeat(3, minmax(0, 1fr))
+    gap: var(--space-1)
+    margin: 0
+    padding: 0
+    list-style: none
+    border-radius: var(--border-radius)
+    overflow: hidden
+    max-height: 60vh
+    overflow-y: auto
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+
+.tile
+    position: relative
+    aspect-ratio: 4 / 3
+    background-color: var(--surface-2)
+
+    // A linked photo: framed in the main colour, with the check in the corner
+    &::after
+        content: ''
+        position: absolute
+        inset: 0
+        pointer-events: none
+        border: 3px solid transparent
+        transition: border-color .15s
+
+    &.linked::after
+        border-color: var(--color-main)
+
+    &:hover .zoom, &:focus-within .zoom
+        opacity: 1
+
+    @media (hover: none)
+        .zoom
+            opacity: 1
+
+.toggle
+    display: block
+    width: 100%
+    height: 100%
+    padding: 0
+    border: 0
+    background: none
+    cursor: pointer
+    position: relative
+
+    img
+        display: block
+        width: 100%
+        height: 100%
+        object-fit: cover
+
+    &:focus-visible
+        outline: 3px solid var(--color-main)
+        outline-offset: -3px
+
+// The fixed dark pills over a photo, like the stats over MediaTile
+.source, .distance
+    position: absolute
+    left: 6px
+    padding: 1px 6px
+    border-radius: 4px
+    background: rgba(0, 0, 0, .6)
+    color: #fff
+    font-size: 11px
+    line-height: 16px
+    pointer-events: none
+
+.source
+    top: 6px
+
+.distance
+    bottom: 6px
+    font-variant-numeric: tabular-nums
+
+.check
+    position: absolute
+    top: 8px
+    right: 8px
+    display: flex
+    pointer-events: none
+
+    // The kit icons are painted with fill: white on the main colour, like the check on the map markers
+    svg
+        width: 22px
+        height: 22px
+        border-radius: 50%
+        background: var(--color-main)
+        fill: #fff
+
+.zoom
+    position: absolute
+    right: 8px
+    bottom: 8px
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 28px
+    height: 28px
+    padding: 0
+    border: 0
+    border-radius: 50%
+    background: rgba(0, 0, 0, .6)
+    color: #fff
+    cursor: zoom-in
+    opacity: 0
+    transition: opacity .15s
+
+    svg
+        width: 18px
+        height: 18px
+        fill: #fff
+
+    &:focus-visible
+        opacity: 1
+
+.more
+    margin-top: var(--space-3)

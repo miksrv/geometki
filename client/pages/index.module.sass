@@ -2,12 +2,16 @@
 
 .twoColumns
     display: grid
-    grid-template-columns: 1fr 1fr
+    // minmax(0, 1fr): columns never grow past the screen because of long content
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)
     gap: 8px
     align-items: start
 
+    & > *
+        min-width: 0
+
     @media only screen and (max-width: variables.$mobileMaxWidth)
-        grid-template-columns: 1fr
+        grid-template-columns: minmax(0, 1fr)
 
 .mapHero
     position: relative

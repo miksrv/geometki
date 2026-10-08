@@ -26,6 +26,7 @@ export const LOCAL_STORAGE = {
     LOCALE: 'locale',
     LOCATION: 'location',
     MAP_CENTER: 'mapCenter',
+    MAP_SETTINGS: 'mapSettings',
     RETURN_PATH: 'returnPath',
     THEME: 'theme'
 }
@@ -34,3 +35,12 @@ export const LOCAL_STORAGE = {
 export const PLACE_COVER_ASPECT = 3
 export const PLACE_COVER_MIN_WIDTH = 1024
 export const PLACE_COVER_MIN_HEIGHT = 341
+
+/**
+ * Infinite lists request the next page while the end of the list is still this far below the
+ * screen: new items are added out of view and do not push the footer down (CLS)
+ */
+export const INFINITE_SCROLL_ROOT_MARGIN = '0px 0px 1000px 0px'
+
+/** The phone layout breakpoint, the same as `$mobileMaxWidth` in `styles/variables.sass` */
+export const MOBILE_MAX_WIDTH = 768

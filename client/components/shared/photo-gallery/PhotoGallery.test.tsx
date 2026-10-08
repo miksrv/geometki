@@ -33,6 +33,7 @@ jest.mock('simple-react-ui-kit', () => ({
             {children}
         </div>
     ),
+    Icon: ({ name }: any) => <span data-icon={name} />,
     Popout: ({ trigger, children, _closeOnChildrenClick, className }: any) => (
         <div className={className}>
             <div data-testid={'popout-trigger'}>{trigger}</div>
@@ -111,6 +112,9 @@ jest.mock('@/api', () => ({
             .fn()
             .mockReturnValue([jest.fn(), { data: undefined, isLoading: false, error: undefined }]),
         usePhotoRotateItemMutation: jest
+            .fn()
+            .mockReturnValue([jest.fn(), { data: undefined, isLoading: false, error: undefined }]),
+        useExternalPhotosDeleteLinkMutation: jest
             .fn()
             .mockReturnValue([jest.fn(), { data: undefined, isLoading: false, error: undefined }])
     },
@@ -197,6 +201,38 @@ describe('PhotoGallery', () => {
         })
     })
 
+    describe('more photos', () => {
+        const manyPhotos: ApiModel.Photo[] = Array.from({ length: 10 }, (_, i) => ({
+            ...mockPhotos[0],
+            id: `many${i}`,
+            title: `Photo ${i}`
+        }))
+
+        it('collapses photos after the first eight behind a button', () => {
+            const { container } = renderWithStore(
+                <PhotoGallery
+                    photos={manyPhotos}
+                    hideActions={true}
+                />
+            )
+            const [visible, hidden] = container.querySelectorAll('ul')
+            expect(visible.querySelectorAll('img')).toHaveLength(8)
+            expect(hidden.querySelectorAll('img')).toHaveLength(2)
+        })
+
+        it('shows every photo in one list with showAll', () => {
+            const { container } = renderWithStore(
+                <PhotoGallery
+                    photos={manyPhotos}
+                    hideActions={true}
+                    showAll={true}
+                />
+            )
+            expect(container.querySelectorAll('ul')).toHaveLength(1)
+            expect(container.querySelectorAll('img')).toHaveLength(10)
+        })
+    })
+
     describe('upload actions', () => {
         it('renders ImageUploader when onPhotoUploadClick is provided', () => {
             renderWithStore(
@@ -245,6 +281,40 @@ describe('PhotoGallery', () => {
             })
             const actionButtons = screen.getAllByRole('button')
             expect(actionButtons.length).toBeGreaterThan(0)
+        })
+
+        it('renders rotate and delete as context menu items', () => {
+            renderWithStore(<PhotoGallery photos={[mockPhotos[0]]} />, {
+                auth: { isAuth: true, user: { id: 'u1', name: 'Alice' } }
+            })
+            const menu = screen.getByTestId('popout-content').querySelector('ul.contextListMenu')
+            expect(menu).toBeInTheDocument()
+            expect(screen.getByRole('button', { name: 'Повернуть' })).toHaveAttribute('type', 'button')
+            expect(screen.getByRole('button', { name: 'Удалить' })).toHaveAttribute('type', 'button')
+        })
+
+        it('offers only removal for a linked Wikimedia Commons photo, which cannot be rotated', () => {
+            const linked: ApiModel.Photo = {
+                external: {
+                    externalId: '10',
+                    source: 'wikimedia',
+                    url: 'https://commons.wikimedia.org/wiki/File:A.jpg'
+                },
+                full: 'https://upload.wikimedia.org/a.jpg',
+                height: 600,
+                id: 'ext1',
+                preview: 'https://upload.wikimedia.org/a_preview.jpg',
+                width: 800
+            }
+
+            renderWithStore(<PhotoGallery photos={[linked]} />, {
+                auth: { isAuth: true, user: { id: 'u1', name: 'Alice' } }
+            })
+
+            expect(screen.queryByRole('button', { name: 'Повернуть' })).not.toBeInTheDocument()
+            expect(screen.getByRole('button', { name: 'Удалить' })).toBeInTheDocument()
+            // An external image is linked as is, without our image host
+            expect(screen.getByRole('link')).toHaveAttribute('href', 'https://upload.wikimedia.org/a.jpg')
         })
 
         it('does not render action buttons when hideActions is true', () => {

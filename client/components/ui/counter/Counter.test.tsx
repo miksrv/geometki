@@ -28,6 +28,23 @@ describe('Counter', () => {
         })
     })
 
+    describe('showZero prop', () => {
+        it('renders 0 when showZero is set', () => {
+            render(
+                <Counter
+                    value={0}
+                    showZero={true}
+                />
+            )
+            expect(screen.getByText('0')).toBeInTheDocument()
+        })
+
+        it('still renders nothing for undefined with showZero', () => {
+            const { container } = render(<Counter showZero={true} />)
+            expect(container.firstChild).toBeNull()
+        })
+    })
+
     describe('max prop', () => {
         it('shows values above max as "max+"', () => {
             render(

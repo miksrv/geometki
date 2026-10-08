@@ -228,6 +228,19 @@ class PlacesModel extends ApplicationBaseModel
     }
 
     /**
+     * Restrict the query to places bookmarked by the given user.
+     *
+     * @param string $userId
+     * @return static
+     */
+    public function filterByBookmarkUser(string $userId): static
+    {
+        return $this
+            ->join('users_bookmarks', 'users_bookmarks.place_id = places.id', 'inner')
+            ->where('users_bookmarks.user_id', $userId);
+    }
+
+    /**
      * Find an existing place by owner and exact coordinates.
      * Used to prevent duplicate submissions.
      *

@@ -437,4 +437,4 @@ The fog of war mechanic is uniquely powerful because:
 
 4. **It's non-competitive by default.** You can't compare fog maps because they're private. But it feeds into leaderboards and exploration scores, creating an opt-in competitive dimension.
 
-5. **It synergizes with ghost places.** A map showing both your fog AND ghost place markers creates a perfect dual mission: "Go to that unexplored area to clear the fog AND capture the ghost place at the same time."
+5. **It synergizes with the "Places to explore" layer (1.13.0).** A map showing both your fog AND the unexplored places creates a perfect dual mission: "Go to that unexplored area to clear the fog AND describe the unexplored place at the same time."

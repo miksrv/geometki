@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Container } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import dynamic from 'next/dynamic'
@@ -14,13 +13,12 @@ import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
-import { AppLayout } from '@/components/shared'
+import { AppLayout, PlacesMap } from '@/components/shared'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import {
     CollectionDescription,
     CollectionHeader,
-    CollectionMap,
     CollectionPlacesList,
     CollectionSettingsDialog
 } from '@/sections/collections'
@@ -34,8 +32,6 @@ import {
     removeMarkdown,
     truncateText
 } from '@/utils/helpers'
-
-import styles from '@/sections/collections/styles.module.sass'
 
 // Owner-only dialog with search, recommendations and image rows — not needed in the SSR bundle
 const AddPlacesDialog = dynamic(
@@ -237,13 +233,13 @@ const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: initial
         [canonicalUrl, pageUrl, collection?.title, t]
     )
 
-    const mapPlaces = useMemo(
+    const mapPlaces = useMemo<ApiModel.PlaceMark[]>(
         () =>
             (collection?.places ?? []).map((place) => ({
                 id: place.id,
                 lat: place.lat,
                 lon: place.lon,
-                category: place.category
+                category: place.category?.name as ApiModel.Categories
             })),
         [collection?.places]
     )
@@ -295,13 +291,7 @@ const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: initial
                 onDelete={() => setDeleteOpen(true)}
             />
 
-            {!!mapPlaces.length && (
-                <Container className={styles.articleMap}>
-                    <div className={styles.articleMapInner}>
-                        <CollectionMap places={mapPlaces} />
-                    </div>
-                </Container>
-            )}
+            <PlacesMap places={mapPlaces} />
 
             {(editMode || !!collection?.description) && (
                 <CollectionDescription

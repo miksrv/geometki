@@ -392,6 +392,61 @@ export const API = createApi({
             query: () => 'notifications/updates'
         }),
 
+        /** Controller: OSM Candidates **/
+        osmCandidatesGetList: builder.query<ApiType.OsmCandidates.ListResponse, ApiType.OsmCandidates.ListRequest>({
+            providesTags: ['OsmCandidates'],
+            query: (params) => `osm-candidates${encodeQueryData(params)}`
+        }),
+        osmCandidatesGetItem: builder.query<ApiType.OsmCandidates.Candidate, string>({
+            providesTags: (res, err, id) => [{ id, type: 'OsmCandidates' }],
+            query: (id) => `osm-candidates/${id}`
+        }),
+        osmCandidatesPatchLink: builder.mutation<void, ApiType.OsmCandidates.LinkRequest>({
+            invalidatesTags: ['OsmCandidates'],
+            query: ({ id, placeId }) => ({ body: { placeId }, method: 'PATCH', url: `osm-candidates/${id}/link` }),
+            transformErrorResponse: extractErrorMessage
+        }),
+        osmCandidatesPatchUnlink: builder.mutation<void, string>({
+            invalidatesTags: ['OsmCandidates'],
+            query: (id) => ({ method: 'PATCH', url: `osm-candidates/${id}/unlink` }),
+            transformErrorResponse: extractErrorMessage
+        }),
+        osmCandidatesPatchReject: builder.mutation<void, string>({
+            invalidatesTags: ['OsmCandidates'],
+            query: (id) => ({ method: 'PATCH', url: `osm-candidates/${id}/reject` }),
+            transformErrorResponse: extractErrorMessage
+        }),
+
+        /** Controller: ExternalPhotos (Wikimedia Commons and PastVu photos linked to places) **/
+        externalPhotosGetList: builder.query<ApiType.ExternalPhotos.ListResponse, ApiType.ExternalPhotos.ListRequest>({
+            providesTags: (result, error, arg) => [{ id: arg.place ?? 'bounds', type: 'ExternalPhotos' }],
+            query: (params) => `external-photos${encodeQueryData(params)}`
+        }),
+        externalPhotosPostLink: builder.mutation<
+            ApiType.ExternalPhotos.CreateResponse,
+            ApiType.ExternalPhotos.CreateRequest
+        >({
+            invalidatesTags: (res, err, arg) => [
+                { id: arg.placeId, type: 'ExternalPhotos' },
+                { id: 'bounds', type: 'ExternalPhotos' },
+                { id: arg.placeId, type: 'Photos' }
+            ],
+            query: (body) => ({ body, method: 'POST', url: 'external-photos' }),
+            transformErrorResponse: extractErrorMessage
+        }),
+        externalPhotosDeleteLink: builder.mutation<
+            ApiType.ExternalPhotos.DeleteResponse,
+            ApiType.ExternalPhotos.DeleteRequest
+        >({
+            invalidatesTags: (res, err, arg) => [
+                { id: arg.placeId, type: 'ExternalPhotos' },
+                { id: 'bounds', type: 'ExternalPhotos' },
+                { id: arg.placeId, type: 'Photos' }
+            ],
+            query: ({ id }) => ({ method: 'DELETE', url: `external-photos/${id}` }),
+            transformErrorResponse: extractErrorMessage
+        }),
+
         /** Controller: Photos **/
         photoDeleteItem: builder.mutation<ApiType.Photos.DeleteResponse, ApiType.Photos.DeleteRequest>({
             query: (params) => ({
@@ -467,7 +522,12 @@ export const API = createApi({
             transformErrorResponse: extractErrorData
         }),
         placesPostItem: builder.mutation<ApiType.Places.PostItemResponse, Omit<ApiType.Places.PostItemRequest, 'id'>>({
-            invalidatesTags: [{ type: 'Places' }, { type: 'Activity' }, { type: 'Notifications' }],
+            invalidatesTags: [
+                { type: 'Places' },
+                { type: 'Activity' },
+                { type: 'Notifications' },
+                { type: 'OsmCandidates' }
+            ],
             query: (data) => ({
                 body: data,
                 method: 'POST',
@@ -614,7 +674,9 @@ export const API = createApi({
         'CollectionMembership',
         'Collections',
         'Comments',
+        'ExternalPhotos',
         'Notifications',
+        'OsmCandidates',
         'Photos',
         'Places',
         'Profile',

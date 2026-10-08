@@ -10,7 +10,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, PageHeader, PlacesList, UserAvatar } from '@/components/shared'
+import { AppLayout, PageHeader, PlacesList, PlacesMap, UserAvatar } from '@/components/shared'
 import { Pagination } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
@@ -34,6 +34,8 @@ const UserBookmarksPage: React.FC<UserBookmarksPageProps> = ({ id, user, current
         limit: PLACES_PER_PAGE,
         offset: (currentPage - 1) * PLACES_PER_PAGE
     })
+
+    const { data: marksData, isLoading: marksLoading } = API.usePoiGetListQuery({ bookmarks: id })
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     const pageTitle = currentPage > 1 ? ` - ${t('page')} ${currentPage}` : ''
@@ -78,6 +80,12 @@ const UserBookmarksPage: React.FC<UserBookmarksPageProps> = ({ id, user, current
             <UserTabs
                 user={user}
                 currentPage={UserPagesEnum.BOOKMARKS}
+            />
+
+            <PlacesMap
+                places={marksData?.items}
+                // The list comes from the server with the count: no placeholder for a user without places
+                loading={marksLoading && !!data?.count}
             />
 
             <PlacesList

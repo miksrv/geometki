@@ -1,9 +1,9 @@
 import Leaflet, { LatLngBounds } from 'leaflet'
 
-import { ResponseGetImageInfo } from '@/api/apiWikimediaCommons'
+import { ResponseGetByBounds } from '@/api/apiWikimediaCommons'
 
 import { WIKIMEDIA_COMMONS_COLOR } from './constants'
-import { buildParams, cleanTitle, createWikimediaIcon, extractImageInfo } from './utils'
+import { buildParams, cleanTitle, createWikimediaIcon, extractPhotoMarks, resizeThumbUrl } from './utils'
 
 jest.mock('leaflet', () => ({
     divIcon: jest.fn().mockReturnValue({})
@@ -80,17 +80,7 @@ describe('createWikimediaIcon', () => {
         expect(mockDivIcon).toHaveBeenCalledWith(expect.objectContaining({ iconAnchor: [10, 10] }))
     })
 
-    it('uses WIKIMEDIA_COMMONS_COLOR when not loading', () => {
-        createWikimediaIcon(false)
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain(WIKIMEDIA_COMMONS_COLOR)
-    })
-
-    it('uses grey color when loading', () => {
-        createWikimediaIcon(true)
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('#999')
-    })
-
-    it('uses WIKIMEDIA_COMMONS_COLOR when loading is undefined', () => {
+    it('uses WIKIMEDIA_COMMONS_COLOR', () => {
         createWikimediaIcon()
         expect(String(mockDivIcon.mock.calls[0][0].html)).toContain(WIKIMEDIA_COMMONS_COLOR)
     })
@@ -106,65 +96,81 @@ describe('createWikimediaIcon', () => {
     })
 })
 
-describe('extractImageInfo', () => {
-    it('returns imageinfo from the first page', () => {
-        const data: ResponseGetImageInfo = {
-            query: {
-                pages: {
-                    '123': {
-                        imageinfo: [
-                            {
-                                descriptionurl: 'https://commons.wikimedia.org/wiki/File:Test.jpg',
-                                thumburl: 'https://thumb.url/Test.jpg',
-                                url: 'https://url.com/Test.jpg'
-                            }
-                        ],
-                        pageid: 123,
-                        title: 'File:Test.jpg'
-                    }
+const THUMB = 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Big.jpg/1280px-Big.jpg?utm_source=x'
+const ORIGINAL = 'https://upload.wikimedia.org/wikipedia/commons/7/7f/Small.jpg?utm_source=x'
+
+describe('resizeThumbUrl', () => {
+    it('replaces the width of a thumbnail', () => {
+        expect(resizeThumbUrl(THUMB, 330)).toBe(
+            'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Big.jpg/330px-Big.jpg?utm_source=x'
+        )
+    })
+
+    it('keeps a link to the original as is', () => {
+        expect(resizeThumbUrl(ORIGINAL, 330)).toBe(ORIGINAL)
+    })
+})
+
+describe('extractPhotoMarks', () => {
+    const data: ResponseGetByBounds = {
+        query: {
+            pages: {
+                '1': {
+                    coordinates: [{ lat: 55.75, lon: 37.61 }],
+                    imageinfo: [
+                        { height: 888, thumburl: THUMB, thumbwidth: 1280, url: 'https://x/Big.jpg', width: 1500 }
+                    ],
+                    index: 1,
+                    pageid: 1,
+                    title: 'File:Big_photo.jpg'
+                },
+                '2': {
+                    coordinates: [{ lat: 55.76, lon: 37.62 }],
+                    imageinfo: [{ height: 1357, thumburl: ORIGINAL, thumbwidth: 1280, url: ORIGINAL, width: 1000 }],
+                    index: -1,
+                    pageid: 2,
+                    title: 'File:Small_photo.jpg'
+                },
+                '3': {
+                    imageinfo: [{ url: 'https://x/NoCoords.jpg' }],
+                    index: 0,
+                    pageid: 3,
+                    title: 'File:No_coords.jpg'
+                },
+                '4': {
+                    coordinates: [{ lat: 55.7, lon: 37.6 }],
+                    index: 2,
+                    pageid: 4,
+                    title: 'File:No_info.jpg'
                 }
             }
         }
-        expect(extractImageInfo(data)).toStrictEqual({
-            descriptionurl: 'https://commons.wikimedia.org/wiki/File:Test.jpg',
-            thumburl: 'https://thumb.url/Test.jpg',
-            url: 'https://url.com/Test.jpg'
+    }
+
+    it('keeps only files with coordinates and an image, in the geosearch order', () => {
+        expect(extractPhotoMarks(data).map(({ pageid }) => pageid)).toStrictEqual([2, 1])
+    })
+
+    it('builds a photo mark of the thumbnail', () => {
+        expect(extractPhotoMarks(data)[1]).toStrictEqual({
+            full: THUMB,
+            height: 758,
+            lat: 55.75,
+            lon: 37.61,
+            pageid: 1,
+            preview: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Big.jpg/330px-Big.jpg?utm_source=x',
+            title: 'Big photo.jpg',
+            width: 1280
         })
     })
 
-    it('returns undefined when imageinfo is absent', () => {
-        const data: ResponseGetImageInfo = {
-            query: {
-                pages: {
-                    '-1': {
-                        pageid: -1,
-                        title: 'File:Missing.jpg'
-                    }
-                }
-            }
-        }
-        expect(extractImageInfo(data)).toBeUndefined()
+    it('does not take the size of a small original for bigger than it is', () => {
+        const [mark] = extractPhotoMarks(data)
+        expect(mark).toEqual(expect.objectContaining({ full: ORIGINAL, height: 1357, preview: ORIGINAL, width: 1000 }))
     })
 
-    it('returns undefined when pages is empty', () => {
-        const data: ResponseGetImageInfo = {
-            query: { pages: {} }
-        }
-        expect(extractImageInfo(data)).toBeUndefined()
-    })
-
-    it('returns undefined when imageinfo array is empty', () => {
-        const data: ResponseGetImageInfo = {
-            query: {
-                pages: {
-                    '1': {
-                        imageinfo: [],
-                        pageid: 1,
-                        title: 'File:Empty.jpg'
-                    }
-                }
-            }
-        }
-        expect(extractImageInfo(data)).toBeUndefined()
+    it('returns an empty list without data', () => {
+        expect(extractPhotoMarks(undefined)).toStrictEqual([])
+        expect(extractPhotoMarks({})).toStrictEqual([])
     })
 })

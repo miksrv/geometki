@@ -55,13 +55,12 @@ jest.mock('next/dist/client/router', () => ({
     })
 }))
 
-jest.mock('@/hooks/useLocalStorage', () => jest.fn().mockReturnValue([undefined, jest.fn()]))
-
 jest.mock('lodash-es/isEqual', () => jest.fn().mockReturnValue(false))
 
 jest.mock('@/config/constants', () => ({
     LOCAL_STORAGE: {
         MAP_CENTER: 'mapCenter',
+        MAP_SETTINGS: 'mapSettings',
         LOCALE: 'locale',
         THEME: 'theme',
         RETURN_PATH: 'returnPath',
@@ -98,7 +97,12 @@ jest.mock('./MapEvents', () => ({
 }))
 
 jest.mock('./marker-photo', () => ({
-    MarkerPhoto: () => <div data-testid={'marker-photo'} />
+    MarkerPhoto: ({ index, onPhotoClick }: { index?: number; onPhotoClick?: (index?: number) => void }) => (
+        <div
+            data-testid={'marker-photo'}
+            onClick={() => onPhotoClick?.(index)}
+        />
+    )
 }))
 
 jest.mock('./marker-photo-cluster', () => ({
@@ -121,6 +125,10 @@ jest.mock('./place-mark', () => ({
     PlaceMark: () => <div data-testid={'place-mark'} />
 }))
 
+jest.mock('./osm-candidates', () => ({
+    OsmCandidates: () => <div data-testid={'osm-candidates'} />
+}))
+
 describe('InteractiveMap', () => {
     describe('rendering', () => {
         it('renders the map container', () => {
@@ -133,6 +141,16 @@ describe('InteractiveMap', () => {
             const tileLayers = screen.getAllByTestId('tile-layer')
             const osm = tileLayers.find((el) => el.getAttribute('data-attribution') === 'Open Street Map')
             expect(osm).toBeInTheDocument()
+        })
+
+        it('does not render the OSM candidates layer by default', () => {
+            render(<InteractiveMap />)
+            expect(screen.queryByTestId('osm-candidates')).not.toBeInTheDocument()
+        })
+
+        it('renders the OSM candidates layer when enabled', () => {
+            render(<InteractiveMap enableOsmCandidates={true} />)
+            expect(screen.getByTestId('osm-candidates')).toBeInTheDocument()
         })
 
         it('renders a spinner when loading', () => {
@@ -233,6 +251,25 @@ describe('InteractiveMap', () => {
             ]
             render(<InteractiveMap photos={photos as any} />)
             expect(screen.getAllByTestId('marker-photo')).toHaveLength(2)
+        })
+
+        it('passes only single photos to onPhotoClick, without the clusters', () => {
+            const onPhotoClick = jest.fn()
+            const photos = [
+                { lat: 51.7, lon: 55.0, type: 'cluster', preview: '/c.jpg', count: 5 },
+                { full: '/f1.jpg', lat: 51.765, lon: 55.099, preview: '/p1.jpg' },
+                { lat: 51.9, lon: 55.3, type: 'cluster', preview: '/c2.jpg', count: 3 },
+                { full: '/f2.jpg', lat: 51.8, lon: 55.2, preview: '/p2.jpg' }
+            ]
+            render(
+                <InteractiveMap
+                    photos={photos as any}
+                    onPhotoClick={onPhotoClick}
+                />
+            )
+            screen.getAllByTestId('marker-photo')[1].click()
+
+            expect(onPhotoClick).toHaveBeenCalledWith([photos[1], photos[3]], 1)
         })
     })
 })

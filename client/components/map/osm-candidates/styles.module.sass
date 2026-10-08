@@ -1,0 +1,368 @@
+@use '../../../styles/variables' as variables
+
+// Only without the map's bottom slot (see MapControlsContext): there the slot places the panel
+.panelWrapper
+    position: absolute
+    z-index: 1000
+    left: 10px
+    bottom: 10px
+
+    .panel
+        width: 260px
+
+.panel
+    box-sizing: border-box
+    max-height: 50vh
+    overflow: auto
+    display: flex
+    flex-direction: column
+    gap: 4px
+    padding: 8px 10px
+    font-size: 12px
+    background: var(--container-background)
+    color: var(--text-color-primary)
+    border: var(--input-border)
+    border-radius: var(--border-radius)
+    cursor: default
+
+    label
+        display: flex
+        align-items: center
+        gap: 6px
+        cursor: pointer
+
+    ul
+        margin: 4px 0 0
+        padding-left: 16px
+
+.header
+    display: flex
+    align-items: center
+    justify-content: space-between
+    gap: 6px
+
+// Plain text cross. The map styles every button in its control blocks
+// (.mapContainer .bottomControls button), so the selector must be stronger than that
+.panel .header button.close
+    min-height: 0 !important
+    padding: 0 2px !important
+    border: none !important
+    box-shadow: none !important
+    background: none !important
+    font-size: 12px
+    line-height: 1
+    color: var(--text-color-secondary)
+    cursor: pointer
+
+    &:hover
+        color: var(--text-color-primary)
+
+// Copies the look of the map's left controls (InteractiveMap styles)
+.collapsedTrigger
+    position: relative
+    display: inline-flex
+
+.collapsedButton
+    padding: 8px 9px !important
+    min-height: 33px
+    border: var(--input-border) !important
+    background-color: var(--surface-2) !important
+
+    svg
+        fill: var(--icon-color-primary)
+
+    &:hover
+        background-color: var(--dropdown-background-color-hover) !important
+
+// Same pill as the AppBar bell counter
+.collapsedCounter
+    position: absolute
+    top: -5px
+    right: -5px
+    min-width: 18px
+    height: 18px
+    padding: 0 5px !important
+    border-radius: 9px !important
+    font-size: 10px !important
+    line-height: 1
+
+.statusLine
+    display: flex
+    align-items: center
+    gap: 6px
+    margin: 4px 0
+
+.dot
+    width: 10px
+    height: 10px
+    border-radius: 50%
+    flex-shrink: 0
+
+.stats, .attribution
+    color: var(--text-color-secondary)
+
+.attribution
+    font-size: 10px
+
+.error
+    color: var(--color-red)
+    word-break: break-word
+
+// ----- Candidate popup -----
+// Leaflet's own frame: no inner margins (the cover is full-bleed), the radius of the other map popups
+.candidatePopup
+    :global(.leaflet-popup-content-wrapper)
+        padding: 0
+        overflow: hidden
+        border-radius: var(--radius-lg)
+
+    :global(.leaflet-popup-content)
+        margin: 0
+        width: auto !important
+        font-size: var(--font-size)
+        line-height: var(--line-height)
+        color: var(--text-color-primary)
+
+    :global(.leaflet-popup-tip)
+        background: var(--modal-background)
+
+    // The place popup's close button (global styles): white over the cover,
+    // grey when there is no cover, otherwise it is lost on the plain surface
+    &:has(.noCover) :global(.leaflet-popup-close-button) span
+        color: var(--text-color-secondary) !important
+
+    &:has(.noCover) :global(.leaflet-popup-close-button):hover span
+        color: var(--text-color-primary) !important
+
+// `article` beats Leaflet's `.leaflet-container a` colour
+article.popup
+    width: 280px
+    max-width: calc(100vw - 64px)
+
+    a
+        color: var(--link-color)
+
+        &:hover
+            color: var(--link-color-hover)
+
+.cover
+    margin: 0
+
+    figcaption
+        padding: var(--space-1) var(--space-3) 0
+        font-size: var(--font-size-small)
+        line-height: 1.4
+        white-space: nowrap
+        overflow: hidden
+        text-overflow: ellipsis
+
+        a, a:hover
+            color: var(--text-color-secondary)
+
+.coverImage
+    position: relative
+    height: 156px
+    background: var(--surface-2)
+
+    img
+        display: block
+        width: 100%
+        height: 100%
+        object-fit: cover
+
+// Same dark pill as the stats over MediaTile covers
+.coverCounter
+    position: absolute
+    right: var(--space-2)
+    bottom: var(--space-2)
+    display: inline-flex
+    align-items: center
+    gap: 4px
+    padding: 2px 8px
+    border-radius: var(--radius-full)
+    background: rgba(0, 0, 0, .55)
+    color: #fff
+    font-size: var(--font-size-small)
+    line-height: 18px
+
+    svg
+        width: 14px
+        height: 14px
+        fill: currentColor
+
+.body
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+    padding: var(--space-3)
+
+// Without a cover the title starts at the top: keep it clear of the close button
+.noCover .popupHeader
+    padding-right: 24px
+
+.popupHeader
+    display: flex
+    flex-direction: column
+    gap: 2px
+    min-width: 0
+
+// Same as the title of the place popup (marker-point)
+.title
+    margin: 0
+    font-size: variables.$fontSizeHeadline
+    font-weight: 300
+    line-height: 1.3
+    overflow-wrap: anywhere
+    display: -webkit-box
+    -webkit-line-clamp: 3
+    -webkit-box-orient: vertical
+    overflow: hidden
+
+.subline, .settlement
+    font-size: var(--font-size-secondary)
+    line-height: 1.4
+    color: var(--text-color-secondary)
+
+.settlement
+    display: flex
+    align-items: flex-start
+    gap: 4px
+
+    svg
+        flex-shrink: 0
+        width: 14px
+        height: 14px
+        margin-top: 2px
+        fill: var(--icon-color-secondary)
+
+.badges
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-1)
+
+    &:empty
+        display: none
+
+.groupBadge .dot
+    width: 8px
+    height: 8px
+
+// Objects that are already on Geometki (admins only)
+.callout
+    display: flex
+    flex-direction: column
+    align-items: stretch
+    gap: var(--space-1)
+    padding: var(--space-2) var(--space-3)
+    border-radius: var(--border-radius)
+    background: var(--color-main-background)
+    font-size: var(--font-size-secondary)
+
+    button
+        margin-top: var(--space-1)
+
+.calloutLabel
+    color: var(--text-color-secondary)
+
+.calloutLink
+    font-weight: var(--font-weight-medium)
+    overflow-wrap: anywhere
+
+.rating
+    border-top: 1px solid var(--border)
+    padding-top: var(--space-2)
+
+    summary
+        display: flex
+        align-items: center
+        gap: var(--space-1)
+        list-style: none
+        cursor: pointer
+        user-select: none
+        font-size: var(--font-size-secondary)
+        color: var(--text-color-secondary)
+
+        &::-webkit-details-marker
+            display: none
+
+        &:hover
+            color: var(--text-color-primary)
+
+        &:focus-visible
+            outline: var(--focus-outline)
+            outline-offset: 2px
+            border-radius: var(--radius-sm)
+
+    &[open] .chevron
+        transform: rotate(90deg)
+
+    ul
+        display: flex
+        flex-direction: column
+        gap: var(--space-1)
+        margin: var(--space-2) 0 0
+        padding: 0
+        list-style: none
+
+    li
+        display: flex
+        justify-content: space-between
+        align-items: baseline
+        gap: var(--space-3)
+        font-size: var(--font-size-small)
+        line-height: 1.4
+        overflow-wrap: anywhere
+
+.chevron
+    flex-shrink: 0
+    width: 16px
+    height: 16px
+    fill: currentColor
+    transition: transform .15s ease
+
+.ratingLabel
+    flex: 1
+
+.ratingValue, .points
+    font-variant-numeric: tabular-nums
+    font-weight: var(--font-weight-semibold)
+
+.ratingValue
+    min-width: 24px
+    padding: 0 6px
+    border-radius: var(--radius-full)
+    background: var(--surface-2)
+    color: var(--text-color-primary)
+    text-align: center
+    font-size: var(--font-size-small)
+    line-height: 20px
+
+.points
+    flex-shrink: 0
+    color: var(--text-color-secondary)
+
+.positive
+    color: var(--color-green)
+
+.negative
+    color: var(--color-red)
+
+.sources
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-1) var(--space-3)
+    font-size: var(--font-size-small)
+
+    a
+        display: inline-flex
+        align-items: center
+        gap: 2px
+        text-decoration: none
+
+        &:hover
+            text-decoration: underline
+
+        svg
+            width: 12px
+            height: 12px
+            fill: currentColor

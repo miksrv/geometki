@@ -7,11 +7,12 @@ import { APIWikimediaCommons } from '@/api/apiWikimediaCommons'
 
 import { WikimediaCommons } from './WikimediaCommons'
 
+// A city district, about 7 km across: small enough for the geosearch of Wikipedia and Commons
 const mockBounds = {
-    getEast: () => 37.96,
-    getNorth: () => 55.92,
-    getSouth: () => 55.57,
-    getWest: () => 37.29
+    getEast: () => 37.65,
+    getNorth: () => 55.76,
+    getSouth: () => 55.7,
+    getWest: () => 37.55
 }
 
 jest.mock('react-leaflet', () => ({
@@ -45,19 +46,36 @@ jest.mock('leaflet', () => ({
     divIcon: jest.fn().mockReturnValue({})
 }))
 
+jest.mock('../linked-photos', () => ({
+    linkedPhotoStyles: { linked: 'linked' },
+    linkedPlacesTitle: jest.fn(),
+    useLinkedExternalPhotos: jest.fn().mockReturnValue(new Map())
+}))
+
 jest.mock('@/api/apiWikimediaCommons', () => ({
     APIWikimediaCommons: {
-        useGetByBoundsQuery: jest.fn().mockReturnValue({ data: undefined }),
-        useLazyGetImageInfoQuery: jest.fn().mockReturnValue([jest.fn().mockResolvedValue({ data: undefined })])
+        useGetByBoundsQuery: jest.fn().mockReturnValue({ data: undefined })
     }
 }))
 
 const mockData = {
     query: {
-        geosearch: [
-            { dist: 10, lat: 51.765, lon: 55.099, pageid: 1, title: 'File:Photo_One.jpg' },
-            { dist: 20, lat: 51.8, lon: 55.2, pageid: 2, title: 'File:Photo_Two.jpg' }
-        ]
+        pages: {
+            '1': {
+                coordinates: [{ lat: 51.765, lon: 55.099 }],
+                imageinfo: [{ url: 'https://url.com/Photo_One.jpg' }],
+                index: 0,
+                pageid: 1,
+                title: 'File:Photo_One.jpg'
+            },
+            '2': {
+                coordinates: [{ lat: 51.8, lon: 55.2 }],
+                imageinfo: [{ url: 'https://url.com/Photo_Two.jpg' }],
+                index: 1,
+                pageid: 2,
+                title: 'File:Photo_Two.jpg'
+            }
+        }
     }
 }
 
@@ -74,31 +92,53 @@ describe('WikimediaCommons', () => {
     describe('no data', () => {
         it('renders nothing when query has no data', () => {
             jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({ data: undefined })
-            jest.mocked(APIWikimediaCommons.useLazyGetImageInfoQuery).mockReturnValue([
-                jest.fn().mockResolvedValue({ data: undefined })
-            ])
             const { container } = render(<WikimediaCommons />)
             expect(container.innerHTML).toBe('')
         })
 
         it('renders nothing when geosearch results are empty', () => {
             jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({
-                data: { query: { geosearch: [] } }
+                data: { query: { pages: {} } }
             })
-            jest.mocked(APIWikimediaCommons.useLazyGetImageInfoQuery).mockReturnValue([
-                jest.fn().mockResolvedValue({ data: undefined })
-            ])
             const { container } = render(<WikimediaCommons />)
             expect(container.innerHTML).toBe('')
+        })
+    })
+
+    describe('too big area', () => {
+        it('does not ask the API and shows nothing when the area is over the geosearch limit', () => {
+            jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(() => ({
+                // The whole of Moscow, about 40 km across
+                getBounds: () => ({
+                    getEast: () => 37.96,
+                    getNorth: () => 55.92,
+                    getSouth: () => 55.57,
+                    getWest: () => 37.29
+                }),
+                getZoom: () => 10,
+                setView: jest.fn()
+            }))
+            jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({ data: mockData })
+
+            const { container } = render(<WikimediaCommons />)
+
+            expect(container.innerHTML).toBe('')
+            expect(APIWikimediaCommons.useGetByBoundsQuery).toHaveBeenLastCalledWith(null, { skip: true })
         })
     })
 
     describe('with data', () => {
         beforeEach(() => {
             jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({ data: mockData })
-            jest.mocked(APIWikimediaCommons.useLazyGetImageInfoQuery).mockReturnValue([
-                jest.fn().mockResolvedValue({ data: undefined })
-            ])
+        })
+
+        it('asks the API for the visible area', () => {
+            render(<WikimediaCommons />)
+
+            expect(APIWikimediaCommons.useGetByBoundsQuery).toHaveBeenLastCalledWith(
+                { east: 37.65, north: 55.76, south: 55.7, west: 37.55 },
+                { skip: false }
+            )
         })
 
         it('renders a Marker for each geosearch item', () => {
@@ -122,34 +162,19 @@ describe('WikimediaCommons', () => {
             expect(markers[0]).toHaveAttribute('data-lat', '51.765')
         })
 
-        it('calls onPhotoClick after a successful image info fetch', async () => {
+        it('passes every photo of the area to onPhotoClick, starting from the clicked one', () => {
             const onPhotoClick = jest.fn()
-            const mockGetImageInfo = jest.fn().mockResolvedValue({
-                data: {
-                    query: {
-                        pages: {
-                            '1': {
-                                imageinfo: [
-                                    {
-                                        descriptionurl: 'https://commons.wikimedia.org/wiki/File:Photo_One.jpg',
-                                        thumburl: 'https://thumb.url/Photo_One.jpg',
-                                        url: 'https://url.com/Photo_One.jpg'
-                                    }
-                                ],
-                                pageid: 1,
-                                title: 'File:Photo_One.jpg'
-                            }
-                        }
-                    }
-                }
-            })
-            jest.mocked(APIWikimediaCommons.useLazyGetImageInfoQuery).mockReturnValue([mockGetImageInfo])
 
             render(<WikimediaCommons onPhotoClick={onPhotoClick} />)
-            screen.getAllByTestId('wikimedia-marker')[0].click()
+            screen.getAllByTestId('wikimedia-marker')[1].click()
 
-            await screen.findAllByTestId('wikimedia-marker')
-            expect(mockGetImageInfo).toHaveBeenCalledWith('File:Photo_One.jpg')
+            expect(onPhotoClick).toHaveBeenCalledTimes(1)
+            const [photos, index] = onPhotoClick.mock.calls[0]
+            expect(photos.map((photo: { full: string }) => photo.full)).toStrictEqual([
+                'https://url.com/Photo_One.jpg',
+                'https://url.com/Photo_Two.jpg'
+            ])
+            expect(index).toBe(1)
         })
     })
 })

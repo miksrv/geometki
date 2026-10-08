@@ -1,0 +1,49 @@
+@use '../../../styles/variables' as variables
+
+// The same look as the "Places to explore" panel below it
+.panel
+    box-sizing: border-box
+    display: flex
+    flex-direction: column
+    gap: 4px
+    padding: 8px 10px
+    font-size: 12px
+    background: var(--container-background)
+    color: var(--text-color-primary)
+    border: var(--input-border)
+    border-radius: var(--border-radius)
+    cursor: default
+
+// Desktop only: on phones the corner is too small for it. The wrapper is hidden, not the panel,
+// so the map's bottom column has no empty gap
+.wrapper
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: none !important
+
+.row
+    display: flex
+    align-items: center
+    justify-content: space-between
+    gap: 8px
+    min-height: 16px
+
+.title
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+
+.value
+    display: inline-flex
+    align-items: center
+    flex-shrink: 0
+    font-variant-numeric: tabular-nums
+
+.spinner
+    width: 12px
+    height: 12px
+
+.empty
+    color: var(--text-color-secondary)
+
+.error
+    color: var(--color-red)

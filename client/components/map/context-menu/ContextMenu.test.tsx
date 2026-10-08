@@ -69,7 +69,7 @@ jest.mock('cookies-next', () => ({
     deleteCookie: jest.fn()
 }))
 
-jest.mock('@/hooks/useLocalStorage', () => jest.fn().mockReturnValue([undefined, jest.fn()]))
+jest.mock('../mapSettings', () => ({ saveMapSettings: jest.fn() }))
 
 jest.mock('@/utils/coordinates', () => ({
     convertDMS: jest.fn((lat: number, lon: number) => `${lat}°N ${lon}°E`)

@@ -63,7 +63,7 @@ re-implement them.
   key/value facts, then the "В коллекциях" rows (`PlaceCollections`, picker-style rows:
   40px cover, title, places count) and the "Здесь были" avatars → "nearby" tiles below.
 - **Collection page** (`pages/collections/[id]`): `CollectionHeader` (a `PageHeader` with a
-  byline) → the map (`CollectionMap`, 360px / 220px on phones, in a `Container` with a 3px frame) on the full content width →
+  byline) → the map (`PlacesMap`, see section 5) on the full content width →
   the description as article prose on the full content width (`prose` mixin) → the places as the usual
   `MediaTileGrid` of `PlaceCard` tiles. No cover, no sidebar, no facts block and no
   containers: the map is the visual of a collection, the title is its only heading. Order
@@ -146,6 +146,16 @@ Known deviations / follow-ups:
   `cover` object on the server (e.g. a versioned `preview` URL) and drop `updated` from
   `PlaceListItem`.
 
+### `PlacesMap` (`components/shared/places-map`)
+
+The map of a fixed set of places: a collection, a user's places, bookmarks and visited
+places. Category markers with the usual place popup, in a `Container` with a 3px frame,
+360px high (220px on phones). The viewport is fitted to all places (32px padding, min zoom 3
+so places across the country fit); a single place is centred at zoom 11. No scroll-wheel
+zoom, no layer switcher or category filter. Renders nothing without places. On the user
+pages it sits under the tabs, so the tabs keep their place when switching to a tab
+without a map.
+
 ### `CategoryIcon` (`components/shared/category-icon`)
 
 A place's category as its square icon (`public/images/poi/<category>.png`: a flat
@@ -205,6 +215,29 @@ views).
   (`components/shared/add-to-collection`: `AddToCollectionButton` + `AddToCollectionModal`,
   used on the place page and in the map popup, `hideLabel` for the icon-only variant); other
   picker-style rows reuse its `collectionPickerStyles` instead of copying them.
+- **Map popups** (reference: `components/map/osm-candidates/CandidatePopup`): 280px wide,
+  no Leaflet inner margins; an optional full-bleed cover of a fixed height (156px, so autopan
+  is right before the image loads) with the photo credits under it, dropped on a load error;
+  then a 12px-padded body with 12px gaps: title (13px, weight 300, line height 1.3, the same as
+  the place popup; up to 3 lines) → 13px secondary sublines → kit `Badge` chips with tooltips → callouts → the primary action
+  (`size="medium"`, stretched) → collapsible details → 12px external links. The close button
+  is the place popup's plain 24px cross: white over a cover, grey without one.
+  Admin actions are full-width buttons: confirming a found duplicate inside its callout, "hide for good"
+  (`outline` `negative`) last; destructive ones ask for confirmation.
+  Exception to "tokens, not values": the candidate group colours (`GROUP_COLORS`) are hex
+  values in JS, like `CATEGORY_COLORS`, because Leaflet paints the markers from `pathOptions`;
+  the photo counter over a cover is the same fixed dark pill as the stats over `MediaTile`.
+- **Photo gallery** (`PhotoGallery`: profile, place page, place form, the user's photos page):
+  a grid of 4:3 tiles, four columns (two on phones) with 4px gaps, so 8 photos make two
+  whole rows; only the outer corners of the whole grid are rounded, tiles are square; previews are 700×500. The first 8 are shown and the rest collapse behind
+  "Ещё фотографии"; a page of photos passes `showAll`.
+- **Tabs** (`components/ui/tabs`, the user profile: activity, achievements, places,
+  bookmarks, visited, collections, photos): a bar on a card (`--container-shadow`,
+  4px padding) of items styled like the app bar navigation — 36px high (32px on phones),
+  secondary text, `--surface-2` on hover, `--color-main` on `--color-main-background` for the
+  active one. Tabs that are pages are links (`href`, `aria-current="page"`), never
+  `router.push`. On phones the bar scrolls sideways without a scrollbar, the active tab is
+  scrolled into view and the cut-off edges fade out. A kit primitive candidate.
 - **Empty states.** `EmptyState` with a title, one sentence and at most one action; copy
   differs for owners (what to do) and readers (what to expect).
 - **Notifications.** Success and error toasts via `Notify`; an entity link in the toast is

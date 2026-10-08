@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.13.0
+
+### Minor Changes
+
+- Map: new "Places to explore" panel with interesting places from OpenStreetMap and Wikidata that are not on Geometki yet, with photos, details and a "Create a place" button
+- Map: the heatmap layer is now called "Travelers"
+- Home page: the "Explorers" counter is replaced with the number of unexplored places
+- Map: remembers the map style, layers, category filter and the "Places to explore" panel between visits
+- Map: zoom level between the zoom buttons; the category filter button shows how many categories are selected
+- Map: a status panel for the PastVu, Wikimedia and Wikipedia layers shows whether each is loading and how many objects it has in the area; Wikipedia and Wikimedia ask to zoom in when the area is too big for them
+- Places: add Wikimedia Commons and PastVu photos to a place with "Photos nearby"; they appear in the place photos with the author and licence, and the map marks the ones already added
+
+### Patch Changes
+
+- Pages no longer jump while loading: buttons, cards and panels are styled from the first paint
+- Activity feed and profile: the next items load before the end of the list, the footer no longer jumps
+- Optimized page loading: analytics loads after the page
+- Home page: fixed the layout overflowing the screen on phones; small texts are easier to read
+- Profile: redesigned the tabs: clear hover and active states, swipeable on phones, Ctrl-click opens a tab in a new browser tab
+- Profile: new tab order: Activity feed, Achievements, Geotags, Favorites, Visited places, Collections, Photos; the tabs no longer jump when switching between them
+- Profile: Favorites now have a map; the maps of geotags, favorites, visited places and collections show all places
+- Profile: the Photos tab shows the whole page of photos without the "More photos" button
+- Photos: gallery tiles keep a 4:3 shape on wide screens instead of stretching; only the outer corners of the gallery are rounded
+- Photo viewer: the preview is shown while the full photo loads; sharper photos when zoomed in; no scroll arrows for a single photo
+- Map: Wikimedia photos can be scrolled through in the viewer, all photos of the visible area
+- Map: fixed broken slides in the photo viewer when the "Photos" mode shows photo clusters
+- Activity feed: fixed vertical photos shown too small in the photo viewer
+- Photos: the photo menu (Rotate, Delete) looks like the other menus; the menu button is always visible on touch screens
+- Place and collection menus: Ctrl-click on an action no longer opens a blank tab
+- Pagination wraps on narrow screens
+- Profile: fixed the list of visited places
+- Map: the layers panel scrolls when it does not fit the screen
+
 ## 1.12.0
 
 ### Minor Changes
