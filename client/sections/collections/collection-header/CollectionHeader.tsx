@@ -151,30 +151,22 @@ export const CollectionHeader: React.FC<CollectionHeaderProps> = ({
                         >
                             <ul className={'contextListMenu'}>
                                 <li>
-                                    <Link
-                                        href={'#'}
-                                        onClick={(event) => {
-                                            event.preventDefault()
-                                            onOpenSettings?.()
-                                        }}
+                                    <button
+                                        type={'button'}
+                                        onClick={onOpenSettings}
                                     >
-                                        {}
                                         <Icon name={'Settings'} />
                                         {t('collections_settings', { defaultValue: 'Настройки коллекции' })}
-                                    </Link>
+                                    </button>
                                 </li>
                                 <li>
-                                    <Link
-                                        href={'#'}
-                                        onClick={(event) => {
-                                            event.preventDefault()
-                                            onDelete?.()
-                                        }}
+                                    <button
+                                        type={'button'}
+                                        onClick={onDelete}
                                     >
-                                        {}
                                         <Icon name={'Close'} />
                                         {t('collections_delete-collection', { defaultValue: 'Удалить коллекцию' })}
-                                    </Link>
+                                    </button>
                                 </li>
                             </ul>
                         </Popout>

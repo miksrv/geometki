@@ -1,0 +1,17 @@
+@use '../../../styles/variables' as variables
+
+// The map in a card with a 3px frame
+.placesMap
+    padding: 3px !important
+
+.inner
+    position: relative
+    height: 360px
+    border-radius: calc(var(--border-radius) - 3px)
+    overflow: hidden
+
+    & > div
+        height: 100%
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        height: 220px

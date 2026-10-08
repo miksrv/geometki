@@ -310,7 +310,9 @@ a
         &:last-of-type
             border-radius: 0 0 var(--border-radius) var(--border-radius)
 
-        a
+        // Links navigate, buttons run an action in place (rotate, delete); both look the same
+        a, button
+            box-sizing: border-box
             text-decoration: none
             height: 100%
             width: 100%
@@ -324,6 +326,11 @@ a
             text-align: left
             display: flex
             align-items: center
+            font-family: var(--font-family), sans-serif
+
+            &:disabled
+                opacity: .5
+                cursor: default
 
             svg
                 fill: var(--link-color) !important
@@ -333,3 +340,6 @@ a
 
         &:hover, &.active
             background-color: var(--surface-2)
+
+        &:has(> button:disabled)
+            background-color: transparent

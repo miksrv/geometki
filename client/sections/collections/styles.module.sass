@@ -70,21 +70,6 @@
 // Map in a Container with a thin 3px frame between the container edge and the map.
 // Vertical spacing between the header, the map, the description and the grid comes from
 // the AppLayout column gap (15px), the same as on every list page — no own margins here.
-.articleMap
-    padding: 3px !important
-
-.articleMapInner
-    position: relative
-    height: 360px
-    border-radius: calc(var(--border-radius) - 3px)
-    overflow: hidden
-
-    & > div
-        height: 100%
-
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        height: 220px
-
 // Byline under the title: avatar + name, places count, region, update time
 .byline
     display: flex

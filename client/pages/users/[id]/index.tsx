@@ -139,6 +139,11 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
 
             <UserHeader user={user} />
 
+            <UserTabs
+                user={user}
+                currentPage={UserPagesEnum.FEED}
+            />
+
             <PhotoGallery
                 title={t('photos')}
                 photos={photosList}
@@ -165,11 +170,6 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
                         </Button>
                     )
                 }
-            />
-
-            <UserTabs
-                user={user}
-                currentPage={UserPagesEnum.FEED}
             />
 
             <ActivityList

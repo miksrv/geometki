@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 
-import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
@@ -8,12 +7,12 @@ import { Tabs } from '@/components/ui'
 
 export enum UserPagesEnum {
     FEED = 'feed',
+    ACHIEVEMENTS = 'achievements',
     PLACES = 'places',
     BOOKMARKS = 'bookmarks',
     VISITED = 'visited',
     COLLECTIONS = 'collections',
-    PHOTOS = 'photos',
-    ACHIEVEMENTS = 'achievements'
+    PHOTOS = 'photos'
 }
 
 interface UserTabsProps {
@@ -22,30 +21,26 @@ interface UserTabsProps {
 }
 
 export const UserTabs: React.FC<UserTabsProps> = ({ user, currentPage }) => {
-    const router = useRouter()
     const { t } = useTranslation()
 
-    const [page, setPage] = useState<UserPagesEnum | undefined>(currentPage)
-
-    useEffect(() => {
-        if (page) {
-            void router.push(`/users/${user?.id}${page === UserPagesEnum.FEED ? '' : `/${page}`}`)
-        }
-    }, [page])
+    const tabs: Array<{ key: UserPagesEnum; label: string }> = [
+        { key: UserPagesEnum.FEED, label: t('activity-feed') },
+        { key: UserPagesEnum.ACHIEVEMENTS, label: t('achievements-title') },
+        { key: UserPagesEnum.PLACES, label: t('geotags') },
+        { key: UserPagesEnum.BOOKMARKS, label: t('favorites') },
+        { key: UserPagesEnum.VISITED, label: t('visited-places') },
+        { key: UserPagesEnum.COLLECTIONS, label: t('nav-collections', { defaultValue: 'Коллекции' }) },
+        { key: UserPagesEnum.PHOTOS, label: t('photos') }
+    ]
 
     return (
         <Tabs<UserPagesEnum>
-            tabs={[
-                { key: UserPagesEnum.FEED, label: t('activity-feed') },
-                { key: UserPagesEnum.PLACES, label: t('geotags') },
-                { key: UserPagesEnum.BOOKMARKS, label: t('favorites') },
-                { key: UserPagesEnum.VISITED, label: t('visited-places') },
-                { key: UserPagesEnum.COLLECTIONS, label: t('nav-collections', { defaultValue: 'Коллекции' }) },
-                { key: UserPagesEnum.PHOTOS, label: t('photos') },
-                { key: UserPagesEnum.ACHIEVEMENTS, label: t('achievements-title') }
-            ]}
-            activeTab={page}
-            onChangeTab={setPage}
+            aria-label={`${user?.name}: ${t('user-profile-sections', { defaultValue: 'Разделы профиля' })}`}
+            tabs={tabs.map((tab) => ({
+                ...tab,
+                href: `/users/${user?.id}${tab.key === UserPagesEnum.FEED ? '' : `/${tab.key}`}`
+            }))}
+            activeTab={currentPage}
         />
     )
 }

@@ -79,7 +79,10 @@ const UserPhotosPage: React.FC<UserPhotosPageProps> = ({ id, user, photosList, p
                 currentPage={UserPagesEnum.PHOTOS}
             />
 
-            <PhotoGallery photos={photosList} />
+            <PhotoGallery
+                photos={photosList}
+                showAll={true}
+            />
 
             <Container className={'paginationContainer'}>
                 <div>

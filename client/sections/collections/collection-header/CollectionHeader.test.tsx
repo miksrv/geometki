@@ -123,6 +123,10 @@ describe('CollectionHeader', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Редактировать' }))
         expect(onEdit).toHaveBeenCalled()
 
+        // Actions, not navigation: menu items are buttons
+        expect(screen.getByRole('button', { name: 'Настройки коллекции' })).toHaveAttribute('type', 'button')
+        expect(screen.getByRole('button', { name: 'Удалить коллекцию' })).toHaveAttribute('type', 'button')
+
         fireEvent.click(screen.getByText('Настройки коллекции'))
         expect(onOpenSettings).toHaveBeenCalled()
 

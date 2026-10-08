@@ -1,68 +1,69 @@
 @use '../../../styles/variables' as variables
 
+$fadeWidth: 24px
+
+// A bar of tabs on a card; the items look like the app bar navigation (`.navItem`)
 .tabs
+    box-sizing: border-box
+    width: 100%
+    padding: var(--space-1)
+    border-radius: var(--container-radius)
+    background: var(--container-background-color)
+    box-shadow: var(--container-shadow)
+
     .tabsHeader
+        position: relative
         display: flex
-        align-items: stretch
-        width: 100%
-        overflow-y: auto
+        gap: var(--space-1)
+        overflow-x: auto
+        overscroll-behavior-x: contain
+        scrollbar-width: none
 
-        .tabsHeaderItem
-            position: relative
-            flex-basis: auto
-            flex-grow: 1
-            flex-shrink: 0
-            min-width: 48px
-            padding: 10px 30px
-            max-width: 100%
-            overflow: hidden
-            text-overflow: ellipsis
-            transition: color .15s ease-out, background-color .15s ease-out
-            white-space: nowrap
-            cursor: pointer
-            border: none
-            background-color: transparent
-            border-radius: var(--border-radius)
-            color: var(--text-color-secondary)
-            font-family: var(--font-family), sans-serif
-            font-size: var(--font-size)
-            margin-right: 10px
-            font-weight: 500
+        &::-webkit-scrollbar
+            display: none
 
-            @media only screen and (max-width: variables.$mobileMaxWidth)
-                min-width: 24px
-                padding: 6px 10px
+    &.fadeStart .tabsHeader
+        mask-image: linear-gradient(to right, transparent, #000 $fadeWidth)
 
-            &:last-of-type
-                margin-right: 0
+    &.fadeEnd .tabsHeader
+        mask-image: linear-gradient(to left, transparent, #000 $fadeWidth)
 
-            &:hover
-                background-color: var(--overlay-background)
+    &.fadeStart.fadeEnd .tabsHeader
+        mask-image: linear-gradient(to right, transparent, #000 $fadeWidth, #000 calc(100% - #{$fadeWidth}), transparent)
 
-            &.active
-                color: var(--text-color-primary)
-                background-color: var(--input-background-content)
+    .tabsHeaderItem
+        display: flex
+        flex: 0 0 auto
+        align-items: center
+        height: 36px
+        padding: 0 var(--space-3)
+        border: none
+        border-radius: var(--border-radius)
+        background-color: transparent
+        color: var(--text-color-secondary)
+        font-family: var(--font-family), sans-serif
+        font-size: var(--font-size)
+        font-weight: 500
+        white-space: nowrap
+        text-decoration: none
+        cursor: pointer
+        transition: color var(--duration-fast) var(--ease), background-color var(--duration-fast) var(--ease)
 
-            .itemBottom
-                background: var(--link-color)
-                border-radius: 2px
-                bottom: 3px
-                left: 5px
-                right: 5px
-                height: 2px
-                opacity: 0
-                pointer-events: none
-                position: absolute
-                transition: opacity .15s ease-out
-                display: none
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            height: 32px
+            padding: 0 10px
 
-                &.active
-                    opacity: 1
+        &:hover
+            color: var(--text-color-primary)
+            background-color: var(--surface-2)
+            text-decoration: none
 
-    &.noContent
-        padding-bottom: 0
+        // Inset: an outer outline would be clipped by the scrolling list
+        &:focus-visible
+            outline: none
+            box-shadow: inset 0 0 0 2px var(--color-main)
 
-        & > div:first-of-type
-            border-bottom: 0
-            margin-bottom: 0
-            padding: 0 10px 10px
+        &.active
+            color: var(--color-main)
+            background-color: var(--color-main-background)
+            cursor: default

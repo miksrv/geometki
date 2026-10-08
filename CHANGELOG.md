@@ -13,6 +13,13 @@
 ### Patch Changes
 
 - Home page: fixed the layout overflowing the screen on phones; small texts are easier to read
+- Profile: redesigned the tabs: clear hover and active states, swipeable on phones, Ctrl-click opens a tab in a new browser tab
+- Profile: new tab order: Activity feed, Achievements, Geotags, Favorites, Visited places, Collections, Photos; the tabs no longer jump when switching between them
+- Profile: Favorites now have a map; the maps of geotags, favorites, visited places and collections show all places
+- Profile: the Photos tab shows the whole page of photos without the "More photos" button
+- Photos: gallery tiles keep a 4:3 shape on wide screens instead of stretching; only the outer corners of the gallery are rounded
+- Photos: the photo menu (Rotate, Delete) looks like the other menus; the menu button is always visible on touch screens
+- Place and collection menus: Ctrl-click on an action no longer opens a blank tab
 - Pagination wraps on narrow screens
 - Profile: fixed the list of visited places
 - Map: the layers panel scrolls when it does not fit the screen

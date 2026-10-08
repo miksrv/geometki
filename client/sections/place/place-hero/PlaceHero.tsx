@@ -76,11 +76,6 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
         }
     }
 
-    const handleRemovePlaceClick = (event: React.MouseEvent) => {
-        event.preventDefault()
-        setShowRemoveDialog(true)
-    }
-
     useEffect(() => {
         if (removeSuccess) {
             void router.push('/places')
@@ -142,34 +137,28 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                                 </Link>
                             </li>
                             <li>
-                                <Link
-                                    href={'#'}
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        onPhotoUploadClick?.(e)
-                                    }}
+                                <button
+                                    type={'button'}
+                                    onClick={onPhotoUploadClick}
                                 >
                                     {/* eslint-disable-next-line react/jsx-max-depth */}
                                     <Icon name={'Camera'} />
                                     {t('upload-photo')}
-                                </Link>
+                                </button>
                             </li>
                             <li>
-                                <Link
-                                    href={'#'}
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        onChangePlaceCoverClick?.(e)
-                                    }}
+                                <button
+                                    type={'button'}
+                                    onClick={onChangePlaceCoverClick}
                                 >
                                     {/* eslint-disable-next-line react/jsx-max-depth */}
                                     <Icon name={'Photo'} />
                                     {t('change-cover')}
-                                </Link>
+                                </button>
                             </li>
                             <li>
                                 <Link
-                                    href={isAuth ? `/places/${place?.id}/edit` : '#'}
+                                    href={`/places/${place?.id}/edit`}
                                     onClick={handleEditPlaceClick}
                                 >
                                     {/* eslint-disable-next-line react/jsx-max-depth */}
@@ -179,13 +168,13 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                             </li>
                             {userRole === 'admin' && (
                                 <li>
-                                    <Link
-                                        href={'#'}
-                                        onClick={handleRemovePlaceClick}
+                                    <button
+                                        type={'button'}
+                                        onClick={() => setShowRemoveDialog(true)}
                                     >
                                         <Icon name={'Close'} />
                                         {t('delete')}
-                                    </Link>
+                                    </button>
                                 </li>
                             )}
                         </ul>
