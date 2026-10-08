@@ -13,6 +13,7 @@ jest.mock('simple-react-ui-kit', () => ({
         />
     ),
     Container: ({ children, className }: any) => <div className={className}>{children}</div>,
+    cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
     Checkbox: ({ id, _label, checked, _indeterminate, onChange }: any) => (
         <label htmlFor={id}>
             <input
@@ -74,6 +75,23 @@ describe('CategoryControl', () => {
         it('does not show category list when closed', () => {
             render(<CategoryControl />)
             expect(screen.queryByText('Все категории геометок')).not.toBeInTheDocument()
+        })
+    })
+
+    describe('counter of the selected categories', () => {
+        it('is hidden when all categories are selected', () => {
+            render(<CategoryControl categories={['abandoned', 'nature'] as any} />)
+            expect(screen.queryByText('2')).not.toBeInTheDocument()
+        })
+
+        it('shows how many categories are selected when some are off', () => {
+            render(<CategoryControl categories={['abandoned'] as any} />)
+            expect(screen.getByText('1')).toBeInTheDocument()
+        })
+
+        it('shows 0 when every category is off', () => {
+            render(<CategoryControl categories={[]} />)
+            expect(screen.getByText('0')).toBeInTheDocument()
         })
     })
 

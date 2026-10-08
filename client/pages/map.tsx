@@ -14,7 +14,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
-import { MapAdditionalLayersEnum } from '@/components/map/types'
+import { getMapSettings, saveMapSettings } from '@/components/map/mapSettings'
 import { AppLayout, MapObjectsTypeEnum } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { round } from '@/utils/helpers'
@@ -29,9 +29,6 @@ const PhotoLightbox = dynamic(
     () => import('@/components/shared/photo-lightbox/PhotoLightbox').then((m) => ({ default: m.PhotoLightbox })),
     { ssr: false }
 )
-
-// New interesting places from OpenStreetMap are shown on the main map by default
-const DEFAULT_ADDITIONAL_LAYERS = [MapAdditionalLayersEnum.OSM_CANDIDATES]
 
 // Experiment to enable/disable POI clusterization on the map
 const ENABLE_POI_CLUSTERIZATION = false
@@ -140,11 +137,15 @@ const MapPage: NextPage<object> = () => {
     const handleChangeCategories = (categories?: ApiModel.Categories[]) => {
         setCategories(categories)
         debounceSetMapCategories(categories)
+        saveMapSettings({ categories: categories ?? [] })
     }
 
+    // After the mount: the page is rendered on the server too, where there is no localStorage
     useEffect(() => {
-        setCategories(Object.values(ApiModel.Categories))
-        setMapCategories(Object.values(ApiModel.Categories))
+        const initialCategories = getMapSettings().categories ?? Object.values(ApiModel.Categories)
+
+        setCategories(initialCategories)
+        setMapCategories(initialCategories)
     }, [])
 
     useEffect(() => {
@@ -235,6 +236,7 @@ const MapPage: NextPage<object> = () => {
                     categories={categories}
                     // layer={initMapLayer}
                     storeMapPosition={true}
+                    storeMapSettings={true}
                     enableCenterPopup={true}
                     // enableSearch={true}
                     enableFullScreen={true}
@@ -242,7 +244,7 @@ const MapPage: NextPage<object> = () => {
                     enableAreaMeasure={true}
                     enableCoordsControl={true}
                     enableLayersSwitcher={true}
-                    defaultAdditionalLayers={DEFAULT_ADDITIONAL_LAYERS}
+                    enableOsmCandidates={true}
                     enableContextMenu={true}
                     enableCategoryControl={mapType === 'Places'}
                     loading={placesLoading || photosLoading}

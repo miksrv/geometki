@@ -8,8 +8,7 @@ import { useRouter } from 'next/dist/client/router'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
-import { LOCAL_STORAGE } from '@/config/constants'
-import useLocalStorage from '@/hooks/useLocalStorage'
+import { CYCLEMAP_TOKEN, MAPBOX_TOKEN } from '@/config/env'
 
 import { AreaMeasure } from './area-measure'
 import { CategoryControl } from './category-control'
@@ -21,6 +20,7 @@ import { HistoricalPhotos } from './historical-photos'
 import { LayerSwitcherControl } from './layer-switcher-control'
 import { MapControlsContext } from './MapControlsContext'
 import { MapEvents } from './MapEvents'
+import { getMapSettings, saveMapSettings } from './mapSettings'
 import { MarkerPhoto } from './marker-photo'
 import { MarkerPhotoCluster } from './marker-photo-cluster'
 import { MarkerPin } from './marker-pin'
@@ -33,6 +33,7 @@ import { Ruler } from './ruler'
 import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum, MapPositionType, MarkerPinData } from './types'
 import { WikimediaCommons } from './wikimedia-commons'
 import { Wikipedia } from './wikipedia'
+import { ZoomLevel } from './zoom-level'
 
 import 'leaflet/dist/leaflet.css'
 import styles from './styles.module.sass'
@@ -55,9 +56,10 @@ type MapProps = {
     enableLayersSwitcher?: boolean
     enableContextMenu?: boolean
     hideAdditionalLayers?: boolean
-    /** Additional layers switched on when the map opens */
-    defaultAdditionalLayers?: MapAdditionalLayersEnum[]
-    storeMapKey?: string
+    /** New interesting places from OpenStreetMap and their panel "Места для исследования" */
+    enableOsmCandidates?: boolean
+    /** Keep the chosen map layer, objects type and additional layers between visits (see mapSettings) */
+    storeMapSettings?: boolean
     fullMapLink?: string
     userLatLon?: ApiType.Coordinates
     onChangeCategories?: (categories?: ApiModel.Categories[]) => void
@@ -132,8 +134,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
     enableLayersSwitcher,
     enableContextMenu,
     hideAdditionalLayers,
-    defaultAdditionalLayers,
-    storeMapKey,
+    enableOsmCandidates,
+    storeMapSettings,
     fullMapLink,
     userLatLon,
     onChangeCategories,
@@ -148,20 +150,25 @@ export const InteractiveMap: React.FC<MapProps> = ({
     const router = useRouter()
     const mapRef = useRef<Map>(null)
 
-    const [readyStorage, setReadyStorage] = useState<boolean>(false)
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false)
     // One measuring tool at a time: both take over the map clicks
     const [activeTool, setActiveTool] = useState<MeasureTool>()
     const [placeMark, setPlaceMark] = useState<ApiType.Coordinates>()
     const [mapPosition, setMapPosition] = useState<MapPositionType>()
-    const [mapLayer, setMapLayer] = useState<MapLayersEnum>(DEFAULT_MAP_LAYER)
-    const [mapType, setMapType] = useState<MapObjectsTypeEnum>(DEFAULT_MAP_TYPE)
+    // The map is rendered on the client only (Leaflet needs `window`), so the saved settings are read right away
+    const [savedSettings] = useState(() => (storeMapSettings || storeMapPosition ? getMapSettings() : {}))
+    // The saved position opens the map, unless the page passes its own center (e.g. from the URL)
+    const savedPosition = storeMapPosition && !props.center ? savedSettings.position : undefined
+    const [mapLayer, setMapLayer] = useState<MapLayersEnum>(
+        (storeMapSettings && savedSettings.layer) || DEFAULT_MAP_LAYER
+    )
+    const [mapType, setMapType] = useState<MapObjectsTypeEnum>(
+        (storeMapSettings && savedSettings.type) || DEFAULT_MAP_TYPE
+    )
     const [bottomSlot, setBottomSlot] = useState<HTMLDivElement | null>(null)
     const [additionalLayers, setAdditionalLayers] = useState<MapAdditionalLayersEnum[] | undefined>(
-        defaultAdditionalLayers
+        storeMapSettings ? savedSettings.additionalLayers : undefined
     )
-
-    const [coordinates, setCoordinates] = useLocalStorage<MapPositionType>(storeMapKey || LOCAL_STORAGE.MAP_CENTER)
 
     const handleUserPosition = () => {
         if (userLatLon?.lat && userLatLon.lon) {
@@ -185,15 +192,35 @@ export const InteractiveMap: React.FC<MapProps> = ({
             onChangeBounds?.(bounds, zoom)
             setMapPosition(currentMapPosition)
 
-            if (readyStorage && storeMapPosition) {
-                setCoordinates(currentMapPosition)
+            if (storeMapPosition) {
+                saveMapSettings({ position: currentMapPosition })
             }
+        }
+    }
+
+    const handleSwitchMapLayer = (layer: MapLayersEnum) => {
+        setMapLayer(layer)
+
+        if (storeMapSettings) {
+            saveMapSettings({ layer })
         }
     }
 
     const handleSwitchMapType = (type: MapObjectsTypeEnum) => {
         setMapType(type)
         onChangeMapType?.(type)
+
+        if (storeMapSettings) {
+            saveMapSettings({ type })
+        }
+    }
+
+    const handleSwitchAdditionalLayers = (layers?: MapAdditionalLayersEnum[]) => {
+        setAdditionalLayers(layers)
+
+        if (storeMapSettings) {
+            saveMapSettings({ additionalLayers: layers ?? [] })
+        }
     }
 
     const handleSetPlaceMarker = async (coords: ApiType.Coordinates | undefined) => {
@@ -271,23 +298,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
         } else if (!match && placeMark) {
             setPlaceMark(undefined)
         }
-
-        if (typeof coordinates !== 'undefined') {
-            if (
-                !readyStorage &&
-                !props.center &&
-                storeMapPosition &&
-                coordinates.lon &&
-                coordinates.lat &&
-                coordinates.zoom &&
-                mapRef.current?.setView
-            ) {
-                mapRef.current?.setView([coordinates.lat, coordinates.lon], coordinates.zoom || DEFAULT_MAP_ZOOM)
-            }
-
-            setReadyStorage(true)
-        }
-    }, [props.center, readyStorage, coordinates, placeMark])
+    }, [props.center, placeMark])
 
     useEffect(() => {
         // With `bounds` the viewport is the fitted bounds, not center/zoom
@@ -321,8 +332,13 @@ export const InteractiveMap: React.FC<MapProps> = ({
                 {...props}
                 // MapContainer prefers center/zoom over bounds when both are set, so with
                 // `bounds` the viewport comes from them alone (see FitBounds below)
-                center={props.bounds ? undefined : (props.center ?? DEFAULT_MAP_CENTER)}
-                zoom={props.bounds ? undefined : (props.zoom ?? DEFAULT_MAP_ZOOM)}
+                center={
+                    props.bounds
+                        ? undefined
+                        : (props.center ??
+                          (savedPosition ? [savedPosition.lat, savedPosition.lon] : DEFAULT_MAP_CENTER))
+                }
+                zoom={props.bounds ? undefined : (props.zoom ?? savedPosition?.zoom ?? DEFAULT_MAP_ZOOM)}
                 minZoom={props.minZoom ?? 6}
                 style={{
                     cursor: enableCoordsControl ? 'crosshair' : props.dragging ? 'pointer' : 'default',
@@ -348,7 +364,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         <WikimediaCommons onPhotoClick={onPhotoClick} />
                     )}
 
-                    {additionalLayers?.includes(MapAdditionalLayersEnum.OSM_CANDIDATES) && <OsmCandidates />}
+                    {enableOsmCandidates && <OsmCandidates />}
 
                     {additionalLayers?.includes(MapAdditionalLayersEnum.WIKIPEDIA) && (
                         <Wikipedia onPhotoClick={onPhotoClick} />
@@ -376,7 +392,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     {mapLayer === MapLayersEnum.OCM && (
                         <ReactLeaflet.TileLayer
                             attribution='Open Cycle Map'
-                            url={`https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${process.env.NEXT_PUBLIC_CYCLEMAP_TOKEN}`}
+                            url={`https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${CYCLEMAP_TOKEN}`}
                         />
                     )}
                     {mapLayer === MapLayersEnum.OPEN_TOPO && (
@@ -396,7 +412,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     {mapLayer === MapLayersEnum.MAPBOX && (
                         <ReactLeaflet.TileLayer
                             attribution='&copy; <a href="https://www.mapbox.com">Mapbox</a> '
-                            url={`https://api.mapbox.com/styles/v1/miksoft/cli4uhd5b00bp01r6eocm21rq/tiles/256/{z}/{x}/{y}@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`}
+                            url={`https://api.mapbox.com/styles/v1/miksoft/cli4uhd5b00bp01r6eocm21rq/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`}
                         />
                     )}
                     {mapLayer === MapLayersEnum.OSM && (
@@ -420,10 +436,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     {mapLayer === MapLayersEnum.MAPBOX_SAT && (
                         <ReactLeaflet.TileLayer
                             attribution='&copy; <a href="https://www.mapbox.com">Mapbox</a> '
-                            url='https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}'
-                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                            // @ts-ignore
-                            accessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+                            url={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`}
                         />
                     )}
 
@@ -475,6 +488,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
                             pin={pin}
                         />
                     ))}
+
+                    {props.zoomControl !== false && <ZoomLevel />}
 
                     {enableContextMenu && <ContextMenu />}
 
@@ -568,22 +583,22 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     </div>
 
                     <div className={styles.rightControls}>
+                        {enableCategoryControl && (
+                            <CategoryControl
+                                categories={categories}
+                                onChangeCategories={onChangeCategories}
+                            />
+                        )}
+
                         {enableLayersSwitcher && (
                             <LayerSwitcherControl
                                 currentLayer={mapLayer}
                                 currentType={mapType}
                                 hideAdditionalLayers={hideAdditionalLayers}
                                 additionalLayers={additionalLayers}
-                                onSwitchMapLayer={setMapLayer}
+                                onSwitchMapLayer={handleSwitchMapLayer}
                                 onSwitchMapType={handleSwitchMapType}
-                                onSwitchAdditionalLayers={setAdditionalLayers}
-                            />
-                        )}
-
-                        {enableCategoryControl && (
-                            <CategoryControl
-                                categories={categories}
-                                onChangeCategories={onChangeCategories}
+                                onSwitchAdditionalLayers={handleSwitchAdditionalLayers}
                             />
                         )}
                     </div>

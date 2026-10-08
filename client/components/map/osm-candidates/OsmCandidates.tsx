@@ -11,6 +11,7 @@ import { useAppSelector } from '@/app/store'
 import { Counter } from '@/components/ui'
 
 import { MapControlsContext } from '../MapControlsContext'
+import { getMapSettings, saveMapSettings } from '../mapSettings'
 
 import { CandidatePopup } from './CandidatePopup'
 import {
@@ -56,7 +57,8 @@ export const OsmCandidates: React.FC = () => {
 
     const [bounds, setBounds] = useState<string>()
     const [zoomTooSmall, setZoomTooSmall] = useState(false)
-    const [collapsed, setCollapsed] = useState(false)
+    // Rendered on the client only, inside the map, so the saved state is read right away
+    const [collapsed, setCollapsed] = useState(() => getMapSettings().osmCandidatesCollapsed ?? false)
     const [visible, setVisible] = useState<CandidateGroup[]>(DEFAULT_GROUPS)
     const [pollingInterval, setPollingInterval] = useState(0)
 
@@ -122,6 +124,11 @@ export const OsmCandidates: React.FC = () => {
 
     const newPlacesCount = counts.known + counts.explore
 
+    const handleCollapse = (value: boolean) => {
+        setCollapsed(value)
+        saveMapSettings({ osmCandidatesCollapsed: value })
+    }
+
     const toggle = (group: CandidateGroup) =>
         setVisible((prev) => (prev.includes(group) ? prev.filter((item) => item !== group) : [...prev, group]))
 
@@ -139,7 +146,7 @@ export const OsmCandidates: React.FC = () => {
                         icon={'Compass'}
                         aria-label={t('osm-candidates_title', { defaultValue: 'Места для исследования' })}
                         tooltip={t('osm-candidates_title', { defaultValue: 'Места для исследования' })}
-                        onClick={() => setCollapsed(false)}
+                        onClick={() => handleCollapse(false)}
                     />
                     {!zoomTooSmall && newPlacesCount > 0 && (
                         <Counter
@@ -158,7 +165,7 @@ export const OsmCandidates: React.FC = () => {
                             className={styles.close}
                             aria-label={t('osm-candidates_collapse', { defaultValue: 'Свернуть' })}
                             title={t('osm-candidates_collapse', { defaultValue: 'Свернуть' })}
-                            onClick={() => setCollapsed(true)}
+                            onClick={() => handleCollapse(true)}
                         >
                             {'✕'}
                         </button>

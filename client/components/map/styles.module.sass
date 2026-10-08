@@ -23,7 +23,8 @@
     .leftControls, .rightControls, .bottomControls
         position: absolute
         z-index: 402
-        top: 90px
+        // Below the zoom control: "+", the zoom level, "−"
+        top: 114px
         left: 10px
         height: calc(100% - 20px)
 
@@ -96,8 +97,15 @@
             height: 26px !important
             line-height: 26px !important
 
+        // The zoom level of the zoom-level control
+        :global(.leaflet-control-zoom) > div
+            width: 26px
+            height: 20px
+            line-height: 20px
+            font-size: 10px
+
         .leftControls, .rightControls, .bottomControls
-            top: 70px
+            top: 90px
 
             button
                 padding: 4px 5.5px
@@ -112,16 +120,35 @@
         top: 10px
         right: 10px
 
-        .mapCategoryContainer
+        // Taller than the map: the panels scroll instead of going off the map
+        .mapCategoryContainer, .mapLayersContainer
             @extend .rightControlContainer
             width: fit-content
             max-height: 100%
             overflow: hidden
-            overflow-y: scroll
+            overflow-y: auto
+            // Over the other buttons of the column, also the positioned ones (with a counter)
+            z-index: 1
 
-        .mapLayersContainer
-            @extend .rightControlContainer
+        // A control button with a counter, like the "Места для исследования" button
+        .controlWithCounter
+            position: relative
+            display: flex
             width: fit-content
+
+        // Same pill as the "Места для исследования" counter, but neutral: it is a setting, not news
+        .controlCounter
+            position: absolute
+            top: -5px
+            right: -5px
+            min-width: 18px
+            height: 18px
+            padding: 0 5px !important
+            border-radius: 9px !important
+            background: var(--color-main) !important
+            font-size: 10px !important
+            line-height: 1
+            pointer-events: none
 
         .mapLayersList, .mapPointsTypeList, .mapCategoryList, .mapAdditionalList
             margin: -10px -10px 5px

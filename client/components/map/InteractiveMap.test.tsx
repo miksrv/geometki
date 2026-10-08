@@ -3,7 +3,6 @@ import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 import { InteractiveMap } from './InteractiveMap'
-import { MapAdditionalLayersEnum } from './types'
 
 jest.mock('react-leaflet', () => ({
     MapContainer: ({ children, _center, zoom, _style, _ref }: any) => (
@@ -56,13 +55,12 @@ jest.mock('next/dist/client/router', () => ({
     })
 }))
 
-jest.mock('@/hooks/useLocalStorage', () => jest.fn().mockReturnValue([undefined, jest.fn()]))
-
 jest.mock('lodash-es/isEqual', () => jest.fn().mockReturnValue(false))
 
 jest.mock('@/config/constants', () => ({
     LOCAL_STORAGE: {
         MAP_CENTER: 'mapCenter',
+        MAP_SETTINGS: 'mapSettings',
         LOCALE: 'locale',
         THEME: 'theme',
         RETURN_PATH: 'returnPath',
@@ -145,8 +143,8 @@ describe('InteractiveMap', () => {
             expect(screen.queryByTestId('osm-candidates')).not.toBeInTheDocument()
         })
 
-        it('renders the additional layers switched on by default', () => {
-            render(<InteractiveMap defaultAdditionalLayers={[MapAdditionalLayersEnum.OSM_CANDIDATES]} />)
+        it('renders the OSM candidates layer when enabled', () => {
+            render(<InteractiveMap enableOsmCandidates={true} />)
             expect(screen.getByTestId('osm-candidates')).toBeInTheDocument()
         })
 

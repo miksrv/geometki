@@ -61,7 +61,8 @@ jest.mock('./CandidatePopup', () => ({ CandidatePopup: () => null }))
 jest.mock('@/app/store', () => ({ useAppSelector: jest.fn() }))
 
 jest.mock('@/api', () => ({
-    API: { useOsmCandidatesGetListQuery: jest.fn() }
+    API: { useOsmCandidatesGetListQuery: jest.fn() },
+    ApiModel: { Categories: {} }
 }))
 
 let mockZoom = 12
@@ -118,6 +119,7 @@ const items = [
 
 describe('OsmCandidates', () => {
     beforeEach(() => {
+        localStorage.clear()
         mockZoom = 12
         mockRole()
         mockList(items)
@@ -173,6 +175,17 @@ describe('OsmCandidates', () => {
         fireEvent.click(screen.getByLabelText('Места для исследования'))
 
         expect(screen.getByText('Хорошо описанные: 2')).toBeInTheDocument()
+    })
+
+    it('remembers the collapsed panel for the next visit', () => {
+        const { unmount } = render(<OsmCandidates />)
+
+        fireEvent.click(screen.getByLabelText('Свернуть'))
+        unmount()
+        render(<OsmCandidates />)
+
+        expect(screen.queryByText(/Хорошо описанные/)).not.toBeInTheDocument()
+        expect(screen.getByLabelText('Места для исследования')).toBeInTheDocument()
     })
 
     it('puts the legend into the map slot above the coordinates', () => {

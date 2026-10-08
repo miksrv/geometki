@@ -26,6 +26,7 @@ export const LOCAL_STORAGE = {
     LOCALE: 'locale',
     LOCATION: 'location',
     MAP_CENTER: 'mapCenter',
+    MAP_SETTINGS: 'mapSettings',
     RETURN_PATH: 'returnPath',
     THEME: 'theme'
 }

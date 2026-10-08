@@ -9,11 +9,9 @@ import { useLeafletContext } from '@react-leaflet/core'
 import { ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
 import { CopyCoordinates, MapLinks } from '@/components/shared'
-import { LOCAL_STORAGE } from '@/config/constants'
-import useLocalStorage from '@/hooks/useLocalStorage'
 import { round } from '@/utils/helpers'
 
-import { MapPositionType } from '../types'
+import { saveMapSettings } from '../mapSettings'
 
 import styles from './styles.module.sass'
 
@@ -21,8 +19,6 @@ export const ContextMenu: React.FC = () => {
     const { t } = useTranslation('components.interactive-map.context-menu')
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
-
-    const [, setCoordinates] = useLocalStorage<MapPositionType>(LOCAL_STORAGE.MAP_CENTER)
 
     const getContext = useLeafletContext()
     const mapContext = useRef<ReturnType<typeof useLeafletContext>>(getContext)
@@ -127,10 +123,13 @@ export const ContextMenu: React.FC = () => {
                             <Link
                                 href={'/places/create'}
                                 onClick={() => {
-                                    setCoordinates({
-                                        lat: pointCords?.lat ?? 0,
-                                        lon: pointCords?.lon ?? 0,
-                                        zoom: 18
+                                    // The place form opens the map at this point
+                                    saveMapSettings({
+                                        position: {
+                                            lat: pointCords?.lat ?? 0,
+                                            lon: pointCords?.lon ?? 0,
+                                            zoom: 18
+                                        }
                                     })
                                 }}
                             >

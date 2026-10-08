@@ -4,15 +4,18 @@
 
 ### Minor Changes
 
-- Map: new "Unexplored" layer with interesting places from OpenStreetMap and Wikidata that are not on Geometki yet, with photos, details and a "Create a place" button
+- Map: new "Places to explore" panel with interesting places from OpenStreetMap and Wikidata that are not on Geometki yet, with photos, details and a "Create a place" button
 - Map: the heatmap layer is now called "Travelers"
 - Home page: the "Explorers" counter is replaced with the number of unexplored places
+- Map: remembers the map style, layers, category filter and the "Places to explore" panel between visits
+- Map: zoom level between the zoom buttons; the category filter button shows how many categories are selected
 
 ### Patch Changes
 
 - Home page: fixed the layout overflowing the screen on phones; small texts are easier to read
 - Pagination wraps on narrow screens
 - Profile: fixed the list of visited places
+- Map: the layers panel scrolls when it does not fit the screen
 
 ## 1.12.0
 

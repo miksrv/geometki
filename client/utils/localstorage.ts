@@ -15,7 +15,8 @@ const _getLocalStorage = (): undefined | typeof LOCAL_STORAGE => {
 
 export const getItem = (key: keyof typeof LOCAL_STORAGE): string => _getLocalStorage()?.[key] ?? ''
 
-export const setItem = (key: keyof typeof LOCAL_STORAGE, value: string | number | undefined) => {
+// Any JSON-serializable value: strings, numbers, and the objects of the map settings
+export const setItem = (key: keyof typeof LOCAL_STORAGE, value: unknown) => {
     if (typeof window === 'undefined') {
         return
     }

@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
+import { Counter } from '@/components/ui'
 import { categoryImage } from '@/utils/categories'
 
 import styles from '../styles.module.sass'
@@ -21,6 +22,10 @@ export const CategoryControl: React.FC<CategoryControlProps> = ({ categories, on
     const [open, setOpen] = useState<boolean>(false)
 
     const { data: categoryData } = API.useCategoriesGetListQuery()
+
+    const allCategoriesCount = Object.values(ApiModel.Categories).length
+    // The filter is on when some categories are switched off: the button shows how many are left
+    const isFiltered = !!categories && categories.length !== allCategoriesCount
 
     const handleToggleOpen = () => {
         setOpen(!open)
@@ -43,7 +48,7 @@ export const CategoryControl: React.FC<CategoryControlProps> = ({ categories, on
     }
 
     const handleChangeAllCategories = () => {
-        if (categories?.length === Object.values(ApiModel.Categories).length) {
+        if (categories?.length === allCategoriesCount) {
             onChangeCategories?.([])
         } else {
             onChangeCategories?.(Object.values(ApiModel.Categories))
@@ -59,12 +64,21 @@ export const CategoryControl: React.FC<CategoryControlProps> = ({ categories, on
     }, [])
 
     return !open ? (
-        <Button
-            mode={'secondary'}
-            icon={'Tune'}
-            tooltip={t('map-category-filter', { defaultValue: 'Фильтр по категориям' })}
-            onClick={handleToggleOpen}
-        />
+        <span className={styles.controlWithCounter}>
+            <Button
+                mode={'secondary'}
+                icon={'Tune'}
+                tooltip={t('map-category-filter', { defaultValue: 'Фильтр по категориям' })}
+                onClick={handleToggleOpen}
+            />
+            {isFiltered && (
+                <Counter
+                    className={styles.controlCounter}
+                    value={categories.length}
+                    showZero={true}
+                />
+            )}
+        </span>
     ) : (
         <Container
             className={styles.mapCategoryContainer}
@@ -81,12 +95,8 @@ export const CategoryControl: React.FC<CategoryControlProps> = ({ categories, on
                         label={t('all-categories-of-geotags', {
                             defaultValue: 'Все категории геометок'
                         })}
-                        checked={categories?.length === Object.values(ApiModel.Categories).length}
-                        indeterminate={
-                            categories &&
-                            categories.length !== Object.values(ApiModel.Categories).length &&
-                            categories.length > 0
-                        }
+                        checked={categories?.length === allCategoriesCount}
+                        indeterminate={isFiltered && categories.length > 0}
                         onChange={handleChangeAllCategories}
                     />
                 </li>
