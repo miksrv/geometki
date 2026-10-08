@@ -18,7 +18,8 @@ import { FitBounds } from './fit-bounds'
 import { HeatmapLayer } from './heatmap-layer'
 import { HistoricalPhotos } from './historical-photos'
 import { LayerSwitcherControl } from './layer-switcher-control'
-import { MapControlsContext } from './MapControlsContext'
+import { LayersStatus } from './layers-status'
+import { LayerStatus, MapControlsContext } from './MapControlsContext'
 import { MapEvents } from './MapEvents'
 import { getMapSettings, saveMapSettings } from './mapSettings'
 import { MarkerPhoto } from './marker-photo'
@@ -176,7 +177,13 @@ export const InteractiveMap: React.FC<MapProps> = ({
         }
     }
 
-    const controlsContext = useMemo(() => ({ bottomSlot }), [bottomSlot])
+    const [layerStatuses, setLayerStatuses] = useState<Partial<Record<MapAdditionalLayersEnum, LayerStatus>>>({})
+
+    const reportLayerStatus = useCallback((layer: MapAdditionalLayersEnum, status?: LayerStatus) => {
+        setLayerStatuses((prev) => ({ ...prev, [layer]: status }))
+    }, [])
+
+    const controlsContext = useMemo(() => ({ bottomSlot, reportLayerStatus }), [bottomSlot, reportLayerStatus])
 
     const toggleTool = (tool: MeasureTool) => setActiveTool((prev) => (prev === tool ? undefined : tool))
 
@@ -246,11 +253,13 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
     // Stable reference for photo markers: the clicked marker's index is passed back as
     // plain data (not baked into a per-item closure), the current `photos` list comes
-    // from the ref-free dependency array.
+    // from the ref-free dependency array. Clusters are not photos, so the lightbox gets
+    // only the single photos and the index within them.
     const handlePhotoMarkerClick = useCallback(
         (index?: number) => {
-            if (typeof index === 'number' && photos) {
-                onPhotoClick?.(photos, index)
+            if (typeof index === 'number' && photos?.[index]) {
+                const points = photos.filter((photo) => photo.type !== 'cluster')
+                onPhotoClick?.(points, points.indexOf(photos[index]))
             }
         },
         [photos, onPhotoClick]
@@ -609,6 +618,13 @@ export const InteractiveMap: React.FC<MapProps> = ({
                             ref={setBottomSlot}
                             className={enableCoordsControl ? styles.bottomSlot : styles.bottomSlotStandalone}
                         />
+                        {/* Below the panels: "Places to explore" can be collapsed into a button above it */}
+                        <LayersStatus
+                            layers={additionalLayers}
+                            statuses={layerStatuses}
+                            className={enableCoordsControl ? styles.bottomSlot : styles.bottomSlotStandalone}
+                        />
+
                         {enableCoordsControl && <CoordinatesControl coordinates={mapPosition} />}
                     </div>
 

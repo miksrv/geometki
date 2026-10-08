@@ -4,6 +4,9 @@ import { Marker, useMapEvents } from 'react-leaflet'
 import { ApiModel } from '@/api'
 import { APIPastvu, PastvuCluster, PastvuPhoto, RequestGetByBounds } from '@/api/apiPastvu'
 
+import { useReportLayerStatus } from '../layers-status'
+import { MapAdditionalLayersEnum } from '../types'
+
 import { THUMBNAIL_ZOOM } from './constants'
 import { buildParams, createClusterIcon, createDirectionIcon, createThumbnailIcon, photoToMark } from './utils'
 
@@ -24,7 +27,17 @@ export const HistoricalPhotos: React.FC<HistoricalPhotosProps> = ({ onPhotoClick
         setParams(buildParams(map.getBounds(), map.getZoom()))
     }, [])
 
-    const { data } = APIPastvu.useGetByBoundsQuery(params!, { skip: !params })
+    const { data, isFetching, isError } = APIPastvu.useGetByBoundsQuery(params!, { skip: !params })
+
+    // A cluster stands for several photos
+    const photosCount =
+        (data?.result.photos?.length ?? 0) + (data?.result.clusters ?? []).reduce((sum, { c }) => sum + c, 0)
+
+    useReportLayerStatus(MapAdditionalLayersEnum.HISTORICAL_PHOTOS, {
+        count: photosCount,
+        error: isError,
+        loading: !params || isFetching
+    })
 
     if (!data) {
         return null

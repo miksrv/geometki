@@ -8,7 +8,10 @@ import { useTranslation } from 'next-i18next/pages'
 import { ApiModel } from '@/api'
 import { APIWikipedia, RequestGetByBounds, WikipediaArticle, WikipediaGeoItem } from '@/api/apiWikipedia'
 
-import { WIKIPEDIA_EXTRACT_MAX_CHARS } from './constants'
+import { useReportLayerStatus } from '../layers-status'
+import { MapAdditionalLayersEnum } from '../types'
+
+import { WIKIPEDIA_EXTRACT_MAX_CHARS, WIKIPEDIA_LIMIT } from './constants'
 import { articleUrl, buildParams, createWikipediaIcon, extractArticle, truncateExtract } from './utils'
 
 import styles from './styles.module.sass'
@@ -43,7 +46,14 @@ export const Wikipedia: React.FC<WikipediaProps> = () => {
         }
     }, [loadingArticleId])
 
-    const { data } = APIWikipedia.useGetByBoundsQuery(params!, { skip: !params })
+    const { data, isFetching, isError } = APIWikipedia.useGetByBoundsQuery(params!, { skip: !params })
+
+    useReportLayerStatus(MapAdditionalLayersEnum.WIKIPEDIA, {
+        count: data?.query?.geosearch?.length ?? 0,
+        error: isError,
+        limited: (data?.query?.geosearch?.length ?? 0) >= WIKIPEDIA_LIMIT,
+        loading: !params || isFetching
+    })
     const [getExtract] = APIWikipedia.useLazyGetExtractQuery()
 
     const handleClose = () => {

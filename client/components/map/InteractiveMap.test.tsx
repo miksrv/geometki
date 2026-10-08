@@ -97,7 +97,12 @@ jest.mock('./MapEvents', () => ({
 }))
 
 jest.mock('./marker-photo', () => ({
-    MarkerPhoto: () => <div data-testid={'marker-photo'} />
+    MarkerPhoto: ({ index, onPhotoClick }: { index?: number; onPhotoClick?: (index?: number) => void }) => (
+        <div
+            data-testid={'marker-photo'}
+            onClick={() => onPhotoClick?.(index)}
+        />
+    )
 }))
 
 jest.mock('./marker-photo-cluster', () => ({
@@ -246,6 +251,25 @@ describe('InteractiveMap', () => {
             ]
             render(<InteractiveMap photos={photos as any} />)
             expect(screen.getAllByTestId('marker-photo')).toHaveLength(2)
+        })
+
+        it('passes only single photos to onPhotoClick, without the clusters', () => {
+            const onPhotoClick = jest.fn()
+            const photos = [
+                { lat: 51.7, lon: 55.0, type: 'cluster', preview: '/c.jpg', count: 5 },
+                { full: '/f1.jpg', lat: 51.765, lon: 55.099, preview: '/p1.jpg' },
+                { lat: 51.9, lon: 55.3, type: 'cluster', preview: '/c2.jpg', count: 3 },
+                { full: '/f2.jpg', lat: 51.8, lon: 55.2, preview: '/p2.jpg' }
+            ]
+            render(
+                <InteractiveMap
+                    photos={photos as any}
+                    onPhotoClick={onPhotoClick}
+                />
+            )
+            screen.getAllByTestId('marker-photo')[1].click()
+
+            expect(onPhotoClick).toHaveBeenCalledWith([photos[1], photos[3]], 1)
         })
     })
 })

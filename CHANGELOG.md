@@ -9,6 +9,7 @@
 - Home page: the "Explorers" counter is replaced with the number of unexplored places
 - Map: remembers the map style, layers, category filter and the "Places to explore" panel between visits
 - Map: zoom level between the zoom buttons; the category filter button shows how many categories are selected
+- Map: a status panel for the PastVu, Wikimedia and Wikipedia layers shows whether each is loading and how many objects it has in the area
 
 ### Patch Changes
 
@@ -18,6 +19,10 @@
 - Profile: Favorites now have a map; the maps of geotags, favorites, visited places and collections show all places
 - Profile: the Photos tab shows the whole page of photos without the "More photos" button
 - Photos: gallery tiles keep a 4:3 shape on wide screens instead of stretching; only the outer corners of the gallery are rounded
+- Photo viewer: the preview is shown while the full photo loads; sharper photos when zoomed in; no scroll arrows for a single photo
+- Map: Wikimedia photos can be scrolled through in the viewer, all photos of the visible area
+- Map: fixed broken slides in the photo viewer when the "Photos" mode shows photo clusters
+- Activity feed: fixed vertical photos shown too small in the photo viewer
 - Photos: the photo menu (Rotate, Delete) looks like the other menus; the menu button is always visible on touch screens
 - Place and collection menus: Ctrl-click on an action no longer opens a blank tab
 - Pagination wraps on narrow screens

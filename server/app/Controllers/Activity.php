@@ -172,8 +172,9 @@ class Activity extends ResourceController
             $itemPhoto = $item->type === 'photo' && $item->filename ? [
                 'full'      => $photoPath . $item->filename . '.' . $item->extension,
                 'preview'   => $photoPath . $item->filename . '_preview.' . $item->extension,
-                'width'     => PHOTO_PREVIEW_WIDTH,
-                'height'    => PHOTO_PREVIEW_HEIGHT,
+                // 0 when unknown: the preview is a crop, its size would distort the full photo
+                'width'     => (int) ($item->width ?? 0),
+                'height'    => (int) ($item->height ?? 0),
                 'placeId'   => $item->place_id
             ] : null;
 

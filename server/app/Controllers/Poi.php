@@ -100,7 +100,7 @@ class Poi extends ResourceController
         $bounds  = $this->getBounds();
 
         $photosModel = new PhotosModel();
-        $photosData  = $photosModel->select('place_id as placeId, lat, lon, filename, extension, title_en, title_ru');
+        $photosData  = $photosModel->select('place_id as placeId, lat, lon, filename, extension, width, height, title_en, title_ru');
 
         if ($bounds) {
             $photosData->where([

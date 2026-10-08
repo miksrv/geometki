@@ -1,16 +1,28 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
-export type WikimediaGeoItem = {
+export type WikimediaImageInfo = {
+    url: string
+    width?: number
+    height?: number
+    /** A copy scaled down to the requested width; the original itself when it is smaller */
+    thumburl?: string
+    thumbwidth?: number
+    thumbheight?: number
+    descriptionurl?: string
+}
+
+export type WikimediaPage = {
     pageid: number
     title: string
-    lat: number
-    lon: number
-    dist: number
+    /** Position in the geosearch results (nearest to the bounds' center first) */
+    index?: number
+    coordinates?: Array<{ lat: number; lon: number }>
+    imageinfo?: WikimediaImageInfo[]
 }
 
 export type ResponseGetByBounds = {
-    query: {
-        geosearch: WikimediaGeoItem[]
+    query?: {
+        pages?: Record<string, WikimediaPage>
     }
 }
 
@@ -21,53 +33,27 @@ export type RequestGetByBounds = {
     west: number
 }
 
-export type WikimediaImageInfo = {
-    url: string
-    thumburl?: string
-    descriptionurl: string
-}
-
-export type WikimediaPage = {
-    pageid: number
-    title: string
-    imageinfo?: WikimediaImageInfo[]
-}
-
-export type ResponseGetImageInfo = {
-    query: {
-        pages: Record<string, WikimediaPage>
-    }
-}
-
 export const APIWikimediaCommons = createApi({
     baseQuery: fetchBaseQuery({
         baseUrl: 'https://commons.wikimedia.org/w/api.php'
     }),
     endpoints: (builder) => ({
+        // One request for the files in the bounds together with their coordinates and image
+        // links, so the lightbox can scroll through every photo of the visible area
         getByBounds: builder.query<ResponseGetByBounds, RequestGetByBounds>({
             query: ({ north, west, south, east }) => ({
                 params: {
                     action: 'query',
+                    colimit: 'max',
                     format: 'json',
-                    gsbbox: `${north}|${west}|${south}|${east}`,
-                    gslimit: 50,
-                    gsnamespace: 6,
-                    list: 'geosearch',
-                    origin: '*'
-                },
-                url: ''
-            })
-        }),
-        getImageInfo: builder.query<ResponseGetImageInfo, string>({
-            query: (title) => ({
-                params: {
-                    action: 'query',
-                    format: 'json',
-                    iiprop: 'url',
+                    generator: 'geosearch',
+                    ggsbbox: `${north}|${west}|${south}|${east}`,
+                    ggslimit: 50,
+                    ggsnamespace: 6,
+                    iiprop: 'url|size',
                     iiurlwidth: 1280,
                     origin: '*',
-                    prop: 'imageinfo',
-                    titles: title
+                    prop: 'imageinfo|coordinates'
                 },
                 url: ''
             })
