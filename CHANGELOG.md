@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.1
+
+### Patch Changes
+
+- Map: fixed giant loading spinners in the layers status panel
+
 ## 1.13.0
 
 ### Minor Changes
