@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Container, Spinner } from 'simple-react-ui-kit'
+import { cn, Container, Spinner } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
 import { useTranslation } from 'next-i18next/pages'
@@ -13,7 +13,16 @@ import { addDecimalPoint } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
-const ShareButtons = dynamic(() => import('./ShareButtons'), { ssr: false })
+// Client-only; the placeholder keeps its row so the page below does not shift when it loads (CLS)
+const ShareButtons = dynamic(() => import('./ShareButtons'), {
+    ssr: false,
+    loading: () => (
+        <div
+            aria-hidden={true}
+            className={cn(styles.share, styles.sharePlaceholder)}
+        />
+    )
+})
 
 interface PlaceActionBarProps {
     placeId?: string

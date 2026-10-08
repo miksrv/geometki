@@ -115,10 +115,12 @@ const App = ({ Component, pageProps }: AppProps) => {
 
             {process.env.NODE_ENV === 'production' && (
                 <>
+                    {/* Analytics loads when the browser is idle after the page load: the counters do not
+                        compete with the page's own code for the main thread (TBT, INP) */}
                     {/* Yandex.Metrika counter */}
                     <Script
                         id={'yandex-metrika'}
-                        strategy={'afterInteractive'}
+                        strategy={'lazyOnload'}
                     >
                         {`
                             (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
@@ -150,11 +152,11 @@ const App = ({ Component, pageProps }: AppProps) => {
                     {/* Google Analytics */}
                     <Script
                         src={'https://www.googletagmanager.com/gtag/js?id=G-JTW79QN3MM'}
-                        strategy={'afterInteractive'}
+                        strategy={'lazyOnload'}
                     />
                     <Script
                         id={'google-analytics'}
-                        strategy={'afterInteractive'}
+                        strategy={'lazyOnload'}
                     >
                         {`
                             window.dataLayer = window.dataLayer || [];

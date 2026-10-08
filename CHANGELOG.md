@@ -13,6 +13,9 @@
 
 ### Patch Changes
 
+- Pages no longer jump while loading: buttons, cards and panels are styled from the first paint
+- Activity feed and profile: the next items load before the end of the list, the footer no longer jumps
+- Optimized page loading: analytics loads after the page
 - Home page: fixed the layout overflowing the screen on phones; small texts are easier to read
 - Profile: redesigned the tabs: clear hover and active states, swipeable on phones, Ctrl-click opens a tab in a new browser tab
 - Profile: new tab order: Activity feed, Achievements, Geotags, Favorites, Visited places, Collections, Photos; the tabs no longer jump when switching between them

@@ -47,7 +47,7 @@ jobs:
           path: |
             client/.next
             !client/.next/cache
-          key: ${{ runner.os }}-build-${{ hashFiles('client/**/*.ts', 'client/**/*.tsx', 'client/**/*.sass', 'client/next.config.js', 'client/next-i18next.config.js') }}
+          key: ${{ runner.os }}-build-${{ hashFiles('client/**/*.ts', 'client/**/*.tsx', 'client/**/*.sass', 'client/next.config.js', 'client/next-i18next.config.js', 'client/scripts/**', 'client/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-build-
 
