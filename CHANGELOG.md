@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.13.0
+
+### Minor Changes
+
+- Map: new "Unexplored" layer with interesting places from OpenStreetMap and Wikidata that are not on Geometki yet, with photos, details and a "Create a place" button
+- Map: the heatmap layer is now called "Travelers"
+- Home page: the "Explorers" counter is replaced with the number of unexplored places
+
+### Patch Changes
+
+- Home page: fixed the layout overflowing the screen on phones; small texts are easier to read
+- Pagination wraps on narrow screens
+- Profile: fixed the list of visited places
+
 ## 1.12.0
 
 ### Minor Changes
