@@ -14,6 +14,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
+import { MapAdditionalLayersEnum } from '@/components/map/types'
 import { AppLayout, MapObjectsTypeEnum } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { round } from '@/utils/helpers'
@@ -28,6 +29,9 @@ const PhotoLightbox = dynamic(
     () => import('@/components/shared/photo-lightbox/PhotoLightbox').then((m) => ({ default: m.PhotoLightbox })),
     { ssr: false }
 )
+
+// New interesting places from OpenStreetMap are shown on the main map by default
+const DEFAULT_ADDITIONAL_LAYERS = [MapAdditionalLayersEnum.OSM_CANDIDATES]
 
 // Experiment to enable/disable POI clusterization on the map
 const ENABLE_POI_CLUSTERIZATION = false
@@ -238,6 +242,7 @@ const MapPage: NextPage<object> = () => {
                     enableAreaMeasure={true}
                     enableCoordsControl={true}
                     enableLayersSwitcher={true}
+                    defaultAdditionalLayers={DEFAULT_ADDITIONAL_LAYERS}
                     enableContextMenu={true}
                     enableCategoryControl={mapType === 'Places'}
                     loading={placesLoading || photosLoading}

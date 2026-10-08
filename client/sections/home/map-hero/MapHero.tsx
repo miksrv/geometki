@@ -20,7 +20,7 @@ type StatKey = keyof ApiType.Stats.GetResponse
 
 const STAT_ITEMS: Array<{ icon: string; key: StatKey; labelKey: string }> = [
     { icon: 'Point', key: 'places', labelKey: 'hero-stat-places' },
-    { icon: 'Users', key: 'users', labelKey: 'hero-stat-users' },
+    { icon: 'Compass', key: 'unexplored', labelKey: 'hero-stat-unexplored' },
     { icon: 'Camera', key: 'photos', labelKey: 'hero-stat-photos' },
     { icon: 'StarEmpty', key: 'reviews', labelKey: 'hero-stat-reviews' }
 ]

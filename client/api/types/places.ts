@@ -50,6 +50,8 @@ export interface PostItemRequest {
     tags?: string[]
     lat?: number
     lon?: number
+    /** OSM candidate the place is created from: links them and hides the candidate from the map */
+    candidate?: string
 }
 
 export interface PatchItemResponse {

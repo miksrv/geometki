@@ -26,6 +26,19 @@ $routes->group('poi', static function ($routes) {
     $routes->options('(:alphanum)', static function () {});
 });
 
+/** OSM Candidates Controller **/
+$routes->group('osm-candidates', static function ($routes) {
+    $routes->get('/', 'OsmCandidates::list');
+    $routes->get('(:alphanum)', 'OsmCandidates::show/$1');
+    $routes->patch('(:alphanum)/link', 'OsmCandidates::link/$1');
+    $routes->patch('(:alphanum)/unlink', 'OsmCandidates::unlink/$1');
+    $routes->patch('(:alphanum)/reject', 'OsmCandidates::reject/$1');
+
+    $routes->options('/', static function () {});
+    $routes->options('(:alphanum)', static function () {});
+    $routes->options('(:alphanum)/(:segment)', static function () {});
+});
+
 /** Places Controller **/
 $routes->group('places', static function ($routes) {
     $routes->get('/', 'Places::list');

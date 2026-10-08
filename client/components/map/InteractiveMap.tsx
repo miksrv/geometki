@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as ReactLeaflet from 'react-leaflet'
 import { FitBoundsOptions, LatLngBounds, LatLngBoundsExpression, LatLngExpression, Map, MapOptions } from 'leaflet'
 import isEqual from 'lodash-es/isEqual'
@@ -19,6 +19,7 @@ import { FitBounds } from './fit-bounds'
 import { HeatmapLayer } from './heatmap-layer'
 import { HistoricalPhotos } from './historical-photos'
 import { LayerSwitcherControl } from './layer-switcher-control'
+import { MapControlsContext } from './MapControlsContext'
 import { MapEvents } from './MapEvents'
 import { MarkerPhoto } from './marker-photo'
 import { MarkerPhotoCluster } from './marker-photo-cluster'
@@ -26,6 +27,7 @@ import { MarkerPin } from './marker-pin'
 import { MarkerPoint } from './marker-point'
 import { MarkerPointCluster } from './marker-point-cluster'
 import { MarkerUser } from './marker-user'
+import { OsmCandidates } from './osm-candidates'
 import { PlaceMark } from './place-mark'
 import { Ruler } from './ruler'
 import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum, MapPositionType, MarkerPinData } from './types'
@@ -53,6 +55,8 @@ type MapProps = {
     enableLayersSwitcher?: boolean
     enableContextMenu?: boolean
     hideAdditionalLayers?: boolean
+    /** Additional layers switched on when the map opens */
+    defaultAdditionalLayers?: MapAdditionalLayersEnum[]
     storeMapKey?: string
     fullMapLink?: string
     userLatLon?: ApiType.Coordinates
@@ -128,6 +132,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
     enableLayersSwitcher,
     enableContextMenu,
     hideAdditionalLayers,
+    defaultAdditionalLayers,
     storeMapKey,
     fullMapLink,
     userLatLon,
@@ -151,7 +156,10 @@ export const InteractiveMap: React.FC<MapProps> = ({
     const [mapPosition, setMapPosition] = useState<MapPositionType>()
     const [mapLayer, setMapLayer] = useState<MapLayersEnum>(DEFAULT_MAP_LAYER)
     const [mapType, setMapType] = useState<MapObjectsTypeEnum>(DEFAULT_MAP_TYPE)
-    const [additionalLayers, setAdditionalLayers] = useState<MapAdditionalLayersEnum[]>()
+    const [bottomSlot, setBottomSlot] = useState<HTMLDivElement | null>(null)
+    const [additionalLayers, setAdditionalLayers] = useState<MapAdditionalLayersEnum[] | undefined>(
+        defaultAdditionalLayers
+    )
 
     const [coordinates, setCoordinates] = useLocalStorage<MapPositionType>(storeMapKey || LOCAL_STORAGE.MAP_CENTER)
 
@@ -160,6 +168,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
             mapRef.current?.setView([userLatLon.lat, userLatLon.lon], DEFAULT_MAP_ZOOM)
         }
     }
+
+    const controlsContext = useMemo(() => ({ bottomSlot }), [bottomSlot])
 
     const toggleTool = (tool: MeasureTool) => setActiveTool((prev) => (prev === tool ? undefined : tool))
 
@@ -322,273 +332,280 @@ export const InteractiveMap: React.FC<MapProps> = ({
                 attributionControl={false}
                 ref={mapRef}
             >
-                <FitBounds
-                    bounds={props.bounds}
-                    options={props.boundsOptions}
-                />
+                <MapControlsContext.Provider value={controlsContext}>
+                    <FitBounds
+                        bounds={props.bounds}
+                        options={props.boundsOptions}
+                    />
 
-                {additionalLayers?.includes(MapAdditionalLayersEnum.HEATMAP) && <HeatmapLayer />}
+                    {additionalLayers?.includes(MapAdditionalLayersEnum.HEATMAP) && <HeatmapLayer />}
 
-                {additionalLayers?.includes(MapAdditionalLayersEnum.HISTORICAL_PHOTOS) && (
-                    <HistoricalPhotos onPhotoClick={onPhotoClick} />
-                )}
+                    {additionalLayers?.includes(MapAdditionalLayersEnum.HISTORICAL_PHOTOS) && (
+                        <HistoricalPhotos onPhotoClick={onPhotoClick} />
+                    )}
 
-                {additionalLayers?.includes(MapAdditionalLayersEnum.WIKIMEDIA_COMMONS) && (
-                    <WikimediaCommons onPhotoClick={onPhotoClick} />
-                )}
+                    {additionalLayers?.includes(MapAdditionalLayersEnum.WIKIMEDIA_COMMONS) && (
+                        <WikimediaCommons onPhotoClick={onPhotoClick} />
+                    )}
 
-                {additionalLayers?.includes(MapAdditionalLayersEnum.WIKIPEDIA) && (
-                    <Wikipedia onPhotoClick={onPhotoClick} />
-                )}
+                    {additionalLayers?.includes(MapAdditionalLayersEnum.OSM_CANDIDATES) && <OsmCandidates />}
 
-                {mapLayer === MapLayersEnum.CARTO_DARK && (
-                    <ReactLeaflet.TileLayer
-                        attribution='&copy; <a href="https://carto.com">CartoDB</a>'
-                        url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
-                    />
-                )}
-                {mapLayer === MapLayersEnum.CARTO_LIGHT && (
-                    <ReactLeaflet.TileLayer
-                        attribution='&copy; <a href="https://carto.com">CartoDB</a>'
-                        url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
-                    />
-                )}
-                {mapLayer === MapLayersEnum.ESRI_SAT && (
-                    <ReactLeaflet.TileLayer
-                        attribution='Tiles &copy; Esri'
-                        url='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                        maxZoom={19}
-                    />
-                )}
-                {mapLayer === MapLayersEnum.OCM && (
-                    <ReactLeaflet.TileLayer
-                        attribution='Open Cycle Map'
-                        url={`https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${process.env.NEXT_PUBLIC_CYCLEMAP_TOKEN}`}
-                    />
-                )}
-                {mapLayer === MapLayersEnum.OPEN_TOPO && (
-                    <ReactLeaflet.TileLayer
-                        attribution='&copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
-                        url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
-                        maxZoom={17}
-                    />
-                )}
-                {mapLayer === MapLayersEnum.YANDEX_SAT && (
-                    <ReactLeaflet.TileLayer
-                        attribution='&copy; Яндекс'
-                        url='https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}'
-                        maxZoom={19}
-                    />
-                )}
-                {mapLayer === MapLayersEnum.MAPBOX && (
-                    <ReactLeaflet.TileLayer
-                        attribution='&copy; <a href="https://www.mapbox.com">Mapbox</a> '
-                        url={`https://api.mapbox.com/styles/v1/miksoft/cli4uhd5b00bp01r6eocm21rq/tiles/256/{z}/{x}/{y}@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`}
-                    />
-                )}
-                {mapLayer === MapLayersEnum.OSM && (
-                    <ReactLeaflet.TileLayer
-                        attribution={'Open Street Map'}
-                        url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-                    />
-                )}
-                {mapLayer === MapLayersEnum.GOOGLE_MAP && (
-                    <ReactLeaflet.TileLayer
-                        attribution={'Google Maps'}
-                        url={'https://www.google.cn/maps/vt?lyrs=m@189&gl=cn&x={x}&y={y}&z={z}'}
-                    />
-                )}
-                {mapLayer === MapLayersEnum.GOOGLE_SAT && (
-                    <ReactLeaflet.TileLayer
-                        attribution={'Google Maps Satellite'}
-                        url={'https://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}'}
-                    />
-                )}
-                {mapLayer === MapLayersEnum.MAPBOX_SAT && (
-                    <ReactLeaflet.TileLayer
-                        attribution='&copy; <a href="https://www.mapbox.com">Mapbox</a> '
-                        url='https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}'
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore
-                        accessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
-                    />
-                )}
+                    {additionalLayers?.includes(MapAdditionalLayersEnum.WIKIPEDIA) && (
+                        <Wikipedia onPhotoClick={onPhotoClick} />
+                    )}
 
-                {placeMark && (
-                    <PlaceMark
-                        {...placeMark}
-                        onClick={() => handleSetPlaceMarker(undefined)}
-                    />
-                )}
-
-                {places?.map((place, i) =>
-                    place.type === 'cluster' ? (
-                        <MarkerPointCluster
-                            key={`markerPointCluster${i}`}
-                            marker={place}
-                            onClick={handleClusterClick}
+                    {mapLayer === MapLayersEnum.CARTO_DARK && (
+                        <ReactLeaflet.TileLayer
+                            attribution='&copy; <a href="https://carto.com">CartoDB</a>'
+                            url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
                         />
-                    ) : (
-                        <MarkerPoint
-                            // By place: a marker keeps its loaded popup data, which must not move to
-                            // another place when the list changes order
-                            key={place.id ?? `markerPoint${i}`}
-                            place={place}
-                            keepInView={enableCenterPopup}
+                    )}
+                    {mapLayer === MapLayersEnum.CARTO_LIGHT && (
+                        <ReactLeaflet.TileLayer
+                            attribution='&copy; <a href="https://carto.com">CartoDB</a>'
+                            url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
                         />
-                    )
-                )}
-
-                {photos?.map((photo, i) =>
-                    photo.type === 'cluster' ? (
-                        <MarkerPhotoCluster
-                            key={`markerPhotoCluster${i}`}
-                            marker={photo}
-                            onClick={handleClusterClick}
+                    )}
+                    {mapLayer === MapLayersEnum.ESRI_SAT && (
+                        <ReactLeaflet.TileLayer
+                            attribution='Tiles &copy; Esri'
+                            url='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                            maxZoom={19}
                         />
-                    ) : (
-                        <MarkerPhoto
-                            key={`markerPhoto${i}`}
-                            photo={photo}
-                            index={i}
-                            onPhotoClick={handlePhotoMarkerClick}
+                    )}
+                    {mapLayer === MapLayersEnum.OCM && (
+                        <ReactLeaflet.TileLayer
+                            attribution='Open Cycle Map'
+                            url={`https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${process.env.NEXT_PUBLIC_CYCLEMAP_TOKEN}`}
                         />
-                    )
-                )}
-
-                {pins?.map((pin, i) => (
-                    <MarkerPin
-                        key={`markerPin${i}`}
-                        pin={pin}
-                    />
-                ))}
-
-                {enableContextMenu && <ContextMenu />}
-
-                {enableRuler && activeTool === 'ruler' && <Ruler />}
-
-                {enableAreaMeasure && activeTool === 'area' && <AreaMeasure />}
-
-                <div className={styles.leftControls}>
-                    {onClickCreatePlace && (
-                        <Button
-                            size={controlsSize}
-                            mode={'secondary'}
-                            icon={'PlusCircle'}
-                            tooltip={t('create-geotag', { defaultValue: 'Добавить геометку' })}
-                            onClick={onClickCreatePlace}
+                    )}
+                    {mapLayer === MapLayersEnum.OPEN_TOPO && (
+                        <ReactLeaflet.TileLayer
+                            attribution='&copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
+                            url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+                            maxZoom={17}
+                        />
+                    )}
+                    {mapLayer === MapLayersEnum.YANDEX_SAT && (
+                        <ReactLeaflet.TileLayer
+                            attribution='&copy; Яндекс'
+                            url='https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}'
+                            maxZoom={19}
+                        />
+                    )}
+                    {mapLayer === MapLayersEnum.MAPBOX && (
+                        <ReactLeaflet.TileLayer
+                            attribution='&copy; <a href="https://www.mapbox.com">Mapbox</a> '
+                            url={`https://api.mapbox.com/styles/v1/miksoft/cli4uhd5b00bp01r6eocm21rq/tiles/256/{z}/{x}/{y}@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`}
+                        />
+                    )}
+                    {mapLayer === MapLayersEnum.OSM && (
+                        <ReactLeaflet.TileLayer
+                            attribution={'Open Street Map'}
+                            url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                        />
+                    )}
+                    {mapLayer === MapLayersEnum.GOOGLE_MAP && (
+                        <ReactLeaflet.TileLayer
+                            attribution={'Google Maps'}
+                            url={'https://www.google.cn/maps/vt?lyrs=m@189&gl=cn&x={x}&y={y}&z={z}'}
+                        />
+                    )}
+                    {mapLayer === MapLayersEnum.GOOGLE_SAT && (
+                        <ReactLeaflet.TileLayer
+                            attribution={'Google Maps Satellite'}
+                            url={'https://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}'}
+                        />
+                    )}
+                    {mapLayer === MapLayersEnum.MAPBOX_SAT && (
+                        <ReactLeaflet.TileLayer
+                            attribution='&copy; <a href="https://www.mapbox.com">Mapbox</a> '
+                            url='https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}'
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            accessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
                         />
                     )}
 
-                    {enableFullScreen && (
-                        <Button
-                            size={controlsSize}
-                            mode={'secondary'}
-                            icon={isFullscreen ? 'FullscreenOut' : 'FullscreenIn'}
-                            tooltip={
-                                isFullscreen
-                                    ? t('fullscreen-exit', { defaultValue: 'Выйти из полноэкранного режима' })
-                                    : t('fullscreen-enter', { defaultValue: 'Во весь экран' })
-                            }
-                            onClick={handleToggleFullscreen}
+                    {placeMark && (
+                        <PlaceMark
+                            {...placeMark}
+                            onClick={() => handleSetPlaceMarker(undefined)}
                         />
                     )}
 
-                    {enableRuler && (
-                        <Button
-                            size={controlsSize}
-                            mode={'secondary'}
-                            className={cn(activeTool === 'ruler' && styles.activeControl)}
-                            icon={'Ruler'}
-                            aria-pressed={activeTool === 'ruler'}
-                            tooltip={
-                                activeTool === 'ruler'
-                                    ? t('ruler-off', { defaultValue: 'Выключить линейку' })
-                                    : t('ruler-on', { defaultValue: 'Измерить расстояние' })
-                            }
-                            onClick={() => toggleTool('ruler')}
+                    {places?.map((place, i) =>
+                        place.type === 'cluster' ? (
+                            <MarkerPointCluster
+                                key={`markerPointCluster${i}`}
+                                marker={place}
+                                onClick={handleClusterClick}
+                            />
+                        ) : (
+                            <MarkerPoint
+                                // By place: a marker keeps its loaded popup data, which must not move to
+                                // another place when the list changes order
+                                key={place.id ?? `markerPoint${i}`}
+                                place={place}
+                                keepInView={enableCenterPopup}
+                            />
+                        )
+                    )}
+
+                    {photos?.map((photo, i) =>
+                        photo.type === 'cluster' ? (
+                            <MarkerPhotoCluster
+                                key={`markerPhotoCluster${i}`}
+                                marker={photo}
+                                onClick={handleClusterClick}
+                            />
+                        ) : (
+                            <MarkerPhoto
+                                key={`markerPhoto${i}`}
+                                photo={photo}
+                                index={i}
+                                onPhotoClick={handlePhotoMarkerClick}
+                            />
+                        )
+                    )}
+
+                    {pins?.map((pin, i) => (
+                        <MarkerPin
+                            key={`markerPin${i}`}
+                            pin={pin}
                         />
-                    )}
+                    ))}
 
-                    {enableAreaMeasure && (
-                        <Button
-                            size={controlsSize}
-                            mode={'secondary'}
-                            className={cn(styles.customIconControl, activeTool === 'area' && styles.activeControl)}
-                            aria-pressed={activeTool === 'area'}
-                            aria-label={
-                                activeTool === 'area'
-                                    ? t('area-measure-off', { defaultValue: 'Выключить измерение площади' })
-                                    : t('area-measure-on', { defaultValue: 'Измерить площадь' })
-                            }
-                            tooltip={
-                                activeTool === 'area'
-                                    ? t('area-measure-off', { defaultValue: 'Выключить измерение площади' })
-                                    : t('area-measure-on', { defaultValue: 'Измерить площадь' })
-                            }
-                            onClick={() => toggleTool('area')}
-                        >
-                            <AreaIcon />
-                        </Button>
-                    )}
+                    {enableContextMenu && <ContextMenu />}
 
-                    {userLatLon && (
-                        <Button
-                            size={controlsSize}
-                            mode={'secondary'}
-                            icon={'Position'}
-                            tooltip={t('my-location', { defaultValue: 'Моё местоположение' })}
-                            onClick={handleUserPosition}
-                        />
-                    )}
+                    {enableRuler && activeTool === 'ruler' && <Ruler />}
 
-                    {fullMapLink && (
-                        <Button
-                            size={controlsSize}
-                            noIndex={true}
-                            mode={'secondary'}
-                            icon={'External'}
-                            tooltip={t('open-on-map', { defaultValue: 'Открыть на карте' })}
-                            link={fullMapLink}
-                        />
-                    )}
-                </div>
+                    {enableAreaMeasure && activeTool === 'area' && <AreaMeasure />}
 
-                <div className={styles.rightControls}>
-                    {enableLayersSwitcher && (
-                        <LayerSwitcherControl
-                            currentLayer={mapLayer}
-                            currentType={mapType}
-                            hideAdditionalLayers={hideAdditionalLayers}
-                            additionalLayers={additionalLayers}
-                            onSwitchMapLayer={setMapLayer}
-                            onSwitchMapType={handleSwitchMapType}
-                            onSwitchAdditionalLayers={setAdditionalLayers}
-                        />
-                    )}
+                    <div className={styles.leftControls}>
+                        {onClickCreatePlace && (
+                            <Button
+                                size={controlsSize}
+                                mode={'secondary'}
+                                icon={'PlusCircle'}
+                                tooltip={t('create-geotag', { defaultValue: 'Добавить геометку' })}
+                                onClick={onClickCreatePlace}
+                            />
+                        )}
 
-                    {enableCategoryControl && (
-                        <CategoryControl
-                            categories={categories}
-                            onChangeCategories={onChangeCategories}
-                        />
-                    )}
-                </div>
+                        {enableFullScreen && (
+                            <Button
+                                size={controlsSize}
+                                mode={'secondary'}
+                                icon={isFullscreen ? 'FullscreenOut' : 'FullscreenIn'}
+                                tooltip={
+                                    isFullscreen
+                                        ? t('fullscreen-exit', { defaultValue: 'Выйти из полноэкранного режима' })
+                                        : t('fullscreen-enter', { defaultValue: 'Во весь экран' })
+                                }
+                                onClick={handleToggleFullscreen}
+                            />
+                        )}
 
-                {enableCoordsControl && (
-                    <div className={styles.bottomControls}>
-                        <CoordinatesControl coordinates={mapPosition} />
+                        {enableRuler && (
+                            <Button
+                                size={controlsSize}
+                                mode={'secondary'}
+                                className={cn(activeTool === 'ruler' && styles.activeControl)}
+                                icon={'Ruler'}
+                                aria-pressed={activeTool === 'ruler'}
+                                tooltip={
+                                    activeTool === 'ruler'
+                                        ? t('ruler-off', { defaultValue: 'Выключить линейку' })
+                                        : t('ruler-on', { defaultValue: 'Измерить расстояние' })
+                                }
+                                onClick={() => toggleTool('ruler')}
+                            />
+                        )}
+
+                        {enableAreaMeasure && (
+                            <Button
+                                size={controlsSize}
+                                mode={'secondary'}
+                                className={cn(styles.customIconControl, activeTool === 'area' && styles.activeControl)}
+                                aria-pressed={activeTool === 'area'}
+                                aria-label={
+                                    activeTool === 'area'
+                                        ? t('area-measure-off', { defaultValue: 'Выключить измерение площади' })
+                                        : t('area-measure-on', { defaultValue: 'Измерить площадь' })
+                                }
+                                tooltip={
+                                    activeTool === 'area'
+                                        ? t('area-measure-off', { defaultValue: 'Выключить измерение площади' })
+                                        : t('area-measure-on', { defaultValue: 'Измерить площадь' })
+                                }
+                                onClick={() => toggleTool('area')}
+                            >
+                                <AreaIcon />
+                            </Button>
+                        )}
+
+                        {userLatLon && (
+                            <Button
+                                size={controlsSize}
+                                mode={'secondary'}
+                                icon={'Position'}
+                                tooltip={t('my-location', { defaultValue: 'Моё местоположение' })}
+                                onClick={handleUserPosition}
+                            />
+                        )}
+
+                        {fullMapLink && (
+                            <Button
+                                size={controlsSize}
+                                noIndex={true}
+                                mode={'secondary'}
+                                icon={'External'}
+                                tooltip={t('open-on-map', { defaultValue: 'Открыть на карте' })}
+                                link={fullMapLink}
+                            />
+                        )}
                     </div>
-                )}
 
-                {userLatLon && <MarkerUser coordinates={userLatLon} />}
-                <div
-                    className={styles.loader}
-                    style={{ display: loading ? 'block' : 'none' }}
-                >
-                    <Spinner />
-                </div>
-                {onChangeBounds && <MapEvents onChangeBounds={handleChangeBounds} />}
+                    <div className={styles.rightControls}>
+                        {enableLayersSwitcher && (
+                            <LayerSwitcherControl
+                                currentLayer={mapLayer}
+                                currentType={mapType}
+                                hideAdditionalLayers={hideAdditionalLayers}
+                                additionalLayers={additionalLayers}
+                                onSwitchMapLayer={setMapLayer}
+                                onSwitchMapType={handleSwitchMapType}
+                                onSwitchAdditionalLayers={setAdditionalLayers}
+                            />
+                        )}
+
+                        {enableCategoryControl && (
+                            <CategoryControl
+                                categories={categories}
+                                onChangeCategories={onChangeCategories}
+                            />
+                        )}
+                    </div>
+
+                    <div className={styles.bottomControls}>
+                        {/* Layers' panels go here, above the coordinates and as wide as them */}
+                        <div
+                            ref={setBottomSlot}
+                            className={enableCoordsControl ? styles.bottomSlot : styles.bottomSlotStandalone}
+                        />
+                        {enableCoordsControl && <CoordinatesControl coordinates={mapPosition} />}
+                    </div>
+
+                    {userLatLon && <MarkerUser coordinates={userLatLon} />}
+                    <div
+                        className={styles.loader}
+                        style={{ display: loading ? 'block' : 'none' }}
+                    >
+                        <Spinner />
+                    </div>
+                    {onChangeBounds && <MapEvents onChangeBounds={handleChangeBounds} />}
+                </MapControlsContext.Provider>
             </ReactLeaflet.MapContainer>
         </div>
     )

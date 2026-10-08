@@ -103,6 +103,9 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
         [MapAdditionalLayersEnum.HISTORICAL_PHOTOS]: t('map-type_HistoricalPhotos', {
             defaultValue: 'Historical Photos'
         }),
+        [MapAdditionalLayersEnum.OSM_CANDIDATES]: t('map-type_OsmCandidates', {
+            defaultValue: 'Неисследовано'
+        }),
         [MapAdditionalLayersEnum.WIKIMEDIA_COMMONS]: t('map-type_WikimediaCommons', {
             defaultValue: 'Wikimedia Photos'
         }),

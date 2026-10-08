@@ -8,6 +8,5 @@ class ManageSeeder extends Seeder {
     public function run()
     {
         $this->call('CategorySeeder');
-        $this->call('OverpassCategorySeeder');
     }
 }

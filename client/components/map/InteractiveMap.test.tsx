@@ -3,6 +3,7 @@ import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 import { InteractiveMap } from './InteractiveMap'
+import { MapAdditionalLayersEnum } from './types'
 
 jest.mock('react-leaflet', () => ({
     MapContainer: ({ children, _center, zoom, _style, _ref }: any) => (
@@ -121,6 +122,10 @@ jest.mock('./place-mark', () => ({
     PlaceMark: () => <div data-testid={'place-mark'} />
 }))
 
+jest.mock('./osm-candidates', () => ({
+    OsmCandidates: () => <div data-testid={'osm-candidates'} />
+}))
+
 describe('InteractiveMap', () => {
     describe('rendering', () => {
         it('renders the map container', () => {
@@ -133,6 +138,16 @@ describe('InteractiveMap', () => {
             const tileLayers = screen.getAllByTestId('tile-layer')
             const osm = tileLayers.find((el) => el.getAttribute('data-attribution') === 'Open Street Map')
             expect(osm).toBeInTheDocument()
+        })
+
+        it('does not render the OSM candidates layer by default', () => {
+            render(<InteractiveMap />)
+            expect(screen.queryByTestId('osm-candidates')).not.toBeInTheDocument()
+        })
+
+        it('renders the additional layers switched on by default', () => {
+            render(<InteractiveMap defaultAdditionalLayers={[MapAdditionalLayersEnum.OSM_CANDIDATES]} />)
+            expect(screen.getByTestId('osm-candidates')).toBeInTheDocument()
         })
 
         it('renders a spinner when loading', () => {

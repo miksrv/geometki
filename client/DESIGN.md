@@ -205,6 +205,18 @@ views).
   (`components/shared/add-to-collection`: `AddToCollectionButton` + `AddToCollectionModal`,
   used on the place page and in the map popup, `hideLabel` for the icon-only variant); other
   picker-style rows reuse its `collectionPickerStyles` instead of copying them.
+- **Map popups** (reference: `components/map/osm-candidates/CandidatePopup`): 280px wide,
+  no Leaflet inner margins; an optional full-bleed cover of a fixed height (156px, so autopan
+  is right before the image loads) with the photo credits under it, dropped on a load error;
+  then a 12px-padded body with 12px gaps: title (13px, weight 300, line height 1.3, the same as
+  the place popup; up to 3 lines) → 13px secondary sublines → kit `Badge` chips with tooltips → callouts → the primary action
+  (`size="medium"`, stretched) → collapsible details → 12px external links. The close button
+  is the place popup's plain 24px cross: white over a cover, grey without one.
+  Admin actions are full-width buttons: confirming a found duplicate inside its callout, "hide for good"
+  (`outline` `negative`) last; destructive ones ask for confirmation.
+  Exception to "tokens, not values": the candidate group colours (`GROUP_COLORS`) are hex
+  values in JS, like `CATEGORY_COLORS`, because Leaflet paints the markers from `pathOptions`;
+  the photo counter over a cover is the same fixed dark pill as the stats over `MediaTile`.
 - **Empty states.** `EmptyState` with a title, one sentence and at most one action; copy
   differs for owners (what to do) and readers (what to expect).
 - **Notifications.** Success and error toasts via `Notify`; an entity link in the toast is

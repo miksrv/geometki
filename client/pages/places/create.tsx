@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Container, Message } from 'simple-react-ui-kit'
+import { Container, Message, Spinner } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
 import dynamic from 'next/dynamic'
 import Head from 'next/head'
+import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
@@ -12,6 +13,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
+import { displayName } from '@/components/map/osm-candidates/utils'
 import { AppLayout, PageHeader } from '@/components/shared'
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import { PlaceForm } from '@/sections/place'
@@ -24,9 +26,29 @@ const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmatio
 })
 
 const CreatePlacePage: NextPage<object> = () => {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
 
     const router = useRouter()
+
+    // Created from an OSM candidate on the map: the form is prefilled and the candidate gets linked
+    const candidateId = typeof router.query.candidate === 'string' ? router.query.candidate : undefined
+
+    const { data: candidate, isLoading: candidateLoading } = API.useOsmCandidatesGetItemQuery(candidateId ?? '', {
+        skip: !candidateId
+    })
+
+    const candidateValues = useMemo<ApiType.Places.PostItemRequest | undefined>(
+        () =>
+            candidate
+                ? {
+                      category: candidate.category ?? undefined,
+                      lat: candidate.lat,
+                      lon: candidate.lon,
+                      title: displayName(t, candidate, i18n.language)
+                  }
+                : undefined,
+        [candidate]
+    )
 
     const [clickedButton, setClickedButton] = useState<boolean>(false)
     const [isDirty, setIsDirty] = useState(false)
@@ -48,7 +70,7 @@ const CreatePlacePage: NextPage<object> = () => {
     const handleSubmit = async (formData?: ApiType.Places.PostItemRequest) => {
         if (formData) {
             setClickedButton(true)
-            await createPlace(formData)
+            await createPlace(candidate?.status === 'open' ? { ...formData, candidate: candidate.id } : formData)
         }
     }
 
@@ -83,14 +105,44 @@ const CreatePlacePage: NextPage<object> = () => {
             <Container>
                 {serverError && <Message type={'error'}>{serverError}</Message>}
 
-                <PlaceForm
-                    loading={isLoading || isSuccess || clickedButton}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    errors={validationErrors as any}
-                    onSubmit={handleSubmit}
-                    onCancel={handleCancel}
-                    onDirtyChange={setIsDirty}
-                />
+                {/* Taken since the map was opened: somebody created the place, or it was there already */}
+                {candidate?.place && candidate.status !== 'open' && (
+                    <Message type={'warning'}>
+                        {candidate.status === 'linked'
+                            ? t('osm-candidates_create-taken', { defaultValue: 'Это место уже есть на Геометках:' })
+                            : t('osm-candidates_create-duplicate', {
+                                  defaultValue: 'Похоже, это место уже есть на Геометках:'
+                              })}{' '}
+                        <Link href={buildPlaceUrl(candidate.place.id)}>
+                            {candidate.place.title ?? candidate.place.id}
+                        </Link>
+                    </Message>
+                )}
+
+                {candidate && (
+                    <Message type={'info'}>
+                        {t('osm-candidates_create-hint', {
+                            defaultValue:
+                                'Название, категория и координаты взяты из OpenStreetMap, проверьте их. Описание напишите своими словами: копировать тексты из Википедии нельзя.'
+                        })}
+                    </Message>
+                )}
+
+                {candidateId && candidateLoading ? (
+                    <Spinner />
+                ) : (
+                    <PlaceForm
+                        // A new form once the candidate is loaded: its values are the form's defaults
+                        key={candidate?.id ?? 'new'}
+                        values={candidateValues}
+                        loading={isLoading || isSuccess || clickedButton}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        errors={validationErrors as any}
+                        onSubmit={handleSubmit}
+                        onCancel={handleCancel}
+                        onDirtyChange={setIsDirty}
+                    />
+                )}
 
                 <ConfirmationDialog {...leaveDialogProps} />
             </Container>

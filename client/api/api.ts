@@ -392,6 +392,31 @@ export const API = createApi({
             query: () => 'notifications/updates'
         }),
 
+        /** Controller: OSM Candidates **/
+        osmCandidatesGetList: builder.query<ApiType.OsmCandidates.ListResponse, ApiType.OsmCandidates.ListRequest>({
+            providesTags: ['OsmCandidates'],
+            query: (params) => `osm-candidates${encodeQueryData(params)}`
+        }),
+        osmCandidatesGetItem: builder.query<ApiType.OsmCandidates.Candidate, string>({
+            providesTags: (res, err, id) => [{ id, type: 'OsmCandidates' }],
+            query: (id) => `osm-candidates/${id}`
+        }),
+        osmCandidatesPatchLink: builder.mutation<void, ApiType.OsmCandidates.LinkRequest>({
+            invalidatesTags: ['OsmCandidates'],
+            query: ({ id, placeId }) => ({ body: { placeId }, method: 'PATCH', url: `osm-candidates/${id}/link` }),
+            transformErrorResponse: extractErrorMessage
+        }),
+        osmCandidatesPatchUnlink: builder.mutation<void, string>({
+            invalidatesTags: ['OsmCandidates'],
+            query: (id) => ({ method: 'PATCH', url: `osm-candidates/${id}/unlink` }),
+            transformErrorResponse: extractErrorMessage
+        }),
+        osmCandidatesPatchReject: builder.mutation<void, string>({
+            invalidatesTags: ['OsmCandidates'],
+            query: (id) => ({ method: 'PATCH', url: `osm-candidates/${id}/reject` }),
+            transformErrorResponse: extractErrorMessage
+        }),
+
         /** Controller: Photos **/
         photoDeleteItem: builder.mutation<ApiType.Photos.DeleteResponse, ApiType.Photos.DeleteRequest>({
             query: (params) => ({
@@ -467,7 +492,12 @@ export const API = createApi({
             transformErrorResponse: extractErrorData
         }),
         placesPostItem: builder.mutation<ApiType.Places.PostItemResponse, Omit<ApiType.Places.PostItemRequest, 'id'>>({
-            invalidatesTags: [{ type: 'Places' }, { type: 'Activity' }, { type: 'Notifications' }],
+            invalidatesTags: [
+                { type: 'Places' },
+                { type: 'Activity' },
+                { type: 'Notifications' },
+                { type: 'OsmCandidates' }
+            ],
             query: (data) => ({
                 body: data,
                 method: 'POST',
@@ -615,6 +645,7 @@ export const API = createApi({
         'Collections',
         'Comments',
         'Notifications',
+        'OsmCandidates',
         'Photos',
         'Places',
         'Profile',
