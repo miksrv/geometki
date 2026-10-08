@@ -14,7 +14,7 @@
 
 ## Overview
 
-Two complementary re-engagement systems: (1) a weekly Monday email digest that summarizes "what happened in your world" — XP earned, places viewed, rank changes, followers gained, and personalized action prompts; (2) a smart push notification layer (mobile + web) that sends timely, contextually relevant triggers — streak expiry warnings, challenge reminders, rank overtake alerts, and ghost place spawn notifications.
+Two complementary re-engagement systems: (1) a weekly Monday email digest that summarizes "what happened in your world" — XP earned, places viewed, rank changes, followers gained, and personalized action prompts; (2) a smart push notification layer (mobile + web) that sends timely, contextually relevant triggers — streak expiry warnings, challenge reminders, rank overtake alerts, and notifications about new unexplored places nearby (the "Places to explore" layer, 1.13.0).
 
 **Effort:** Medium (4–5 days backend + 2 days frontend for notification preferences UI)
 **Impact:** Very High — re-engages dormant users (who would never think to re-open the app) and converts active users into daily habits
@@ -26,7 +26,7 @@ Two complementary re-engagement systems: (1) a weekly Monday email digest that s
 
 The app never calls out to the user. The only proactive communication today is a real-time email when someone rates or comments on your place — a passive, other-user-dependent trigger. This means:
 - Users who haven't been active for a week receive zero prompts.
-- There is no signal for "something changed in your world" — no streak warning, no rank overtake, no ghost place spawn.
+- There is no signal for "something changed in your world" — no streak warning, no rank overtake, no new unexplored places nearby.
 - Users who go cold stay cold because nothing reaches them.
 
 The weekly digest and push notifications together answer: *"What is waiting for you? Why should you open the app today?"*
@@ -149,7 +149,7 @@ Shown if user gained followers this week:
 
 #### Section 7: What to do this week `[⚠️ PARTIAL — only generic prompts available now]`
 
-> Currently implementable: prompt to rate more places (activity data available). All other prompts blocked on missing features (streaks, ghost places, challenges, rank system).
+> Currently implementable: prompt to rate more places (activity data available). All other prompts blocked on missing features (streaks, challenges, rank system); unexplored places nearby are available since 1.13.0 (`osm_candidates`).
 
 Always shown — 2–3 personalized action prompts based on user's current state:
 
@@ -157,13 +157,13 @@ Always shown — 2–3 personalized action prompts based on user's current state
 This week you could:
 
   📋 Complete your 3-day challenge streak to earn the ×1.1 multiplier
-  📍 5 ghost places appeared near you this week — be the first to capture them
+  📍 5 unexplored places appeared near you this week — be the first to describe them
   ⭐ Rate 3 more places to finish this week's challenge (+90 XP)
 ```
 
 Prompts are selected from a priority list:
 1. Streak expiry warning (if streak ≥ 3 and not yet active today/this week)
-2. Ghost places near user (Feature 11)
+2. Unexplored places near the user (the "Places to explore" layer, 1.13.0: open `osm_candidates` of the `known` and `explore` tiers)
 3. Active challenge with incomplete progress (Feature 02)
 4. Freshness alerts for creator's places
 5. Rank opportunity ("you're 45 pts from top 10")
@@ -173,14 +173,14 @@ Prompts are selected from a priority list:
 
 #### Section 8: Community highlights `[✅ IMPLEMENT NOW]`
 
-> Data source: `activity` table (new places count this week) + `users_levels` (who levelled up). Ghost place captures and seasonal events omitted until those systems exist.
+> Data source: `activity` table (new places count this week) + `users_levels` (who levelled up). Seasonal events omitted until that system exists; places created from the "Places to explore" layer are available via `osm_candidates.place_id`.
 
 Always shown — keeps the digest interesting even for inactive users:
 
 ```
 🗺️  In Moscow this week:
   → 23 new places added
-  → Ghost place "Дом Пашкова" captured for the first time
+  → Unexplored place "Дом Пашкова" described for the first time
   → Anna K. reached Level 25
   → March photo challenge: "Abandoned Buildings" — voting opens tomorrow
 ```
@@ -200,7 +200,7 @@ Here's what happened in Moscow since you last visited Geometki:
 
   📍 34 new places added near you
   👥 2 explorers you know reached new levels
-  🏠 A ghost place appeared 400m from your home pin — no one has captured it yet
+  🏠 An unexplored place appeared 400m from your home pin — no one has described it yet
   ⭐ Your place "Café Pushkin" got 12 new ratings this week
 
 Your 6-day streak from last month? Start a new one with one action today.
@@ -265,7 +265,7 @@ Every digest email has a one-click unsubscribe link. Clicking it sets `users.ema
 | Streak expiry | User has streak ≥ 3 AND no activity today | 20:00 local time daily | Push + optionally email |
 | Challenge deadline | Active challenge, user hasn't completed it, 4 hours left | 4h before midnight | Push only |
 | Rank overtaken | Nightly cron detects rank drop of ±1 in top 20 | 08:00 next morning | Push + in-app |
-| Ghost place spawned | Overpass cron creates new ghost places within 1km | Within 1h of spawn | Push only |
+| Unexplored place found | `osm:collect` adds new candidates within 1km (the "Places to explore" layer, 1.13.0) | Within 1h of the run | Push only |
 | New follower | Someone follows you | Immediately | Push + in-app |
 | Place trending | Your place hits 20+ views this week | Thursday 18:00 | Push + in-app |
 | Freshness decay | Your place dropped a tier | Monday morning | In-app + weekly digest |
@@ -334,7 +334,7 @@ Push notifications
   ✓ Streak expiry warning
   ✓ Daily challenge reminder
   ✓ Rank changes
-  ✓ Ghost places near you
+  ✓ Unexplored places near you
   ✓ New follower
   ✗ Place trending (off by default — can be noisy)
 ```

@@ -373,10 +373,10 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                 </div>
             )}
 
-            {place?.id && (
+            {nearbyPhotosOpen && place?.id && (
                 <NearbyPhotosDialog
                     place={{ id: place.id, lat: place.lat, lon: place.lon, title: place.title }}
-                    open={nearbyPhotosOpen}
+                    open={true}
                     onClose={() => setNearbyPhotosOpen(false)}
                     // Newest first, like the gallery from the server
                     onLink={(photo) => setLocalPhotos((photos) => [photo, ...photos])}

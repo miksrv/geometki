@@ -238,6 +238,50 @@ final class OsmScoringTest extends CIUnitTestCase
         $this->assertNull($this->scoring->duplicateOf('Чкалову', 'memorial', 51.80, 55.0969, $place));
     }
 
+    public function testNewPlaceWithSimilarTitleTakesTheCandidate(): void
+    {
+        $place = ['lat' => 51.7682, 'lon' => 55.0970, 'category' => 'monument', 'titles' => ['Памятник Чкалову']];
+
+        $this->assertTrue($this->scoring->isNewPlaceOf('Чкалову', 'memorial', 51.7681, 55.0969, $place));
+    }
+
+    public function testNewPlaceWithUnrelatedTitleDoesNotTakeTheCandidate(): void
+    {
+        $place = ['lat' => 51.7682, 'lon' => 55.0970, 'category' => 'monument', 'titles' => ['Моя дача']];
+
+        $this->assertFalse($this->scoring->isNewPlaceOf('Чкалову', 'memorial', 51.7681, 55.0969, $place));
+    }
+
+    public function testNewPlaceOfTheSameCategoryVeryCloseTakesTheCandidate(): void
+    {
+        $place = ['lat' => 51.76812, 'lon' => 55.09692, 'category' => 'memorial', 'titles' => ['Без имени']];
+
+        $this->assertTrue($this->scoring->isNewPlaceOf(null, 'memorial', 51.7681, 55.0969, $place));
+    }
+
+    public function testNewPlaceWithSimilarTitleWithinLinkRadiusTakesTheCandidate(): void
+    {
+        // About 600 m away: further than a duplicate, the marker was moved to the real spot
+        $place = ['lat' => 51.7735, 'lon' => 55.0970, 'category' => 'monument', 'titles' => ['Памятник Чкалову']];
+
+        $this->assertTrue($this->scoring->isNewPlaceOf('Чкалову', 'memorial', 51.7681, 55.0969, $place));
+    }
+
+    public function testNewPlaceOfTheSameCategoryOnlyBeyondDuplicateRadiusDoesNotTakeTheCandidate(): void
+    {
+        // About 600 m away with an unrelated title: the category alone is not enough from that far
+        $place = ['lat' => 51.7735, 'lon' => 55.0970, 'category' => 'memorial', 'titles' => ['Моя дача']];
+
+        $this->assertFalse($this->scoring->isNewPlaceOf('Чкалову', 'memorial', 51.7681, 55.0969, $place));
+    }
+
+    public function testNewPlaceBeyondLinkRadiusDoesNotTakeTheCandidate(): void
+    {
+        $place = ['lat' => 51.80, 'lon' => 55.0969, 'category' => 'memorial', 'titles' => ['Памятник Чкалову']];
+
+        $this->assertFalse($this->scoring->isNewPlaceOf('Чкалову', 'memorial', 51.7681, 55.0969, $place));
+    }
+
     public function testNearbyArticleAboutStreetIsSkipped(): void
     {
         $articles = [['pageid' => 1, 'title' => 'Улица Кирова (Самара)', 'lat' => 53.2, 'lon' => 50.1]];

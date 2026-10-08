@@ -21,6 +21,21 @@ final class OsmTilesTest extends CIUnitTestCase
         $this->tiles = new OsmTiles(new OsmCandidates());
     }
 
+    public function testCountInBoundsMatchesTheList(): void
+    {
+        foreach ([[51.05, 55.05, 51.35, 55.45], [51.0, 55.0, 51.2, 55.2], [-90.0, 0.0, 90.0, 0.005]] as $bounds) {
+            $this->assertSame(count($this->tiles->tilesInBounds($bounds)), $this->tiles->countInBounds($bounds));
+        }
+    }
+
+    public function testThinTallStripHasManyTilesDespiteSmallArea(): void
+    {
+        $bounds = [-90.0, 0.0, 90.0, 0.005];
+
+        $this->assertLessThan((new OsmCandidates())->maxRequestArea, (90 + 90) * 0.005);
+        $this->assertGreaterThan((new OsmCandidates())->maxRequestTiles, $this->tiles->countInBounds($bounds));
+    }
+
     public function testTileOfFloorsCoordinates(): void
     {
         $this->assertSame([511, 549], $this->tiles->tileOf(51.15, 54.98));

@@ -18,8 +18,8 @@ import { FitBounds } from './fit-bounds'
 import { HeatmapLayer } from './heatmap-layer'
 import { HistoricalPhotos } from './historical-photos'
 import { LayerSwitcherControl } from './layer-switcher-control'
-import { LayersStatus } from './layers-status'
-import { LayerStatus, MapControlsContext } from './MapControlsContext'
+import { createLayerStatusStore, LayersStatus } from './layers-status'
+import { MapControlsContext } from './MapControlsContext'
 import { MapEvents } from './MapEvents'
 import { getMapSettings, saveMapSettings } from './mapSettings'
 import { MarkerPhoto } from './marker-photo'
@@ -177,33 +177,39 @@ export const InteractiveMap: React.FC<MapProps> = ({
         }
     }
 
-    const [layerStatuses, setLayerStatuses] = useState<Partial<Record<MapAdditionalLayersEnum, LayerStatus>>>({})
+    // The external layers report their loading state here, outside of the map's state:
+    // only the LayersStatus panel re-renders on a report, not the map with all its markers
+    const [layerStatuses] = useState(createLayerStatusStore)
 
-    const reportLayerStatus = useCallback((layer: MapAdditionalLayersEnum, status?: LayerStatus) => {
-        setLayerStatuses((prev) => ({ ...prev, [layer]: status }))
-    }, [])
-
-    const controlsContext = useMemo(() => ({ bottomSlot, reportLayerStatus }), [bottomSlot, reportLayerStatus])
+    const controlsContext = useMemo(() => ({ bottomSlot, layerStatuses }), [bottomSlot, layerStatuses])
 
     const toggleTool = (tool: MeasureTool) => setActiveTool((prev) => (prev === tool ? undefined : tool))
 
-    const handleChangeBounds = (bounds: LatLngBounds, zoom: number) => {
-        const center = bounds.getCenter()
-        const currentMapPosition = {
-            lat: center.lat,
-            lon: center.lng,
-            zoom
-        }
+    // Stable, so MapEvents does not re-bind the map listeners on every render.
+    // The last position is compared through a ref: the state is for the coordinates readout
+    const mapPositionRef = useRef<MapPositionType>(undefined)
 
-        if (!isEqual(mapPosition, currentMapPosition)) {
-            onChangeBounds?.(bounds, zoom)
-            setMapPosition(currentMapPosition)
-
-            if (storeMapPosition) {
-                saveMapSettings({ position: currentMapPosition })
+    const handleChangeBounds = useCallback(
+        (bounds: LatLngBounds, zoom: number) => {
+            const center = bounds.getCenter()
+            const currentMapPosition = {
+                lat: center.lat,
+                lon: center.lng,
+                zoom
             }
-        }
-    }
+
+            if (!isEqual(mapPositionRef.current, currentMapPosition)) {
+                mapPositionRef.current = currentMapPosition
+                onChangeBounds?.(bounds, zoom)
+                setMapPosition(currentMapPosition)
+
+                if (storeMapPosition) {
+                    saveMapSettings({ position: currentMapPosition })
+                }
+            }
+        },
+        [onChangeBounds, storeMapPosition]
+    )
 
     const handleSwitchMapLayer = (layer: MapLayersEnum) => {
         setMapLayer(layer)
@@ -621,7 +627,6 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         {/* Below the panels: "Places to explore" can be collapsed into a button above it */}
                         <LayersStatus
                             layers={additionalLayers}
-                            statuses={layerStatuses}
                             className={enableCoordsControl ? styles.bottomSlot : styles.bottomSlotStandalone}
                         />
 

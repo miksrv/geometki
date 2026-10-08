@@ -421,7 +421,8 @@ class Places extends ResourceController
                 $this->savePhotos($input->photos, $newPlaceId, $place, $content);
             }
 
-            // Created from an OSM candidate: the same link an admin sets by hand, hides it from the map
+            // Created from an OSM candidate: the same link an admin sets by hand, hides it from the map.
+            // Only a similar place takes it, otherwise the candidate stays on the map
             if (!empty($input->candidate) && is_string($input->candidate)) {
                 (new OsmCandidatesModel())->linkToNewPlace(
                     $input->candidate,
@@ -429,7 +430,8 @@ class Places extends ResourceController
                     $this->session->user?->id,
                     (float) $input->lat,
                     (float) $input->lon,
-                    config('OsmCandidates')->linkRadius
+                    (string) $input->category,
+                    [$placeTitle]
                 );
             }
 

@@ -35,7 +35,7 @@ const UserVisitedPage: React.FC<UserVisitedPageProps> = ({ id, user, currentPage
         offset: (currentPage - 1) * VISITED_PLACES_PER_PAGE
     })
 
-    const { data: marksData } = API.usePoiGetListQuery({ visited: id })
+    const { data: marksData, isLoading: marksLoading } = API.usePoiGetListQuery({ visited: id })
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     const pageTitle = currentPage > 1 ? ` - ${t('page')} ${currentPage}` : ''
@@ -82,7 +82,11 @@ const UserVisitedPage: React.FC<UserVisitedPageProps> = ({ id, user, currentPage
                 currentPage={UserPagesEnum.VISITED}
             />
 
-            <PlacesMap places={marksData?.items} />
+            <PlacesMap
+                places={marksData?.items}
+                // The list comes from the server with the count: no placeholder for a user without places
+                loading={marksLoading && !!data?.count}
+            />
 
             <PlacesList
                 places={data?.items}
@@ -140,8 +144,6 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     offset: (currentPage - 1) * VISITED_PLACES_PER_PAGE
                 })
             )
-
-            await store.dispatch(API.endpoints.poiGetList.initiate({ visited: id }))
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 

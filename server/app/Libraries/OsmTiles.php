@@ -29,12 +29,12 @@ class OsmTiles
     }
 
     /**
-     * Tiles covering the bounds
+     * Tile index ranges covering the bounds
      *
      * @param array{0: float, 1: float, 2: float, 3: float} $bounds south, west, north, east
-     * @return array<int, array{0: int, 1: int}>
+     * @return array{0: int, 1: int, 2: int, 3: int} from lat, from lon, to lat, to lon
      */
-    public function tilesInBounds(array $bounds): array
+    private function tileRange(array $bounds): array
     {
         [$south, $west, $north, $east] = $bounds;
         [$fromLat, $fromLon] = $this->tileOf($south, $west);
@@ -48,6 +48,31 @@ class OsmTiles
         if ($toLon > $fromLon && abs($east / $this->size - $toLon) < 1e-9) {
             $toLon--;
         }
+
+        return [$fromLat, $fromLon, $toLat, $toLon];
+    }
+
+    /**
+     * How many tiles cover the bounds, without listing them
+     *
+     * @param array{0: float, 1: float, 2: float, 3: float} $bounds south, west, north, east
+     */
+    public function countInBounds(array $bounds): int
+    {
+        [$fromLat, $fromLon, $toLat, $toLon] = $this->tileRange($bounds);
+
+        return ($toLat - $fromLat + 1) * ($toLon - $fromLon + 1);
+    }
+
+    /**
+     * Tiles covering the bounds
+     *
+     * @param array{0: float, 1: float, 2: float, 3: float} $bounds south, west, north, east
+     * @return array<int, array{0: int, 1: int}>
+     */
+    public function tilesInBounds(array $bounds): array
+    {
+        [$fromLat, $fromLon, $toLat, $toLon] = $this->tileRange($bounds);
 
         $tiles = [];
 

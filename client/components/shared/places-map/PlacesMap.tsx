@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Container } from 'simple-react-ui-kit'
+import { Container, Skeleton } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
 
@@ -21,6 +21,8 @@ const isCoordinate = (value: unknown): boolean =>
 
 interface PlacesMapProps {
     places?: ApiModel.PlaceMark[]
+    /** The places are being fetched: keeps the map's place with a placeholder, so the page does not shift */
+    loading?: boolean
 }
 
 /**
@@ -28,7 +30,7 @@ interface PlacesMapProps {
  * category markers with the usual place popup, in a framed card. The viewport is fitted
  * to all of them; a single place is centred at a city zoom. Renders nothing without places.
  */
-export const PlacesMap: React.FC<PlacesMapProps> = ({ places }) => {
+export const PlacesMap: React.FC<PlacesMapProps> = ({ places, loading }) => {
     // Coordinates are numbers in the API types, but guard against decimal strings anyway:
     // `sum + '50.7'` concatenates instead of adding and Leaflet throws on (NaN, NaN).
     // null and '' are skipped before converting, since Number() turns them into 0 (a point off Africa).
@@ -65,7 +67,13 @@ export const PlacesMap: React.FC<PlacesMapProps> = ({ places }) => {
     }, [located])
 
     if (!located.length) {
-        return null
+        return loading ? (
+            <Container className={styles.placesMap}>
+                <div className={styles.inner}>
+                    <Skeleton style={{ height: '100%', width: '100%' }} />
+                </div>
+            </Container>
+        ) : null
     }
 
     return (

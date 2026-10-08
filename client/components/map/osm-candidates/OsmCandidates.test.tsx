@@ -9,11 +9,31 @@ import { MapControlsContext } from '../MapControlsContext'
 
 import { OsmCandidates } from './OsmCandidates'
 
+// Every `center` and `pathOptions` object gets a number: the same object keeps its number across renders
+const objectIds = new WeakMap<object, number>()
+const objectId = (value: object): number => {
+    if (!objectIds.has(value)) {
+        objectIds.set(value, objectIds.get(value) ?? Math.random())
+    }
+
+    return objectIds.get(value)!
+}
+
 jest.mock('react-leaflet', () => ({
-    CircleMarker: ({ children, pathOptions }: { children?: React.ReactNode; pathOptions: { fillColor: string } }) => (
+    CircleMarker: ({
+        children,
+        center,
+        pathOptions
+    }: {
+        children?: React.ReactNode
+        center: [number, number]
+        pathOptions: { fillColor: string }
+    }) => (
         <div
             data-testid={'candidate-marker'}
             data-color={pathOptions.fillColor}
+            data-center={objectId(center)}
+            data-options={objectId(pathOptions)}
         >
             {children}
         </div>
@@ -186,6 +206,38 @@ describe('OsmCandidates', () => {
 
         expect(screen.queryByText(/Хорошо описанные/)).not.toBeInTheDocument()
         expect(screen.getByLabelText('Места для исследования')).toBeInTheDocument()
+    })
+
+    it('starts collapsed on a phone screen unless the user opened it before', () => {
+        const matchMedia = jest.fn().mockReturnValue({ matches: true })
+        Object.defineProperty(window, 'matchMedia', { configurable: true, value: matchMedia, writable: true })
+
+        const { unmount } = render(<OsmCandidates />)
+
+        expect(matchMedia).toHaveBeenCalledWith('(max-width: 768px)')
+        expect(screen.queryByText(/Хорошо описанные/)).not.toBeInTheDocument()
+        expect(screen.getByLabelText('Места для исследования')).toBeInTheDocument()
+
+        fireEvent.click(screen.getByLabelText('Места для исследования'))
+        unmount()
+        render(<OsmCandidates />)
+
+        expect(screen.getByText('Хорошо описанные: 2')).toBeInTheDocument()
+
+        Object.defineProperty(window, 'matchMedia', { configurable: true, value: undefined, writable: true })
+    })
+
+    it('does not move or restyle the markers when the layer re-renders', () => {
+        const { rerender } = render(<OsmCandidates />)
+        const marker = screen.getAllByTestId('candidate-marker')[0]
+        const center = marker.getAttribute('data-center')
+        const options = marker.getAttribute('data-options')
+
+        rerender(<OsmCandidates />)
+
+        const same = screen.getAllByTestId('candidate-marker')[0]
+        expect(same.getAttribute('data-center')).toBe(center)
+        expect(same.getAttribute('data-options')).toBe(options)
     })
 
     it('puts the legend into the map slot above the coordinates', () => {

@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { cn, Spinner } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
-import { LayerStatus } from '../MapControlsContext'
+import { MapControlsContext } from '../MapControlsContext'
 import { MapAdditionalLayersEnum } from '../types'
+
+import { LayerStatus, useLayerStatuses } from './store'
 
 import styles from './styles.module.sass'
 
@@ -17,16 +19,17 @@ export const STATUS_LAYERS = [
 
 interface LayersStatusProps {
     layers?: MapAdditionalLayersEnum[]
-    statuses: Partial<Record<MapAdditionalLayersEnum, LayerStatus>>
     className?: string
 }
 
 /**
  * Shows for every turned on external layer whether it is still loading and how many objects
  * it has in the visible area: an empty area is told apart from a slow source.
+ * The statuses come from the map's store (MapControlsContext), so only this panel re-renders on a report
  */
-export const LayersStatus: React.FC<LayersStatusProps> = ({ layers, statuses, className }) => {
+export const LayersStatus: React.FC<LayersStatusProps> = ({ layers, className }) => {
     const { t } = useTranslation()
+    const statuses = useLayerStatuses(useContext(MapControlsContext).layerStatuses)
 
     const enabled = STATUS_LAYERS.filter((layer) => layers?.includes(layer))
 
@@ -52,6 +55,12 @@ export const LayersStatus: React.FC<LayersStatusProps> = ({ layers, statuses, cl
                     className={styles.spinner}
                     aria-label={t('layers-status_loading', { defaultValue: 'Загрузка' })}
                 />
+            )
+        }
+
+        if (status.tooLarge) {
+            return (
+                <span className={styles.empty}>{t('layers-status_zoom-in', { defaultValue: 'Приблизьте карту' })}</span>
             )
         }
 

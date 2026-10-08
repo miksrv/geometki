@@ -1,19 +1,21 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CircleMarker, Popup, Tooltip, useMapEvents } from 'react-leaflet'
-import Leaflet, { LatLngBounds } from 'leaflet'
+import { useMapEvents } from 'react-leaflet'
+import Leaflet from 'leaflet'
 import { Button } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
-import { API, ApiType } from '@/api'
+import { API } from '@/api'
 import { useAppSelector } from '@/app/store'
 import { Counter } from '@/components/ui'
+import { MOBILE_MAX_WIDTH } from '@/config/constants'
 
+import { roundBoundsOutwards } from '../bounds'
 import { MapControlsContext } from '../MapControlsContext'
 import { getMapSettings, saveMapSettings } from '../mapSettings'
 
-import { CandidatePopup } from './CandidatePopup'
+import { CandidateMarker } from './CandidateMarker'
 import {
     DEFAULT_GROUPS,
     GROUP_COLORS,
@@ -28,23 +30,17 @@ import { CandidateGroup, candidateGroup, displayName } from './utils'
 
 import styles from './styles.module.sass'
 
-/** Bounds rounded outwards, so that small pans ask for the same area and hit the RTK cache */
-const toRequestBounds = (bounds: LatLngBounds): string =>
-    [
-        Math.floor(bounds.getSouth() * 100) / 100,
-        Math.floor(bounds.getWest() * 100) / 100,
-        Math.ceil(bounds.getNorth() * 100) / 100,
-        Math.ceil(bounds.getEast() * 100) / 100
-    ].join(',')
-
-const markerRadius = (candidate: ApiType.OsmCandidates.Candidate, group: CandidateGroup): number =>
-    group === 'known' || group === 'explore' ? Math.min(14, 6 + Math.max(0, candidate.score) / 2) : 5
+/** On a phone the open legend covers too much of the map: collapsed until the user opens it */
+const isNarrowScreen = (): boolean =>
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH}px)`).matches
 
 /**
  * Map layer with interesting OSM objects that are not on Geometki yet, and its legend.
  * The candidates come from our API; the areas that were never collected are collected in the background.
  */
-export const OsmCandidates: React.FC = () => {
+export const OsmCandidates: React.FC = React.memo(function OsmCandidates() {
     const { t, i18n } = useTranslation()
     const groupTitles = useGroupTitles()
     const groupHints = useGroupHints()
@@ -58,16 +54,11 @@ export const OsmCandidates: React.FC = () => {
     const [bounds, setBounds] = useState<string>()
     const [zoomTooSmall, setZoomTooSmall] = useState(false)
     // Rendered on the client only, inside the map, so the saved state is read right away
-    const [collapsed, setCollapsed] = useState(() => getMapSettings().osmCandidatesCollapsed ?? false)
+    const [collapsed, setCollapsed] = useState(() => getMapSettings().osmCandidatesCollapsed ?? isNarrowScreen())
     const [visible, setVisible] = useState<CandidateGroup[]>(DEFAULT_GROUPS)
+    // Poll only while the area is being collected in the background. Through the state: the
+    // interval is an argument of the query hook, so it cannot be computed from the hook's result
     const [pollingInterval, setPollingInterval] = useState(0)
-
-    const updateBounds = () => {
-        const tooSmall = map.getZoom() < OSM_CANDIDATES_MIN_ZOOM
-
-        setZoomTooSmall(tooSmall)
-        setBounds(tooSmall ? undefined : toRequestBounds(map.getBounds()))
-    }
 
     const map = useMapEvents({
         moveend: () => {
@@ -75,6 +66,13 @@ export const OsmCandidates: React.FC = () => {
             timerRef.current = setTimeout(updateBounds, OSM_CANDIDATES_DEBOUNCE_MS)
         }
     })
+
+    const updateBounds = () => {
+        const tooSmall = map.getZoom() < OSM_CANDIDATES_MIN_ZOOM
+
+        setZoomTooSmall(tooSmall)
+        setBounds(tooSmall ? undefined : roundBoundsOutwards(map.getBounds()).join(','))
+    }
 
     const { data, isFetching, isError } = API.useOsmCandidatesGetListQuery(
         // All tiers at once: the legend shows the counts of the hidden groups too
@@ -84,7 +82,6 @@ export const OsmCandidates: React.FC = () => {
 
     const pending = !!data?.pendingTiles
 
-    // Poll only while the area is being collected in the background
     useEffect(() => {
         setPollingInterval(pending ? OSM_CANDIDATES_POLLING_MS : 0)
     }, [pending])
@@ -118,8 +115,15 @@ export const OsmCandidates: React.FC = () => {
             (bounds ? (data?.items ?? []) : [])
                 .map((item) => ({ group: candidateGroup(item), item }))
                 .filter(({ group }) => visible.includes(group))
-                .sort((a, b) => Number(DEFAULT_GROUPS.includes(a.group)) - Number(DEFAULT_GROUPS.includes(b.group))),
-        [data, visible, bounds]
+                .sort((a, b) => Number(DEFAULT_GROUPS.includes(a.group)) - Number(DEFAULT_GROUPS.includes(b.group)))
+                .map(({ group, item }) => ({
+                    group,
+                    item,
+                    title: isAdmin
+                        ? `${item.score} · ${displayName(t, item, i18n.language)}`
+                        : displayName(t, item, i18n.language)
+                })),
+        [data, visible, bounds, isAdmin, t, i18n.language]
     )
 
     const newPlacesCount = counts.known + counts.explore
@@ -225,35 +229,15 @@ export const OsmCandidates: React.FC = () => {
             {/* In the map's bottom-left slot above the coordinates; on its own corner without the slot */}
             {bottomSlot ? createPortal(panel, bottomSlot) : panel}
 
-            {items.map(({ group, item }) => (
-                <CircleMarker
+            {items.map(({ group, item, title }) => (
+                <CandidateMarker
                     key={item.id}
-                    center={[item.lat, item.lon]}
-                    radius={markerRadius(item, group)}
-                    pathOptions={{
-                        color: '#fff',
-                        fillColor: GROUP_COLORS[group],
-                        fillOpacity: 0.9,
-                        weight: 1.5
-                    }}
-                >
-                    <Tooltip direction={'top'}>
-                        {isAdmin
-                            ? `${item.score} · ${displayName(t, item, i18n.language)}`
-                            : displayName(t, item, i18n.language)}
-                    </Tooltip>
-                    <Popup
-                        className={styles.candidatePopup}
-                        maxWidth={320}
-                        autoPanPadding={[16, 16]}
-                    >
-                        <CandidatePopup
-                            candidate={item}
-                            isAdmin={isAdmin}
-                        />
-                    </Popup>
-                </CircleMarker>
+                    candidate={item}
+                    group={group}
+                    title={title}
+                    isAdmin={isAdmin}
+                />
             ))}
         </>
     )
-}
+})

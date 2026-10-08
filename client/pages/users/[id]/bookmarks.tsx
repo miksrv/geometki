@@ -35,7 +35,7 @@ const UserBookmarksPage: React.FC<UserBookmarksPageProps> = ({ id, user, current
         offset: (currentPage - 1) * PLACES_PER_PAGE
     })
 
-    const { data: marksData } = API.usePoiGetListQuery({ bookmarks: id })
+    const { data: marksData, isLoading: marksLoading } = API.usePoiGetListQuery({ bookmarks: id })
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     const pageTitle = currentPage > 1 ? ` - ${t('page')} ${currentPage}` : ''
@@ -82,7 +82,11 @@ const UserBookmarksPage: React.FC<UserBookmarksPageProps> = ({ id, user, current
                 currentPage={UserPagesEnum.BOOKMARKS}
             />
 
-            <PlacesMap places={marksData?.items} />
+            <PlacesMap
+                places={marksData?.items}
+                // The list comes from the server with the count: no placeholder for a user without places
+                loading={marksLoading && !!data?.count}
+            />
 
             <PlacesList
                 places={data?.items}
@@ -137,8 +141,6 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     offset: (currentPage - 1) * PLACES_PER_PAGE
                 })
             )
-
-            await store.dispatch(API.endpoints.poiGetList.initiate({ bookmarks: id }))
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 

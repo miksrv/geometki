@@ -65,7 +65,12 @@ class OsmCandidates extends ResourceController
 
         [$south, $west, $north, $east] = $bounds;
 
-        if (($north - $south) * ($east - $west) > $this->config->maxRequestArea) {
+        $osmTiles = new OsmTiles($this->config);
+
+        if (
+            ($north - $south) * ($east - $west) > $this->config->maxRequestArea
+            || $osmTiles->countInBounds($bounds) > $this->config->maxRequestTiles
+        ) {
             return $this->respond(['tooLarge' => true, 'items' => [], 'pendingTiles' => 0]);
         }
 
@@ -80,7 +85,7 @@ class OsmCandidates extends ResourceController
         // Ask for the tiles in the background and report how many are being collected.
         // Limited per IP, so that a script walking the map cannot flood the queue
         $tiles = $this->mayQueueTiles()
-            ? (new OsmTilesModel())->request((new OsmTiles($this->config))->tilesInBounds($bounds))
+            ? (new OsmTilesModel())->request($osmTiles->tilesInBounds($bounds))
             : [];
         // Only the tiles that are really being collected: a failed one waits for its retry for hours
         $pendingTiles = count(array_filter($tiles, static fn ($tile) => $tile['fetched_at'] === null

@@ -432,7 +432,7 @@ Create a new place.
 | content | string | No | Description text (HTML stripped) |
 | tags | array | No | Array of tag strings |
 | photos | array | No | Array of temporary photo filenames to attach |
-| candidate | string | No | OSM candidate id the place is created from: links the candidate to the new place and hides it from the map. Ignored when the candidate is already taken or stands farther than `linkRadius` (1 km) from the place |
+| candidate | string | No | OSM candidate id the place is created from: links the candidate to the new place and hides it from the map. Ignored (the place is still created) when the candidate is already taken, or the place is not the same object: it must stand within `linkRadius` (1 km) and have a similar title, or be of the same category within `sameCategoryRadius` (50 m) |
 
 ```json
 {
@@ -714,7 +714,7 @@ Candidates inside the map area. Objects already on Geometki (`status` `linked` o
 
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
-| bounds | string | Yes | `south,west,north,east`; areas over `maxRequestArea` square degrees get `tooLarge` |
+| bounds | string | Yes | `south,west,north,east`; areas over `maxRequestArea` square degrees, or covering more than `maxRequestTiles` (150) tiles of 0.1°, get `tooLarge` |
 | tiers | string | No | Comma separated: `known`, `explore`, `other` (default `known,explore`) |
 
 **Response:**

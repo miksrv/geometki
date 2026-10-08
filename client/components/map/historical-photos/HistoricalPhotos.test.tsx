@@ -7,11 +7,12 @@ import { APIPastvu } from '@/api/apiPastvu'
 
 import { HistoricalPhotos } from './HistoricalPhotos'
 
+// A city district, about 7 km across: small enough for the geosearch of Wikipedia and Commons
 const mockBounds = {
-    getEast: () => 37.96,
-    getNorth: () => 55.92,
-    getSouth: () => 55.57,
-    getWest: () => 37.29
+    getEast: () => 37.65,
+    getNorth: () => 55.76,
+    getSouth: () => 55.7,
+    getWest: () => 37.55
 }
 
 jest.mock('react-leaflet', () => ({

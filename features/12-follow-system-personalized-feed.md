@@ -12,7 +12,7 @@ Users can follow other explorers. The home activity feed shifts from a global fi
 
 ## Core Problem It Solves
 
-The activity feed today is impersonal. "Someone somewhere rated a place" creates no emotional response. "Alex, who you follow, just captured a ghost place 1.5 km from you" creates curiosity, accountability, and the desire to compete. Without a follow graph, the community remains abstract. Abstract communities don't pull users back; named people do.
+The activity feed today is impersonal. "Someone somewhere rated a place" creates no emotional response. "Alex, who you follow, just described an unexplored place 1.5 km from you" creates curiosity, accountability, and the desire to compete. Without a follow graph, the community remains abstract. Abstract communities don't pull users back; named people do.
 
 ---
 
@@ -43,7 +43,7 @@ The "Following" tab is the default for users who follow 3+ people. For new users
 All existing activity types are supported in the personalized feed:
 - User created a new place
 - User uploaded photos to a place
-- User captured a ghost place
+- User created a place from the "Places to explore" layer (1.13.0, an unexplored OSM object)
 - User earned an achievement badge
 - User reached a new level
 - User is on a streak milestone (7, 14, 30, 60 days)

@@ -16,7 +16,7 @@ This directory documents proposed features for Geometki. The existing system alr
 | 08 | **Tags Page Redesign** | ✅ Done | Low–Medium | High | Existing tag list API + unused search endpoint |
 | [09](./09-categories-page-redesign.md) | **Categories Page Redesign** | ⏳ Pending | Low–Medium | High | Existing category list API + category images |
 | 10 | **Trending Places & Personalized Recommendations** | ✅ Done | Low–Medium | High | `views` counter, `rating`/`bookmarks`/`comments` fields |
-| [11](./11-overpass-ghost-places.md) | **Overpass Ghost Places & Capture Mechanic** | ⏳ Pending | Medium–High | Very High | `OverpassAPI.php`, `OverpassCategoryModel`, `SessionLibrary` coordinates |
+| 11 | **Places to Explore from OpenStreetMap & Wikidata** (1.13.0; the original "ghost places & capture" spec was replaced by the implementation, see `server/API.md`, "OSM Candidates") | ✅ Done | Medium–High | Very High | `OsmCollector`, `OsmScoring`, `osm_candidates` table |
 | [12](./12-follow-system-personalized-feed.md) | **Follow System & Personalized Activity Feed** | ⏳ Pending | Medium | Very High | Activity feed, user profiles, notification system |
 | [13](./13-regional-leaderboards.md) | **Regional Leaderboards & Social Competition** | ⏳ Pending | Medium | High | Place coordinates, existing XP/contribution data, cron infrastructure |
 | [14](./14-photo-challenges-community-albums.md) | **Photo Challenges & Community Albums** | ⏳ Pending | High | High | Photos table, existing place/user system, notifications |
@@ -26,6 +26,7 @@ This directory documents proposed features for Geometki. The existing system alr
 | [18](./18-visited-places-checkin.md) | **Verified Visit Mechanic ("Я здесь был")** | ✅ Done | Low–Medium | Medium | `users_visited_places`, `places` table, existing visited toggle |
 | [19](./19-admin-sent-emails.md) | **Admin: Sent Emails Dashboard** | ✅ Done | Low | Low | `sending_mail` table, existing mail controller, `SessionLibrary` auth |
 | [22](./22-xp-snackbar-notifications.md) | **XP Snackbar & Notification Groups** | 🔄 In Progress | Low–Medium | High | Existing snackbar, `notificationSlice`, `LevelProgress` component |
+| [23](./23-map-tools-from-nakarte.md) | **Map Tools from nakarte.me** (panoramas, elevation profile, Wikimedia layer fixes) | ⏳ Pending | Medium | High | `/maps` ruler & area tools, Wikimedia Commons layer |
 
 ## Recommended Implementation Order
 

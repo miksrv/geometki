@@ -28,8 +28,8 @@ const RADIUS_NEAR = 500
 const RADIUS_WIDE = 2000
 
 /** A search radius is a round number: «500 м», «2 км», not «2,00 км» as a measured distance */
-const formatRadius = (meters: number, locale: string): string =>
-    meters < 1000 ? formatDistance(meters, locale) : `${meters / 1000} ${locale.startsWith('ru') ? 'км' : 'km'}`
+const formatRadius = (meters: number, locale: string, kmUnit: string): string =>
+    meters < 1000 ? formatDistance(meters, locale) : `${meters / 1000} ${kmUnit}`
 
 type SourceFilter = 'all' | ApiModel.PhotoExternalSource
 
@@ -51,6 +51,7 @@ interface NearbyPhotosDialogProps {
 export const NearbyPhotosDialog: React.FC<NearbyPhotosDialogProps> = ({ place, open, onClose, onLink, onUnlink }) => {
     const { t, i18n } = useTranslation()
     const dispatch = useAppDispatch()
+    const kmUnit = t('nearby-photos_km', { defaultValue: 'км' })
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
@@ -177,7 +178,7 @@ export const NearbyPhotosDialog: React.FC<NearbyPhotosDialogProps> = ({ place, o
                     {t('nearby-photos_summary', {
                         defaultValue: 'Добавлено: {{count}} · до {{radius}}',
                         count: linkedCount,
-                        radius: formatRadius(radius, i18n.language)
+                        radius: formatRadius(radius, i18n.language, kmUnit)
                     })}
                 </span>
             </div>
@@ -262,7 +263,7 @@ export const NearbyPhotosDialog: React.FC<NearbyPhotosDialogProps> = ({ place, o
                     stretched={true}
                     label={t('nearby-photos_wider', {
                         defaultValue: 'Искать дальше (до {{radius}})',
-                        radius: formatRadius(RADIUS_WIDE, i18n.language)
+                        radius: formatRadius(RADIUS_WIDE, i18n.language, kmUnit)
                     })}
                     onClick={() => setRadius(RADIUS_WIDE)}
                 />

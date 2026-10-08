@@ -163,19 +163,39 @@ class OsmCandidatesModel extends ApplicationBaseModel
     }
 
     /**
-     * Links a candidate to a place just created from it. The place must stand near the candidate:
-     * otherwise any user could hide any candidate by creating a place somewhere else.
+     * Links a candidate to a place just created from it. The place must stand near the candidate
+     * and look like it (a similar title, or the same category very close): otherwise any user
+     * could hide any candidate by creating a place anywhere around.
      *
-     * @return bool false when the candidate is taken, gone or too far
+     * @param string[] $titles titles of the new place
+     * @return bool false when the candidate is taken, gone, too far or not similar
      */
-    public function linkToNewPlace(string $candidateId, string $placeId, ?string $userId, float $lat, float $lon, int $radius): bool
-    {
+    public function linkToNewPlace(
+        string $candidateId,
+        string $placeId,
+        ?string $userId,
+        float $lat,
+        float $lon,
+        string $category,
+        array $titles,
+        ?OsmScoring $scoring = null
+    ): bool {
         $candidate = $this->find($candidateId);
 
-        if (!$candidate || OsmScoring::distance($lat, $lon, $candidate->lat, $candidate->lon) > $radius) {
+        if (!$candidate) {
             return false;
         }
 
-        return $this->linkToPlace($candidateId, $placeId, $userId);
+        $scoring ??= new OsmScoring(config('OsmCandidates'));
+
+        $similar = $scoring->isNewPlaceOf(
+            $candidate->name,
+            (string) $candidate->category,
+            (float) $candidate->lat,
+            (float) $candidate->lon,
+            ['category' => $category, 'lat' => $lat, 'lon' => $lon, 'titles' => $titles]
+        );
+
+        return $similar && $this->linkToPlace($candidateId, $placeId, $userId);
     }
 }

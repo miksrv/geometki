@@ -38,9 +38,12 @@ describe('mapSettings', () => {
 
     it('merges a change into the saved settings', () => {
         saveMapSettings({ layer: MapLayersEnum.OPEN_TOPO })
-        saveMapSettings({ categories: [] })
+        saveMapSettings({ categories: [ApiModel.Categories.bridge] })
 
-        expect(getMapSettings()).toMatchObject({ categories: [], layer: MapLayersEnum.OPEN_TOPO })
+        expect(getMapSettings()).toMatchObject({
+            categories: [ApiModel.Categories.bridge],
+            layer: MapLayersEnum.OPEN_TOPO
+        })
     })
 
     it('keeps the other keys of the storage entry', () => {
@@ -85,10 +88,10 @@ describe('mapSettings', () => {
         expect(getMapSettings().categories).toBeUndefined()
     })
 
-    it('keeps a saved empty list of categories', () => {
+    it('treats a saved empty list of categories as not saved, so the map opens with every category', () => {
         saveMapSettings({ categories: [] })
 
-        expect(getMapSettings().categories).toEqual([])
+        expect(getMapSettings().categories).toBeUndefined()
     })
 
     it('drops a position out of the coordinate range', () => {

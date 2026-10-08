@@ -1,15 +1,8 @@
 import { createContext } from 'react'
 
-import { MapAdditionalLayersEnum } from './types'
+import type { LayerStatusStore } from './layers-status/store'
 
-export interface LayerStatus {
-    loading: boolean
-    error?: boolean
-    /** Objects of the layer in the visible area */
-    count: number
-    /** The source has more objects in the area than it returned */
-    limited?: boolean
-}
+export type { LayerStatus } from './layers-status/store'
 
 interface MapControlsContextValue {
     /**
@@ -17,8 +10,8 @@ interface MapControlsContextValue {
      * the panel gets the same left offset, gap and width as the coordinates readout
      */
     bottomSlot: HTMLElement | null
-    /** An external layer reports what it is doing, `undefined` once it is turned off */
-    reportLayerStatus?: (layer: MapAdditionalLayersEnum, status?: LayerStatus) => void
+    /** Where an external layer reports what it is doing, read by the layers status panel */
+    layerStatuses?: LayerStatusStore
 }
 
 export const MapControlsContext = createContext<MapControlsContextValue>({ bottomSlot: null })

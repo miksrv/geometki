@@ -42,7 +42,7 @@ leaderboard_score =
     (photos_uploaded_in_region      *  3) +
     (places_edited_in_region        *  5) +
     (ratings_given_in_region        *  2) +
-    (ghost_places_captured_in_region * 15) +
+    (unexplored_places_described_in_region * 15) +   -- places created from the "Places to explore" layer (1.13.0)
     (avg_quality_score_of_places    *  2)   -- bonus for quality, not just quantity
 ```
 

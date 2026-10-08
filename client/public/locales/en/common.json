@@ -88,6 +88,7 @@
     "layers-status_error": "Loading error",
     "layers-status_limit": "Not all are shown, zoom in",
     "layers-status_loading": "Loading",
+    "layers-status_zoom-in": "Zoom in",
     "map-type_Wikipedia": "Wikipedia",
     "error_email-incorrect": "The entered email address is incorrect",
     "error_name-required": "Name is required",
@@ -498,6 +499,7 @@
     "my-location": "My location",
     "map-layers": "Map layers",
     "map-category-filter": "Filter by category",
+    "map-category-filter-selected": "{{title}}: {{selected}} of {{total}} selected",
     "coordinates-cursor": "Cursor coordinates",
     "place_menu": "Place actions",
     "comment-reply-cancel": "Cancel reply",
@@ -580,5 +582,6 @@
     "nearby-photos_title": "Photos nearby",
     "nearby-photos_unlink": "Remove from the place photos",
     "nearby-photos_wider": "Search farther (within {{radius}})",
-    "nearby-photos_zoom": "View"
+    "nearby-photos_zoom": "View",
+    "nearby-photos_km": "km"
 }

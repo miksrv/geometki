@@ -7,11 +7,12 @@ import { APIWikimediaCommons } from '@/api/apiWikimediaCommons'
 
 import { WikimediaCommons } from './WikimediaCommons'
 
+// A city district, about 7 km across: small enough for the geosearch of Wikipedia and Commons
 const mockBounds = {
-    getEast: () => 37.96,
-    getNorth: () => 55.92,
-    getSouth: () => 55.57,
-    getWest: () => 37.29
+    getEast: () => 37.65,
+    getNorth: () => 55.76,
+    getSouth: () => 55.7,
+    getWest: () => 37.55
 }
 
 jest.mock('react-leaflet', () => ({
@@ -104,9 +105,40 @@ describe('WikimediaCommons', () => {
         })
     })
 
+    describe('too big area', () => {
+        it('does not ask the API and shows nothing when the area is over the geosearch limit', () => {
+            jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(() => ({
+                // The whole of Moscow, about 40 km across
+                getBounds: () => ({
+                    getEast: () => 37.96,
+                    getNorth: () => 55.92,
+                    getSouth: () => 55.57,
+                    getWest: () => 37.29
+                }),
+                getZoom: () => 10,
+                setView: jest.fn()
+            }))
+            jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({ data: mockData })
+
+            const { container } = render(<WikimediaCommons />)
+
+            expect(container.innerHTML).toBe('')
+            expect(APIWikimediaCommons.useGetByBoundsQuery).toHaveBeenLastCalledWith(null, { skip: true })
+        })
+    })
+
     describe('with data', () => {
         beforeEach(() => {
             jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({ data: mockData })
+        })
+
+        it('asks the API for the visible area', () => {
+            render(<WikimediaCommons />)
+
+            expect(APIWikimediaCommons.useGetByBoundsQuery).toHaveBeenLastCalledWith(
+                { east: 37.65, north: 55.76, south: 55.7, west: 37.55 },
+                { skip: false }
+            )
         })
 
         it('renders a Marker for each geosearch item', () => {

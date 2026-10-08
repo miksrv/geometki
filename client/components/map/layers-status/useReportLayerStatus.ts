@@ -1,18 +1,20 @@
 import { useContext, useEffect } from 'react'
 
-import { LayerStatus, MapControlsContext } from '../MapControlsContext'
+import { MapControlsContext } from '../MapControlsContext'
 import { MapAdditionalLayersEnum } from '../types'
+
+import { LayerStatus } from './store'
 
 /** Sends the layer's loading state and objects count to the map's layers status panel */
 export const useReportLayerStatus = (
     layer: MapAdditionalLayersEnum,
-    { loading, error, count, limited }: LayerStatus
+    { loading, error, count, limited, tooLarge }: LayerStatus
 ) => {
-    const { reportLayerStatus } = useContext(MapControlsContext)
+    const { layerStatuses } = useContext(MapControlsContext)
 
     useEffect(() => {
-        reportLayerStatus?.(layer, { count, error, limited, loading })
-    }, [reportLayerStatus, layer, loading, error, count, limited])
+        layerStatuses?.set(layer, { count, error, limited, loading, tooLarge })
+    }, [layerStatuses, layer, loading, error, count, limited, tooLarge])
 
-    useEffect(() => () => reportLayerStatus?.(layer, undefined), [reportLayerStatus, layer])
+    useEffect(() => () => layerStatuses?.set(layer, undefined), [layerStatuses, layer])
 }

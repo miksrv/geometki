@@ -63,12 +63,25 @@ export const CategoryControl: React.FC<CategoryControlProps> = ({ categories, on
         }
     }, [])
 
+    const buttonTitle = t('map-category-filter', { defaultValue: 'Фильтр по категориям' })
+
     return !open ? (
         <span className={styles.controlWithCounter}>
             <Button
                 mode={'secondary'}
                 icon={'Tune'}
-                tooltip={t('map-category-filter', { defaultValue: 'Фильтр по категориям' })}
+                // The counter next to the button is decorative: the label carries the number
+                aria-label={
+                    isFiltered
+                        ? t('map-category-filter-selected', {
+                              defaultValue: '{{title}}: выбрано {{selected}} из {{total}}',
+                              selected: categories.length,
+                              title: buttonTitle,
+                              total: allCategoriesCount
+                          })
+                        : buttonTitle
+                }
+                tooltip={buttonTitle}
                 onClick={handleToggleOpen}
             />
             {isFiltered && (

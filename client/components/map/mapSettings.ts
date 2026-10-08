@@ -23,7 +23,8 @@ const isOneOf = <T extends string>(values: Record<string, T>, value: unknown): v
     Object.values(values).includes(value as T)
 
 // Unknown values are dropped: layers and categories may have been removed since they were saved.
-// A list of removed values only is treated as not saved, not as "nothing selected"
+// An empty list (nothing selected, or removed values only) is treated as not saved: the map opens
+// with its default, every category, rather than empty with no hint why
 const onlyKnown = <T extends string>(values: Record<string, T>, list: unknown): T[] | undefined => {
     if (!Array.isArray(list)) {
         return
@@ -31,7 +32,7 @@ const onlyKnown = <T extends string>(values: Record<string, T>, list: unknown): 
 
     const known = [...new Set(list.filter((value): value is T => isOneOf(values, value)))]
 
-    return known.length || !list.length ? known : undefined
+    return known.length ? known : undefined
 }
 
 const toPosition = (value: unknown): MapPositionType | undefined => {

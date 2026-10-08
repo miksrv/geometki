@@ -365,6 +365,34 @@ class OsmScoring
     }
 
     /**
+     * Whether a place just created by a user may take the candidate. Close to it, the usual
+     * duplicate rules apply (see duplicateOf). Further, up to `linkRadius`, the user may have
+     * moved the marker to the real spot, so only a similar title counts
+     *
+     * @param array $place [category, lat, lon, titles]
+     */
+    public function isNewPlaceOf(?string $name, string $category, float $lat, float $lon, array $place): bool
+    {
+        $distance = self::distance($lat, $lon, (float) $place['lat'], (float) $place['lon']);
+
+        if ($distance > $this->config->linkRadius) {
+            return false;
+        }
+
+        if ($this->duplicateOf($name, $category, $lat, $lon, $place) !== null) {
+            return true;
+        }
+
+        $similarity = 0;
+
+        foreach ($place['titles'] ?? [] as $title) {
+            $similarity = max($similarity, $this->titleSimilarity((string) $name, (string) $title));
+        }
+
+        return $similarity >= 50;
+    }
+
+    /**
      * Places bucketed by cells not smaller than `duplicateRadius`: a candidate is compared only
      * with the places of its own and the 8 neighbouring cells, not with every place of the area
      *

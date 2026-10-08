@@ -27,6 +27,9 @@ class OsmCandidates extends BaseConfig
     /** Map requests for a bigger area (square degrees) are refused */
     public float $maxRequestArea = 1.0;
 
+    /** Map requests covering more tiles are refused too: a thin tall strip has a small area but many tiles */
+    public int $maxRequestTiles = 150;
+
     /** Days until a collected tile is collected again */
     public int $refreshDays = 60;
 

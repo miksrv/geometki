@@ -5,10 +5,11 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { CategoryControl } from './CategoryControl'
 
 jest.mock('simple-react-ui-kit', () => ({
-    Button: ({ icon, onClick, mode }: any) => (
+    Button: ({ icon, onClick, mode, 'aria-label': ariaLabel }: any) => (
         <button
             data-icon={icon}
             data-mode={mode}
+            aria-label={ariaLabel}
             onClick={onClick}
         />
     ),
@@ -39,9 +40,10 @@ jest.mock('next/image', () => {
     return Image
 })
 
-jest.mock('next-i18next', () => ({
+jest.mock('next-i18next/pages', () => ({
     useTranslation: () => ({
-        t: (key: string, opts?: Record<string, unknown>) => opts?.defaultValue ?? key
+        t: (key: string, opts?: Record<string, unknown>) =>
+            String(opts?.defaultValue ?? key).replace(/{{(\w+)}}/g, (_, name: string) => String(opts?.[name] ?? ''))
     })
 }))
 
@@ -92,6 +94,16 @@ describe('CategoryControl', () => {
         it('shows 0 when every category is off', () => {
             render(<CategoryControl categories={[]} />)
             expect(screen.getByText('0')).toBeInTheDocument()
+        })
+
+        it('tells the number of selected categories in the button label', () => {
+            render(<CategoryControl categories={['abandoned'] as any} />)
+            expect(screen.getByRole('button')).toHaveAccessibleName('Фильтр по категориям: выбрано 1 из 2')
+        })
+
+        it('keeps the plain label when nothing is filtered', () => {
+            render(<CategoryControl categories={['abandoned', 'nature'] as any} />)
+            expect(screen.getByRole('button')).toHaveAccessibleName('Фильтр по категориям')
         })
     })
 

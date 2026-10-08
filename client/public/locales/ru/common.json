@@ -88,6 +88,7 @@
     "layers-status_error": "Ошибка загрузки",
     "layers-status_limit": "Показаны не все, приблизьте карту",
     "layers-status_loading": "Загрузка",
+    "layers-status_zoom-in": "Приблизьте карту",
     "map-type_Wikipedia": "Википедия",
     "error_email-incorrect": "Введенный email адрес не корректный",
     "error_name-required": "Имя обязательно для заполнения",
@@ -499,6 +500,7 @@
     "my-location": "Моё местоположение",
     "map-layers": "Слои карты",
     "map-category-filter": "Фильтр по категориям",
+    "map-category-filter-selected": "{{title}}: выбрано {{selected}} из {{total}}",
     "coordinates-cursor": "Координаты курсора",
     "place_menu": "Действия с местом",
     "comment-reply-cancel": "Отменить ответ",
@@ -581,5 +583,6 @@
     "nearby-photos_title": "Фото рядом",
     "nearby-photos_unlink": "Убрать из фотографий места",
     "nearby-photos_wider": "Искать дальше (до {{radius}})",
-    "nearby-photos_zoom": "Посмотреть"
+    "nearby-photos_zoom": "Посмотреть",
+    "nearby-photos_km": "км"
 }

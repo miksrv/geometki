@@ -79,11 +79,12 @@ const MapPage: NextPage<object> = () => {
         setShowLightbox(false)
     }
 
-    const handlePhotoClick = (photos: ApiModel.PhotoMark[], index?: number) => {
+    // Stable: the photo layers memoize their markers' click handlers on it
+    const handlePhotoClick = useCallback((photos: ApiModel.PhotoMark[], index?: number) => {
         setPhotoLightbox(photos)
         setPhotoIndex(index ?? 0)
         setShowLightbox(true)
-    }
+    }, [])
 
     const updateUrlCoordinates = async (lat?: number, lon?: number, zoom?: number) => {
         const url = new URL(window.location.href)

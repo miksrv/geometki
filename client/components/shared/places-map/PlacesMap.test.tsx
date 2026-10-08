@@ -11,7 +11,8 @@ const mockMap = jest.fn()
 jest.mock('simple-react-ui-kit', () => ({
     Container: ({ children, className }: { children: React.ReactNode; className?: string }) => (
         <div className={className}>{children}</div>
-    )
+    ),
+    Skeleton: () => <div data-testid={'map-skeleton'} />
 }))
 
 jest.mock('next/dynamic', () => () => {
@@ -36,6 +37,27 @@ describe('PlacesMap', () => {
 
     it('renders nothing without places', () => {
         const { container } = render(<PlacesMap places={[]} />)
+        expect(container).toBeEmptyDOMElement()
+    })
+
+    it('shows a placeholder of the map size while the places are loading', () => {
+        render(
+            <PlacesMap
+                places={undefined}
+                loading={true}
+            />
+        )
+        expect(screen.getByTestId('map-skeleton')).toBeInTheDocument()
+        expect(screen.queryByTestId('interactive-map')).not.toBeInTheDocument()
+    })
+
+    it('renders nothing once loading finished without places', () => {
+        const { container } = render(
+            <PlacesMap
+                places={[]}
+                loading={false}
+            />
+        )
         expect(container).toBeEmptyDOMElement()
     })
 

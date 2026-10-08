@@ -8,6 +8,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { ApiModel } from '@/api'
 import { APIWikipedia, RequestGetByBounds, WikipediaArticle, WikipediaGeoItem } from '@/api/apiWikipedia'
 
+import { isGeoSearchTooBig } from '../bounds'
 import { useReportLayerStatus } from '../layers-status'
 import { MapAdditionalLayersEnum } from '../types'
 
@@ -25,19 +26,27 @@ export const Wikipedia: React.FC<WikipediaProps> = () => {
     const locale = i18n.language
 
     const [params, setParams] = useState<RequestGetByBounds | null>(null)
+    // The API answers nothing for a big area (see isGeoSearchTooBig): it is not asked
+    const [tooLarge, setTooLarge] = useState(false)
     const [loadingArticleId, setLoadingArticleId] = useState<number | null>(null)
     const [selectedArticle, setSelectedArticle] = useState<WikipediaArticle | null>(null)
     const [selectedItem, setSelectedItem] = useState<WikipediaGeoItem | null>(null)
     const markerRefs = useRef<Record<number, Leaflet.Marker | null>>({})
 
+    const updateParams = () => {
+        const bounds = map.getBounds()
+        const isTooLarge = isGeoSearchTooBig(bounds)
+
+        setTooLarge(isTooLarge)
+        setParams(isTooLarge ? null : buildParams(bounds, locale))
+    }
+
     const map = useMapEvents({
-        moveend: () => {
-            setParams(buildParams(map.getBounds(), locale))
-        }
+        moveend: updateParams
     })
 
     useEffect(() => {
-        setParams(buildParams(map.getBounds(), locale))
+        updateParams()
     }, [])
 
     useEffect(() => {
@@ -48,11 +57,14 @@ export const Wikipedia: React.FC<WikipediaProps> = () => {
 
     const { data, isFetching, isError } = APIWikipedia.useGetByBoundsQuery(params!, { skip: !params })
 
+    const items = params ? (data?.query?.geosearch ?? []) : []
+
     useReportLayerStatus(MapAdditionalLayersEnum.WIKIPEDIA, {
-        count: data?.query?.geosearch?.length ?? 0,
+        count: items.length,
         error: isError,
-        limited: (data?.query?.geosearch?.length ?? 0) >= WIKIPEDIA_LIMIT,
-        loading: !params || isFetching
+        limited: items.length >= WIKIPEDIA_LIMIT,
+        loading: !tooLarge && (!params || isFetching),
+        tooLarge
     })
     const [getExtract] = APIWikipedia.useLazyGetExtractQuery()
 
@@ -78,8 +90,6 @@ export const Wikipedia: React.FC<WikipediaProps> = () => {
 
         setLoadingArticleId(null)
     }
-
-    const items = data?.query?.geosearch ?? []
 
     if (!items.length) {
         return null

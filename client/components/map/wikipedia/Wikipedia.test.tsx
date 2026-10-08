@@ -7,11 +7,12 @@ import { APIWikipedia } from '@/api/apiWikipedia'
 
 import { Wikipedia } from './Wikipedia'
 
+// A city district, about 7 km across: small enough for the geosearch of Wikipedia and Commons
 const mockBounds = {
-    getEast: () => 37.96,
-    getNorth: () => 55.92,
-    getSouth: () => 55.57,
-    getWest: () => 37.29
+    getEast: () => 37.65,
+    getNorth: () => 55.76,
+    getSouth: () => 55.7,
+    getWest: () => 37.55
 }
 
 const mockOpenPopup = jest.fn()
@@ -119,6 +120,31 @@ describe('Wikipedia', () => {
             ])
             const { container } = render(<Wikipedia />)
             expect(container.innerHTML).toBe('')
+        })
+    })
+
+    describe('too big area', () => {
+        it('does not ask the API and shows nothing when the area is over the geosearch limit', () => {
+            jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(() => ({
+                // The whole of Moscow, about 40 km across
+                getBounds: () => ({
+                    getEast: () => 37.96,
+                    getNorth: () => 55.92,
+                    getSouth: () => 55.57,
+                    getWest: () => 37.29
+                }),
+                getZoom: () => 10,
+                setView: jest.fn()
+            }))
+            jest.mocked(APIWikipedia.useGetByBoundsQuery).mockReturnValue({ data: mockData })
+            jest.mocked(APIWikipedia.useLazyGetExtractQuery).mockReturnValue([
+                jest.fn().mockResolvedValue({ data: undefined })
+            ])
+
+            const { container } = render(<Wikipedia />)
+
+            expect(container.innerHTML).toBe('')
+            expect(APIWikipedia.useGetByBoundsQuery).toHaveBeenLastCalledWith(null, { skip: true })
         })
     })
 
