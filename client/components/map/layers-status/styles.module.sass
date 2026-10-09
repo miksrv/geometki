@@ -38,8 +38,8 @@
     flex-shrink: 0
     font-variant-numeric: tabular-nums
 
-// Nested on purpose: the kit's own spinner rule is `width: 100%` and comes after the project
-// styles in the production build (see TODO-kit-styles-css.md), so a plain class would lose to it
+// Nested on purpose: the kit's own spinner rule is `width: 100%`, and the doubled selector
+// beats it whatever the stylesheet order is
 .value .spinner
     width: 12px
     height: 12px
