@@ -5,10 +5,9 @@ import { Input, Select, SelectOptionType } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next/pages'
 
 import { UserSortFields } from '@/api/types/users'
+import { ListingToolbar, ListingToolbarGroup } from '@/components/shared'
 
 import { UsersFilterType } from './types'
-
-import styles from './styles.module.sass'
 
 interface UsersFilterPanelProps {
     search?: string
@@ -53,28 +52,32 @@ export const UsersFilterPanel: React.FC<UsersFilterPanelProps> = ({ search, sort
     )
 
     return (
-        <div className={styles.component}>
-            <Input
-                clearable={true}
-                placeholder={t('search-by-name')}
-                defaultValue={search ?? ''}
-                onChange={(e) => handleChangeSearch(e.target.value)}
-                size={'medium'}
-            />
+        <ListingToolbar>
+            <ListingToolbarGroup>
+                <Input
+                    clearable={true}
+                    placeholder={t('search-by-name')}
+                    defaultValue={search ?? ''}
+                    onChange={(e) => handleChangeSearch(e.target.value)}
+                    size={'medium'}
+                />
+            </ListingToolbarGroup>
 
-            <Select
-                placeholder={t('sorting')}
-                options={sortOptions}
-                value={sort}
-                onSelect={handleChangeSort}
-            />
+            <ListingToolbarGroup>
+                <Select
+                    placeholder={t('sorting')}
+                    options={sortOptions}
+                    value={sort}
+                    onSelect={handleChangeSort}
+                />
 
-            <Select
-                placeholder={t('order')}
-                options={orderOptions}
-                value={order}
-                onSelect={handleChangeOrder}
-            />
-        </div>
+                <Select
+                    placeholder={t('order')}
+                    options={orderOptions}
+                    value={order}
+                    onSelect={handleChangeOrder}
+                />
+            </ListingToolbarGroup>
+        </ListingToolbar>
     )
 }

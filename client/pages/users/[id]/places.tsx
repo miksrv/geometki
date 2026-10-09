@@ -1,5 +1,4 @@
 import React from 'react'
-import { cn, Container, Spinner } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
 import Head from 'next/head'
@@ -10,13 +9,10 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, PageHeader, PlacesList, PlacesMap, UserAvatar } from '@/components/shared'
-import { Pagination } from '@/components/ui'
+import { AppLayout, PageHeader, PaginationBar, PlacesList, PlacesMap, UserAvatar } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
 import { buildHreflangTags } from '@/utils/seo'
-
-import styles from '@/sections/user/styles.module.sass'
 
 export const PLACES_PER_PAGE = 21
 
@@ -93,23 +89,12 @@ const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage }
                 loading={isLoading}
             />
 
-            <Container
-                className={cn('paginationContainer', !data?.count || data?.count <= PLACES_PER_PAGE ? 'hide' : '')}
-            >
-                <div className={styles.countContainer}>
-                    {t('geotags')}: {isLoading ? <Spinner /> : <strong>{data?.count || 0}</strong>}
-                </div>
-
-                <Pagination
-                    currentPage={currentPage}
-                    captionPage={t('page')}
-                    captionNextPage={t('next-page')}
-                    captionPrevPage={t('prev-page')}
-                    totalItemsCount={data?.count ?? 0}
-                    perPage={PLACES_PER_PAGE}
-                    linkPart={`users/${id}/places`}
-                />
-            </Container>
+            <PaginationBar
+                currentPage={currentPage}
+                totalItemsCount={data?.count ?? 0}
+                perPage={PLACES_PER_PAGE}
+                linkPart={`users/${id}/places`}
+            />
         </AppLayout>
     )
 }

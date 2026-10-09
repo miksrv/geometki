@@ -1,0 +1,40 @@
+@use '../../../styles/variables' as variables
+
+.component
+    position: relative
+    min-width: 0
+
+.text
+    margin: 0
+
+// Before the first measurement (and without JS): plain CSS clamp, no control
+.clamped
+    display: -webkit-box
+    -webkit-line-clamp: var(--lines, 3)
+    -webkit-box-orient: vertical
+    overflow: hidden
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        -webkit-line-clamp: var(--lines-mobile, 2)
+
+// The hidden twin the cut is measured on: same width and type as the visible paragraph
+.measurer
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    visibility: hidden
+    pointer-events: none
+    user-select: none
+
+.more
+    padding: 0
+    border: 0
+    background: none
+    color: var(--color-main)
+    font: inherit
+    cursor: pointer
+
+    &:hover
+        color: var(--color-main-hover)
+        text-decoration: underline

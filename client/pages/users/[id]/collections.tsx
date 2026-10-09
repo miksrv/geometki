@@ -1,5 +1,5 @@
 import React from 'react'
-import { cn, Container } from 'simple-react-ui-kit'
+import { Container } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
 import Head from 'next/head'
@@ -10,14 +10,11 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, EmptyState, MediaTileGrid, PageHeader, UserAvatar } from '@/components/shared'
-import { Pagination } from '@/components/ui'
+import { AppLayout, EmptyState, MediaTileGrid, PageHeader, PaginationBar, UserAvatar } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { CollectionCard, CreateCollectionButton } from '@/sections/collections'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
 import { buildHreflangTags } from '@/utils/seo'
-
-import styles from '@/sections/collections/styles.module.sass'
 
 export const USER_COLLECTIONS_PER_PAGE = 40
 
@@ -63,7 +60,7 @@ const UserCollectionsPage: React.FC<UserCollectionsPageProps> = ({ id, user, cur
                         size={'medium'}
                     />
                 }
-                actions={isOwnProfile && <CreateCollectionButton />}
+                actions={isOwnProfile && <CreateCollectionButton size={'small'} />}
             />
 
             <UserTabs
@@ -105,21 +102,12 @@ const UserCollectionsPage: React.FC<UserCollectionsPageProps> = ({ id, user, cur
                 </Container>
             )}
 
-            <Container className={cn('paginationContainer', count <= USER_COLLECTIONS_PER_PAGE ? 'hide' : '')}>
-                <div className={styles.countContainer}>
-                    {title}: <strong>{count}</strong>
-                </div>
-
-                <Pagination
-                    currentPage={currentPage}
-                    captionPage={t('page')}
-                    captionNextPage={t('next-page')}
-                    captionPrevPage={t('prev-page')}
-                    totalItemsCount={count}
-                    perPage={USER_COLLECTIONS_PER_PAGE}
-                    linkPart={`users/${id}/collections`}
-                />
-            </Container>
+            <PaginationBar
+                currentPage={currentPage}
+                totalItemsCount={count}
+                perPage={USER_COLLECTIONS_PER_PAGE}
+                linkPart={`users/${id}/collections`}
+            />
         </AppLayout>
     )
 }

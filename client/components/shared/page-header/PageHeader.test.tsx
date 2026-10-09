@@ -8,7 +8,19 @@ jest.mock('simple-react-ui-kit', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' ')
 }))
 
+jest.mock('next-i18next/pages', () => ({
+    useTranslation: () => ({
+        t: (key: string, defaultValue?: string) => defaultValue ?? key
+    })
+}))
+
 jest.mock('@/components/ui', () => ({
+    ExpandableText: ({ text, moreLabel }: any) => (
+        <div>
+            <p>{text}</p>
+            <button>{moreLabel}</button>
+        </div>
+    ),
     Breadcrumbs: ({ links }: any) =>
         links?.length ? (
             <nav aria-label={'breadcrumb'}>
@@ -60,5 +72,21 @@ describe('PageHeader', () => {
         expect(screen.getByText('Все категории мест')).toBeInTheDocument()
         expect(screen.getByText('avatar')).toBeInTheDocument()
         expect(screen.getByRole('button', { name: 'act' })).toBeInTheDocument()
+    })
+
+    it('renders the lede with its "more" control and the aside block', () => {
+        render(
+            <PageHeader
+                title={'Водопады'}
+                description={'27 мест'}
+                lede={'Водопады и каскады рек.'}
+                aside={<div data-testid={'map'} />}
+            />
+        )
+
+        expect(screen.getByText('27 мест')).toBeInTheDocument()
+        expect(screen.getByText('Водопады и каскады рек.')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Подробнее' })).toBeInTheDocument()
+        expect(screen.getByTestId('map')).toBeInTheDocument()
     })
 })

@@ -150,7 +150,7 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
                 actions={
                     <Button
                         mode={'primary'}
-                        size={'medium'}
+                        size={'small'}
                         link={'/admin/achievements/create'}
                     >
                         {t('achievements-admin-add')}

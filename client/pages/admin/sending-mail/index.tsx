@@ -11,8 +11,7 @@ import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
 import { SendingMailDetail } from '@/components/pages/sending-mail-detail/SendingMailDetail'
-import { AppLayout, PageHeader, UserAvatar } from '@/components/shared'
-import { Pagination } from '@/components/ui'
+import { AppLayout, PageHeader, PaginationBar, UserAvatar } from '@/components/shared'
 import { SendingMailFilterPanel, SendingMailFilterType } from '@/sections/sending-mail'
 import { formatDate } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
@@ -168,13 +167,11 @@ const AdminSendingMailPage: React.FC<AdminSendingMailPageProps> = () => {
 
             <PageHeader title={pageTitle} />
 
-            <Container style={{ padding: '10px' }}>
-                <SendingMailFilterPanel
-                    status={filters.status}
-                    email={filters.email}
-                    onChange={handleFilterChange}
-                />
-            </Container>
+            <SendingMailFilterPanel
+                status={filters.status}
+                email={filters.email}
+                onChange={handleFilterChange}
+            />
 
             <Container style={{ padding: '2px' }}>
                 <Table<ApiType.SendingMail.SendingMailItem>
@@ -188,22 +185,12 @@ const AdminSendingMailPage: React.FC<AdminSendingMailPageProps> = () => {
                 />
             </Container>
 
-            <Container className={'paginationContainer'}>
-                <div>
-                    {t('sending-mail-admin-total')} <strong>{data?.count}</strong>
-                </div>
-
-                <Pagination
-                    currentPage={filters.page ?? 1}
-                    totalItemsCount={data?.count ?? 0}
-                    perPage={filters.limit ?? DEFAULT_FILTERS.limit!}
-                    captionPage={t('page')}
-                    captionNextPage={t('next-page')}
-                    captionPrevPage={t('prev-page')}
-                    hideIfOnePage={true}
-                    onChangePage={(page) => setFilters((prev) => ({ ...prev, page }))}
-                />
-            </Container>
+            <PaginationBar
+                currentPage={filters.page ?? 1}
+                totalItemsCount={data?.count ?? 0}
+                perPage={filters.limit ?? DEFAULT_FILTERS.limit!}
+                onChangePage={(page) => setFilters((prev) => ({ ...prev, page }))}
+            />
 
             <SendingMailDetail
                 id={selectedId}
