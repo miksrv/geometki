@@ -48,23 +48,16 @@ jest.mock('next-i18next/pages', () => ({
 }))
 
 jest.mock('@/api', () => ({
-    API: {
-        useCategoriesGetListQuery: jest.fn().mockReturnValue({
-            data: {
-                items: [
-                    { name: 'abandoned', title: 'Заброшенные' },
-                    { name: 'nature', title: 'Природа' }
-                ]
-            }
-        })
-    },
     ApiModel: {
         Categories: { abandoned: 'abandoned', nature: 'nature' }
     }
 }))
 
 jest.mock('@/utils/categories', () => ({
-    categoryImage: jest.fn().mockReturnValue({ src: '/icons/category.png' })
+    getCategoryOptions: () => [
+        { image: { src: '/icons/category.png' }, key: 'abandoned', value: 'Заброшенные' },
+        { image: { src: '/icons/category.png' }, key: 'nature', value: 'Природа' }
+    ]
 }))
 
 describe('CategoryControl', () => {

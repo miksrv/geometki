@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Checkbox, Container } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 import { useTranslation } from 'next-i18next/pages'
 
-import { API, ApiModel } from '@/api'
+import { ApiModel } from '@/api'
 import { Counter } from '@/components/ui'
-import { categoryImage } from '@/utils/categories'
+import { getCategoryOptions } from '@/utils/categories'
 
 import styles from '../styles.module.sass'
 
@@ -21,7 +21,9 @@ export const CategoryControl: React.FC<CategoryControlProps> = ({ categories, on
     const layersContainerRef = useRef<HTMLUListElement>(null)
     const [open, setOpen] = useState<boolean>(false)
 
-    const { data: categoryData } = API.useCategoriesGetListQuery()
+    // The catalogue's labels come from the default namespace, not this control's own
+    const { t: tCommon } = useTranslation()
+    const categoryOptions = useMemo(() => getCategoryOptions(tCommon), [tCommon])
 
     const allCategoriesCount = Object.values(ApiModel.Categories).length
     // The filter is on when some categories are switched off: the button shows how many are left
@@ -114,23 +116,23 @@ export const CategoryControl: React.FC<CategoryControlProps> = ({ categories, on
                     />
                 </li>
 
-                {categoryData?.items?.map((item) => (
-                    <li key={item.name}>
+                {categoryOptions.map((item) => (
+                    <li key={item.key}>
                         <Checkbox
-                            id={item.name}
+                            id={item.key}
                             label={
                                 <>
                                     <Image
-                                        src={categoryImage(item.name).src}
+                                        src={item.image.src}
                                         alt={''}
                                         width={18}
                                         height={18}
                                         style={{ marginRight: '4px' }}
                                     />
-                                    {item.title}
+                                    {item.value}
                                 </>
                             }
-                            checked={categories?.includes(item.name)}
+                            checked={categories?.includes(item.key)}
                             onChange={handleChangeCategory}
                         />
                     </li>

@@ -69,7 +69,7 @@ jest.mock('@/components/shared/category-icon', () => ({
     CategoryIcon: ({ category, size }: any) => (
         <span
             data-testid={'category-icon'}
-            data-name={category?.name}
+            data-name={category}
             data-size={size}
         />
     )
@@ -85,7 +85,7 @@ const place: ApiModel.PlaceListItem = {
     distance: 1.2,
     views: 300,
     photos: 4,
-    category: { name: 'cave' as ApiModel.Categories, title: 'Caves' },
+    category: 'cave' as ApiModel.Categories,
     cover: { preview: 'covers/p1-preview.jpg', full: 'covers/p1-full.jpg' },
     updated: { date: '2026-10-06T12:00:00+00:00', timezone_type: 3, timezone: 'UTC' },
     address: { country: { id: 1, name: 'Russia', type: 'country' } } as ApiModel.Place['address']

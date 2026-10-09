@@ -3,8 +3,8 @@ import { Select, SelectOptionType } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
-import { API, ApiModel, ApiType } from '@/api'
-import { categoryImage } from '@/utils/categories'
+import { ApiType } from '@/api'
+import { getCategoryOptions } from '@/utils/categories'
 
 import styles from './styles.module.sass'
 
@@ -24,8 +24,6 @@ interface SearchFiltersProps {
 export const SearchFilters: React.FC<SearchFiltersProps> = ({ query, onChange }) => {
     const { t } = useTranslation()
 
-    const { data: categoriesData } = API.useCategoriesGetListQuery()
-
     const typeOptions: Array<SelectOptionType<string>> = [
         { key: 'all', value: t('search-filter-type-all', { defaultValue: 'Все' }) },
         { key: 'location', value: t('search-filter-type-location', { defaultValue: 'Адреса' }) },
@@ -36,14 +34,14 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({ query, onChange })
     const categoryOptions: Array<SelectOptionType<string>> = useMemo(
         () => [
             { key: '', value: t('all', { defaultValue: 'Все' }) },
-            ...(categoriesData?.items?.map((cat) => ({
+            ...getCategoryOptions(t).map((option) => ({
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                image: categoryImage(cat.name as ApiModel.Categories) as any,
-                key: cat.name as string,
-                value: cat.title
-            })) ?? [])
+                image: option.image as any,
+                key: option.key as string,
+                value: option.value
+            }))
         ],
-        [categoriesData?.items]
+        [t]
     )
 
     const sortOptions: Array<SelectOptionType<string>> = [

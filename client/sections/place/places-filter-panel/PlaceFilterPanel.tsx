@@ -6,11 +6,10 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { categoryImage } from '@/utils/categories'
+import { ListingToolbar, ListingToolbarGroup } from '@/components/shared'
+import { getCategoryOptions } from '@/utils/categories'
 
 import { PlacesFilterType } from './types'
-
-import styles from './styles.module.sass'
 
 interface PlaceFilterPanelProps {
     sort?: ApiType.SortFieldsType
@@ -34,8 +33,6 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
     const userLocation = useAppSelector((state) => state.application.userLocation)
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
-    const { data: categoryData } = API.useCategoriesGetListQuery()
-
     const [searchAddress, { data: addressData, isLoading: addressLoading }] = API.useLocationGetSearchMutation()
 
     const sortOptions: Array<SelectOptionType<string>> = useMemo(
@@ -57,16 +54,8 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
         []
     )
 
-    const categoryOptions: Array<SelectOptionType<string>> = useMemo(
-        () =>
-            categoryData?.items?.map((item) => ({
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                image: categoryImage(item.name as ApiModel.Categories) as any,
-                key: item.name,
-                value: item.title
-            })) ?? [],
-        [categoryData?.items]
-    )
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const categoryOptions: Array<SelectOptionType<string>> = useMemo(() => getCategoryOptions(t) as any, [t])
 
     const locationOptions: Array<SelectOptionType<string>> = useMemo(() => {
         const results: Array<SelectOptionType<string>> = [
@@ -120,42 +109,46 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
     )
 
     return (
-        <div className={styles.component}>
-            <Select
-                searchable={true}
-                clearable={true}
-                loading={addressLoading}
-                placeholder={t('filter-by-location')}
-                notFoundCaption={t('nothing-found')}
-                options={locationOptions}
-                value={location?.id && location?.type ? `${location.type}:${location.id}` : undefined}
-                onSearch={handleSearchLocation}
-                onSelect={handleChangeLocation}
-            />
-
-            <Select
-                placeholder={t('sorting-geotags')}
-                options={sortOptions}
-                value={sort}
-                onSelect={handleChangeSort}
-            />
-
-            {sort !== ApiType.SortFields.Recommended && (
+        <ListingToolbar>
+            <ListingToolbarGroup>
                 <Select
-                    placeholder={t('sorting-order')}
-                    options={orderOptions}
-                    value={order}
-                    onSelect={handleChangeOrder}
+                    searchable={true}
+                    clearable={true}
+                    loading={addressLoading}
+                    placeholder={t('filter-by-location')}
+                    notFoundCaption={t('nothing-found')}
+                    options={locationOptions}
+                    value={location?.id && location?.type ? `${location.type}:${location.id}` : undefined}
+                    onSearch={handleSearchLocation}
+                    onSelect={handleChangeLocation}
                 />
-            )}
 
-            <Select
-                clearable={true}
-                placeholder={t('input_category-placeholder')}
-                options={categoryOptions}
-                value={category ?? undefined}
-                onSelect={handleChangeCategory}
-            />
-        </div>
+                <Select
+                    clearable={true}
+                    placeholder={t('input_category-placeholder')}
+                    options={categoryOptions}
+                    value={category ?? undefined}
+                    onSelect={handleChangeCategory}
+                />
+            </ListingToolbarGroup>
+
+            <ListingToolbarGroup>
+                <Select
+                    placeholder={t('sorting-geotags')}
+                    options={sortOptions}
+                    value={sort}
+                    onSelect={handleChangeSort}
+                />
+
+                {sort !== ApiType.SortFields.Recommended && (
+                    <Select
+                        placeholder={t('sorting-order')}
+                        options={orderOptions}
+                        value={order}
+                        onSelect={handleChangeOrder}
+                    />
+                )}
+            </ListingToolbarGroup>
+        </ListingToolbar>
     )
 }

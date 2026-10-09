@@ -26,6 +26,7 @@ import {
     PlaceInfoSidebar,
     PlaceVisited
 } from '@/sections/place'
+import { getCategoryTitle } from '@/utils/categories'
 import {
     buildPlacesHref,
     buildPlaceUrl,
@@ -161,7 +162,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                               '@type': 'ListItem',
                               item: `${canonicalUrl}${buildPlacesHref(
                                   {
-                                      category: place.category.name,
+                                      category: place.category,
                                       defaultOrder: ApiType.SortOrders.DESC,
                                       defaultSort: ApiType.SortFields.Trending,
                                       location:
@@ -175,7 +176,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                                   },
                                   landingFlags
                               ).href.replace(/^\//, '')}`,
-                              name: place.category.title,
+                              name: getCategoryTitle(t, place.category),
                               position: 3
                           }
                       ]
@@ -264,7 +265,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                             authors: [`${SITE_LINK}users/${place?.author?.id}`],
                             modifiedTime: formatDateUTC(place?.updated?.date),
                             publishedTime: formatDateUTC(place?.created?.date),
-                            section: place?.category?.title,
+                            section: place?.category ? getCategoryTitle(t, place.category) : undefined,
                             tags: place?.tags
                         },
                         description: placeDescription,

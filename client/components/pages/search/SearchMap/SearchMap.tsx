@@ -25,7 +25,7 @@ export const SearchMap: React.FC<SearchMapProps> = ({ places, locations, coordin
                 ?.filter((p): p is ApiModel.Place & { lat: number; lon: number } => p.lat != null && p.lon != null)
                 .map((p) => ({
                     id: p.id,
-                    category: p.category?.name as ApiModel.Categories,
+                    category: p.category as ApiModel.Categories,
                     lat: p.lat,
                     lon: p.lon
                 })) ?? [],

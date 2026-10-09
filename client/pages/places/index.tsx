@@ -12,11 +12,11 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, EmptyState, PageHeader, PlacesList } from '@/components/shared'
-import { Pagination } from '@/components/ui'
+import { AppLayout, EmptyState, PageHeader, PaginationBar, PlacesList } from '@/components/shared'
 import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { PlaceFilterPanel, PlacesFilterType } from '@/sections/place'
+import { getCategoryTitle, isCategoryName } from '@/utils/categories'
 import { buildPlacesHref, encodeQueryData, getLandingFlags } from '@/utils/helpers'
 import { PlaceSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
@@ -26,9 +26,7 @@ const DEFAULT_SORT = ApiType.SortFields.Trending
 const DEFAULT_ORDER = ApiType.SortOrders.DESC
 const POST_PER_PAGE = 21
 
-// TODO: Rename categoriesData to categoriesList
 interface PlacesPageProps {
-    categoriesData: ApiModel.Category[]
     locationType: ApiType.LocationTypes | null
     locationData: ApiModel.AddressItem | null
     country: number | null
@@ -40,6 +38,11 @@ interface PlacesPageProps {
     lat: number | null
     lon: number | null
     sort: ApiType.SortFieldsType
+    /**
+     * The sort the server applies when the URL has none: `recommended` for a signed-in
+     * visitor, `trending` for a guest. Equal to `sort` means "no `?sort=` in the URL".
+     */
+    defaultSort: ApiType.SortFieldsType
     order: ApiType.SortOrdersType
     currentPage: number
     placesCount: number
@@ -47,7 +50,6 @@ interface PlacesPageProps {
 }
 
 const PlacesPage: NextPage<PlacesPageProps> = ({
-    categoriesData,
     locationType,
     locationData,
     country,
@@ -59,6 +61,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
     lat,
     lon,
     sort,
+    defaultSort,
     order,
     currentPage,
     placesCount,
@@ -79,20 +82,21 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         order: order !== DEFAULT_ORDER ? order : undefined,
         page: currentPage !== 1 ? currentPage : undefined,
         region: region ?? undefined,
-        sort: sort !== DEFAULT_SORT ? sort : undefined,
+        sort: sort !== defaultSort ? sort : undefined,
         tag: tag ?? undefined
     }
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     // 2+ categories: canonical drops `category` entirely (features/20-location-seo-pages.md)
-    const canonicalPage = `${canonicalUrl}places${encodeQueryData({
+    const canonicalQuery = encodeQueryData({
         ...initialFilter,
         category: category?.includes(',') ? undefined : initialFilter.category,
         lat: undefined,
         lon: undefined,
         order: undefined,
         sort: undefined
-    })}`
+    })
+    const canonicalPage = `${canonicalUrl}places${canonicalQuery}`
 
     const handleChangeFilter = useCallback(
         async (key: keyof PlacesFilterType, value: string | number | undefined) => {
@@ -124,7 +128,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                 {
                     category: filter.category,
                     defaultOrder: DEFAULT_ORDER,
-                    defaultSort: DEFAULT_SORT,
+                    defaultSort,
                     lat: filter.lat,
                     location: filterLocationType
                         ? { id: (filter[filterLocationType] as number) ?? 0, slug: null, type: filterLocationType }
@@ -140,7 +144,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
 
             return await router.push(target.href)
         },
-        [category, country, currentPage, district, flags, initialFilter, locality, region, router]
+        [category, country, currentPage, defaultSort, district, flags, initialFilter, locality, region, router]
     )
 
     const handleClearLocationFilter = async () => {
@@ -148,7 +152,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
             {
                 category: initialFilter.category,
                 defaultOrder: DEFAULT_ORDER,
-                defaultSort: DEFAULT_SORT,
+                defaultSort,
                 lat: initialFilter.lat,
                 location: null,
                 lon: initialFilter.lon,
@@ -171,7 +175,8 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         }
     }
 
-    const currentCategory = categoriesData.find(({ name }) => name === category)?.title
+    // The label of a single selected category; several (comma list) or an unknown key get none
+    const currentCategory = isCategoryName(category) ? getCategoryTitle(t, category) : undefined
 
     const title = useMemo(() => {
         const titleTag = tag ? ` #${tag}` : ''
@@ -257,7 +262,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         ]
     }
 
-    const isGeoFiltered = !!(lat || lon || sort !== DEFAULT_SORT || order !== DEFAULT_ORDER)
+    const isGeoFiltered = !!(lat || lon || sort !== defaultSort || order !== DEFAULT_ORDER)
     // 2+ categories (features/20-location-seo-pages.md: "2+ категории — только
     // query-параметром... noindex, follow"), independent of the landing flags: this rule is
     // about an SEO meta tag, not a URL, so it applies as soon as the API accepts the list.
@@ -288,7 +293,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                         url: canonicalPage
                     },
                     twitter: { cardType: 'summary_large_image' },
-                    additionalLinkTags: buildHreflangTags('places')
+                    additionalLinkTags: buildHreflangTags('places', canonicalQuery)
                 })}
             </Head>
 
@@ -320,41 +325,36 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
             <PageHeader
                 title={title}
                 breadcrumbs={breadcrumbsLinks}
+                lede={
+                    currentPage === 1 && !currentCategory && !locationType && !tag
+                        ? t('places-seo-description')
+                        : undefined
+                }
             />
 
-            <Container style={{ padding: '10px' }}>
-                <PlaceFilterPanel
-                    sort={sort}
-                    order={order}
-                    category={category}
-                    location={
-                        locationData && locationType
-                            ? { id: locationData.id, name: locationData.name, type: locationType }
-                            : undefined
-                    }
-                    onChange={handleChangeFilter}
-                    onChangeLocation={handleChangeLocation}
-                />
-            </Container>
+            <PlaceFilterPanel
+                sort={sort}
+                order={order}
+                category={category}
+                location={
+                    locationData && locationType
+                        ? { id: locationData.id, name: locationData.name, type: locationType }
+                        : undefined
+                }
+                onChange={handleChangeFilter}
+                onChangeLocation={handleChangeLocation}
+            />
 
             {placesList?.length ? (
                 <>
                     <PlacesList places={placesList} />
-                    <Container className={'paginationContainer'}>
-                        <div>
-                            {t('geotags_count')} <strong>{placesCount}</strong>
-                        </div>
-                        <Pagination
-                            currentPage={currentPage}
-                            captionPage={t('page')}
-                            captionNextPage={t('next-page')}
-                            captionPrevPage={t('prev-page')}
-                            totalItemsCount={placesCount}
-                            perPage={POST_PER_PAGE}
-                            urlParam={initialFilter}
-                            linkPart={'places'}
-                        />
-                    </Container>
+                    <PaginationBar
+                        currentPage={currentPage}
+                        totalItemsCount={placesCount}
+                        perPage={POST_PER_PAGE}
+                        urlParam={initialFilter}
+                        linkPart={'places'}
+                    />
                 </>
             ) : (
                 <Container>
@@ -383,9 +383,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const lon = parseFloat(context.query.lon as string) || null
 
             const tag = (context.query.tag as string) || null
-            const sort =
-                (context.query.sort as ApiType.SortFieldsType) ||
-                (cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT)
+            const defaultSort = cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT
+            const sort = (context.query.sort as ApiType.SortFieldsType) || defaultSort
             const order = (context.query.order as ApiType.SortOrdersType) || DEFAULT_ORDER
 
             hydrateAuthFromCookies(store, cookies)
@@ -418,13 +417,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return { notFound: true }
             }
 
-            const { data: categoriesData } = await store.dispatch(API.endpoints.categoriesGetList.initiate())
-
-            if (
-                !!category &&
-                !category.includes(',') &&
-                !categoriesData?.items?.find(({ name }) => name === category)
-            ) {
+            if (!!category && !category.includes(',') && !isCategoryName(category)) {
                 return { notFound: true }
             }
 
@@ -449,7 +442,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     {
                         category,
                         defaultOrder: DEFAULT_ORDER,
-                        defaultSort: DEFAULT_SORT,
+                        defaultSort,
                         lat,
                         location:
                             locationType && legacyId
@@ -498,13 +491,18 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
+            // A page past the end is not a page: 404 instead of an empty, indexable listing
+            if (currentPage > 1 && !placesList?.items?.length) {
+                return { notFound: true }
+            }
+
             return {
                 props: {
                     ...translations,
-                    categoriesData: categoriesData?.items ?? [],
                     category,
                     country,
                     currentPage,
+                    defaultSort,
                     district,
                     lat,
                     locality,

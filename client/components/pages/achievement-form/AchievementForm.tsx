@@ -4,9 +4,10 @@ import { Button, Input, Select, TextArea } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
-import { API, ApiType } from '@/api'
+import { ApiType } from '@/api'
 import { AchievementIcon } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
+import { getCategoryOptions } from '@/utils/categories'
 
 import styles from './styles.module.sass'
 
@@ -76,13 +77,12 @@ const AchievementForm: React.FC<AchievementFormProps> = ({
     const titleRu = watch('title_ru')
     const titleEn = watch('title_en')
 
-    const { data: categoryData } = API.useCategoriesGetListQuery()
     const categoryOptions = useMemo(
         () => [
             { key: '', value: t('achievements-admin-filter-all') },
-            ...(categoryData?.items?.map((item) => ({ key: item.name, value: item.title })) ?? [])
+            ...getCategoryOptions(t).map((option) => ({ key: option.key as string, value: option.value }))
         ],
-        [categoryData?.items, t]
+        [t]
     )
 
     const rulesJson = useMemo(() => JSON.stringify(rules, null, 2), [JSON.stringify(rules)])

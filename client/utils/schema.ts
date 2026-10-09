@@ -18,7 +18,7 @@ const getPlaceSchemaType = (category?: ApiModel.Categories): string => {
 
 export const PlaceSchema = (place: ApiModel.Place, canonicalUrl?: string): unknown | LocalBusiness => ({
     '@context': 'https://schema.org',
-    '@type': getPlaceSchemaType(place.category?.name),
+    '@type': getPlaceSchemaType(place.category),
     address: {
         '@type': 'PostalAddress',
         addressCountry: place.address?.country?.name,

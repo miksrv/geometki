@@ -13,6 +13,7 @@ import { useAppDispatch, useAppSelector } from '@/app/store'
 import { AddToCollectionButton, BookmarkButton, CategoryIcon } from '@/components/shared'
 import { Breadcrumbs } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
+import { getCategoryTitle } from '@/utils/categories'
 import { buildLocationHref, buildPlacesHref, dateToUnixTime, getLandingFlags } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
@@ -125,7 +126,7 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                                       // flags off this reduces to the plain category link.
                                       link: buildPlacesHref(
                                           {
-                                              category: place.category.name,
+                                              category: place.category,
                                               defaultOrder: ApiType.SortOrders.DESC,
                                               defaultSort: ApiType.SortFields.Trending,
                                               location: mostSpecificAddress
@@ -138,7 +139,7 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                                           },
                                           landingFlags
                                       ).href,
-                                      text: place.category.title ?? ''
+                                      text: getCategoryTitle(t, place.category)
                                   }
                               ]
                             : [])

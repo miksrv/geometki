@@ -15,7 +15,7 @@ import { wrapper } from '@/app/store'
 import { ActivityList, AppLayout, PlaceCard, UsersList } from '@/components/shared'
 import { Carousel } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
-import { MapHero, PopularCategories } from '@/sections/home'
+import { MapHero } from '@/sections/home'
 import { PlaceSchema, UserSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
@@ -26,11 +26,10 @@ interface IndexPageProps {
     placesList: ApiModel.Place[]
     usersList: ApiModel.User[]
     activityList: ApiModel.Activity[]
-    topCategories: ApiModel.TopCategory[]
     stats?: ApiType.Stats.GetResponse
 }
 
-const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList, activityList, topCategories, stats }) => {
+const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList, activityList, stats }) => {
     const { t, i18n } = useTranslation()
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
@@ -150,8 +149,6 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList, activityLi
                     }
                 />
             </div>
-
-            <PopularCategories categories={topCategories} />
         </AppLayout>
     )
 }
@@ -166,25 +163,19 @@ export const getServerSideProps = wrapper.getServerSideProps(
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
-            const [
-                { data: placesList },
-                { data: usersList },
-                { data: stats },
-                { data: activityList },
-                { data: topCategoriesData }
-            ] = await Promise.all([
-                store.dispatch(
-                    API.endpoints.placesGetList.initiate({
-                        limit: 6,
-                        order: ApiType.SortOrders.DESC,
-                        sort: ApiType.SortFields.ViewsWeek
-                    })
-                ),
-                store.dispatch(API.endpoints.usersGetList.initiate({ limit: 15 })),
-                store.dispatch(API.endpoints.statsGetSummary.initiate()),
-                store.dispatch(API.endpoints.activityGetList.initiate({ limit: 40 })),
-                store.dispatch(API.endpoints.categoriesGetTop.initiate({ limit: 6 }))
-            ])
+            const [{ data: placesList }, { data: usersList }, { data: stats }, { data: activityList }] =
+                await Promise.all([
+                    store.dispatch(
+                        API.endpoints.placesGetList.initiate({
+                            limit: 6,
+                            order: ApiType.SortOrders.DESC,
+                            sort: ApiType.SortFields.ViewsWeek
+                        })
+                    ),
+                    store.dispatch(API.endpoints.usersGetList.initiate({ limit: 15 })),
+                    store.dispatch(API.endpoints.statsGetSummary.initiate()),
+                    store.dispatch(API.endpoints.activityGetList.initiate({ limit: 40 }))
+                ])
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
@@ -194,7 +185,6 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     activityList: activityList?.items || [],
                     placesList: placesList?.items || [],
                     stats: stats ?? undefined,
-                    topCategories: topCategoriesData?.items ?? [],
                     usersList: usersList?.items || []
                 }
             }

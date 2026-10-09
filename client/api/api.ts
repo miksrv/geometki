@@ -294,12 +294,6 @@ export const API = createApi({
         }),
 
         /** Controller: Categories v*/
-        categoriesGetList: builder.query<ApiType.Categories.Response, Maybe<ApiType.Categories.Request>>({
-            query: (params) => `categories${encodeQueryData(params)}`
-        }),
-        categoriesGetTop: builder.query<ApiType.Categories.TopResponse, Maybe<ApiType.Categories.TopRequest>>({
-            query: (params) => `categories/top${encodeQueryData(params)}`
-        }),
         categoriesGetLocations: builder.query<
             ApiType.Locations.CategoryLocationsResponse,
             ApiType.Locations.CategoryLocationsRequest

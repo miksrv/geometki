@@ -45,7 +45,7 @@ export const LandingMapPreview: React.FC<LandingMapPreviewProps> = ({ places, fu
     const markers: ApiModel.PlaceMark[] | undefined = places
         ?.filter((place) => place.lat && place.lon && place.category)
         .map((place) => ({
-            category: place.category?.name as ApiModel.Categories,
+            category: place.category as ApiModel.Categories,
             id: place.id,
             lat: place.lat,
             lon: place.lon,

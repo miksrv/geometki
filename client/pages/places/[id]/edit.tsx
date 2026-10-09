@@ -42,7 +42,7 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
 
     const placeValuesData: ApiType.Places.PostItemRequest = useMemo(
         () => ({
-            category: place?.category?.name,
+            category: place?.category,
             content: place?.content,
             lat: place?.lat ?? 0,
             lon: place?.lon ?? 0,
@@ -68,7 +68,7 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place }) => {
 
         await updatePlace({
             ...formData,
-            category: formData?.category !== place?.category?.name ? formData?.category : undefined,
+            category: formData?.category !== place?.category ? formData?.category : undefined,
             content: content !== place?.content ? content : undefined,
             id: place?.id ?? '',
             tags: !equalsArrays(place?.tags, formData?.tags) ? formData?.tags : undefined,

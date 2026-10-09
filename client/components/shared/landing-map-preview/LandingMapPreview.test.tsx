@@ -35,7 +35,7 @@ class MockIntersectionObserver {
 }
 
 const place = (id: string, lat: number, lon: number, category = 'cave'): ApiModel.PlaceListItem =>
-    ({ category: { name: category, title: category }, id, lat, lon }) as unknown as ApiModel.PlaceListItem
+    ({ category, id, lat, lon }) as unknown as ApiModel.PlaceListItem
 
 beforeEach(() => {
     observeCallback = undefined

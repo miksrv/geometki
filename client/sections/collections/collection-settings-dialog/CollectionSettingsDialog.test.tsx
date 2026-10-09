@@ -76,7 +76,6 @@ jest.mock('next-i18next/pages', () => ({
 jest.mock('@/api', () => ({
     API: {
         useCollectionsPatchMutation: jest.fn(),
-        useCategoriesGetListQuery: jest.fn(),
         useLocationGetSearchMutation: jest.fn()
     }
 }))
@@ -118,14 +117,6 @@ describe('CollectionSettingsDialog', () => {
         jest.clearAllMocks()
         patchCollection.mockResolvedValue({ data: {} })
         jest.mocked(API.useCollectionsPatchMutation).mockReturnValue([patchCollection, { isLoading: false } as any])
-        jest.mocked(API.useCategoriesGetListQuery).mockReturnValue({
-            data: {
-                items: [
-                    { name: 'mountain', title: 'Горы' },
-                    { name: 'cave', title: 'Пещеры' }
-                ]
-            }
-        } as any)
         jest.mocked(API.useLocationGetSearchMutation).mockReturnValue([jest.fn(), { data: undefined } as any])
     })
 

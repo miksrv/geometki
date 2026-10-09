@@ -32,7 +32,6 @@ export interface ResolvedLocation {
 export interface ResolvedCategory {
     type: 'category'
     name: string
-    title: string
 }
 
 export interface ResolvedRedirect {
@@ -56,7 +55,6 @@ export interface LocationTypeIdRequest {
 
 export interface LocationCategoryItem {
     name: string
-    title: string
     count: number
     indexable: boolean
 }
@@ -80,7 +78,6 @@ export interface ChildrenResponse {
 
 export interface SummaryCategoryItem {
     name: string
-    title: string
     count: number
 }
 

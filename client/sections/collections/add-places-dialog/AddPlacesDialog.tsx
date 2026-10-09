@@ -11,6 +11,7 @@ import { collectionPickerStyles } from '@/components/shared/add-to-collection'
 import { IMG_HOST } from '@/config/env'
 import { addressToString } from '@/utils/address'
 import { getErrorMessage } from '@/utils/api'
+import { getCategoryTitle } from '@/utils/categories'
 
 import styles from '../styles.module.sass'
 
@@ -216,7 +217,11 @@ export const AddPlacesDialog: React.FC<AddPlacesDialogProps> = ({ collection, op
 
                             <div className={collectionPickerStyles.pickerBody}>
                                 <strong>{place.title}</strong>
-                                <span>{[place.category?.title, address].filter(Boolean).join(' · ')}</span>
+                                <span>
+                                    {[place.category ? getCategoryTitle(t, place.category) : undefined, address]
+                                        .filter(Boolean)
+                                        .join(' · ')}
+                                </span>
                             </div>
 
                             <Button

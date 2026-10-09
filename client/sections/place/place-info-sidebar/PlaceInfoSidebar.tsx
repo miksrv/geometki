@@ -113,7 +113,7 @@ export const PlaceInfoSidebar: React.FC<PlaceInfoSidebarProps> = ({ place }) => 
                         dragging={false}
                         controlsSize={'small'}
                         fullMapLink={`/map#${place.lat},${place.lon},14`}
-                        places={[{ category: place.category.name, lat: place.lat, lon: place.lon }]}
+                        places={[{ category: place.category, lat: place.lat, lon: place.lon }]}
                     />
                 </div>
             )}

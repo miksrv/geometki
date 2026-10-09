@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react'
-import { Container } from 'simple-react-ui-kit'
+import { Button, Container } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
@@ -12,12 +12,20 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, EmptyState, LocationLinkList, PageHeader, PlacesList } from '@/components/shared'
+import {
+    AppLayout,
+    EmptyState,
+    LandingMapPreview,
+    LocationLinkList,
+    PageHeader,
+    PaginationBar,
+    PlacesList
+} from '@/components/shared'
 import type { LocationLinkListItem } from '@/components/shared/location-link-list'
-import { Pagination } from '@/components/ui'
 import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
-import { PlaceFilterPanel, PlacesFilterType, PlacesLandingIntro } from '@/sections/place'
+import { PlaceFilterPanel, PlacesFilterType } from '@/sections/place'
+import { getCategoryContent, getCategoryLandingTitle, getCategoryTitle } from '@/utils/categories'
 import { buildPlacesHref, encodeQueryData, formatDate, getLandingFlags, LANDING_PROXY_HEADER } from '@/utils/helpers'
 import type { LandingFlags } from '@/utils/placesLanding'
 import type { LandingClassification, ResolvedSegment } from '@/utils/placesLandingResolve'
@@ -44,7 +52,7 @@ type PageKind = 'category' | 'location' | 'pair'
 
 interface LocationSummary {
     placesCount: number
-    categories: Array<{ title: string; count: number }>
+    categories: Array<{ name: string; count: number }>
     lastAddedAt: string | null
 }
 
@@ -57,9 +65,6 @@ interface PlacesLandingPageProps {
     locationTitle: string | null
     locationParents: ApiType.Locations.LocationParentRef[]
     categoryName: string | null
-    categoryTitle: string | null
-    /** Category-only page: `category.content` from the DB, already localized. `null` elsewhere. */
-    categoryContent: string | null
     /** Location-only page: the data behind the summary description. `null` elsewhere. */
     summary: LocationSummary | null
     /** Pair page: place count of this category within this location. `null` elsewhere. */
@@ -71,6 +76,11 @@ interface PlacesLandingPageProps {
     tag: string | null
     queryCategories: string[]
     sort: ApiType.SortFieldsType
+    /**
+     * The sort the server applies when the URL has none: `recommended` for a signed-in
+     * visitor, `trending` for a guest. Equal to `sort` means "no `?sort=` in the URL".
+     */
+    defaultSort: ApiType.SortFieldsType
     order: ApiType.SortOrdersType
     lat: number | null
     lon: number | null
@@ -88,8 +98,6 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
     locationTitle,
     locationParents,
     categoryName,
-    categoryTitle,
-    categoryContent,
     summary,
     pairCount,
     indexable,
@@ -99,6 +107,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
     tag,
     queryCategories,
     sort,
+    defaultSort,
     order,
     lat,
     lon,
@@ -107,6 +116,11 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
     placesList
 }) => {
     const { t, i18n } = useTranslation()
+
+    // The category's texts come from the client catalogue (utils/categories.ts): the plural
+    // page name for the h1/title, the short label for chips, the intro text for the lede.
+    const categoryTitle = categoryName ? getCategoryLandingTitle(t, categoryName) : null
+    const categoryContent = kind === 'category' && categoryName ? getCategoryContent(t, categoryName) : null
     const router = useRouter()
 
     const flags = getLandingFlags()
@@ -133,7 +147,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                 {
                     category: nextCategory,
                     defaultOrder: DEFAULT_ORDER,
-                    defaultSort: DEFAULT_SORT,
+                    defaultSort,
                     lat,
                     location: nextLocation,
                     lon,
@@ -147,7 +161,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
 
             return await router.push(target.href)
         },
-        [currentFilterCategory, currentPage, flags, lat, locationRef, lon, order, router, sort, tag]
+        [currentFilterCategory, currentPage, defaultSort, flags, lat, locationRef, lon, order, router, sort, tag]
     )
 
     const handleChangeLocation = async (location?: ApiModel.AddressItem) => {
@@ -155,7 +169,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
             {
                 category: currentFilterCategory,
                 defaultOrder: DEFAULT_ORDER,
-                defaultSort: DEFAULT_SORT,
+                defaultSort,
                 lat,
                 location: location ? { id: location.id, slug: location.slug, type: location.type ?? 'locality' } : null,
                 lon,
@@ -180,7 +194,14 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
               : t('landing-title-location', 'Интересные места: {{location}}', { location: locationTitle })
 
     const titlePageSuffix = currentPage > 1 ? ` - ${t('page')} ${currentPage}` : ''
-    const title = h1 + titlePageSuffix
+    // The <title> of a category page carries the search modifiers ("карта, фото, координаты");
+    // the h1 stays the bare page name
+    const title =
+        (kind === 'category'
+            ? t('landing-title-category-seo', '{{category}}: map, photos, coordinates and descriptions', {
+                  category: categoryTitle
+              })
+            : h1) + titlePageSuffix
 
     // The listing's intro text (features/20-location-seo-pages.md, "Шаблон страницы →
     // Описание"): the category's own text, or a summary built from the location/pair's data.
@@ -200,7 +221,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
             const parts = [t('landing-description-places', '{{count}} places', { count: summary.placesCount })]
 
             if (summary.categories.length) {
-                const list = summary.categories.map((c) => `${c.title} (${c.count})`).join(', ')
+                const list = summary.categories.map((c) => `${getCategoryTitle(t, c.name)} (${c.count})`).join(', ')
                 parts.push(t('landing-description-top-categories', 'Top categories: {{list}}', { list }))
             }
 
@@ -217,6 +238,36 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
 
         return ''
     }, [kind, categoryContent, pairCount, locationTitle, summary, t])
+
+    // The header's lede (DESIGN.md → Page header): the category's own text, or what the
+    // location summary says beyond the count — the count itself is the header's meta line,
+    // and a pair page has nothing to say beyond it.
+    const lede = useMemo(() => {
+        if (kind === 'category') {
+            return categoryContent ?? ''
+        }
+
+        if (kind === 'location' && summary) {
+            const parts: string[] = []
+
+            if (summary.categories.length) {
+                const list = summary.categories.map((c) => `${getCategoryTitle(t, c.name)} (${c.count})`).join(', ')
+                parts.push(t('landing-description-top-categories', 'Top categories: {{list}}', { list }))
+            }
+
+            if (summary.lastAddedAt) {
+                parts.push(
+                    t('landing-description-last-added', 'Last added: {{date}}', {
+                        date: formatDate(summary.lastAddedAt)
+                    })
+                )
+            }
+
+            return parts.join('. ')
+        }
+
+        return ''
+    }, [kind, categoryContent, summary, t])
 
     const chipsTitle =
         kind === 'pair'
@@ -283,7 +334,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
         ]
     }
 
-    const isGeoFiltered = !!(lat || lon || sort !== DEFAULT_SORT || order !== DEFAULT_ORDER)
+    const isGeoFiltered = !!(lat || lon || sort !== defaultSort || order !== DEFAULT_ORDER)
     const multiCategory = queryCategories.length >= 2
     const noindex = computeLandingNoindex({ indexable, isGeoFiltered, multiCategory })
 
@@ -293,7 +344,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
         <AppLayout>
             <Head>
                 {generateNextSeo({
-                    additionalLinkTags: buildHreflangTags(pathname.replace(/^\//, '')),
+                    additionalLinkTags: buildHreflangTags(pathname.replace(/^\//, ''), canonicalQuery),
                     canonical: canonicalPage,
                     description,
                     nofollow: false,
@@ -343,50 +394,60 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
             <PageHeader
                 title={h1}
                 breadcrumbs={breadcrumbsLinks}
+                lede={currentPage === 1 ? lede : undefined}
+                // A category page has no map preview (the places are scattered across the whole
+                // country, features/20-location-seo-pages.md "Шаблон страницы → Карта"), so the
+                // way to see every place of the category on a map is the big map filtered by it.
+                // A plain link, no Leaflet: nothing to shift the layout between pages.
+                actions={
+                    kind === 'category' ? (
+                        <Button
+                            size={'small'}
+                            mode={'secondary'}
+                            icon={'Map'}
+                            noIndex={true}
+                            label={t('landing-open-on-map', { defaultValue: 'Показать на карте' })}
+                            link={`/map${mapQuery}`}
+                        />
+                    ) : undefined
+                }
+                aside={
+                    currentPage === 1 && kind !== 'category' ? (
+                        <LandingMapPreview
+                            places={placesList}
+                            fullMapQuery={mapQuery}
+                        />
+                    ) : undefined
+                }
             />
 
-            {currentPage === 1 && (
-                <PlacesLandingIntro
-                    description={description}
-                    showMap={kind !== 'category'}
-                    places={placesList}
-                    fullMapQuery={mapQuery}
-                />
-            )}
-
-            <Container style={{ padding: '10px' }}>
-                <PlaceFilterPanel
-                    sort={sort}
-                    order={order}
-                    category={categoryName ?? (queryCategories[0] as string | undefined)}
-                    location={
-                        locationRef
-                            ? { id: locationRef.id, name: locationTitle ?? '', type: locationRef.type }
-                            : undefined
-                    }
-                    onChange={handleChangeFilter}
-                    onChangeLocation={handleChangeLocation}
-                />
-            </Container>
+            <PlaceFilterPanel
+                sort={sort}
+                order={order}
+                category={categoryName ?? (queryCategories[0] as string | undefined)}
+                location={
+                    locationRef ? { id: locationRef.id, name: locationTitle ?? '', type: locationRef.type } : undefined
+                }
+                onChange={handleChangeFilter}
+                onChangeLocation={handleChangeLocation}
+            />
 
             {placesList?.length ? (
                 <>
                     <PlacesList places={placesList} />
-                    <Container className={'paginationContainer'}>
-                        <div>
-                            {t('geotags_count')} <strong>{placesCount}</strong>
-                        </div>
-                        <Pagination
-                            currentPage={currentPage}
-                            captionPage={t('page')}
-                            captionNextPage={t('next-page')}
-                            captionPrevPage={t('prev-page')}
-                            totalItemsCount={placesCount}
-                            perPage={POST_PER_PAGE}
-                            urlParam={{ lat, lon, order, sort, tag }}
-                            linkPart={pathname.replace(/^\//, '')}
-                        />
-                    </Container>
+                    <PaginationBar
+                        currentPage={currentPage}
+                        totalItemsCount={placesCount}
+                        perPage={POST_PER_PAGE}
+                        urlParam={{
+                            lat,
+                            lon,
+                            order: order !== DEFAULT_ORDER ? order : undefined,
+                            sort: sort !== defaultSort ? sort : undefined,
+                            tag
+                        }}
+                        linkPart={pathname.replace(/^\//, '')}
+                    />
                 </>
             ) : (
                 <Container>
@@ -398,7 +459,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                 <>
                     <LocationLinkList
                         title={chipsTitle}
-                        items={chips}
+                        items={chips.map((chip) => ({ ...chip, title: getCategoryTitle(t, chip.key) }))}
                     />
                     <LocationLinkList
                         title={t('landing-children-title', 'Районы и города')}
@@ -449,9 +510,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const lat = parseFloat(context.query.lat as string) || null
             const lon = parseFloat(context.query.lon as string) || null
             const tag = (context.query.tag as string) || null
-            const sort =
-                (context.query.sort as ApiType.SortFieldsType) ||
-                (cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT)
+            const defaultSort = cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT
+            const sort = (context.query.sort as ApiType.SortFieldsType) || defaultSort
             const order = (context.query.order as ApiType.SortOrdersType) || DEFAULT_ORDER
             const rawQueryCategory = (context.query.category as string) || ''
             const queryCategoriesFromUrl = rawQueryCategory
@@ -543,15 +603,6 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const categoryData = fullA?.category ?? fullB?.category
 
             if (classification.kind === 'category') {
-                const { data: categoriesWithPlaces } = await store.dispatch(
-                    API.endpoints.categoriesGetList.initiate({ places: true })
-                )
-                const category = categoriesWithPlaces?.items?.find((c) => c.name === categoryData!.name)
-
-                if (!category || isLandingEmpty(category.count ?? 0)) {
-                    return { notFound: true }
-                }
-
                 const { data: relatedData } = await store.dispatch(
                     API.endpoints.categoriesGetLocations.initiate({ level: 'region', name: categoryData!.name })
                 )
@@ -570,6 +621,11 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
                 await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
+                // A category with no places has no page (the list's own count, no extra request)
+                if (isLandingEmpty(placesList?.count ?? 0)) {
+                    return { notFound: true }
+                }
+
                 if (isLandingPageOutOfRange(currentPage, placesList?.items?.length ?? 0)) {
                     return { notFound: true }
                 }
@@ -577,9 +633,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return {
                     props: {
                         ...translations,
-                        categoryContent: category.content ?? null,
                         categoryName: categoryData!.name,
-                        categoryTitle: categoryData!.title,
                         chips: [],
                         children: [],
                         currentPage,
@@ -605,6 +659,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                             title: item.title
                         })),
                         sort,
+                        defaultSort,
                         summary: null,
                         tag
                     }
@@ -648,14 +703,13 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return {
                     props: {
                         ...translations,
-                        categoryContent: null,
                         categoryName: null,
-                        categoryTitle: null,
                         chips: (chipsData?.items ?? []).map((item) => ({
                             count: item.count,
                             href: `/places/${locationData!.slug}/${item.name}`,
                             key: item.name,
-                            title: item.title
+                            // The localized label is resolved at render time (getCategoryTitle)
+                            title: item.name
                         })),
                         children: (childrenData?.items ?? []).filter(hasSlug).map((item) => ({
                             count: item.placesCount,
@@ -681,9 +735,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         queryCategories: queryCategoriesFromUrl,
                         relatedLocations: [],
                         sort,
+                        defaultSort,
                         summary: summaryData
                             ? {
-                                  categories: summaryData.categories.map((c) => ({ count: c.count, title: c.title })),
+                                  categories: summaryData.categories.map((c) => ({ count: c.count, name: c.name })),
                                   lastAddedAt: summaryData.lastAddedAt,
                                   placesCount: summaryData.placesCount
                               }
@@ -734,16 +789,15 @@ export const getServerSideProps = wrapper.getServerSideProps(
             return {
                 props: {
                     ...translations,
-                    categoryContent: null,
                     categoryName: categoryData!.name,
-                    categoryTitle: categoryData!.title,
                     chips: (chipsData?.items ?? [])
                         .filter((item) => item.name !== categoryData!.name)
                         .map((item) => ({
                             count: item.count,
                             href: `/places/${locationData!.slug}/${item.name}`,
                             key: item.name,
-                            title: item.title
+                            // The localized label is resolved at render time (getCategoryTitle)
+                            title: item.name
                         })),
                     children: [],
                     currentPage,
@@ -772,6 +826,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                             title: item.title
                         })),
                     sort,
+                    defaultSort,
                     summary: null,
                     tag
                 }
