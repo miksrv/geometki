@@ -280,12 +280,13 @@ List places with optional filtering, sorting, and pagination.
 |------|------|----------|-------------|
 | sort | string | No | Sort field: `views`, `rating`, `comments`, `bookmarks`, `category`, `distance`, `created_at`, `updated_at` |
 | order | string | No | Sort direction: `ASC` or `DESC` (default `DESC`) |
-| category | string | No | Filter by category name (e.g. `historic`, `nature`) |
+| category | string | No | Filter by category name, or a comma-separated list (e.g. `historic`, `cave,abandoned,mine`) |
 | author | string | No | Filter by user ID |
 | country | integer | No | Filter by country ID |
 | region | integer | No | Filter by region ID |
 | district | integer | No | Filter by district ID |
 | locality | integer | No | Filter by locality/city ID |
+| location | string | No | Filter by a location slug (any level) — see `GET /locations/resolve`. Applied in addition to the id-based params above; an unknown slug matches no places |
 | tag | string | No | Filter by tag title (Russian or English) |
 | search | string | No | Full-text search in place titles and content |
 | bookmarkUser | string | No | Return only places bookmarked by this user ID |
@@ -321,10 +322,10 @@ List places with optional filtering, sorting, and pagination.
         "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg"
       },
       "address": {
-        "country": { "id": 1, "name": "Russia" },
-        "region": { "id": 5, "name": "Bashkortostan" },
-        "district": { "id": 22, "name": "Baymaksky District" },
-        "locality": { "id": 101, "name": "Gadelsha" }
+        "country": { "id": 1, "name": "Russia", "slug": "russia" },
+        "region": { "id": 5, "name": "Bashkortostan", "slug": "bashkortostan" },
+        "district": { "id": 22, "name": "Baymaksky District", "slug": "baymakskiy-rayon" },
+        "locality": { "id": 101, "name": "Gadelsha", "slug": "gadelsha" }
       },
       "cover": {
         "full": "/uploads/photos/a1b2c3d4e5f6g/cover.jpg",
@@ -337,7 +338,7 @@ List places with optional filtering, sorting, and pagination.
 }
 ```
 
-Note: `distance` (km) is only present when `lat`/`lon` query parameters are provided or when the user session has a known location. `cover` is only present when a cover image exists. `address` sub-fields are only present when geocoding data is available.
+Note: `distance` (km) is only present when `lat`/`lon` query parameters are provided or when the user session has a known location. `cover` is only present when a cover image exists. `address` sub-fields are only present when geocoding data is available; each sub-field's `slug` is the location's path segment for the landing pages (see `GET /locations/resolve`) and is `null` until a slug has been assigned.
 
 ---
 
@@ -395,10 +396,10 @@ Get full details for a single place by ID. Increments the view counter.
   ],
   "tags": ["waterfall", "nature", "ural"],
   "address": {
-    "country": { "id": 1, "name": "Russia" },
-    "region": { "id": 5, "name": "Bashkortostan" },
-    "district": { "id": 22, "name": "Baymaksky District" },
-    "locality": { "id": 101, "name": "Gadelsha" },
+    "country": { "id": 1, "name": "Russia", "slug": "russia" },
+    "region": { "id": 5, "name": "Bashkortostan", "slug": "bashkortostan" },
+    "district": { "id": 22, "name": "Baymaksky District", "slug": "baymakskiy-rayon" },
+    "locality": { "id": 101, "name": "Gadelsha", "slug": "gadelsha" },
     "street": "near village Gadelsha"
   },
   "cover": {
@@ -1782,6 +1783,157 @@ Update the current user session's geographic coordinates. Used to improve distan
 
 ---
 
+### Locations
+
+The landing-page API behind `/places/{location}`-style URLs (see `features/20-location-seo-pages.md`). Distinct from the `Location` (singular) endpoints above, which serve the existing filter UI.
+
+Every response that represents a location, a category, or a location×category pair includes `placesCount` and `indexable` (`placesCount >= 5`, the site-wide indexing threshold) so the client and the sitemap never have to duplicate that rule. A location with 0 places is still returned normally by `GET /locations/resolve` (with `placesCount: 0`, `indexable: false`) — the client renders its own 404 rather than the API doing so, since the entity itself is real.
+
+#### `GET /locations/resolve`
+
+Resolves a location slug — or a pre-rebuild legacy numeric id — to the entity it names. One call handles every case the client's router needs for the first path segment after `/places/`: a current location, a merged/renamed location (301), or a category.
+
+**Auth required:** No
+
+**Query parameters:** either `slug`, or `type` + `legacyId`.
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| slug | string | One of `slug` / `legacyId` | The path segment to resolve |
+| type | string | Required with `legacyId` | One of: `country`, `region`, `district`, `locality` |
+| legacyId | integer | One of `slug` / `legacyId` | A pre-`locations:rebuild` numeric location id (e.g. from an old `?region=2` URL) |
+
+**Response — a location:**
+
+```json
+{
+  "type": "region",
+  "id": 2,
+  "slug": "bashkortostan",
+  "title": "Башкортостан",
+  "parents": [
+    { "type": "country", "id": 1, "slug": "russia", "title": "Россия" }
+  ],
+  "placesCount": 132,
+  "indexable": true
+}
+```
+
+`title` is already localized to the request's `Locale` header, like every other endpoint. `parents` is ordered country → … → the immediate parent (not including the resolved entity itself) and is `[]` for a country.
+
+**Response — a slug that has been superseded (merge, rename, qualification change):**
+
+```json
+{ "redirect": "bashkortostan" }
+```
+
+The client should 301 to `/places/{redirect}` (or `/places/{redirect}/{category}` if a category segment followed).
+
+**Response — a slug that is a category name**, so the client can resolve any first path segment with one call:
+
+```json
+{ "type": "category", "name": "cave", "title": "Пещеры" }
+```
+
+**Response — `legacyId` lookup:** the same "a location" shape as above, resolved via `location_legacy_ids` (or the id itself, if it was never merged) — used to 301 old `/places?region=2`-style query URLs.
+
+**Error responses:**
+
+- `400` — Neither `slug` nor (`type` + `legacyId`) was given, or `type` is invalid
+- `404` — The slug/id does not resolve to anything
+
+---
+
+#### `GET /locations/:type/:id/categories`
+
+Place categories present in a location — any district/locality below it is included automatically, since every place carries its full country/region/district/locality chain — with per-category place counts. Powers the location page's category chips.
+
+**Auth required:** No
+
+**Path parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| type | string | One of: `country`, `region`, `district`, `locality` |
+| id | integer | Location entity ID |
+
+**Response:**
+
+```json
+{
+  "items": [
+    { "name": "cave", "title": "Пещеры", "count": 18, "indexable": true },
+    { "name": "mountain", "title": "Горы", "count": 15, "indexable": true },
+    { "name": "abandoned", "title": "Заброшенные места", "count": 4, "indexable": false }
+  ]
+}
+```
+
+Ordered by `count` descending.
+
+**Error responses:**
+
+- `400` — Invalid `type` or missing/non-numeric `id`
+
+---
+
+#### `GET /locations/:type/:id/children`
+
+Direct child locations, for perelinking: a country's regions, a region's districts plus the localities that have no district of their own, or a district's localities. A locality has no children (`items: []`).
+
+**Auth required:** No
+
+**Path parameters:** same as `GET /locations/:type/:id/categories`.
+
+**Response:**
+
+```json
+{
+  "items": [
+    { "type": "district", "id": 22, "slug": "baymakskiy-rayon", "title": "Баймакский район", "placesCount": 41, "indexable": true },
+    { "type": "locality", "id": 101, "slug": "gadelsha", "title": "Гадельша", "placesCount": 3, "indexable": false }
+  ]
+}
+```
+
+Ordered by `placesCount` descending.
+
+**Error responses:**
+
+- `400` — Invalid `type` or missing/non-numeric `id`
+
+---
+
+#### `GET /locations/:type/:id/summary`
+
+Data for the location page's auto-generated description (features/20-location-seo-pages.md, "Описание"): total places, the top categories, and the most recent place's creation date.
+
+**Auth required:** No
+
+**Path parameters:** same as `GET /locations/:type/:id/categories`.
+
+**Response:**
+
+```json
+{
+  "placesCount": 132,
+  "indexable": true,
+  "categories": [
+    { "name": "cave", "title": "Пещеры", "count": 18 },
+    { "name": "mountain", "title": "Горы", "count": 15 }
+  ],
+  "lastAddedAt": "2026-09-30T14:22:00+00:00"
+}
+```
+
+`categories` is capped at the top 5. `lastAddedAt` is `null` when the location has no places.
+
+**Error responses:**
+
+- `400` — Invalid `type` or missing/non-numeric `id`
+
+---
+
 ### Categories
 
 #### `GET /categories`
@@ -1812,6 +1964,43 @@ List all place categories. Optionally includes a count of places per category.
 ```
 
 Note: `content` and `count` are only included when `places=true`.
+
+---
+
+#### `GET /categories/:name/locations`
+
+Top locations for a category — perelinking on the category landing page (features/20-location-seo-pages.md: "эта категория по регионам").
+
+**Auth required:** No
+
+**Path parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| name | string | Category name (e.g. `cave`) |
+
+**Query parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| level | string | No | `region` (default) or `locality` |
+| limit | integer | No | Max results (default 20, max 50) |
+
+**Response:**
+
+```json
+{
+  "items": [
+    { "type": "region", "id": 5, "slug": "bashkortostan", "title": "Башкортостан", "placesCount": 18, "indexable": true }
+  ]
+}
+```
+
+Ordered by `placesCount` descending.
+
+**Error responses:**
+
+- `404` — Unknown category
 
 ---
 
@@ -1903,26 +2092,38 @@ List all gamification levels with experience thresholds, activity modifier value
 
 ### Sitemap
 
-#### `GET /visited`
+#### `GET /sitemap`
 
-Returns all place IDs and user IDs with their last update timestamps for sitemap generation.
+Returns the ids/slugs and last-modified timestamps of everything the client's XML sitemap (`client/pages/sitemap.tsx`) needs: places, users, indexable collections, and — for the landing pages of `features/20-location-seo-pages.md` — indexable categories, locations, and location×category pairs.
 
 **Auth required:** No
-
-Note: Despite the URL path `/visited`, this endpoint is served by the `Sitemap` controller due to a route group name collision in `Routes.php`.
 
 **Response:**
 
 ```json
 {
   "places": [
-    { "id": "a1b2c3d4e5f6g", "updated": "2025-11-01T12:00:00+00:00" }
+    { "id": "a1b2c3d4e5f6g", "slug": "vodopad-gadelsha", "updated": "2026-11-01T12:00:00+00:00" }
   ],
   "users": [
-    { "id": "u1u2u3u4", "updated": "2025-11-10T08:00:00+00:00" }
+    { "id": "u1u2u3u4", "updated": "2026-11-10T08:00:00+00:00" }
+  ],
+  "collections": [
+    { "id": "c1c2c3c4c5c6c", "slug": "peshchery-bashkortostana", "updated": "2026-10-20T09:00:00+00:00" }
+  ],
+  "categories": [
+    { "name": "cave", "updated": "2026-11-01T12:00:00+00:00" }
+  ],
+  "locations": [
+    { "type": "region", "id": 2, "slug": "bashkortostan", "updated": "2026-11-01T12:00:00+00:00" }
+  ],
+  "locationCategories": [
+    { "type": "region", "id": 2, "slug": "bashkortostan", "category": "cave", "updated": "2026-11-01T12:00:00+00:00" }
   ]
 }
 ```
+
+`categories`/`locations`/`locationCategories` only include entries with `placesCount >= 5` (the indexing threshold — see `GET /locations/resolve`); `updated` is the most recent `updated_at` among that entry's places. `collections` is already filtered to `hidden=false, indexable=true`. A `slug` is `null` for a location that has not been assigned one yet.
 
 ---
 

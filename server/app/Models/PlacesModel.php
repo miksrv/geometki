@@ -167,6 +167,8 @@ class PlacesModel extends ApplicationBaseModel
                 location_regions.title_en as region_en, location_regions.title_ru as region_ru,
                 location_districts.title_en as district_en, location_districts.title_ru as district_ru,
                 location_localities.title_en as city_en, location_localities.title_ru as city_ru,
+                slug_country.slug as country_slug, slug_region.slug as region_slug,
+                slug_district.slug as district_slug, slug_locality.slug as city_slug,
                 category.title_ru as category_ru, category.title_en as category_en,
                 places.visit_radius_m, places.verification_exempt' . $distanceSQL
             )
@@ -177,6 +179,10 @@ class PlacesModel extends ApplicationBaseModel
             ->join('location_regions', 'location_regions.id = places.region_id', 'left')
             ->join('location_districts', 'location_districts.id = places.district_id', 'left')
             ->join('location_localities', 'location_localities.id = places.locality_id', 'left')
+            ->join('location_slugs slug_country', "slug_country.type = 'country' AND slug_country.entity_id = places.country_id", 'left')
+            ->join('location_slugs slug_region', "slug_region.type = 'region' AND slug_region.entity_id = places.region_id", 'left')
+            ->join('location_slugs slug_district', "slug_district.type = 'district' AND slug_district.entity_id = places.district_id", 'left')
+            ->join('location_slugs slug_locality', "slug_locality.type = 'locality' AND slug_locality.entity_id = places.locality_id", 'left')
             ->find($id);
     }
 
@@ -201,6 +207,8 @@ class PlacesModel extends ApplicationBaseModel
             location_regions.title_en as region_en, location_regions.title_ru as region_ru,
             location_districts.title_en as district_en, location_districts.title_ru as district_ru,
             location_localities.title_en as city_en, location_localities.title_ru as city_ru,
+            slug_country.slug as country_slug, slug_region.slug as region_slug,
+            slug_district.slug as district_slug, slug_locality.slug as city_slug,
             category.title_en as category_en, category.title_ru as category_ru' . $distanceSQL
         )
         ->join('users', 'places.user_id = users.id', 'left')
@@ -208,6 +216,10 @@ class PlacesModel extends ApplicationBaseModel
         ->join('location_regions', 'location_regions.id = places.region_id', 'left')
         ->join('location_districts', 'location_districts.id = places.district_id', 'left')
         ->join('location_localities', 'location_localities.id = places.locality_id', 'left')
+        ->join('location_slugs slug_country', "slug_country.type = 'country' AND slug_country.entity_id = places.country_id", 'left')
+        ->join('location_slugs slug_region', "slug_region.type = 'region' AND slug_region.entity_id = places.region_id", 'left')
+        ->join('location_slugs slug_district', "slug_district.type = 'district' AND slug_district.entity_id = places.district_id", 'left')
+        ->join('location_slugs slug_locality', "slug_locality.type = 'locality' AND slug_locality.entity_id = places.locality_id", 'left')
         ->join('category', 'places.category = category.name', 'left');
 
         return $this;
