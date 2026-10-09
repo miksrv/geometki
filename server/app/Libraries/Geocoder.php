@@ -2,105 +2,124 @@
 
 namespace App\Libraries;
 
-use App\Models\LocationLocalitiesModel;
+use App\Entities\LocationCountryEntity;
+use App\Entities\LocationDistrictEntity;
+use App\Entities\LocationLocalityEntity;
+use App\Entities\LocationRegionEntity;
+use App\Models\LocationAliasesModel;
 use App\Models\LocationCountriesModel;
 use App\Models\LocationDistrictsModel;
+use App\Models\LocationLocalitiesModel;
 use App\Models\LocationRegionsModel;
+use App\Models\LocationSlugsModel;
 use Config\Services;
 use Geocoder\Exception\Exception;
 use Geocoder\Provider\Nominatim\Nominatim;
 use Geocoder\Provider\Yandex\Yandex;
 use Geocoder\Query\GeocodeQuery;
-use Geocoder\Query\ReverseQuery;
 use Geocoder\StatefulGeocoder;
 use GuzzleHttp\Client;
-use JetBrains\PhpStorm\NoReturn;
 use ReflectionException;
 
  /**
   * Class Geocoder
   *
-  * This class provides geocoding functionalities using different providers.
-  * It can search for locations based on text or coordinates and retrieve detailed location data.
+  * search() does free-text forward geocoding via geocoder-php/Nominatim, unchanged.
+  *
+  * coordinates() reverse-geocodes a point directly against the Nominatim HTTP API
+  * (via NominatimClient), in three calls for the common case:
+  *   1. reverse(lang=ru, no zoom) — full detail: the matched feature's own osm
+  *      id (used as the anchor for call 3), plus the Russian-localized address
+  *      breakdown (country/state/county/city/road/house_number) and the
+  *      country/region ISO codes.
+  *   2. reverse(lang=en, no zoom) — the same address breakdown in English.
+  *   3. details(matched osm id) — the ancestor administrative hierarchy, each
+  *      with its OWN osm_type/osm_id (reverse only gives that for the matched
+  *      feature, not its ancestors) — see NominatimClient::details().
+  * A level missing from call 3's hierarchy (rare — e.g. the matched feature
+  * has no usable osm id, or the hierarchy genuinely does not cover it) falls
+  * back to one extra zoom-scoped reverse call (as before) for just that
+  * level; district/locality fallback calls are skipped entirely when their
+  * result would be discarded anyway (no region resolved yet for district, no
+  * name at all for locality).
+  *
+  * Each level is resolved against the database in a fixed order — existing
+  * OSM id → ISO code (country/region) → normalized-name alias within the
+  * parent → create new — implemented by matchLocation() and
+  * App\Libraries\LocationMatcher. A location's title_en/title_ru are set
+  * only when it is created; an existing match is never overwritten with a
+  * new name, only recorded as an additional alias (see
+  * App\Models\LocationAliasesModel).
+  *
+  * One Geocoder instance caches hierarchy fallback responses in memory for
+  * its own lifetime, keyed by zoom and coordinates rounded to a per-level
+  * precision. `php spark locations:rebuild` reuses a single instance for its
+  * whole run so neighbouring places short-circuit repeat fallback calls —
+  * the single live request from Places::create()/update() does not benefit
+  * from this (nothing to reuse across one call) but is unaffected by it.
   *
   * @package App\Libraries
   * @link https://geocoder-php.org/docs/providers/nominatim/
+  * @link https://nominatim.org/release-docs/latest/api/Reverse/
+  * @link https://nominatim.org/release-docs/latest/api/Details/
   */
 class Geocoder{
-    /**
-     * @var int|null $countryId The ID of the country.
-     */
+    /** @var int|null */
     public ?int $countryId = null;
 
-    /**
-     * @var int|null $regionId The ID of the region.
-     */
+    /** @var int|null */
     public ?int $regionId = null;
 
-    /**
-     * @var int|null $districtId The ID of the district.
-     */
+    /** @var int|null */
     public ?int $districtId = null;
 
-    /**
-     * @var int|null $localityId The ID of the locality.
-     */
+    /** @var int|null */
     public ?int $localityId = null;
 
-    /**
-     * @var string $addressEn The address in English.
-     */
+    /** @var string */
     public string $addressEn = '';
 
-    /**
-     * @var string $addressRu The address in Russian.
-     */
+    /** @var string */
     public string $addressRu = '';
 
-    /**
-     * @var Client $httpClient The HTTP client used for making requests.
-     */
     private Client $httpClient;
 
-    /**
-     * @var \CodeIgniter\HTTP\IncomingRequest|\CodeIgniter\HTTP\CLIRequest $requestApi The request API.
-     */
     private \CodeIgniter\HTTP\IncomingRequest|\CodeIgniter\HTTP\CLIRequest $requestApi;
 
-    /**
-     * @var Nominatim|Yandex $provider The geocoding provider.
-     */
     private Nominatim|Yandex $provider;
 
-    /**
-     * @var string User-Agent string for Nominatim API requests
-     */
+    private NominatimClient $nominatimClient;
+
+    private \Config\LocationSlugs $slugConfig;
+
+    /** @var array<string, array|null> zoom:lat:lon => decoded Nominatim response (or null); fallback calls only */
+    private array $hierarchyCache = [];
+
+    /** Nominatim's own rank_address scale (not raw OSM admin_level, which varies by country) for region/district */
+    private const REGION_RANK_RANGE   = [7, 10];
+    private const DISTRICT_RANK_RANGE = [11, 13];
+
+    /** place-class types counted as a "locality" (excludes sub-city suburb/neighbourhood) */
+    private const LOCALITY_TYPES = ['city', 'town', 'village', 'hamlet'];
+
     private const USER_AGENT = 'Geometki/1.0 (https://geometki.com)';
 
-    /**
-     * Geocoder constructor.
-     * Initializes the HTTP client and request API, and sets the geocoding provider.
-     */
-    public function __construct()
+    public function __construct(?NominatimClient $nominatimClient = null)
     {
         $this->httpClient = new Client();
         $this->requestApi = Services::request();
-
-        // Yandex clien was blocked :(
-        // $this->provider   = new Yandex($this->httpClient, null, getenv('app.geocoder.yandexKey'));
-        $this->provider   = Nominatim::withOpenStreetMapServer($this->httpClient, self::USER_AGENT);
-
-       // $this->provider   = $this->requestApi->getLocale() === 'ru'
-       //     ? new Yandex($this->httpClient, null, getenv('app.geocoder.yandexKey'))
-       //     : Nominatim::withOpenStreetMapServer($this->httpClient, self::USER_AGENT);
+        $this->provider    = Nominatim::withOpenStreetMapServer($this->httpClient, self::USER_AGENT);
+        $this->nominatimClient = $nominatimClient ?? new NominatimClient();
+        $this->slugConfig = config('LocationSlugs');
     }
 
     /**
-     * Searches for locations based on the provided text.
+     * Searches for locations based on the provided text (forward geocoding,
+     * unrelated to coordinates()/the admin-level matching below). Unchanged.
      *
-     * @param string $text The text to search for locations.
-     * @return array An array of location data including latitude, longitude, locality, country, region, district, and street.
-     * @throws Exception If there is an error during geocoding.
+     * @param string $text
+     * @return array
+     * @throws Exception
      */
     public function search($text): array
     {
@@ -146,242 +165,505 @@ class Geocoder{
     }
 
     /**
-     * Retrieves and processes location data based on provided coordinates.
+     * Reverse-geocodes coordinates: resolves/creates the country, region,
+     * district and locality, and the localized street address. Three
+     * Nominatim requests in the common case — see the class docblock.
      *
-     * @param float $lat The latitude of the location.
-     * @param float $lng The longitude of the location.
-     * @param bool $changeProvider Flag to indicate if the provider should be changed in case of failure.
-     * @return bool Returns true if the location data is successfully retrieved and processed, false otherwise.
-     * @throws Exception If there is an error during geocoding.
-     * @throws ReflectionException If there is an error during reflection.
+     * @param float $lat
+     * @param float $lng
+     * @return bool false when Nominatim has nothing at all for this point (e.g. open ocean)
+     * @throws ReflectionException
      */
-    public function coordinates(float $lat, float $lng, bool $changeProvider = false): bool
+    public function coordinates(float $lat, float $lng): bool
     {
-        $geocoderEn = new StatefulGeocoder($this->provider, 'en');
-        $geocoderRu = new StatefulGeocoder($this->provider, 'ru');
-        $locationEn = $geocoderEn->reverseQuery(ReverseQuery::fromCoordinates($lat, $lng))->first();
-        $locationRu = $geocoderRu->reverseQuery(ReverseQuery::fromCoordinates($lat, $lng))->first();
+        helper('location');
+        helper('slug');
 
-        $countryTitleEn = $locationEn->getCountry()?->getName();
-        $countryTitleRu = $locationRu->getCountry()?->getName();
+        $ruResponse = $this->nominatimClient->reverse($lat, $lng, null, 'ru');
 
-        // If the first geocoder cannot find the address, then connect the second one and try again
-        if (!$countryTitleEn || !$countryTitleRu) {
-            $this->provider = Nominatim::withOpenStreetMapServer($this->httpClient, self::USER_AGENT);
+        if (!$ruResponse) {
+            return false;
+        }
 
-            // In order not to go into recursion, if we still cannot determine the address, we exit the function
-            if ($changeProvider) {
-                return false;
+        $enResponse = $this->nominatimClient->reverse($lat, $lng, null, 'en');
+
+        $this->addressRu = $this->formatStreetAddress($ruResponse);
+        $this->addressEn = $this->formatStreetAddress($enResponse);
+
+        $matchedOsmType = $this->extractOsmType($ruResponse);
+        $matchedOsmId   = $this->extractOsmId($ruResponse);
+        $hierarchy      = ($matchedOsmType && $matchedOsmId)
+            ? $this->nominatimClient->details($matchedOsmType, $matchedOsmId)
+            : null;
+
+        $addressRuBreakdown = $ruResponse['address'] ?? [];
+        $addressEnBreakdown = $enResponse['address'] ?? [];
+
+        // --- Country: no osm id comes back from details() for the country
+        // entry (verified live), so identity relies on the ISO code / alias.
+        $this->countryId = $this->resolveCountry(
+            $this->extractCountryIso($ruResponse),
+            $addressRuBreakdown['country'] ?? null,
+            $addressEnBreakdown['country'] ?? null
+        );
+
+        if (!$this->countryId) {
+            return false;
+        }
+
+        // --- Region ---
+        $regionEntry = $this->pickHierarchyEntry($hierarchy, self::REGION_RANK_RANGE);
+
+        if (!$regionEntry) {
+            $regionEntry = $this->reverseWithCache($lat, $lng, $this->slugConfig->reverseZoomByType['region']);
+        }
+
+        $this->regionId = $this->resolveRegion(
+            $this->extractOsmType($regionEntry),
+            $this->extractOsmId($regionEntry),
+            $this->extractRegionIso($ruResponse),
+            $addressRuBreakdown['state'] ?? null,
+            $addressEnBreakdown['state'] ?? null
+        );
+
+        // --- District (requires a region; skip the fallback call otherwise — it would be discarded) ---
+        if ($this->regionId) {
+            $districtEntry = $this->pickHierarchyEntry($hierarchy, self::DISTRICT_RANK_RANGE);
+
+            if (!$districtEntry) {
+                $districtEntry = $this->reverseWithCache($lat, $lng, $this->slugConfig->reverseZoomByType['district']);
             }
 
-            return $this->coordinates($lat, $lng, true);
+            $this->districtId = $this->resolveDistrict(
+                $this->extractOsmType($districtEntry),
+                $this->extractOsmId($districtEntry),
+                $addressRuBreakdown['county'] ?? $addressRuBreakdown['state_district'] ?? null,
+                $addressEnBreakdown['county'] ?? $addressEnBreakdown['state_district'] ?? null
+            );
+        } else {
+            $this->districtId = null;
         }
 
-        $this->_getCountryId($countryTitleEn, $countryTitleRu);
+        // --- Locality (independent of district/region) ---
+        $localityNameRu = $addressRuBreakdown['city'] ?? $addressRuBreakdown['town']
+            ?? $addressRuBreakdown['village'] ?? $addressRuBreakdown['hamlet'] ?? null;
+        $localityNameEn = $addressEnBreakdown['city'] ?? $addressEnBreakdown['town']
+            ?? $addressEnBreakdown['village'] ?? $addressEnBreakdown['hamlet'] ?? null;
 
-        if ($locationEn->getAdminLevels()->has(1) && $locationRu->getAdminLevels()->has(1)) {
-            $regionTitleEn = $locationEn->getAdminLevels()->get(1)->getName();
-            $regionTitleRu = $locationRu->getAdminLevels()->get(1)->getName();
-            $this->_getRegionId($regionTitleEn, $regionTitleRu);
+        if ($localityNameRu || $localityNameEn) {
+            $localityEntry = $this->pickLocalityEntry($hierarchy);
+
+            // Only worth a fallback call when we know there IS a settlement
+            // here but details() did not resolve its osm id — not when there
+            // is simply no locality at this point (its result would be discarded).
+            if (!$this->extractOsmId($localityEntry)) {
+                $localityEntry = $this->reverseWithCache($lat, $lng, $this->slugConfig->reverseZoomByType['locality']) ?? $localityEntry;
+            }
+
+            $this->localityId = $this->resolveLocality(
+                $this->extractOsmType($localityEntry),
+                $this->extractOsmId($localityEntry),
+                $localityNameRu,
+                $localityNameEn
+            );
+        } else {
+            $this->localityId = null;
         }
-
-        if ($locationEn->getAdminLevels()->has(2) && $locationRu->getAdminLevels()->has(2)) {
-            $districtTitleEn = $locationEn->getAdminLevels()->get(2)->getName();
-            $districtTitleRu = $locationRu->getAdminLevels()->get(2)->getName();
-            $this->_getDistrictId($districtTitleEn, $districtTitleRu);
-        }
-
-        $this->_getLocalityId($locationEn->getLocality(), $locationRu->getLocality());
-
-        $this->addressEn = $locationEn->getStreetName() . ($locationEn->getStreetNumber() ? ', ' . $locationEn->getStreetNumber() : '');
-        $this->addressRu = $locationRu->getStreetName() . ($locationRu->getStreetNumber() ? ', ' . $locationRu->getStreetNumber() : '');
 
         return true;
     }
 
+    // -------------------------------------------------------------------------
+    // Per-level resolution
+    // -------------------------------------------------------------------------
+
     /**
-     * Retrieves or creates the country ID based on the provided English and Russian titles.
-     *
-     * @param string $titleEn The English title of the country.
-     * @param string $titleRu The Russian title of the country.
-     * @return void
-     * @throws ReflectionException If there is an error during reflection.
+     * @throws ReflectionException
      */
-    private function _getCountryId(
-        string $titleEn,
-        string $titleRu
-    ): void
+    private function resolveCountry(?string $isoCode, ?string $nameRu, ?string $nameEn): ?int
     {
-        $countryModel = new LocationCountriesModel();
-        $countryData  = $countryModel
-            ->select('id')
-            ->where([
-                'title_en' => $titleEn,
-                'title_ru' => $titleRu
-            ])
-            ->first();
+        $model = new LocationCountriesModel();
 
-        if ($countryData) {
-            $this->countryId = $countryData->id;
-            return;
-        }
+        return $this->matchLocation(
+            $model,
+            'country',
+            null,
+            null,
+            $isoCode,
+            0,
+            $nameRu,
+            $nameEn,
+            function (string $finalNameEn, string $finalNameRu) use ($model, $isoCode) {
+                $entity = new LocationCountryEntity();
+                $entity->iso_code = $isoCode;
+                $entity->title_en = mb_substr($finalNameEn, 0, 50, 'UTF-8');
+                $entity->title_ru = mb_substr($finalNameRu, 0, 50, 'UTF-8');
 
-        $country = new \App\Entities\LocationCountryEntity();
-        $country->title_en = $titleEn;
-        $country->title_ru = $titleRu;
+                $model->insert($entity);
+                $id = $model->getInsertID();
 
-        $countryModel->insert($country);
+                if ($id) {
+                    (new LocationSlugLibrary())->assignForNewLocation('country', $id, $entity->title_ru, []);
+                }
 
-        $this->countryId = $countryModel->getInsertID();
+                return $id;
+            }
+        );
     }
 
     /**
-     * Retrieves or creates the region ID based on the provided English and Russian titles.
-     *
-     * @param string $titleEn The English title of the region.
-     * @param string $titleRu The Russian title of the region.
-     * @return void
-     * @throws ReflectionException If there is an error during reflection.
+     * @throws ReflectionException
      */
-    private function _getRegionId(
-        string $titleEn,
-        string $titleRu,
-    ): void
+    private function resolveRegion(?string $osmType, ?int $osmId, ?string $isoCode, ?string $nameRu, ?string $nameEn): ?int
     {
         if (!$this->countryId) {
-            return;
+            return null;
         }
 
-        $regionModel = new LocationRegionsModel();
-        $regionData  = $regionModel
-            ->select('id')
-            ->where([
-                'country_id' => $this->countryId,
-                'title_en'   => $titleEn,
-                'title_ru'   => $titleRu
-            ])
-            ->first();
+        $model = new LocationRegionsModel();
 
-        if ($regionData) {
-            $this->regionId = $regionData->id;
-            return;
-        }
+        return $this->matchLocation(
+            $model,
+            'region',
+            $osmType,
+            $osmId,
+            $isoCode,
+            $this->countryId,
+            $nameRu,
+            $nameEn,
+            function (string $finalNameEn, string $finalNameRu) use ($model, $osmType, $osmId, $isoCode) {
+                $entity = new LocationRegionEntity();
+                $entity->country_id = $this->countryId;
+                $entity->osm_type   = $osmType;
+                $entity->osm_id     = $osmId;
+                $entity->iso_code   = $isoCode;
+                $entity->title_en   = mb_substr($finalNameEn, 0, 100, 'UTF-8');
+                $entity->title_ru   = mb_substr($finalNameRu, 0, 100, 'UTF-8');
 
-        $region = new \App\Entities\LocationRegionEntity();
-        $region->country_id = $this->countryId;
-        $region->title_en   = $titleEn;
-        $region->title_ru   = $titleRu;
+                $model->insert($entity);
+                $id = $model->getInsertID();
 
-        $regionModel->insert($region);
+                if ($id) {
+                    $parentChain = array_filter([$this->slugFor('country', $this->countryId)]);
+                    (new LocationSlugLibrary())->assignForNewLocation('region', $id, $entity->title_ru, $parentChain);
+                }
 
-        $this->regionId = $regionModel->getInsertID();
+                return $id;
+            }
+        );
     }
 
     /**
-     * Retrieves or creates the district ID based on the provided English and Russian titles.
-     *
-     * @param string $titleEn The English title of the district.
-     * @param string $titleRu The Russian title of the district.
-     * @return void
-     * @throws ReflectionException If there is an error during reflection.
+     * @throws ReflectionException
      */
-    private function _getDistrictId(
-        string $titleEn,
-        string $titleRu,
-    ): void
+    private function resolveDistrict(?string $osmType, ?int $osmId, ?string $nameRu, ?string $nameEn): ?int
     {
         if (!$this->countryId || !$this->regionId) {
-            return;
+            return null;
         }
 
-        $districtModel = new LocationDistrictsModel();
-        $districtData  = $districtModel
-            ->select('id')
-            ->where([
-                'country_id' => $this->countryId,
-                'region_id'  => $this->regionId,
-                'title_en'   => $titleEn,
-                'title_ru'   => $titleRu
-            ])
-            ->first();
+        $model = new LocationDistrictsModel();
 
-        if ($districtData) {
-            $this->districtId = $districtData->id;
-            return;
-        }
+        return $this->matchLocation(
+            $model,
+            'district',
+            $osmType,
+            $osmId,
+            null,
+            $this->regionId,
+            $nameRu,
+            $nameEn,
+            function (string $finalNameEn, string $finalNameRu) use ($model, $osmType, $osmId) {
+                $entity = new LocationDistrictEntity();
+                $entity->country_id = $this->countryId;
+                $entity->region_id  = $this->regionId;
+                $entity->osm_type   = $osmType;
+                $entity->osm_id     = $osmId;
+                $entity->title_en   = mb_substr($finalNameEn, 0, 100, 'UTF-8');
+                $entity->title_ru   = mb_substr($finalNameRu, 0, 100, 'UTF-8');
 
-        $district = new \App\Entities\LocationDistrictEntity();
-        $district->country_id = $this->countryId;
-        $district->region_id  = $this->regionId;
-        $district->title_en   = $titleEn;
-        $district->title_ru   = $titleRu;
+                $model->insert($entity);
+                $id = $model->getInsertID();
 
-        $districtModel->insert($district);
+                if ($id) {
+                    $parentChain = array_filter([
+                        $this->slugFor('region', $this->regionId),
+                        $this->slugFor('country', $this->countryId),
+                    ]);
+                    (new LocationSlugLibrary())->assignForNewLocation('district', $id, $entity->title_ru, $parentChain);
+                }
 
-        $this->districtId = $districtModel->getInsertID();
+                return $id;
+            }
+        );
     }
 
     /**
-     * Retrieves or creates the locality ID based on the provided English and Russian titles.
-     *
-     * @param string|null $titleEn The English title of the locality.
-     * @param string|null $titleRu The Russian title of the locality.
-     * @return void
-     * @throws ReflectionException If there is an error during reflection.
+     * @throws ReflectionException
      */
-    private function _getLocalityId(
-        ?string $titleEn,
-        ?string $titleRu,
-    ): void
+    private function resolveLocality(?string $osmType, ?int $osmId, ?string $nameRu, ?string $nameEn): ?int
     {
-        // Both titles are required by the DB schema (NOT NULL) and model validation.
-        // If either is missing we cannot insert a valid row, so bail out.
-        if (!$titleEn || !$titleRu) {
-            return;
+        if (!$nameRu && !$nameEn) {
+            return null;
         }
 
-        $localityModel = new LocationLocalitiesModel();
+        $model    = new LocationLocalitiesModel();
+        $parentId = $this->districtId ?: ($this->regionId ?: ($this->countryId ?: 0));
 
-        // Use IS NULL for nullable FK columns; "= NULL" never matches in SQL.
-        $query = $localityModel
-            ->select('id')
-            ->where('country_id', $this->countryId)
-            ->where('title_en', $titleEn)
-            ->where('title_ru', $titleRu);
+        return $this->matchLocation(
+            $model,
+            'locality',
+            $osmType,
+            $osmId,
+            null,
+            $parentId,
+            $nameRu,
+            $nameEn,
+            function (string $finalNameEn, string $finalNameRu) use ($model, $osmType, $osmId) {
+                $entity = new LocationLocalityEntity();
+                $entity->country_id  = $this->countryId;
+                $entity->region_id   = $this->regionId;
+                $entity->district_id = $this->districtId;
+                $entity->osm_type    = $osmType;
+                $entity->osm_id      = $osmId;
+                $entity->title_en    = mb_substr($finalNameEn, 0, 100, 'UTF-8');
+                $entity->title_ru    = mb_substr($finalNameRu, 0, 100, 'UTF-8');
 
-        if ($this->regionId !== null) {
-            $query->where('region_id', $this->regionId);
+                $model->insert($entity);
+                $insertId = $model->getInsertID();
+
+                if ($insertId > 0) {
+                    $parentChain = array_filter([
+                        $this->slugFor('district', $this->districtId),
+                        $this->slugFor('region', $this->regionId),
+                        $this->slugFor('country', $this->countryId),
+                    ]);
+                    (new LocationSlugLibrary())->assignForNewLocation('locality', $insertId, $entity->title_ru, $parentChain);
+                }
+
+                return $insertId;
+            }
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Shared matching-order logic
+    // -------------------------------------------------------------------------
+
+    /**
+     * Resolves one location level against the database in the fixed order —
+     * osm id → ISO code → normalized-name alias within $parentId → create —
+     * via App\Libraries\LocationMatcher, then records every name seen for it
+     * as an alias and (only on a match coming from the alias step) backfills
+     * osm_type/osm_id onto the row so later lookups use the fast osm-id path.
+     *
+     * @param object      $model      A Location*Model instance
+     * @param string      $type       country|region|district|locality
+     * @param string|null $osmType
+     * @param int|null    $osmId
+     * @param string|null $isoCode    Only meaningful for country/region
+     * @param int         $parentId   Alias-matching scope; 0 for country
+     * @param string|null $nameRu
+     * @param string|null $nameEn
+     * @param callable(string, string): int $createRow fn(nameEn, nameRu): new id
+     * @return int|null
+     * @throws ReflectionException
+     */
+    private function matchLocation(
+        $model,
+        string $type,
+        ?string $osmType,
+        ?int $osmId,
+        ?string $isoCode,
+        int $parentId,
+        ?string $nameRu,
+        ?string $nameEn,
+        callable $createRow
+    ): ?int {
+        if (!$nameRu && !$nameEn) {
+            return null;
+        }
+
+        $osmMatch = null;
+
+        if ($osmType && $osmId) {
+            $row = $model->where(['osm_type' => $osmType, 'osm_id' => $osmId])->first();
+            $osmMatch = $row->id ?? null;
+        }
+
+        $isoMatch = null;
+
+        if ($isoCode && $osmMatch === null) {
+            $row = $model->where('iso_code', $isoCode)->first();
+            $isoMatch = $row->id ?? null;
+        }
+
+        $aliasModel = new LocationAliasesModel();
+        $aliasMatch = null;
+
+        if ($osmMatch === null && $isoMatch === null) {
+            $normalizedRu = normalizeLocationName($nameRu);
+            $normalizedEn = normalizeLocationName($nameEn);
+
+            $alias = $normalizedRu !== '' ? $aliasModel->findMatch($type, $parentId, $normalizedRu) : null;
+            $alias = $alias ?? ($normalizedEn !== '' ? $aliasModel->findMatch($type, $parentId, $normalizedEn) : null);
+            $aliasMatch = $alias->location_id ?? null;
+        }
+
+        $decision = LocationMatcher::resolve($osmMatch, $isoMatch, $aliasMatch);
+
+        if ($decision['strategy'] === LocationMatcher::STRATEGY_CREATE) {
+            $id = $createRow($nameEn ?: $nameRu, $nameRu ?: $nameEn);
+
+            if (!$id) {
+                return null;
+            }
         } else {
-            $query->where('region_id IS NULL');
+            $id = $decision['id'];
+
+            // Matched via alias only (not already identified by osm id): heal
+            // the row so the next lookup for this exact location is O(1).
+            if ($decision['strategy'] === LocationMatcher::STRATEGY_ALIAS && $osmType && $osmId) {
+                $model->skipValidation(true)->update($id, ['osm_type' => $osmType, 'osm_id' => $osmId]);
+            }
         }
 
-        if ($this->districtId !== null) {
-            $query->where('district_id', $this->districtId);
-        } else {
-            $query->where('district_id IS NULL');
+        $aliasModel->remember($type, $id, $parentId, $nameRu);
+        $aliasModel->remember($type, $id, $parentId, $nameEn);
+
+        return $id;
+    }
+
+    // -------------------------------------------------------------------------
+    // Nominatim response parsing
+    // -------------------------------------------------------------------------
+
+    /**
+     * Normalizes an osm_type coming from either /reverse (full word) or
+     * /details' address entries (a single letter: N/W/R — verified live).
+     */
+    private function extractOsmType(?array $response): ?string
+    {
+        if (!$response) {
+            return null;
         }
 
-        $localityData = $query->first();
+        static $map = [
+            'node' => 'node', 'way' => 'way', 'relation' => 'relation',
+            'n' => 'node', 'w' => 'way', 'r' => 'relation',
+        ];
 
-        if ($localityData) {
-            $this->localityId = $localityData->id;
-            return;
+        return $map[mb_strtolower((string) ($response['osm_type'] ?? ''), 'UTF-8')] ?? null;
+    }
+
+    private function extractOsmId(?array $response): ?int
+    {
+        return isset($response['osm_id']) ? (int) $response['osm_id'] : null;
+    }
+
+    /**
+     * Picks the first boundary/administrative entry in a details() hierarchy
+     * whose rank_address (Nominatim's own normalized level scale) falls in
+     * the given range — the entries are pre-sorted most-specific-first.
+     *
+     * @param array|null   $hierarchy A details() response, or null
+     * @param array{0:int,1:int} $rankRange [min, max] inclusive
+     */
+    private function pickHierarchyEntry(?array $hierarchy, array $rankRange): ?array
+    {
+        foreach ($hierarchy['address'] ?? [] as $entry) {
+            if (($entry['class'] ?? null) !== 'boundary' || ($entry['type'] ?? null) !== 'administrative') {
+                continue;
+            }
+
+            $rank = $entry['rank_address'] ?? null;
+
+            if ($rank !== null && $rank >= $rankRange[0] && $rank <= $rankRange[1]) {
+                return $entry;
+            }
         }
 
-        $locality = new \App\Entities\LocationLocalityEntity();
-        $locality->country_id  = $this->countryId;
-        $locality->region_id   = $this->regionId;
-        $locality->district_id = $this->districtId;
-        $locality->title_en    = $titleEn;
-        $locality->title_ru    = $titleRu;
+        return null;
+    }
 
-        $localityModel->insert($locality);
-
-        $insertId = $localityModel->getInsertID();
-
-        // Only assign if the insert actually succeeded (getInsertID returns 0 on failure).
-        if ($insertId > 0) {
-            $this->localityId = $insertId;
+    /**
+     * Picks the first place-class settlement entry (city/town/village/
+     * hamlet — not a sub-city suburb/neighbourhood) in a details() hierarchy.
+     */
+    private function pickLocalityEntry(?array $hierarchy): ?array
+    {
+        foreach ($hierarchy['address'] ?? [] as $entry) {
+            if (($entry['class'] ?? null) === 'place' && in_array($entry['type'] ?? null, self::LOCALITY_TYPES, true)) {
+                return $entry;
+            }
         }
+
+        return null;
+    }
+
+    private function extractCountryIso(array $response): ?string
+    {
+        $code = $response['address']['country_code'] ?? null;
+
+        return (is_string($code) && preg_match('/^[a-z]{2}$/i', $code)) ? strtoupper($code) : null;
+    }
+
+    private function extractRegionIso(array $response): ?string
+    {
+        $code = $response['address']['ISO3166-2-lvl4'] ?? null;
+
+        return (is_string($code) && preg_match('/^[A-Z]{2}-[A-Z0-9]{1,5}$/i', $code)) ? strtoupper($code) : null;
+    }
+
+    private function formatStreetAddress(?array $response): string
+    {
+        if (!$response) {
+            return '';
+        }
+
+        $address = $response['address'] ?? [];
+        $road    = trim((string) ($address['road'] ?? ''));
+        $house   = trim((string) ($address['house_number'] ?? ''));
+
+        if ($road === '') {
+            return '';
+        }
+
+        return $house !== '' ? $road . ', ' . $house : $road;
+    }
+
+    /**
+     * In-memory, per-instance cache of fallback hierarchy responses, keyed
+     * by zoom and coordinates rounded to a precision appropriate for that
+     * admin level — see the class docblock. Only used when details() did
+     * not cover a level.
+     */
+    private function reverseWithCache(float $lat, float $lon, int $zoom): ?array
+    {
+        $precision = match (true) {
+            $zoom <= 3 => 1,
+            $zoom <= 5 => 2,
+            default    => 3,
+        };
+
+        $key = $zoom . ':' . round($lat, $precision) . ':' . round($lon, $precision);
+
+        if (!array_key_exists($key, $this->hierarchyCache)) {
+            $this->hierarchyCache[$key] = $this->nominatimClient->reverse($lat, $lon, $zoom, 'ru');
+        }
+
+        return $this->hierarchyCache[$key];
+    }
+
+    private function slugFor(string $type, ?int $entityId): ?string
+    {
+        if (!$entityId) {
+            return null;
+        }
+
+        static $slugsModel = null;
+        $slugsModel ??= new LocationSlugsModel();
+
+        return $slugsModel->findFor($type, $entityId)?->slug;
     }
 }

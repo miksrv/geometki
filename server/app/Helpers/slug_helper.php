@@ -1,35 +1,16 @@
 <?php
 
 /**
- * Generates an SEO-friendly, URL-safe slug from a place title.
+ * The one fixed Cyrillic → Latin transliteration scheme for the whole site
+ * (place slugs, collection slugs, and location slugs). This map, and the
+ * rules in transliterateToSlug(), must never change after launch: changing
+ * either would silently change every previously-issued slug.
  *
- * Cyrillic (Russian) text is transliterated via a fixed BGN-like map that is
- * the single source of truth for Russian — it is applied the same way on
- * every environment, so URLs never change depending on whether the intl
- * extension happens to be installed (intl's own "Russian-Latin/BGN"
- * transliterator can disagree with this map on punctuation/diacritics,
- * which would otherwise make the same title produce two different slugs).
- *
- * When the intl extension's Transliterator class is available, it is used
- * only as a secondary pass to Latinise any characters that are not Cyrillic
- * and not already ASCII (e.g. other scripts); Russian text never reaches
- * this step because the map above already converted it.
- *
- * Non [a-z0-9] characters become a single dash, runs of dashes collapse to
- * one, and the result is trimmed and cut to roughly 80 characters on a word
- * boundary. An input that transliterates to nothing (e.g. emoji-only, or
- * null/empty) returns null.
- *
- * @param string|null $title
- * @return string|null
+ * @return array<string, string>
  */
-function generatePlaceSlug(?string $title): ?string
+function slugCyrillicMap(): array
 {
-    if ($title === null || trim($title) === '') {
-        return null;
-    }
-
-    static $cyrillicMap = [
+    static $map = [
         'а' => 'a',  'б' => 'b',  'в' => 'v',  'г' => 'g',   'д' => 'd',
         'е' => 'e',  'ё' => 'e',  'ж' => 'zh', 'з' => 'z',   'и' => 'i',
         'й' => 'y',  'к' => 'k',  'л' => 'l',  'м' => 'm',   'н' => 'n',
@@ -39,7 +20,32 @@ function generatePlaceSlug(?string $title): ?string
         'э' => 'e',  'ю' => 'yu', 'я' => 'ya',
     ];
 
-    $lower  = mb_strtolower($title, 'UTF-8');
+    return $map;
+}
+
+/**
+ * Transliterates and slugifies arbitrary text using the fixed scheme above:
+ * Cyrillic via slugCyrillicMap(), any other remaining non-ASCII script via
+ * the intl extension's Transliterator (when available) as a secondary pass,
+ * then lowercased, non [a-z0-9] runs collapsed to a single dash, trimmed,
+ * and cut to roughly 80 characters on a word boundary.
+ *
+ * Low-level building block shared by generatePlaceSlug() and the location
+ * slug generator (LocationSlugLibrary) — kept here, in one place, so both
+ * are pinned by the same scheme and the same unit tests.
+ *
+ * @param string|null $text
+ * @return string|null null when the input is empty or transliterates to nothing (e.g. emoji-only)
+ */
+function transliterateToSlug(?string $text): ?string
+{
+    if ($text === null || trim($text) === '') {
+        return null;
+    }
+
+    $cyrillicMap = slugCyrillicMap();
+
+    $lower  = mb_strtolower($text, 'UTF-8');
     $length = mb_strlen($lower, 'UTF-8');
     $transliterated = '';
 
@@ -86,6 +92,87 @@ function generatePlaceSlug(?string $title): ?string
     }
 
     return $slug === '' ? null : $slug;
+}
+
+/**
+ * Generates an SEO-friendly, URL-safe slug from a place title. See
+ * transliterateToSlug() for the scheme.
+ *
+ * @param string|null $title
+ * @return string|null
+ */
+function generatePlaceSlug(?string $title): ?string
+{
+    return transliterateToSlug($title);
+}
+
+/**
+ * Strips a single leading settlement-type word from a Russian location
+ * title ("село Никольское" → "Никольское"), case-insensitively, so it does
+ * not end up in the location's slug (it stays in the H1). Multi-word types
+ * ("посёлок городского типа") are matched whole, not word-by-word, so
+ * matching them before shorter overlapping ones (e.g. "посёлок") matters —
+ * callers should list longer phrases first, as LocationSlugs::$settlementTypeWords does.
+ *
+ * Only ever removes a prefix: a settlement word appearing elsewhere in the
+ * title ("Старое Село") is left alone.
+ *
+ * @param string   $titleRu
+ * @param string[] $settlementTypeWords Case-insensitive, longest-first for multi-word phrases
+ * @return string
+ */
+function stripLeadingSettlementWord(string $titleRu, array $settlementTypeWords): string
+{
+    $trimmed = trim($titleRu);
+
+    foreach ($settlementTypeWords as $word) {
+        $wordLength = mb_strlen($word, 'UTF-8');
+        $prefix     = mb_substr($trimmed, 0, $wordLength, 'UTF-8');
+
+        if (mb_strtolower($prefix, 'UTF-8') !== mb_strtolower($word, 'UTF-8')) {
+            continue;
+        }
+
+        // Require a word boundary right after the match, so a name that merely
+        // starts with the same letters ("Городище") is not mistaken for the
+        // type word ("город") followed by a name.
+        $boundary = mb_substr($trimmed, $wordLength, 1, 'UTF-8');
+
+        if ($boundary !== '' && $boundary !== ' ') {
+            continue;
+        }
+
+        $rest = trim(mb_substr($trimmed, $wordLength, null, 'UTF-8'));
+
+        if ($rest !== '') {
+            return $rest;
+        }
+    }
+
+    return $trimmed;
+}
+
+/**
+ * Generates the unqualified ("clean") slug candidate for a location from its
+ * Russian title: strips a leading settlement-type word, then transliterates
+ * via the same fixed scheme as place slugs. Collision resolution (parent
+ * qualification, reserved words, the "most places" / level-priority primary
+ * pick) is NOT done here — see App\Libraries\LocationSlugLibrary, which
+ * needs the database to check other locations.
+ *
+ * @param string|null $titleRu
+ * @param string[]    $settlementTypeWords From Config\LocationSlugs::$settlementTypeWords
+ * @return string|null
+ */
+function generateLocationBaseSlug(?string $titleRu, array $settlementTypeWords = []): ?string
+{
+    if ($titleRu === null || trim($titleRu) === '') {
+        return null;
+    }
+
+    $stripped = $settlementTypeWords ? stripLeadingSettlementWord($titleRu, $settlementTypeWords) : $titleRu;
+
+    return transliterateToSlug($stripped);
 }
 
 /**

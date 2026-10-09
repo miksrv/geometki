@@ -26,6 +26,9 @@ class LocationRegionsModel extends ApplicationBaseModel
     /** @var array<int, string> */
     protected $allowedFields = [
         'country_id',
+        'osm_type',
+        'osm_id',
+        'iso_code',
         'title_en',
         'title_ru',
     ];
@@ -37,6 +40,9 @@ class LocationRegionsModel extends ApplicationBaseModel
     protected $deletedField  = 'deleted_at';
 
     protected $validationRules = [
+        'osm_type' => 'permit_empty|in_list[node,way,relation]',
+        'osm_id'   => 'permit_empty|integer',
+        'iso_code' => 'permit_empty|string|max_length[10]',
         'title_en' => 'required|string|max_length[100]',
         'title_ru' => 'required|string|max_length[100]',
     ];
