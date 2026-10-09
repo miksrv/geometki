@@ -194,7 +194,6 @@ class Places extends ResourceController
             $place->comments  = (int) $place->comments;
             $place->bookmarks = (int) $place->bookmarks;
             $place->title     = $placeContent->title($place->id);
-            $place->category  = $formatter->formatCategory($place, $locale);
 
             if ($coordinates && $place->distance) {
                 $place->distance = $formatter->formatDistance($place->distance);
@@ -269,8 +268,6 @@ class Places extends ResourceController
             'avatar'   => $avatarLibrary->buildPath($placeData->user_id, $placeData->user_avatar, 'small'),
         ];
 
-        $placeData->category = $formatter->formatCategory($placeData, $locale);
-
         $cover = $formatter->formatCover($id, (int) $placeData->photos);
         if ($cover) {
             $placeData->cover = $cover;
@@ -311,7 +308,6 @@ class Places extends ResourceController
             $placeData->region_en, $placeData->region_ru,
             $placeData->district_en, $placeData->district_ru,
             $placeData->city_en, $placeData->city_ru,
-            $placeData->category_en, $placeData->category_ru,
             $placeData->visit_radius_m, $placeData->verification_exempt,
         );
 
@@ -345,7 +341,7 @@ class Places extends ResourceController
         $input  = $this->request->getJSON();
         $rules  = [
             'title'    => 'required|min_length[8]|max_length[200]',
-            'category' => 'required|is_not_unique[category.name]',
+            'category' => 'required|in_list[' . implode(',', config('Categories')->names) . ']',
             'lat'      => 'numeric|min_length[3]',
             'lon'      => 'numeric|min_length[3]',
         ];
@@ -475,7 +471,7 @@ class Places extends ResourceController
         $input  = $this->request->getJSON();
         $rules  = [
             'title'    => 'if_exist|required|min_length[8]|max_length[200]',
-            'category' => 'if_exist|required|is_not_unique[category.name]',
+            'category' => 'if_exist|required|in_list[' . implode(',', config('Categories')->names) . ']',
             'lat'      => 'if_exist|numeric|min_length[3]',
             'lon'      => 'if_exist|numeric|min_length[3]',
         ];

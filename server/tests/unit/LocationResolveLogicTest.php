@@ -25,7 +25,7 @@ final class LocationResolveLogicTest extends CIUnitTestCase
      * @param bool $currentSlugFound  location_slugs has this exact slug
      * @param bool $historySlugFound  location_slug_history has this exact old_slug
      *                                AND its current slug still exists
-     * @param bool $categoryFound    category.name matches
+     * @param bool $categoryFound    the slug is a key in Config\Categories
      */
     private function resolveSlugStrategy(bool $currentSlugFound, bool $historySlugFound, bool $categoryFound): string
     {

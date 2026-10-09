@@ -79,6 +79,7 @@ CodeIgniter 4 REST API following MVC pattern:
 - **Error format:** API returns `{ messages: { error?: string, [field]: string } }` — handle accordingly.
 - **Image uploads:** Flow is temp upload → attach to entity. Server stores files in `uploads/` directory.
 - **Map:** Leaflet via `react-leaflet` with Leaflet.heat for heatmaps. Map components must be dynamically imported (`next/dynamic` with `ssr: false`) because Leaflet requires `window`.
+- **Categories:** there is no `category` table. The server only whitelists the keys (`server/app/Config/Categories.php`, `in_list` validation) and returns the key (`category: "waterfall"`); there is no categories listing endpoint and no `/categories` page — the filter on `/places` and the category icons on cards are the way into a category. The catalogue is on the client: keys and icons in `client/utils/categories.ts` (`ApiModel.Categories`), texts in `public/locales/<lang>/common.json` under `categoryCatalogue.<name>` (`title` label, `landing` page name, `content` intro). Adding a category touches the enum, an icon, both locales and the server config.
 
 ## Environment
 

@@ -93,42 +93,6 @@ class PlacesModel extends ApplicationBaseModel
     }
 
     /**
-     * Count the number of non-deleted places for a given category slug.
-     *
-     * @param string $category
-     * @return int|string
-     */
-    public function getCountPlacesByCategory(string $category): int|string
-    {
-        return $this
-            ->select('id')
-            ->where('category', $category)
-            ->countAllResults();
-    }
-
-    /**
-     * Find the most-viewed place in a category that has at least one photo.
-     * Returns only id and photos columns, sufficient for cover URL generation.
-     *
-     * @param string $category
-     * @return object|null
-     */
-    public function getCoverPlaceByCategory(string $category): ?object
-    {
-        return $this->db->query("
-            SELECT p.id, p.photos
-            FROM places p
-            LEFT JOIN places_views_log pvl ON pvl.place_id = p.id
-            WHERE p.category = ?
-              AND p.photos > 0
-              AND p.deleted_at IS NULL
-            GROUP BY p.id, p.photos
-            ORDER BY SUM(pvl.count) DESC
-            LIMIT 1
-        ", [$category])->getRowObject() ?: null;
-    }
-
-    /**
      * Build a Haversine distance SELECT expression for use in queries.
      *
      * Returns an empty string when either coordinate is missing. The returned
@@ -149,7 +113,7 @@ class PlacesModel extends ApplicationBaseModel
 
     /**
      * Fetch a single place record by ID, including joined user, location,
-     * and category data, plus an optional Haversine distance expression.
+     * and location data, plus an optional Haversine distance expression.
      *
      * @param string $id          Place primary key.
      * @param string $distanceSQL Optional distance SELECT fragment from makeDistanceSQL().
@@ -169,12 +133,10 @@ class PlacesModel extends ApplicationBaseModel
                 location_localities.title_en as city_en, location_localities.title_ru as city_ru,
                 slug_country.slug as country_slug, slug_region.slug as region_slug,
                 slug_district.slug as district_slug, slug_locality.slug as city_slug,
-                category.title_ru as category_ru, category.title_en as category_en,
                 places.visit_radius_m, places.verification_exempt' . $distanceSQL
             )
             // The place page is the only reader that needs the author — list rows do not
             ->join('users', 'places.user_id = users.id', 'left')
-            ->join('category', 'places.category = category.name', 'left')
             ->join('location_countries', 'location_countries.id = places.country_id', 'left')
             ->join('location_regions', 'location_regions.id = places.region_id', 'left')
             ->join('location_districts', 'location_districts.id = places.district_id', 'left')
@@ -208,8 +170,7 @@ class PlacesModel extends ApplicationBaseModel
             location_districts.title_en as district_en, location_districts.title_ru as district_ru,
             location_localities.title_en as city_en, location_localities.title_ru as city_ru,
             slug_country.slug as country_slug, slug_region.slug as region_slug,
-            slug_district.slug as district_slug, slug_locality.slug as city_slug,
-            category.title_en as category_en, category.title_ru as category_ru' . $distanceSQL
+            slug_district.slug as district_slug, slug_locality.slug as city_slug' . $distanceSQL
         )
         ->join('users', 'places.user_id = users.id', 'left')
         ->join('location_countries', 'location_countries.id = places.country_id', 'left')
@@ -219,8 +180,7 @@ class PlacesModel extends ApplicationBaseModel
         ->join('location_slugs slug_country', "slug_country.type = 'country' AND slug_country.entity_id = places.country_id", 'left')
         ->join('location_slugs slug_region', "slug_region.type = 'region' AND slug_region.entity_id = places.region_id", 'left')
         ->join('location_slugs slug_district', "slug_district.type = 'district' AND slug_district.entity_id = places.district_id", 'left')
-        ->join('location_slugs slug_locality', "slug_locality.type = 'locality' AND slug_locality.entity_id = places.locality_id", 'left')
-        ->join('category', 'places.category = category.name', 'left');
+        ->join('location_slugs slug_locality', "slug_locality.type = 'locality' AND slug_locality.entity_id = places.locality_id", 'left');
 
         return $this;
     }

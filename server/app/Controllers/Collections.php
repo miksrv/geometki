@@ -169,7 +169,6 @@ class Collections extends ResourceController
                 $place->comments = (int) $place->comments;
                 $place->bookmarks = (int) $place->bookmarks;
                 $place->title    = $placeContent->title($place->id);
-                $place->category = $formatter->formatCategory($place, $locale);
                 $place->note     = $notes[$place->id] ?? null;
 
                 $cover = $formatter->formatCover($place->id, (int) $place->photos);
@@ -694,7 +693,6 @@ class Collections extends ResourceController
             $place->comments  = (int) $place->comments;
             $place->bookmarks = (int) $place->bookmarks;
             $place->title     = $placeContent->title($place->id);
-            $place->category  = $formatter->formatCategory($place, $locale);
 
             $cover = $formatter->formatCover($place->id, (int) $place->photos);
             if ($cover) {

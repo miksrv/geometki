@@ -16,7 +16,7 @@ class LocationSlugs extends BaseConfig
      * segments that would otherwise collide with a location slug. Collected
      * from client/pages (top-level and places/-level files) and
      * server/app/Config/Routes.php. category slugs are reserved too, but
-     * those are read live from the `category` table, not listed here.
+     * those come from Config\Categories::$names, not listed here.
      */
     public array $reservedWords = [
         // client/pages top level + places/, search/, collections/, users/, admin/

@@ -110,12 +110,8 @@ $routes->options('stats', static function () {});
 
 /** Categories Controller **/
 $routes->group('categories', static function ($routes) {
-    $routes->get('/', 'Categories::list');
-    $routes->get('top', 'Categories::top');
     $routes->get('(:segment)/locations', 'Categories::locations/$1');
 
-    $routes->options('/', static function () {});
-    $routes->options('top', static function () {});
     $routes->options('(:segment)/locations', static function () {});
 });
 

@@ -2,7 +2,6 @@
 
 namespace App\Controllers;
 
-use App\Models\CategoryModel;
 use App\Models\LocationCountriesModel;
 use App\Models\LocationDistrictsModel;
 use App\Models\LocationLegacyIdsModel;
@@ -90,23 +89,21 @@ class Locations extends ResourceController
             return $this->failValidationErrors(lang('Locations.typeInvalid'));
         }
 
-        $locale    = $this->request->getLocale();
         $threshold = config('LocationSlugs')->indexThreshold;
         $column    = self::COLUMNS[$type];
 
         $rows = Database::connect()
             ->table('places p')
-            ->select("category.name, category.title_$locale as title, COUNT(p.id) as count")
-            ->join('category', 'category.name = p.category', 'inner')
+            ->select('p.category as name, COUNT(p.id) as count')
             ->where("p.{$column}", $id)
             ->where('p.deleted_at IS NULL', null, false)
-            ->groupBy('category.name')
+            ->where('p.category IS NOT NULL', null, false)
+            ->groupBy('p.category')
             ->orderBy('count', 'DESC')
             ->get()->getResult();
 
         $items = array_map(static fn ($row) => [
             'name'      => $row->name,
-            'title'     => $row->title,
             'count'     => (int) $row->count,
             'indexable' => (int) $row->count >= $threshold,
         ], $rows);
@@ -178,7 +175,6 @@ class Locations extends ResourceController
             return $this->failValidationErrors(lang('Locations.typeInvalid'));
         }
 
-        $locale    = $this->request->getLocale();
         $threshold = config('LocationSlugs')->indexThreshold;
         $column    = self::COLUMNS[$type];
         $db        = Database::connect();
@@ -188,11 +184,11 @@ class Locations extends ResourceController
             ->countAllResults();
 
         $topCategories = $db->table('places p')
-            ->select("category.name, category.title_$locale as title, COUNT(p.id) as count")
-            ->join('category', 'category.name = p.category', 'inner')
+            ->select('p.category as name, COUNT(p.id) as count')
             ->where("p.{$column}", $id)
             ->where('p.deleted_at IS NULL', null, false)
-            ->groupBy('category.name')
+            ->where('p.category IS NOT NULL', null, false)
+            ->groupBy('p.category')
             ->orderBy('count', 'DESC')
             ->limit(5)
             ->get()->getResult();
@@ -207,7 +203,6 @@ class Locations extends ResourceController
             'indexable'   => $placesCount >= $threshold,
             'categories'  => array_map(static fn ($row) => [
                 'name'  => $row->name,
-                'title' => $row->title,
                 'count' => (int) $row->count,
             ], $topCategories),
             'lastAddedAt' => $lastAdded && $lastAdded->last_added
@@ -239,13 +234,11 @@ class Locations extends ResourceController
             }
         }
 
-        // A category "slug" is just its name (category.name), not a row in
+        // A category "slug" is just its key (Config\Categories), not a row in
         // location_slugs — categories are reserved words in the slug
         // namespace (Config\LocationSlugs::$reservedWords), not part of it.
-        $category = (new CategoryModel())->select("name, title_$locale as title")->find($slug);
-
-        if ($category) {
-            return $this->respond(['type' => 'category', 'name' => $category->name, 'title' => $category->title]);
+        if (config('Categories')->has($slug)) {
+            return $this->respond(['type' => 'category', 'name' => $slug]);
         }
 
         return $this->failNotFound(lang('Locations.slugNotFound'));

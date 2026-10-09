@@ -172,7 +172,6 @@ class Search extends ResourceController
                     $place->comments  = (int) $place->comments;
                     $place->bookmarks = (int) $place->bookmarks;
                     $place->title     = $placeContent->title($place->id);
-                    $place->category  = $formatter->formatCategory($place, $locale);
 
                     if ($coordinatesAvailable && isset($place->distance) && $place->distance !== null) {
                         $place->distance = $formatter->formatDistance($place->distance);

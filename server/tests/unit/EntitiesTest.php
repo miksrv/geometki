@@ -1,7 +1,6 @@
 <?php
 
 use App\Entities\ActivityEntity;
-use App\Entities\CategoryEntity;
 use App\Entities\CommentEntity;
 use App\Entities\LocationCountryEntity;
 use App\Entities\PhotoEntity;
@@ -443,35 +442,6 @@ final class EntitiesTest extends CIUnitTestCase
 
         $this->assertIsInt($activity->views);
         $this->assertSame(7, $activity->views);
-    }
-
-    // =========================================================================
-    // CategoryEntity
-    // =========================================================================
-
-    public function testCategoryEntityCanBeInstantiated(): void
-    {
-        $category = new CategoryEntity();
-
-        $this->assertInstanceOf(CategoryEntity::class, $category);
-    }
-
-    public function testCategoryEntityFillSetsBilingualTitlesAndContent(): void
-    {
-        $category = new CategoryEntity();
-        $category->fill([
-            'name'       => 'historic',
-            'title_ru'   => 'Историческое',
-            'title_en'   => 'Historic',
-            'content_ru' => 'Описание на русском',
-            'content_en' => 'Description in English',
-        ]);
-
-        $this->assertSame('historic', $category->name);
-        $this->assertSame('Историческое', $category->title_ru);
-        $this->assertSame('Historic', $category->title_en);
-        $this->assertSame('Описание на русском', $category->content_ru);
-        $this->assertSame('Description in English', $category->content_en);
     }
 
     // =========================================================================

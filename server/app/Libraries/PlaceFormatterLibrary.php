@@ -77,21 +77,6 @@ class PlaceFormatterLibrary
     }
 
     /**
-     * Build the category array from raw category columns.
-     *
-     * @param object $row
-     * @param string $locale
-     * @return array
-     */
-    public function formatCategory(object $row, string $locale): array
-    {
-        return [
-            'name'  => $row->category,
-            'title' => $row->{"category_$locale"},
-        ];
-    }
-
-    /**
      * Return cover paths if the cover file exists, otherwise null.
      *
      * @param string $placeId
@@ -149,7 +134,7 @@ class PlaceFormatterLibrary
     public function cleanupFields(object $row): void
     {
         unset(
-            $row->address_en, $row->address_ru, $row->category_en, $row->category_ru,
+            $row->address_en, $row->address_ru,
             $row->user_id, $row->user_name, $row->user_avatar,
             $row->country_id, $row->country_en, $row->country_ru, $row->country_slug,
             $row->region_id, $row->region_en, $row->region_ru, $row->region_slug,

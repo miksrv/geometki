@@ -4,7 +4,6 @@ namespace App\Controllers;
 
 use App\Libraries\AvatarLibrary;
 use App\Libraries\PlacesContent;
-use App\Models\CategoryModel;
 use App\Models\ActivityModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -154,9 +153,6 @@ class Activity extends ResourceController
      */
     protected function groupSimilarActivities(array $activityData, ?PlacesContent $placeContent = null): array
     {
-        $categoriesModel = new CategoryModel();
-        $categoriesData  = $categoriesModel->findAll();
-
         $groupData = [];
 
         if (empty($activityData)) {
@@ -219,27 +215,20 @@ class Activity extends ResourceController
                 'photos'  => []
             ];
 
-            if ($placeContent && $categoriesData) {
-                $findCategory = array_search($item->category, array_column($categoriesData, 'name'));
+            if ($placeContent && $item->category) {
+                $coverPreviewFile = UPLOAD_PHOTOS . $item->place_id . '/cover_preview.jpg';
 
-                if ($findCategory !== false) {
-                    $coverPreviewFile = UPLOAD_PHOTOS . $item->place_id . '/cover_preview.jpg';
-
-                    $currentGroup->place = (object) [
-                        'id'         => $item->place_id,
-                        'slug'       => $item->place_slug ?? null,
-                        'title'      => $placeContent->get($item->place_id, 'title', $item->created_at),
-                        'content'    => $placeContent->get($item->place_id, 'content', $item->created_at),
-                        'difference' => (int) $placeContent->get($item->place_id, 'delta', $item->created_at),
-                        'category'   => (object) [
-                            'name'  => $categoriesData[$findCategory]->name,
-                            'title' => $categoriesData[$findCategory]->title,
-                        ],
-                        'cover'      => file_exists($coverPreviewFile) ? (object) [
-                            'preview' => PATH_PHOTOS . $item->place_id . '/cover_preview.jpg',
-                        ] : null,
-                    ];
-                }
+                $currentGroup->place = (object) [
+                    'id'         => $item->place_id,
+                    'slug'       => $item->place_slug ?? null,
+                    'title'      => $placeContent->get($item->place_id, 'title', $item->created_at),
+                    'content'    => $placeContent->get($item->place_id, 'content', $item->created_at),
+                    'difference' => (int) $placeContent->get($item->place_id, 'delta', $item->created_at),
+                    'category'   => $item->category,
+                    'cover'      => file_exists($coverPreviewFile) ? (object) [
+                        'preview' => PATH_PHOTOS . $item->place_id . '/cover_preview.jpg',
+                    ] : null,
+                ];
             }
 
             if ($item->user_id) {

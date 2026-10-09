@@ -312,10 +312,7 @@ List places with optional filtering, sorting, and pagination.
       "bookmarks": 7,
       "title": "Waterfall Gadelsha",
       "content": "Beautiful waterfall in the southern Urals...",
-      "category": {
-        "name": "nature",
-        "title": "Nature"
-      },
+      "category": "nature",
       "author": {
         "id": "u1u2u3u4",
         "name": "traveler42",
@@ -377,10 +374,7 @@ Get full details for a single place by ID. Increments the view counter.
   "created": "2024-03-15T09:30:00+00:00",
   "title": "Waterfall Gadelsha",
   "content": "Beautiful waterfall in the southern Urals with a 15m drop...",
-  "category": {
-    "name": "nature",
-    "title": "Nature"
-  },
+  "category": "nature",
   "author": {
     "id": "u1u2u3u4",
     "name": "traveler42",
@@ -427,7 +421,7 @@ Create a new place.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | title | string | Yes | Place title (8–200 chars) |
-| category | string | Yes | Category name (must exist in `category` table) |
+| category | string | Yes | Category key — one of `Config\Categories::$names` (see the Categories section) |
 | lat | float | Yes | Latitude (min 3 chars) |
 | lon | float | Yes | Longitude (min 3 chars) |
 | content | string | No | Description text (HTML stripped) |
@@ -1458,10 +1452,7 @@ List site-wide activity feed, grouped by user and place. Results are paginated a
         "title": "Waterfall Gadelsha",
         "content": "Beautiful waterfall...",
         "difference": 0,
-        "category": {
-          "name": "nature",
-          "title": "Nature"
-        }
+        "category": "nature"
       },
       "photos": [
         {
@@ -1832,7 +1823,7 @@ The client should 301 to `/places/{redirect}` (or `/places/{redirect}/{category}
 **Response — a slug that is a category name**, so the client can resolve any first path segment with one call:
 
 ```json
-{ "type": "category", "name": "cave", "title": "Пещеры" }
+{ "type": "category", "name": "cave" }
 ```
 
 **Response — `legacyId` lookup:** the same "a location" shape as above, resolved via `location_legacy_ids` (or the id itself, if it was never merged) — used to 301 old `/places?region=2`-style query URLs.
@@ -1862,9 +1853,9 @@ Place categories present in a location — any district/locality below it is inc
 ```json
 {
   "items": [
-    { "name": "cave", "title": "Пещеры", "count": 18, "indexable": true },
-    { "name": "mountain", "title": "Горы", "count": 15, "indexable": true },
-    { "name": "abandoned", "title": "Заброшенные места", "count": 4, "indexable": false }
+    { "name": "cave", "count": 18, "indexable": true },
+    { "name": "mountain", "count": 15, "indexable": true },
+    { "name": "abandoned", "count": 4, "indexable": false }
   ]
 }
 ```
@@ -1919,8 +1910,8 @@ Data for the location page's auto-generated description (features/20-location-se
   "placesCount": 132,
   "indexable": true,
   "categories": [
-    { "name": "cave", "title": "Пещеры", "count": 18 },
-    { "name": "mountain", "title": "Горы", "count": 15 }
+    { "name": "cave", "count": 18 },
+    { "name": "mountain", "count": 15 }
   ],
   "lastAddedAt": "2026-09-30T14:22:00+00:00"
 }
@@ -1935,37 +1926,6 @@ Data for the location page's auto-generated description (features/20-location-se
 ---
 
 ### Categories
-
-#### `GET /categories`
-
-List all place categories. Optionally includes a count of places per category.
-
-**Auth required:** No
-
-**Query parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| places | boolean | No | Set `true` to include place counts and category descriptions |
-
-**Response:**
-
-```json
-{
-  "items": [
-    {
-      "name": "nature",
-      "title": "Nature",
-      "content": "Natural landscapes and features",
-      "count": 342
-    }
-  ]
-}
-```
-
-Note: `content` and `count` are only included when `places=true`.
-
----
 
 #### `GET /categories/:name/locations`
 
@@ -2142,6 +2102,6 @@ These are CLI-only commands run via `php index.php system <command>`. They are n
 ## Notes
 
 - **IDs** — Place and user IDs are alphanumeric strings (not sequential integers). Place IDs are 13 characters long.
-- **Locale** — The `Accept-Language` header (or CI4's locale detection) selects between Russian (`ru`, default) and English (`en`). Translated fields such as `title`, `content`, `category.title`, and address names respond in the detected locale.
+- **Locale** — The `Accept-Language` header (or CI4's locale detection) selects between Russian (`ru`, default) and English (`en`). Translated fields such as `title`, `content`, and address names respond in the detected locale (a place's `category` is a language-neutral key; the client translates it).
 - **Image paths** — All image paths in responses are relative paths on the server. Prepend the API base URL to construct absolute URLs.
 - **Distance** — The `distance` field (km) uses the Haversine formula. It is only returned when either the request includes `lat`/`lon` query parameters or the session has a stored location from `PUT /location`.
