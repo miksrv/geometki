@@ -1,0 +1,25 @@
+@use '../../../styles/variables' as variables
+
+.list
+    display: flex
+    flex-wrap: wrap
+    gap: 8px
+
+.pill
+    display: inline-flex
+    align-items: center
+    gap: 4px
+    padding: 6px 12px
+    border-radius: var(--border-radius)
+    background: var(--surface-2)
+    color: var(--text-color-primary)
+    font-size: variables.$fontSizeParagraph
+    text-decoration: none
+
+    &:hover
+        background: var(--color-main-background)
+        color: var(--color-main)
+
+.count
+    color: var(--text-color-secondary)
+    font-size: variables.$fontSizeCaption

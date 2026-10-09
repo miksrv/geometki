@@ -9,6 +9,7 @@ import { ApiModel } from '@/api'
 import { CATEGORY_COLORS } from '@/components/shared/category-icon/constants'
 import { IMG_HOST } from '@/config/env'
 import { categoryImage } from '@/utils/categories'
+import { buildCategoryHref, getLandingFlags } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -19,6 +20,7 @@ interface CategoriesListProps {
 
 export const CategoriesList: React.FC<CategoriesListProps> = ({ categories, topCategories }) => {
     const { t } = useTranslation()
+    const landingFlags = getLandingFlags()
 
     const topNames = new Set(topCategories?.map((c) => c.name) ?? [])
     const regularCategories = categories?.filter((c) => !topNames.has(c.name)) ?? []
@@ -68,7 +70,7 @@ export const CategoriesList: React.FC<CategoriesListProps> = ({ categories, topC
 
                                 <div className={styles.topCardContent}>
                                     <Link
-                                        href={`/places?category=${category.name}`}
+                                        href={buildCategoryHref(category.name, landingFlags)}
                                         className={styles.topCardTitle}
                                         title={category.title}
                                     >
@@ -78,7 +80,7 @@ export const CategoriesList: React.FC<CategoriesListProps> = ({ categories, topC
                                         <p className={styles.topCardDescription}>{category.content}</p>
                                     )}
                                     <Link
-                                        href={`/places?category=${category.name}`}
+                                        href={buildCategoryHref(category.name, landingFlags)}
                                         className={styles.topCardButton}
                                         style={{ backgroundColor: color }}
                                     >
@@ -114,7 +116,7 @@ export const CategoriesList: React.FC<CategoriesListProps> = ({ categories, topC
                                     />
                                 </span>
                                 <Link
-                                    href={`/places?category=${category.name}`}
+                                    href={buildCategoryHref(category.name, landingFlags)}
                                     className={styles.categoryTitle}
                                     title={category.title}
                                 >
@@ -124,7 +126,7 @@ export const CategoriesList: React.FC<CategoriesListProps> = ({ categories, topC
                             {category.content && <p className={styles.categoryDescription}>{category.content}</p>}
                             {category.count !== undefined && (
                                 <Link
-                                    href={`/places?category=${category.name}`}
+                                    href={buildCategoryHref(category.name, landingFlags)}
                                     className={styles.categoryButton}
                                     style={{ backgroundColor: color }}
                                 >

@@ -10,7 +10,14 @@ import { CategoryIcon } from '@/components/shared/category-icon'
 import { MediaTile, mediaTileStyles } from '@/components/shared/media-tile'
 import { IMG_HOST } from '@/config/env'
 import { addressToString } from '@/utils/address'
-import { addDecimalPoint, buildPlaceUrl, dateToUnixTime, numberFormatter } from '@/utils/helpers'
+import {
+    addDecimalPoint,
+    buildLocationHref,
+    buildPlaceUrl,
+    dateToUnixTime,
+    getLandingFlags,
+    numberFormatter
+} from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -211,7 +218,14 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                     {address.map((item, i, array) => (
                         <span key={`address${item.type}${place.id}`}>
                             <Link
-                                href={`/places?${item.type}=${item.id}`}
+                                href={
+                                    item.type
+                                        ? buildLocationHref(
+                                              { id: item.id, slug: item.slug, type: item.type },
+                                              getLandingFlags()
+                                          )
+                                        : '/places'
+                                }
                                 title={`${t('all-geotags-at-address')} ${item.name}`}
                             >
                                 {item.name}

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Container, Skeleton } from 'simple-react-ui-kit'
+import { cn, Container, Skeleton } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
 
@@ -23,6 +23,10 @@ interface PlacesMapProps {
     places?: ApiModel.PlaceMark[]
     /** The places are being fetched: keeps the map's place with a placeholder, so the page does not shift */
     loading?: boolean
+    /** ~200px instead of the default 360px (220px on phones) — the landing pages' preview (features/20-location-seo-pages.md) */
+    compact?: boolean
+    /** Appended as a query string on the "Открыть на большой карте" link, after the `#lat,lon,zoom` part (e.g. `?category=cave`) — see `pages/map.tsx` */
+    fullMapQuery?: string
 }
 
 /**
@@ -30,7 +34,7 @@ interface PlacesMapProps {
  * category markers with the usual place popup, in a framed card. The viewport is fitted
  * to all of them; a single place is centred at a city zoom. Renders nothing without places.
  */
-export const PlacesMap: React.FC<PlacesMapProps> = ({ places, loading }) => {
+export const PlacesMap: React.FC<PlacesMapProps> = ({ places, loading, compact, fullMapQuery }) => {
     // Coordinates are numbers in the API types, but guard against decimal strings anyway:
     // `sum + '50.7'` concatenates instead of adding and Leaflet throws on (NaN, NaN).
     // null and '' are skipped before converting, since Number() turns them into 0 (a point off Africa).
@@ -68,8 +72,8 @@ export const PlacesMap: React.FC<PlacesMapProps> = ({ places, loading }) => {
 
     if (!located.length) {
         return loading ? (
-            <Container className={styles.placesMap}>
-                <div className={styles.inner}>
+            <Container className={cn(styles.placesMap)}>
+                <div className={cn(styles.inner, compact && styles.compact)}>
                     <Skeleton style={{ height: '100%', width: '100%' }} />
                 </div>
             </Container>
@@ -78,7 +82,7 @@ export const PlacesMap: React.FC<PlacesMapProps> = ({ places, loading }) => {
 
     return (
         <Container className={styles.placesMap}>
-            <div className={styles.inner}>
+            <div className={cn(styles.inner, compact && styles.compact)}>
                 <InteractiveMap
                     places={located}
                     // A single place has no extent: centre on it; several places: fit them all
@@ -89,7 +93,7 @@ export const PlacesMap: React.FC<PlacesMapProps> = ({ places, loading }) => {
                     minZoom={MIN_ZOOM}
                     scrollWheelZoom={false}
                     controlsSize={'small'}
-                    fullMapLink={center ? `/map#${center[0]},${center[1]},10` : undefined}
+                    fullMapLink={center ? `/map${fullMapQuery ?? ''}#${center[0]},${center[1]},10` : undefined}
                     enableFullScreen={false}
                     enableCategoryControl={false}
                     enableLayersSwitcher={false}

@@ -13,7 +13,7 @@ import { useAppDispatch, useAppSelector } from '@/app/store'
 import { AddToCollectionButton, BookmarkButton, CategoryIcon } from '@/components/shared'
 import { Breadcrumbs } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
-import { dateToUnixTime } from '@/utils/helpers'
+import { buildLocationHref, buildPlacesHref, dateToUnixTime, getLandingFlags } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -31,6 +31,7 @@ interface PlaceHeroProps {
 type PlaceAddress = {
     id?: number
     name?: string
+    slug?: string | null
     type: ApiType.LocationTypes
 }
 
@@ -52,6 +53,7 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
     const [showRemoveDialog, setShowRemoveDialog] = useState<boolean>(false)
 
     const coverHashString = coverHash || dateToUnixTime(place?.updated?.date)
+    const landingFlags = getLandingFlags()
     const placeAddress: PlaceAddress[] = useMemo(() => {
         const addressTypes: ApiType.LocationTypes[] = ['country', 'region', 'district', 'locality']
         const address: PlaceAddress[] = []
@@ -61,6 +63,7 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                 address.push({
                     id: place?.address[type]?.id,
                     name: place?.address[type]?.name,
+                    slug: place?.address[type]?.slug,
                     type
                 })
             }
@@ -68,6 +71,11 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
 
         return address
     }, [place?.address])
+
+    // The most specific level with an id — last in `placeAddress` (ordered country → locality)
+    const mostSpecificAddress = [...placeAddress]
+        .reverse()
+        .find((item): item is PlaceAddress & { id: number } => !!item.id)
 
     const handleEditPlaceClick = (event: React.MouseEvent) => {
         if (!isAuth) {
@@ -110,7 +118,29 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                     links={[
                         { link: '/places', text: t('nav-places', { defaultValue: 'Места' }) },
                         ...(place?.category
-                            ? [{ link: `/places?category=${place.category.name}`, text: place.category.title ?? '' }]
+                            ? [
+                                  {
+                                      // The most specific location of the place + the category
+                                      // (features/20-location-seo-pages.md): with the relevant
+                                      // flags off this reduces to the plain category link.
+                                      link: buildPlacesHref(
+                                          {
+                                              category: place.category.name,
+                                              defaultOrder: ApiType.SortOrders.DESC,
+                                              defaultSort: ApiType.SortFields.Trending,
+                                              location: mostSpecificAddress
+                                                  ? {
+                                                        id: mostSpecificAddress.id,
+                                                        slug: mostSpecificAddress.slug,
+                                                        type: mostSpecificAddress.type
+                                                    }
+                                                  : null
+                                          },
+                                          landingFlags
+                                      ).href,
+                                      text: place.category.title ?? ''
+                                  }
+                              ]
                             : [])
                     ]}
                 />
@@ -198,7 +228,14 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                             {placeAddress.map((address, i) => (
                                 <span key={`address${address.type}`}>
                                     <Link
-                                        href={`/places?${address.type}=${address.id}`}
+                                        href={
+                                            address.id
+                                                ? buildLocationHref(
+                                                      { id: address.id, slug: address.slug, type: address.type },
+                                                      landingFlags
+                                                  )
+                                                : '/places'
+                                        }
                                         title={`${t('all-geotags-at-address')} ${address.name}`}
                                     >
                                         {address.name}

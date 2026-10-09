@@ -27,10 +27,12 @@ import {
     PlaceVisited
 } from '@/sections/place'
 import {
+    buildPlacesHref,
     buildPlaceUrl,
     encodeQueryData,
     formatDateISO,
     formatDateUTC,
+    getLandingFlags,
     parsePlaceId,
     removeMarkdown,
     truncateText
@@ -80,6 +82,12 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
     const [localPhotos, setLocalPhotos] = useState<ApiModel.Photo[]>(photoList ?? [])
     const [uploadingPhotos, setUploadingPhotos] = useState<string[]>()
     const [nearbyPhotosOpen, setNearbyPhotosOpen] = useState<boolean>(false)
+
+    const landingFlags = getLandingFlags()
+    // The most specific level of the place's address — same pairing as the visible
+    // breadcrumbs (PlaceHero): "category" links to the location × category landing page.
+    const mostSpecificAddress =
+        place?.address?.locality ?? place?.address?.district ?? place?.address?.region ?? place?.address?.country
 
     // Only our own photos go to the structured data and the link previews, not the linked ones
     const ownPhotos = useMemo(() => photoList?.filter(({ external }) => !external), [photoList])
@@ -151,7 +159,22 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                     ? [
                           {
                               '@type': 'ListItem',
-                              item: `${canonicalUrl}places?category=${place.category.name}`,
+                              item: `${canonicalUrl}${buildPlacesHref(
+                                  {
+                                      category: place.category.name,
+                                      defaultOrder: ApiType.SortOrders.DESC,
+                                      defaultSort: ApiType.SortFields.Trending,
+                                      location:
+                                          mostSpecificAddress?.id && mostSpecificAddress.type
+                                              ? {
+                                                    id: mostSpecificAddress.id,
+                                                    slug: mostSpecificAddress.slug,
+                                                    type: mostSpecificAddress.type
+                                                }
+                                              : null
+                                  },
+                                  landingFlags
+                              ).href.replace(/^\//, '')}`,
                               name: place.category.title,
                               position: 3
                           }

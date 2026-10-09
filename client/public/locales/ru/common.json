@@ -584,5 +584,16 @@
     "nearby-photos_unlink": "Убрать из фотографий места",
     "nearby-photos_wider": "Искать дальше (до {{radius}})",
     "nearby-photos_zoom": "Посмотреть",
-    "nearby-photos_km": "км"
+    "nearby-photos_km": "км",
+    "landing-description-more": "Подробнее",
+    "landing-title-location": "Интересные места: {{location}}",
+    "landing-children-title": "Районы и города",
+    "landing-title-pair": "{{category}} — {{location}}",
+    "landing-description-pair": "{{count}} мест — {{location}}",
+    "landing-description-places": "{{count}} мест",
+    "landing-description-top-categories": "Основные категории: {{list}}",
+    "landing-description-last-added": "Последнее добавлено: {{date}}",
+    "landing-chips-title-pair": "Другие категории здесь",
+    "landing-related-by-region": "{{category}} по регионам",
+    "landing-related-nearby": "{{category}} рядом"
 }

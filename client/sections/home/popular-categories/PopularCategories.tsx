@@ -8,6 +8,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { ApiModel } from '@/api'
 import { CATEGORY_COLORS } from '@/components/shared/category-icon/constants'
 import { categoryImage } from '@/utils/categories'
+import { buildCategoryHref, getLandingFlags } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -41,7 +42,7 @@ export const PopularCategories: React.FC<PopularCategoriesProps> = ({ categories
                     return (
                         <Link
                             key={category.name}
-                            href={`/places?category=${category.name}`}
+                            href={buildCategoryHref(category.name, getLandingFlags())}
                             className={styles.card}
                             title={category.title}
                             style={{

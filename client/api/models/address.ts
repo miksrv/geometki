@@ -4,6 +4,8 @@ export type AddressItem = {
     id: number
     name: string
     type?: ApiType.LocationTypes
+    /** The landing-page path segment for this location (features/20-location-seo-pages.md) — `null`/absent until a slug has been assigned */
+    slug?: string | null
 }
 
 export type Address = {

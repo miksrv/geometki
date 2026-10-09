@@ -1,0 +1,51 @@
+@use '../../../styles/variables' as variables
+
+.description
+    flex: 1
+    min-width: 0
+
+.text
+    margin: 0
+    color: var(--text-color-secondary)
+    font-size: variables.$fontSizeParagraph
+    line-height: 1.5
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: -webkit-box
+        -webkit-line-clamp: 3
+        -webkit-box-orient: vertical
+        overflow: hidden
+
+.expanded
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: block
+        -webkit-line-clamp: unset
+        overflow: visible
+
+.more
+    display: none
+    margin-top: 8px
+    padding: 0
+    border: 0
+    background: none
+    color: var(--color-main)
+    font-size: variables.$fontSizeParagraph
+    cursor: pointer
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: inline-block
+
+.intro
+    display: flex
+    align-items: flex-start
+    gap: 16px
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-direction: column
+
+.introMap
+    width: 340px
+    flex-shrink: 0
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        width: 100%

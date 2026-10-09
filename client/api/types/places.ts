@@ -21,8 +21,11 @@ export interface ListRequest {
     region?: number | null
     district?: number | null
     locality?: number | null
+    /** A location slug (any level) — see `GET /locations/resolve`. Applied in addition to the id-based params above */
+    location?: string | null
     limit?: number
     offset?: number
+    /** A single category name, or several joined with a comma (features/20-location-seo-pages.md: 2+ categories stay a query param) */
     category?: string | null
     excludePlaces?: string[]
 }

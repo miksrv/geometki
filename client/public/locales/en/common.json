@@ -583,5 +583,16 @@
     "nearby-photos_unlink": "Remove from the place photos",
     "nearby-photos_wider": "Search farther (within {{radius}})",
     "nearby-photos_zoom": "View",
-    "nearby-photos_km": "km"
+    "nearby-photos_km": "km",
+    "landing-description-more": "Show more",
+    "landing-title-location": "Interesting places: {{location}}",
+    "landing-children-title": "Districts and localities",
+    "landing-title-pair": "{{category}} — {{location}}",
+    "landing-description-pair": "{{count}} places in {{location}}",
+    "landing-description-places": "{{count}} places",
+    "landing-description-top-categories": "Top categories: {{list}}",
+    "landing-description-last-added": "Last added: {{date}}",
+    "landing-chips-title-pair": "Other categories here",
+    "landing-related-by-region": "{{category}} by region",
+    "landing-related-nearby": "{{category}} nearby"
 }

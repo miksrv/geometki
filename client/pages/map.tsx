@@ -17,7 +17,7 @@ import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { getMapSettings, saveMapSettings } from '@/components/map/mapSettings'
 import { AppLayout, MapObjectsTypeEnum } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
-import { round } from '@/utils/helpers'
+import { getLandingFlags, round } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
@@ -141,9 +141,25 @@ const MapPage: NextPage<object> = () => {
         saveMapSettings({ categories: categories ?? [] })
     }
 
-    // After the mount: the page is rendered on the server too, where there is no localStorage
+    // After the mount: the page is rendered on the server too, where there is no localStorage.
+    // `?category=` (set by the landing pages' "Открыть на большой карте" button, features/20-location-seo-pages.md)
+    // overrides the saved filter for that one visit — it is not persisted to mapSettings. Gated
+    // behind the landing flags so a stray `?category=` leaves today's behaviour untouched while
+    // every flag is off, same as everywhere else this feature changes a URL.
     useEffect(() => {
-        const initialCategories = getMapSettings().categories ?? Object.values(ApiModel.Categories)
+        const landingFlags = getLandingFlags()
+        const queryCategories =
+            landingFlags.categories || landingFlags.locations || landingFlags.combinations
+                ? (Array.isArray(router.query.category) ? router.query.category[0] : router.query.category)
+                      ?.split(',')
+                      .filter((name): name is ApiModel.Categories =>
+                          Object.values(ApiModel.Categories).includes(name as ApiModel.Categories)
+                      )
+                : undefined
+
+        const initialCategories = queryCategories?.length
+            ? queryCategories
+            : (getMapSettings().categories ?? Object.values(ApiModel.Categories))
 
         setCategories(initialCategories)
         setMapCategories(initialCategories)

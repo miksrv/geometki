@@ -70,6 +70,16 @@ re-implement them.
   is the author's, but it is not numbered — numbers would read as a route. In edit mode
   the same tiles get small move/remove buttons over the top-right corner of the cover
   (`PlaceCard` `actions`), and a full-width "Добавить места" button follows the grid.
+- **Places listing / landing pages** (`pages/places/index.tsx` for `/places`, `pages/places/landing/[...slug].tsx`
+  for `/places/{category}`, `/places/{location}` and `/places/{location}/{category}` behind the
+  `NEXT_PUBLIC_LANDING_*` flags — see CLAUDE.md → Environment): one skeleton, `PageHeader` →
+  (page 1 only) `PlacesLandingIntro` — description (`PlacesLandingDescription`, collapses to
+  3 lines behind "Подробнее" on phones) beside `LandingMapPreview` on location/pair pages, the
+  description full-width with no map on `/places` and category pages → the filter panel
+  (`PlaceFilterPanel`, unchanged) → `MediaTileGrid` of `PlaceCard` tiles + pagination → (page 1
+  only) the `LocationLinkList` perelinking blocks. Filter changes build the canonical path
+  (`utils/placesLanding.ts` `buildPlacesHref`) instead of `/places?…` once the relevant flag
+  is on.
 - **Containers** (`Container` from the kit) are for content blocks with a heading inside
   the page body: description, comments, places of a collection, a form. They carry a
   `title` and an optional `action` (`mode="link"` buttons). Page chrome — the page header,
@@ -90,15 +100,16 @@ list title and a hero title read as the same level, above the prose headings and
 
 Breadcrumbs appear only on nested pages, where the app bar cannot show where you are:
 
-| Page                                                                                | Breadcrumbs            |
-| ----------------------------------------------------------------------------------- | ---------------------- |
-| Section roots: places, collections, people, map, activity, categories, tags, search | none                   |
-| Filtered places list (`/places?category=…`)                                         | Места › parent filters |
-| Place page                                                                          | Места › category       |
-| Collection page                                                                     | Коллекции              |
-| Create / edit place                                                                 | Места (› place)        |
-| User sub-pages (places, photos, bookmarks, …), settings                             | Люди › name            |
-| Admin sub-pages                                                                     | admin section          |
+| Page                                                                                                                                                                       | Breadcrumbs                         |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| Section roots: places, collections, people, map, activity, categories, tags, search                                                                                        | none                                |
+| Filtered places list (`/places?category=…`)                                                                                                                                | Места › parent filters              |
+| Category / location / pair landing (`/places/{category}`, `/places/{location}`, `/places/{location}/{category}`, behind the `NEXT_PUBLIC_LANDING_*` flags — see CLAUDE.md) | Места › location parents › location |
+| Place page                                                                                                                                                                 | Места › category                    |
+| Collection page                                                                                                                                                            | Коллекции                           |
+| Create / edit place                                                                                                                                                        | Места (› place)                     |
+| User sub-pages (places, photos, bookmarks, …), settings                                                                                                                    | Люди › name                         |
+| Admin sub-pages                                                                                                                                                            | admin section                       |
 
 The trail starts at the section (the logo is the way home) and stops at the parent; the
 current page is the h1 next to it, so it is not repeated. There is no "back" button: the
@@ -156,11 +167,35 @@ zoom, no layer switcher or category filter. Renders nothing without places. On t
 pages it sits under the tabs, so the tabs keep their place when switching to a tab
 without a map.
 
+`compact` (200px instead of 360/220px) and `fullMapQuery` (a query string appended before
+the `#lat,lon,zoom` hash of the "Открыть на большой карте" link, e.g. `?category=cave` — see
+`pages/map.tsx`) are additive props for `LandingMapPreview` below; the collection/user-pages
+usage is unaffected.
+
+### `LandingMapPreview` (`components/shared/landing-map-preview`)
+
+The location/pair landing page's compact map block (features/20-location-seo-pages.md,
+"Шаблон страницы → Карта"): wraps `PlacesMap` (`compact`) behind an `IntersectionObserver`
+gate, so Leaflet is only loaded once the block scrolls into view — the mobile first screen
+never pays for it. Takes the page's own place list (already fetched for the grid) as
+markers; renders nothing without placed places, same as `PlacesMap`. Category-only and
+`/places` pages have no map — places there are nationwide, a preview would not mean
+anything.
+
+### `LocationLinkList` (`components/shared/location-link-list`)
+
+A titled `Container` of link pills with an optional count — one component behind all four
+perelinking blocks of the landing template: category chips, child locations, "this
+category by region", "this category nearby" (features/20-location-seo-pages.md, "Шаблон
+страницы"). Renders nothing without items.
+
 ### `CategoryIcon` (`components/shared/category-icon`)
 
 A place's category as its square icon (`public/images/poi/<category>.png`: a flat
 rounded square, 12% corner radius like the logo, white pictogram, no border), linking to
-`/places?category=…` with the category name in a kit `Tooltip` and as the link's name.
+the category (`/places?category=…`, or `/places/{category}` once `NEXT_PUBLIC_LANDING_CATEGORIES`
+is on — see CLAUDE.md → Environment and `utils/placesLanding.ts`) with the category name in
+a kit `Tooltip` and as the link's name.
 One colour per category (`CATEGORY_COLORS`, the same hex as the icon background) also
 tints category blocks on the home and categories pages. Sizes in use: 16 (cards, search
 suggestions; small on purpose, so the category does not outweigh the cover and title),

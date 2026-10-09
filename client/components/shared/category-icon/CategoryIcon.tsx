@@ -6,6 +6,7 @@ import Link from 'next/link'
 
 import { ApiModel } from '@/api'
 import { categoryImage } from '@/utils/categories'
+import { buildCategoryHref, getLandingFlags } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -44,7 +45,7 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ category, size = 20,
     return (
         <Tooltip content={category.title}>
             <Link
-                href={`/places?category=${category.name}`}
+                href={buildCategoryHref(category.name, getLandingFlags())}
                 aria-label={category.title}
                 className={cn(styles.categoryIcon, className)}
             >

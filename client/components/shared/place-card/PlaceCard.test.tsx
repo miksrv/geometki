@@ -58,8 +58,10 @@ jest.mock('@/utils/address', () => ({
 
 jest.mock('@/utils/helpers', () => ({
     addDecimalPoint: jest.fn((value: number) => value.toFixed(1)),
+    buildLocationHref: jest.fn(({ type, id }: { type: string; id: number }) => `/places?${type}=${id}`),
     buildPlaceUrl: jest.requireActual('@/utils/place').buildPlaceUrl,
     dateToUnixTime: jest.fn().mockReturnValue(1700000000),
+    getLandingFlags: jest.fn().mockReturnValue({ categories: false, combinations: false, locations: false }),
     numberFormatter: jest.fn((value: number) => String(value))
 }))
 
