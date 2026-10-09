@@ -65,4 +65,21 @@ final class LocationHelperTest extends CIUnitTestCase
     {
         $this->assertNotSame(normalizeLocationName('Пушкино'), normalizeLocationName('Пушкино-2'));
     }
+
+    public function testUsableNameNeedsAtLeastOneLetter(): void
+    {
+        $this->assertTrue(isUsableLocationName('Оренбург'));
+        $this->assertTrue(isUsableLocationName('Пушкино-2'));
+        $this->assertFalse(isUsableLocationName('№ 20'));
+        $this->assertFalse(isUsableLocationName('12'));
+        $this->assertFalse(isUsableLocationName(''));
+        $this->assertFalse(isUsableLocationName(null));
+    }
+
+    public function testTransliteratesTitleKeepingCase(): void
+    {
+        $this->assertSame('Argayashskiy munitsipalnyy okrug', transliterateLocationTitle('Аргаяшский муниципальный округ'));
+        $this->assertSame('Shchelkovo', transliterateLocationTitle('Щёлково'));
+        $this->assertSame('Orenburg Oblast', transliterateLocationTitle('Orenburg Oblast'));
+    }
 }

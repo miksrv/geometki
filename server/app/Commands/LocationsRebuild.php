@@ -31,6 +31,14 @@
  * silently clear them. Finally assigns slugs to every location that still
  * lacks one (via LocationSlugLibrary::assignAll()).
  *
+ * Which row of a duplicate group survives is decided by place count, not
+ * by which name Nominatim happens to return today (keepPopulatedIds()):
+ * "Республика Башкортостан" (id 2, 108 places) keeps its id and absorbs
+ * "Башкортостан" (id 78, 24 places), even though the geocoder resolves
+ * every place to the latter's name. The demoted row's osm/iso identity,
+ * aliases and slug are carried over to the survivor before it is deleted,
+ * so the next geocoding of the same point lands on the survivor directly.
+ *
  * Resumable: the geocoding result for each place is saved to
  * writable/locations_rebuild_progress.json as soon as it is computed, so a
  * crash, Ctrl-C, or a Nominatim outage loses at most the one place in
@@ -50,6 +58,8 @@ use App\Models\LocationDistrictsModel;
 use App\Models\LocationLegacyIdsModel;
 use App\Models\LocationLocalitiesModel;
 use App\Models\LocationRegionsModel;
+use App\Models\LocationSlugHistoryModel;
+use App\Models\LocationSlugsModel;
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
 use Config\Database;
@@ -70,6 +80,11 @@ class LocationsRebuild extends BaseCommand
     ];
 
     private const LEVELS = ['country', 'region', 'district', 'locality'];
+
+    private const COLUMNS = ['country' => 'country_id', 'region' => 'region_id', 'district' => 'district_id', 'locality' => 'locality_id'];
+
+    /** The level whose alias rows are keyed by this level's id (see LocationAliasesModel::remember()) */
+    private const CHILD_LEVEL = ['country' => 'region', 'region' => 'district', 'district' => 'locality'];
 
     public function run(array $params)
     {
@@ -93,8 +108,12 @@ class LocationsRebuild extends BaseCommand
         CLI::write('Phase 2/3: re-geocoding places (throttled to Nominatim\'s 1 request/second policy — this takes a while)...', 'yellow');
         $progress = $this->geocodeAllPlaces($limit);
 
+        CLI::write('Choosing the surviving row of every duplicate group (most places keeps its id)...', 'yellow');
+        [$progress, $primaryOverrides, $demoted] = $this->keepPopulatedIds($progress);
+
         CLI::write('Building the report...', 'yellow');
-        $report = $this->buildReport($progress);
+        $report = $this->buildReport($progress, $demoted);
+        $report['primary_overrides'] = $primaryOverrides;
         $this->writeReport($report, $dryRun);
 
         if ($dryRun) {
@@ -256,32 +275,37 @@ class LocationsRebuild extends BaseCommand
     }
 
     // -------------------------------------------------------------------------
-    // Report
+    // Surviving-id choice
     // -------------------------------------------------------------------------
 
-    /**
-     * @param array<string, array<string, mixed>> $progress
-     * @return array{total_places: int, failed_count: int, failed_places: array,
-     *               level_changed: array, legacy_map: array, merged_groups: array,
-     *               stale_references: array, child_location_remaps: array}
-     */
-    private function buildReport(array $progress): array
+    /** @return array<string, object> live places' current location ids, keyed by place id */
+    private function currentPlaceRows(): array
     {
-        $db    = Database::connect();
-        $old   = $db->table('places')
+        $rows = Database::connect()->table('places')
             ->select('id, country_id, region_id, district_id, locality_id')
             ->where('deleted_at IS NULL', null, false)
             ->get()->getResult();
 
-        $oldById = [];
-        foreach ($old as $row) {
-            $oldById[$row->id] = $row;
+        $byId = [];
+        foreach ($rows as $row) {
+            $byId[$row->id] = $row;
         }
 
-        $failed      = [];
-        $changed     = array_fill_keys(self::LEVELS, 0);
-        $moveCounts  = array_fill_keys(self::LEVELS, []); // oldId => [destinationKey => count]
-        $columns     = ['country' => 'country_id', 'region' => 'region_id', 'district' => 'district_id', 'locality' => 'locality_id'];
+        return $byId;
+    }
+
+    /**
+     * Per level, where each currently-referenced location id's places go
+     * according to the geocoding results: oldId => [destinationKey => count],
+     * with '__null__' for "no location at this level any more".
+     *
+     * @return array{failed: array<int, string>, changed: array<string, int>, moves: array<string, array<int, array<string, int>>>}
+     */
+    private function countMoves(array $progress, array $oldById): array
+    {
+        $failed  = [];
+        $changed = array_fill_keys(self::LEVELS, 0);
+        $moves   = array_fill_keys(self::LEVELS, []);
 
         foreach ($progress as $placeId => $result) {
             if (empty($result['ok'])) {
@@ -291,7 +315,7 @@ class LocationsRebuild extends BaseCommand
 
             $oldRow = $oldById[$placeId] ?? null;
 
-            foreach ($columns as $type => $column) {
+            foreach (self::COLUMNS as $type => $column) {
                 $oldId = $oldRow && $oldRow->$column !== null ? (int) $oldRow->$column : null;
                 $newId = $result[$column] !== null ? (int) $result[$column] : null;
 
@@ -301,10 +325,134 @@ class LocationsRebuild extends BaseCommand
 
                 if ($oldId !== null) {
                     $destinationKey = $newId === null ? '__null__' : (string) $newId;
-                    $moveCounts[$type][$oldId][$destinationKey] = ($moveCounts[$type][$oldId][$destinationKey] ?? 0) + 1;
+                    $moves[$type][$oldId][$destinationKey] = ($moves[$type][$oldId][$destinationKey] ?? 0) + 1;
                 }
             }
         }
+
+        return ['failed' => $failed, 'changed' => $changed, 'moves' => $moves];
+    }
+
+    /**
+     * Enforces "the row with the most places keeps its id" (LocationMerge)
+     * across differently-named duplicates. The geocoder resolves each place
+     * to whichever existing row carries the name Nominatim returns today —
+     * "Башкортостан" (id 78, 24 places) rather than "Республика
+     * Башкортостан" (id 2, 108 places) — so, left alone, the sparse newer
+     * row would survive and the populated one would be merged away: the
+     * opposite of what the spec promises and of what every external
+     * `?region=2` link expects. (preloadAliases()' ordering only settles
+     * this for rows sharing one normalized name.)
+     *
+     * For every destination id that places are moving onto, the primary is
+     * picked among it and the rows being merged into it, by current place
+     * count (LocationMerge::pickPrimary()), and the geocoding results are
+     * rewritten so the primary is the destination. The demoted row then
+     * shows up in the report as an ordinary merge onto the primary, and
+     * applySwitch() carries its osm/iso identity, aliases and slug over
+     * before deleting it.
+     *
+     * @return array{0: array<string, array<string, mixed>>, 1: array<int, array<string, int|string>>, 2: array<string, array<int, int>>}
+     *         [rewritten progress, overrides for the report, demoted id => surviving id per level]
+     */
+    private function keepPopulatedIds(array $progress): array
+    {
+        $moves        = $this->countMoves($progress, $this->currentPlaceRows())['moves'];
+        $placesCounts = (new LocationSlugLibrary())->placesCountsByLocation();
+        $redirects    = array_fill_keys(self::LEVELS, []); // demoted destination id => primary id
+        $overrides    = [];
+
+        foreach ($moves as $type => $byOldId) {
+            $groups = []; // destination id => old ids whose places mostly move onto it
+
+            foreach ($byOldId as $oldId => $destinations) {
+                arsort($destinations);
+                $winnerKey = array_key_first($destinations);
+
+                if ($winnerKey === '__null__' || (int) $winnerKey === (int) $oldId) {
+                    continue;
+                }
+
+                $groups[(int) $winnerKey][] = (int) $oldId;
+            }
+
+            foreach ($groups as $destinationId => $oldIds) {
+                $candidates = [['id' => $destinationId, 'places_count' => $placesCounts[$type][$destinationId] ?? 0]];
+
+                foreach ($oldIds as $oldId) {
+                    $candidates[] = ['id' => $oldId, 'places_count' => $placesCounts[$type][$oldId] ?? 0];
+                }
+
+                $primaryId = LocationMerge::pickPrimary($candidates);
+
+                if ($primaryId !== $destinationId) {
+                    $redirects[$type][$destinationId] = $primaryId;
+                    $overrides[] = [
+                        'type'           => $type,
+                        'kept_id'        => $primaryId,
+                        'kept_places'    => $placesCounts[$type][$primaryId] ?? 0,
+                        'demoted_id'     => $destinationId,
+                        'demoted_places' => $placesCounts[$type][$destinationId] ?? 0,
+                    ];
+                }
+            }
+        }
+
+        foreach ($progress as $placeId => $result) {
+            if (empty($result['ok'])) {
+                continue;
+            }
+
+            foreach (self::COLUMNS as $type => $column) {
+                if ($result[$column] === null) {
+                    continue;
+                }
+
+                $id = (int) $result[$column];
+
+                // Follow chains (A demoted to B, B demoted to C), bounded.
+                for ($hop = 0; $hop < 10 && isset($redirects[$type][$id]); $hop++) {
+                    $id = $redirects[$type][$id];
+                }
+
+                $progress[$placeId][$column] = $id;
+            }
+        }
+
+        // Resolve chains in the map itself too, so buildReport() can merge
+        // each demoted row straight onto its final survivor.
+        foreach ($redirects as $type => $map) {
+            foreach ($map as $demotedId => $primaryId) {
+                for ($hop = 0; $hop < 10 && isset($map[$primaryId]); $hop++) {
+                    $primaryId = $map[$primaryId];
+                }
+
+                $redirects[$type][$demotedId] = $primaryId;
+            }
+        }
+
+        return [$progress, $overrides, $redirects];
+    }
+
+    // -------------------------------------------------------------------------
+    // Report
+    // -------------------------------------------------------------------------
+
+    /**
+     * @param array<string, array<string, mixed>> $progress
+     * @return array{total_places: int, failed_count: int, failed_places: array,
+     *               level_changed: array, legacy_map: array, merged_groups: array,
+     *               stale_references: array, child_location_remaps: array}
+     */
+    /**
+     * @param array<string, array<int, int>> $demoted demoted id => surviving id per level (keepPopulatedIds())
+     */
+    private function buildReport(array $progress, array $demoted = []): array
+    {
+        $db      = Database::connect();
+        $columns = self::COLUMNS;
+
+        ['failed' => $failed, 'changed' => $changed, 'moves' => $moveCounts] = $this->countMoves($progress, $this->currentPlaceRows());
 
         $legacyMap    = array_fill_keys(self::LEVELS, []);
         $mergedGroups = [];
@@ -329,6 +477,27 @@ class LocationsRebuild extends BaseCommand
                         'places_moved' => $destinations[$winnerKey],
                     ];
                 }
+            }
+        }
+
+        // A demoted row is merged away even when no place in this run
+        // currently references it (a row the geocoder created during an
+        // earlier dry run, or one whose places all lie outside --limit):
+        // left alive it would keep its osm id and re-attract the next
+        // geocoding of the same point, re-creating the duplicate.
+        foreach ($demoted as $type => $map) {
+            foreach ($map as $demotedId => $primaryId) {
+                if (isset($legacyMap[$type][$demotedId])) {
+                    continue;
+                }
+
+                $legacyMap[$type][$demotedId] = $primaryId;
+                $mergedGroups[] = [
+                    'type'         => $type,
+                    'old_id'       => $demotedId,
+                    'new_id'       => $primaryId,
+                    'places_moved' => 0,
+                ];
             }
         }
 
@@ -417,6 +586,16 @@ class LocationsRebuild extends BaseCommand
         CLI::write('--- Report ---', 'cyan');
         CLI::write("Places processed: {$report['total_places']}, failed to geocode: {$report['failed_count']}");
         CLI::write('Places whose level changed: ' . json_encode($report['level_changed']));
+        CLI::write('Populated rows kept over the name the geocoder returns (see keepPopulatedIds): ' . count($report['primary_overrides'] ?? []));
+
+        foreach (array_slice($report['primary_overrides'] ?? [], 0, 20) as $override) {
+            CLI::write("  {$override['type']} keeps {$override['kept_id']} ({$override['kept_places']} places), absorbs {$override['demoted_id']} ({$override['demoted_places']} places)");
+        }
+
+        if (count($report['primary_overrides'] ?? []) > 20) {
+            CLI::write('  ... and ' . (count($report['primary_overrides']) - 20) . ' more (see the saved report)');
+        }
+
         CLI::write('Duplicate groups to merge: ' . count($report['merged_groups']));
 
         foreach (array_slice($report['merged_groups'], 0, 20) as $group) {
@@ -590,8 +769,12 @@ class LocationsRebuild extends BaseCommand
                         );
                     }
 
+                    $oldRow = $models[$type]->find($oldId);
+
                     $legacyModel->insert(['location_type' => $type, 'old_id' => $oldId, 'new_id' => $newId]);
+                    $this->retireAliasesAndSlug($db, $type, $oldId, $newId);
                     $models[$type]->delete($oldId, true); // hard delete — frees its osm/iso unique slots too
+                    $this->carryIdentity($models[$type], $type, $oldRow, $newId);
                 }
             }
         } catch (Throwable $e) {
@@ -627,5 +810,81 @@ class LocationsRebuild extends BaseCommand
         CLI::write('Switch complete.', 'green');
 
         return true;
+    }
+
+    /**
+     * Everything that identified the merged-away row now identifies the
+     * survivor: its alias names, the child-level aliases keyed by its id as
+     * parent (a child name already registered under the survivor wins — the
+     * old row's copy is dropped), and its slug, which becomes a 301 to the
+     * survivor rather than a dangling live slug.
+     */
+    private function retireAliasesAndSlug($db, string $type, int $oldId, int $newId): void
+    {
+        $db->table('location_aliases')
+            ->where(['location_type' => $type, 'location_id' => $oldId])
+            ->update(['location_id' => $newId]);
+
+        $childType = self::CHILD_LEVEL[$type] ?? null;
+
+        if ($childType) {
+            $db->query(
+                'DELETE a FROM location_aliases a
+                 JOIN location_aliases b
+                   ON b.location_type = a.location_type AND b.name_normalized = a.name_normalized AND b.parent_id = ?
+                 WHERE a.location_type = ? AND a.parent_id = ?',
+                [$newId, $childType, $oldId]
+            );
+            $db->table('location_aliases')
+                ->where(['location_type' => $childType, 'parent_id' => $oldId])
+                ->update(['parent_id' => $newId]);
+        }
+
+        $slugsModel   = new LocationSlugsModel();
+        $historyModel = new LocationSlugHistoryModel();
+        $slug         = $slugsModel->findFor($type, $oldId);
+
+        if ($slug) {
+            if (!$historyModel->where('old_slug', $slug->slug)->first()) {
+                $historyModel->insert(['old_slug' => $slug->slug, 'type' => $type, 'entity_id' => $newId]);
+            }
+
+            $slugsModel->delete($slug->id);
+        }
+    }
+
+    /**
+     * Copies the merged-away row's osm_type/osm_id (and iso_code for
+     * country/region) onto the survivor when it has none — after the old
+     * row is deleted, since both columns are unique per table. Without this
+     * the next geocoding of the same point would miss the survivor by osm
+     * id and have to fall back to the alias, or re-create the duplicate.
+     */
+    private function carryIdentity($model, string $type, ?object $oldRow, int $newId): void
+    {
+        if (!$oldRow) {
+            return;
+        }
+
+        $newRow = $model->find($newId);
+
+        if (!$newRow) {
+            return;
+        }
+
+        $update = [];
+
+        if (!empty($oldRow->osm_id) && empty($newRow->osm_id) && $type !== 'country') {
+            $update['osm_type'] = $oldRow->osm_type;
+            $update['osm_id']   = $oldRow->osm_id;
+        }
+
+        if (in_array($type, ['country', 'region'], true) && !empty($oldRow->iso_code) && empty($newRow->iso_code)) {
+            $update['iso_code'] = $oldRow->iso_code;
+        }
+
+        if ($update) {
+            $model->skipValidation(true)->update($newId, $update);
+        }
     }
 }

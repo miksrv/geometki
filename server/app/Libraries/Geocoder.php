@@ -102,6 +102,16 @@ class Geocoder{
     /** place-class types counted as a "locality" (excludes sub-city suburb/neighbourhood) */
     private const LOCALITY_TYPES = ['city', 'town', 'village', 'hamlet'];
 
+    /** address-breakdown keys that name the locality, most specific first */
+    private const LOCALITY_ADDRESS_KEYS = ['city', 'town', 'village', 'hamlet'];
+
+    /**
+     * highway types whose name is a trail/track name, not a street: when the
+     * point Nominatim matched is one of these, its `road` ("легкий заход",
+     * "(Заросшая дорога)") must not become the place's street address.
+     */
+    private const PATH_LIKE_HIGHWAY_TYPES = ['path', 'track', 'footway', 'cycleway', 'bridleway', 'steps', 'trail'];
+
     private const USER_AGENT = 'Geometki/1.0 (https://geometki.com)';
 
     public function __construct(?NominatimClient $nominatimClient = null)
@@ -245,10 +255,8 @@ class Geocoder{
         }
 
         // --- Locality (independent of district/region) ---
-        $localityNameRu = $addressRuBreakdown['city'] ?? $addressRuBreakdown['town']
-            ?? $addressRuBreakdown['village'] ?? $addressRuBreakdown['hamlet'] ?? null;
-        $localityNameEn = $addressEnBreakdown['city'] ?? $addressEnBreakdown['town']
-            ?? $addressEnBreakdown['village'] ?? $addressEnBreakdown['hamlet'] ?? null;
+        $localityNameRu = $this->pickLocalityName($addressRuBreakdown);
+        $localityNameEn = $this->pickLocalityName($addressEnBreakdown);
 
         if ($localityNameRu || $localityNameEn) {
             $localityEntry = $this->pickLocalityEntry($hierarchy);
@@ -513,7 +521,16 @@ class Geocoder{
         $decision = LocationMatcher::resolve($osmMatch, $isoMatch, $aliasMatch);
 
         if ($decision['strategy'] === LocationMatcher::STRATEGY_CREATE) {
-            $id = $createRow($nameEn ?: $nameRu, $nameRu ?: $nameEn);
+            $finalNameRu = $nameRu ?: $nameEn;
+            $finalNameEn = $nameEn ?: $nameRu;
+
+            // No English name in OSM → the lang=en call echoes the Cyrillic
+            // one. Transliterate rather than store Cyrillic in title_en.
+            if (preg_match('/\p{Cyrillic}/u', $finalNameEn)) {
+                $finalNameEn = transliterateLocationTitle($finalNameEn);
+            }
+
+            $id = $createRow($finalNameEn, $finalNameRu);
 
             if (!$id) {
                 return null;
@@ -615,6 +632,14 @@ class Geocoder{
         return (is_string($code) && preg_match('/^[A-Z]{2}-[A-Z0-9]{1,5}$/i', $code)) ? strtoupper($code) : null;
     }
 
+    /**
+     * Street address line ("улица Ленина, 5") from a reverse response, or ''
+     * when the point has no real street address:
+     *  - the matched feature is a trail/track (its `road` is the trail name);
+     *  - there is a `road` but no settlement around it and no house number —
+     *    a lone highway name ("Миасский тракт") outside any locality is not
+     *    an address, and the old provider left these empty too.
+     */
     private function formatStreetAddress(?array $response): string
     {
         if (!$response) {
@@ -629,7 +654,39 @@ class Geocoder{
             return '';
         }
 
+        // jsonv2 reverse responses carry `category`; the older json format, `class`.
+        $matchedClass = $response['category'] ?? $response['class'] ?? null;
+
+        if ($matchedClass === 'highway' && in_array($response['type'] ?? null, self::PATH_LIKE_HIGHWAY_TYPES, true)) {
+            return '';
+        }
+
+        if ($house === '' && $this->pickLocalityName($address) === null) {
+            return '';
+        }
+
         return $house !== '' ? $road . ', ' . $house : $road;
+    }
+
+    /**
+     * The settlement name from an address breakdown (city → town → village →
+     * hamlet), skipping values that are not usable as a location name
+     * (see isUsableLocationName()): a numbered plot labelled as a hamlet
+     * must not become a locality row.
+     */
+    private function pickLocalityName(array $address): ?string
+    {
+        helper('location');
+
+        foreach (self::LOCALITY_ADDRESS_KEYS as $key) {
+            $name = $address[$key] ?? null;
+
+            if (is_string($name) && isUsableLocationName($name)) {
+                return $name;
+            }
+        }
+
+        return null;
     }
 
     /**

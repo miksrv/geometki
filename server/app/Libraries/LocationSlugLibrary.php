@@ -2,7 +2,6 @@
 
 namespace App\Libraries;
 
-use App\Models\CategoryModel;
 use App\Models\LocationCountriesModel;
 use App\Models\LocationDistrictsModel;
 use App\Models\LocationLocalitiesModel;
@@ -11,6 +10,7 @@ use App\Models\LocationSlugHistoryModel;
 use App\Models\LocationSlugsModel;
 use Config\Database;
 use Config\LocationSlugs;
+use RuntimeException;
 
 /**
  * Generates and persists location slugs — see "Слаги локаций" in
@@ -195,12 +195,21 @@ class LocationSlugLibrary
             $entityId
         );
 
-        $this->slugsModel->insert([
+        $inserted = $this->slugsModel->insert([
             'slug'       => $claim['slug'],
             'type'       => $type,
             'entity_id'  => $entityId,
-            'is_primary' => $claim['isPrimary'],
+            'is_primary' => (int) $claim['isPrimary'],
         ]);
+
+        if ($inserted === false) {
+            // A silent `false` here once left every geocoder-created location
+            // without a slug (bool is_primary failed in_list[0,1]) — fail loudly.
+            throw new RuntimeException(
+                "Could not store slug '{$claim['slug']}' for {$type} {$entityId}: "
+                . json_encode($this->slugsModel->errors(), JSON_UNESCAPED_UNICODE)
+            );
+        }
 
         return $claim['slug'];
     }
@@ -288,16 +297,23 @@ class LocationSlugLibrary
                 ]);
                 $this->slugsModel->update($existing->id, [
                     'slug'       => $claim['slug'],
-                    'is_primary' => $claim['isPrimary'],
+                    'is_primary' => (int) $claim['isPrimary'],
                 ]);
                 $report['reassigned']++;
             } elseif (!$existing) {
-                $this->slugsModel->insert([
+                $inserted = $this->slugsModel->insert([
                     'slug'       => $claim['slug'],
                     'type'       => $entity['type'],
                     'entity_id'  => $entity['id'],
-                    'is_primary' => $claim['isPrimary'],
+                    'is_primary' => (int) $claim['isPrimary'],
                 ]);
+
+                if ($inserted === false) {
+                    throw new RuntimeException(
+                        "Could not store slug '{$claim['slug']}' for {$entity['type']} {$entity['id']}: "
+                        . json_encode($this->slugsModel->errors(), JSON_UNESCAPED_UNICODE)
+                    );
+                }
             }
 
             $resolvedSlugs[$key] = $claim['slug'];
@@ -312,14 +328,14 @@ class LocationSlugLibrary
     // -------------------------------------------------------------------------
 
     /**
-     * Reserved slugs: every category name (read live from the `category`
-     * table) plus the service words in Config\LocationSlugs::$reservedWords.
+     * Reserved slugs: every category key (Config\Categories) plus the
+     * service words in Config\LocationSlugs::$reservedWords.
      *
      * @return string[]
      */
     private function reservedWordsSet(): array
     {
-        $categories = (new CategoryModel())->findColumn('name') ?? [];
+        $categories = config('Categories')->names;
 
         return array_values(array_unique(array_map(
             static fn (string $word): string => mb_strtolower($word, 'UTF-8'),
