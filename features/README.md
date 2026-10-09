@@ -27,6 +27,7 @@ This directory documents proposed features for Geometki. The existing system alr
 | [19](./19-admin-sent-emails.md) | **Admin: Sent Emails Dashboard** | ✅ Done | Low | Low | `sending_mail` table, existing mail controller, `SessionLibrary` auth |
 | [22](./22-xp-snackbar-notifications.md) | **XP Snackbar & Notification Groups** | 🔄 In Progress | Low–Medium | High | Existing snackbar, `notificationSlice`, `LevelProgress` component |
 | [23](./23-map-tools-from-nakarte.md) | **Map Tools from nakarte.me** (panoramas, elevation profile, Wikimedia layer fixes) | ⏳ Pending | Medium | High | `/maps` ruler & area tools, Wikimedia Commons layer |
+| [24](./24-place-page-redesign.md) | **Place Page Redesign** (sections instead of containers, guest-first order, explicit rating prompt, nearby/related blocks) | ⏳ Pending | Medium | Very High | `PlaceHero`, `PhotoGallery`, `Rating`, `placesGetList`, landing pages (20) |
 
 ## Recommended Implementation Order
 

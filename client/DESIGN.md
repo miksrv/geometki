@@ -10,7 +10,8 @@ changing any user-facing component; `CLAUDE.md` points here for the same reason.
   second component. Recognisability comes from the invariant parts, not from the layout.
 - **Three entities, three page archetypes.** A place, a person and a collection must not
   look alike, so each entity page has its own skeleton and the reader always knows where
-  they are. Place: a detail page (cover hero → content + sticky facts sidebar). Person: a
+  they are. Place: a detail page (cover hero → actions row → sections + a sticky "where is
+  it" card). Person: a
   profile (card with the avatar → tabs). Collection: an article (title with a byline → the
   map → prose → a flow of large place cards). New entity pages pick one of these or get a
   new archetype; they never borrow another entity's hero or sidebar.
@@ -57,11 +58,24 @@ re-implement them.
   chrome, there is no permanent sidebar.
 - **Lists** are a flow of tiles on the page background, three columns on desktop and one
   on phones (`MediaTileGrid`). Lists never sit inside a `Container`.
-- **Place page** (`pages/places/[id]`): `PlaceHero` (the cover at 3:1, at least 240px tall on
-  phones; cover files are 1800×600) → `.pageLayout` grid `1fr 300px` → main
-  column of `Container` blocks with 8px gaps, sticky sidebar (`top: 60px`) with the map and
-  key/value facts, then the "В коллекциях" rows (`PlaceCollections`, picker-style rows:
-  40px cover, title, places count) and the "Здесь были" avatars → "nearby" tiles below.
+- **Place page** (`pages/places/[id]`, spec: `features/24-place-page-redesign.md`):
+  `Breadcrumbs` on the page background → `PlaceHero` (the cover at 3:1, at least 240px tall
+  on phones; cover files are 1800×600) carrying only the h1 and the meta line (rating ·
+  category · address · distance, every fact a link) → `PlaceActions`, one row of `medium`
+  buttons on the page background with a single primary "На карте" → `.pageLayout` grid
+  `1fr 320px` with a 24px gap → main column of `Section`s (h2 + optional link action, 32px
+  apart, no boxes): photos mosaic, description (clamped, "Читать полностью"), the rate
+  prompt, "Рядом" carousel, "Ещё {category} в {location}" tiles, comments, the collapsed
+  "История изменений" row. The sticky sidebar (`top: 60px`) holds the one boxed block of
+  the page, the "Где это" card (`Container`: interactive map with the nearby places as
+  markers, address links, coordinates, route links), then the "В коллекциях" rows
+  (`PlaceCollections`, picker-style rows: 40px cover, title, places count), the "Здесь были"
+  avatars and the byline (author, dates, editors, views) — all as plain h3 sections. On
+  phones the order is explicit (cover → actions → photos → description → rate → where →
+  nearby → related → sidebar blocks → comments → history) and a sticky bottom bar repeats
+  "На карте / Маршрут / Сохранить" once the actions row has scrolled away. Until the
+  redesign lands the page still renders the pre-redesign `Container` blocks; new work on
+  it follows the spec, not the old layout.
 - **Collection page** (`pages/collections/[id]`): `CollectionHeader` (a `PageHeader` with a
   byline) → the map (`PlacesMap`, see section 5) on the full content width →
   the description as article prose on the full content width (`prose` mixin) → the places as the usual
@@ -72,30 +86,54 @@ re-implement them.
   (`PlaceCard` `actions`), and a full-width "Добавить места" button follows the grid.
 - **Places listing / landing pages** (`pages/places/index.tsx` for `/places`, `pages/places/landing/[...slug].tsx`
   for `/places/{category}`, `/places/{location}` and `/places/{location}/{category}` behind the
-  `NEXT_PUBLIC_LANDING_*` flags — see CLAUDE.md → Environment): one skeleton, `PageHeader` →
-  (page 1 only) `PlacesLandingIntro` — description (`PlacesLandingDescription`, collapses to
-  3 lines behind "Подробнее" on phones) beside `LandingMapPreview` on location/pair pages, the
-  description full-width with no map on `/places` and category pages → the filter panel
-  (`PlaceFilterPanel`, unchanged) → `MediaTileGrid` of `PlaceCard` tiles + pagination → (page 1
-  only) the `LocationLinkList` perelinking blocks. Filter changes build the canonical path
+  `NEXT_PUBLIC_LANDING_*` flags — see CLAUDE.md → Environment): one skeleton, all of it page
+  chrome on the page background, no `Container` anywhere above the perelinking blocks:
+  `PageHeader` with the places count as the meta line and (page 1 only) the lede — the
+  category's text, or the location summary — and, on location/pair pages, `LandingMapPreview`
+  in the `aside` slot → the listing toolbar (`PlaceFilterPanel`, section 6) → `MediaTileGrid`
+  of `PlaceCard` tiles → `PaginationBar` → (page 1 only) the `LocationLinkList` perelinking
+  blocks, which are `Container`s because they are titled content. `/places` and category
+  pages have no map: places there are nationwide. Filter changes build the canonical path
   (`utils/placesLanding.ts` `buildPlacesHref`) instead of `/places?…` once the relevant flag
   is on.
-- **Containers** (`Container` from the kit) are for content blocks with a heading inside
-  the page body: description, comments, places of a collection, a form. They carry a
-  `title` and an optional `action` (`mode="link"` buttons). Page chrome — the page header,
-  filters, lists, pagination — sits on the page background, never in a `Container`.
+- **Sections, not containers.** The parts of one entity (its description, photos,
+  comments, history, the facts about it) are `Section`s: an h2 (h3 in a sidebar) with an
+  optional `action` (`mode="link"` buttons), separated from each other by whitespace alone,
+  on the page background. A box groups by enclosure, whitespace groups by proximity; nesting
+  boxes inside the page card reads as "object inside object", which these are not.
+- **Containers** (`Container` from the kit) are reserved for things of another nature than
+  the page itself: a form (also a section switched to edit mode), a tool card with its own
+  purpose (the "Где это" map card on the place page), and titled link blocks on listing
+  pages (`LocationLinkList`). They carry a `title` and an optional `action`. Page chrome —
+  the page header, filters, lists, pagination — sits on the page background, never in a
+  `Container`. Empty states are a single line in place of the content, never an empty box.
 - **Breakpoint.** One: `$mobileMaxWidth` (768px). Below it columns stack and side action
   groups wrap under the content.
 
 ## 4. Page header and breadcrumbs
 
 `PageHeader` (`components/shared/page-header`) is the one header for list, form, admin and
-collection pages: breadcrumbs above the h1, an optional one-line `description` (a string, or
-a node for the collection byline: author avatar, places count, region, update time),
-`leading` for an avatar, `actions` on the right (`medium` buttons, wrapping under the title
-on phones). The place page and the user profile use a hero instead: the same `Breadcrumbs`,
-h1 and actions sit on the cover (`PlaceHero`) or in the title row attached to the bottom of
-the profile card (`UserHeader`). The h1 size is one token everywhere (`--font-size-title-page` in `styles/theme.css`, 22px), so a
+collection pages. It is a stack of four text levels, each optional except the h1, read top
+to bottom in decreasing weight:
+
+| Level       | Prop          | Looks                                                                                                                                                      | Holds                                                                                                                                                                                                                      |
+| ----------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| breadcrumbs | `breadcrumbs` | 12px secondary                                                                                                                                             | the path to the parent (table below)                                                                                                                                                                                       |
+| title       | `title`       | h1, `--font-size-title-page` (22px), weight 600, tight tracking, balanced wrapping                                                                         | what the page is                                                                                                                                                                                                           |
+| meta line   | `description` | 13px secondary, one line                                                                                                                                   | facts about the entity: the collection byline (author avatar, places count, update time). Listings do not use it: their count is in the `PaginationBar` range, a line under the title would push the list down for nothing |
+| lede        | `lede`        | 14px primary text, 1.55 line height, the full width of the text column; at most 3 lines (2 on phones), the last ending in "… Подробнее" (`ExpandableText`) | a few sentences introducing the page: the category text, the location summary                                                                                                                                              |
+
+Then `leading` for an avatar before the text, `actions` — `small` buttons on the h1's own
+line, right-aligned, folded into the line box so the title line is no taller than without
+them; under the title on phones — and `aside` for a block beside the text — the map
+preview of a location landing — 340px wide, top-aligned with the title, stacking under the
+text on phones. The header sits on the page background: the lede is never boxed in a
+`Container` and never greyed out — it is the page's first paragraph, not a footnote.
+The place page and the user profile use a hero instead. On the place page the same
+`Breadcrumbs` sit above the cover on the page background, the h1 and the meta line sit on
+the cover (`PlaceHero`) and the actions are a row under it (`PlaceActions`); on the profile
+the h1 and actions are in the title row attached to the bottom of the profile card
+(`UserHeader`). The h1 size is one token everywhere (`--font-size-title-page` in `styles/theme.css`, 22px), so a
 list title and a hero title read as the same level, above the prose headings and container titles.
 
 Breadcrumbs appear only on nested pages, where the app bar cannot show where you are:
@@ -105,7 +143,7 @@ Breadcrumbs appear only on nested pages, where the app bar cannot show where you
 | Section roots: places, collections, people, map, activity, categories, tags, search                                                                                        | none                                |
 | Filtered places list (`/places?category=…`)                                                                                                                                | Места › parent filters              |
 | Category / location / pair landing (`/places/{category}`, `/places/{location}`, `/places/{location}/{category}`, behind the `NEXT_PUBLIC_LANDING_*` flags — see CLAUDE.md) | Места › location parents › location |
-| Place page                                                                                                                                                                 | Места › category                    |
+| Place page (above the cover, on the page background)                                                                                                                       | Места › category                    |
 | Collection page                                                                                                                                                            | Коллекции                           |
 | Create / edit place                                                                                                                                                        | Места (› place)                     |
 | User sub-pages (places, photos, bookmarks, …), settings                                                                                                                    | Люди › name                         |
@@ -175,12 +213,30 @@ usage is unaffected.
 ### `LandingMapPreview` (`components/shared/landing-map-preview`)
 
 The location/pair landing page's compact map block (features/20-location-seo-pages.md,
-"Шаблон страницы → Карта"): wraps `PlacesMap` (`compact`) behind an `IntersectionObserver`
-gate, so Leaflet is only loaded once the block scrolls into view — the mobile first screen
-never pays for it. Takes the page's own place list (already fetched for the grid) as
-markers; renders nothing without placed places, same as `PlacesMap`. Category-only and
-`/places` pages have no map — places there are nationwide, a preview would not mean
-anything.
+"Шаблон страницы → Карта"), passed to `PageHeader` as its `aside`: wraps `PlacesMap`
+(`compact`) behind an `IntersectionObserver` gate, so Leaflet is only loaded once the block
+scrolls into view — the mobile first screen never pays for it. Takes the page's own place
+list (already fetched for the grid) as markers; renders nothing without placed places, same
+as `PlacesMap`. Category-only and `/places` pages have no map — places there are
+nationwide, a preview would not mean anything.
+
+### `PaginationBar` (`components/shared/pagination-bar`)
+
+The row under a paginated list: the range of this page's items ("22–42 из 132", 13px
+secondary) on the left and the `Pagination` links on the right, on the page background;
+on phones the links come first, centred, with the range under them. Renders nothing when
+everything fits on one page — the list itself is the count then. Page links are 32px
+squares: secondary text, `--surface-2` on hover, `--color-main` on `--color-main-background`
+for the current page, the same states as tabs and link pills. Every paginated list uses it
+(places, collections, people, the user's places / bookmarks / visited / collections /
+photos, the admin mailing table); there is no other pagination row.
+
+### `ListingToolbar` (`components/shared/listing-toolbar`)
+
+The filter row of a list page (section 6, "Listing toolbar"): `ListingToolbar` is the row,
+`ListingToolbarGroup` keeps related controls together — `PlaceFilterPanel` (location +
+category, then sort + order) and `UsersFilterPanel` (search, then sort + order) are built
+from it and own no layout of their own.
 
 ### `LocationLinkList` (`components/shared/location-link-list`)
 
@@ -192,12 +248,14 @@ category by region", "this category nearby" (features/20-location-seo-pages.md, 
 ### `CategoryIcon` (`components/shared/category-icon`)
 
 A place's category as its square icon (`public/images/poi/<category>.png`: a flat
-rounded square, 12% corner radius like the logo, white pictogram, no border), linking to
+rounded square, 12% corner radius like the logo, white pictogram, no border). Takes the
+category key (`ApiModel.Categories`, what the API returns) and resolves the label from the
+client catalogue (`utils/categories.ts` → `getCategoryTitle`); no component ever receives a
+category title from the API. Links to
 the category (`/places?category=…`, or `/places/{category}` once `NEXT_PUBLIC_LANDING_CATEGORIES`
 is on — see CLAUDE.md → Environment and `utils/placesLanding.ts`) with the category name in
 a kit `Tooltip` and as the link's name.
-One colour per category (`CATEGORY_COLORS`, the same hex as the icon background) also
-tints category blocks on the home and categories pages. Sizes in use: 16 (cards, search
+The category's colour is the icon background itself; there is no separate colour map. Sizes in use: 16 (cards, search
 suggestions; small on purpose, so the category does not outweigh the cover and title),
 40 (place hero, next to the h1). The place page shows the icon once, in the hero; the
 breadcrumbs name the category in text (and the schema.org `BreadcrumbList` has the same
@@ -260,7 +318,7 @@ views).
   Admin actions are full-width buttons: confirming a found duplicate inside its callout, "hide for good"
   (`outline` `negative`) last; destructive ones ask for confirmation.
   Exception to "tokens, not values": the candidate group colours (`GROUP_COLORS`) are hex
-  values in JS, like `CATEGORY_COLORS`, because Leaflet paints the markers from `pathOptions`;
+  values in JS, because Leaflet paints the markers from `pathOptions`;
   the photo counter over a cover is the same fixed dark pill as the stats over `MediaTile`.
 - **Photo gallery** (`PhotoGallery`: profile, place page, place form, the user's photos page):
   a grid of 4:3 tiles, four columns (two on phones) with 4px gaps, so 8 photos make two
@@ -273,6 +331,20 @@ views).
   active one. Tabs that are pages are links (`href`, `aria-current="page"`), never
   `router.push`. On phones the bar scrolls sideways without a scrollbar, the active tab is
   scrolled into view and the cut-off edges fade out. A kit primitive candidate.
+- **Listing toolbar** (`ListingToolbar` + `ListingToolbarGroup`, used by `PlaceFilterPanel`,
+  `UsersFilterPanel` and the admin `SendingMailFilterPanel`): the filter row directly above a list, on the page background,
+  never in a `Container`. One row: the filters group (location, category; or the search
+  field), then the sorting group (sort field, order); on wide screens every kit control
+  gets the same width, however many there are, 8px apart. On phones the row scrolls
+  sideways at fixed control widths with the groups kept together.
+- **Expandable text** (`components/ui/expandable-text`): a paragraph that shows at most N
+  lines (3, or 2 on phones) and ends with "… Подробнее" on the last visible line — the cut
+  is measured (a hidden twin is laid out with shorter prefixes until the text, the ellipsis
+  and the control fit), trimmed to a word, and re-measured on resize. The control is text
+  only, in `--color-main`, inline with the text — never on a line of its own, never hiding
+  a single word behind a whole extra line. A text that fits gets no control; expanding is
+  one-way. The header lede and any other long intro use it; typography comes from the
+  parent. A kit primitive candidate.
 - **Empty states.** `EmptyState` with a title, one sentence and at most one action; copy
   differs for owners (what to do) and readers (what to expect).
 - **Notifications.** Success and error toasts via `Notify`; an entity link in the toast is
