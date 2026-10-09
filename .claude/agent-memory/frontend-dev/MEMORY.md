@@ -6,6 +6,7 @@
 - [project_package_upgrades.md](./project_package_upgrades.md) — April 2026 major package upgrades: what changed and why ESLint 10 was not adopted.
 
 ## Testing
+- [project_test_env_gotcha.md](./project_test_env_gotcha.md) — if `yarn jest` fails almost every suite with "React.act is not a function", the shell has `NODE_ENV=production`; rerun with `NODE_ENV=test yarn jest`.
 - `client/__mocks__/commonMocks.ts` — shared test store factory, renderWithStore helper, mockRouter, mockUseTranslation, and fixture data.
 - `client/__mocks__/simple-react-ui-kit.tsx` — manual CJS mock for pure-ESM simple-react-ui-kit; mapped via moduleNameMapper in jest.config.ts.
 - `identity-obj-proxy` and `@testing-library/dom` are required devDeps (not installed by default) — install if tests fail with "Cannot find module".

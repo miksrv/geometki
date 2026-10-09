@@ -54,7 +54,7 @@ Uses **Next.js Pages Router** (not App Router) with **Redux Toolkit + RTK Query*
 - `api/types/` — TypeScript interfaces for all API response shapes
 - `components/` — Split into `common/` (layout, header, shared UI) and `pages/` (page-specific)
 - `functions/` — Pure utilities: `helpers.ts`, `coordinates.ts`, `validators.ts`; unit tests co-located as `*.test.ts`
-- `proxy.ts` — Next.js proxy (formerly middleware); protects `/places/create`, `/places/:id/edit` and `/users/settings` routes; redirects unauthenticated users
+- `proxy.ts` — Next.js proxy (formerly middleware); protects `/places/create`, `/places/:id/edit` and `/users/settings` routes; redirects unauthenticated users; also rewrites `/places/{category|location}` and `/places/{location}/{category}` to `pages/places/landing/[...slug].tsx` when the matching `NEXT_PUBLIC_LANDING_*` flag is on (see Environment below and `features/20-location-seo-pages.md`)
 - `styles/` — Global SASS; `theme.css` holds project token overrides on top of `simple-react-ui-kit/theme.css` (imported first in `pages/_app.tsx`)
 - `DESIGN.md` — the client design system: layers (kit primitives vs domain components), layouts, the `MediaTile` / `PlaceCard` / `CollectionCard` rules and UI patterns. Read it before adding or changing any user-facing component; one component per entity, variants for layout.
 
@@ -88,7 +88,11 @@ NEXT_PUBLIC_API_HOST         # API base URL (e.g. http://localhost:8080/)
 NEXT_PUBLIC_SITE_LINK        # Public site URL
 NEXT_PUBLIC_MAPBOX_TOKEN     # Optional
 NEXT_PUBLIC_CYCLEMAP_TOKEN   # Optional
+NEXT_PUBLIC_LANDING_CATEGORIES    # "true" to turn on /places/{category} (features/20-location-seo-pages.md, stage 2); unset/anything else = off
+NEXT_PUBLIC_LANDING_LOCATIONS     # "true" to turn on /places/{location} (stage 3)
+NEXT_PUBLIC_LANDING_COMBINATIONS  # "true" to turn on /places/{location}/{category} (stage 4); has no effect unless NEXT_PUBLIC_LANDING_LOCATIONS is also "true"
 ```
+Each landing flag independently switches canonical URLs, 301s, site links and sitemap entries for its page type on; with all three unset the site is byte-for-byte what it was before that feature. See `client/utils/placesLanding.ts` (`getLandingFlags`, `buildPlacesHref`) for the single source of truth on what each flag does, and `features/20-location-seo-pages.md` for the full spec.
 
 **Server** (`.env` in `server/`): Configure database credentials, `app.baseURL`, and JWT secret. Use `cp env .env` as starting point. For a local stand that uses a production database with images served from production (client `NEXT_PUBLIC_IMG_HOST=https://api.geometki.com/`), set `uploads.verifyFiles = false`, otherwise the API drops covers whose files are not on the local disk.
 
