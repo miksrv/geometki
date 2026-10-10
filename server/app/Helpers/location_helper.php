@@ -44,6 +44,26 @@ function isUsableLocationName(?string $name): bool
 }
 
 /**
+ * The English street address line. Nominatim has no English names for most
+ * streets, so the lang=en reverse call echoes the Cyrillic one ("улица 9
+ * Января, 43") — or, worse, a different nearby road. A Cyrillic English
+ * address is replaced by the transliterated Russian one ("ulitsa 9 Yanvarya,
+ * 43"), which is what the previous provider returned; a Latin one is kept.
+ *
+ * @param string $addressEn
+ * @param string $addressRu
+ * @return string
+ */
+function latinizeStreetAddress(string $addressEn, string $addressRu): string
+{
+    if (!preg_match('/\p{Cyrillic}/u', $addressEn)) {
+        return $addressEn;
+    }
+
+    return transliterateLocationTitle($addressRu !== '' ? $addressRu : $addressEn);
+}
+
+/**
  * Transliterates a Cyrillic location title into a Latin one for title_en,
  * keeping capitalization ("Аргаяшский муниципальный округ" →
  * "Argayashskiy munitsipalnyy okrug"). Used as the title_en fallback when

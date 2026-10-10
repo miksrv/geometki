@@ -198,7 +198,7 @@ class Geocoder{
         $enResponse = $this->nominatimClient->reverse($lat, $lng, null, 'en');
 
         $this->addressRu = $this->formatStreetAddress($ruResponse);
-        $this->addressEn = $this->formatStreetAddress($enResponse);
+        $this->addressEn = latinizeStreetAddress($this->formatStreetAddress($enResponse), $this->addressRu);
 
         $matchedOsmType = $this->extractOsmType($ruResponse);
         $matchedOsmId   = $this->extractOsmId($ruResponse);
@@ -211,11 +211,21 @@ class Geocoder{
 
         // --- Country: no osm id comes back from details() for the country
         // entry (verified live), so identity relies on the ISO code / alias.
-        $this->countryId = $this->resolveCountry(
-            $this->extractCountryIso($ruResponse),
-            $addressRuBreakdown['country'] ?? null,
-            $addressEnBreakdown['country'] ?? null
-        );
+        // A region listed in Config\LocationSlugs::$countryOverridesByRegionIso
+        // (Crimea, Sevastopol) is resolved under the country the site shows it in.
+        $countryIso    = $this->extractCountryIso($ruResponse);
+        $countryNameRu = $addressRuBreakdown['country'] ?? null;
+        $countryNameEn = $addressEnBreakdown['country'] ?? null;
+        $regionIso     = $this->extractRegionIso($ruResponse);
+        $overrideIso   = $regionIso ? ($this->slugConfig->countryOverridesByRegionIso[$regionIso] ?? null) : null;
+
+        if ($overrideIso) {
+            $countryIso    = $overrideIso;
+            $countryNameRu = $this->slugConfig->countryNamesByIso[$overrideIso]['ru'] ?? $countryNameRu;
+            $countryNameEn = $this->slugConfig->countryNamesByIso[$overrideIso]['en'] ?? $countryNameEn;
+        }
+
+        $this->countryId = $this->resolveCountry($countryIso, $countryNameRu, $countryNameEn);
 
         if (!$this->countryId) {
             return false;
@@ -231,7 +241,7 @@ class Geocoder{
         $this->regionId = $this->resolveRegion(
             $this->extractOsmType($regionEntry),
             $this->extractOsmId($regionEntry),
-            $this->extractRegionIso($ruResponse),
+            $regionIso,
             $addressRuBreakdown['state'] ?? null,
             $addressEnBreakdown['state'] ?? null
         );

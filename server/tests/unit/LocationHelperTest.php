@@ -66,6 +66,19 @@ final class LocationHelperTest extends CIUnitTestCase
         $this->assertNotSame(normalizeLocationName('Пушкино'), normalizeLocationName('Пушкино-2'));
     }
 
+    public function testLatinizeStreetAddressTransliteratesACyrillicEnglishAddressFromTheRussianOne(): void
+    {
+        $this->assertSame('ulitsa 9 Yanvarya, 43', latinizeStreetAddress('улица 9 Января, 43', 'улица 9 Января, 43'));
+        // A different road in the lang=en answer: the Russian one is the source
+        $this->assertSame('ulitsa Lunacharskogo', latinizeStreetAddress('Первомайская улица', 'улица Луначарского'));
+        $this->assertSame('', latinizeStreetAddress('', ''));
+    }
+
+    public function testLatinizeStreetAddressKeepsALatinEnglishAddress(): void
+    {
+        $this->assertSame('9 January Street, 43', latinizeStreetAddress('9 January Street, 43', 'улица 9 Января, 43'));
+    }
+
     public function testUsableNameNeedsAtLeastOneLetter(): void
     {
         $this->assertTrue(isUsableLocationName('Оренбург'));

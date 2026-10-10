@@ -1876,7 +1876,7 @@ Ordered by `count` descending.
 
 #### `GET /locations/:type/:id/children`
 
-Direct child locations, for perelinking: a country's regions, a region's districts plus the localities that have no district of their own, or a district's localities. A locality has no children (`items: []`).
+Direct child locations, for perelinking: a country's regions, a region's districts plus the localities that have no district of their own, or a district's localities. Only children with at least one place are listed (an empty location has no page). A locality has no children (`items: []`).
 
 **Auth required:** No
 

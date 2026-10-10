@@ -80,4 +80,29 @@ class LocationSlugs extends BaseConfig
      * never have to duplicate the number.
      */
     public int $indexThreshold = 5;
+
+    /**
+     * Country overrides by the region's ISO 3166-2 code, as Nominatim reports it
+     * in `ISO3166-2-lvl4`. The site shows Crimea (UA-43) and Sevastopol (UA-40)
+     * under Russia, as the previous geocoding provider returned them; OSM
+     * attributes them to Ukraine, so without this rule every new place there
+     * would land under a different country than the existing ones. Applied in
+     * App\Libraries\Geocoder before the country is resolved.
+     *
+     * @var array<string, string> region ISO code => country ISO 3166-1 alpha-2
+     */
+    public array $countryOverridesByRegionIso = [
+        'UA-43' => 'RU',
+        'UA-40' => 'RU',
+    ];
+
+    /**
+     * Names to resolve an overridden country by when its row has no iso_code
+     * yet (the alias match is by name).
+     *
+     * @var array<string, array{ru: string, en: string}>
+     */
+    public array $countryNamesByIso = [
+        'RU' => ['ru' => 'Россия', 'en' => 'Russia'],
+    ];
 }
