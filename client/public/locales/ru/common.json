@@ -538,6 +538,7 @@
     "landing-children-title": "Районы и города",
     "landing-title-pair": "{{category}} — {{location}}",
     "landing-description-pair": "{{count}} мест — {{location}}",
+    "landing-description-examples": "Например: {{list}}",
     "landing-description-places": "{{count}} мест",
     "landing-description-top-categories": "Основные категории: {{list}}",
     "landing-description-last-added": "Последнее добавлено: {{date}}",

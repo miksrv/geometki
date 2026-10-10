@@ -78,7 +78,12 @@ interface PlacePageProps {
     relatedLocation?: RelatedPlacesLocation | null
 }
 
-const PlacePage: NextPage<PlacePageProps> = ({
+/**
+ * The page body, keyed by the place in `PlacePage` below: Next reuses the page component
+ * between `/places/[id]` routes, and none of this state (cover hash, local photos, open
+ * dialogs, the sections' own state) may survive a move to a nearby place
+ */
+const PlacePageContent: React.FC<PlacePageProps> = ({
     ratingCount,
     place,
     photoList,
@@ -328,9 +333,7 @@ const PlacePage: NextPage<PlacePageProps> = ({
                 data={placeSchema}
             />
 
-            {/* Keyed by the place: Next reuses the page component between /places/[id] routes, and
-                the sections' state (open history, clamp, rate editing) must not survive the move */}
-            <div key={place?.id}>
+            <div>
                 <PlaceHero
                     place={place}
                     coverHash={coverHash}
@@ -469,13 +472,23 @@ const PlacePage: NextPage<PlacePageProps> = ({
     )
 }
 
+const PlacePage: NextPage<PlacePageProps> = (props) => (
+    <PlacePageContent
+        key={props.place?.id}
+        {...props}
+    />
+)
+
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<PlacePageProps>> => {
             const rawParam = typeof context.params?.id === 'string' ? context.params.id : undefined
             const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
-            const translations = await serverSideTranslations(locale)
+            // Started now, awaited with the data: a local file read, but a serial one otherwise.
+            // The no-op catch keeps an early 404/301 return from leaving an unhandled rejection.
+            const translationsPromise = serverSideTranslations(locale)
+            translationsPromise.catch(() => undefined)
 
             if (typeof rawParam !== 'string') {
                 return { notFound: true }
@@ -540,7 +553,11 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 { data: photosData },
                 { data: _commentsData },
                 { data: nearPlaces },
-                { data: relatedData }
+                { data: relatedData },
+                ,
+                ,
+                ,
+                translations
             ] = await Promise.all([
                 store.dispatch(API.endpoints.ratingGetList.initiate(id)),
                 store.dispatch(API.endpoints.photosGetList.initiate({ place: id })),
@@ -571,7 +588,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     : Promise.resolve({ data: undefined }),
                 store.dispatch(API.endpoints.visitedGetUsersList.initiate(id)),
                 store.dispatch(API.endpoints.collectionsGetList.initiate({ limit: IN_COLLECTIONS_LIMIT, placeId: id })),
-                store.dispatch(API.endpoints.activityGetList.initiate({ countOnly: true, place: id }))
+                store.dispatch(API.endpoints.activityGetList.initiate({ countOnly: true, place: id })),
+                translationsPromise
             ])
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))

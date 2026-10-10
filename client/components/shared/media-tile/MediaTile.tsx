@@ -78,6 +78,7 @@ export const MediaTile: React.FC<MediaTileProps> = ({
                                     quality={75}
                                     fill
                                     priority={priority}
+                                    fetchPriority={priority ? 'high' : undefined}
                                     sizes={
                                         mosaic.length === 1
                                             ? '(max-width: 768px) 100vw, 33vw'
@@ -96,6 +97,7 @@ export const MediaTile: React.FC<MediaTileProps> = ({
                             quality={75}
                             fill
                             priority={priority}
+                            fetchPriority={priority ? 'high' : undefined}
                             sizes={sizes}
                             src={coverSrc}
                         />

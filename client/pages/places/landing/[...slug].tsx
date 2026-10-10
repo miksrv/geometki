@@ -25,7 +25,7 @@ import type { LocationLinkListItem } from '@/components/shared/location-link-lis
 import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { PlaceFilterPanel, PlacesFilterType } from '@/sections/place'
-import { getCategoryContent, getCategoryLandingTitle, getCategoryTitle } from '@/utils/categories'
+import { getCategoryContent, getCategoryLandingTitle, getCategoryTitle, isCategoryName } from '@/utils/categories'
 import {
     buildPlacesHref,
     buildPlaceUrl,
@@ -231,11 +231,18 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
         if (kind === 'pair') {
             // The count line, then the category's own text: a pair page with 5-9 places would
             // otherwise be a near-duplicate of every other pair of the same category
+            const examples = placesList
+                .slice(0, 3)
+                .map(({ title: placeTitle }) => placeTitle)
+                .filter(Boolean)
+                .join(', ')
+
             return [
                 t('landing-description-pair', '{{count}} places in {{location}}', {
                     count: pairCount ?? 0,
                     location: locationTitle
                 }),
+                examples ? t('landing-description-examples', 'For example: {{list}}', { list: examples }) : '',
                 categoryContent ?? ''
             ]
                 .filter(Boolean)
@@ -262,7 +269,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
         }
 
         return ''
-    }, [kind, categoryContent, pairCount, locationTitle, summary, t])
+    }, [kind, categoryContent, pairCount, locationTitle, placesList, summary, t])
 
     // The header's lede (DESIGN.md → Page header): the category's own text, or what the
     // location summary says beyond the count — the count itself is the header's meta line,
@@ -404,7 +411,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
             />
             <JsonLdScript
                 scriptKey={'places-landing-list'}
-                data={placesList.map((place) => PlaceSchema(place, SITE_LINK))}
+                data={placesList.map((place) => PlaceSchema(place, canonicalUrl))}
             />
             {!isGeoFiltered && currentPage === 1 && (
                 <JsonLdScript
@@ -415,7 +422,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                         itemListElement: placesList.map((place, index) => ({
                             '@type': 'ListItem',
                             position: index + 1,
-                            url: `${SITE_LINK}${buildPlaceUrl(place.id, place.slug).replace(/^\//, '')}`
+                            url: `${canonicalUrl}${buildPlaceUrl(place.id, place.slug).replace(/^\//, '')}`
                         })),
                         name: title,
                         url: canonicalPage
@@ -547,6 +554,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
             hydrateAuthFromCookies(store, cookies)
             // Started now, awaited with the data: the translations do not gate the API calls
             const translationsPromise = serverSideTranslations(locale)
+            // An early 404/301 return never awaits it: the no-op catch keeps a rejection from
+            // being unhandled; the branches that await it still get the error
+            translationsPromise.catch(() => undefined)
             store.dispatch(setLocale(locale))
 
             const currentPage = parseInt(context.query.page as string, 10) || 1
@@ -648,7 +658,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
             // `?category=` under a URL that already names a category, or a single one under a
             // location when the pair pages are on: the canonical page is another URL (SEO review,
             // 2026-10-10: the page served other content under a self-canonical, indexable URL)
-            if (queryCategoriesFromUrl.length && classification.kind === 'category') {
+            if (
+                queryCategoriesFromUrl.length &&
+                (classification.kind === 'category' || classification.kind === 'pair')
+            ) {
                 const { category: _category, ...rest } = query
                 writeRedirect(context, locale, `${canonicalPathname}${encodeQueryData(rest)}`)
                 return { props: {} as PlacesLandingPageProps }
@@ -656,6 +669,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             if (
                 queryCategoriesFromUrl.length === 1 &&
+                isCategoryName(queryCategoriesFromUrl[0]) &&
                 classification.kind === 'location' &&
                 flags.combinations &&
                 flags.categories

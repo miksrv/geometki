@@ -536,6 +536,7 @@
     "landing-children-title": "Districts and localities",
     "landing-title-pair": "{{category}} — {{location}}",
     "landing-description-pair": "{{count}} places in {{location}}",
+    "landing-description-examples": "For example: {{list}}",
     "landing-description-places": "{{count}} places",
     "landing-description-top-categories": "Top categories: {{list}}",
     "landing-description-last-added": "Last added: {{date}}",
