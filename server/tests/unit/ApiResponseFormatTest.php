@@ -389,8 +389,8 @@ final class ApiResponseFormatTest extends CIUnitTestCase
 
     public function testPlaceCoverMinimumCropKeepsTheCoverAspect(): void
     {
-        $this->assertSame(1024, PLACE_COVER_MIN_WIDTH);
-        $this->assertSame(341, PLACE_COVER_MIN_HEIGHT);
+        $this->assertSame(400, PLACE_COVER_MIN_WIDTH);
+        $this->assertSame(133, PLACE_COVER_MIN_HEIGHT);
         // 3:1 like the cover itself, rounded down so a client-side 3:1 crop always passes
         $this->assertSame(PLACE_COVER_WIDTH / PLACE_COVER_HEIGHT, 3);
         $this->assertSame((int) floor(PLACE_COVER_MIN_WIDTH / 3), PLACE_COVER_MIN_HEIGHT);

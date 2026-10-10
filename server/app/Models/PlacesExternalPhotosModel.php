@@ -51,6 +51,46 @@ class PlacesExternalPhotosModel extends ApplicationBaseModel
     protected $beforeInsert   = ['generateId'];
 
     /**
+     * Whether the place cover may be cut from this photo: big enough for the cover, and a licence
+     * that allows changing the image. A Commons photo needs a known licence without NoDerivatives
+     * (cropping is a change); PastVu gives no licence, its photos are credited in the cover caption.
+     *
+     * @param array $row
+     * @return bool
+     */
+    public static function canBeCover(array $row): bool
+    {
+        if ((int) ($row['width'] ?? 0) < PLACE_COVER_MIN_WIDTH || (int) ($row['height'] ?? 0) < PLACE_COVER_MIN_HEIGHT) {
+            return false;
+        }
+
+        if ($row['source'] === self::SOURCE_PASTVU) {
+            return true;
+        }
+
+        $license = trim((string) ($row['license'] ?? ''));
+
+        return $license !== '' && !preg_match('/(\bND\b|no\s*deriv)/i', $license);
+    }
+
+    /**
+     * The cover caption of a cover cut from this photo
+     *
+     * @param array $row
+     * @return array
+     */
+    public static function formatAsCoverCredit(array $row): array
+    {
+        return [
+            'source'     => $row['source'],
+            'author'     => $row['author'],
+            'license'    => $row['license'],
+            'licenseUrl' => $row['license_url'],
+            'url'        => $row['page_url'],
+        ];
+    }
+
+    /**
      * A linked photo in the shape of an uploaded one (ApiModel.Photo on the client),
      * with the source details in `external`
      *
@@ -78,6 +118,8 @@ class PlacesExternalPhotosModel extends ApplicationBaseModel
                 'licenseUrl' => $row['license_url'],
                 'year'       => $row['year'] ? (int) $row['year'] : null,
                 'url'        => $row['page_url'],
+                // The place cover can be cut from it (see canBeCover)
+                'coverAllowed' => self::canBeCover($row),
             ],
         ];
     }

@@ -175,7 +175,7 @@ class Photos extends ResourceController
         }
 
         $placesModel = new PlacesModel();
-        $placesData  = $placesModel->select('id, lat, lon, photos, user_id')->find($id);
+        $placesData  = $placesModel->select('id, lat, lon, photos, cover_external_id, user_id')->find($id);
 
         $placeContent = new PlacesContent();
         $placeContent->translate([$id]);
@@ -199,9 +199,13 @@ class Photos extends ResourceController
             $newName  = $photo->getRandomName();
             $photo->move($photoDir, $newName, true);
 
-            // The first photo of a place also becomes its cover
+            // The first photo of a place also becomes its cover, unless the cover is cut from a linked photo
             $photoLibrary = new PhotoLibrary();
-            $processed    = $photoLibrary->processFile($photoDir . $newName, $photoDir, (int) $placesData->photos === 0);
+            $processed    = $photoLibrary->processFile(
+                $photoDir . $newName,
+                $photoDir,
+                (int) $placesData->photos === 0 && empty($placesData->cover_external_id)
+            );
 
             $name = $processed->name;
             $ext  = $processed->ext;
@@ -279,7 +283,7 @@ class Photos extends ResourceController
         }
 
         $placesModel = new PlacesModel();
-        $placesData  = $placesModel->select('id, photos')->find($photoData->place_id);
+        $placesData  = $placesModel->select('id, photos, cover_external_id')->find($photoData->place_id);
 
         if (!$photosModel->delete($id, true)) {
             return $this->failServerError(lang('Photos.deleteError'));
@@ -290,8 +294,9 @@ class Photos extends ResourceController
         PhotoLibrary::removeFile($photoDir . $photoData->filename . '.' . $photoData->extension);
         PhotoLibrary::removeFile($photoDir . $photoData->filename . '_preview.' . $photoData->extension);
 
-        // If this was last photo of place - we need to remove place cover files
-        if ((int) $placesData?->photos === 1) {
+        // If this was last photo of place - we need to remove place cover files,
+        // unless the cover is cut from a linked photo
+        if ((int) $placesData?->photos === 1 && empty($placesData->cover_external_id)) {
             PhotoLibrary::removeFile($photoDir . 'cover.jpg');
             PhotoLibrary::removeFile($photoDir . 'cover_preview.jpg');
         }

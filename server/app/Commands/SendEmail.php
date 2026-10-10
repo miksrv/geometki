@@ -91,7 +91,7 @@ class SendEmail extends BaseCommand
         // If we have collected IDs of places, we will get information about them from the database and download translations
         if ($placesIds) {
             $placesModel = new PlacesModel();
-            $placesData  = $placesModel->select('id, slug, photos')->whereIn('id', $placesIds)->findAll();
+            $placesData  = $placesModel->select('id, slug, photos, cover_external_id')->whereIn('id', $placesIds)->findAll();
             $placeContent->translate($placesIds);
         }
 
@@ -126,7 +126,7 @@ class SendEmail extends BaseCommand
                 $placeId    = $placesData[$findPlace]->id;
                 $placeSlug  = $placesData[$findPlace]->slug;
                 $placeTitle = $placeContent->title($placeId);
-                $placeCover = $placesData[$findPlace]->photos && (new PlaceFormatterLibrary())->coverExists($placeId)
+                $placeCover = (new PlaceFormatterLibrary())->coverExists($placeId, $placesData[$findPlace]->photos || $placesData[$findPlace]->cover_external_id)
                     ? PATH_PHOTOS . $placeId . '/cover.jpg'
                     : null;
 

@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 use App\Libraries\ExternalPhotosClient;
 use App\Libraries\OsmTiles;
+use App\Libraries\PlaceCoverLibrary;
+use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Models\PlacesExternalPhotosModel;
@@ -18,7 +20,8 @@ use Throwable;
  *
  * The images are not downloaded: the gallery of a place shows them from the source servers
  * together with the uploaded photos (see Photos::list). Linking gives no experience
- * and is not shown in the activity feed.
+ * and is not shown in the activity feed. A place without a cover gets one cut from the first
+ * linked photo that can be a cover (PlaceCoverLibrary); unlinking the cover source rebuilds it.
  *
  * @package App\Controllers
  */
@@ -129,7 +132,7 @@ class ExternalPhotos extends ResourceController
             return $this->failValidationErrors(lang('ExternalPhotos.invalidRequest'));
         }
 
-        $place = (new PlacesModel())->select('id, lat, lon')->find($placeId);
+        $place = (new PlacesModel())->select('id, lat, lon, photos, cover_external_id')->find($placeId);
 
         if (!$place) {
             return $this->failValidationErrors(lang('ExternalPhotos.placeNotFound'));
@@ -164,6 +167,8 @@ class ExternalPhotos extends ResourceController
             }
 
             $saved = $this->model->find($this->model->getLastGeneratedId());
+
+            $this->autoCover($place, $saved);
 
             $content = new PlacesContent();
             $content->translate([$placeId]);
@@ -203,7 +208,7 @@ class ExternalPhotos extends ResourceController
             return $this->failNotFound(lang('ExternalPhotos.linkNotFound'));
         }
 
-        $place  = (new PlacesModel())->select('id, user_id')->find($row['place_id']);
+        $place  = (new PlacesModel())->select('id, user_id, cover_external_id')->find($row['place_id']);
         $userId = $this->session->user?->id;
 
         $allowed = $row['user_id'] === $userId
@@ -216,6 +221,39 @@ class ExternalPhotos extends ResourceController
 
         $this->model->delete($id);
 
+        // The cover was cut from this photo: it goes with the photo's credit
+        if ($place && $place->cover_external_id === $id) {
+            try {
+                (new PlaceCoverLibrary())->rebuild($place->id);
+            } catch (Throwable $e) {
+                log_message('error', '{exception}', ['exception' => $e]);
+            }
+        }
+
         return $this->respondDeleted(['id' => $id]);
+    }
+
+    /**
+     * The first linked photo that can be a cover becomes the cover of a place without one.
+     * A failure only leaves the place without a cover: the photo is linked anyway.
+     *
+     * @param object $place
+     * @param array $row
+     * @return void
+     */
+    private function autoCover(object $place, array $row): void
+    {
+        $hasCover = (new PlaceFormatterLibrary())
+            ->coverExists($place->id, (int) $place->photos > 0 || !empty($place->cover_external_id));
+
+        if ($hasCover || !PlacesExternalPhotosModel::canBeCover($row)) {
+            return;
+        }
+
+        try {
+            (new PlaceCoverLibrary())->fromExternal($place->id, $row);
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+        }
     }
 }

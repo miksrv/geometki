@@ -33,6 +33,7 @@ class PlacesModel extends ApplicationBaseModel
         'views',
         'trending_score',
         'photos',
+        'cover_external_id',
         'comments',
         'bookmarks',
         'address_en',
@@ -123,7 +124,7 @@ class PlacesModel extends ApplicationBaseModel
     {
         return $this
             ->select(
-                'places.id, places.slug, places.lat, places.lon, places.views, places.photos, places.rating, places.comments,
+                'places.id, places.slug, places.lat, places.lon, places.views, places.photos, places.cover_external_id, places.rating, places.comments,
                 places.bookmarks, places.updated_at as updated, places.created_at as created, places.category,
                 places.country_id, places.region_id, places.district_id, places.locality_id, places.address_ru, places.address_en,
                 users.id as user_id, users.name as user_name, users.avatar as user_avatar, users.activity_at,
@@ -161,7 +162,7 @@ class PlacesModel extends ApplicationBaseModel
     {
         $this->select(
             'places.id, places.slug, places.lat, places.lon, places.category,
-            places.rating, places.views, places.photos, places.comments, places.bookmarks,
+            places.rating, places.views, places.photos, places.cover_external_id, places.comments, places.bookmarks,
             places.updated_at as updated,
             places.country_id, places.region_id, places.district_id, places.locality_id,
             places.address_ru, places.address_en,

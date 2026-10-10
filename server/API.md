@@ -451,6 +451,8 @@ Get full details for a single place by ID. Increments the view counter.
 
 `visitRadiusM` and `verificationExempt` drive the verified "visited" mark (see `PUT /visited`).
 
+A cover cut from a linked photo (see `PATCH /places/cover/:id`) also has `cover.credit`: `{ "source": "wikimedia" | "pastvu", "author", "license", "licenseUrl", "url" }` — the photo's author, licence and source page, to be shown with the cover.
+
 **Error responses:**
 
 - `404` — Place not found
@@ -556,7 +558,9 @@ Note: The `tags` key is only present in the response when `tags` was included in
 
 #### `PATCH /places/cover/:id`
 
-Set the cover image for a place by cropping an existing uploaded photo.
+Set the cover image for a place by cropping one of its photos: an uploaded one (`photoId`) or a linked Wikimedia Commons / PastVu one (`externalPhotoId`, the `id` of a `GET /photos` item with `external.coverAllowed: true`). A linked photo is downloaded from its source only for the cut; the place then remembers it and `GET /places/:id` credits it in `cover.credit`.
+
+A linked photo can be a cover when it is at least 400×133 (a smaller photo is upscaled to the 1800×600 cover) and, for Wikimedia Commons, has a known licence without NoDerivatives (cropping changes the image). PastVu gives no licence; such covers are credited too.
 
 **Auth required:** Yes
 
@@ -570,11 +574,14 @@ Set the cover image for a place by cropping an existing uploaded photo.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| photoId | string | Yes | ID of the photo to use as cover |
+| photoId | string | One of the two | ID of an uploaded photo of the place |
+| externalPhotoId | string | One of the two | ID of a linked photo of the place |
 | x | integer | Yes | Crop origin X (pixels) |
 | y | integer | Yes | Crop origin Y (pixels) |
 | width | integer | Yes | Crop width (pixels) |
 | height | integer | Yes | Crop height (pixels) |
+
+The crop box is in the pixels of the image file: for a linked photo, of the file at its `full` URL (a PastVu file is a little taller than its size in the PastVu API). A box sticking out of the image by rounding is moved inside it.
 
 ```json
 {
@@ -591,7 +598,7 @@ Set the cover image for a place by cropping an existing uploaded photo.
 **Error responses:**
 
 - `401` — Not authenticated
-- `400` — Missing fields, image dimensions too small/large, place or photo not found
+- `400` — Missing fields, image dimensions too small/large, place or photo not found, the linked photo cannot be a cover, or its source did not return the image
 
 ---
 
@@ -899,7 +906,7 @@ List photos with optional filtering and pagination, newest first.
 }
 ```
 
-With `place` (and no `author`), the first page also includes the Wikimedia Commons and PastVu photos linked to the place (see External Photos): same shape with absolute `full`/`preview` URLs, no `author`, and an `external` object (`source`, `externalId`, `title`, `author`, `license`, `licenseUrl`, `year`, `url`). `count` includes them on every page.
+With `place` (and no `author`), the first page also includes the Wikimedia Commons and PastVu photos linked to the place (see External Photos): same shape with absolute `full`/`preview` URLs, no `author`, and an `external` object (`source`, `externalId`, `title`, `author`, `license`, `licenseUrl`, `year`, `url`, `coverAllowed` — the place cover can be cut from it). `count` includes them on every page.
 
 ---
 
@@ -1134,6 +1141,8 @@ Link a photo to a place; its details (URLs, author, licence, coordinates) are fe
 
 **Response:** `201 Created` with the photo in the `GET /photos` external shape.
 
+A place without a cover gets one cut from the centre of the first linked photo that can be a cover (`external.coverAllowed`). A failure there leaves the place without a cover; the photo is linked anyway.
+
 **Error responses:**
 
 - `401` — Not authenticated
@@ -1145,7 +1154,7 @@ Link a photo to a place; its details (URLs, author, licence, coordinates) are fe
 
 #### `DELETE /external-photos/:id`
 
-Unlink a photo: by the user who linked it, the place author, or an admin.
+Unlink a photo: by the user who linked it, the place author, or an admin. When the place cover was cut from this photo, the cover is made again from the newest uploaded photo, otherwise from another linked photo that can be a cover, otherwise the place is left without one.
 
 **Auth required:** Yes
 

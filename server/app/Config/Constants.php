@@ -93,9 +93,10 @@ defined('PATH_TEMPORARY') || define('PATH_TEMPORARY', 'uploads/temp/');
 // width, stored at about 1.5x of it for sharp HiDPI screens (next/image serves smaller copies)
 defined('PLACE_COVER_WIDTH') || define('PLACE_COVER_WIDTH', 1800);
 defined('PLACE_COVER_HEIGHT') || define('PLACE_COVER_HEIGHT', 600);
-// Smallest crop of a photo accepted as a cover (same 3:1, upscaled to the cover size)
-defined('PLACE_COVER_MIN_WIDTH') || define('PLACE_COVER_MIN_WIDTH', 1024);
-defined('PLACE_COVER_MIN_HEIGHT') || define('PLACE_COVER_MIN_HEIGHT', 341);
+// Smallest crop of a photo accepted as a cover (same 3:1, upscaled to the cover size): low on
+// purpose, so an old or small linked photo can still be the cover; only a tiny crop is refused
+defined('PLACE_COVER_MIN_WIDTH') || define('PLACE_COVER_MIN_WIDTH', 400);
+defined('PLACE_COVER_MIN_HEIGHT') || define('PLACE_COVER_MIN_HEIGHT', 133);
 defined('PLACE_COVER_PREVIEW_WIDTH') || define('PLACE_COVER_PREVIEW_WIDTH', 680);
 defined('PLACE_COVER_PREVIEW_HEIGHT') || define('PLACE_COVER_PREVIEW_HEIGHT', 300);
 
