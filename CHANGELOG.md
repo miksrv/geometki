@@ -7,7 +7,7 @@
 - Categories: new categories Natural wonders, Viewpoints, Industrial, Architecture, Engineering, Art objects, Disasters and Anomalous, with new icons
 - Categories: Nature, Bridges, Engineering structures, Mines, Monuments, Places of death, Radiation and Animals are merged into them; old category links redirect
 - Categories: "Historical building" is now "Manor" (manors and palaces), "Equipment on a pedestal" is now "Vehicles"
-- Places: category landing pages (`/places/{category}`) are on
+- Places: category landing pages (`/places/{category}`) are on; an empty category suggests adding the first place
 - Tags: the Tags page is removed; tags stay on places and in the filter
 - Places: the cover can be cut from a linked Wikimedia Commons or PastVu photo and is credited on it; a place without a cover gets one from the first suitable linked photo
 - Places: smaller photos can be the cover too (upscaled); a failed cover save shows one error instead of two
