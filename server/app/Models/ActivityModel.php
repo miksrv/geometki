@@ -120,6 +120,31 @@ class ActivityModel extends ApplicationBaseModel
     }
 
     /**
+     * Number of activity rows the feed would show for the same filters as
+     * getActivityList() (bookmarks excluded): the "История изменений (N)"
+     * counter on the place page, which renders collapsed and must not load
+     * the list itself to show the number.
+     *
+     * @param string|null $userId
+     * @param string|null $placeId
+     * @return int
+     */
+    public function getActivityCount(?string $userId = null, ?string $placeId = null): int
+    {
+        $model = $this->where('activity.type !=', 'bookmark');
+
+        if ($userId) {
+            $model->where('activity.user_id', $userId);
+        }
+
+        if ($placeId) {
+            $model->where('activity.place_id', $placeId);
+        }
+
+        return (int) $model->countAllResults();
+    }
+
+    /**
      * Whether a 'collection' (created) activity has already been recorded
      * for the given collection. Used to fire that activity only once, when
      * the collection first reaches the minimum place count.

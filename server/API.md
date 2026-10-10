@@ -1334,6 +1334,7 @@ Submit or update a rating for a place.
 **Error responses:**
 
 - `400` — Missing data
+- `403` — The signed-in user is the author of the place (own places cannot be rated)
 - `404` — Place not found
 
 ---
@@ -1464,9 +1465,13 @@ List site-wide activity feed, grouped by user and place. Results are paginated a
         }
       ]
     }
-  ]
+  ],
+  "has_more": true,
+  "count": 14
 }
 ```
+
+`has_more` tells whether another page follows; `count` is the total number of activity rows (not groups) matching the `author` / `place` filters, so a collapsed "history" block can show the number without loading the list.
 
 Activity `type` values: `place` (new place created), `edit` (place content updated), `photo` (photo uploaded), `rating` (place rated), `comment` (comment posted), `cover` (cover image set).
 

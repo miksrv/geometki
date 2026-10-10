@@ -77,7 +77,12 @@ class Activity extends ResourceController
             $this->model->incrementViews($activityIds);
         }
 
-        return $this->respond(['items' => $groupedData, 'has_more' => $hasMore]);
+        return $this->respond([
+            'items'    => $groupedData,
+            'has_more' => $hasMore,
+            // Total rows for these filters (not groups): the collapsed "history" row of the place page
+            'count'    => $this->model->getActivityCount($author, $place),
+        ]);
     }
 
     /**
