@@ -97,9 +97,9 @@ class PlaceFormatterLibrary
     }
 
     /**
-     * Whether the place's cover file is available. With Config\Uploads::$verifyFiles
-     * disabled (images served from another host) the file is not checked: then a place has
-     * a cover when it has photos or a cover from a linked photo, which the caller passes.
+     * Whether the place has a cover: something to cut it from (uploaded photos or a linked
+     * cover photo, passed by the caller) and the cover file. With Config\Uploads::$verifyFiles
+     * disabled (images served from another host) the file is assumed to exist.
      *
      * @param string $placeId
      * @param bool   $hasCoverSource The place has uploaded photos or places.cover_external_id
@@ -107,8 +107,12 @@ class PlaceFormatterLibrary
      */
     public function coverExists(string $placeId, bool $hasCoverSource = true): bool
     {
+        if (!$hasCoverSource) {
+            return false;
+        }
+
         if (!config('Uploads')->verifyFiles) {
-            return $hasCoverSource;
+            return true;
         }
 
         return file_exists(UPLOAD_PHOTOS . $placeId . '/cover.jpg');

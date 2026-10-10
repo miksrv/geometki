@@ -95,11 +95,6 @@ export const HistoricalPhotos: React.FC<HistoricalPhotosProps> = ({ onPhotoClick
 
     const allPhotoMarks = useMemo(() => photos.map(photoToMark), [photos])
 
-    const handlePhotoClick = useCallback(
-        (index: number) => onPhotoClick?.(allPhotoMarks, index),
-        [onPhotoClick, allPhotoMarks]
-    )
-
     const zoom = params?.z ?? 0
 
     // From LOCAL_WORK_ZOOM PastVu returns every photo of the area unclustered: grouped here
@@ -109,6 +104,22 @@ export const HistoricalPhotos: React.FC<HistoricalPhotosProps> = ({ onPhotoClick
                 ? groupPhotos(photos, (geo) => map.project(geo, zoom))
                 : photos.map((photo, index) => ({ geo: photo.geo, indexes: [index] })),
         [photos, zoom]
+    )
+
+    // The viewer gets the photos drawn one by one: from LOCAL_WORK_ZOOM the area may hold
+    // thousands of photos, most of them inside the groups
+    const viewerIndexes = useMemo(
+        () => groups.filter(({ indexes }) => indexes.length === 1).map(({ indexes }) => indexes[0]),
+        [groups]
+    )
+
+    const handlePhotoClick = useCallback(
+        (index: number) =>
+            onPhotoClick?.(
+                viewerIndexes.map((i) => allPhotoMarks[i]),
+                Math.max(0, viewerIndexes.indexOf(index))
+            ),
+        [onPhotoClick, allPhotoMarks, viewerIndexes]
     )
 
     // Closer if the map can zoom in, otherwise the group's photos in the viewer

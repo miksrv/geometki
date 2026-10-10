@@ -377,7 +377,18 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const locality = parseInt(context.query.locality as string, 10) || null
 
             const currentPage = parseInt(context.query.page as string, 10) || 1
-            const category = (context.query.category as string) || null
+            // A repeated `?category=a&category=b` comes as an array: its first value counts
+            const rawCategory = context.query.category
+            const queryCategory = (Array.isArray(rawCategory) ? rawCategory[0] : rawCategory) || ''
+
+            // A retired category key (features/09-place-categories.md) is replaced with the key
+            // that took its places: the landing 301 below then goes straight to its page, and
+            // the other cases get a 301 to the same listing with the new key
+            const requestedCategories = queryCategory ? queryCategory.split(',').map((name) => name.trim()) : []
+            const renamedCategory = requestedCategories.some((name) => RENAMED_CATEGORIES[name])
+                ? Array.from(new Set(requestedCategories.map((name) => RENAMED_CATEGORIES[name] ?? name))).join(',')
+                : null
+            const category = renamedCategory ?? (queryCategory || null)
 
             const lat = parseFloat(context.query.lat as string) || null
             const lon = parseFloat(context.query.lon as string) || null
@@ -386,19 +397,6 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const defaultSort = cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT
             const sort = (context.query.sort as ApiType.SortFieldsType) || defaultSort
             const order = (context.query.order as ApiType.SortOrdersType) || DEFAULT_ORDER
-
-            // A retired category key (features/09-place-categories.md) 301s to the key that took
-            // its places; the landing redirect below then runs on the new URL
-            const requestedCategories = category ? category.split(',').map((name) => name.trim()) : []
-
-            if (requestedCategories.some((name) => RENAMED_CATEGORIES[name])) {
-                const current = Array.from(new Set(requestedCategories.map((name) => RENAMED_CATEGORIES[name] ?? name)))
-                const query = { ...context.query, category: current.join(',') }
-                context.res.statusCode = 301
-                context.res.setHeader('Location', `${locale === 'en' ? '/en' : ''}/places${encodeQueryData(query)}`)
-                context.res.end()
-                return { props: {} as PlacesPageProps }
-            }
 
             hydrateAuthFromCookies(store, cookies)
 
@@ -499,6 +497,15 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     context.res.end()
                     return { props: {} as PlacesPageProps }
                 }
+            }
+
+            // A retired category key without a landing page to go to (a list, or the flag off)
+            if (renamedCategory) {
+                const query = { ...context.query, category: renamedCategory }
+                context.res.statusCode = 301
+                context.res.setHeader('Location', `${locale === 'en' ? '/en' : ''}/places${encodeQueryData(query)}`)
+                context.res.end()
+                return { props: {} as PlacesPageProps }
             }
 
             const { data: placesList } = await store.dispatch(

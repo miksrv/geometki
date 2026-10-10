@@ -21,6 +21,9 @@ class PlaceCoverLibrary
 
     private const MAX_DOWNLOAD_BYTES = 30 * 1024 * 1024;
 
+    /** Linked photos tried when rebuilding a cover: each one may wait for a slow source */
+    private const MAX_REBUILD_ATTEMPTS = 2;
+
     private const IMAGE_TYPES = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP, IMAGETYPE_GIF];
 
     private Client $client;
@@ -161,11 +164,23 @@ class PlaceCoverLibrary
             ->orderBy('created_at', 'DESC')
             ->findAll();
 
+        $attempts = 0;
+
         foreach ($linked as $row) {
-            if (PlacesExternalPhotosModel::canBeCover($row) && $this->fromExternal($placeId, $row) === null) {
+            if (!PlacesExternalPhotosModel::canBeCover($row)) {
+                continue;
+            }
+
+            if ($this->fromExternal($placeId, $row) === null || ++$attempts >= self::MAX_REBUILD_ATTEMPTS) {
                 return;
             }
         }
+    }
+
+    private static function isSourceUrl(string $url): bool
+    {
+        return parse_url($url, PHP_URL_SCHEME) === 'https'
+            && in_array(parse_url($url, PHP_URL_HOST), self::SOURCE_HOSTS, true);
     }
 
     /**
@@ -176,7 +191,7 @@ class PlaceCoverLibrary
      */
     private function download(string $url): ?string
     {
-        if (parse_url($url, PHP_URL_SCHEME) !== 'https' || !in_array(parse_url($url, PHP_URL_HOST), self::SOURCE_HOSTS, true)) {
+        if (!self::isSourceUrl($url)) {
             return null;
         }
 
@@ -188,8 +203,18 @@ class PlaceCoverLibrary
 
         try {
             $this->client->get($url, [
-                'sink'       => $path,
-                'on_headers' => static function ($response) {
+                'sink'            => $path,
+                // A redirect is followed only to a source host as well
+                'allow_redirects' => [
+                    'max'         => 3,
+                    'protocols'   => ['https'],
+                    'on_redirect' => static function ($request, $response, $uri) {
+                        if (!self::isSourceUrl((string) $uri)) {
+                            throw new \RuntimeException('The linked photo redirects outside its source');
+                        }
+                    },
+                ],
+                'on_headers'      => static function ($response) {
                     if ((int) $response->getHeaderLine('Content-Length') > self::MAX_DOWNLOAD_BYTES) {
                         throw new \RuntimeException('The linked photo is too big');
                     }

@@ -537,7 +537,7 @@
     "read-more": "Read more",
     "pagination-range": "{{from}}–{{to}} of {{total}}",
     "collections_index-lede": "Collections are themed sets of places put together by travellers themselves: a weekend route, the abandoned factories of one region, the caves of the Urals or the manors along a single road. Every collection has a map with all its points, photos and the author's description, so it is easy to plan a whole trip from it instead of looking places up one by one. Any registered user can put together a collection of their own from the places on the site.",
-    "landing-title-category-seo": "{{category}}: map, photos, coordinates and descriptions",
+    "landing-title-category-seo": "{{category}}: map and photos",
     "landing-open-on-map": "Show on map",
     "landing-category-empty-title": "No places here yet",
     "landing-category-empty-description": "Know a place like this? Add it first and it will show up on this page",
