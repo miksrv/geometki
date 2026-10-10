@@ -22,6 +22,11 @@ export type RequestGetByBounds = {
         coordinates: Array<Array<[number, number]>>
     }
     z: number
+    /**
+     * Required from zoom 17 (`LOCAL_WORK_ZOOM`): without it PastVu answers with nothing there.
+     * With it, every photo of the area comes back, never clustered
+     */
+    localWork?: 1
     isPainting?: boolean
     year?: number
     year2?: number

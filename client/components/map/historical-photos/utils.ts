@@ -3,7 +3,7 @@ import Leaflet, { LatLngBounds } from 'leaflet'
 import { ApiModel } from '@/api'
 import { PastvuPhoto, RequestGetByBounds } from '@/api/apiPastvu'
 
-import { DIR_TO_DEGREES, IMG_HOST, MAX_YEAR, MIN_YEAR } from './constants'
+import { DIR_TO_DEGREES, GROUP_CELL_SIZE, IMG_HOST, LOCAL_WORK_ZOOM, MAX_YEAR, MIN_YEAR } from './constants'
 
 import styles from './styles.module.sass'
 
@@ -20,8 +20,44 @@ export const buildParams = (bounds: LatLngBounds, zoom: number): RequestGetByBou
             ]
         ]
     },
-    z: zoom
+    z: zoom,
+    ...(zoom >= LOCAL_WORK_ZOOM ? { localWork: 1 as const } : {})
 })
+
+export interface PhotoGroup {
+    /** The first photo's position: the group is drawn there */
+    geo: [number, number]
+    /** Indexes into the photos array */
+    indexes: number[]
+}
+
+/**
+ * Groups the photos by a screen grid. PastVu clusters them itself only below
+ * `LOCAL_WORK_ZOOM`; above it a city centre has tens of thousands of photos in view,
+ * one marker each would freeze the map. `project` turns a position into screen pixels
+ * (`map.project` at the current zoom).
+ */
+export const groupPhotos = (
+    photos: Array<Pick<PastvuPhoto, 'geo'>>,
+    project: (geo: [number, number]) => { x: number; y: number },
+    cellSize: number = GROUP_CELL_SIZE
+): PhotoGroup[] => {
+    const cells = new Map<string, PhotoGroup>()
+
+    photos.forEach((photo, index) => {
+        const { x, y } = project(photo.geo)
+        const key = `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`
+        const cell = cells.get(key)
+
+        if (cell) {
+            cell.indexes.push(index)
+        } else {
+            cells.set(key, { geo: photo.geo, indexes: [index] })
+        }
+    })
+
+    return Array.from(cells.values())
+}
 
 export const photoToMark = (photo: PastvuPhoto): ApiModel.PhotoMark => ({
     full: `${IMG_HOST}/a/${photo.file}`,

@@ -6,6 +6,7 @@ import {
     createClusterIcon,
     createDirectionIcon,
     createThumbnailIcon,
+    groupPhotos,
     photoToMark,
     yearToColor
 } from './utils'
@@ -73,6 +74,41 @@ describe('buildParams', () => {
         const coords = buildParams(mockBounds, 10).geometry.coordinates[0]
         expect(coords[0]).toStrictEqual([37.29, 55.57])
         expect(coords[2]).toStrictEqual([37.96, 55.92])
+    })
+
+    it('asks for local work from zoom 17: PastVu returns nothing there without it', () => {
+        expect(buildParams(mockBounds, 16).localWork).toBeUndefined()
+        expect(buildParams(mockBounds, 17).localWork).toBe(1)
+        expect(buildParams(mockBounds, 19).localWork).toBe(1)
+    })
+})
+
+describe('groupPhotos', () => {
+    // 1 degree = 1000 px, so the photos' screen positions are easy to read
+    const project = ([lat, lon]: [number, number]) => ({ x: lon * 1000, y: lat * 1000 })
+
+    it('puts the photos of one grid cell into one group, in order', () => {
+        const photos: Array<{ geo: [number, number] }> = [
+            { geo: [0.01, 0.01] },
+            { geo: [0.5, 0.5] },
+            { geo: [0.02, 0.05] }
+        ]
+
+        expect(groupPhotos(photos, project, 64)).toStrictEqual([
+            { geo: [0.01, 0.01], indexes: [0, 2] },
+            { geo: [0.5, 0.5], indexes: [1] }
+        ])
+    })
+
+    it('keeps a photo alone in its cell', () => {
+        expect(groupPhotos([{ geo: [0.01, 0.01] }, { geo: [0.01, 0.07] }], project, 64)).toStrictEqual([
+            { geo: [0.01, 0.01], indexes: [0] },
+            { geo: [0.01, 0.07], indexes: [1] }
+        ])
+    })
+
+    it('returns no groups for no photos', () => {
+        expect(groupPhotos([], project)).toStrictEqual([])
     })
 })
 

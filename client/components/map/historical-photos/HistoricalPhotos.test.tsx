@@ -67,6 +67,28 @@ const mockData = {
     }
 }
 
+// Two photos a few meters apart and one far away
+const closePhotos = {
+    result: {
+        clusters: [],
+        photos: [
+            { cid: 1, file: 'photo1.jpg', geo: [51.765, 55.099], title: 'Old Photo 1', year: 1900 },
+            { cid: 2, file: 'photo2.jpg', geo: [51.76501, 55.09901], title: 'Old Photo 2', year: 1910 },
+            { cid: 3, file: 'photo3.jpg', geo: [51.8, 55.2], title: 'Old Photo 3', year: 1920 }
+        ]
+    }
+}
+
+// 1 degree = 100 000 px: the two close photos share a 64 px cell
+const mockCloseMap = (maxZoom: number, setView = jest.fn()) =>
+    jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(() => ({
+        getBounds: () => mockBounds,
+        getMaxZoom: () => maxZoom,
+        getZoom: () => 17,
+        project: ([lat, lon]: [number, number]) => ({ x: lon * 100000, y: lat * 100000 }),
+        setView
+    }))
+
 describe('HistoricalPhotos', () => {
     beforeEach(() => {
         jest.clearAllMocks()
@@ -108,12 +130,56 @@ describe('HistoricalPhotos', () => {
             expect(screen.getByLabelText('Old Photo 1')).toBeInTheDocument()
         })
 
+        it('draws every photo separately below zoom 17: PastVu has clustered them already', () => {
+            jest.mocked(APIPastvu.useGetByBoundsQuery).mockReturnValue({ data: closePhotos })
+            render(<HistoricalPhotos />)
+            expect(screen.getAllByTestId('historical-marker')).toHaveLength(3)
+        })
+
         it('calls onPhotoClick when a marker is clicked', () => {
             const onPhotoClick = jest.fn()
             render(<HistoricalPhotos onPhotoClick={onPhotoClick} />)
             screen.getAllByTestId('historical-marker')[0].click()
             expect(onPhotoClick).toHaveBeenCalledWith(
                 expect.arrayContaining([expect.objectContaining({ title: expect.stringContaining('Old Photo 1') })]),
+                0
+            )
+        })
+    })
+
+    describe('from zoom 17', () => {
+        beforeEach(() => {
+            jest.mocked(APIPastvu.useGetByBoundsQuery).mockReturnValue({ data: closePhotos })
+        })
+
+        it('groups the photos that share a screen cell into one marker', () => {
+            mockCloseMap(19)
+            render(<HistoricalPhotos />)
+
+            expect(screen.getAllByTestId('historical-marker')).toHaveLength(2)
+            expect(screen.getByLabelText('Old Photo 3')).toBeInTheDocument()
+        })
+
+        it('zooms in on a group while the map can zoom in', () => {
+            const setView = jest.fn()
+            mockCloseMap(19, setView)
+            render(<HistoricalPhotos />)
+
+            screen.getAllByTestId('historical-marker')[0].click()
+            expect(setView).toHaveBeenCalledWith([51.765, 55.099], 18)
+        })
+
+        it('opens the photos of the group at the maximum zoom', () => {
+            const onPhotoClick = jest.fn()
+            mockCloseMap(17)
+            render(<HistoricalPhotos onPhotoClick={onPhotoClick} />)
+
+            screen.getAllByTestId('historical-marker')[0].click()
+            expect(onPhotoClick).toHaveBeenCalledWith(
+                [
+                    expect.objectContaining({ title: 'Old Photo 1 (1900)' }),
+                    expect.objectContaining({ title: 'Old Photo 2 (1910)' })
+                ],
                 0
             )
         })
