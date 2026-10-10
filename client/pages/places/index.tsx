@@ -16,7 +16,7 @@ import { AppLayout, EmptyState, PageHeader, PaginationBar, PlacesList } from '@/
 import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { PlaceFilterPanel, PlacesFilterType } from '@/sections/place'
-import { getCategoryTitle, isCategoryName } from '@/utils/categories'
+import { getCategoryTitle, isCategoryName, RENAMED_CATEGORIES } from '@/utils/categories'
 import { buildPlacesHref, encodeQueryData, getLandingFlags } from '@/utils/helpers'
 import { PlaceSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
@@ -386,6 +386,19 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const defaultSort = cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT
             const sort = (context.query.sort as ApiType.SortFieldsType) || defaultSort
             const order = (context.query.order as ApiType.SortOrdersType) || DEFAULT_ORDER
+
+            // A retired category key (features/09-place-categories.md) 301s to the key that took
+            // its places; the landing redirect below then runs on the new URL
+            const requestedCategories = category ? category.split(',').map((name) => name.trim()) : []
+
+            if (requestedCategories.some((name) => RENAMED_CATEGORIES[name])) {
+                const current = Array.from(new Set(requestedCategories.map((name) => RENAMED_CATEGORIES[name] ?? name)))
+                const query = { ...context.query, category: current.join(',') }
+                context.res.statusCode = 301
+                context.res.setHeader('Location', `${locale === 'en' ? '/en' : ''}/places${encodeQueryData(query)}`)
+                context.res.end()
+                return { props: {} as PlacesPageProps }
+            }
 
             hydrateAuthFromCookies(store, cookies)
 

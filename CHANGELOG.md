@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.14.1
+
+### Patch Changes
+
+- Categories: new categories Natural wonders, Viewpoints, Industrial, Architecture, Engineering, Art objects, Disasters and Anomalous, with new icons
+- Categories: Nature, Bridges, Engineering structures, Mines, Monuments, Places of death, Radiation and Animals are merged into them; old category links redirect
+- Categories: "Historical building" is now "Manor" (manors and palaces), "Equipment on a pedestal" is now "Vehicles"
+- Places: category landing pages (`/places/{category}`) are on
+- Locations: addresses in English are transliterated instead of shown in Cyrillic; Crimea and Sevastopol are listed under Russia
+
 ## 1.14.0
 
 ### Minor Changes

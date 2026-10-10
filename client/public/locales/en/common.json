@@ -548,6 +548,9 @@
     "collections_index-lede": "Collections are themed sets of places put together by travellers themselves: a weekend route, the abandoned factories of one region, the caves of the Urals or the manors along a single road. Every collection has a map with all its points, photos and the author's description, so it is easy to plan a whole trip from it instead of looking places up one by one. Any registered user can put together a collection of their own from the places on the site.",
     "landing-title-category-seo": "{{category}}: map, photos, coordinates and descriptions",
     "landing-open-on-map": "Show on map",
+    "landing-category-empty-title": "No places here yet",
+    "landing-category-empty-description": "Know a place like this? Add it first and it will show up on this page",
+    "landing-category-empty-action": "Add a place",
     "place-votes-count_one": "{{count}} vote",
     "place-votes-count_other": "{{count}} votes",
     "place-no-votes-yet": "No votes yet",
@@ -586,32 +589,32 @@
     "categoryCatalogue": {
         "abandoned": {
             "title": "Abandoned",
-            "landing": "Abandoned places",
+            "landing": "Abandoned buildings and ghost villages",
             "content": "Abandoned and destroyed buildings, complexes and structures of historical, cultural or architectural significance. These objects reflect past eras and events, being witnesses of time and change. Abandoned structures may include abandoned factories, castles, estates, churches, bunkers and other architectural sites that attract the attention of researchers, historians and lovers of abandoned places."
-        },
-        "animals": {
-            "title": "Animals",
-            "landing": "Animals",
-            "content": "Zoos, animal farms and animal parks where visitors can encounter a variety of animal life. These unique places provide an opportunity to meet animals from different parts of the world, study their behavior, biology and ecology."
         },
         "archeology": {
             "title": "Archeology",
-            "landing": "Archaeological sites",
+            "landing": "Hillforts, kurgans and megaliths",
             "content": "This category presents various archaeological sites, including ancient settlements, dolmens, sites of primitive people and other interesting places related to the history and culture of various eras. This includes unique artifacts, remains of ancient civilizations, religious buildings such as obelisks and megalithic monuments, as well as historical excavation sites, petroglyphs, and underwater archaeological finds."
         },
-        "bridge": {
-            "title": "Bridge",
-            "landing": "Bridges",
-            "content": "Historical and modern bridges that represent important architectural and historical sites. These structures play a key role in providing transport infrastructure and connecting various territories, and are also symbols of engineering and architectural excellence. Historic bridges are often associated with important events or periods in history, representing the legacy of past eras and technological advances. Modern bridges, in turn, reflect modern technology and innovation in engineering."
+        "architecture": {
+            "title": "Architecture",
+            "landing": "Unusual architecture and Soviet modernism",
+            "content": "Buildings worth a detour: Soviet modernism and constructivism, wooden architecture with carved window frames, eccentric houses and buildings of unusual shapes. This is architecture that rarely makes it into guidebooks but sticks in the memory at first sight: bold concrete forms, mosaics on facades, old merchant houses and structures built by enthusiasts to their own design."
+        },
+        "artwork": {
+            "title": "Art object",
+            "landing": "Unusual monuments and art objects",
+            "content": "Unusual sculptures and monuments, street art, Soviet mosaics, land art and open-air art objects. These are places where art leaves the museums for the streets and fields: strange, funny or touching monuments, huge installations and murals. Many of them were made by local craftsmen and are known only to the people living nearby, while some have long become symbols of their towns."
         },
         "camping": {
             "title": "Camping (Vacation place)",
-            "landing": "Camping and recreation spots",
+            "landing": "Campsites and overnight spots",
             "content": "Various campsites and campgrounds where visitors can spend the night in tents, RVs or motorhomes. These places provide amenities for temporary outdoor living and provide opportunities for travelers to enjoy nature, relax, and spend time outdoors. Campsites are usually equipped with fire pits, cooking areas, toilets, showers and amenities for a comfortable stay. Tent cities offer more compact tent sites and accommodate both campers and campers."
         },
         "castle": {
             "title": "Fortress (Castle)",
-            "landing": "Fortresses and castles",
+            "landing": "Fortresses, kremlins and castles",
             "content": "Various types of castles, palaces, fortresses, estates, stately homes, kremlins and other historical buildings. These architectural sites are important historical and cultural monuments, reflecting the wealth and grandeur of past eras. Castles and fortresses often served as defensive structures that protected the territory from enemy attacks, while palaces and estates were the residences of noble families and aristocracy."
         },
         "cave": {
@@ -619,84 +622,84 @@
             "landing": "Caves and grottoes",
             "content": "Natural formations such as caves, small grottoes and sinkholes that are formed naturally and provide opportunities for exploration. These places are unique and mysterious, have beauty and mysticism, and provide an opportunity to plunge into the mysterious world of underground spaces. In addition, this category may also include man-made abandoned and unused mines, horizontal adits that are open and accessible for exploration."
         },
-        "construction": {
-            "title": "Engineering structure",
-            "landing": "Engineering structures",
-            "content": "Interesting engineering structures and structures that reflect human creativity in solving various problems and challenges. This includes mills, lighthouses, observatories, antennas and other technical structures that have historical, cultural or scientific significance. These objects are important architectural and technical achievements, reflecting diverse aspects of human development and technological progress."
+        "disaster": {
+            "title": "Disaster site",
+            "landing": "Disasters, nuclear test sites and radiation",
+            "content": "Crash and disaster sites, nuclear test sites, exclusion zones and areas of radioactive contamination, meteorite impact sites. These are traces of tragic events that changed the lives of people and the face of the land. They are reminders of the cost of mistakes and of the power of nature and technology. Visiting many of these places requires special care, and sometimes a permit."
         },
-        "death": {
-            "title": "Place of death",
-            "landing": "Places of death",
-            "content": "Known places of death of a person or group of people, as well as places of accidents, crashes of aircraft or other aircraft that have historical or cultural significance. These places often become objects of memory and veneration, remembering tragic events and losses. Some of them become shrines and places of pilgrimage where people gather to honor the memory of the dead."
+        "engineering": {
+            "title": "Engineering",
+            "landing": "Lighthouses, towers, bridges and observatories",
+            "content": "Lighthouses, windmills and watermills, water towers, dams, old bridges, observatories and other engineering structures. Many of them were built more than a century ago and still impress with their well-thought-out design, and some have become monuments to the engineering thought of their time. Here it is worth looking at the details: the masonry, the steel trusses, the mechanisms and the traces of how people solved technical problems without modern technology."
+        },
+        "industrial": {
+            "title": "Industrial site",
+            "landing": "Factories, mines and quarries",
+            "content": "Working and abandoned factories, plants, mines, adits, quarries and spoil heaps. Industrial sites show the scale of human activity: giant workshops, deep pits, mountains of waste rock and old workings where ore, coal and stone were extracted. They attract fans of industrial aesthetics, the history of technology and unusual man-made landscapes. Many of these places are dangerous, so visit them with care."
+        },
+        "landscape": {
+            "title": "Natural wonder",
+            "landing": "Canyons, craters, dunes and natural landmarks",
+            "content": "Canyons and gorges, craters, dunes, glaciers, geological outcrops, monumental trees and other unusual natural formations that are not mountains, caves or bodies of water. Wind, water and ice shaped these places over thousands of years, carving out landscapes that look like the set of a science fiction film. People come here for rare scenery, for the geological history written in the rock layers and for photos no one else has."
         },
         "manor": {
-            "title": "Historical building",
-            "landing": "Historic buildings and manors",
-            "content": "Historic estates, manors and farms that have been preserved in their original condition and are associated with famous historical figures. These architectural complexes are unique historical objects reflecting the life and culture of past eras. This also includes residences of noble families, estates of famous figures and other objects related to the history and culture of the region."
+            "title": "Manor",
+            "landing": "Manors and palaces",
+            "content": "Noble and merchant manors, palaces, estates and country houses, both preserved and abandoned. These are main houses with colonnades, outbuildings, parks with alleys and ponds, farm buildings and the traces of a life that went on here for centuries. Many manors are associated with famous families, writers and scientists, and some became sanatoriums, schools or simply ruins after the revolution, still keeping the beauty of past eras."
         },
         "memorial": {
             "title": "Monument",
-            "landing": "Monuments",
-            "content": "Monuments and busts that are erected in honor of famous individuals, peoples and victims who died in world wars. These memorial sites serve as reminders of the sacrifices and suffering brought by wars, as well as an expression of honor and respect for those who gave their lives for peace and freedom. Monuments and busts often become symbols of the memory and pride of nations, educating generations and reminding them of the importance of peace and solidarity."
+            "landing": "Monuments and memorials",
+            "content": "Memorials and memorial complexes, monuments, obelisks, busts and mass graves erected in honor of famous people, events and the victims of wars. These places serve as reminders of the heroism and suffering brought by wars and as an expression of respect for those who gave their lives for peace and freedom. Many of them have become symbols of remembrance for their towns and villages, places of gatherings and memorial ceremonies."
         },
         "military": {
             "title": "Military facility",
-            "landing": "Military sites",
+            "landing": "Military bases, forts and bunkers",
             "content": "This category includes various military forts, military training grounds, bunkers (long-term firing points) and bunkers (wood-earth firing points), as well as fortifications and free-standing defensive structures of historical significance. These facilities were built to provide defense and protection of territories during different historical periods. Military forts and fortifications are important historical monuments, reflecting the military architecture and strategic thinking of the era. This category does NOT include modern and secret military facilities that are only of historical significance."
-        },
-        "mine": {
-            "title": "Mine (Quarry)",
-            "landing": "Mines and quarries",
-            "content": "Mines, pits, cuts, quarries and mines that are of historical significance. This includes both ancient mines and mines abandoned many years ago, as well as objects associated with the activities of ancient people. Some of these objects are important archaeological finds, reflecting the techniques and work processes of ancient civilizations. In some cases, this may also include modern facilities, such as grand quarries created through interesting engineering solutions."
-        },
-        "monument": {
-            "title": "Memorial",
-            "landing": "Memorials",
-            "content": "Very large memorial objects that were built for the purpose of remembering and paying respect to a person or group of people, and to serve as a reminder of a specific event. These memorials and monuments are often important symbols of history and culture, representing expressive works of architecture and sculpture. They serve as gathering places, sites of remembrance, and sites of pilgrimage where people come to commemorate the departed and pay tribute to their contributions to history."
         },
         "mountain": {
             "title": "Mountain",
-            "landing": "Mountains and rocks",
+            "landing": "Mountains, cliffs and rock pillars",
             "content": "Various mountain formations and landscapes, including cliffs, cliffs, mountain peaks, hills, mountain peaks and ridges. These natural formations are important elements of the landscape, reflecting natural geological processes and the history of the formation of the earth's crust. Mountain landscapes are objects of admiration for tourists and outdoor enthusiasts, providing opportunities for mountaineering, rock climbing, hiking and enjoying picturesque views of the surrounding nature."
         },
         "museum": {
             "title": "Museum",
-            "landing": "Museums",
-            "content": "Various institutions that host exhibitions of scientific, historical, artistic or cultural artifacts. Museums and exhibition halls are important cultural centers, providing the public with opportunities to become acquainted with various aspects of history, science, art and culture. Here you can see exhibits from different eras and cultural traditions, explore historical artifacts, works of art, and scientific discoveries and innovations."
+            "landing": "Museums, zoos and open-air museums",
+            "content": "Unusual and private museums, open-air museums, exhibition halls, zoos and animal parks. Here you can see exhibits from different eras, old machinery and everyday objects, works of art, and get to know the animal world. Small museums created by enthusiasts are especially valuable: they often keep things and stories that cannot be found anywhere else."
         },
-        "nature": {
-            "title": "Natural object",
-            "landing": "Natural landmarks",
-            "content": "Natural features, including dells, valleys, gorges, preserves and unusual natural formations, excluding caves, cliffs, mountains and the like. These natural objects have unique geological and natural characteristics, attracting attention with their beauty, diversity and unusual shapes. Here you can observe flora and fauna, study geological processes, enjoy picturesque landscapes and immerse yourself in the atmosphere of wild nature."
-        },
-        "radiation": {
-            "title": "Radiation",
-            "landing": "Radiation zones",
-            "content": "Sites of radioactive contamination resulting from accidents or nuclear weapons testing, even in the past. These places have high levels of radiation and pose a danger to human health and the environment. They become objects of research and radiation safety monitoring, as well as symbols of the destructive power of nuclear energy. Visiting these places requires special caution and precautions."
+        "mystic": {
+            "title": "Anomalous place",
+            "landing": "Anomalous and mystical places",
+            "content": "Places of power, anomalous zones and places surrounded by legends: \"cursed\" forests, mysterious stones, tracts with a bad reputation and spots where, as the stories go, inexplicable things happen. What matters here is the story: local legends, rumors and eyewitness accounts. Whether to believe them is up to you, but visiting such a place and forming your own opinion is interesting for any traveler."
         },
         "religious": {
             "title": "Religious building",
-            "landing": "Religious buildings",
+            "landing": "Temples, monasteries and holy places",
             "content": "Churches, mosques, monasteries, chapels and temples of historical significance, including both active and historical religious buildings of various faiths. These buildings are witnesses to the history and culture of peoples, architectural masterpieces and places of spiritual worship. They preserve the rich heritage of past times and reflect religious traditions and customs."
         },
         "spring": {
             "title": "Spring (Source)",
-            "landing": "Springs",
-            "content": "Sources of drinking water, such as springs, springs, groundwater outlets to the surface, which are suitable for drinking. These natural sources of water are of particular value as a source of life and health. They provide fresh, clean water directly from the depths of nature, preserving its natural properties and taste. In some cases, this may include man-made sources of drinking water, such as standpipes, but only those that are located in hard-to-reach places, which adds special character and interest to them."
+            "landing": "Springs, hot springs and geysers",
+            "content": "Springs, wells and holy springs, mineral and hot springs, geysers and other places where groundwater comes to the surface. Many springs offer clean drinking water, holy springs often have a chapel and a bathing font, and hot springs and geysers are a rare natural phenomenon worth travelling far for. In some cases this also includes man-made standpipes, but only in hard-to-reach places where they become a landmark of their own."
         },
         "transport": {
-            "title": "Equipment on a pedestal",
-            "landing": "Vehicles on pedestals",
-            "content": "Static equipment, which is usually installed in a permanent location. This includes various types of military and civilian equipment, as well as railway, air and sea vehicles. These objects represent important historical, technical or cultural artifacts that reflect various aspects of the development of technology and the transport system. Static technology can include tanks, planes, ships, locomotives, cars and other types of vehicles that have become symbols of their era or have special significance to society."
+            "title": "Vehicles",
+            "landing": "Vehicles, ships and railways",
+            "content": "Vehicles on pedestals, ship and aircraft graveyards, abandoned railways, locomotives and other vehicles that have become landmarks. This includes tanks and aircraft monuments, ships moored or stranded on the shore, abandoned carriages and narrow-gauge railways lost in the forest. These objects tell the story of technology and transport, and many of them have become symbols of their era and their towns."
+        },
+        "viewpoint": {
+            "title": "Viewpoint",
+            "landing": "Viewpoints and panoramas",
+            "content": "Places with the widest view: lookout points on hills and cliffs, observation towers, rooftops and spots overlooking a river, a valley or a city. These are places worth climbing up to: at sunrise, at sunset or on a clear day you can see for tens of kilometers. They are the best way to understand the lie of the land, take a panorama, or simply stand above the world for a while."
         },
         "water": {
             "title": "Water",
-            "landing": "Lakes and reservoirs",
+            "landing": "Unusual lakes and reservoirs",
             "content": "Water bodies such as lakes, rivers, reservoirs, ponds and other bodies of water that are suitable for recreation, fishing, and camping. Reservoirs in this category must be part of the natural landscape and play an important role in the biological and ecological diversity of the region. This category should not include artificial hydraulic structures, such as treatment plants, settling tanks and other similar reservoirs."
         },
         "waterfall": {
             "title": "Waterfall",
-            "landing": "Waterfalls",
+            "landing": "Waterfalls and rapids",
             "content": "This category includes various natural waterfalls - unique natural formations characterized by water falling from a height and creating characteristic sound effects. Natural waterfalls are the result of natural processes such as erosion and hydrological phenomena and are important components of ecosystems. They are of interest to tourists and the scientific community as objects of beauty and research."
         }
     }

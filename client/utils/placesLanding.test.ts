@@ -98,9 +98,13 @@ describe('buildPlacesHref — stage 2, categories only', () => {
     })
 
     it('2+ categories never join the path, even with the flag on', () => {
-        const result = buildPlacesHref({ ...base, category: ['cave', 'mine'] }, CATEGORIES_ON)
+        const result = buildPlacesHref({ ...base, category: ['cave', 'industrial'] }, CATEGORIES_ON)
 
-        expect(result).toMatchObject({ href: '/places?category=cave%2Cmine', multiCategory: true, pathname: '/places' })
+        expect(result).toMatchObject({
+            href: '/places?category=cave%2Cindustrial',
+            multiCategory: true,
+            pathname: '/places'
+        })
         expect(result.categoryInPath).toBeUndefined()
     })
 
@@ -182,13 +186,13 @@ describe('buildPlacesHref — stage 4, all flags on', () => {
     })
 
     it('2+ categories with a location: location path + category query, canonical without category', () => {
-        expect(buildPlacesHref({ ...base, category: ['cave', 'mine'], location: bashkortostan }, ALL_ON)).toMatchObject(
-            {
-                href: '/places/bashkortostan?category=cave%2Cmine',
-                multiCategory: true,
-                pathname: '/places/bashkortostan'
-            }
-        )
+        expect(
+            buildPlacesHref({ ...base, category: ['cave', 'industrial'], location: bashkortostan }, ALL_ON)
+        ).toMatchObject({
+            href: '/places/bashkortostan?category=cave%2Cindustrial',
+            multiCategory: true,
+            pathname: '/places/bashkortostan'
+        })
     })
 
     it('a location without a slug keeps the pair on query params entirely', () => {

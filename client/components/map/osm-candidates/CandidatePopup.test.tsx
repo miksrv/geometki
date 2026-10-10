@@ -100,7 +100,7 @@ const candidate = (overrides: Partial<ApiType.OsmCandidates.Candidate> = {}): Ap
         { code: 'type', points: 1, value: 'historic=monument' },
         { code: 'nearbyWiki', distance: 0, points: 4, value: 'Памятник жертвам репрессий' }
     ],
-    category: 'monument',
+    category: 'memorial',
     ele: null,
     heritage: null,
     id: 'cand123456789',

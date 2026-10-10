@@ -56,7 +56,7 @@ describe('displayName', () => {
 
     it('keeps the name of a non-natural object as is', () => {
         expect(
-            displayName(t, candidate({ category: 'monument', name: 'Жертвам репрессий', typeTitle: 'Монумент' }), 'ru')
+            displayName(t, candidate({ category: 'memorial', name: 'Жертвам репрессий', typeTitle: 'Монумент' }), 'ru')
         ).toBe('Жертвам репрессий')
     })
 

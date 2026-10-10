@@ -49,14 +49,14 @@ jest.mock('next-i18next/pages', () => ({
 
 jest.mock('@/api', () => ({
     ApiModel: {
-        Categories: { abandoned: 'abandoned', nature: 'nature' }
+        Categories: { abandoned: 'abandoned', landscape: 'landscape' }
     }
 }))
 
 jest.mock('@/utils/categories', () => ({
     getCategoryOptions: () => [
         { image: { src: '/icons/category.png' }, key: 'abandoned', value: 'Заброшенные' },
-        { image: { src: '/icons/category.png' }, key: 'nature', value: 'Природа' }
+        { image: { src: '/icons/category.png' }, key: 'landscape', value: 'Природное чудо' }
     ]
 }))
 
@@ -75,7 +75,7 @@ describe('CategoryControl', () => {
 
     describe('counter of the selected categories', () => {
         it('is hidden when all categories are selected', () => {
-            render(<CategoryControl categories={['abandoned', 'nature'] as any} />)
+            render(<CategoryControl categories={['abandoned', 'landscape'] as any} />)
             expect(screen.queryByText('2')).not.toBeInTheDocument()
         })
 
@@ -95,7 +95,7 @@ describe('CategoryControl', () => {
         })
 
         it('keeps the plain label when nothing is filtered', () => {
-            render(<CategoryControl categories={['abandoned', 'nature'] as any} />)
+            render(<CategoryControl categories={['abandoned', 'landscape'] as any} />)
             expect(screen.getByRole('button')).toHaveAccessibleName('Фильтр по категориям')
         })
     })
@@ -113,7 +113,7 @@ describe('CategoryControl', () => {
             fireEvent.click(screen.getByRole('button'))
             // Checkboxes rendered with id as their label text in our mock
             expect(document.querySelector('input#abandoned')).toBeInTheDocument()
-            expect(document.querySelector('input#nature')).toBeInTheDocument()
+            expect(document.querySelector('input#landscape')).toBeInTheDocument()
         })
     })
 
@@ -127,7 +127,7 @@ describe('CategoryControl', () => {
                 />
             )
             fireEvent.click(screen.getByRole('button'))
-            const checkbox = document.querySelector('input#nature') as HTMLInputElement
+            const checkbox = document.querySelector('input#landscape') as HTMLInputElement
             // The handler reads event.target.id, which is already set on the element
             fireEvent.click(checkbox)
             expect(onChangeCategories).toHaveBeenCalled()

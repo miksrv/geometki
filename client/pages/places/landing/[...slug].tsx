@@ -488,6 +488,23 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                         linkPart={pathname.replace(/^\//, '')}
                     />
                 </>
+            ) : kind === 'category' && !placesCount && categoryName ? (
+                <Container>
+                    <EmptyState
+                        title={t('landing-category-empty-title', { defaultValue: 'Здесь пока нет мест' })}
+                        description={t('landing-category-empty-description', {
+                            defaultValue: 'Знаете такое место? Добавьте его первым — оно появится на этой странице'
+                        })}
+                        action={
+                            <Button
+                                mode={'primary'}
+                                link={`/places/create?category=${categoryName}`}
+                            >
+                                {t('landing-category-empty-action', { defaultValue: 'Добавить место' })}
+                            </Button>
+                        }
+                    />
+                </Container>
             ) : (
                 <Container>
                     <EmptyState />
@@ -704,11 +721,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
                 await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
-                // A category with no places has no page (the list's own count, no extra request)
-                if (isLandingEmpty(placesList?.count ?? 0)) {
-                    return { notFound: true }
-                }
-
+                // A category with no places still has a page: a visitor comes here from the filter
+                // or a link, and a 404 would look like a broken site. It is noindex (below the
+                // threshold) and not in the sitemap, and says how to add the first place.
                 if (isLandingPageOutOfRange(currentPage, placesList?.items?.length ?? 0)) {
                     return { notFound: true }
                 }
