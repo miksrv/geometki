@@ -413,7 +413,23 @@ export const getServerSideProps = wrapper.getServerSideProps(
                       })
                   )
 
+            // An id that `locations:rebuild` merged away (location_legacy_ids) still has a
+            // page: the same listing under the surviving id. With the location pages on, the
+            // landing redirect below handles it; before that, the query URL is rewritten here.
             if (locationType && locationData?.isError) {
+                const legacyId = country ?? region ?? district ?? locality
+                const resolved = legacyId
+                    ? await store.dispatch(API.endpoints.locationsResolve.initiate({ legacyId, type: locationType }))
+                    : null
+
+                if (resolved?.data && ApiType.Locations.isResolvedLocation(resolved.data)) {
+                    const query = { ...context.query, [locationType]: String(resolved.data.id) }
+                    context.res.statusCode = 301
+                    context.res.setHeader('Location', `${locale === 'en' ? '/en' : ''}/places${encodeQueryData(query)}`)
+                    context.res.end()
+                    return { props: {} as PlacesPageProps }
+                }
+
                 return { notFound: true }
             }
 
