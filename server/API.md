@@ -280,7 +280,7 @@ List places with optional filtering, sorting, and pagination.
 |------|------|----------|-------------|
 | sort | string | No | Sort field: `views`, `rating`, `comments`, `bookmarks`, `category`, `distance`, `created_at`, `updated_at` |
 | order | string | No | Sort direction: `ASC` or `DESC` (default `DESC`) |
-| category | string | No | Filter by category name, or a comma-separated list (e.g. `historic`, `cave,abandoned,mine`) |
+| category | string | No | Filter by category name, or a comma-separated list (e.g. `historic`, `cave,abandoned,industrial`) |
 | author | string | No | Filter by user ID |
 | country | integer | No | Filter by country ID |
 | region | integer | No | Filter by region ID |
@@ -312,7 +312,7 @@ List places with optional filtering, sorting, and pagination.
       "bookmarks": 7,
       "title": "Waterfall Gadelsha",
       "content": "Beautiful waterfall in the southern Urals...",
-      "category": "nature",
+      "category": "landscape",
       "author": {
         "id": "u1u2u3u4",
         "name": "traveler42",
@@ -374,7 +374,7 @@ Get full details for a single place by ID. Increments the view counter.
   "created": "2024-03-15T09:30:00+00:00",
   "title": "Waterfall Gadelsha",
   "content": "Beautiful waterfall in the southern Urals with a 15m drop...",
-  "category": "nature",
+  "category": "landscape",
   "author": {
     "id": "u1u2u3u4",
     "name": "traveler42",
@@ -432,7 +432,7 @@ Create a new place.
 ```json
 {
   "title": "Waterfall Gadelsha",
-  "category": "nature",
+  "category": "landscape",
   "lat": 51.7686,
   "lon": 55.1014,
   "content": "Beautiful waterfall in the southern Urals.",
@@ -595,7 +595,7 @@ Get a list of POI markers, optionally clustered, within optional map bounds.
 {
   "count": 3,
   "items": [
-    { "id": "a1b2c3d4e5f6g", "category": "nature", "lat": 51.7686, "lon": 55.1014 },
+    { "id": "a1b2c3d4e5f6g", "category": "landscape", "lat": 51.7686, "lon": 55.1014 },
     { "id": "h7i8j9k0l1m2n", "category": "historic", "lat": 52.2865, "lon": 56.8412 }
   ]
 }
@@ -1454,7 +1454,7 @@ List site-wide activity feed, grouped by user and place. Results are paginated a
         "title": "Waterfall Gadelsha",
         "content": "Beautiful waterfall...",
         "difference": 0,
-        "category": "nature"
+        "category": "landscape"
       },
       "photos": [
         {
