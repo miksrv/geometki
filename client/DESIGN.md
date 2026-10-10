@@ -58,7 +58,7 @@ re-implement them.
   chrome, there is no permanent sidebar.
 - **Lists** are a flow of tiles on the page background, three columns on desktop and one
   on phones (`MediaTileGrid`). Lists never sit inside a `Container`.
-- **Place page** (`pages/places/[id]`, spec: `features/24-place-page-redesign.md`):
+- **Place page** (`pages/places/[id]`):
   `PlaceHero` — the cover at 3:1 (at least 240px tall, 320px on phones; cover files are
   1800×600) with the `Breadcrumbs` on its top gradient and, on the bottom one, the h1, the
   address line (each level a link), the facts line (rating · category · views · distance,
@@ -147,7 +147,7 @@ Breadcrumbs appear only on nested pages, where the app bar cannot show where you
 
 | Page                                                                                                                                                                       | Breadcrumbs                         |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| Section roots: places, collections, people, map, activity, categories, tags, search                                                                                        | none                                |
+| Section roots: places, collections, people, map, activity, search                                                                                                          | none                                |
 | Filtered places list (`/places?category=…`)                                                                                                                                | Места › parent filters              |
 | Category / location / pair landing (`/places/{category}`, `/places/{location}`, `/places/{location}/{category}`, behind the `NEXT_PUBLIC_LANDING_*` flags — see CLAUDE.md) | Места › location parents › location |
 | Place page (on the cover's top gradient)                                                                                                                                   | Места › category                    |
@@ -176,12 +176,13 @@ the same for every entity. `MediaTileGrid` is the 3-column flow.
 
 The one card for a place.
 
-| Variant                 | Use                                                                            | Thumb                      | Heading                        |
-| ----------------------- | ------------------------------------------------------------------------------ | -------------------------- | ------------------------------ |
-| `tile` (default)        | `/places`, user places / bookmarks / visited, home carousel, "nearby" carousel | cover fills the tile       | `h2`                           |
-| `row` + `size="large"`  | places on the collection page                                                  | 200×140 (120×84 on phones) | `h2`                           |
-| `row` + `size="medium"` | search results                                                                 | 120×80                     | `h3` (inside a titled section) |
-| `row` + `size="small"`  | dense pickers and popups (map popup, planned)                                  | 96×72                      | `h3`                           |
+| Variant                 | Use                                                                                        | Thumb                | Heading                        |
+| ----------------------- | ------------------------------------------------------------------------------------------ | -------------------- | ------------------------------ |
+| `tile` (default)        | `/places`, collection page, user places / bookmarks / visited, home and "nearby" carousels | cover fills the tile | `h2`                           |
+| `row` + `size="medium"` | search results                                                                             | 120×80               | `h3` (inside a titled section) |
+| `row` + `size="small"`  | dense pickers and popups (map popup, planned)                                              | 96×72                | `h3`                           |
+
+The heading level is the `headingLevel` prop (2 by default, 3 inside another titled block).
 
 Invariant order of parts in both variants: cover → category icon → title → address →
 stats row. The category is never a text label on a card: a tile shows its icon (16px) in
@@ -288,7 +289,7 @@ views).
 - **Prose.** Rendered markdown (place description, collection article) uses the `prose`
   mixin from `styles/mixins.sass`: 15px body (`--font-size-prose`) on a 1.55 line height, semibold `h2` 18px / `h3` 16px with
   more space above than below, disc/decimal lists, a left-bordered quote, rounded images,
-  code on `--surface-2`. The place page keeps it inside the "Описание" `Container`, the
+  code on `--surface-2`. The place page keeps it inside the "Описание" `Section`, the
   collection page shows it bare on the page background; the text itself looks the same.
 - **Form fields.** Kit `Input`, `Select`, `TextArea` and the project's `ContentEditor`
   (`components/ui/content-editor`, the markdown editor for descriptions) are outlined:

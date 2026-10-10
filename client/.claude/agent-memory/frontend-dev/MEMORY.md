@@ -1,1 +1,0 @@
-- [Map layer integration pattern](project_map_layers.md) — Pattern for adding additional map layers (Pastvu, Wikimedia Commons) to InteractiveMap

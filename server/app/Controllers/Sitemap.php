@@ -132,8 +132,7 @@ class Sitemap extends ResourceController
     /**
      * Location×category pairs with at least indexThreshold places — the
      * `/places/{location}/{category}` pages (stage 4 of
-     * features/20-location-seo-pages.md). Across all 4 levels: the spec's own
-     * distribution table only sizes these at region level, but the rule
+     * features/20-location-seo-pages.md), across all 4 levels: the rule
      * (≥ indexThreshold places) applies identically at every level.
      *
      * @return array<int, array{type: string, id: int, slug: ?string, category: string, updated: \DateTime}>

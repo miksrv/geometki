@@ -9,49 +9,30 @@ CodeIgniter 4 PHP REST API serving the geometki geolocation/POI platform.
 **Why:** Backend for a mapping app where users create, edit, and rate geotagged places.
 
 **Tech stack:**
-- CodeIgniter 4 (ResourceController base for all controllers)
+- CodeIgniter 4 (ResourceController base for all controllers), PHP 8.2+
 - MySQL with soft deletes on most tables
-- JWT auth via firebase/php-jwt stored in Authorization header; session tracking via custom SessionLibrary + sessions table
-- OAuth integrations: Google, Yandex, VK
-- Nominatim (OpenStreetMap) for reverse geocoding
+- JWT auth via firebase/php-jwt in the Authorization header; session tracking via `SessionLibrary` + sessions table (`Session` header for anonymous sessions)
+- OAuth clients: `GoogleClient`, `YandexClient`, `VkClient`
+- Geocoding: `Geocoder` / `NominatimClient` (geocoder-php Nominatim + Yandex providers)
 - GD image library for photo/avatar processing
-- Custom CORS filter (wildcard origin)
+- `CorsFilter`: allowlist from `cors.allowedOrigins` env; falls back to `*` when unset
 
-**ID scheme:** All primary keys are VARCHAR(15) generated with `uniqid()` via `ApplicationBaseModel::generateId()` before insert — not auto-increment integers.
+**ID scheme:** primary keys are 13-char hex strings generated in `ApplicationBaseModel::generateId()` (beforeInsert, `random_bytes`) — not auto-increment integers.
 
-**Locale:** Custom `LocaleLibrary` reads a `Locale` HTTP header; supported locales are `en` and `ru`. All place content is stored in `places_content` table with a locale column.
+**Locale:** `LocaleFilter` (global before-filter in `Config/Filters.php`) applies `LocaleLibrary`, which reads the `Locale` header (`en`/`ru`). Do NOT call `new LocaleLibrary()` in controllers. Place content lives in `places_content` with a locale column.
 
-**Key models:** PlacesModel, UsersModel, ActivityModel, PhotosModel, CommentsModel, RatingModel, SessionsModel, PlacesContentModel.
+**SessionLibrary:** assign to `$this->session` in the controller constructor, not per method.
 
-**Key libraries (original):** SessionLibrary (auth + session resolution), PlacesContent (multi-locale content fetching), LevelsLibrary (XP/level system), ActivityLibrary (event logging + notifications), Geocoder (Nominatim integration), NotifyLibrary (in-app notifications), EmailLibrary (outbound email queue via SendingMail model).
+**Categories:** no table; `Config/Categories.php` whitelists the keys, names/texts live on the client. `Categories` controller only serves `GET /categories/:name/locations` (landing perelinking).
 
-**New libraries added 2026-03-23:**
-- `AvatarLibrary` — `buildPath(?userId, ?filename, size)` constructs avatar URL; `processUpload(userId, sourcePath)` moves file and generates _small/_medium; `deleteOld(userId, filename)` removes all variants.
-- `PlaceFormatterLibrary` — `formatAuthor`, `formatAddress(row, locale)`, `formatCategory(row, locale)`, `formatCover(placeId, photosCount)`, `formatDistance(raw)`, `cleanupFields(row)` for place response shaping.
-- `ReputationLibrary` — `recalculate(userId)` computes/persists user reputation from all place ratings.
-- `PhotoLibrary` — `processFile(sourcePath, targetDir, createCover)` normalises dimensions/generates preview; `generateCover(sourcePath, targetDir)`.
+**Library boundaries (app/Libraries):** `AvatarLibrary` (avatar paths/upload/variants), `PhotoLibrary` (photo processing, covers), `PlaceFormatterLibrary` (place response shaping: author, address, cover, distance), `ReputationLibrary`, `LevelsLibrary`, `AchievementsLibrary`, `ActivityLibrary`, `NotifyLibrary`, `EmailLibrary`, `PlacesContent`, `PlaceTags`, location dedup/slugs (`LocationMatcher`, `LocationMerge`, `LocationSlugLibrary`), OSM candidates (`OsmCollector`, `OsmScoring`, `OsmSourcesClient`, `OsmTiles`).
 
-**Locale:** `LocaleLibrary` is now a global before-filter (`LocaleFilter` registered in `Config/Filters.php`). Do NOT call `new LocaleLibrary()` in controller constructors — it's already applied globally.
+**Spark commands (app/Commands):** `trending:refresh`, `interests:refresh`, `achievements:evaluate`, `locations:rebuild`, `osm:collect`, `osm:rescore`, `digest:weekly`, `system:generate-place-slugs`, `system:calculate-tags-count`, `system:generate-users-online`, `system:send-email`, `system:test-email`.
 
-**SessionLibrary:** Must be assigned to `$this->session` in the controller constructor, not instantiated per-method.
-
-**Notable model methods added 2026-03-23:**
-- `PlacesModel::recordView(placeId, ?userId, updatedAt)` — transactional view+log; best-effort users_place_views.
-- `PlacesModel::applyWeeklyViewsSort(order)` / `applyRecommendationSort(userId)` — query-builder sort helpers.
-- `PlacesModel::incrementBookmarks/decrementBookmarks/incrementComments/incrementPhotos/decrementPhotos/syncPhotosCount/refreshTrendingScores`.
-- `ActivityModel::incrementViews(ids)`.
-- `UsersNotificationsModel::getRecentUnread/countOlderUnread/getPaginatedByUser/countByUser/markRead`.
-- `UserInterestProfilesModel::refreshForUser(userId)`.
-
-**Spark commands:** `trending:refresh`, `interests:refresh`, `migrate:fix-cover-sizes`.
-
-**How to apply:** When suggesting changes, consider the CI4 model/entity/controller pattern, the custom ID generation, dual-language content architecture, and the library/model boundaries established above.
-
-**Error handling convention (Stage 1, 2026-03-24):**
-- All user-visible strings must go through `lang('File.key')` — no hardcoded English in controllers
-- Key naming: `ControllerName.camelCaseKey`
-- All I/O and external-service calls wrapped in `try/catch (Throwable $e)` with `log_message('error', '{exception}', ['exception' => $e])` returning `$this->failServerError(lang('...'))`
+**Error handling convention:**
+- All user-visible strings go through `lang('File.key')` — no hardcoded English in controllers; key naming `ControllerName.camelCaseKey`
+- I/O and external-service calls wrapped in `try/catch (Throwable $e)` with `log_message('error', '{exception}', ['exception' => $e])`, returning `$this->failServerError(lang('...'))`
 - Language files in `app/Language/en/` and `app/Language/ru/` — always keep in sync
 - Reference impl: `Photos.php` + `Language/{en,ru}/Photos.php`
-- New language files created: Comments, Rating, Bookmarks, Visited (en + ru each)
-- Extended: Photos, Places, Users, Auth (en + ru each)
+
+**How to apply:** follow the CI4 model/entity/controller pattern, the custom ID generation, dual-language content and the library/model boundaries above.

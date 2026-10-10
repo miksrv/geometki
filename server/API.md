@@ -1,6 +1,6 @@
 # Geometki API Reference
 
-The Geometki REST API is a CodeIgniter 4 PHP backend that powers the Geometki geospatial POI platform. All responses are JSON. The base URL in production is `https://geometki.com/` (append route paths directly, e.g. `https://geometki.com/places`). For local development the server runs on `http://localhost:8080/`.
+The Geometki REST API is a CodeIgniter 4 PHP backend that powers the Geometki geospatial POI platform. All responses are JSON. The base URL in production is `https://api.geometki.com/` (append route paths directly, e.g. `https://api.geometki.com/places`). For local development the server runs on `http://localhost:8080/`.
 
 ---
 
@@ -14,7 +14,9 @@ Most read endpoints are public. Write operations require authentication.
 Authorization: Bearer <token>
 ```
 
-A session-cookie fallback is also accepted for browser clients.
+Guests are tracked by a `Session` header carrying the anonymous session id (the `session` value returned by `GET /auth/me`). It does not authenticate; it ties rating votes and the stored location (`PUT /location`) to a visitor.
+
+**Locale** — send a `Locale: ru` or `Locale: en` header (default `ru`); translated fields are returned in that language.
 
 **Error response format** (all error responses follow this envelope):
 
@@ -45,13 +47,27 @@ Validation errors may return a map of field names to messages:
 | 201  | Created |
 | 400  | Validation / bad request |
 | 401  | Unauthorized |
-| 403  | Forbidden (already authenticated) |
+| 403  | Forbidden (not allowed, or already authenticated on auth endpoints) |
 | 404  | Not found |
+| 409  | Already exists |
+| 429  | Too many requests |
 | 500  | Server error |
+
+Auth endpoints `POST /auth/login` and `POST /auth/registration` are rate-limited to 10 requests a minute per IP (`429` with a `Retry-After` header).
 
 ---
 
 ## Endpoints
+
+#### `GET /`
+
+API info, e.g. for health checks. **Auth required:** No
+
+```json
+{ "name": "Geometki API", "version": "1.0.0", "status": "ok" }
+```
+
+---
 
 ### Auth
 
@@ -89,19 +105,19 @@ Register a new user with email and password.
     "email": "user@example.com",
     "role": "user",
     "locale": "ru",
-    "avatar": null,
-    "website": null,
-    "reputation": 0,
-    "settings": null
+    "avatar": null
   },
   "token": "eyJhbGciOiJIUzI1NiJ9..."
 }
 ```
 
+`user` is the stored account row (`id`, `name`, `email`, `avatar`, `role`, `locale`, …); the exact set of fields differs slightly between the auth flows.
+
 **Error responses:**
 
 - `403` — User is already authenticated
 - `400` — Validation errors (name taken, email taken, invalid format)
+- `429` — Rate limit exceeded
 
 ---
 
@@ -131,12 +147,52 @@ Authenticate with email and password.
 
 - `403` — Already authenticated
 - `400` — Invalid credentials or validation errors
+- `429` — Rate limit exceeded
+
+---
+
+#### `POST /auth/magic-link`
+
+Request a passwordless login link by email. Always answers the same way, whether or not the email is registered or rate-limited, so it never reveals account existence. The emailed link points to `{siteUrl}/auth?token=…` (plus `&return=…` when `returnPath` was given).
+
+**Auth required:** No (returns 403 if already authenticated)
+
+**Request body (JSON):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| email | string | Yes | Email address (max 255 chars) |
+| returnPath | string | No | Site-relative path (must start with `/`) to return to after login |
+
+**Response:** `{ "sent": true }`
+
+**Error responses:**
+
+- `403` — Already authenticated
+- `400` — Invalid email
+
+---
+
+#### `POST /auth/magic-link/verify`
+
+Exchange a magic-link token for a login; creates the account on first use.
+
+**Auth required:** No (returns 403 if already authenticated)
+
+**Request body (JSON):** `{ "token": "<token from the link>" }`
+
+**Response:** Same shape as `POST /auth/registration`, plus `"isNewUser": true` when the account was just created.
+
+**Error responses:**
+
+- `403` — Already authenticated
+- `400` — Token missing, invalid, or expired
 
 ---
 
 #### `GET /auth/me`
 
-Retrieve the currently authenticated user's profile and a fresh JWT token. Also updates the user's session.
+Retrieve the current session and, when authenticated, the user and a JWT token. Also updates the session. The token is regenerated only when the one sent is within 5 minutes of expiry; otherwise the same token is returned.
 
 **Auth required:** No (returns partial response if unauthenticated)
 
@@ -161,19 +217,9 @@ Retrieve the currently authenticated user's profile and a fresh JWT token. Also 
     "email": "user@example.com",
     "role": "user",
     "locale": "ru",
-    "avatar": "/uploads/avatars/a1b2c3d4e5f6g7h/photo_small.jpg",
-    "website": "https://example.com",
-    "reputation": 42,
-    "settings": {
-      "emailComment": true,
-      "emailEdit": true,
-      "emailPhoto": true,
-      "emailRating": true,
-      "emailCover": true
-    },
+    "avatar": "photo.jpg",
     "levelData": {
       "level": 3,
-      "title": "Explorer",
       "experience": 150,
       "nextLevel": 300
     }
@@ -278,9 +324,9 @@ List places with optional filtering, sorting, and pagination.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| sort | string | No | Sort field: `views`, `rating`, `comments`, `bookmarks`, `category`, `distance`, `created_at`, `updated_at` |
+| sort | string | No | Sort field: `views`, `views_week`, `trending`, `recommended`, `rating`, `comments`, `bookmarks`, `category`, `distance`, `created_at`, `updated_at`. `recommended` falls back to `trending` for guests; `distance` needs coordinates |
 | order | string | No | Sort direction: `ASC` or `DESC` (default `DESC`) |
-| category | string | No | Filter by category name, or a comma-separated list (e.g. `historic`, `cave,abandoned,industrial`) |
+| category | string | No | Filter by category key, or a comma-separated list (e.g. `castle`, `cave,abandoned,industrial`) |
 | author | string | No | Filter by user ID |
 | country | integer | No | Filter by country ID |
 | region | integer | No | Filter by region ID |
@@ -303,21 +349,17 @@ List places with optional filtering, sorting, and pagination.
   "items": [
     {
       "id": "a1b2c3d4e5f6g",
+      "slug": "vodopad-gadelsha",
       "lat": 51.7686,
       "lon": 55.1014,
+      "category": "waterfall",
       "rating": 4,
       "views": 312,
       "photos": 5,
       "comments": 3,
       "bookmarks": 7,
+      "updated": "2025-11-01T12:00:00+00:00",
       "title": "Waterfall Gadelsha",
-      "content": "Beautiful waterfall in the southern Urals...",
-      "category": "landscape",
-      "author": {
-        "id": "u1u2u3u4",
-        "name": "traveler42",
-        "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg"
-      },
       "address": {
         "country": { "id": 1, "name": "Russia", "slug": "russia" },
         "region": { "id": 5, "name": "Bashkortostan", "slug": "bashkortostan" },
@@ -363,6 +405,7 @@ Get full details for a single place by ID. Increments the view counter.
 ```json
 {
   "id": "a1b2c3d4e5f6g",
+  "slug": "vodopad-gadelsha",
   "lat": 51.7686,
   "lon": 55.1014,
   "rating": 4.2,
@@ -374,7 +417,9 @@ Get full details for a single place by ID. Increments the view counter.
   "created": "2024-03-15T09:30:00+00:00",
   "title": "Waterfall Gadelsha",
   "content": "Beautiful waterfall in the southern Urals with a 15m drop...",
-  "category": "landscape",
+  "category": "waterfall",
+  "visitRadiusM": 500,
+  "verificationExempt": false,
   "author": {
     "id": "u1u2u3u4",
     "name": "traveler42",
@@ -404,6 +449,8 @@ Get full details for a single place by ID. Increments the view counter.
 }
 ```
 
+`visitRadiusM` and `verificationExempt` drive the verified "visited" mark (see `PUT /visited`).
+
 **Error responses:**
 
 - `404` — Place not found
@@ -421,7 +468,7 @@ Create a new place.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | title | string | Yes | Place title (8–200 chars) |
-| category | string | Yes | Category key — one of `Config\Categories::$names` (see the Categories section) |
+| category | string | Yes | Category key — one of `Config\Categories::$names` (see the Categories section for the list) |
 | lat | float | Yes | Latitude (min 3 chars) |
 | lon | float | Yes | Longitude (min 3 chars) |
 | content | string | No | Description text (HTML stripped) |
@@ -432,7 +479,7 @@ Create a new place.
 ```json
 {
   "title": "Waterfall Gadelsha",
-  "category": "landscape",
+  "category": "waterfall",
   "lat": 51.7686,
   "lon": 55.1014,
   "content": "Beautiful waterfall in the southern Urals.",
@@ -441,7 +488,7 @@ Create a new place.
 }
 ```
 
-**Response:**
+**Response:** `201 Created`
 
 ```json
 {
@@ -476,7 +523,7 @@ Update an existing place's content, category, coordinates, or tags.
 |-------|------|-------------|
 | title | string | New title (8–200 chars) |
 | content | string | New description text (HTML stripped) |
-| category | string | New category name |
+| category | string | New category key |
 | lat | float | New latitude |
 | lon | float | New longitude |
 | tags | array | Replacement tag list |
@@ -583,9 +630,11 @@ Get a list of POI markers, optionally clustered, within optional map bounds.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| bounds | string | No | Viewport bounding box: `lon_left,lat_top,lon_right,lat_bottom` |
-| categories | string | No | Comma-separated list of category names to filter |
+| bounds | string | No | Viewport bounding box `west,south,east,north` (Leaflet `toBBoxString()`); ignored when malformed |
+| categories | string | No | Comma-separated list of category keys to filter |
 | author | string | No | Filter by user ID |
+| visited | string | No | Only places marked visited by this user ID |
+| bookmarks | string | No | Only places bookmarked by this user ID |
 | zoom | integer | No | Map zoom level used for clustering (default 10) |
 | cluster | boolean | No | Set `true` to receive clustered markers |
 
@@ -596,7 +645,7 @@ Get a list of POI markers, optionally clustered, within optional map bounds.
   "count": 3,
   "items": [
     { "id": "a1b2c3d4e5f6g", "category": "landscape", "lat": 51.7686, "lon": 55.1014 },
-    { "id": "h7i8j9k0l1m2n", "category": "historic", "lat": 52.2865, "lon": 56.8412 }
+    { "id": "h7i8j9k0l1m2n", "category": "castle", "lat": 52.2865, "lon": 56.8412 }
   ]
 }
 ```
@@ -615,7 +664,7 @@ Get photo geo-coordinates for map rendering, optionally clustered.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| bounds | string | No | Viewport bounding box: `lon_left,lat_top,lon_right,lat_bottom` |
+| bounds | string | No | Viewport bounding box `west,south,east,north` |
 | zoom | integer | No | Map zoom level (default 10) |
 | cluster | boolean | No | Set `true` to enable clustering |
 
@@ -660,7 +709,7 @@ Get the geo-coordinates of recently active user sessions for heatmap display. Re
 
 #### `GET /poi/:id`
 
-Get lightweight details for a single place (used as map popup data).
+Get lightweight details for a single place (used as map popup data). Distance is computed from the session's stored location.
 
 **Auth required:** No
 
@@ -675,6 +724,7 @@ Get lightweight details for a single place (used as map popup data).
 ```json
 {
   "id": "a1b2c3d4e5f6g",
+  "slug": "vodopad-gadelsha",
   "rating": 4,
   "views": 312,
   "photos": 5,
@@ -685,9 +735,12 @@ Get lightweight details for a single place (used as map popup data).
   "cover": {
     "full": "/uploads/photos/a1b2c3d4e5f6g/cover.jpg",
     "preview": "/uploads/photos/a1b2c3d4e5f6g/cover_preview.jpg"
-  }
+  },
+  "bookmarked": false
 }
 ```
+
+`bookmarked` is present only for an authenticated user.
 
 **Error responses:**
 
@@ -762,6 +815,8 @@ Tiles are queued at most `queueRequestsPerMinute` times a minute per IP; above t
 
 `pendingTiles` — tiles of the area that are queued or being collected now (a failed tile waits for its retry and is not counted).
 
+An area that is too large returns `{ "tooLarge": true, "items": [], "pendingTiles": 0 }`; malformed `bounds` returns `400`.
+
 ---
 
 #### `GET /osm-candidates/:id`
@@ -782,6 +837,8 @@ Link a candidate to an existing place, the same link as when a place is created 
 
 **Request body (JSON):** `{ "placeId": "65cfaf32be69b" }`
 
+**Response:** `{ "id": "<candidate id>", "placeId": "65cfaf32be69b" }`; `400` when the place is not found.
+
 ---
 
 #### `PATCH /osm-candidates/:id/unlink`
@@ -794,6 +851,8 @@ Remove a wrong link: the candidate is open again. **Auth required:** Yes (admin)
 
 Hide a candidate for good; re-collection does not bring it back. **Auth required:** Yes (admin)
 
+`unlink` and `reject` respond `{ "id": "<candidate id>", "status": "open" | "rejected" }`.
+
 Errors of the three admin endpoints: `401` not authenticated, `403` not an admin, `404` candidate not found.
 
 ---
@@ -802,7 +861,7 @@ Errors of the three admin endpoints: `401` not authenticated, `403` not an admin
 
 #### `GET /photos`
 
-List photos with optional filtering and pagination.
+List photos with optional filtering and pagination, newest first.
 
 **Auth required:** No
 
@@ -828,7 +887,7 @@ List photos with optional filtering and pagination.
       "width": 1920,
       "height": 1080,
       "title": "Waterfall Gadelsha",
-      "created_at": "2025-03-01T10:00:00+00:00",
+      "created": "2025-03-01T10:00:00+00:00",
       "author": {
         "id": "u1u2u3u4",
         "name": "traveler42",
@@ -840,11 +899,13 @@ List photos with optional filtering and pagination.
 }
 ```
 
+With `place` (and no `author`), the first page also includes the Wikimedia Commons and PastVu photos linked to the place (see External Photos): same shape with absolute `full`/`preview` URLs, no `author`, and an `external` object (`source`, `externalId`, `title`, `author`, `license`, `licenseUrl`, `year`, `url`). `count` includes them on every page.
+
 ---
 
 #### `POST /photos/upload/temporary`
 
-Upload a photo to the temporary holding area before a place has been created. Returns a temporary file reference.
+Upload a photo to the temporary holding area before a place has been created. Returns a temporary file reference (`201 Created`).
 
 **Auth required:** Yes
 
@@ -877,7 +938,7 @@ Upload a photo to the temporary holding area before a place has been created. Re
 
 #### `POST /photos/upload/:id`
 
-Upload a photo directly to an existing place.
+Upload a photo directly to an existing place (`201 Created`).
 
 **Auth required:** Yes
 
@@ -1024,11 +1085,85 @@ Delete a permanent photo. Only the photo's uploader or an admin may delete it.
 
 ---
 
+### External Photos
+
+Wikimedia Commons and PastVu photos linked to places. The images are not downloaded: they are served from the source and shown in the place gallery together with the uploaded photos (`GET /photos?place=`). Linking gives no experience and is not shown in the activity feed.
+
+#### `GET /external-photos`
+
+**Auth required:** No
+
+**Query parameters:** either `place` or `bounds`.
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| place | string | One of | Place ID: the photos linked to it |
+| bounds | string | One of | `south,west,north,east`: the linked photos inside the map area (areas over 1 square degree return `[]`; up to 1000 rows) |
+
+**Response (`place`):**
+
+```json
+{ "items": [{ "id": "1f2e3d4c5b6a7", "source": "wikimedia", "externalId": "12345678" }] }
+```
+
+**Response (`bounds`):**
+
+```json
+{ "items": [{ "source": "pastvu", "externalId": "123456", "places": [{ "id": "a1b2c3d4e5f6g", "title": "Waterfall Gadelsha" }] }] }
+```
+
+**Error responses:**
+
+- `400` — Neither `place` nor valid `bounds`
+
+---
+
+#### `POST /external-photos`
+
+Link a photo to a place; its details (URLs, author, licence, coordinates) are fetched from the source by id.
+
+**Auth required:** Yes
+
+**Request body (JSON):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| placeId | string | Yes | Place ID |
+| source | string | Yes | `wikimedia` or `pastvu` |
+| externalId | string | Yes | Photo id at the source |
+
+**Response:** `201 Created` with the photo in the `GET /photos` external shape.
+
+**Error responses:**
+
+- `401` — Not authenticated
+- `400` — Invalid request or place not found
+- `404` — Photo not found at the source
+- `409` — Already linked to this place
+
+---
+
+#### `DELETE /external-photos/:id`
+
+Unlink a photo: by the user who linked it, the place author, or an admin.
+
+**Auth required:** Yes
+
+**Response:** `{ "id": "<link id>" }`
+
+**Error responses:**
+
+- `401` — Not authenticated
+- `403` — No access
+- `404` — Link not found
+
+---
+
 ### Users
 
 #### `GET /users`
 
-List users, ordered by recent activity.
+List users, by default ordered by recent activity.
 
 **Auth required:** No
 
@@ -1036,6 +1171,9 @@ List users, ordered by recent activity.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
+| search | string | No | Substring of the user name |
+| sort | string | No | `activity_at` (default), `created_at`, `reputation`, `experience` |
+| order | string | No | `ASC` or `DESC` (default `DESC`) |
 | limit | integer | No | Max results (default 40, max 40) |
 | offset | integer | No | Pagination offset (default 0) |
 
@@ -1050,13 +1188,13 @@ List users, ordered by recent activity.
       "avatar": "/uploads/avatars/u1u2u3u4u5u6u7/photo_small.jpg",
       "levelData": {
         "level": 3,
-        "title": "Explorer",
         "experience": 150,
         "nextLevel": 300
       },
       "reputation": 42,
       "created": "2024-01-15T10:00:00+00:00",
-      "activity": "2025-11-10T08:00:00+00:00"
+      "activity": "2025-11-10T08:00:00+00:00",
+      "statistic": { "photo": 45, "place": 12, "visited": 20 }
     }
   ],
   "count": 350
@@ -1095,22 +1233,27 @@ Get full profile for a single user, including gamification statistics.
   "reputation": 42,
   "levelData": {
     "level": 3,
-    "title": "Explorer",
     "experience": 150,
     "nextLevel": 300
   },
   "statistic": {
-    "places": 12,
-    "photos": 45,
-    "comments": 8,
-    "ratings": 30
+    "place": 12,
+    "photo": 45,
+    "rating": 30,
+    "edit": 5,
+    "cover": 3,
+    "comment": 8,
+    "visited": 20
   },
   "settings": {
     "emailComment": true,
     "emailEdit": true,
     "emailPhoto": true,
     "emailRating": true,
-    "emailCover": true
+    "emailCover": true,
+    "emailBookmark": true,
+    "emailVisit": true,
+    "emailDigest": true
   }
 }
 ```
@@ -1143,7 +1286,7 @@ Update user profile fields. Can only update your own profile.
 | website | string | Personal website URL (max 150 chars) |
 | oldPassword | string | Current password required when changing password |
 | newPassword | string | New password (8–50 chars) |
-| settings | object | Notification preferences (all booleans) |
+| settings | object | Notification preferences (booleans: `emailComment`, `emailEdit`, `emailPhoto`, `emailRating`, `emailCover`, `emailBookmark`, `emailVisit`, `emailDigest`); omitted keys keep their current value |
 
 ```json
 {
@@ -1161,7 +1304,7 @@ Update user profile fields. Can only update your own profile.
 }
 ```
 
-**Response:** `200 OK` with empty body.
+**Response:** `200 OK` with empty body. Changing the password requires both `oldPassword` and `newPassword`.
 
 **Error responses:**
 
@@ -1172,7 +1315,7 @@ Update user profile fields. Can only update your own profile.
 
 #### `POST /users/avatar`
 
-Upload a new avatar image. The file is stored temporarily and a crop step is required next.
+Upload a new avatar image (JPEG, PNG or WebP, max 5 MB). The file is stored temporarily and a crop step is required next. Responds `201 Created`.
 
 **Auth required:** Yes
 
@@ -1269,46 +1412,6 @@ Note: `vote` is only present if the current session or user has previously voted
 
 ---
 
-#### `GET /rating/history`
-
-Get the rating history for a place or user.
-
-**Auth required:** No
-
-**Query parameters (exactly one required):**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| placeId | string | No | Place ID — returns rating history with voter info |
-| userId | string | No | User ID — returns rating history for that user |
-
-**Response:**
-
-```json
-{
-  "count": 3,
-  "items": [
-    {
-      "value": 5,
-      "created_at": "2025-10-15T14:30:00+00:00",
-      "author": {
-        "id": "u1u2u3u4",
-        "name": "traveler42",
-        "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg"
-      }
-    }
-  ]
-}
-```
-
-Note: `author` is only present when querying by `placeId`.
-
-**Error responses:**
-
-- `400` — Both parameters provided, or neither provided
-
----
-
 #### `PUT /rating`
 
 Submit or update a rating for a place.
@@ -1320,7 +1423,7 @@ Submit or update a rating for a place.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | place | string | Yes | Place ID |
-| score | integer | Yes | Rating value (positive integer, typically 1–5) |
+| score | integer | Yes | Rating value, 1–5 |
 
 ```json
 {
@@ -1333,7 +1436,7 @@ Submit or update a rating for a place.
 
 **Error responses:**
 
-- `400` — Missing data
+- `400` — Missing data or score out of range
 - `403` — The signed-in user is the author of the place (own places cannot be rated)
 - `404` — Place not found
 
@@ -1343,7 +1446,7 @@ Submit or update a rating for a place.
 
 #### `GET /comments`
 
-List comments for a place.
+List comments for a place, newest first.
 
 **Auth required:** No
 
@@ -1388,7 +1491,7 @@ Post a new comment on a place.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | placeId | string | Yes | Place ID (exactly 13 chars) |
-| comment | string | Yes | Comment text (HTML stripped) |
+| comment | string | Yes | Comment text (max 2000 chars, HTML stripped) |
 | answerId | string | No | ID of the comment being replied to (exactly 13 chars) |
 
 ```json
@@ -1408,11 +1511,25 @@ Post a new comment on a place.
 
 ---
 
-#### `GET /comments/unsubscribe`
+### Mail
 
-Unsubscribe a user from email notifications via a link sent in email. (Note: this route is registered under the `comments` group in Routes.php.)
+#### `GET /mail/unsubscribe`
+
+Unsubscribe link from notification emails. Turns off the email setting matching the activity the email was about (comment, edit, photo, rating, cover, bookmark, visit), or `emailDigest` for a digest email.
 
 **Auth required:** No
+
+**Query parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| mail | string | Yes | ID of the sent email (`sending_mail` row) |
+
+**Response:** A localized success message string.
+
+**Error responses:**
+
+- `400` — No `mail` parameter, or the email / its user / its place is not found
 
 ---
 
@@ -1451,10 +1568,12 @@ List site-wide activity feed, grouped by user and place. Results are paginated a
       },
       "place": {
         "id": "a1b2c3d4e5f6g",
+        "slug": "vodopad-gadelsha",
         "title": "Waterfall Gadelsha",
         "content": "Beautiful waterfall...",
         "difference": 0,
-        "category": "landscape"
+        "category": "waterfall",
+        "cover": { "preview": "/uploads/photos/a1b2c3d4e5f6g/cover_preview.jpg" }
       },
       "photos": [
         {
@@ -1474,7 +1593,9 @@ List site-wide activity feed, grouped by user and place. Results are paginated a
 
 `has_more` tells whether another page follows; `count` is present only for a feed filtered by `author` or `place` and is the total number of activity rows (not groups) matching the filter, so a collapsed "history" block can show the number without loading the list (`countOnly=true` returns just that).
 
-Activity `type` values: `place` (new place created), `edit` (place content updated), `photo` (photo uploaded), `rating` (place rated), `comment` (comment posted), `cover` (cover image set).
+Activity `type` values: `place` (new place created), `edit` (place content updated), `photo` (photo uploaded), `rating` (place rated), `comment` (comment posted), `cover` (cover image set), `visit` (place marked visited), `collection` (a collection reached 3 places), `collection_place` (a place added to someone else's collection). Bookmarks are recorded as activity but never returned in the feed.
+
+Depending on the type, a group also carries `rating: { value }`, `comment: { content }`, or `collection: { id, slug, title }`.
 
 ---
 
@@ -1532,9 +1653,29 @@ Toggle a bookmark for a place. If the bookmark exists it is removed; otherwise i
 
 ### Visited
 
+#### `GET /visited`
+
+Check whether the authenticated user has marked a place as visited.
+
+**Auth required:** No (returns `{ "result": false }` if not authenticated)
+
+**Query parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| placeId | string | Yes | Place ID to check |
+
+**Response:** `{ "result": true }`
+
+**Error responses:**
+
+- `400` — No `placeId` provided
+
+---
+
 #### `GET /visited/:id`
 
-Get the list of users who have marked a place as visited.
+Get the users who have marked a place as visited.
 
 **Auth required:** No
 
@@ -1552,17 +1693,31 @@ Get the list of users who have marked a place as visited.
     {
       "id": "u1u2u3u4",
       "name": "traveler42",
-      "avatar": "photo_small.jpg"
+      "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg"
     }
-  ]
+  ],
+  "verified_count": 1,
+  "total_count": 3
 }
 ```
 
 ---
 
+#### `GET /visited/user/:id`
+
+Places a user has marked as visited, in the `GET /places` list shape (plus `content`).
+
+**Auth required:** No
+
+**Query parameters:** `limit` (default 21, max 40), `offset` (default 0).
+
+**Response:** `{ "items": [ ... ], "count": 12 }`
+
+---
+
 #### `PUT /visited`
 
-Toggle a "visited" mark for a place. If already marked as visited, the mark is removed.
+Toggle a "visited" mark for a place. If already marked as visited, the mark is removed. When the request carries the user's coordinates and they are within the place's `visitRadiusM` (and the place is not `verificationExempt`), the visit is marked verified.
 
 **Auth required:** Yes
 
@@ -1571,12 +1726,14 @@ Toggle a "visited" mark for a place. If already marked as visited, the mark is r
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | place | string | Yes | Place ID |
+| lat | float | No | User's current latitude |
+| lon | float | No | User's current longitude |
 
 ```json
-{ "place": "a1b2c3d4e5f6g" }
+{ "place": "a1b2c3d4e5f6g", "lat": 51.7686, "lon": 55.1014 }
 ```
 
-**Response:** `201 Created` when marked, `200 OK` when unmarked.
+**Response:** `201 Created` with `{ "visited": true, "verified": true }` when marked, `200 OK` with `{ "visited": false, "verified": false }` when unmarked.
 
 **Error responses:**
 
@@ -1588,11 +1745,11 @@ Toggle a "visited" mark for a place. If already marked as visited, the mark is r
 
 ### Notifications
 
-All notification endpoints require authentication. The controller exits immediately (no response) if the user is not authenticated.
+All notification endpoints require authentication and return `401` otherwise.
 
 #### `GET /notifications/updates`
 
-Get notifications from the last 15 minutes that have not yet been read (for Snackbar/toast display). Also returns a count of older unread notifications. All returned notifications are marked as read.
+Get up to 10 unread notifications from the last 15 minutes (for Snackbar/toast display). Also returns a count of older unread notifications. All returned notifications are marked as read.
 
 **Auth required:** Yes
 
@@ -1610,6 +1767,7 @@ Get notifications from the last 15 minutes that have not yet been read (for Snac
       "read": false,
       "place": {
         "id": "a1b2c3d4e5f6g",
+        "slug": "vodopad-gadelsha",
         "title": "Waterfall Gadelsha",
         "cover": {
           "preview": "/uploads/photos/a1b2c3d4e5f6g/cover_preview.jpg"
@@ -1621,7 +1779,7 @@ Get notifications from the last 15 minutes that have not yet been read (for Snac
 }
 ```
 
-Note: `count` is the number of unread notifications older than 15 minutes (shown as a badge). `place` is omitted for `level` and `achievements` notification types.
+Note: `count` is the number of unread notifications older than 15 minutes (shown as a badge). `place` is omitted for `level` and `achievements` notification types, whose `meta` is `{ title, level }` / `{ title, image }`. Notifications about collections carry `collection: { id, slug, title }`.
 
 ---
 
@@ -1638,7 +1796,7 @@ Get a paginated list of all notifications for the current user. All returned unr
 | limit | integer | No | Max results (default 10) |
 | offset | integer | No | Pagination offset (default 0) |
 
-**Response:** Same shape as `GET /notifications/updates`.
+**Response:** Same shape as `GET /notifications/updates`; here `count` is the total number of the user's notifications.
 
 ---
 
@@ -1688,9 +1846,7 @@ Search for locations (countries, regions, districts, cities) by name text.
 }
 ```
 
-**Error responses:**
-
-- `400` — No search text provided
+Without `text` the response is an empty array `[]`.
 
 ---
 
@@ -1714,15 +1870,17 @@ Search for addresses and coordinates using the external geocoder (Nominatim / Ya
     {
       "lat": 51.7686,
       "lon": 55.1014,
-      "address": "Gadelsha, Baymaksky District, Bashkortostan, Russia"
+      "locality": "Gadelsha",
+      "country": "Russia",
+      "region": "Bashkortostan",
+      "district": "Baymaksky District",
+      "street": "Lenina, 1"
     }
   ]
 }
 ```
 
-**Error responses:**
-
-- `400` — No search text provided
+`country`, `region`, `district` and `street` are present only when the geocoder knows them. Without `text` the response is an empty array `[]`.
 
 ---
 
@@ -1752,6 +1910,8 @@ Get details for a specific location entity by ID and type.
   "name": "Bashkortostan"
 }
 ```
+
+An unknown `id` returns an empty body.
 
 **Error responses:**
 
@@ -1933,6 +2093,10 @@ Data for the location page's auto-generated description (features/20-location-se
 
 ### Categories
 
+There is no categories table and no listing endpoint: the server only whitelists the keys (`app/Config/Categories.php`), the client owns names, texts and icons. A place's `category` is one of these language-neutral keys:
+
+`mountain`, `cave`, `waterfall`, `spring`, `water`, `landscape`, `viewpoint`, `abandoned`, `industrial`, `military`, `castle`, `manor`, `architecture`, `religious`, `archeology`, `engineering`, `transport`, `memorial`, `artwork`, `disaster`, `mystic`, `museum`, `camping`.
+
 #### `GET /categories/:name/locations`
 
 Top locations for a category — perelinking on the category landing page (features/20-location-seo-pages.md: "эта категория по регионам").
@@ -1982,9 +2146,9 @@ Search for up to 10 tags matching a text string. Used for autocomplete.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| text | string | Yes | Search string (1–29 chars) |
+| text | string | Yes | Search string (1–29 chars; otherwise `items` is empty) |
 
-**Response:**
+**Response:** tag titles in the request locale.
 
 ```json
 {
@@ -1994,43 +2158,417 @@ Search for up to 10 tags matching a text string. Used for autocomplete.
 
 ---
 
-### Levels
+### Search
 
-#### `GET /levels`
+#### `GET /search`
 
-List all gamification levels with experience thresholds, activity modifier values, and the users currently at each level.
+Full search: places by title/content, geocoder locations, and a coordinates entry. Queries of 2 characters or fewer return the empty shape.
+
+**Auth required:** No
+
+**Query parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| q | string | Yes | Search text, or a coordinate pair (decimal, DMS or DM, with or without N/S/E/W) |
+| type | string | No | `all` (default), `places`, `location`, `coordinates` |
+| category | string | No | Restrict places to a category key |
+| sort | string | No | `views`, `rating`, `comments`, `bookmarks`, `distance`, `created_at`, `updated_at`; default is distance when coordinates are known, otherwise relevance |
+| order | string | No | `ASC` or `DESC` (default `DESC`) |
+| lat / lon | float | No | Viewer coordinates for `distance` |
+| limit | integer | No | Max places (default 20, max 40) |
+| offset | integer | No | Places offset (default 0) |
+
+**Response:**
+
+```json
+{
+  "locations": { "items": [{ "lat": 51.7686, "lon": 55.1014, "locality": "Gadelsha", "region": "Bashkortostan", "country": "Russia" }], "count": 1 },
+  "places": { "items": [], "count": 0 },
+  "coordinates": { "lat": 51.7686, "lon": 55.1014, "secondary": "Gadelsha, Bashkortostan, Russia" }
+}
+```
+
+`locations.items` are geocoder results (up to 5, the `GET /location/geosearch` shape); `places.items` use the `GET /places` list shape. `coordinates` is the parsed query when it is a coordinate pair, otherwise the position of the first place or location found; it is absent when there is none.
+
+---
+
+#### `GET /search/suggest`
+
+Autocomplete for the site header: up to 5 suggestions — a coordinates entry when the query parses as one, up to 2 places, up to 2 geocoder locations.
+
+**Auth required:** No
+
+**Query parameters:** `q` (string, more than 2 characters, otherwise the list is empty).
+
+**Response:**
+
+```json
+{
+  "suggestions": [
+    { "type": "coordinates", "lat": 51.7686, "lon": 55.1014 },
+    { "type": "place", "id": "a1b2c3d4e5f6g", "slug": "vodopad-gadelsha", "category": "waterfall", "title": "Waterfall Gadelsha" },
+    { "type": "location", "title": "Gadelsha", "lat": 51.7686, "lon": 55.1014 }
+  ]
+}
+```
+
+---
+
+### Stats
+
+#### `GET /stats`
+
+Site-wide counters.
 
 **Auth required:** No
 
 **Response:**
 
 ```json
+{ "places": 1245, "unexplored": 830, "photos": 5120, "reviews": 2310 }
+```
+
+`unexplored` — open OSM candidates in the `known` and `explore` tiers; `reviews` — comments plus ratings.
+
+---
+
+### Collections
+
+Author-curated public lists of places with a description. Any registered user may create one; only the owner and admins may edit, delete or manage its places. Hidden collections are excluded from lists and return `404` to everyone but the owner and admins.
+
+#### `GET /collections`
+
+**Auth required:** No
+
+**Query parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| region | integer | No | Filter by region ID |
+| author | string | No | Filter by user ID |
+| placeId | string | No | Only collections containing this place |
+| sort | string | No | `updated` (default) or `popular` (places count, then views) |
+| limit | integer | No | Max results (default 20, max 40) |
+| offset | integer | No | Pagination offset (default 0) |
+
+**Response:**
+
+```json
 {
-  "awards": {
-    "place": 10,
-    "photo": 5,
-    "rating": 2,
-    "cover": 3,
-    "edit": 4,
-    "comment": 1
-  },
   "items": [
     {
-      "experience": 0,
-      "level": 1,
-      "title": "Newbie",
-      "count": 120,
-      "users": [
-        {
-          "id": "u1u2u3u4",
-          "name": "traveler42",
-          "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg"
-        }
-      ]
+      "id": "c1c2c3c4c5c6c",
+      "slug": "peshchery-bashkortostana",
+      "title": "Caves of Bashkortostan",
+      "author": { "id": "u1u2u3u4", "name": "traveler42", "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg" },
+      "region": { "id": 5, "name": "Bashkortostan" },
+      "placesCount": 8,
+      "views": 120,
+      "saves": 4,
+      "featured": false,
+      "updated": "2026-10-20T09:00:00+00:00",
+      "created": "2026-09-01T09:00:00+00:00",
+      "covers": [{ "full": "/uploads/photos/a1b2c3d4e5f6g/cover.jpg", "preview": "/uploads/photos/a1b2c3d4e5f6g/cover_preview.jpg" }],
+      "cover": { "full": "/uploads/photos/a1b2c3d4e5f6g/cover.jpg", "preview": "/uploads/photos/a1b2c3d4e5f6g/cover_preview.jpg" }
     }
-  ]
+  ],
+  "count": 14
 }
 ```
+
+`covers` — up to 4 covers of the first places with photos, in the author's order; `cover` is the first of them.
+
+---
+
+#### `GET /collections/:id`
+
+One collection with its places in the author's order. Increments the view counter.
+
+**Auth required:** No
+
+**Response:** The list item shape plus `description`, `hidden`, `indexable` (for the robots meta tag only) and `places` — in the `GET /places` list shape, each with the author's `note` (or `null`).
+
+**Error responses:**
+
+- `404` — Not found or hidden
+
+---
+
+#### `GET /collections/membership`
+
+The current user's own collections, each with a `contains` flag for a place. Feeds the "Add to collection" dialog.
+
+**Auth required:** Yes
+
+**Query parameters:** `placeId` (string, optional).
+
+**Response:**
+
+```json
+{ "items": [{ "id": "c1c2c3c4c5c6c", "title": "Caves of Bashkortostan", "placesCount": 8, "cover": null, "contains": true }] }
+```
+
+---
+
+#### `GET /collections/:id/recommended`
+
+Places in the collection's region that are not in it yet, by rating. Empty when the collection has no region.
+
+**Auth required:** No
+
+**Query parameters:** `limit` (default 20, max 40).
+
+**Response:** `{ "items": [ ... ], "count": 5 }` — `GET /places` list shape.
+
+**Error responses:**
+
+- `404` — Not found or hidden
+
+---
+
+#### `POST /collections`
+
+Create a collection. Limited to 10 per user per 24 hours.
+
+**Auth required:** Yes
+
+**Request body (JSON):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| title | string | Yes | 3–120 chars |
+| description | string | No | Up to 20000 chars (Markdown, HTML stripped) |
+| region | integer | No | Region ID |
+
+**Response:** `201 Created` with `{ "id": "c1c2c3c4c5c6c", "slug": "peshchery-bashkortostana" }`
+
+**Error responses:**
+
+- `401` — Not authenticated
+- `400` — Validation errors
+- `429` — Daily limit reached
+
+---
+
+#### `PATCH /collections/:id`
+
+Update `title`, `description` and/or `region` (same rules as create; `description` and `region` accept `null`). The slug follows the title.
+
+**Auth required:** Yes (owner or admin)
+
+**Response:** `200 OK`
+
+**Error responses:** `401`, `403`, `404`, `400` (validation)
+
+---
+
+#### `DELETE /collections/:id`
+
+**Auth required:** Yes (owner or admin)
+
+**Response:** `200 OK`
+
+**Error responses:** `401`, `403`, `404`
+
+---
+
+#### `PUT /collections/:id/places`
+
+Add places to a collection; places already in it or not found are skipped.
+
+**Auth required:** Yes (owner or admin)
+
+**Request body (JSON):** `{ "placeIds": ["a1b2c3d4e5f6g", "h7i8j9k0l1m2n"] }` (up to 100)
+
+**Response:**
+
+```json
+{ "added": ["a1b2c3d4e5f6g"], "skipped": ["h7i8j9k0l1m2n"], "placesCount": 9 }
+```
+
+**Error responses:** `401`, `403`, `404`, `400` (no `placeIds` or more than 100)
+
+---
+
+#### `PATCH /collections/:id/places`
+
+Reorder the places and/or set a place's note.
+
+**Auth required:** Yes (owner or admin)
+
+**Request body (JSON):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| order | array | No | All place IDs of the collection in the new order (must be exactly the current set) |
+| placeId | string | No | Place whose note to set |
+| note | string \| null | No | Note for `placeId`, up to 500 chars |
+
+**Response:** `200 OK`
+
+**Error responses:** `401`, `403`, `404` (collection, or `placeId` not in it), `400` (empty body, wrong `order`, note too long)
+
+---
+
+#### `DELETE /collections/:id/places/:placeId`
+
+Remove a place from a collection.
+
+**Auth required:** Yes (owner or admin)
+
+**Response:** `200 OK`
+
+**Error responses:** `401`, `403`, `404`
+
+---
+
+#### `PATCH /collections/:id/moderation`
+
+Hide or feature a collection.
+
+**Auth required:** Yes (admin)
+
+**Request body (JSON):** `{ "hidden": true, "featured": false }` (at least one)
+
+**Response:** `200 OK`
+
+**Error responses:** `401` (not authenticated or not an admin), `404`, `400` (nothing to update)
+
+---
+
+### Achievements
+
+Achievement objects have `id`, `group_slug`, `type`, `tier`, `category`, `title` and `description` (in the request locale), `image`, `xp_bonus`, `season_start`, `season_end`, and `rules`.
+
+#### `GET /achievements`
+
+Active achievements. For an authenticated user each item also has `earned_at` (or `null`) and `progress`.
+
+**Auth required:** No
+
+**Query parameters:** `category`, `tier`, `type` (optional filters).
+
+**Response:** `{ "data": [ ... ] }`
+
+---
+
+#### `GET /achievements/progress`
+
+The current user's progress, keyed by achievement ID.
+
+**Auth required:** Yes
+
+**Response:** `{ "data": { "<achievementId>": { ... } } }`
+
+---
+
+#### `GET /achievements/:id`
+
+One achievement, plus `is_active`.
+
+**Auth required:** No
+
+**Error responses:** `404` — Not found
+
+---
+
+#### `GET /users/:id/achievements`
+
+All active achievements with that user's `earned_at` and `progress` (no `rules`).
+
+**Auth required:** No
+
+**Response:** `{ "data": [ ... ] }`
+
+---
+
+#### `GET /achievements/manage`
+
+All achievements, inactive ones included, with both locales (`title_en`, `title_ru`, `description_en`, `description_ru`), `sort_order` and `is_active`.
+
+**Auth required:** Yes (admin)
+
+**Response:** `{ "data": [ ... ] }`
+
+---
+
+#### `POST /achievements`, `PUT /achievements/:id`, `DELETE /achievements/:id`
+
+Admin CRUD. The body (JSON or form) takes `group_slug`, `type` (default `base`), `tier` (default `none`), `category`, `title_en`, `title_ru`, `description_en`, `description_ru`, `image`, `rules` (object), `season_start`, `season_end`, `xp_bonus`, `sort_order`, `is_active`; `PUT` updates only the fields sent. `POST` returns `201` with the stored row, `PUT` the updated row. `DELETE` deactivates an achievement that someone has earned, otherwise deletes it, and returns `{ "id": "..." }`.
+
+**Auth required:** Yes (admin)
+
+**Error responses:** `403` — not an admin; `404` — not found
+
+---
+
+#### `POST /achievements/:id/image`
+
+Upload an achievement image: `multipart/form-data` field `image`, PNG or SVG, under 1 MB.
+
+**Auth required:** Yes (admin)
+
+**Response:** `{ "id": "...", "image": "uploads/achievements/<id>_<time>.png" }`
+
+**Error responses:** `403`, `404`, `400` (no file, wrong type, too large)
+
+---
+
+### Sending Mail (admin)
+
+#### `GET /sending-mail/manage`
+
+The outgoing email queue.
+
+**Auth required:** Yes (admin)
+
+**Query parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| status | string | No | Filter by status |
+| email | string | No | Filter by recipient |
+| date_from / date_to | string | No | Creation date range |
+| sort | string | No | `created_at` (default), `updated_at`, `status`, `email` |
+| order | string | No | `asc` or `desc` (default `desc`) |
+| page | integer | No | Page number (default 1) |
+| limit | integer | No | Page size (default 20, max 100) |
+
+**Response:**
+
+```json
+{
+  "items": [
+    {
+      "id": "m1m2m3m4",
+      "status": "completed",
+      "email": "user@example.com",
+      "subject": "New comment",
+      "created": { "date": "2026-10-01 10:00:00.000000", "timezone_type": 3, "timezone": "UTC" },
+      "updated": { "date": "2026-10-01 10:01:00.000000", "timezone_type": 3, "timezone": "UTC" },
+      "user": { "id": "u1u2u3u4", "name": "traveler42", "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg" },
+      "activity": { "type": "comment" }
+    }
+  ],
+  "count": 320,
+  "limit": 20,
+  "offset": 0,
+  "stats": { "total": 320, "completed": 300, "error": 5, "pending": 15 }
+}
+```
+
+**Error responses:** `403` — not an admin
+
+---
+
+#### `GET /sending-mail/manage/:id`
+
+One email: the list item plus `message` and `error`, wrapped in `{ "data": { ... } }`.
+
+**Auth required:** Yes (admin)
+
+**Error responses:** `403`, `404`
 
 ---
 
@@ -2071,21 +2609,30 @@ Returns the ids/slugs and last-modified timestamps of everything the client's XM
 
 ---
 
-## CLI Commands (System)
+## CLI Commands
 
-These are CLI-only commands run via `php index.php system <command>`. They are not accessible over HTTP.
+Spark commands (`php spark <command>`), not accessible over HTTP:
 
 | Command | Description |
 |---------|-------------|
-| `php index.php system recalculate_tags_count` | Recalculates and updates the usage counter on all tags |
-| `php index.php system generate_users_online` | Randomly updates activity timestamps for demo/bot users to simulate online presence |
-| `php index.php system send_email` | Processes the outbound email queue (subject to daily/monthly limits) |
+| `system:send-email` | Process and send queued notification emails |
+| `system:test-email` | Send a test email to verify SMTP configuration |
+| `system:calculate-tags-count` | Recalculate the usage counter of all tags |
+| `system:generate-users-online` | Simulate activity for internal geometki.com accounts |
+| `system:generate-place-slugs` | Backfill place slugs from their titles |
+| `locations:rebuild` | Re-geocode every place, merge duplicate locations, assign slugs |
+| `osm:collect` | Collect OSM candidates for the queued tiles (cron, every minute) |
+| `osm:rescore` | Recalculate OSM candidate scores from the stored tags |
+| `achievements:evaluate` | Evaluate and award achievements |
+| `trending:refresh` | Refresh place trending scores |
+| `interests:refresh` | Refresh user interest profiles |
+| `digest:weekly` | Queue weekly digest emails |
 
 ---
 
 ## Notes
 
 - **IDs** — Place and user IDs are alphanumeric strings (not sequential integers). Place IDs are 13 characters long.
-- **Locale** — The `Accept-Language` header (or CI4's locale detection) selects between Russian (`ru`, default) and English (`en`). Translated fields such as `title`, `content`, and address names respond in the detected locale (a place's `category` is a language-neutral key; the client translates it).
-- **Image paths** — All image paths in responses are relative paths on the server. Prepend the API base URL to construct absolute URLs.
+- **Locale** — The `Locale` header selects between Russian (`ru`, default) and English (`en`). Translated fields such as `title`, `content`, and address names respond in that locale (a place's `category` is a language-neutral key; the client translates it).
+- **Image paths** — Image paths in responses are relative paths on the server; prepend the API base URL to construct absolute URLs. Linked external photos (Wikimedia Commons, PastVu) are the exception: their URLs are absolute.
 - **Distance** — The `distance` field (km) uses the Haversine formula. It is only returned when either the request includes `lat`/`lon` query parameters or the session has a stored location from `PUT /location`.

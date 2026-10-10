@@ -1,58 +1,29 @@
 ---
 name: geometki-client-architecture
-description: Core architecture, stack, and patterns used in the geometki Next.js client (post March 2026 refactor)
+description: Core architecture, stack, and patterns used in the geometki Next.js client
 type: project
 ---
 
-Next.js 16 (Pages Router) with React 19. TypeScript throughout.
+Next.js 16 (Pages Router) with React 19, TypeScript 6. CLAUDE.md and client/DESIGN.md hold the overview; this file keeps what they don't.
 
-**State management**: Redux Toolkit + RTK Query. Store is in `app/store.ts` (moved from `api/store.ts`). Redux slices in `app/applicationSlice.ts`, `app/authSlice.ts`, `app/notificationSlice.ts`. API definitions in `api/api.ts` (monolithic — all endpoints in one file; the injectEndpoints split is not viable without updating all ~40 consumers). SSR hydration uses `next-redux-wrapper`. Two API instances: `API` (main backend) and `APIPastvu` (pastvu.com historical photos).
+**State**: Redux Toolkit + RTK Query. Store and slices in `app/` (`store.ts`, `authSlice.ts`, `applicationSlice.ts`, `notificationSlice.ts`, `errorMiddleware.ts`). `api/api.ts` is monolithic (all project endpoints in one slice; an `injectEndpoints` split is not worth it). Extra RTK Query slices for map layers: `APIPastvu`, `APIWikimediaCommons`, `APIWikipedia`. SSR hydration via `next-redux-wrapper`.
 
-**Directory structure** (post refactor, as of commit 786dbd4e on develop):
-- `app/` — Redux store + slices
-- `api/` — RTK Query API slice (`api.ts`), types (`types/`), models (`models/`), `apiPastvu.ts`
-- `config/` — `constants.ts` (LOCAL_STORAGE), `env.ts` (IMG_HOST, SITE_LINK, API_HOST)
-- `hooks/` — custom React hooks (`useLocalStorage.ts`, `useClientOnly.ts`)
-- `utils/` — pure utility functions split by domain: `date.ts`, `text.ts`, `number.ts`, `url.ts`, `array.ts`, `api.ts` (isApiValidationErrors), `pagination.ts`, `localstorage.ts`, `schema.ts`, `address.ts`, `coordinates.ts`, `validators.ts`; barrel re-export in `helpers.ts`
-- `features/` — domain co-location: `features/<domain>/` contains `<domain>.types.ts` (re-exports from `api/types/`) and `<domain>.utils.ts` (domain utilities). NOT used for API splitting.
-- `components/layout/` — app-level layout (AppLayout, AppBar, Snackbar, etc.)
-- `components/map/` — Leaflet map components (InteractiveMap, MarkerPoint, etc.)
-- `components/shared/` — shared UI components (PhotoGallery, BookmarkButton, UserAvatar, etc.)
-- `components/ui/` — generic UI primitives (Autocomplete, Pagination, Carousel, etc.)
-- `sections/` — page-specific compound components (place/, user/, categories/, tags/) — formerly `components/pages/`
-- `pages/` — Next.js route entry points
-- `styles/` — `globals.sass` (global classes + contextListMenu), `variables.sass` (SASS vars + %placeBottomPanel placeholder), `dark.css`, `light.css`
+**Directories**: `app/` (store), `api/` (`api.ts`, `types/` = `ApiType`, `models/` = `ApiModel`), `config/` (`constants.ts`, `env.ts`), `hooks/`, `utils/` (pure functions by domain, barrel `helpers.ts`), `components/{layout,map,shared,ui,pages}`, `sections/{collections,home,place,sending-mail,user}`, `pages/`, `styles/` (`theme.css`, `globals.sass`, `variables.sass`, `mixins.sass`, `animations.sass`).
 
-**Styling**: SASS modules per component (`styles.module.sass`). Theme via CSS custom properties. SASS placeholder `%placeBottomPanel` in `variables.sass` (use `@extend %placeBottomPanel` after `@use`-ing variables). Global utility classes (`.contextListMenu`, `.emptyList`, etc.) in `globals.sass`.
-
-**Import paths for common things**:
+**Import paths**:
 - Store hooks: `import { useAppDispatch, useAppSelector } from '@/app/store'`
 - API: `import { API, ApiModel, ApiType } from '@/api'`
 - Env constants: `import { IMG_HOST, SITE_LINK } from '@/config/env'`
 - Validation helper: `import { isApiValidationErrors } from '@/utils/api'`
 
-**i18n**: `next-i18next` v16 with two locales: `ru` (default) and `en`. Pages Router API is under subpaths — import `appWithTranslation`, `useTranslation`, `Trans` from `'next-i18next/pages'`; import `serverSideTranslations` from `'next-i18next/pages/serverSideTranslations'`. Run `yarn locales:build` after adding translation keys (always dot-separated).
+**Styling**: SASS modules per component (`styles.module.sass`), tokens as CSS custom properties (kit `theme.css` + `styles/theme.css`). `%placeBottomPanel` placeholder in `variables.sass` (`@use` variables, then `@extend`).
 
-**next-seo**: v7. Pages Router uses `generateNextSeo({...})` function (not `<NextSeo>` component). Import from `'next-seo/pages'`. Wrap in `<Head>{generateNextSeo({title: ..., description: ...})}</Head>`.
+**Auth**: JWT and session id in cookies (`AUTH_COOKIES` in `config/constants.ts`), state in `app/authSlice.ts`; `AppAuthChecker` (app bar) polls every 60s.
 
-**Map**: Leaflet + react-leaflet v5, loaded client-side only via `next/dynamic` with `ssr: false`.
+**Testing**: Jest + jsdom, tests co-located. `simple-react-ui-kit` (pure ESM) is mapped via `moduleNameMapper` to `client/__mocks__/simple-react-ui-kit.tsx`. Shared helpers in `client/__mocks__/commonMocks.ts` (store factory, `renderWithStore`, `mockRouter`, `mockUseTranslation`, fixtures).
 
-**Authentication**: JWT token in localStorage. Auth state in `app/authSlice.ts`. `AppAuthChecker` polls every 60s.
+**Test pattern for components that import app slices directly**: use an inline store (not `commonMocks.ts`) and mock `@/utils/localstorage`, `next-i18next.config`, `cookies-next` and `@/config/constants` before importing the slices, so their initial state does not fail. Canonical examples: `LoginForm.test.tsx`, `AppLayout.test.tsx`, `AppBar.test.tsx`.
 
-**Testing**: Jest + jsdom. Test files co-located with source. As of March 2026: 887 tests across 93 suites all pass. `identity-obj-proxy` and `@testing-library/dom` must be installed as devDeps. `simple-react-ui-kit` (pure ESM) is mapped via `moduleNameMapper` to `client/__mocks__/simple-react-ui-kit.tsx`. Shared test utilities live in `client/__mocks__/commonMocks.ts`.
+**Test pattern for map components**: mock `react-leaflet`, `leaflet` and Leaflet context hooks (`useLeafletContext`, `useMapEvents`, `useMap`); never use real Leaflet in jsdom. Jest hoists `jest.mock` above declarations, so don't reference outer variables inside mock factories — define data inside the factory or use `jest.fn()` overridden in `beforeEach`.
 
-**Test pattern for components that import applicationSlice/authSlice/notificationSlice**: Use inline store (NOT `commonMocks.ts`) and mock `@/utils/localstorage`, `next-i18next.config`, `cookies-next`, and `@/config/constants` before importing those slices. This prevents `getStorageLocale()` initialization failures. See `LoginForm.test.tsx`, `AppLayout.test.tsx`, `AppBar.test.tsx` for the canonical pattern.
-
-**Test pattern for map components**: Mock `react-leaflet`, `leaflet`, and any Leaflet context hooks (`useLeafletContext`, `useMapEvents`, `useMap`). Never use the real Leaflet in tests — it requires a browser DOM that jsdom cannot provide. Temporal dead zone: never reference variables defined outside mock factories *inside* the factory (jest hoists mock calls above variable declarations). Solution: define mock data inside the factory, or use `jest.fn()` and override in `beforeEach`.
-
-**Search feature (added 2026-05-18)**:
-- `api/types/search.ts` — flat exports: `Request`, `Response`, `SuggestResponse`, `Suggestion` (union type)
-- `api/api.ts` — `search` (query, keepUnusedDataFor: 60) and `searchSuggest` (query, keepUnusedDataFor: 30) endpoints
-- `utils/number.ts` + `utils/helpers.ts` — `formatCount(n)` helper (1.0K / 1.0M suffix style)
-- `pages/search/index.tsx` — SSR page; redirects to `/` if `q` is empty; load-more via `useLazySearchQuery`
-- `components/pages/search/` — PlaceSearchCard, LocationItem, CoordinatesItem, SearchFilters, SearchMap (dynamic ssr:false), SearchResults
-- `components/layout/app-bar/Search.tsx` — uses `useSearchSuggestQuery`, navigate to `/search?q=` on Enter via wrapper `onKeyDown`; place suggestion selects and navigates to search page; location/coordinates suggestion navigates to `/map#lat,lon,zoom`
-- Custom `Autocomplete` in `components/ui/autocomplete/` does NOT support `onKeyDown` prop — use a wrapper div with `role="search"` + `onKeyDown` to intercept Enter at the container level
-
-**Why:** Summarises the entire client codebase structure for quick context in future sessions.
-**How to apply:** Use when suggesting refactors, new features, or bug fixes to stay consistent with existing patterns.
+**How to apply:** stay consistent with these patterns when adding features or fixing bugs.

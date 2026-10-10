@@ -1,87 +1,59 @@
 # Feature: Seasonal Events & Limited-Time Campaigns
 
+> **Status: not started.** Seasonal *achievements* already exist (`achievements.type = 'seasonal'` with `season_start`/`season_end` and rule filters, `AchievementsLibrary`); what is missing is the event itself: a community goal, a banner, a leaderboard and an archive.
+
 ## Overview
 
-Timed community events focused on a theme (season, holiday, category of place) that give all users a shared goal. Events create urgency, bring back inactive users, and generate topical content clusters on the map.
-
-## Event Structure
-
-An event runs for 1–4 weeks and has:
-- A **theme** (e.g., "Summer Beaches", "Hidden Cafés of Winter", "Soviet Architecture")
-- A **global goal** (community collectively adds N places of a type)
-- **Individual goals** with tiered rewards
-- An **exclusive badge** only earnable during the event window
+Timed community events (1–4 weeks) around a theme — usually a set of categories — with a shared community goal, individual tiers and an exclusive badge. They create urgency, bring back inactive users and produce topical clusters on the map.
 
 ### Example Events
 
-| Event | Window | Goal | Exclusive Badge |
-|-------|--------|------|----------------|
-| Summer Expedition | Jul 1–Aug 31 | Add 1,000 outdoor places | "Sun Seeker" |
-| Café Crawl | Mar 1–Mar 31 | Add 500 cafés/restaurants | "Barista's Friend" |
-| Heritage Hunt | Sep 1–Oct 15 | Add 300 historical landmarks | "Time Keeper" |
-| Winter Wonderland | Dec 1–Jan 10 | Add 200 winter activity spots | "Frost Wanderer" |
+| Event | Window | Categories | Goal | Badge |
+|-------|--------|-----------|------|-------|
+| Waters of Summer | Jul 1–Aug 31 | `waterfall`, `spring`, `water` | 1,000 places | "Sun Seeker" |
+| Heritage Hunt | Sep 1–Oct 15 | `castle`, `manor`, `architecture`, `archeology` | 300 places | "Time Keeper" |
+| Abandoned Autumn | Oct 1–Nov 15 | `abandoned`, `industrial`, `military` | 300 places | "Ruin Walker" |
 
-### Individual Contribution Tiers
+### Individual Tiers
 
-Within an event, users who contribute themed places unlock tiered rewards:
-
-| Contributions | XP Bonus | Reward |
+| Themed places added | XP Bonus | Reward |
 |--------------|---------|--------|
-| 1 place | +50 XP | Bronze event badge |
-| 5 places | +200 XP | Silver event badge |
-| 15 places | +500 XP | Gold event badge |
-| Top 10 leaderboard | +1,000 XP | Exclusive "Elite" variant badge |
+| 1 | +50 XP | Bronze event badge |
+| 5 | +200 XP | Silver event badge |
+| 15 | +500 XP | Gold event badge |
+| Top 10 | +1,000 XP | "Elite" badge variant |
 
-### Community Progress Bar
-
-A global progress tracker shows the community's collective progress toward the event goal. When the goal is reached, everyone who participated gets a +100 XP "Community Victory" bonus.
+The tier badges can be ordinary seasonal achievements with a category filter, so only the community goal and the leaderboard need new code. When the community goal is reached, every participant gets +100 XP.
 
 ## Server Design
 
-**New table: `events`**
+**Table `events`**
 ```sql
 id, title_en, title_ru, description_en, description_ru,
-category_filter (JSON array of place category IDs),
+categories JSON,          -- category keys, e.g. ["castle","manor"]
 starts_at, ends_at,
-community_goal INT,
-community_progress INT DEFAULT 0,
-bronze_threshold, silver_threshold, gold_threshold
+community_goal INT, community_progress INT DEFAULT 0
 ```
 
-**New table: `users_events`**
+**Table `users_events`**
 ```sql
-id, user_id, event_id, contribution_count, tier_reached, bonus_awarded
+id, user_id, event_id, contribution_count, bonus_awarded
 ```
 
 **`EventsLibrary.php`**
-- `getActive(): ?Event` — return the currently running event, if any.
-- `trackContribution(int $userId, int $placeId)` — called when a place is added; check if it matches the event's category filter; increment user and community counters; award tier bonuses as thresholds are crossed.
+- `getActive(): array` — running events (they may overlap).
+- `trackContribution(string $userId, string $placeId)` — called from `ActivityLibrary::place()`; if the place category matches, increments user and community counters.
 
 **Routes**
-- `GET /events/active` — current event details + authenticated user's progress.
-- `GET /events/{id}/leaderboard` — top contributors for a specific event.
-- `GET /events` — archive of past events.
+- `GET /events/active` — current events + the user's progress.
+- `GET /events/{id}/leaderboard` — top contributors.
+- `GET /events` — archive.
+
+Events are created via a seeder or the admin area; no user-facing creation UI.
 
 ## Client Design
 
-**Event banner** — sticky banner on the main page and map during an active event, showing:
-- Event name and theme art
-- Community progress bar ("847 / 1,000 places added")
-- User's current tier and progress to next tier
-- Time remaining countdown
-
-**Event leaderboard modal** — top 10 contributors with their tier badges; accessible from the banner.
-
-**Past events archive** (`/events`) — shows all historical events with community outcomes; users can see which badges they earned.
-
-**Map integration** — places added during an active event get a small themed marker pin (e.g., a snowflake overlay in winter), creating visible clusters of event content.
-
-## Admin Considerations
-
-- Events are created via database seed or a future admin panel; no user-facing creation UI needed initially.
-- Category filter is a JSON array of place `category_id` values, making event scoping flexible.
-- Events can overlap (e.g., a regional campaign and a category campaign simultaneously).
-
-## Why It Fits
-
-Events require no changes to core place-addition flow — `ActivityLibrary::push()` for the `place` action type is the only hook needed. The seasonal rhythm gives the platform a living calendar of moments that PR/social media can amplify, driving acquisition alongside retention.
+- Event banner on the main page and map: name, community progress ("847 / 1,000"), user's tier, countdown.
+- Leaderboard modal from the banner.
+- `/events` archive with outcomes and earned badges.
+- Optional themed marker overlay for places added during the event.
