@@ -2,6 +2,7 @@ import { DateTime } from '@/api/types'
 
 import { Address } from './address'
 import { Categories } from './category'
+import { PlaceCoverCredit } from './photo'
 import { User } from './user'
 
 export type Place = {
@@ -29,6 +30,8 @@ export type Place = {
     cover?: {
         full?: string
         preview: string
+        /** Set when the cover is cut from a linked Wikimedia Commons or PastVu photo: credited under it */
+        credit?: PlaceCoverCredit
     }
     visitRadiusM?: number
     verificationExempt?: boolean

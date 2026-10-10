@@ -9,6 +9,8 @@
 - Categories: "Historical building" is now "Manor" (manors and palaces), "Equipment on a pedestal" is now "Vehicles"
 - Places: category landing pages (`/places/{category}`) are on
 - Tags: the Tags page is removed; tags stay on places and in the filter
+- Places: the cover can be cut from a linked Wikimedia Commons or PastVu photo and is credited on it; a place without a cover gets one from the first suitable linked photo
+- Places: smaller photos can be the cover too (upscaled); a failed cover save shows one error instead of two
 - Map: PastVu photos no longer disappear at close zoom; dense areas are grouped into counters
 - Locations: addresses in English are transliterated instead of shown in Cyrillic; Crimea and Sevastopol are listed under Russia
 

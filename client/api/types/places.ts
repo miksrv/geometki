@@ -35,13 +35,16 @@ export interface ListResponse {
     count?: number
 }
 
+/** The crop box in the image pixels; the source is an uploaded photo or a linked one */
 export interface PatchCoverRequest {
     x: number
     y: number
     width: number
     height: number
     placeId: string
-    photoId: string
+    photoId?: string
+    /** A linked Wikimedia Commons or PastVu photo (`Photo.id` of an `external` photo) */
+    externalPhotoId?: string
 }
 
 export interface PostItemRequest {

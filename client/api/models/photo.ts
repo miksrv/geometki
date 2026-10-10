@@ -17,7 +17,12 @@ export type PhotoExternal = {
     year?: number | null
     /** Page of the photo in the source */
     url: string
+    /** The place cover can be cut from it: big enough, and its licence allows changes */
+    coverAllowed?: boolean
 }
+
+/** The caption of a place cover cut from a linked photo */
+export type PlaceCoverCredit = Pick<PhotoExternal, 'source' | 'author' | 'license' | 'licenseUrl' | 'url'>
 
 export type Photo = {
     id: string

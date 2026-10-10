@@ -22,6 +22,51 @@ import {
 
 import styles from './styles.module.sass'
 
+const SOURCE_NAMES: Record<ApiModel.PhotoExternalSource, string> = {
+    pastvu: 'PastVu',
+    wikimedia: 'Wikimedia Commons'
+}
+
+/** The caption of a cover cut from a linked photo: the author, the licence and the source page */
+const CoverCredit: React.FC<{ credit: ApiModel.PlaceCoverCredit }> = ({ credit }) => {
+    const { t } = useTranslation()
+
+    const parts: React.ReactNode[] = [
+        credit.author ? `© ${credit.author}` : null,
+        credit.license && credit.licenseUrl ? (
+            <a
+                href={credit.licenseUrl}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+            >
+                {credit.license}
+            </a>
+        ) : (
+            credit.license
+        ),
+        <a
+            key={'source'}
+            href={credit.url}
+            target={'_blank'}
+            rel={'noopener noreferrer'}
+        >
+            {SOURCE_NAMES[credit.source]}
+        </a>
+    ].filter(Boolean)
+
+    return (
+        <div className={styles.coverCredit}>
+            {t('cover-credit_photo', { defaultValue: 'Фото' })}:{' '}
+            {parts.map((part, index) => (
+                <React.Fragment key={index}>
+                    {index > 0 && ' · '}
+                    {part}
+                </React.Fragment>
+            ))}
+        </div>
+    )
+}
+
 interface PlaceHeroProps {
     place?: ApiModel.Place
     coverHash?: number
@@ -150,6 +195,8 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({ place, coverHash, attached
                             : [])
                     ]}
                 />
+
+                {place?.cover?.credit && <CoverCredit credit={place.cover.credit} />}
             </div>
 
             <div className={styles.bottomPanel}>
