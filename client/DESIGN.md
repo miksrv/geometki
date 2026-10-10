@@ -59,23 +59,30 @@ re-implement them.
 - **Lists** are a flow of tiles on the page background, three columns on desktop and one
   on phones (`MediaTileGrid`). Lists never sit inside a `Container`.
 - **Place page** (`pages/places/[id]`, spec: `features/24-place-page-redesign.md`):
-  `Breadcrumbs` on the page background → `PlaceHero` (the cover at 3:1, at least 240px tall
-  on phones; cover files are 1800×600) carrying only the h1 and the meta line (rating ·
-  category · address · distance, every fact a link) → `PlaceActions`, one row of `medium`
-  buttons on the page background with a single primary "На карте" → `.pageLayout` grid
-  `1fr 320px` with a 24px gap → main column of `Section`s (h2 + optional link action, 32px
-  apart, no boxes): photos mosaic, description (clamped, "Читать полностью"), the rate
-  prompt, "Рядом" carousel, "Ещё {category} в {location}" tiles, comments, the collapsed
-  "История изменений" row. The sticky sidebar (`top: 60px`) holds the one boxed block of
-  the page, the "Где это" card (`Container`: interactive map with the nearby places as
-  markers, address links, coordinates, route links), then the "В коллекциях" rows
-  (`PlaceCollections`, picker-style rows: 40px cover, title, places count), the "Здесь были"
-  avatars and the byline (author, dates, editors, views) — all as plain h3 sections. On
-  phones the order is explicit (cover → actions → photos → description → rate → where →
-  nearby → related → sidebar blocks → comments → history) and a sticky bottom bar repeats
-  "На карте / Маршрут / Сохранить" once the actions row has scrolled away. Until the
-  redesign lands the page still renders the pre-redesign `Container` blocks; new work on
-  it follows the spec, not the old layout.
+  `PlaceHero` — the cover at 3:1 (at least 240px tall, 320px on phones; cover files are
+  1800×600) with the `Breadcrumbs` on its top gradient and, on the bottom one, the h1, the
+  address line (each level a link), the facts line (rating · category · views · distance,
+  every fact a link) → `PlaceActions`, a toolbar strip attached to the bottom of the cover
+  (the container surface with the cover's bottom corners): `small` buttons left to right
+  with a single primary "На карте", the "⋯" menu on the right, wrapping into short rows on
+  phones → `.pageLayout` grid `1fr 320px` with a `--space-6` gap → main column of `Section`s (h2 +
+  optional link action, `--space-6` apart and `--space-5` on phones, no boxes): photos mosaic ("Все фото" opens the full grid
+  with the per-photo menus), description (clamped, "Читать полностью" as plain text), the
+  rate prompt, "Рядом" carousel, "Ещё {category}: {location}" as a carousel of four with
+  a one-line truncated title and a plain "Все" link, comments, the collapsed "История изменений" row. The sticky sidebar (`top: 60px`)
+  is one card, `PlaceSidebar` (`Container`): the interactive map with the nearby places as
+  markers, then "icon → value" rows without labels (coordinates, the last update, the
+  author, the editors; the icon tooltip names the fact), then the "Здесь были" avatars and
+  the "В коллекциях" rows (`PlaceCollections`, picker-style rows: 40px cover, title, places
+  count) as h3 blocks separated by rules — nothing from the hero (address, views, distance)
+  or the toolbar (map link, route) is repeated there, and the creation date is only in the
+  structured data. On phones the
+  order is explicit (cover → photos → description → rate → the sidebar card → nearby →
+  related → comments → history); there is no sticky actions bar — phones already have the
+  bottom navigation, and a second fixed bar over it looked wrong. The rate
+  prompt (`PlaceRatePrompt`, anchor `#rate`) is the only place with interactive stars:
+  empty until hovered, a word per score; the average is a number in the hero meta line and
+  never a star input.
 - **Collection page** (`pages/collections/[id]`): `CollectionHeader` (a `PageHeader` with a
   byline) → the map (`PlacesMap`, see section 5) on the full content width →
   the description as article prose on the full content width (`prose` mixin) → the places as the usual
@@ -97,9 +104,10 @@ re-implement them.
   (`utils/placesLanding.ts` `buildPlacesHref`) instead of `/places?…` once the relevant flag
   is on.
 - **Sections, not containers.** The parts of one entity (its description, photos,
-  comments, history, the facts about it) are `Section`s: an h2 (h3 in a sidebar) with an
-  optional `action` (`mode="link"` buttons), separated from each other by whitespace alone,
-  on the page background. A box groups by enclosure, whitespace groups by proximity; nesting
+  comments, history, the facts about it) are `Section`s (`components/shared/section`, the
+  same `title` / `action` / `footer` slots as the kit `Container`, a kit candidate): an h2
+  (h3 in a sidebar, `level={3}`) with an optional `action` (`mode="link"` buttons),
+  separated from each other by whitespace alone, on the page background. A box groups by enclosure, whitespace groups by proximity; nesting
   boxes inside the page card reads as "object inside object", which these are not.
 - **Containers** (`Container` from the kit) are reserved for things of another nature than
   the page itself: a form (also a section switched to edit mode), a tool card with its own
@@ -130,10 +138,9 @@ preview of a location landing — 340px wide, top-aligned with the title, stacki
 text on phones. The header sits on the page background: the lede is never boxed in a
 `Container` and never greyed out — it is the page's first paragraph, not a footnote.
 The place page and the user profile use a hero instead. On the place page the same
-`Breadcrumbs` sit above the cover on the page background, the h1 and the meta line sit on
-the cover (`PlaceHero`) and the actions are a row under it (`PlaceActions`); on the profile
-the h1 and actions are in the title row attached to the bottom of the profile card
-(`UserHeader`). The h1 size is one token everywhere (`--font-size-title-page` in `styles/theme.css`, 22px), so a
+`Breadcrumbs`, the h1, the address and facts lines sit on the cover (`PlaceHero`) and the
+actions are the toolbar attached under it (`PlaceActions`); on the profile the h1 and actions are in the title row
+attached to the bottom of the profile card (`UserHeader`). The h1 size is one token everywhere (`--font-size-title-page` in `styles/theme.css`, 22px), so a
 list title and a hero title read as the same level, above the prose headings and container titles.
 
 Breadcrumbs appear only on nested pages, where the app bar cannot show where you are:
@@ -143,7 +150,7 @@ Breadcrumbs appear only on nested pages, where the app bar cannot show where you
 | Section roots: places, collections, people, map, activity, categories, tags, search                                                                                        | none                                |
 | Filtered places list (`/places?category=…`)                                                                                                                                | Места › parent filters              |
 | Category / location / pair landing (`/places/{category}`, `/places/{location}`, `/places/{location}/{category}`, behind the `NEXT_PUBLIC_LANDING_*` flags — see CLAUDE.md) | Места › location parents › location |
-| Place page (above the cover, on the page background)                                                                                                                       | Места › category                    |
+| Place page (on the cover's top gradient)                                                                                                                                   | Места › category                    |
 | Collection page                                                                                                                                                            | Коллекции                           |
 | Create / edit place                                                                                                                                                        | Места (› place)                     |
 | User sub-pages (places, photos, bookmarks, …), settings                                                                                                                    | Люди › name                         |

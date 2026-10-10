@@ -1,5 +1,5 @@
 import React from 'react'
-import { cn, Container, Icon } from 'simple-react-ui-kit'
+import { cn, Icon } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 import Link from 'next/link'
@@ -7,6 +7,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
 import { collectionPickerStyles } from '@/components/shared/add-to-collection'
+import { Section } from '@/components/shared/section'
 import { IMG_HOST } from '@/config/env'
 import { buildCollectionUrl } from '@/utils/helpers'
 
@@ -21,7 +22,7 @@ interface PlaceCollectionsProps {
 /**
  * "В коллекциях" block in the place page sidebar: compact rows (cover, title, places
  * count) for the published collections containing this place, like the "visited here"
- * block next to it. Skipped entirely while empty — no empty-state noise on every place.
+ * block next to it — a boxless Section, as every sidebar block of the page. Skipped entirely while empty — no empty-state noise on every place.
  */
 export const PlaceCollections: React.FC<PlaceCollectionsProps> = ({ placeId }) => {
     const { t } = useTranslation()
@@ -35,7 +36,8 @@ export const PlaceCollections: React.FC<PlaceCollectionsProps> = ({ placeId }) =
     const count = data.count ?? data.items.length
 
     return (
-        <Container
+        <Section
+            level={3}
             title={`${t('collections_place-in-collections-short', { defaultValue: 'В коллекциях' })} (${count})`}
         >
             <ul className={styles.sidebarRows}>
@@ -73,6 +75,6 @@ export const PlaceCollections: React.FC<PlaceCollectionsProps> = ({ placeId }) =
                     </li>
                 ))}
             </ul>
-        </Container>
+        </Section>
     )
 }

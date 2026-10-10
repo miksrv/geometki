@@ -76,6 +76,11 @@ export const CommentList: React.FC<CommentListProps> = ({ placeId }) => {
 
     return (
         <section className={styles.commentList}>
+            {!comments?.length && (
+                <div className={styles.empty}>
+                    {t('comments-empty', { defaultValue: 'Пока никто не оставил комментарий. Ваш будет первым.' })}
+                </div>
+            )}
             {!!comments?.length && renderComments()}
 
             {appAuth.isAuth && (

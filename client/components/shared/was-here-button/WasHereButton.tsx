@@ -23,9 +23,10 @@ interface PendingVisit {
 interface WasHereButtonProps {
     placeId?: string
     verificationExempt?: boolean
+    size?: 'small' | 'medium'
 }
 
-export const WasHereButton: React.FC<WasHereButtonProps> = ({ placeId, verificationExempt }) => {
+export const WasHereButton: React.FC<WasHereButtonProps> = ({ placeId, verificationExempt, size = 'small' }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
 
@@ -191,7 +192,7 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({ placeId, verificat
         <>
             <Button
                 mode={visitedData?.result ? 'primary' : 'secondary'}
-                size={'small'}
+                size={size}
                 className={styles.wasHereButton}
                 disabled={!placeId || isLoading}
                 loading={isLoading}

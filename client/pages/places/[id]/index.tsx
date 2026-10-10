@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Container } from 'simple-react-ui-kit'
+import { Button, cn } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import dynamic from 'next/dynamic'
@@ -12,20 +12,25 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, PhotoGallery, PlaceCard } from '@/components/shared'
+import { AppLayout, PhotoGallery, Section } from '@/components/shared'
 import type { PhotoUploaderHandle } from '@/components/shared/photo-uploader'
-import { Carousel, FileDropZone } from '@/components/ui'
+import { FileDropZone } from '@/components/ui'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { PlaceCollections } from '@/sections/collections'
 import {
-    PlaceActionBar,
+    NearbyPlaces,
+    PlaceActions,
     PlaceActivity,
     PlaceCommentList,
     PlaceDescription,
     PlaceHero,
-    PlaceInfoSidebar,
-    PlaceVisited
+    PlaceRatePrompt,
+    PlaceSidebar,
+    PlaceVisited,
+    RELATED_PLACES_COUNT,
+    RelatedPlaces
 } from '@/sections/place'
+import type { RelatedPlacesLocation } from '@/sections/place/related-places'
 import { getCategoryTitle } from '@/utils/categories'
 import {
     buildPlacesHref,
@@ -67,10 +72,20 @@ interface PlacePageProps {
     ratingCount: number
     place?: ApiModel.Place
     photoList?: ApiModel.Photo[]
-    nearPlaces?: ApiModel.Place[] | null
+    nearPlaces?: ApiModel.PlaceListItem[] | null
+    /** "Ещё {category}: {region}" — the same category in the place's region (null without a region) */
+    relatedPlaces?: ApiModel.PlaceListItem[] | null
+    relatedLocation?: RelatedPlacesLocation | null
 }
 
-const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, nearPlaces }) => {
+const PlacePage: NextPage<PlacePageProps> = ({
+    ratingCount,
+    place,
+    photoList,
+    nearPlaces,
+    relatedPlaces,
+    relatedLocation
+}) => {
     const { t, i18n } = useTranslation()
 
     const dispatch = useAppDispatch()
@@ -94,6 +109,10 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
     const ownPhotos = useMemo(() => photoList?.filter(({ external }) => !external), [photoList])
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
+
+    // Prefetched on the server with the page: the count for the "Комментарии (N)" heading
+    const { data: commentsData } = API.useCommentsGetListQuery({ place: place?.id }, { skip: !place?.id })
+    const commentsCount = commentsData?.items?.length ?? 0
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     const placePath = buildPlaceUrl(place?.id ?? '', place?.slug)
@@ -305,97 +324,115 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                 data={placeSchema}
             />
 
-            <PlaceHero
-                place={place}
-                coverHash={coverHash}
-                onChangePlaceCoverClick={handleEditPlaceCoverClick}
-                onPhotoUploadClick={handleUploadPhotoClick}
-            />
+            <div>
+                <PlaceHero
+                    place={place}
+                    coverHash={coverHash}
+                    attached={true}
+                />
 
-            <div className={styles.pageLayout}>
-                <div className={styles.mainColumn}>
-                    <PlaceActionBar
-                        placeId={place?.id}
-                        placeUrl={pagePlaceUrl}
-                        bookmarks={place?.bookmarks}
-                        verificationExempt={place?.verificationExempt}
-                    />
+                <PlaceActions
+                    place={place}
+                    placeUrl={pagePlaceUrl}
+                    onPhotoUploadClick={handleUploadPhotoClick}
+                    onChangePlaceCoverClick={handleEditPlaceCoverClick}
+                />
 
-                    <PlaceDescription
-                        placeId={place?.id}
-                        content={place?.content}
-                        tags={place?.tags}
-                    />
-
-                    <FileDropZone
-                        label={t('photo-drop-label', { defaultValue: 'Перетащите фотографии сюда, чтобы загрузить' })}
-                        hint={t('photo-drop-hint', { defaultValue: 'JPG, PNG, GIF или WEBP, до 10 МБ' })}
-                        onDrop={handleDropPhotos}
-                    >
-                        <PhotoGallery
-                            title={t('photos')}
-                            photos={localPhotos}
-                            uploadingPhotos={uploadingPhotos}
-                            onPhotoDelete={setLocalPhotos}
-                            action={
-                                <>
-                                    <Button
-                                        mode={'link'}
-                                        onClick={handleNearbyPhotosClick}
-                                    >
-                                        {t('nearby-photos_title', { defaultValue: 'Фото рядом' })}
-                                    </Button>
-                                    <Button
-                                        mode={'link'}
-                                        onClick={handleUploadPhotoClick}
-                                    >
-                                        {t('upload-photo')}
-                                    </Button>
-                                </>
-                            }
-                        />
-                    </FileDropZone>
-
-                    <Container title={t('comments-title')}>
-                        <PlaceCommentList placeId={place?.id} />
-                    </Container>
-
-                    <PlaceActivity
-                        placeId={place?.id}
-                        hidePlaceName={true}
-                        hideCover={true}
-                    />
-                </div>
-
-                <aside className={styles.sidebar}>
-                    <PlaceInfoSidebar place={place} />
-                    <PlaceCollections placeId={place?.id} />
-                    <PlaceVisited place={place} />
-                </aside>
-            </div>
-
-            {!!nearPlaces?.length && (
-                <div className={styles.nearPlaces}>
-                    <Carousel options={{ dragFree: true, loop: true }}>
-                        {nearPlaces.map((nearPlace) => (
-                            <PlaceCard
-                                key={nearPlace.id}
-                                place={nearPlace}
+                {/* Two columns on desktop; on phones the main column dissolves (display: contents) and
+                    the blocks take the explicit order of the .order* classes, the sidebar card among them */}
+                <div className={styles.pageLayout}>
+                    <div className={styles.mainColumn}>
+                        <FileDropZone
+                            className={styles.orderPhotos}
+                            label={t('photo-drop-label', {
+                                defaultValue: 'Перетащите фотографии сюда, чтобы загрузить'
+                            })}
+                            hint={t('photo-drop-hint', { defaultValue: 'JPG, PNG, GIF или WEBP, до 10 МБ' })}
+                            onDrop={handleDropPhotos}
+                        >
+                            <PhotoGallery
+                                variant={'mosaic'}
+                                title={localPhotos.length ? `${t('photos')} (${localPhotos.length})` : t('photos')}
+                                photos={localPhotos}
+                                uploadingPhotos={uploadingPhotos}
+                                onPhotoDelete={setLocalPhotos}
+                                action={
+                                    <>
+                                        <Button
+                                            mode={'link'}
+                                            onClick={handleNearbyPhotosClick}
+                                        >
+                                            {t('photos-nearby-short', { defaultValue: 'Рядом' })}
+                                        </Button>
+                                        <Button
+                                            mode={'link'}
+                                            onClick={handleUploadPhotoClick}
+                                        >
+                                            {t('add', { defaultValue: 'Добавить' })}
+                                        </Button>
+                                    </>
+                                }
                             />
-                        ))}
-                    </Carousel>
+                        </FileDropZone>
 
-                    <Button
-                        size={'medium'}
-                        mode={'secondary'}
-                        noIndex={true}
-                        stretched={true}
-                        link={`/places?lat=${place?.lat}&lon=${place?.lon}&sort=distance&order=ASC`}
-                    >
-                        {t('all-places-nearby')}
-                    </Button>
+                        <div className={styles.orderDescription}>
+                            <PlaceDescription
+                                placeId={place?.id}
+                                content={place?.content}
+                                tags={place?.tags}
+                            />
+                        </div>
+
+                        <div className={styles.orderRate}>
+                            <PlaceRatePrompt
+                                placeId={place?.id}
+                                authorId={place?.author?.id}
+                            />
+                        </div>
+
+                        <div className={cn(styles.orderNearby, !nearPlaces?.length && styles.hidden)}>
+                            <NearbyPlaces
+                                places={nearPlaces}
+                                lat={place?.lat}
+                                lon={place?.lon}
+                            />
+                        </div>
+
+                        <div className={cn(styles.orderRelated, (relatedPlaces?.length ?? 0) < 3 && styles.hidden)}>
+                            <RelatedPlaces
+                                places={relatedPlaces}
+                                category={place?.category}
+                                location={relatedLocation}
+                            />
+                        </div>
+
+                        <Section
+                            className={styles.orderComments}
+                            title={commentsCount ? `${t('comments-title')} (${commentsCount})` : t('comments-title')}
+                        >
+                            <PlaceCommentList placeId={place?.id} />
+                        </Section>
+
+                        <div className={styles.orderHistory}>
+                            <PlaceActivity
+                                placeId={place?.id}
+                                hidePlaceName={true}
+                                hideCover={true}
+                            />
+                        </div>
+                    </div>
+
+                    <aside className={styles.sidebar}>
+                        <PlaceSidebar
+                            place={place}
+                            nearPlaces={nearPlaces}
+                        >
+                            <PlaceVisited place={place} />
+                            <PlaceCollections placeId={place?.id} />
+                        </PlaceSidebar>
+                    </aside>
                 </div>
-            )}
+            </div>
 
             {nearbyPhotosOpen && place?.id && (
                 <NearbyPhotosDialog
@@ -477,6 +514,17 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 }
             }
 
+            // "Ещё {category}: {region}": the place's region, or nothing (then the block is hidden)
+            const relatedLocation: RelatedPlacesLocation | null =
+                placeData?.category && placeData.address?.region?.id
+                    ? {
+                          id: placeData.address.region.id,
+                          name: placeData.address.region.name,
+                          slug: placeData.address.region.slug,
+                          type: 'region'
+                      }
+                    : null
+
             const [{ data: ratingData }, { data: photosData }, { data: _commentsData }, { data: nearPlaces }] =
                 await Promise.all([
                     store.dispatch(API.endpoints.ratingGetList.initiate(id)),
@@ -494,6 +542,23 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     )
                 ])
 
+            // The closest places of the same category in the region, apart from the ones already
+            // in "Рядом" — needs the nearby ids, hence the second round
+            const { data: relatedData } = relatedLocation
+                ? await store.dispatch(
+                      API.endpoints.placesGetList.initiate({
+                          category: placeData?.category,
+                          excludePlaces: [id, ...(nearPlaces?.items?.map((item) => item.id) ?? [])],
+                          lat: placeData?.lat,
+                          limit: RELATED_PLACES_COUNT,
+                          lon: placeData?.lon,
+                          order: ApiType.SortOrders.ASC,
+                          region: relatedLocation.id,
+                          sort: ApiType.SortFields.Distance
+                      })
+                  )
+                : { data: undefined }
+
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
             return {
@@ -502,7 +567,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     nearPlaces: nearPlaces?.items ?? null,
                     photoList: photosData?.items,
                     place: placeData,
-                    ratingCount: ratingData?.count ?? 0
+                    ratingCount: ratingData?.count ?? 0,
+                    relatedLocation,
+                    relatedPlaces: relatedData?.items ?? null
                 }
             }
         }

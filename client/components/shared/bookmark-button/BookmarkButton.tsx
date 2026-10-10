@@ -14,9 +14,11 @@ interface BookmarkButtonProps extends ButtonProps {
     placeId?: string
     className?: string
     hideLabel?: boolean
+    /** How many people saved the place: shown after the label ("Сохранить · 12") */
+    count?: number
 }
 
-export const BookmarkButton: React.FC<BookmarkButtonProps> = ({ placeId, className, hideLabel, ...props }) => {
+export const BookmarkButton: React.FC<BookmarkButtonProps> = ({ placeId, className, hideLabel, count, ...props }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
 
@@ -71,7 +73,7 @@ export const BookmarkButton: React.FC<BookmarkButtonProps> = ({ placeId, classNa
             {...props}
             mode={bookmarkData?.result ? 'primary' : (props?.mode ?? 'secondary')}
             icon={'Bookmark'}
-            label={hideLabel ? undefined : stateLabel}
+            label={hideLabel ? undefined : count ? `${stateLabel} · ${count}` : stateLabel}
             tooltip={stateLabel}
             className={className}
             disabled={!placeId || loading}

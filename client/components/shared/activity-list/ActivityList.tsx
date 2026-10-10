@@ -18,6 +18,8 @@ interface ActivityListProps extends Pick<ContainerProps, 'action' | 'footer'> {
     scrollable?: boolean
     hidePlaceName?: boolean
     hideCover?: boolean
+    /** Render the items without the Container box (inside a Section of the parent) */
+    plain?: boolean
 }
 
 export const ActivityList: React.FC<ActivityListProps> = ({
@@ -29,12 +31,15 @@ export const ActivityList: React.FC<ActivityListProps> = ({
     compact,
     scrollable,
     hidePlaceName,
-    hideCover
+    hideCover,
+    plain
 }) => {
     const { t } = useTranslation('components.activity-list')
 
     if (!activities?.length && !loading) {
-        return (
+        return plain ? (
+            <div className={styles.plainEmpty}>{t('nothing-here-yet', { defaultValue: 'Тут пока ничего нет' })}</div>
+        ) : (
             <Container className={'emptyList'}>
                 {t('nothing-here-yet', { defaultValue: 'Тут пока ничего нет' })}
             </Container>
@@ -55,6 +60,15 @@ export const ActivityList: React.FC<ActivityListProps> = ({
             {loading && <ActivityListItemLoader />}
         </>
     )
+
+    if (plain) {
+        return (
+            <div className={styles.plain}>
+                {content}
+                {footer && <div className={styles.plainFooter}>{footer}</div>}
+            </div>
+        )
+    }
 
     return (
         <Container

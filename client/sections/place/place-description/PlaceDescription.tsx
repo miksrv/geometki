@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import Markdown from 'react-markdown'
 import debounce from 'lodash-es/debounce'
-import { Button, Container, Select, SelectOptionType } from 'simple-react-ui-kit'
+import { Button, cn, Select, SelectOptionType } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
@@ -12,6 +12,7 @@ import { API } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
+import { Section } from '@/components/shared'
 import { ScreenSpinner } from '@/components/ui'
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import { equalsArrays } from '@/utils/helpers'
@@ -26,6 +27,9 @@ const ContentEditor = dynamic(
 const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
     ssr: false
 })
+
+// Collapsed height of a long description (about 12 lines of prose); shorter texts are never clamped
+const CLAMP_HEIGHT = 300
 
 interface DescriptionFormValues {
     content: string
@@ -48,7 +52,13 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
 
     const [searchTags, { data: searchResult, isLoading: searchLoading }] = API.useTagsGetSearchMutation()
 
+    const contentRef = useRef<HTMLDivElement>(null)
+
     const [editorMode, setEditorMode] = useState<boolean>(false)
+    // Clamped until measured: the server HTML and the first client render agree, and a
+    // short text is simply shorter than the limit. Expanded for good when it fits.
+    const [clamped, setClamped] = useState<boolean>(true)
+    const [overflows, setOverflows] = useState<boolean>(false)
     const [localTags, setLocalTags] = useState<string[] | undefined>(tags)
     const [localContent, setLocalContent] = useState<string | undefined>(content)
     const [tagSearch, setTagSearch] = useState('')
@@ -147,8 +157,24 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
         setEditorMode(false)
     }, [placeId])
 
+    useEffect(() => {
+        const element = contentRef.current
+
+        if (!element || editorMode) {
+            return
+        }
+
+        const fits = element.scrollHeight <= CLAMP_HEIGHT + 24
+
+        setOverflows(!fits)
+
+        if (fits) {
+            setClamped(false)
+        }
+    }, [localContent, editorMode])
+
     return (
-        <Container
+        <Section
             className={styles.placeDescription}
             title={t('description')}
             action={
@@ -190,11 +216,36 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
                     )}
                 />
             ) : localContent ? (
-                <div className={styles.content}>
-                    <Markdown>{localContent}</Markdown>
-                </div>
+                <>
+                    <div
+                        ref={contentRef}
+                        className={cn(styles.content, clamped && styles.clamped)}
+                    >
+                        <Markdown>{localContent}</Markdown>
+                    </div>
+                    {overflows && (
+                        <Button
+                            unstyled={true}
+                            className={styles.readMore}
+                            aria-expanded={!clamped}
+                            onClick={() => setClamped((prev) => !prev)}
+                        >
+                            {clamped
+                                ? t('read-full-text', { defaultValue: 'Читать полностью' })
+                                : t('collapse-text', { defaultValue: 'Свернуть' })}
+                        </Button>
+                    )}
+                </>
             ) : (
-                <div className={styles.emptyContent}>{t('description-not-added-yet')}</div>
+                <div className={styles.emptyContent}>
+                    {t('description-not-added-yet')}
+                    {' · '}
+                    <Button
+                        mode={'link'}
+                        label={t('add', { defaultValue: 'Добавить' })}
+                        onClick={handleEditClick}
+                    />
+                </div>
             )}
 
             {isAuth && editorMode ? (
@@ -237,6 +288,6 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
             )}
 
             <ConfirmationDialog {...leaveDialogProps} />
-        </Container>
+        </Section>
     )
 }

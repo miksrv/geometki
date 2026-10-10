@@ -13,6 +13,7 @@ import { ImageUploader } from '@/components/ui'
 import { getErrorMessage } from '@/utils/api'
 
 import { isAbsoluteUrl, resolveImageUrl } from '../photo-lightbox/utils'
+import { Section } from '../section'
 
 import styles from './styles.module.sass'
 
@@ -29,12 +30,21 @@ const VISIBLE_COUNT = 8
 
 // A quarter of the content width (--width-max 1260px) on desktop, half the screen on phones
 const TILE_SIZES = '(max-width: 768px) 50vw, 320px'
+// Mosaic: one big tile (half of the main column, ~450px) and four small ones, a strip of 200px tiles on phones
+const MOSAIC_COUNT = 5
+const MOSAIC_SIZES = '(max-width: 768px) 200px, 450px'
 
 interface PhotoGalleryProps extends ContainerProps {
     photos?: ApiModel.Photo[]
     hideActions?: boolean
     /** Show every photo at once, without the "more photos" button (a page of photos) */
     showAll?: boolean
+    /**
+     * `grid` (default) — rows of 4:3 tiles in a Container, the rest behind "more photos";
+     * `mosaic` — a boxless Section with one big and four small tiles, the last one carrying
+     * "+N" into the lightbox (the place page, DESIGN.md → Place page)
+     */
+    variant?: 'grid' | 'mosaic'
     uploadingPhotos?: string[]
     onPhotoDelete?: (photos: ApiModel.Photo[]) => void
     onPhotoUploadClick?: () => void
@@ -44,6 +54,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     photos,
     hideActions,
     showAll,
+    variant = 'grid',
     uploadingPhotos,
     onPhotoDelete,
     onPhotoUploadClick,
@@ -68,6 +79,8 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     const [lightboxPhotoIndex, setLightboxPhotoIndex] = useState<number>()
 
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
+    // Mosaic only: "Все фото" swaps the mosaic for the full grid, where every tile has its menu
+    const [gridOpen, setGridOpen] = useState<boolean>(false)
 
     const visibleCount = showAll ? localPhotos.length : VISIBLE_COUNT
     const visiblePhotos = localPhotos.slice(0, visibleCount)
@@ -138,11 +151,17 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         setLocalPhotos(photos ?? [])
     }, [photos])
 
-    const renderPhotoItem = (photo: ApiModel.Photo, listIndex: number) => (
+    const renderPhotoItem = (photo: ApiModel.Photo, listIndex: number, more?: number) => (
         <li
             key={photo.id}
             className={styles.photoItem}
         >
+            {!!more && (
+                <span
+                    className={styles.more}
+                    aria-hidden={true}
+                >{`+${more}`}</span>
+            )}
             {photo.id === photoLoadingID && (
                 <div className={styles.loader}>
                     <Spinner />
@@ -166,7 +185,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                     quality={75}
                     width={700}
                     height={500}
-                    sizes={TILE_SIZES}
+                    sizes={variant === 'mosaic' ? MOSAIC_SIZES : TILE_SIZES}
                     style={{ width: '100%', height: '100%' }}
                 />
             </Link>
@@ -213,6 +232,115 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             )}
         </li>
     )
+
+    const dialogs = (
+        <>
+            {typeof lightboxPhotoIndex === 'number' && (
+                <PhotoLightbox
+                    photos={localPhotos}
+                    photoIndex={lightboxPhotoIndex}
+                    showLightbox={true}
+                    onCloseLightBox={() => setLightboxPhotoIndex(undefined)}
+                />
+            )}
+
+            {!!photoDeleteID && (
+                <ConfirmationDialog
+                    open={!!photoDeleteID}
+                    message={t('delete-photo', { defaultValue: 'Удалить фотографию?' })}
+                    onCancel={() => {
+                        setPhotoDeleteID(undefined)
+                        setPhotoLoadingID(undefined)
+                    }}
+                    onConfirm={async () => {
+                        const photo = localPhotos.find(({ id }) => id === photoDeleteID)
+
+                        if (photo?.external) {
+                            await unlinkPhoto({ id: photo.id, placeId: photo.placeId })
+                            setPhotoDeleteID(undefined)
+                            setPhotoLoadingID(undefined)
+                        } else if (photo) {
+                            await deletePhoto({ id: photo?.id, temporary: photo?.placeId === 'temporary' })
+                            setPhotoDeleteID(undefined)
+                            setPhotoLoadingID(undefined)
+                        }
+                    }}
+                />
+            )}
+        </>
+    )
+
+    if (variant === 'mosaic') {
+        const mosaicPhotos = localPhotos.slice(0, MOSAIC_COUNT)
+        const hiddenCount = localPhotos.length - mosaicPhotos.length
+        const tileCount = Math.min(MOSAIC_COUNT, mosaicPhotos.length + (uploadingPhotos?.length ?? 0))
+
+        return (
+            <Section
+                title={props.title}
+                action={
+                    <>
+                        {hiddenCount > 0 && (
+                            <Button
+                                mode={'link'}
+                                aria-expanded={gridOpen}
+                                onClick={() => setGridOpen((prev) => !prev)}
+                            >
+                                {gridOpen
+                                    ? t('collapse-photos', { defaultValue: 'Скрыть' })
+                                    : t('all-photos', { defaultValue: 'Все' })}
+                            </Button>
+                        )}
+                        {props.action}
+                    </>
+                }
+                footer={props.footer}
+                className={props.className}
+            >
+                {isEmptyPhotoList ? (
+                    <div className={styles.emptyLine}>
+                        {t('no-photos-here-yet', { defaultValue: 'Тут пока нет фотографий' })}
+                    </div>
+                ) : gridOpen ? (
+                    <div className={styles.photoGrid}>
+                        <ul className={styles.photoGallery}>
+                            {localPhotos.map((photo, index) => renderPhotoItem(photo, index))}
+                        </ul>
+                    </div>
+                ) : (
+                    <ul
+                        className={styles.mosaic}
+                        data-count={tileCount}
+                    >
+                        {uploadingPhotos?.slice(0, MOSAIC_COUNT).map((photo) => (
+                            <li
+                                key={photo}
+                                className={styles.photoItem}
+                            >
+                                <div className={styles.loader}>
+                                    <Spinner />
+                                </div>
+                                <Image
+                                    src={photo}
+                                    alt={''}
+                                    width={206}
+                                    height={150}
+                                />
+                            </li>
+                        ))}
+                        {mosaicPhotos.map((photo, index) =>
+                            renderPhotoItem(
+                                photo,
+                                index,
+                                index === mosaicPhotos.length - 1 && hiddenCount > 0 ? hiddenCount : undefined
+                            )
+                        )}
+                    </ul>
+                )}
+                {dialogs}
+            </Section>
+        )
+    }
 
     return (
         <Container
@@ -292,38 +420,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 </>
             )}
 
-            {typeof lightboxPhotoIndex === 'number' && (
-                <PhotoLightbox
-                    photos={localPhotos}
-                    photoIndex={lightboxPhotoIndex}
-                    showLightbox={true}
-                    onCloseLightBox={() => setLightboxPhotoIndex(undefined)}
-                />
-            )}
-
-            {!!photoDeleteID && (
-                <ConfirmationDialog
-                    open={!!photoDeleteID}
-                    message={t('delete-photo', { defaultValue: 'Удалить фотографию?' })}
-                    onCancel={() => {
-                        setPhotoDeleteID(undefined)
-                        setPhotoLoadingID(undefined)
-                    }}
-                    onConfirm={async () => {
-                        const photo = localPhotos.find(({ id }) => id === photoDeleteID)
-
-                        if (photo?.external) {
-                            await unlinkPhoto({ id: photo.id, placeId: photo.placeId })
-                            setPhotoDeleteID(undefined)
-                            setPhotoLoadingID(undefined)
-                        } else if (photo) {
-                            await deletePhoto({ id: photo?.id, temporary: photo?.placeId === 'temporary' })
-                            setPhotoDeleteID(undefined)
-                            setPhotoLoadingID(undefined)
-                        }
-                    }}
-                />
-            )}
+            {dialogs}
         </Container>
     )
 }

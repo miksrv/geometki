@@ -1,0 +1,1 @@
+export { PlaceRatePrompt } from './PlaceRatePrompt'

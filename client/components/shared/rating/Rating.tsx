@@ -10,10 +10,16 @@ export interface RatingProps {
     value?: number
     voted?: boolean
     disabled?: boolean
+    /**
+     * Word for each score, 1 to 5 ("Плохо" … "Отлично"): shown next to the stars for the
+     * hovered score, or for `value` when nothing is hovered. Makes the stars read as an
+     * input (the rate prompt of the place page), not as an indicator.
+     */
+    labels?: string[]
     onChange?: (rating: number) => void
 }
 
-export const Rating: React.FC<RatingProps> = ({ className, value, voted, disabled, onChange }) => {
+export const Rating: React.FC<RatingProps> = ({ className, value, voted, disabled, labels, onChange }) => {
     const { t } = useTranslation('components.shared.rating')
     const groupName = useId()
     const [hoverRating, setHoverRating] = useState<number>()
@@ -21,9 +27,12 @@ export const Rating: React.FC<RatingProps> = ({ className, value, voted, disable
     const showFullStar = (rating: number) =>
         (!hoverRating && value && value >= (rating || 0)) || (hoverRating && hoverRating >= rating)
 
-    return (
+    const labelScore = hoverRating ?? value
+    const label = labels && labelScore ? labels[labelScore - 1] : undefined
+
+    const stars = (
         <ul
-            className={cn(styles.rating, className)}
+            className={cn(styles.rating, !labels && className)}
             role={'radiogroup'}
             aria-label={t('rate-this-place', { defaultValue: 'Оценить место' })}
         >
@@ -78,5 +87,21 @@ export const Rating: React.FC<RatingProps> = ({ className, value, voted, disable
                 </li>
             ))}
         </ul>
+    )
+
+    if (!labels) {
+        return stars
+    }
+
+    return (
+        <div className={cn(styles.withLabels, className)}>
+            {stars}
+            <span
+                className={cn(styles.label, !label && styles.labelEmpty)}
+                aria-live={'polite'}
+            >
+                {label}
+            </span>
+        </div>
     )
 }

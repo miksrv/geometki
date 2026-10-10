@@ -178,3 +178,20 @@
             .compactRight
                 width: 100%
                 flex-shrink: 1
+
+// Boxless variant (the collapsed history of the place page): air between the items, no
+// rules — the comments above it have none either
+.plain
+    min-width: 0
+
+    .activityItem:not(:last-child)
+        border-bottom: 0
+        padding-bottom: 0
+        margin-bottom: var(--space-4)
+
+.plainFooter
+    margin-top: var(--space-3)
+
+.plainEmpty
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
