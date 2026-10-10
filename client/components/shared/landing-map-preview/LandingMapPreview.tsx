@@ -11,9 +11,10 @@ interface LandingMapPreviewProps {
 
 /**
  * The compact map block of a location/pair landing page (features/20-location-seo-pages.md,
- * "Шаблон страницы → Карта"): Leaflet is only loaded once the block scrolls into view, so it
- * never costs anything on the mobile first screen. Renders nothing without placed places —
- * same as `PlacesMap`, which it wraps once visible.
+ * "Шаблон страницы → Карта"): the box is rendered at its final size right away (the
+ * `PlacesMap` loading skeleton) and Leaflet is only loaded once the block is in view, so the
+ * page never shifts when the map mounts. Renders nothing without placed places — same as
+ * `PlacesMap`, which it wraps once visible.
  */
 export const LandingMapPreview: React.FC<LandingMapPreviewProps> = ({ places, fullMapQuery }) => {
     const [visible, setVisible] = useState(false)
@@ -57,13 +58,19 @@ export const LandingMapPreview: React.FC<LandingMapPreviewProps> = ({ places, fu
             ref={rootRef}
             data-testid={'landing-map-preview'}
         >
-            {visible && !!markers?.length && (
-                <PlacesMap
-                    places={markers}
-                    compact={true}
-                    fullMapQuery={fullMapQuery}
-                />
-            )}
+            {!!markers?.length &&
+                (visible ? (
+                    <PlacesMap
+                        places={markers}
+                        compact={true}
+                        fullMapQuery={fullMapQuery}
+                    />
+                ) : (
+                    <PlacesMap
+                        loading={true}
+                        compact={true}
+                    />
+                ))}
         </div>
     )
 }

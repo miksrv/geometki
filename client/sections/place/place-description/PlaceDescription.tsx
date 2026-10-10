@@ -30,6 +30,10 @@ const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmatio
 
 // Collapsed height of a long description (about 12 lines of prose); shorter texts are never clamped
 const CLAMP_HEIGHT = 300
+// A markdown source longer than this is almost certainly taller than CLAMP_HEIGHT: the server
+// renders the "Читать полностью" control for it right away, so it does not appear after
+// hydration and push the page down (CLS); the measurement below corrects the rare miss
+const LIKELY_LONG_LENGTH = 800
 
 interface DescriptionFormValues {
     content: string
@@ -58,7 +62,7 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
     // Clamped until measured: the server HTML and the first client render agree, and a
     // short text is simply shorter than the limit. Expanded for good when it fits.
     const [clamped, setClamped] = useState<boolean>(true)
-    const [overflows, setOverflows] = useState<boolean>(false)
+    const [overflows, setOverflows] = useState<boolean>((content?.length ?? 0) > LIKELY_LONG_LENGTH)
     const [localTags, setLocalTags] = useState<string[] | undefined>(tags)
     const [localContent, setLocalContent] = useState<string | undefined>(content)
     const [tagSearch, setTagSearch] = useState('')
@@ -164,7 +168,9 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
             return
         }
 
-        const fits = element.scrollHeight <= CLAMP_HEIGHT + 24
+        // Strict: a text within the limit is shown whole, a taller one is clamped at the limit
+        // exactly, so the toggle never changes the height by a few pixels
+        const fits = element.scrollHeight <= CLAMP_HEIGHT
 
         setOverflows(!fits)
 

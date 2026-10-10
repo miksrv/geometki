@@ -568,6 +568,8 @@
     "change": "Change",
     "add": "Add",
     "all-photos": "All",
+    "collapse-photos": "Hide",
+    "expand-photos": "More photos ({{count}})",
     "photos-nearby-short": "Nearby",
     "nearby-places-title": "Nearby",
     "related-places-title": "More {{category}}: {{location}}",

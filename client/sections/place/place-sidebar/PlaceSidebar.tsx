@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Container, Icon } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
@@ -30,6 +30,35 @@ interface PlaceSidebarProps {
 export const PlaceSidebar: React.FC<PlaceSidebarProps> = ({ place, nearPlaces, children }) => {
     const { t } = useTranslation()
 
+    const mapRef = useRef<HTMLDivElement>(null)
+    // The Leaflet chunk is loaded once the card is near the viewport: above the fold on
+    // desktop, far below the photos and the description on phones. The box keeps its height
+    // either way (styles), so nothing shifts when the map mounts.
+    const [mapNear, setMapNear] = useState<boolean>(false)
+
+    useEffect(() => {
+        const element = mapRef.current
+
+        if (!element || typeof IntersectionObserver === 'undefined') {
+            setMapNear(true)
+            return
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setMapNear(true)
+                    observer.disconnect()
+                }
+            },
+            { rootMargin: '400px 0px' }
+        )
+
+        observer.observe(element)
+
+        return () => observer.disconnect()
+    }, [])
+
     const marks = useMemo<ApiModel.PlaceMark[]>(() => {
         if (!place?.category) {
             return []
@@ -55,8 +84,11 @@ export const PlaceSidebar: React.FC<PlaceSidebarProps> = ({ place, nearPlaces, c
             className={styles.card}
             aria-label={t('place-location-card', { defaultValue: 'Где это' })}
         >
-            <div className={styles.map}>
-                {place.category && (
+            <div
+                ref={mapRef}
+                className={styles.map}
+            >
+                {mapNear && place.category && (
                     <InteractiveMap
                         zoom={14}
                         center={[place.lat, place.lon]}

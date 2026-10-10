@@ -1,1 +1,1 @@
-export { PlaceCollections } from './PlaceCollections'
+export { IN_COLLECTIONS_LIMIT, PlaceCollections } from './PlaceCollections'

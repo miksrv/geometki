@@ -1433,6 +1433,7 @@ List site-wide activity feed, grouped by user and place. Results are paginated a
 | date | string | No | Return activities older than this date |
 | limit | integer | No | Max groups (default 9, max 40) |
 | offset | integer | No | Pagination offset (default 0) |
+| countOnly | `true` | No | Return only `count` for the `author` / `place` filters: no rows, no view counters touched |
 
 **Response:**
 
@@ -1471,7 +1472,7 @@ List site-wide activity feed, grouped by user and place. Results are paginated a
 }
 ```
 
-`has_more` tells whether another page follows; `count` is the total number of activity rows (not groups) matching the `author` / `place` filters, so a collapsed "history" block can show the number without loading the list.
+`has_more` tells whether another page follows; `count` is present only for a feed filtered by `author` or `place` and is the total number of activity rows (not groups) matching the filter, so a collapsed "history" block can show the number without loading the list (`countOnly=true` returns just that).
 
 Activity `type` values: `place` (new place created), `edit` (place content updated), `photo` (photo uploaded), `rating` (place rated), `comment` (comment posted), `cover` (cover image set).
 

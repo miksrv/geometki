@@ -47,13 +47,14 @@ beforeEach(() => {
 })
 
 describe('LandingMapPreview', () => {
-    it('does not render the map before the block has intersected', () => {
+    it('reserves the map box with the loading skeleton before the block has intersected', () => {
         render(<LandingMapPreview places={[place('a', 51.7, 55.1)]} />)
 
         expect(screen.getByTestId('landing-map-preview')).toBeInTheDocument()
-        expect(screen.queryByTestId('places-map')).not.toBeInTheDocument()
         expect(observe).toHaveBeenCalled()
-        expect(mockPlacesMap).not.toHaveBeenCalled()
+        // The placeholder has the final size, so the map's arrival shifts nothing (CLS)
+        expect(mockPlacesMap).toHaveBeenCalledWith(expect.objectContaining({ compact: true, loading: true }))
+        expect(mockPlacesMap).not.toHaveBeenCalledWith(expect.objectContaining({ places: expect.anything() }))
     })
 
     it('renders PlacesMap, compact, once the block intersects', () => {

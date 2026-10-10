@@ -271,9 +271,13 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     )
 
     if (variant === 'mosaic') {
-        const mosaicPhotos = localPhotos.slice(0, MOSAIC_COUNT)
+        // Uploads in flight take tiles first; photos fill the rest of the five
+        const uploadingTiles = uploadingPhotos?.slice(0, MOSAIC_COUNT) ?? []
+        const mosaicPhotos = localPhotos.slice(0, Math.max(0, MOSAIC_COUNT - uploadingTiles.length))
         const hiddenCount = localPhotos.length - mosaicPhotos.length
-        const tileCount = Math.min(MOSAIC_COUNT, mosaicPhotos.length + (uploadingPhotos?.length ?? 0))
+        const tileCount = uploadingTiles.length + mosaicPhotos.length
+        // Deleting down to five photos while the grid is open: back to the mosaic, no stale "Скрыть"
+        const showGrid = gridOpen && hiddenCount > 0
 
         return (
             <Section
@@ -283,10 +287,10 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                         {hiddenCount > 0 && (
                             <Button
                                 mode={'link'}
-                                aria-expanded={gridOpen}
+                                aria-expanded={showGrid}
                                 onClick={() => setGridOpen((prev) => !prev)}
                             >
-                                {gridOpen
+                                {showGrid
                                     ? t('collapse-photos', { defaultValue: 'Скрыть' })
                                     : t('all-photos', { defaultValue: 'Все' })}
                             </Button>
@@ -301,7 +305,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                     <div className={styles.emptyLine}>
                         {t('no-photos-here-yet', { defaultValue: 'Тут пока нет фотографий' })}
                     </div>
-                ) : gridOpen ? (
+                ) : showGrid ? (
                     <div className={styles.photoGrid}>
                         <ul className={styles.photoGallery}>
                             {localPhotos.map((photo, index) => renderPhotoItem(photo, index))}
@@ -312,7 +316,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                         className={styles.mosaic}
                         data-count={tileCount}
                     >
-                        {uploadingPhotos?.slice(0, MOSAIC_COUNT).map((photo) => (
+                        {uploadingTiles.map((photo) => (
                             <li
                                 key={photo}
                                 className={styles.photoItem}

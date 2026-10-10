@@ -2,6 +2,11 @@ const { i18n } = require('./next-i18next.config.js')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    // The categories page is gone (the catalogue lives in the client, see CLAUDE.md →
+    // Categories): its indexed URL goes to the places listing instead of a 404
+    async redirects() {
+        return [{ destination: '/places', permanent: true, source: '/categories' }]
+    },
     i18n: { ...i18n, localeDetection: false },
     // Authorization does not work in this mode
     reactStrictMode: false,

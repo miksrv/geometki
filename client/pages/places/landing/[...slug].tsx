@@ -26,7 +26,15 @@ import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { PlaceFilterPanel, PlacesFilterType } from '@/sections/place'
 import { getCategoryContent, getCategoryLandingTitle, getCategoryTitle } from '@/utils/categories'
-import { buildPlacesHref, encodeQueryData, formatDate, getLandingFlags, LANDING_PROXY_HEADER } from '@/utils/helpers'
+import {
+    buildPlacesHref,
+    buildPlaceUrl,
+    encodeQueryData,
+    formatDate,
+    getLandingFlags,
+    LANDING_PROXY_HEADER,
+    truncateAtSentence
+} from '@/utils/helpers'
 import type { LandingFlags } from '@/utils/placesLanding'
 import type { LandingClassification, ResolvedSegment } from '@/utils/placesLandingResolve'
 // Two lint rules disagree on importing both a value and a type from the same module — see the
@@ -38,7 +46,8 @@ import {
     computeLandingNoindex,
     decideLandingRedirect,
     isLandingEmpty,
-    isLandingPageOutOfRange
+    isLandingPageOutOfRange,
+    LANDING_INDEX_THRESHOLD
 } from '@/utils/placesLandingResolve'
 import { PlaceSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
@@ -47,6 +56,9 @@ import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 const DEFAULT_SORT = ApiType.SortFields.Trending
 const DEFAULT_ORDER = ApiType.SortOrders.DESC
 const POST_PER_PAGE = 21
+// Meta description length: the full category intro (about 500 characters) is the visible lede,
+// the snippet gets its first sentences
+const META_DESCRIPTION_LENGTH = 155
 
 type PageKind = 'category' | 'location' | 'pair'
 
@@ -183,7 +195,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
         return await router.push(target.href)
     }
 
-    const h1 =
+    const pageName =
         kind === 'category'
             ? (categoryTitle ?? '')
             : kind === 'pair'
@@ -193,15 +205,21 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                 })
               : t('landing-title-location', 'Интересные места: {{location}}', { location: locationTitle })
 
+    // A tag filter and the page number are part of the page name, in the h1 as well as in the
+    // <title> (spec decision 4; the same as `/places`), so pages 2+ and tag pages never share a
+    // heading with page 1
+    const titleTag = tag ? ` #${tag}` : ''
     const titlePageSuffix = currentPage > 1 ? ` - ${t('page')} ${currentPage}` : ''
-    // The <title> of a category page carries the search modifiers ("карта, фото, координаты");
-    // the h1 stays the bare page name
+    const h1 = `${pageName}${titleTag}${titlePageSuffix}`
+    // The <title> of a category page carries the search modifiers ("карта, фото, координаты")
     const title =
         (kind === 'category'
             ? t('landing-title-category-seo', '{{category}}: map, photos, coordinates and descriptions', {
                   category: categoryTitle
               })
-            : h1) + titlePageSuffix
+            : pageName) +
+        titleTag +
+        titlePageSuffix
 
     // The listing's intro text (features/20-location-seo-pages.md, "Шаблон страницы →
     // Описание"): the category's own text, or a summary built from the location/pair's data.
@@ -211,10 +229,17 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
         }
 
         if (kind === 'pair') {
-            return t('landing-description-pair', '{{count}} places in {{location}}', {
-                count: pairCount ?? 0,
-                location: locationTitle
-            })
+            // The count line, then the category's own text: a pair page with 5-9 places would
+            // otherwise be a near-duplicate of every other pair of the same category
+            return [
+                t('landing-description-pair', '{{count}} places in {{location}}', {
+                    count: pairCount ?? 0,
+                    location: locationTitle
+                }),
+                categoryContent ?? ''
+            ]
+                .filter(Boolean)
+                .join('. ')
         }
 
         if (kind === 'location' && summary) {
@@ -243,7 +268,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
     // location summary says beyond the count — the count itself is the header's meta line,
     // and a pair page has nothing to say beyond it.
     const lede = useMemo(() => {
-        if (kind === 'category') {
+        if (kind === 'category' || kind === 'pair') {
             return categoryContent ?? ''
         }
 
@@ -268,6 +293,10 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
 
         return ''
     }, [kind, categoryContent, summary, t])
+
+    // The snippet: the first sentences of the description plus the page number, so pages 2+
+    // do not repeat page 1's description verbatim
+    const metaDescription = `${truncateAtSentence(description, META_DESCRIPTION_LENGTH)}${titlePageSuffix}`
 
     const chipsTitle =
         kind === 'pair'
@@ -336,7 +365,10 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
 
     const isGeoFiltered = !!(lat || lon || sort !== defaultSort || order !== DEFAULT_ORDER)
     const multiCategory = queryCategories.length >= 2
-    const noindex = computeLandingNoindex({ indexable, isGeoFiltered, multiCategory })
+    // A tag, or a category filter on a location page (a single one is a 301 to the pair page
+    // when those are on): content the canonical page does not have
+    const filtered = !!tag || (kind === 'location' && queryCategories.length >= 1)
+    const noindex = computeLandingNoindex({ filtered, indexable, isGeoFiltered, multiCategory })
 
     const mapQuery = categoryName ? `?category=${categoryName}` : ''
 
@@ -346,11 +378,11 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                 {generateNextSeo({
                     additionalLinkTags: buildHreflangTags(pathname.replace(/^\//, ''), canonicalQuery),
                     canonical: canonicalPage,
-                    description,
+                    description: metaDescription,
                     nofollow: false,
                     noindex,
                     openGraph: {
-                        description,
+                        description: metaDescription,
                         images: placesList
                             .filter(({ cover }) => cover?.full)
                             .slice(0, 3)
@@ -383,7 +415,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                         itemListElement: placesList.map((place, index) => ({
                             '@type': 'ListItem',
                             position: index + 1,
-                            url: `${SITE_LINK}places/${place.id}`
+                            url: `${SITE_LINK}${buildPlaceUrl(place.id, place.slug).replace(/^\//, '')}`
                         })),
                         name: title,
                         url: canonicalPage
@@ -502,8 +534,19 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return { notFound: true }
             }
 
+            // `/places/Cave` is not a page of its own: one canonical case (SEO review, 2026-10-10)
+            const lowerSegments = segments.map((segment) => segment.toLowerCase())
+
+            if (lowerSegments.some((segment, i) => segment !== segments[i])) {
+                const query = { ...context.query }
+                delete query.slug
+                writeRedirect(context, locale, `/places/${lowerSegments.join('/')}${encodeQueryData(query)}`)
+                return { props: {} as PlacesLandingPageProps }
+            }
+
             hydrateAuthFromCookies(store, cookies)
-            const translations = await serverSideTranslations(locale)
+            // Started now, awaited with the data: the translations do not gate the API calls
+            const translationsPromise = serverSideTranslations(locale)
             store.dispatch(setLocale(locale))
 
             const currentPage = parseInt(context.query.page as string, 10) || 1
@@ -568,8 +611,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return null
             }
 
-            const fullA = await resolveFull(first)
-            const fullB = second ? await resolveFull(second) : null
+            // The two segments resolve independently: one round trip, not two
+            const [fullA, fullB] = await Promise.all([resolveFull(first), second ? resolveFull(second) : null])
 
             const classification: LandingClassification = classifyLandingSegments(
                 fullA?.segment ?? null,
@@ -602,22 +645,48 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const locationData = fullA?.location ?? fullB?.location
             const categoryData = fullA?.category ?? fullB?.category
 
-            if (classification.kind === 'category') {
-                const { data: relatedData } = await store.dispatch(
-                    API.endpoints.categoriesGetLocations.initiate({ level: 'region', name: categoryData!.name })
-                )
+            // `?category=` under a URL that already names a category, or a single one under a
+            // location when the pair pages are on: the canonical page is another URL (SEO review,
+            // 2026-10-10: the page served other content under a self-canonical, indexable URL)
+            if (queryCategoriesFromUrl.length && classification.kind === 'category') {
+                const { category: _category, ...rest } = query
+                writeRedirect(context, locale, `${canonicalPathname}${encodeQueryData(rest)}`)
+                return { props: {} as PlacesLandingPageProps }
+            }
 
-                const { data: placesList } = await store.dispatch(
-                    API.endpoints.placesGetList.initiate({
-                        category: queryCategoriesFromUrl.length ? queryCategoriesFromUrl.join(',') : categoryData!.name,
-                        lat,
-                        limit: POST_PER_PAGE,
-                        offset: (currentPage - 1) * POST_PER_PAGE,
-                        order,
-                        sort,
-                        tag
-                    })
+            if (
+                queryCategoriesFromUrl.length === 1 &&
+                classification.kind === 'location' &&
+                flags.combinations &&
+                flags.categories
+            ) {
+                const { category: _category, ...rest } = query
+                writeRedirect(
+                    context,
+                    locale,
+                    `${canonicalPathname}/${queryCategoriesFromUrl[0]}${encodeQueryData(rest)}`
                 )
+                return { props: {} as PlacesLandingPageProps }
+            }
+
+            if (classification.kind === 'category') {
+                const [{ data: relatedData }, { data: placesList }, translations] = await Promise.all([
+                    store.dispatch(
+                        API.endpoints.categoriesGetLocations.initiate({ level: 'region', name: categoryData!.name })
+                    ),
+                    store.dispatch(
+                        API.endpoints.placesGetList.initiate({
+                            category: categoryData!.name,
+                            lat,
+                            limit: POST_PER_PAGE,
+                            offset: (currentPage - 1) * POST_PER_PAGE,
+                            order,
+                            sort,
+                            tag
+                        })
+                    ),
+                    translationsPromise
+                ])
 
                 await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
@@ -637,7 +706,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         chips: [],
                         children: [],
                         currentPage,
-                        indexable: true,
+                        // No resolver flag for a category: the same threshold as the sitemap applies
+                        indexable: (placesList?.count ?? 0) >= LANDING_INDEX_THRESHOLD,
                         kind: 'category',
                         lat,
                         locationId: null,
@@ -651,7 +721,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         pathname: canonicalPathname,
                         placesCount: placesList?.count ?? 0,
                         placesList: placesList?.items ?? [],
-                        queryCategories: queryCategoriesFromUrl,
+                        queryCategories: [],
                         relatedLocations: (relatedData?.items ?? []).filter(hasSlug).map((item) => ({
                             count: item.placesCount,
                             href: `/places/${item.slug}/${categoryData!.name}`,
@@ -671,28 +741,41 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     return { notFound: true }
                 }
 
-                const { data: chipsData } = await store.dispatch(
-                    API.endpoints.locationsGetCategories.initiate({ id: locationData!.id, type: locationData!.type })
-                )
-                const { data: childrenData } = await store.dispatch(
-                    API.endpoints.locationsGetChildren.initiate({ id: locationData!.id, type: locationData!.type })
-                )
-                const { data: summaryData } = await store.dispatch(
-                    API.endpoints.locationsGetSummary.initiate({ id: locationData!.id, type: locationData!.type })
-                )
-                const { data: placesList } = await store.dispatch(
-                    API.endpoints.placesGetList.initiate({
-                        category: queryCategoriesFromUrl.length ? queryCategoriesFromUrl.join(',') : undefined,
-                        lat,
-                        limit: POST_PER_PAGE,
-                        location: locationData!.slug ?? undefined,
-                        lon,
-                        offset: (currentPage - 1) * POST_PER_PAGE,
-                        order,
-                        sort,
-                        tag
-                    })
-                )
+                // Four independent requests: one round trip to the API instead of four
+                const [
+                    { data: chipsData },
+                    { data: childrenData },
+                    { data: summaryData },
+                    { data: placesList },
+                    translations
+                ] = await Promise.all([
+                    store.dispatch(
+                        API.endpoints.locationsGetCategories.initiate({
+                            id: locationData!.id,
+                            type: locationData!.type
+                        })
+                    ),
+                    store.dispatch(
+                        API.endpoints.locationsGetChildren.initiate({ id: locationData!.id, type: locationData!.type })
+                    ),
+                    store.dispatch(
+                        API.endpoints.locationsGetSummary.initiate({ id: locationData!.id, type: locationData!.type })
+                    ),
+                    store.dispatch(
+                        API.endpoints.placesGetList.initiate({
+                            category: queryCategoriesFromUrl.length ? queryCategoriesFromUrl.join(',') : undefined,
+                            lat,
+                            limit: POST_PER_PAGE,
+                            location: locationData!.slug ?? undefined,
+                            lon,
+                            offset: (currentPage - 1) * POST_PER_PAGE,
+                            order,
+                            sort,
+                            tag
+                        })
+                    ),
+                    translationsPromise
+                ])
 
                 await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
@@ -748,39 +831,43 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 }
             }
 
-            // classification.kind === 'pair'
-            const { data: chipsData } = await store.dispatch(
-                API.endpoints.locationsGetCategories.initiate({ id: locationData!.id, type: locationData!.type })
-            )
+            // classification.kind === 'pair': three independent requests, the empty check after them
+            const [{ data: chipsData }, { data: nearbyData }, { data: placesList }, translations] = await Promise.all([
+                store.dispatch(
+                    API.endpoints.locationsGetCategories.initiate({ id: locationData!.id, type: locationData!.type })
+                ),
+                store.dispatch(
+                    API.endpoints.categoriesGetLocations.initiate({
+                        level:
+                            locationData!.type === 'locality' || locationData!.type === 'district'
+                                ? 'locality'
+                                : 'region',
+                        name: categoryData!.name
+                    })
+                ),
+                store.dispatch(
+                    API.endpoints.placesGetList.initiate({
+                        category: categoryData!.name,
+                        lat,
+                        limit: POST_PER_PAGE,
+                        location: locationData!.slug ?? undefined,
+                        lon,
+                        offset: (currentPage - 1) * POST_PER_PAGE,
+                        order,
+                        sort,
+                        tag
+                    })
+                ),
+                translationsPromise
+            ])
+
+            await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
+
             const currentCategoryItem = chipsData?.items?.find((item) => item.name === categoryData!.name)
 
             if (!currentCategoryItem || isLandingEmpty(currentCategoryItem.count)) {
                 return { notFound: true }
             }
-
-            const { data: nearbyData } = await store.dispatch(
-                API.endpoints.categoriesGetLocations.initiate({
-                    level:
-                        locationData!.type === 'locality' || locationData!.type === 'district' ? 'locality' : 'region',
-                    name: categoryData!.name
-                })
-            )
-
-            const { data: placesList } = await store.dispatch(
-                API.endpoints.placesGetList.initiate({
-                    category: categoryData!.name,
-                    lat,
-                    limit: POST_PER_PAGE,
-                    location: locationData!.slug ?? undefined,
-                    lon,
-                    offset: (currentPage - 1) * POST_PER_PAGE,
-                    order,
-                    sort,
-                    tag
-                })
-            )
-
-            await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
             if (isLandingPageOutOfRange(currentPage, placesList?.items?.length ?? 0)) {
                 return { notFound: true }

@@ -17,5 +17,5 @@ export {
     type PlacesHref,
     type PlacesHrefInput
 } from './placesLanding'
-export { isValidJSON, removeMarkdown, truncateText } from './text'
+export { isValidJSON, removeMarkdown, truncateAtSentence, truncateText } from './text'
 export { encodeQueryData, makeActiveLink, removeProtocolFromUrl } from './url'

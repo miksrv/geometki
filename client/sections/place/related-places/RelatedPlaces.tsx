@@ -85,6 +85,7 @@ export const RelatedPlaces: React.FC<RelatedPlacesProps> = ({ places, category, 
                         key={place.id}
                         place={place}
                         headingLevel={3}
+                        sizes={'(max-width: 768px) 100vw, 300px'}
                     />
                 ))}
             </Carousel>

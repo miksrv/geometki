@@ -108,14 +108,27 @@ export const isLandingEmpty = (placesCount: number): boolean => placesCount <= 0
 export const isLandingPageOutOfRange = (currentPage: number, itemsOnPage: number): boolean =>
     currentPage > 1 && itemsOnPage === 0
 
+/**
+ * Minimum places for a landing page to be indexed and listed in the sitemap — mirrors the
+ * server's `Config\LocationSlugs::$indexThreshold`, which decides `indexable` for locations
+ * and pairs; a category page has no resolver flag and applies it to its own count.
+ */
+export const LANDING_INDEX_THRESHOLD = 5
+
 export interface NoindexInput {
     /** lat/lon or a non-default sort/order — the existing geo-filter rule from `/places` */
     isGeoFiltered: boolean
     /** 2+ categories requested via `?category=a,b` */
     multiCategory: boolean
+    /**
+     * Any `?category=` on a location page (a filter the page's canonical does not carry; with
+     * the pair pages on, a single one is a 301 instead) or a `?tag=`: the content differs from
+     * the canonical page, so the page must not be indexed under it (SEO review, 2026-10-10)
+     */
+    filtered?: boolean
     /** The resolved entity's own `indexable` (placesCount >= threshold) */
     indexable: boolean
 }
 
-export const computeLandingNoindex = ({ isGeoFiltered, multiCategory, indexable }: NoindexInput): boolean =>
-    isGeoFiltered || multiCategory || !indexable
+export const computeLandingNoindex = ({ isGeoFiltered, multiCategory, filtered, indexable }: NoindexInput): boolean =>
+    isGeoFiltered || multiCategory || !!filtered || !indexable

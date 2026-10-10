@@ -14,22 +14,10 @@
         gap: var(--space-1) var(--space-3)
         margin: 0 0 var(--space-3)
 
+    // The section title level of the type scale (18px), whatever the global h2/h3 say
     .title
         margin: 0
         min-width: 0
-
-    // `truncateTitle`: one line, the title gives way to the action ("Ещё озёра и водоёмы: Оренбургская область … Все")
-    .header.truncate
-        flex-wrap: nowrap
-
-        .title
-            flex: 1 1 auto
-            overflow: hidden
-            white-space: nowrap
-            text-overflow: ellipsis
-
-        .actions
-            flex-shrink: 0
         font-size: variables.$fontSizeTitleH1
         font-weight: var(--font-weight-semibold)
         line-height: 1.3
@@ -47,6 +35,19 @@
         margin-top: var(--space-3)
         color: var(--text-color-secondary)
         font-size: variables.$fontSizeCaption
+
+    // `truncateTitle`: one line, the title gives way to the action ("Ещё озёра и водоёмы: Оренбургская область … Все")
+    .header.truncate
+        flex-wrap: nowrap
+
+        .title
+            flex: 1 1 auto
+            overflow: hidden
+            white-space: nowrap
+            text-overflow: ellipsis
+
+        .actions
+            flex-shrink: 0
 
     // Sidebar blocks: a block title, less air under the heading
     &.compact

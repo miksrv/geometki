@@ -110,6 +110,7 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({ place, coverHash, attached
                     alt={place.title || ''}
                     fill={true}
                     priority={true}
+                    fetchPriority={'high'}
                     style={{ objectFit: 'cover' }}
                     // The hero spans the content column: full viewport below --width-max (1260px), 1228px above
                     sizes={'(max-width: 1260px) 100vw, 1228px'}
@@ -125,20 +126,21 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({ place, coverHash, attached
                             ? [
                                   {
                                       // The most specific location of the place + the category
-                                      // (features/20-location-seo-pages.md): with the relevant
-                                      // flags off this reduces to the plain category link.
+                                      // (features/20-location-seo-pages.md) when the pair pages
+                                      // exist; otherwise the plain category link, as before them.
                                       link: buildPlacesHref(
                                           {
                                               category: place.category,
                                               defaultOrder: ApiType.SortOrders.DESC,
                                               defaultSort: ApiType.SortFields.Trending,
-                                              location: mostSpecificAddress
-                                                  ? {
-                                                        id: mostSpecificAddress.id,
-                                                        slug: mostSpecificAddress.slug,
-                                                        type: mostSpecificAddress.type
-                                                    }
-                                                  : null
+                                              location:
+                                                  landingFlags.combinations && mostSpecificAddress
+                                                      ? {
+                                                            id: mostSpecificAddress.id,
+                                                            slug: mostSpecificAddress.slug,
+                                                            type: mostSpecificAddress.type
+                                                        }
+                                                      : null
                                           },
                                           landingFlags
                                       ).href,

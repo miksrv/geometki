@@ -37,6 +37,8 @@ export interface PlaceCardProps {
     headingLevel?: 2 | 3
     /** Preload the cover (above-the-fold tiles only) */
     priority?: boolean
+    /** Tile only: the cover's `sizes` when the tile is not in the three-column grid (carousels) */
+    sizes?: string
     /** Row only: element before the thumbnail, e.g. a position number */
     leading?: React.ReactNode
     /** Controls: on the right of a row, or in the top-right corner over a tile's cover (owner actions) */
@@ -61,6 +63,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
     distanceLabel,
     headingLevel = 2,
     priority,
+    sizes,
     leading,
     actions,
     footer,
@@ -182,6 +185,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
             href={href}
             title={place.title ?? ''}
             priority={priority}
+            sizes={sizes}
             className={className}
             top={
                 place.category || actions ? (

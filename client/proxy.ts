@@ -38,7 +38,7 @@ export const proxy = (request: NextRequest) => {
     // content at `/places/landing/...` (or `/en/places/landing/...` — nextUrl.pathname has
     // the locale prefix already stripped) itself; only this proxy's own rewrite, which alone
     // knows `PROXY_SECRET`, may continue past this point with that exact pathname.
-    if (request.nextUrl.pathname.startsWith('/places/landing')) {
+    if (request.nextUrl.pathname === '/places/landing' || request.nextUrl.pathname.startsWith('/places/landing/')) {
         if (request.headers.get(LANDING_PROXY_HEADER) === PROXY_SECRET) {
             return NextResponse.next({ request: { headers: sanitizedHeaders } })
         }

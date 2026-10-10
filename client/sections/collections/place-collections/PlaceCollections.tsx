@@ -13,7 +13,8 @@ import { buildCollectionUrl } from '@/utils/helpers'
 
 import styles from '../styles.module.sass'
 
-const IN_COLLECTIONS_LIMIT = 5
+/** Rows of the block; the place page prefetches the same request on the server */
+export const IN_COLLECTIONS_LIMIT = 5
 
 interface PlaceCollectionsProps {
     placeId?: string

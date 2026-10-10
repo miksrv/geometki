@@ -78,6 +78,8 @@ class Sitemap extends ResourceController
         $rows = Database::connect()->table('places')
             ->select('category as name, COUNT(*) as count, MAX(updated_at) as updated')
             ->where('deleted_at IS NULL', null, false)
+            // No FK since the category table is gone: a stray value must not become a 404 URL
+            ->whereIn('category', config('Categories')->names)
             ->groupBy('category')
             ->having('count >=', $threshold)
             ->get()->getResult();

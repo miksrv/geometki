@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.14.0
+
+### Minor Changes
+
+- Places: landing pages for categories, locations and their combinations (`/places/{category}`, `/places/{location}`, `/places/{location}/{category}`) with an intro text, breadcrumbs, a map preview, category chips and related locations; the old filter URLs redirect to them
+- Place page: redesigned — breadcrumbs, the address and the facts line (rating, category, views, distance) on the cover, one toolbar under it: "Open on map", "Directions", "Was here", "Save", "Add to collection", "Share" (the system share sheet on phones)
+- Place page: the sections have no boxes any more; photos are a mosaic with "All" opening the full grid, "Nearby" and "Add" sit in the block header
+- Place page: "Been here? Rate this place" after the description with a word for each score ("Poor" … "Excellent"), the average is on the cover; a vote can be changed; the author cannot rate their own place
+- Place page: "Nearby" moved up under the description; new "More {category}: {region}" block linking to the landing page
+- Place page: one sidebar card: the map with the nearby places as markers, coordinates, last update, author, editors, "Visited here" and "In collections"
+- Place page: long descriptions are collapsed behind "Read more"; the change history is collapsed and loads on click; empty comments are a single line
+- Listings: one toolbar for the filters and a pagination bar with the range ("1–21 of 100") on every list page
+
+### Patch Changes
+
+- Locations: duplicates created by the geocoder are merged, so region and city filters show every place again
+- Categories: the Categories page is removed, a category is reached from the places filter and the card icons; `/categories` redirects to `/places`
+- Phones: fixed the extra gap above the footer on every page
+- Optimized the place page and the landing pages: fewer requests before the page renders, no layout shifts from the map, the description and the sidebar
+- Place page: all section headings share one style
+
 ## 1.13.1
 
 ### Patch Changes

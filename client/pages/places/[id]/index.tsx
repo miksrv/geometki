@@ -16,7 +16,7 @@ import { AppLayout, PhotoGallery, Section } from '@/components/shared'
 import type { PhotoUploaderHandle } from '@/components/shared/photo-uploader'
 import { FileDropZone } from '@/components/ui'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
-import { PlaceCollections } from '@/sections/collections'
+import { IN_COLLECTIONS_LIMIT, PlaceCollections } from '@/sections/collections'
 import {
     NearbyPlaces,
     PlaceActions,
@@ -184,8 +184,12 @@ const PlacePage: NextPage<PlacePageProps> = ({
                                       category: place.category,
                                       defaultOrder: ApiType.SortOrders.DESC,
                                       defaultSort: ApiType.SortFields.Trending,
+                                      // The pair page only when it exists: with the flags off the crumb
+                                      // is the plain category listing, as before the landing pages
                                       location:
-                                          mostSpecificAddress?.id && mostSpecificAddress.type
+                                          landingFlags.combinations &&
+                                          mostSpecificAddress?.id &&
+                                          mostSpecificAddress.type
                                               ? {
                                                     id: mostSpecificAddress.id,
                                                     slug: mostSpecificAddress.slug,
@@ -324,7 +328,9 @@ const PlacePage: NextPage<PlacePageProps> = ({
                 data={placeSchema}
             />
 
-            <div>
+            {/* Keyed by the place: Next reuses the page component between /places/[id] routes, and
+                the sections' state (open history, clamp, rate editing) must not survive the move */}
+            <div key={place?.id}>
                 <PlaceHero
                     place={place}
                     coverHash={coverHash}
@@ -525,41 +531,55 @@ export const getServerSideProps = wrapper.getServerSideProps(
                       }
                     : null
 
-            const [{ data: ratingData }, { data: photosData }, { data: _commentsData }, { data: nearPlaces }] =
-                await Promise.all([
-                    store.dispatch(API.endpoints.ratingGetList.initiate(id)),
-                    store.dispatch(API.endpoints.photosGetList.initiate({ place: id })),
-                    store.dispatch(API.endpoints.commentsGetList.initiate({ place: id })),
-                    store.dispatch(
-                        API.endpoints.placesGetList.initiate({
-                            excludePlaces: [id],
-                            lat: placeData?.lat,
-                            limit: NEAR_PLACES_COUNT,
-                            lon: placeData?.lon,
-                            order: ApiType.SortOrders.ASC,
-                            sort: ApiType.SortFields.Distance
-                        })
-                    )
-                ])
-
-            // The closest places of the same category in the region, apart from the ones already
-            // in "Рядом" — needs the nearby ids, hence the second round
-            const { data: relatedData } = relatedLocation
-                ? await store.dispatch(
-                      API.endpoints.placesGetList.initiate({
-                          category: placeData?.category,
-                          excludePlaces: [id, ...(nearPlaces?.items?.map((item) => item.id) ?? [])],
-                          lat: placeData?.lat,
-                          limit: RELATED_PLACES_COUNT,
-                          lon: placeData?.lon,
-                          order: ApiType.SortOrders.ASC,
-                          region: relatedLocation.id,
-                          sort: ApiType.SortFields.Distance
-                      })
-                  )
-                : { data: undefined }
+            // One round trip for everything the page shows: the related list is requested with
+            // room for the nearby places and filtered here instead of waiting for their ids;
+            // the sidebar blocks (visited, collections) and the history count are prefetched so
+            // they are in the server HTML instead of popping in after hydration
+            const [
+                { data: ratingData },
+                { data: photosData },
+                { data: _commentsData },
+                { data: nearPlaces },
+                { data: relatedData }
+            ] = await Promise.all([
+                store.dispatch(API.endpoints.ratingGetList.initiate(id)),
+                store.dispatch(API.endpoints.photosGetList.initiate({ place: id })),
+                store.dispatch(API.endpoints.commentsGetList.initiate({ place: id })),
+                store.dispatch(
+                    API.endpoints.placesGetList.initiate({
+                        excludePlaces: [id],
+                        lat: placeData?.lat,
+                        limit: NEAR_PLACES_COUNT,
+                        lon: placeData?.lon,
+                        order: ApiType.SortOrders.ASC,
+                        sort: ApiType.SortFields.Distance
+                    })
+                ),
+                relatedLocation
+                    ? store.dispatch(
+                          API.endpoints.placesGetList.initiate({
+                              category: placeData?.category,
+                              excludePlaces: [id],
+                              lat: placeData?.lat,
+                              limit: RELATED_PLACES_COUNT + NEAR_PLACES_COUNT,
+                              lon: placeData?.lon,
+                              order: ApiType.SortOrders.ASC,
+                              region: relatedLocation.id,
+                              sort: ApiType.SortFields.Distance
+                          })
+                      )
+                    : Promise.resolve({ data: undefined }),
+                store.dispatch(API.endpoints.visitedGetUsersList.initiate(id)),
+                store.dispatch(API.endpoints.collectionsGetList.initiate({ limit: IN_COLLECTIONS_LIMIT, placeId: id })),
+                store.dispatch(API.endpoints.activityGetList.initiate({ countOnly: true, place: id }))
+            ])
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
+
+            const nearIds = new Set(nearPlaces?.items?.map((item) => item.id) ?? [])
+            const relatedPlaces = relatedData?.items
+                ?.filter((item) => !nearIds.has(item.id))
+                .slice(0, RELATED_PLACES_COUNT)
 
             return {
                 props: {
@@ -569,7 +589,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     place: placeData,
                     ratingCount: ratingData?.count ?? 0,
                     relatedLocation,
-                    relatedPlaces: relatedData?.items ?? null
+                    relatedPlaces: relatedPlaces ?? null
                 }
             }
         }

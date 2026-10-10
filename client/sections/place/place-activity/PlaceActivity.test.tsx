@@ -28,6 +28,13 @@ jest.mock('next-i18next/pages', () => ({
 
 jest.mock('@/components/shared', () => ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Section: ({ title, children }: any) => (
+        <section>
+            <h2>{title}</h2>
+            {children}
+        </section>
+    ),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ActivityList: ({ activities, plain }: any) => (
         <ul
             data-testid={'activity-list'}
@@ -59,8 +66,8 @@ describe('PlaceActivity', () => {
     }
 
     beforeEach(() => {
-        useList.mockImplementation(((args: { limit?: number }, opts?: { skip?: boolean }) =>
-            args.limit === 1 ? countResult : opts?.skip ? skippedResult : listResult) as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        useList.mockImplementation(((args: { countOnly?: boolean }, opts?: { skip?: boolean }) =>
+            args.countOnly ? countResult : opts?.skip ? skippedResult : listResult) as any) // eslint-disable-line @typescript-eslint/no-explicit-any
     })
 
     it('renders collapsed with the count and loads the list only on click', () => {
@@ -73,7 +80,7 @@ describe('PlaceActivity', () => {
         expect(screen.queryByTestId('activity-list')).toBeNull()
 
         // The list request is skipped while collapsed
-        const listCalls = useList.mock.calls.filter(([args]) => (args as { limit?: number })?.limit !== 1)
+        const listCalls = useList.mock.calls.filter(([args]) => !(args as { countOnly?: boolean })?.countOnly)
         expect(listCalls.every(([, opts]) => opts?.skip)).toBe(true)
 
         fireEvent.click(toggle)

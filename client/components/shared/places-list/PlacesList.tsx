@@ -24,7 +24,9 @@ export const PlacesList: React.FC<PlacesListProps> = ({ places, loading }) => {
                         <PlaceCard
                             key={place.id}
                             place={place}
-                            priority={index < 3}
+                            // Only the first tile is in the first screen everywhere; on phones the
+                            // list is one column and tiles 2 and 3 would preload for nothing
+                            priority={index === 0}
                         />
                     ))}
                 </MediaTileGrid>

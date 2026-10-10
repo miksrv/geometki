@@ -571,6 +571,8 @@
     "change": "Изменить",
     "add": "Добавить",
     "all-photos": "Все",
+    "collapse-photos": "Скрыть",
+    "expand-photos": "Ещё фотографии ({{count}})",
     "photos-nearby-short": "Рядом",
     "nearby-places-title": "Рядом",
     "related-places-title": "Ещё {{category}}: {{location}}",

@@ -4,7 +4,7 @@ import { Button, cn, Icon } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
-import { ActivityList } from '@/components/shared'
+import { ActivityList, Section } from '@/components/shared'
 
 import styles from './styles.module.sass'
 
@@ -17,8 +17,9 @@ interface PlaceActivityProps {
 }
 
 /**
- * "История изменений (N)": a collapsed row at the end of the place page. Only the count
- * is fetched with the page (a one-row request); the list itself loads on the first click.
+ * "История изменений (N)": a collapsed row at the end of the place page. The page prefetches
+ * the count on the server (a count-only request: no rows, no view counters touched); the
+ * list itself loads on the first click.
  */
 export const PlaceActivity: React.FC<PlaceActivityProps> = ({ placeId, hidePlaceName, hideCover }) => {
     const { t } = useTranslation()
@@ -27,7 +28,7 @@ export const PlaceActivity: React.FC<PlaceActivityProps> = ({ placeId, hidePlace
     const [offset, setOffset] = useState<number>(0)
     const [allItems, setAllItems] = useState<ApiModel.Activity[]>([])
 
-    const { data: countData } = API.useActivityGetListQuery({ place: placeId, limit: 1 }, { skip: !placeId })
+    const { data: countData } = API.useActivityGetListQuery({ countOnly: true, place: placeId }, { skip: !placeId })
 
     const { data, isLoading, isFetching } = API.useActivityGetListQuery(
         { place: placeId, limit: ACTIVITY_LIMIT, offset },
@@ -43,11 +44,10 @@ export const PlaceActivity: React.FC<PlaceActivityProps> = ({ placeId, hidePlace
     }, [data])
 
     return (
-        <section
+        <Section
             className={styles.history}
-            aria-label={t('place-history', { defaultValue: 'История изменений' })}
-        >
-            <h2 className={styles.title}>
+            // The heading itself is the disclosure control: same h2 as every other section
+            title={
                 <button
                     type={'button'}
                     className={cn(styles.toggle, open && styles.open)}
@@ -55,14 +55,14 @@ export const PlaceActivity: React.FC<PlaceActivityProps> = ({ placeId, hidePlace
                     onClick={() => setOpen((prev) => !prev)}
                 >
                     {t('place-history', { defaultValue: 'История изменений' })}
-                    {!!count && <span className={styles.count}>{` (${count})`}</span>}
+                    {!!count && ` (${count})`}
                     <Icon
                         name={'KeyboardDown'}
                         className={styles.chevron}
                     />
                 </button>
-            </h2>
-
+            }
+        >
             {open && (
                 <ActivityList
                     plain={true}
@@ -86,6 +86,6 @@ export const PlaceActivity: React.FC<PlaceActivityProps> = ({ placeId, hidePlace
                     }
                 />
             )}
-        </section>
+        </Section>
     )
 }

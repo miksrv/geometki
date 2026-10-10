@@ -13,4 +13,6 @@ export interface GetListRequest {
     place?: string
     limit?: number
     offset?: number
+    /** Only `count` for the filters, no rows (the collapsed history of the place page) */
+    countOnly?: boolean
 }
