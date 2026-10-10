@@ -7,6 +7,7 @@ use App\Entities\PlaceEntity;
 use App\Libraries\AvatarLibrary;
 use App\Libraries\Geocoder;
 use App\Libraries\PhotoLibrary;
+use App\Libraries\PlaceCoverLibrary;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlaceTags;
 use App\Libraries\PlacesContent;
@@ -18,6 +19,7 @@ use App\Models\CollectionsPlacesModel;
 use App\Models\LocationSlugsModel;
 use App\Models\OsmCandidatesModel;
 use App\Models\PhotosModel;
+use App\Models\PlacesExternalPhotosModel;
 use App\Models\PlacesModel;
 use App\Models\PlacesTagsModel;
 use App\Models\PlacesContentModel;
@@ -27,7 +29,6 @@ use CodeIgniter\Files\File;
 use CodeIgniter\I18n\Time;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
-use Config\Services;
 use Geocoder\Exception\Exception;
 use ReflectionException;
 use Throwable;
@@ -199,7 +200,7 @@ class Places extends ResourceController
                 $place->distance = $formatter->formatDistance($place->distance);
             }
 
-            $cover = $formatter->formatCover($place->id, (int) $place->photos);
+            $cover = $formatter->formatCover($place->id, (int) $place->photos, $place->cover_external_id ?? null);
             if ($cover) {
                 $place->cover = $cover;
             }
@@ -268,8 +269,17 @@ class Places extends ResourceController
             'avatar'   => $avatarLibrary->buildPath($placeData->user_id, $placeData->user_avatar, 'small'),
         ];
 
-        $cover = $formatter->formatCover($id, (int) $placeData->photos);
+        $cover = $formatter->formatCover($id, (int) $placeData->photos, $placeData->cover_external_id ?? null);
         if ($cover) {
+            // A cover cut from a linked photo is credited under it (author, licence, source)
+            $coverSource = $placeData->cover_external_id
+                ? (new PlacesExternalPhotosModel())->find($placeData->cover_external_id)
+                : null;
+
+            if ($coverSource) {
+                $cover['credit'] = PlacesExternalPhotosModel::formatAsCoverCredit($coverSource);
+            }
+
             $placeData->cover = $cover;
         }
 
@@ -308,7 +318,7 @@ class Places extends ResourceController
             $placeData->region_en, $placeData->region_ru,
             $placeData->district_en, $placeData->district_ru,
             $placeData->city_en, $placeData->city_ru,
-            $placeData->visit_radius_m, $placeData->verification_exempt,
+            $placeData->visit_radius_m, $placeData->verification_exempt, $placeData->cover_external_id,
         );
 
         // Incrementing view counter + daily log (atomic) + optional per-user tracking
@@ -660,10 +670,12 @@ class Places extends ResourceController
     }
 
     /**
-     * Crop and save a new cover image from an existing place photo.
+     * Crop and save a new cover image from a place photo: an uploaded one (photoId) or a linked
+     * Wikimedia Commons / PastVu one (externalPhotoId, see PlacesExternalPhotosModel::canBeCover).
      *
-     * POST /places/:id/cover — auth required.
-     * Expects JSON with photoId, x, y, width, height crop coordinates.
+     * PATCH /places/cover/:id — auth required.
+     * Expects JSON with photoId or externalPhotoId, and the x, y, width, height crop box in the
+     * image pixels (of the downloaded file for a linked photo).
      *
      * @param string|null $id Place primary key.
      *
@@ -677,9 +689,14 @@ class Places extends ResourceController
             return $this->failUnauthorized();
         }
 
-        $input = $this->request->getJSON();
+        $input           = $this->request->getJSON();
+        $photoId         = (string) ($input->photoId ?? '');
+        $externalPhotoId = (string) ($input->externalPhotoId ?? '');
 
-        if (!isset($input->x) || !isset($input->y) || !$input->photoId || !$input->width || !$input->height) {
+        if (
+            !isset($input->x) || !isset($input->y) || empty($input->width) || empty($input->height)
+            || ($photoId === '') === ($externalPhotoId === '')
+        ) {
             return $this->failValidationErrors(lang('Places.coverIncorrectData'));
         }
 
@@ -687,33 +704,58 @@ class Places extends ResourceController
             return $this->failValidationErrors(lang('Places.coverFailDimensions'));
         }
 
-        $photosModel = new PhotosModel();
-        $placeData   = $this->model->select('id, user_id')->find($id);
-        $photoData   = $photosModel->select('id, filename, extension')->find($input->photoId);
+        $crop = [
+            'x'      => (int) $input->x,
+            'y'      => (int) $input->y,
+            'width'  => (int) $input->width,
+            'height' => (int) $input->height,
+        ];
 
-        if (!$placeData || !$photoData) {
+        $placeData = $this->model->select('id, user_id')->find($id);
+
+        if (!$placeData) {
             return $this->failValidationErrors(lang('Places.coverPointNotExist'));
         }
 
-        $photoDir  = UPLOAD_PHOTOS . $id . '/';
-        $imageFile = new File($photoDir . $photoData->filename . '.' . $photoData->extension);
-
-        list($width, $height) = getimagesize($imageFile->getRealPath());
-
-        if ($input->width > $width || $input->height > $height) {
-            return $this->failValidationErrors(lang('Places.coverExceedDimensions'));
-        }
+        $coverLibrary = new PlaceCoverLibrary();
 
         try {
-            $image = Services::image('gd'); // imagick
-            $image->withFile($imageFile->getRealPath())
-                ->crop($input->width, $input->height, $input->x, $input->y)
-                ->fit(PLACE_COVER_WIDTH, PLACE_COVER_HEIGHT)
-                ->save($photoDir . 'cover.jpg');
+            if ($externalPhotoId !== '') {
+                $row = (new PlacesExternalPhotosModel())->where('place_id', $id)->find($externalPhotoId);
 
-            $image->withFile($imageFile->getRealPath())
-                ->fit(PLACE_COVER_PREVIEW_WIDTH, PLACE_COVER_PREVIEW_HEIGHT)
-                ->save($photoDir . '/cover_preview.jpg');
+                if (!$row) {
+                    return $this->failValidationErrors(lang('Places.coverPointNotExist'));
+                }
+
+                if (!PlacesExternalPhotosModel::canBeCover($row)) {
+                    return $this->failValidationErrors(lang('Places.coverExternalNotAllowed'));
+                }
+
+                $error = $coverLibrary->fromExternal($id, $row, $crop);
+
+                if ($error) {
+                    return $this->failValidationErrors(lang($error));
+                }
+            } else {
+                $photoData = (new PhotosModel())->select('id, filename, extension')->find($photoId);
+
+                if (!$photoData) {
+                    return $this->failValidationErrors(lang('Places.coverPointNotExist'));
+                }
+
+                $imageFile = new File(UPLOAD_PHOTOS . $id . '/' . $photoData->filename . '.' . $photoData->extension);
+
+                list($width, $height) = getimagesize($imageFile->getRealPath());
+
+                $crop = PlaceCoverLibrary::fitCrop($crop, $width, $height);
+
+                if (!$crop) {
+                    return $this->failValidationErrors(lang('Places.coverExceedDimensions'));
+                }
+
+                $coverLibrary->make($imageFile->getRealPath(), $id, $crop);
+                $this->model->update($id, ['cover_external_id' => null]);
+            }
 
             $this->model->touch($id);
 

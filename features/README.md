@@ -1,52 +1,31 @@
-# Feature Proposals
+# Feature Specs
 
-This directory documents proposed features for Geometki. The existing system already provides XP earning (6 action types), 30 levels, reputation from place ratings, and a partial achievements schema.
+Specs for open features and reference rules the code relies on. Shipped features are removed from here; their history is in `CHANGELOG.md`. The order of work is set by `ROADMAP.md` and `GROWTH-ANALYSIS.md`.
 
-## Proposals
+## Reference
 
-| # | Feature | Status | Effort | Impact | Builds On |
-|---|---------|--------|--------|--------|-----------|
-| [01](./01-achievements-badges.md) | **Achievements & Badges** | ✅ Done | Medium | High | Existing DB schema, partial implementation |
-| [02](./02-daily-weekly-challenges.md) | **Daily & Weekly Challenges** | ⏳ Pending | Medium | High | `ActivityLibrary::push()` hook |
-| [03](./03-activity-streaks.md) | **Activity Streaks** | ⏳ Pending | Low | High | `activity` table timestamps |
-| [04](./04-territory-ownership.md) | **Territory Ownership** | ⏳ Pending | High | High | Geocoder + coordinates data |
-| [05](./05-place-quality-curator-rank.md) | **Place Quality Score & Curator Rank** | ⏳ Pending | Medium | Medium | Place model, existing photo/rating flow |
-| [06](./06-seasonal-events.md) | **Seasonal Events & Campaigns** | ⏳ Pending | Medium | Medium | `ActivityLibrary::push()` hook |
-| [07](./07-social-kudos-endorsements.md) | **Social Kudos & Peer Endorsements** | ⏳ Pending | Low | Medium | Reputation field, notifications |
-| 08 | **Tags Page Redesign** | ✅ Done | Low–Medium | High | Existing tag list API + unused search endpoint |
-| [09](./09-place-categories.md) | **Place Categories** (niche taxonomy: 23 categories re-cut for unusual places) | ⏳ Pending | Medium | Very High | Category enum, locales, OSM candidates whitelist, landing pages (20) |
-| 10 | **Trending Places & Personalized Recommendations** | ✅ Done | Low–Medium | High | `views` counter, `rating`/`bookmarks`/`comments` fields |
-| 11 | **Places to Explore from OpenStreetMap & Wikidata** (1.13.0; the original "ghost places & capture" spec was replaced by the implementation, see `server/API.md`, "OSM Candidates") | ✅ Done | Medium–High | Very High | `OsmCollector`, `OsmScoring`, `osm_candidates` table |
-| [12](./12-follow-system-personalized-feed.md) | **Follow System & Personalized Activity Feed** | ⏳ Pending | Medium | Very High | Activity feed, user profiles, notification system |
-| [13](./13-regional-leaderboards.md) | **Regional Leaderboards & Social Competition** | ⏳ Pending | Medium | High | Place coordinates, existing XP/contribution data, cron infrastructure |
-| [14](./14-photo-challenges-community-albums.md) | **Photo Challenges & Community Albums** | ⏳ Pending | High | High | Photos table, existing place/user system, notifications |
-| [15](./15-dynamic-place-freshness-badges.md) | **Dynamic Place Freshness Badges** | ⏳ Pending | Medium | High | Places table, photo/rating data, cron infrastructure |
-| [16](./16-weekly-digest-push-notifications.md) | **Weekly Digest & Smart Push Notifications** | ⚡ Partial | Medium | Very High | Email service, all retention features as data sources |
-| [17](./17-personal-fog-of-war-explorer-map.md) | **Personal Fog of War & Explorer Map** | ⏳ Pending | Medium–High | Very High | `sessions_history` coordinates, `user_explored_tiles` (new), Leaflet heatmap layer |
-| [18](./18-visited-places-checkin.md) | **Verified Visit Mechanic ("Я здесь был")** | ✅ Done | Low–Medium | Medium | `users_visited_places`, `places` table, existing visited toggle |
-| [19](./19-admin-sent-emails.md) | **Admin: Sent Emails Dashboard** | ✅ Done | Low | Low | `sending_mail` table, existing mail controller, `SessionLibrary` auth |
-| [22](./22-xp-snackbar-notifications.md) | **XP Snackbar & Notification Groups** | 🔄 In Progress | Low–Medium | High | Existing snackbar, `notificationSlice`, `LevelProgress` component |
-| [23](./23-map-tools-from-nakarte.md) | **Map Tools from nakarte.me** (panoramas, elevation profile, Wikimedia layer fixes) | ⏳ Pending | Medium | High | `/maps` ruler & area tools, Wikimedia Commons layer |
-| [24](./24-place-page-redesign.md) | **Place Page Redesign** (sections instead of containers, guest-first order, explicit rating prompt, nearby/related blocks) | ⏳ Pending | Medium | Very High | `PlaceHero`, `PhotoGallery`, `Rating`, `placesGetList`, landing pages (20) |
+| # | Spec | What it holds |
+|---|------|---------------|
+| [09](./09-place-categories.md) | **Place Categories** | Tagging guide for the 23 niche category keys |
+| [20](./20-location-seo-pages.md) | **Location SEO Pages** | Rules for the `/places/{location}/{category}` landing pages and the remaining launch steps behind the `NEXT_PUBLIC_LANDING_*` flags |
 
-## Recommended Implementation Order
+## Open
 
-**Phase 1 — Quick wins (low effort, high return)**
-1. **Streaks** (03) — two DB columns, one check in `ActivityLibrary`. Immediately drives daily retention.
-2. **Achievements** (01) — schema exists; needs evaluation logic and API endpoints only.
-3. **Kudos** (07) — one new table, one controller. Adds social layer with minimal backend work.
-4. **Weekly Digest** (16, Part 1) — no new features needed; queries existing data. Re-engages dormant users immediately.
-
-**Phase 2 — Engagement depth**
-5. **Daily/Weekly Challenges** (02) — requires a cron job and new tables but hooks cleanly into existing XP flow.
-6. **Place Quality Score** (05) — improves content quality organically; useful for search ranking too.
-7. **Follow System** (12) — the most impactful social feature; named social graph replaces the anonymous firehose.
-8. **Place Freshness Badges** (15) — creates ongoing creator maintenance loop; integrates with challenges.
-9. **Regional Leaderboards** (13) — adds competitive social layer; requires Feature 12 for full value.
-10. **Smart Push Notifications** (16, Part 2) — proactive re-engagement; amplifies all other retention features.
-
-**Phase 3 — Differentiated features**
-11. **Seasonal Events** (06) — community events that drive spikes in acquisition and PR.
-12. **Territory Ownership** (04) — most complex but the most uniquely geo-native feature; strongest competitive differentiator.
-13. **Photo Challenges** (14) — creative social dimension; best SEO content generator; requires mature user base to seed voting.
-14. **Fog of War** (17) — highest-engagement location mechanic; Phase 2 when sessions_history has meaningful data volume.
+| # | Feature | Status | Effort | Impact |
+|---|---------|--------|--------|--------|
+| [02](./02-daily-weekly-challenges.md) | **Daily & Weekly Challenges** | Not started | Medium | High |
+| [03](./03-activity-streaks.md) | **Activity Streaks** | Not started | Low | High |
+| [04](./04-territory-ownership.md) | **Territory Ownership** (builds on 13) | Not started | High | High |
+| [05](./05-place-quality-curator-rank.md) | **Place Quality Score & Curator Rank** | Not started | Medium | Medium |
+| [06](./06-seasonal-events.md) | **Seasonal Events & Campaigns** | Not started (seasonal achievements exist) | Medium | Medium |
+| [07](./07-social-kudos-endorsements.md) | **Social Kudos & Peer Endorsements** | Not started | Low | Medium |
+| [12](./12-follow-system-personalized-feed.md) | **Follow System & Personalized Feed** | Not started | Medium | Very High |
+| [13](./13-regional-leaderboards.md) | **Regional Leaderboards** | Not started | Medium | High |
+| [14](./14-photo-challenges-community-albums.md) | **Photo Challenges & Community Albums** | Not started | High | High |
+| [15](./15-dynamic-place-freshness-badges.md) | **Dynamic Place Freshness Badges** | Not started | Medium | High |
+| [16](./16-weekly-digest-push-notifications.md) | **Weekly Digest Additions & Web Push** | Digest additions and push open | Medium | Very High |
+| [17](./17-personal-fog-of-war-explorer-map.md) | **Personal Fog of War & Explorer Map** | Not started | Medium–High | Very High |
+| [21](./21-search-redesign.md) | **Search: Russian morphology** | Open | Low–Medium | Medium |
+| [22](./22-xp-snackbar-notifications.md) | **XP Snackbar & Notification Groups** | Not started | Low–Medium | High |
+| [23](./23-map-tools-from-nakarte.md) | **Map Tools from nakarte.me** | Not started | Medium | High |
+| [24](./24-place-page-redesign.md) | **Place Page Redesign: metrics** | Metrika goals open | Low | Medium |

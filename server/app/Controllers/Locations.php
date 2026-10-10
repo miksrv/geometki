@@ -370,7 +370,9 @@ class Locations extends ResourceController
             $query->where("{$alias}.{$mustBeNullColumn}", null);
         }
 
-        $rows = $query->orderBy('placesCount', 'DESC')->get()->getResult();
+        // A child without places has no page (its landing 404s) and nothing to say:
+        // never a link on the parent page
+        $rows = $query->having('placesCount >', 0)->orderBy('placesCount', 'DESC')->get()->getResult();
 
         return array_map(static fn ($row) => [
             'type'        => $childType,

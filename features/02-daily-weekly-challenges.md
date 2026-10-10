@@ -1,12 +1,12 @@
 # Feature: Daily & Weekly Challenges
 
+> **Status: not started**
+
 ## Overview
 
-Time-boxed tasks that give users a reason to open the app every day. A rotating set of challenges resets on a schedule; completing them awards bonus XP and a streak multiplier.
+Time-boxed tasks that give users a reason to open the site every day. A rotating set of challenges resets on a schedule; completing one awards bonus XP. Challenges are the same for all users (community event feel).
 
-## How It Works
-
-### Challenge Types
+## Challenge Types
 
 | Scope | Example Task | Bonus XP |
 |-------|-------------|---------|
@@ -17,46 +17,35 @@ Time-boxed tasks that give users a reason to open the app every day. A rotating 
 | Weekly | Contribute to 3 different cities | +200 XP |
 | Weekly | Be the first to add a photo to 5 places | +100 XP |
 
-### Server Design
+Weekly challenges can be geo-specific ("add a place in a city you haven't contributed to before") using the location data (`location_*` tables).
 
-**New table: `challenges`**
+## Server Design
+
+**Table `challenges`**
 ```sql
 id, title_en, title_ru, description_en, description_ru,
 type ENUM('daily','weekly'), action_type, target_count,
 bonus_xp, active_from, active_until
 ```
 
-**New table: `users_challenges`**
+**Table `users_challenges`**
 ```sql
 id, user_id, challenge_id, progress, completed_at
 ```
 
 **`ChallengesLibrary.php`**
-- `getActive(): array` — return today's/this week's challenges.
-- `increment(string $actionType, int $userId)` — called from `ActivityLibrary::push()` to advance challenge progress.
-- `complete(int $userId, int $challengeId)` — award bonus XP via `LevelsLibrary::push()`, mark done.
+- `getActive(): array` — today's / this week's challenges.
+- `increment(string $actionType, string $userId)` — called from `ActivityLibrary` next to `LevelsLibrary::push()` / `AchievementsLibrary::check()`.
+- `complete(string $userId, string $challengeId)` — award bonus XP, mark done.
 
-A scheduled task (CI4 Spark command, run via cron) rotates challenges daily/weekly and resets user progress.
+A Spark command run by cron rotates challenges and resets progress.
 
 **Routes**
-- `GET /challenges` — active challenges with authenticated user's progress.
-- `GET /challenges/history` — completed challenges for the current user.
+- `GET /challenges` — active challenges with the authenticated user's progress.
+- `GET /challenges/history` — completed challenges of the current user.
 
-### Client Design
+## Client Design
 
-**Challenge widget** — small card on the dashboard and user profile showing:
-- Active challenges with a progress bar (`2/5 photos`)
-- Time remaining until reset (countdown)
-- Completed challenges shown with a checkmark and XP earned
-
-**Notification** — push/in-app notification when a challenge is completed.
-
-## Engagement Mechanics
-
-- Challenges are the same for all users (community event feel).
-- Weekly challenges can include geo-specific tasks ("add a place in a city you haven't contributed to before") using the existing coordinates infrastructure.
-- Optional "challenge streak" counter: completing all daily challenges 7 days in a row unlocks an achievement.
-
-## Why It Fits
-
-The activity log and XP system are already action-aware (`photo`, `place`, `rating`, `edit`, `cover`, `comment`). Plugging challenge progress tracking into `ActivityLibrary::push()` is a natural extension with no changes to existing flow.
+- Challenge widget (user profile, main page): progress bar per challenge (`2/5 photos`), countdown to reset, completed ones with a checkmark and XP earned.
+- In-app notification on completion.
+- Optional: completing all daily challenges 7 days in a row unlocks an achievement (new metric in `AchievementsLibrary::resolveMetric()`).

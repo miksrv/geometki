@@ -1,1 +1,0 @@
-export { TagsAlphabetBar } from './TagsAlphabetBar'

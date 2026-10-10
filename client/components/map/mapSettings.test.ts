@@ -19,7 +19,7 @@ describe('mapSettings', () => {
     it('saves and reads all settings', () => {
         saveMapSettings({
             additionalLayers: [MapAdditionalLayersEnum.WIKIPEDIA],
-            categories: [ApiModel.Categories.bridge],
+            categories: [ApiModel.Categories.engineering],
             layer: MapLayersEnum.OPEN_TOPO,
             osmCandidatesCollapsed: false,
             position: { lat: 51.7, lon: 55.1, zoom: 14 },
@@ -28,7 +28,7 @@ describe('mapSettings', () => {
 
         expect(getMapSettings()).toEqual({
             additionalLayers: [MapAdditionalLayersEnum.WIKIPEDIA],
-            categories: [ApiModel.Categories.bridge],
+            categories: [ApiModel.Categories.engineering],
             layer: MapLayersEnum.OPEN_TOPO,
             osmCandidatesCollapsed: false,
             position: { lat: 51.7, lon: 55.1, zoom: 14 },
@@ -38,10 +38,10 @@ describe('mapSettings', () => {
 
     it('merges a change into the saved settings', () => {
         saveMapSettings({ layer: MapLayersEnum.OPEN_TOPO })
-        saveMapSettings({ categories: [ApiModel.Categories.bridge] })
+        saveMapSettings({ categories: [ApiModel.Categories.engineering] })
 
         expect(getMapSettings()).toMatchObject({
-            categories: [ApiModel.Categories.bridge],
+            categories: [ApiModel.Categories.engineering],
             layer: MapLayersEnum.OPEN_TOPO
         })
     })
@@ -57,7 +57,7 @@ describe('mapSettings', () => {
         store({
             mapSettings: {
                 additionalLayers: ['OsmCandidates', MapAdditionalLayersEnum.HEATMAP, MapAdditionalLayersEnum.HEATMAP],
-                categories: 'bridge',
+                categories: 'engineering',
                 layer: 'Removed',
                 osmCandidatesCollapsed: 'yes',
                 position: { lat: 'x', lon: 55 },

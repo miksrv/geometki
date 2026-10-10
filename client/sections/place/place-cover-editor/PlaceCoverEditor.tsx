@@ -5,16 +5,20 @@ import { Button, Dialog } from 'simple-react-ui-kit'
 import Image from 'next/image'
 import { useTranslation } from 'next-i18next/pages'
 
-import { API } from '@/api'
+import { API, ApiModel } from '@/api'
 import { toggleOverlay } from '@/app/applicationSlice'
-import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch } from '@/app/store'
+import { resolveImageUrl } from '@/components/shared/photo-lightbox/utils'
 import { PLACE_COVER_ASPECT, PLACE_COVER_MIN_HEIGHT, PLACE_COVER_MIN_WIDTH } from '@/config/constants'
 import { IMG_HOST } from '@/config/env'
-import { getErrorMessage } from '@/utils/api'
 
 import 'react-image-crop/src/ReactCrop.scss'
 import styles from './styles.module.sass'
+
+const SOURCE_NAMES: Record<ApiModel.PhotoExternalSource, string> = {
+    pastvu: 'PastVu',
+    wikimedia: 'Wikimedia'
+}
 
 interface PlaceCoverEditorProps {
     placeId?: string
@@ -28,23 +32,40 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
     const { t } = useTranslation()
 
     const { data: photosData, isLoading: photoLoading } = API.usePhotosGetListQuery({ place: placeId })
-    // A cover is cut from our own files: the linked Wikimedia Commons and PastVu photos are not on our disk
-    const ownPhotos = useMemo(() => photosData?.items?.filter(({ external }) => !external), [photosData?.items])
+    // Uploaded photos, and the linked Wikimedia Commons and PastVu ones the server lets a cover be cut from
+    // (big enough, a licence that allows changes): the server downloads such a photo only for the cut
+    const coverPhotos = useMemo(
+        () => photosData?.items?.filter(({ external }) => !external || external.coverAllowed),
+        [photosData?.items]
+    )
 
-    const [updateCover, { isLoading, isSuccess, isError, error }] = API.usePlacesPatchCoverMutation()
+    // A failed save is shown by the API error middleware (app/errorMiddleware.ts), not here
+    const [updateCover, { isLoading, isSuccess }] = API.usePlacesPatchCoverMutation()
 
     const [heightRatio, setHeightRatio] = useState<number>(1)
     const [widthRatio, setWidthRatio] = useState<number>(1)
     const [coverDialogOpen, setCoverDialogOpen] = useState<boolean>(false)
     const [selectedPhotoId, setSelectedPhotoId] = useState<string>('')
     const [imageCropData, setImageCropData] = useState<Crop>()
+    // The size of the loaded image: a linked photo is cut from this very file, and a PastVu file is
+    // a little taller than its size in the PastVu API (the signature strip)
+    const [naturalSize, setNaturalSize] = useState<{ width: number; height: number }>()
 
     const selectedPhoto = useMemo(
-        () => ownPhotos?.find(({ id }) => id === selectedPhotoId),
-        [selectedPhotoId, ownPhotos]
+        () => coverPhotos?.find(({ id }) => id === selectedPhotoId),
+        [selectedPhotoId, coverPhotos]
     )
 
+    const sourceSize = (photo?: ApiModel.Photo) =>
+        photo?.external ? naturalSize : photo?.width && photo.height ? photo : undefined
+
     const disabled = isLoading || !imageCropData?.width || !imageCropData.height
+
+    const handleSelectPhoto = (id: string) => {
+        setNaturalSize(undefined)
+        setImageCropData(undefined)
+        setSelectedPhotoId(id)
+    }
 
     const handleCoverDialogClose = () => {
         dispatch(toggleOverlay(false))
@@ -54,29 +75,36 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
     }
 
     const handleSaveCover = async () => {
-        if (!selectedPhoto?.width || !selectedPhoto.height || disabled) {
+        const size = sourceSize(selectedPhoto)
+
+        if (!selectedPhoto || !size || disabled) {
             return
         }
 
         await updateCover({
-            height: Math.round(selectedPhoto.height * ((imageCropData.height || 0) / 100)),
-            photoId: selectedPhotoId!,
+            ...(selectedPhoto.external ? { externalPhotoId: selectedPhoto.id } : { photoId: selectedPhoto.id }),
+            height: Math.round(size.height * ((imageCropData.height || 0) / 100)),
             placeId: placeId!,
-            width: Math.round(selectedPhoto.width * ((imageCropData.width || 0) / 100)),
-            x: Math.round(selectedPhoto.width * ((imageCropData.x || 0) / 100)),
-            y: Math.round(selectedPhoto.height * ((imageCropData.y || 0) / 100))
+            width: Math.round(size.width * ((imageCropData.width || 0) / 100)),
+            x: Math.round(size.width * ((imageCropData.x || 0) / 100)),
+            y: Math.round(size.height * ((imageCropData.y || 0) / 100))
         })
     }
 
     const handleImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
-        const { width, height } = event.currentTarget
+        const { width, height, naturalWidth, naturalHeight } = event.currentTarget
+        const size = selectedPhoto?.external
+            ? { height: naturalHeight, width: naturalWidth }
+            : sourceSize(selectedPhoto)
 
-        if (!selectedPhoto?.height || !selectedPhoto.width) {
+        if (!size?.height || !size.width) {
             return
         }
 
-        const ratioW = selectedPhoto.width ? selectedPhoto.width / width : 1
-        const ratioH = selectedPhoto.height ? selectedPhoto.height / height : 1
+        setNaturalSize({ height: naturalHeight, width: naturalWidth })
+
+        const ratioW = size.width / width
+        const ratioH = size.height / height
 
         setWidthRatio(ratioW)
         setHeightRatio(ratioH)
@@ -106,18 +134,6 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
         }
     }, [isSuccess])
 
-    useEffect(() => {
-        if (error) {
-            void dispatch(
-                Notify({
-                    id: 'placeCoverEditor',
-                    message: getErrorMessage(error),
-                    type: 'error'
-                })
-            )
-        }
-    }, [isError, error])
-
     return (
         <Dialog
             contentHeight={'490px'}
@@ -132,7 +148,7 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
             onCloseDialog={handleCoverDialogClose}
         >
             <>
-                {!photoLoading && !ownPhotos?.length && (
+                {!photoLoading && !coverPhotos?.length && (
                     <div className={styles.noPhotos}>
                         {t('no-photos-here-yet')}
                         <br />
@@ -141,17 +157,30 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
                 )}
                 {!selectedPhotoId ? (
                     <ul className={styles.coverPhotosList}>
-                        {ownPhotos?.map((photo) => (
+                        {coverPhotos?.map((photo) => (
                             <li key={`coverDialog${photo.id}`}>
-                                <Image
-                                    src={`${IMG_HOST}${photo.preview}`}
-                                    alt={''}
-                                    width={200}
-                                    height={150}
-                                    onClick={() => {
-                                        setSelectedPhotoId(photo.id)
-                                    }}
-                                />
+                                {photo.external ? (
+                                    <>
+                                        {/* A linked photo stays on its source server, outside the image optimizer */}
+                                        {/* eslint-disable-next-line next/no-img-element */}
+                                        <img
+                                            src={resolveImageUrl(photo.preview)}
+                                            alt={''}
+                                            width={200}
+                                            height={150}
+                                            onClick={() => handleSelectPhoto(photo.id)}
+                                        />
+                                        <span className={styles.source}>{SOURCE_NAMES[photo.external.source]}</span>
+                                    </>
+                                ) : (
+                                    <Image
+                                        src={`${IMG_HOST}${photo.preview}`}
+                                        alt={''}
+                                        width={200}
+                                        height={150}
+                                        onClick={() => handleSelectPhoto(photo.id)}
+                                    />
+                                )}
                             </li>
                         ))}
                     </ul>
@@ -166,7 +195,7 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
                         >
                             {/* eslint-disable-next-line next/no-img-element */}
                             <img
-                                src={`${IMG_HOST}${selectedPhoto?.full}`}
+                                src={resolveImageUrl(selectedPhoto?.full)}
                                 onLoad={handleImageLoad}
                                 alt={''}
                                 style={{

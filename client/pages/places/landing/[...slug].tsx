@@ -10,8 +10,8 @@ import { JsonLdScript } from 'next-seo'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { setLocale } from '@/app/applicationSlice'
-import { wrapper } from '@/app/store'
+import { openAuthDialog, setLocale } from '@/app/applicationSlice'
+import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import {
     AppLayout,
     EmptyState,
@@ -128,6 +128,17 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
     placesList
 }) => {
     const { t, i18n } = useTranslation()
+    const dispatch = useAppDispatch()
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
+
+    // A guest is asked to sign in first, like the "Add place" button of the app bar: the create
+    // page itself sends guests away to /places
+    const handleAddFirstPlace = (event: React.MouseEvent) => {
+        if (isAuth !== true) {
+            event.preventDefault()
+            dispatch(openAuthDialog())
+        }
+    }
 
     // The category's texts come from the client catalogue (utils/categories.ts): the plural
     // page name for the h1/title, the short label for chips, the intro text for the lede.
@@ -214,7 +225,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
     // The <title> of a category page carries the search modifiers ("карта, фото, координаты")
     const title =
         (kind === 'category'
-            ? t('landing-title-category-seo', '{{category}}: map, photos, coordinates and descriptions', {
+            ? t('landing-title-category-seo', '{{category}}: map and photos', {
                   category: categoryTitle
               })
             : pageName) +
@@ -488,6 +499,24 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                         linkPart={pathname.replace(/^\//, '')}
                     />
                 </>
+            ) : kind === 'category' && !placesCount && categoryName && !tag && !isGeoFiltered ? (
+                <Container>
+                    <EmptyState
+                        title={t('landing-category-empty-title', { defaultValue: 'Здесь пока нет мест' })}
+                        description={t('landing-category-empty-description', {
+                            defaultValue: 'Знаете такое место? Добавьте его первым — оно появится на этой странице'
+                        })}
+                        action={
+                            <Button
+                                mode={'primary'}
+                                link={`/places/create?category=${categoryName}`}
+                                onClick={handleAddFirstPlace}
+                            >
+                                {t('landing-category-empty-action', { defaultValue: 'Добавить место' })}
+                            </Button>
+                        }
+                    />
+                </Container>
             ) : (
                 <Container>
                     <EmptyState />
@@ -559,7 +588,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             translationsPromise.catch(() => undefined)
             store.dispatch(setLocale(locale))
 
-            const currentPage = parseInt(context.query.page as string, 10) || 1
+            const currentPage = Math.max(1, parseInt(context.query.page as string, 10) || 1)
             const lat = parseFloat(context.query.lat as string) || null
             const lon = parseFloat(context.query.lon as string) || null
             const tag = (context.query.tag as string) || null
@@ -704,11 +733,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
                 await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
-                // A category with no places has no page (the list's own count, no extra request)
-                if (isLandingEmpty(placesList?.count ?? 0)) {
-                    return { notFound: true }
-                }
-
+                // A category with no places still has a page: a visitor comes here from the filter
+                // or a link, and a 404 would look like a broken site. It is noindex (below the
+                // threshold) and not in the sitemap, and says how to add the first place.
                 if (isLandingPageOutOfRange(currentPage, placesList?.items?.length ?? 0)) {
                     return { notFound: true }
                 }

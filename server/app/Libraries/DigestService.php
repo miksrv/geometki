@@ -180,14 +180,14 @@ class DigestService
 
         $placesModel = new PlacesModel();
         $placesData  = $placesModel
-            ->select('id, slug, photos')
+            ->select('id, slug, photos, cover_external_id')
             ->whereIn('id', $allPlaceIds)
             ->findAll();
 
-        $photosMap = [];
+        $coverMap = [];
         $slugMap   = [];
         foreach ($placesData as $place) {
-            $photosMap[$place->id] = (int) ($place->photos ?? 0);
+            $coverMap[$place->id] = (int) ($place->photos ?? 0) > 0 || !empty($place->cover_external_id);
             $slugMap[$place->id]   = $place->slug;
         }
 
@@ -195,9 +195,9 @@ class DigestService
         foreach ($allPlaceIds as $placeId) {
             $a = $activityMap[$placeId] ?? null;
 
-            // Build cover URL if place has photos
+            // Build cover URL if place has a cover: from its photos or a linked one
             $coverUrl = null;
-            if (($photosMap[$placeId] ?? 0) > 0) {
+            if ($coverMap[$placeId] ?? false) {
                 $coverUrl = 'https://api.geometki.com/' . PATH_PHOTOS . $placeId . '/cover.jpg';
             }
 

@@ -449,7 +449,9 @@ export const API = createApi({
             invalidatesTags: (res, err, arg) => [
                 { id: arg.placeId, type: 'ExternalPhotos' },
                 { id: 'bounds', type: 'ExternalPhotos' },
-                { id: arg.placeId, type: 'Photos' }
+                { id: arg.placeId, type: 'Photos' },
+                // Linking may give a place its cover, unlinking the cover source rebuilds it
+                { id: arg.placeId, type: 'Places' }
             ],
             query: (body) => ({ body, method: 'POST', url: 'external-photos' }),
             transformErrorResponse: extractErrorMessage
@@ -461,7 +463,9 @@ export const API = createApi({
             invalidatesTags: (res, err, arg) => [
                 { id: arg.placeId, type: 'ExternalPhotos' },
                 { id: 'bounds', type: 'ExternalPhotos' },
-                { id: arg.placeId, type: 'Photos' }
+                { id: arg.placeId, type: 'Photos' },
+                // Linking may give a place its cover, unlinking the cover source rebuilds it
+                { id: arg.placeId, type: 'Places' }
             ],
             query: ({ id }) => ({ method: 'DELETE', url: `external-photos/${id}` }),
             transformErrorResponse: extractErrorMessage
@@ -611,9 +615,6 @@ export const API = createApi({
         }),
 
         /** Controller: Tags **/
-        tagsGetList: builder.query<ApiType.Tags.ListResponse, void>({
-            query: () => 'tags'
-        }),
         tagsGetSearch: builder.mutation<ApiType.Tags.SearchResponse, Maybe<string>>({
             query: (searchString) => `tags/search?text=${searchString || ''}`
         }),

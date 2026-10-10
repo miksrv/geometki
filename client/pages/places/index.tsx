@@ -16,7 +16,7 @@ import { AppLayout, EmptyState, PageHeader, PaginationBar, PlacesList } from '@/
 import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { PlaceFilterPanel, PlacesFilterType } from '@/sections/place'
-import { getCategoryTitle, isCategoryName } from '@/utils/categories'
+import { getCategoryTitle, isCategoryName, RENAMED_CATEGORIES } from '@/utils/categories'
 import { buildPlacesHref, encodeQueryData, getLandingFlags } from '@/utils/helpers'
 import { PlaceSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
@@ -377,7 +377,18 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const locality = parseInt(context.query.locality as string, 10) || null
 
             const currentPage = parseInt(context.query.page as string, 10) || 1
-            const category = (context.query.category as string) || null
+            // A repeated `?category=a&category=b` comes as an array: its first value counts
+            const rawCategory = context.query.category
+            const queryCategory = (Array.isArray(rawCategory) ? rawCategory[0] : rawCategory) || ''
+
+            // A retired category key (features/09-place-categories.md) is replaced with the key
+            // that took its places: the landing 301 below then goes straight to its page, and
+            // the other cases get a 301 to the same listing with the new key
+            const requestedCategories = queryCategory ? queryCategory.split(',').map((name) => name.trim()) : []
+            const renamedCategory = requestedCategories.some((name) => RENAMED_CATEGORIES[name])
+                ? Array.from(new Set(requestedCategories.map((name) => RENAMED_CATEGORIES[name] ?? name))).join(',')
+                : null
+            const category = renamedCategory ?? (queryCategory || null)
 
             const lat = parseFloat(context.query.lat as string) || null
             const lon = parseFloat(context.query.lon as string) || null
@@ -413,7 +424,23 @@ export const getServerSideProps = wrapper.getServerSideProps(
                       })
                   )
 
+            // An id that `locations:rebuild` merged away (location_legacy_ids) still has a
+            // page: the same listing under the surviving id. With the location pages on, the
+            // landing redirect below handles it; before that, the query URL is rewritten here.
             if (locationType && locationData?.isError) {
+                const legacyId = country ?? region ?? district ?? locality
+                const resolved = legacyId
+                    ? await store.dispatch(API.endpoints.locationsResolve.initiate({ legacyId, type: locationType }))
+                    : null
+
+                if (resolved?.data && ApiType.Locations.isResolvedLocation(resolved.data)) {
+                    const query = { ...context.query, [locationType]: String(resolved.data.id) }
+                    context.res.statusCode = 301
+                    context.res.setHeader('Location', `${locale === 'en' ? '/en' : ''}/places${encodeQueryData(query)}`)
+                    context.res.end()
+                    return { props: {} as PlacesPageProps }
+                }
+
                 return { notFound: true }
             }
 
@@ -470,6 +497,15 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     context.res.end()
                     return { props: {} as PlacesPageProps }
                 }
+            }
+
+            // A retired category key without a landing page to go to (a list, or the flag off)
+            if (renamedCategory) {
+                const query = { ...context.query, category: renamedCategory }
+                context.res.statusCode = 301
+                context.res.setHeader('Location', `${locale === 'en' ? '/en' : ''}/places${encodeQueryData(query)}`)
+                context.res.end()
+                return { props: {} as PlacesPageProps }
             }
 
             const { data: placesList } = await store.dispatch(

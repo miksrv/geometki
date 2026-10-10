@@ -18,6 +18,7 @@ import { AppLayout, PageHeader } from '@/components/shared'
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import { PlaceForm } from '@/sections/place'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
+import { isCategoryName } from '@/utils/categories'
 import { buildPlaceUrl } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
@@ -49,6 +50,10 @@ const CreatePlacePage: NextPage<object> = () => {
                 : undefined,
         [candidate]
     )
+
+    // "Add a place" on an empty category page: the category is preselected
+    const presetCategory = isCategoryName(router.query.category) ? router.query.category : undefined
+    const formValues = candidateValues ?? (presetCategory ? { category: presetCategory } : undefined)
 
     const [clickedButton, setClickedButton] = useState<boolean>(false)
     const [isDirty, setIsDirty] = useState(false)
@@ -133,8 +138,8 @@ const CreatePlacePage: NextPage<object> = () => {
                 ) : (
                     <PlaceForm
                         // A new form once the candidate is loaded: its values are the form's defaults
-                        key={candidate?.id ?? 'new'}
-                        values={candidateValues}
+                        key={candidate?.id ?? presetCategory ?? 'new'}
+                        values={formValues}
                         loading={isLoading || isSuccess || clickedButton}
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         errors={validationErrors as any}

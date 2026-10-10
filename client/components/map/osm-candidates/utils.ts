@@ -8,7 +8,7 @@ type Candidate = ApiType.OsmCandidates.Candidate
 export type CandidateGroup = ApiType.OsmCandidates.Tier | 'onsite'
 
 /** Natural objects: the bare name ("Паршино") does not tell what it is */
-const NATURAL_CATEGORIES = ['water', 'mountain', 'cave', 'spring', 'waterfall', 'nature']
+const NATURAL_CATEGORIES = ['water', 'mountain', 'cave', 'spring', 'waterfall', 'landscape', 'viewpoint']
 
 const SETTLEMENT_PREFIX: Record<string, string> = { city: 'г.', hamlet: 'д.', town: 'г.', village: 'с.' }
 

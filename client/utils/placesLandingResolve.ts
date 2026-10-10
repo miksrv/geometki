@@ -98,11 +98,11 @@ export const decideLandingRedirect = ({
     return !isProxied || requestedPath !== canonicalPath ? canonicalPath : null
 }
 
-/** 0 places → 404 (features/20-location-seo-pages.md: "страница с 0 мест отдаёт 404") */
+/** 0 places → 404 for a location or pair page (features/20-location-seo-pages.md); an empty category page renders an empty state instead */
 export const isLandingEmpty = (placesCount: number): boolean => placesCount <= 0
 
 /**
- * Pagination is self-canonical ("Открытые вопросы" #4 in the spec): a page past the end 404s
+ * Pagination is self-canonical (the spec's "SEO-паттерны" → "Пагинация"): a page past the end 404s
  * instead of silently rendering an empty list page 1 would never link to.
  */
 export const isLandingPageOutOfRange = (currentPage: number, itemsOnPage: number): boolean =>

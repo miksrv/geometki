@@ -226,7 +226,7 @@ final class OsmScoringTest extends CIUnitTestCase
 
     public function testDuplicateBySimilarTitleNearby(): void
     {
-        $place = ['lat' => 51.7681, 'lon' => 55.0969, 'category' => 'monument', 'titles' => ['Памятник Валерию Чкалову']];
+        $place = ['lat' => 51.7681, 'lon' => 55.0969, 'category' => 'memorial', 'titles' => ['Памятник Валерию Чкалову']];
 
         $this->assertNotNull($this->scoring->duplicateOf('В.П. Чкалову', 'memorial', 51.7681, 55.0970, $place));
     }
@@ -240,14 +240,14 @@ final class OsmScoringTest extends CIUnitTestCase
 
     public function testNewPlaceWithSimilarTitleTakesTheCandidate(): void
     {
-        $place = ['lat' => 51.7682, 'lon' => 55.0970, 'category' => 'monument', 'titles' => ['Памятник Чкалову']];
+        $place = ['lat' => 51.7682, 'lon' => 55.0970, 'category' => 'memorial', 'titles' => ['Памятник Чкалову']];
 
         $this->assertTrue($this->scoring->isNewPlaceOf('Чкалову', 'memorial', 51.7681, 55.0969, $place));
     }
 
     public function testNewPlaceWithUnrelatedTitleDoesNotTakeTheCandidate(): void
     {
-        $place = ['lat' => 51.7682, 'lon' => 55.0970, 'category' => 'monument', 'titles' => ['Моя дача']];
+        $place = ['lat' => 51.7682, 'lon' => 55.0970, 'category' => 'artwork', 'titles' => ['Моя дача']];
 
         $this->assertFalse($this->scoring->isNewPlaceOf('Чкалову', 'memorial', 51.7681, 55.0969, $place));
     }
@@ -262,7 +262,7 @@ final class OsmScoringTest extends CIUnitTestCase
     public function testNewPlaceWithSimilarTitleWithinLinkRadiusTakesTheCandidate(): void
     {
         // About 600 m away: further than a duplicate, the marker was moved to the real spot
-        $place = ['lat' => 51.7735, 'lon' => 55.0970, 'category' => 'monument', 'titles' => ['Памятник Чкалову']];
+        $place = ['lat' => 51.7735, 'lon' => 55.0970, 'category' => 'memorial', 'titles' => ['Памятник Чкалову']];
 
         $this->assertTrue($this->scoring->isNewPlaceOf('Чкалову', 'memorial', 51.7681, 55.0969, $place));
     }

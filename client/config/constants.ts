@@ -33,8 +33,8 @@ export const LOCAL_STORAGE = {
 
 /** Place cover (the place page hero): 3:1, the smallest photo crop the API accepts as a cover, px */
 export const PLACE_COVER_ASPECT = 3
-export const PLACE_COVER_MIN_WIDTH = 1024
-export const PLACE_COVER_MIN_HEIGHT = 341
+export const PLACE_COVER_MIN_WIDTH = 400
+export const PLACE_COVER_MIN_HEIGHT = 133
 
 /**
  * Infinite lists request the next page while the end of the list is still this far below the

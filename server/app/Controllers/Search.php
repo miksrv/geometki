@@ -177,7 +177,7 @@ class Search extends ResourceController
                         $place->distance = $formatter->formatDistance($place->distance);
                     }
 
-                    $cover = $formatter->formatCover($place->id, (int) $place->photos);
+                    $cover = $formatter->formatCover($place->id, (int) $place->photos, $place->cover_external_id ?? null);
                     if ($cover) {
                         $place->cover = $cover;
                     }

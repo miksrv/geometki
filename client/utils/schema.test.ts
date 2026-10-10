@@ -46,7 +46,7 @@ describe('PlaceSchema', () => {
     it('uses TouristAttraction type for non-commercial categories', () => {
         const nonCommercialPlace = {
             ...mockPlace,
-            category: ApiModel.Categories.monument
+            category: ApiModel.Categories.memorial
         }
         const schema = PlaceSchema(nonCommercialPlace as ApiModel.Place)
         expect((schema as Record<string, unknown>)['@type']).toBe('TouristAttraction')

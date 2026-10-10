@@ -1,25 +1,32 @@
+/** The niche taxonomy of features/09-place-categories.md, mirrored by the server's `Config\Categories` */
 export enum Categories {
-    animals = 'animals',
-    bridge = 'bridge',
-    radiation = 'radiation',
-    death = 'death',
-    military = 'military',
-    transport = 'transport',
-    abandoned = 'abandoned',
-    mine = 'mine',
-    construction = 'construction',
-    memorial = 'memorial',
-    monument = 'monument',
-    museum = 'museum',
-    castle = 'castle',
-    manor = 'manor',
-    religious = 'religious',
-    archeology = 'archeology',
+    // Nature
+    mountain = 'mountain',
     cave = 'cave',
     waterfall = 'waterfall',
     spring = 'spring',
-    nature = 'nature',
     water = 'water',
-    mountain = 'mountain',
+    landscape = 'landscape',
+    viewpoint = 'viewpoint',
+    // Abandoned & industrial
+    abandoned = 'abandoned',
+    industrial = 'industrial',
+    military = 'military',
+    // History & architecture
+    castle = 'castle',
+    manor = 'manor',
+    architecture = 'architecture',
+    religious = 'religious',
+    archeology = 'archeology',
+    engineering = 'engineering',
+    transport = 'transport',
+    // Monuments & art
+    memorial = 'memorial',
+    artwork = 'artwork',
+    // Dark & strange
+    disaster = 'disaster',
+    mystic = 'mystic',
+    // Leisure
+    museum = 'museum',
     camping = 'camping'
 }

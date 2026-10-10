@@ -25,6 +25,7 @@
     margin: 0
 
     li
+        position: relative
         flex-basis: calc(25%)
         padding: 0 2px
 
@@ -38,6 +39,18 @@
             cursor: pointer
             border-radius: var(--border-radius)
             height: auto
+
+    // A linked photo: where it comes from
+    .source
+        position: absolute
+        left: 6px
+        bottom: 6px
+        padding: 0 4px
+        border-radius: var(--border-radius)
+        background: rgba(0, 0, 0, .55)
+        color: #fff
+        font-size: 11px
+        pointer-events: none
 
 .dialogFooter
     display: flex

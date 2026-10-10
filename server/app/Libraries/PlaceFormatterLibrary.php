@@ -79,13 +79,14 @@ class PlaceFormatterLibrary
     /**
      * Return cover paths if the cover file exists, otherwise null.
      *
-     * @param string $placeId
-     * @param int    $photosCount
+     * @param string      $placeId
+     * @param int         $photosCount
+     * @param string|null $coverExternalId places.cover_external_id: the cover is cut from a linked photo
      * @return array|null
      */
-    public function formatCover(string $placeId, int $photosCount): ?array
+    public function formatCover(string $placeId, int $photosCount, ?string $coverExternalId = null): ?array
     {
-        if ($photosCount && $this->coverExists($placeId)) {
+        if ($this->coverExists($placeId, $photosCount > 0 || !empty($coverExternalId))) {
             return [
                 'full'    => PATH_PHOTOS . $placeId . '/cover.jpg',
                 'preview' => PATH_PHOTOS . $placeId . '/cover_preview.jpg',
@@ -96,14 +97,20 @@ class PlaceFormatterLibrary
     }
 
     /**
-     * Whether the place's cover file is available. With Config\Uploads::$verifyFiles
+     * Whether the place has a cover: something to cut it from (uploaded photos or a linked
+     * cover photo, passed by the caller) and the cover file. With Config\Uploads::$verifyFiles
      * disabled (images served from another host) the file is assumed to exist.
      *
      * @param string $placeId
+     * @param bool   $hasCoverSource The place has uploaded photos or places.cover_external_id
      * @return bool
      */
-    public function coverExists(string $placeId): bool
+    public function coverExists(string $placeId, bool $hasCoverSource = true): bool
     {
+        if (!$hasCoverSource) {
+            return false;
+        }
+
         if (!config('Uploads')->verifyFiles) {
             return true;
         }
@@ -141,7 +148,7 @@ class PlaceFormatterLibrary
             $row->district_id, $row->district_en, $row->district_ru, $row->district_slug,
             $row->locality_id, $row->city_en, $row->city_ru, $row->city_slug,
             $row->created_at, $row->updated_at, $row->deleted_at,
-            $row->visit_radius_m, $row->verification_exempt
+            $row->visit_radius_m, $row->verification_exempt, $row->cover_external_id
         );
     }
 }

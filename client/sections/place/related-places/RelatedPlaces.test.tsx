@@ -60,7 +60,7 @@ describe('RelatedPlaces', () => {
         const { container } = render(
             <RelatedPlaces
                 places={places.slice(0, 2)}
-                category={'bridge' as ApiModel.Categories}
+                category={'engineering' as ApiModel.Categories}
                 location={location}
             />
         )
@@ -79,7 +79,7 @@ describe('RelatedPlaces', () => {
         render(
             <RelatedPlaces
                 places={places}
-                category={'bridge' as ApiModel.Categories}
+                category={'engineering' as ApiModel.Categories}
                 location={location}
             />
         )
@@ -93,7 +93,7 @@ describe('RelatedPlaces', () => {
         render(
             <RelatedPlaces
                 places={places}
-                category={'bridge' as ApiModel.Categories}
+                category={'engineering' as ApiModel.Categories}
             />
         )
 

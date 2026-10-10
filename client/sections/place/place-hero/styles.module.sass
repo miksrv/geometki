@@ -36,6 +36,9 @@
         top: 0
         left: 0
         width: 100%
+        display: flex
+        align-items: flex-start
+        gap: var(--space-3)
         padding: var(--space-3) var(--space-4) var(--space-6)
         background: linear-gradient(to bottom, rgba(0, 0, 0, .45) 0%, transparent 100%)
 
@@ -43,6 +46,9 @@
             padding: var(--space-2) var(--space-3) var(--space-6)
 
         .breadcrumbs
+            flex: 1
+            min-width: 0
+
             li
                 color: rgba(255, 255, 255, .85)
 
@@ -52,6 +58,23 @@
 
                     &:hover
                         color: #fff
+
+        // A cover cut from a linked photo credits it: small, on the top gradient, never over the title
+        .coverCredit
+            flex: none
+            max-width: 45%
+            overflow: hidden
+            text-overflow: ellipsis
+            white-space: nowrap
+            font-size: 11px
+            line-height: 20px
+            color: rgba(255, 255, 255, .75)
+
+            a
+                color: inherit
+
+                &:hover
+                    color: #fff
 
     .bottomPanel
         @extend %placeBottomPanel

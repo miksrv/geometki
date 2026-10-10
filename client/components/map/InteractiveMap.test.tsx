@@ -227,7 +227,7 @@ describe('InteractiveMap', () => {
         it('renders MarkerPoint for each place', () => {
             const places = [
                 { id: 'p1', lat: 51.765, lon: 55.099, type: 'place', category: 'abandoned', count: 1 },
-                { id: 'p2', lat: 51.8, lon: 55.2, type: 'place', category: 'nature', count: 1 }
+                { id: 'p2', lat: 51.8, lon: 55.2, type: 'place', category: 'landscape', count: 1 }
             ]
             render(<InteractiveMap places={places as any} />)
             expect(screen.getAllByTestId('marker-point')).toHaveLength(2)

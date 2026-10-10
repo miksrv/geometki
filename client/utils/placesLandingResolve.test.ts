@@ -62,7 +62,7 @@ describe('classifyLandingSegments', () => {
         expect(classifyLandingSegments(location('bashkortostan'), location('orenburg'))).toStrictEqual({
             kind: 'not-found'
         })
-        expect(classifyLandingSegments(category('cave'), category('mine'))).toStrictEqual({ kind: 'not-found' })
+        expect(classifyLandingSegments(category('cave'), category('industrial'))).toStrictEqual({ kind: 'not-found' })
     })
 })
 

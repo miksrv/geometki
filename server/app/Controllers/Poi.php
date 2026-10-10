@@ -166,7 +166,7 @@ class Poi extends ResourceController
         $placesModel = new PlacesModel();
         $coordinates = $placesModel->makeDistanceSQL($sessionLib->lat, $sessionLib->lon);
         $placeData   = $placesModel
-            ->select('id, slug, rating, views, photos, photos, comments, bookmarks' . $coordinates)
+            ->select('id, slug, rating, views, photos, cover_external_id, comments, bookmarks' . $coordinates)
             ->find($id);
 
         $placeData->title = $placeContent->title($id);
@@ -176,10 +176,12 @@ class Poi extends ResourceController
         }
 
         $formatter = new PlaceFormatterLibrary();
-        $cover     = $formatter->formatCover($id, (int) $placeData->photos);
+        $cover     = $formatter->formatCover($id, (int) $placeData->photos, $placeData->cover_external_id ?? null);
         if ($cover) {
             $placeData->cover = $cover;
         }
+
+        unset($placeData->cover_external_id);
 
         // Bookmark state for the signed-in user, so the map popup does not need a separate check request
         if ($sessionLib->isAuth && $sessionLib->user) {

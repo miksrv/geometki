@@ -9,8 +9,15 @@ import { useReportLayerStatus } from '../layers-status'
 import { linkedPhotoStyles, linkedPlacesTitle, useLinkedExternalPhotos } from '../linked-photos'
 import { MapAdditionalLayersEnum } from '../types'
 
-import { THUMBNAIL_ZOOM } from './constants'
-import { buildParams, createClusterIcon, createDirectionIcon, createThumbnailIcon, photoToMark } from './utils'
+import { LOCAL_WORK_ZOOM, THUMBNAIL_ZOOM } from './constants'
+import {
+    buildParams,
+    createClusterIcon,
+    createDirectionIcon,
+    createThumbnailIcon,
+    groupPhotos,
+    photoToMark
+} from './utils'
 
 interface PastvuMarkerProps {
     photo: PastvuPhoto
@@ -88,16 +95,48 @@ export const HistoricalPhotos: React.FC<HistoricalPhotosProps> = ({ onPhotoClick
 
     const allPhotoMarks = useMemo(() => photos.map(photoToMark), [photos])
 
-    const handlePhotoClick = useCallback(
-        (index: number) => onPhotoClick?.(allPhotoMarks, index),
-        [onPhotoClick, allPhotoMarks]
+    const zoom = params?.z ?? 0
+
+    // From LOCAL_WORK_ZOOM PastVu returns every photo of the area unclustered: grouped here
+    const groups = useMemo(
+        () =>
+            zoom >= LOCAL_WORK_ZOOM
+                ? groupPhotos(photos, (geo) => map.project(geo, zoom))
+                : photos.map((photo, index) => ({ geo: photo.geo, indexes: [index] })),
+        [photos, zoom]
     )
+
+    // The viewer gets the photos drawn one by one: from LOCAL_WORK_ZOOM the area may hold
+    // thousands of photos, most of them inside the groups
+    const viewerIndexes = useMemo(
+        () => groups.filter(({ indexes }) => indexes.length === 1).map(({ indexes }) => indexes[0]),
+        [groups]
+    )
+
+    const handlePhotoClick = useCallback(
+        (index: number) =>
+            onPhotoClick?.(
+                viewerIndexes.map((i) => allPhotoMarks[i]),
+                Math.max(0, viewerIndexes.indexOf(index))
+            ),
+        [onPhotoClick, allPhotoMarks, viewerIndexes]
+    )
+
+    // Closer if the map can zoom in, otherwise the group's photos in the viewer
+    const handleGroupClick = (indexes: number[], geo: [number, number]) => {
+        if (zoom < map.getMaxZoom()) {
+            map.setView(geo, zoom + 1)
+        } else {
+            onPhotoClick?.(
+                indexes.map((index) => allPhotoMarks[index]),
+                0
+            )
+        }
+    }
 
     if (!photos.length && !clusters.length) {
         return null
     }
-
-    const zoom = params?.z ?? 0
 
     return (
         <>
@@ -112,16 +151,27 @@ export const HistoricalPhotos: React.FC<HistoricalPhotosProps> = ({ onPhotoClick
                 />
             ))}
 
-            {photos.map((photo, index) => (
-                <PastvuMarker
-                    key={`pastvu-photo-${photo.cid}`}
-                    photo={photo}
-                    index={index}
-                    thumbnail={zoom >= THUMBNAIL_ZOOM}
-                    link={linked.get(externalKey('pastvu', photo.cid))}
-                    onClick={handlePhotoClick}
-                />
-            ))}
+            {groups.map(({ geo, indexes }) => {
+                const photo = photos[indexes[0]]
+
+                return indexes.length > 1 ? (
+                    <Marker
+                        key={`pastvu-group-${photo.cid}`}
+                        position={geo}
+                        icon={createClusterIcon(indexes.length)}
+                        eventHandlers={{ click: () => handleGroupClick(indexes, geo) }}
+                    />
+                ) : (
+                    <PastvuMarker
+                        key={`pastvu-photo-${photo.cid}`}
+                        photo={photo}
+                        index={indexes[0]}
+                        thumbnail={zoom >= THUMBNAIL_ZOOM}
+                        link={linked.get(externalKey('pastvu', photo.cid))}
+                        onClick={handlePhotoClick}
+                    />
+                )
+            })}
         </>
     )
 }

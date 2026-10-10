@@ -163,7 +163,7 @@ class Visited extends ResourceController
             $place->title     = $placeContent->title($place->id);
             $place->content   = strip_tags(html_entity_decode($placeContent->content($place->id), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 
-            $cover = $formatter->formatCover($place->id, (int) $place->photos);
+            $cover = $formatter->formatCover($place->id, (int) $place->photos, $place->cover_external_id ?? null);
             if ($cover) {
                 $place->cover = $cover;
             }

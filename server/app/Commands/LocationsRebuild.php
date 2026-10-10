@@ -366,10 +366,15 @@ class LocationsRebuild extends BaseCommand
             $groups = []; // destination id => old ids whose places mostly move onto it
 
             foreach ($byOldId as $oldId => $destinations) {
+                // Same rule as buildReport(): a row that keeps a place is not merged
+                if (isset($destinations[(string) $oldId])) {
+                    continue;
+                }
+
                 arsort($destinations);
                 $winnerKey = array_key_first($destinations);
 
-                if ($winnerKey === '__null__' || (int) $winnerKey === (int) $oldId) {
+                if ($winnerKey === '__null__') {
                     continue;
                 }
 
@@ -459,6 +464,14 @@ class LocationsRebuild extends BaseCommand
 
         foreach ($moveCounts as $type => $byOldId) {
             foreach ($byOldId as $oldId => $destinations) {
+                // A row that keeps any of its places is not a duplicate of anything: the
+                // places that leave it were simply re-geocoded elsewhere (a point near a
+                // border). Merging it would delete a row still in use — applySwitch()
+                // refuses that, and did (Павлово-Посадский округ, 2026-10-10).
+                if (isset($destinations[(string) $oldId])) {
+                    continue;
+                }
+
                 arsort($destinations);
                 $winnerKey = array_key_first($destinations);
 
@@ -650,6 +663,10 @@ class LocationsRebuild extends BaseCommand
      */
     private function applySwitch(array $progress, array $report): bool
     {
+        // latinizeStreetAddress() below; the geocoder loads this helper only when it
+        // actually geocodes, and a complete progress file skips every place
+        helper('location');
+
         $db = Database::connect();
         $columns = ['country' => 'country_id', 'region' => 'region_id', 'district' => 'district_id', 'locality' => 'locality_id'];
 
@@ -712,7 +729,9 @@ class LocationsRebuild extends BaseCommand
                     'region_id'   => $result['region_id'],
                     'district_id' => $result['district_id'],
                     'locality_id' => $result['locality_id'],
-                    'address_en'  => $result['address_en'],
+                    // Progress saved before latinizeStreetAddress() existed in the
+                    // geocoder still carries Cyrillic English addresses: fixed here
+                    'address_en'  => latinizeStreetAddress((string) $result['address_en'], (string) $result['address_ru']),
                     'address_ru'  => $result['address_ru'],
                 ]);
             }

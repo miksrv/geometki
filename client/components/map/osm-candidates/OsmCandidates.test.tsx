@@ -93,7 +93,7 @@ const candidate = (
     status: ApiType.OsmCandidates.Status = 'open'
 ): ApiType.OsmCandidates.Candidate => ({
     breakdown: [],
-    category: 'monument',
+    category: 'memorial',
     ele: null,
     heritage: null,
     id,

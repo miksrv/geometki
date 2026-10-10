@@ -1,65 +1,51 @@
 # Feature: Social Kudos & Peer Endorsements
 
+> **Status: not started**
+
 ## Overview
 
-Let users recognize each other's contributions directly. A lightweight "kudos" system allows any user to give a fellow contributor a typed endorsement (e.g., "Great Photographer", "Accurate Mapper"). Receiving kudos boosts reputation and provides social proof on the recipient's profile.
+Let users recognize each other's contributions with typed endorsements. Receiving kudos boosts reputation and shows social proof on the profile.
 
-## How It Works
+## Kudos Types
 
-### Kudos Types
+| Kudos | Awarded For |
+|-------|-------------|
+| Accurate Mapper | Correct coordinates, complete places |
+| Great Photographer | High-quality photos |
+| Helpful Reviewer | Insightful ratings and comments |
+| Local Expert | Deep knowledge of a specific area |
+| Quick Updater | Fast to correct outdated info |
 
-Pre-defined endorsement categories, each tied to a contribution style:
+## Mechanics
 
-| Kudos | Icon | Awarded For |
-|-------|------|-------------|
-| Accurate Mapper | 📍 | Their places have correct coordinates / high quality scores |
-| Great Photographer | 📷 | Their photos are high-quality |
-| Helpful Reviewer | ⭐ | Their ratings and comments are insightful |
-| Local Expert | 🏙️ | Deep knowledge of a specific region |
-| Quick Updater | ✏️ | Fast to correct outdated info |
+- One kudos per type per recipient per month.
+- Giver earns +2 XP; recipient earns +5 reputation and +10 XP.
+- Counts are public on the profile; the dominant type is shown as "Known for".
 
-### Mechanics
+### Reputation
 
-- A user can give **one kudos per type per recipient per month** (prevents farming).
-- Giving kudos costs nothing and earns the giver +2 XP (encourages generosity).
-- Receiving kudos earns the recipient **+5 reputation** and **+10 XP** per kudos.
-- Kudos counts are public on user profiles; the top kudos type is displayed as a "Known for" label.
+`ReputationLibrary::recalculate()` rebuilds `users.reputation` from scratch out of ratings of the user's places, so kudos must be added inside that calculation (sum from the `kudos` table), not as a one-off increment that the next recalculation would wipe.
 
-### Reputation Integration
+## Server Design
 
-Kudos reputation feeds into the existing `users.reputation` field, which already influences leveling. No new column needed — it's just another reputation-modifying event.
-
-### Server Design
-
-**New table: `kudos`**
+**Table `kudos`**
 ```sql
-id, giver_id, receiver_id, kudos_type ENUM(...),
-created_at
--- UNIQUE KEY (giver_id, receiver_id, kudos_type, MONTH(created_at))
+id, giver_id, receiver_id, kudos_type ENUM(...), created_at
+-- monthly uniqueness enforced in code (or via a generated YYYY-MM column + UNIQUE)
 ```
 
-**`KudosController.php`**
-- `POST /users/{id}/kudos` — give kudos; body: `{ type: "accurate_mapper" }`.
-  - Validate monthly limit; award XP to giver, XP + reputation to receiver; send notification.
-- `GET /users/{id}/kudos` — return kudos summary for a user (count per type, total, recent givers).
+**Routes (`Kudos` controller)**
+- `POST /users/{id}/kudos` — body `{ type: "accurate_mapper" }`; validates the monthly limit, awards XP/reputation, sends a notification.
+- `GET /users/{id}/kudos` — counts per type, total, recent givers.
 
-### Client Design
+## Client Design
 
-**User profile** — "Kudos" section below stats:
-- Row of kudos type icons with counts.
-- "Known for: Accurate Mapper" highlight if one type dominates.
-- "Give Kudos" button (visible when viewing another user's profile); dropdown of kudos types.
+- Profile: row of kudos types with counts, "Known for" label, "Give kudos" button on other users' profiles.
+- Notification: "Alice gave you 'Great Photographer'".
+- Optional `/users` sort by kudos received this month.
 
-**Activity feed** — "Alice gave you 'Great Photographer' kudos" notification.
+## Anti-Abuse
 
-**Users list page** — optional sort by "most kudos received this month".
-
-### Anti-Abuse
-
-- Monthly per-type limit prevents trading kudos between two accounts.
-- Givers must be Level 3+ to give kudos (requires ~300 XP, filters out brand-new accounts).
-- Receiving 20+ kudos of the same type in a 30-day window triggers a soft review flag (logged, not auto-penalized).
-
-## Why It Fits
-
-Reputation already exists as a core metric but is currently only driven by place ratings. Kudos adds a **social reputation signal** — recognition from peers rather than the public — which feels more personal and meaningful. It also gives mid-level users (who can't yet compete on quantity with power users) a way to feel valued for the quality of their specific contributions.
+- Monthly per-type limit.
+- Givers need a minimum level (filters out brand-new accounts).
+- 20+ kudos of one type within 30 days → soft review flag (logged, not penalized).
