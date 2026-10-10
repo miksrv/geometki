@@ -611,9 +611,6 @@ export const API = createApi({
         }),
 
         /** Controller: Tags **/
-        tagsGetList: builder.query<ApiType.Tags.ListResponse, void>({
-            query: () => 'tags'
-        }),
         tagsGetSearch: builder.mutation<ApiType.Tags.SearchResponse, Maybe<string>>({
             query: (searchString) => `tags/search?text=${searchString || ''}`
         }),

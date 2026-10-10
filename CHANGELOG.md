@@ -8,6 +8,7 @@
 - Categories: Nature, Bridges, Engineering structures, Mines, Monuments, Places of death, Radiation and Animals are merged into them; old category links redirect
 - Categories: "Historical building" is now "Manor" (manors and palaces), "Equipment on a pedestal" is now "Vehicles"
 - Places: category landing pages (`/places/{category}`) are on
+- Tags: the Tags page is removed; tags stay on places and in the filter
 - Locations: addresses in English are transliterated instead of shown in Cyrillic; Crimea and Sevastopol are listed under Russia
 
 ## 1.14.0

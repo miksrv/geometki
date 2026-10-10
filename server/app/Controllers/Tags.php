@@ -9,8 +9,7 @@ use CodeIgniter\RESTful\ResourceController;
 /**
  * Tags controller
  *
- * Provides the tag catalogue for place filtering and a typeahead search
- * endpoint for the tag input field.
+ * A typeahead search endpoint for the tag input field.
  *
  * @package App\Controllers
  */
@@ -22,35 +21,6 @@ class Tags extends ResourceController
     public function __construct()
     {
         $this->model = new TagsModel();
-    }
-
-    /**
-     * Return all tags ordered by usage count and last-updated date.
-     *
-     * GET /tags
-     *
-     * @return ResponseInterface
-     */
-    public function list(): ResponseInterface
-    {
-        $locale = $this->request->getLocale();
-        $result = $this->model
-            ->select('title_ru, title_en, count, updated_at')
-            ->orderBy('count, updated_at', 'DESC')
-            ->findAll();
-
-        if ($result) {
-            foreach ($result as $tag) {
-                $tag->updated = $tag->updated_at;
-                $tag->title   = $locale === 'en' && !empty($tag->title_en)
-                    ? $tag->title_en
-                    : (!empty($tag->title_ru) ? $tag->title_ru : $tag->title_en);
-
-                unset($tag->title_ru, $tag->title_en, $tag->updated_at);
-            }
-        }
-
-        return $this->respond(['items' => $result]);
     }
 
     /**

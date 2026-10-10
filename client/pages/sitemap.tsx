@@ -23,7 +23,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 console.error('Sitemap: failed to load places/users', error)
             }
 
-            const staticPages = ['map', 'places', 'users', 'tags']
+            const staticPages = ['map', 'places', 'users']
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 

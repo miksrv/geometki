@@ -220,7 +220,6 @@ $routes->post('(:segment)/image', 'Achievements::uploadImage/$1');
 
 /** Tags Controller **/
 $routes->group('tags', static function ($routes) {
-    $routes->get('/', 'Tags::list');
     $routes->get('search', 'Tags::search');
 
     $routes->options('(:alphanum)', static function () {});
