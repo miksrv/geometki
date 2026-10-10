@@ -1,18 +1,12 @@
-const { execFileSync } = require('node:child_process')
-const path = require('node:path')
-
 const { i18n } = require('./next-i18next.config.js')
-
-// TEMPORARY until simple-react-ui-kit ships styles.css, see TODO-kit-styles-css.md in the repo root.
-// Component styles of simple-react-ui-kit, rendered into the server HTML by pages/_document.tsx
-// so the page does not shift when the kit injects them on hydration (see the script)
-const kitComponentsCss = execFileSync(process.execPath, [path.join(__dirname, 'scripts/kit-components-css.mjs')], {
-    cwd: __dirname,
-    encoding: 'utf8'
-})
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    // The categories page is gone (the catalogue lives in the client, see CLAUDE.md →
+    // Categories): its indexed URL goes to the places listing instead of a 404
+    async redirects() {
+        return [{ destination: '/places', permanent: true, source: '/categories' }]
+    },
     i18n: { ...i18n, localeDetection: false },
     // Authorization does not work in this mode
     reactStrictMode: false,
@@ -45,9 +39,6 @@ const nextConfig = {
         // unoptimized - When true, the source image will be served as-is instead of changing quality,
         // size, or format. Defaults to false.
         unoptimized: false
-    },
-    env: {
-        KIT_COMPONENTS_CSS: kitComponentsCss
     },
     output: 'standalone',
     trailingSlash: false,

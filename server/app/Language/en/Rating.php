@@ -6,5 +6,6 @@ return [
     'missingSetData' => 'Insufficient data to set the rating',
     'scoreOutOfRange' => 'Score must be between 1 and 5',
     'placeNotFound' => 'The geotag you are rating does not exist',
+    'ownPlace'      => 'You cannot rate your own place',
     'setError'      => 'An error occurred while saving the rating, please try again',
 ];

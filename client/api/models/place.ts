@@ -1,7 +1,7 @@
 import { DateTime } from '@/api/types'
 
 import { Address } from './address'
-import { Category } from './category'
+import { Categories } from './category'
 import { User } from './user'
 
 export type Place = {
@@ -22,7 +22,8 @@ export type Place = {
     distance?: number
     author?: User
     editors?: User[]
-    category?: Category
+    /** The category key; its label and texts come from `utils/categories.ts` */
+    category?: Categories
     address?: Address
     tags?: string[]
     cover?: {

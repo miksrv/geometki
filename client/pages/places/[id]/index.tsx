@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Container } from 'simple-react-ui-kit'
+import { Button, cn } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import dynamic from 'next/dynamic'
@@ -12,25 +12,33 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, PhotoGallery, PlaceCard } from '@/components/shared'
+import { AppLayout, PhotoGallery, Section } from '@/components/shared'
 import type { PhotoUploaderHandle } from '@/components/shared/photo-uploader'
-import { Carousel, FileDropZone } from '@/components/ui'
+import { FileDropZone } from '@/components/ui'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
-import { PlaceCollections } from '@/sections/collections'
+import { IN_COLLECTIONS_LIMIT, PlaceCollections } from '@/sections/collections'
 import {
-    PlaceActionBar,
+    NearbyPlaces,
+    PlaceActions,
     PlaceActivity,
     PlaceCommentList,
     PlaceDescription,
     PlaceHero,
-    PlaceInfoSidebar,
-    PlaceVisited
+    PlaceRatePrompt,
+    PlaceSidebar,
+    PlaceVisited,
+    RELATED_PLACES_COUNT,
+    RelatedPlaces
 } from '@/sections/place'
+import type { RelatedPlacesLocation } from '@/sections/place/related-places'
+import { getCategoryTitle } from '@/utils/categories'
 import {
+    buildPlacesHref,
     buildPlaceUrl,
     encodeQueryData,
     formatDateISO,
     formatDateUTC,
+    getLandingFlags,
     parsePlaceId,
     removeMarkdown,
     truncateText
@@ -64,10 +72,25 @@ interface PlacePageProps {
     ratingCount: number
     place?: ApiModel.Place
     photoList?: ApiModel.Photo[]
-    nearPlaces?: ApiModel.Place[] | null
+    nearPlaces?: ApiModel.PlaceListItem[] | null
+    /** "Ещё {category}: {region}" — the same category in the place's region (null without a region) */
+    relatedPlaces?: ApiModel.PlaceListItem[] | null
+    relatedLocation?: RelatedPlacesLocation | null
 }
 
-const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, nearPlaces }) => {
+/**
+ * The page body, keyed by the place in `PlacePage` below: Next reuses the page component
+ * between `/places/[id]` routes, and none of this state (cover hash, local photos, open
+ * dialogs, the sections' own state) may survive a move to a nearby place
+ */
+const PlacePageContent: React.FC<PlacePageProps> = ({
+    ratingCount,
+    place,
+    photoList,
+    nearPlaces,
+    relatedPlaces,
+    relatedLocation
+}) => {
     const { t, i18n } = useTranslation()
 
     const dispatch = useAppDispatch()
@@ -81,10 +104,20 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
     const [uploadingPhotos, setUploadingPhotos] = useState<string[]>()
     const [nearbyPhotosOpen, setNearbyPhotosOpen] = useState<boolean>(false)
 
+    const landingFlags = getLandingFlags()
+    // The most specific level of the place's address — same pairing as the visible
+    // breadcrumbs (PlaceHero): "category" links to the location × category landing page.
+    const mostSpecificAddress =
+        place?.address?.locality ?? place?.address?.district ?? place?.address?.region ?? place?.address?.country
+
     // Only our own photos go to the structured data and the link previews, not the linked ones
     const ownPhotos = useMemo(() => photoList?.filter(({ external }) => !external), [photoList])
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
+
+    // Prefetched on the server with the page: the count for the "Комментарии (N)" heading
+    const { data: commentsData } = API.useCommentsGetListQuery({ place: place?.id }, { skip: !place?.id })
+    const commentsCount = commentsData?.items?.length ?? 0
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     const placePath = buildPlaceUrl(place?.id ?? '', place?.slug)
@@ -151,8 +184,27 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                     ? [
                           {
                               '@type': 'ListItem',
-                              item: `${canonicalUrl}places?category=${place.category.name}`,
-                              name: place.category.title,
+                              item: `${canonicalUrl}${buildPlacesHref(
+                                  {
+                                      category: place.category,
+                                      defaultOrder: ApiType.SortOrders.DESC,
+                                      defaultSort: ApiType.SortFields.Trending,
+                                      // The pair page only when it exists: with the flags off the crumb
+                                      // is the plain category listing, as before the landing pages
+                                      location:
+                                          landingFlags.combinations &&
+                                          mostSpecificAddress?.id &&
+                                          mostSpecificAddress.type
+                                              ? {
+                                                    id: mostSpecificAddress.id,
+                                                    slug: mostSpecificAddress.slug,
+                                                    type: mostSpecificAddress.type
+                                                }
+                                              : null
+                                  },
+                                  landingFlags
+                              ).href.replace(/^\//, '')}`,
+                              name: getCategoryTitle(t, place.category),
                               position: 3
                           }
                       ]
@@ -241,7 +293,7 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                             authors: [`${SITE_LINK}users/${place?.author?.id}`],
                             modifiedTime: formatDateUTC(place?.updated?.date),
                             publishedTime: formatDateUTC(place?.created?.date),
-                            section: place?.category?.title,
+                            section: place?.category ? getCategoryTitle(t, place.category) : undefined,
                             tags: place?.tags
                         },
                         description: placeDescription,
@@ -281,97 +333,115 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
                 data={placeSchema}
             />
 
-            <PlaceHero
-                place={place}
-                coverHash={coverHash}
-                onChangePlaceCoverClick={handleEditPlaceCoverClick}
-                onPhotoUploadClick={handleUploadPhotoClick}
-            />
+            <div>
+                <PlaceHero
+                    place={place}
+                    coverHash={coverHash}
+                    attached={true}
+                />
 
-            <div className={styles.pageLayout}>
-                <div className={styles.mainColumn}>
-                    <PlaceActionBar
-                        placeId={place?.id}
-                        placeUrl={pagePlaceUrl}
-                        bookmarks={place?.bookmarks}
-                        verificationExempt={place?.verificationExempt}
-                    />
+                <PlaceActions
+                    place={place}
+                    placeUrl={pagePlaceUrl}
+                    onPhotoUploadClick={handleUploadPhotoClick}
+                    onChangePlaceCoverClick={handleEditPlaceCoverClick}
+                />
 
-                    <PlaceDescription
-                        placeId={place?.id}
-                        content={place?.content}
-                        tags={place?.tags}
-                    />
-
-                    <FileDropZone
-                        label={t('photo-drop-label', { defaultValue: 'Перетащите фотографии сюда, чтобы загрузить' })}
-                        hint={t('photo-drop-hint', { defaultValue: 'JPG, PNG, GIF или WEBP, до 10 МБ' })}
-                        onDrop={handleDropPhotos}
-                    >
-                        <PhotoGallery
-                            title={t('photos')}
-                            photos={localPhotos}
-                            uploadingPhotos={uploadingPhotos}
-                            onPhotoDelete={setLocalPhotos}
-                            action={
-                                <>
-                                    <Button
-                                        mode={'link'}
-                                        onClick={handleNearbyPhotosClick}
-                                    >
-                                        {t('nearby-photos_title', { defaultValue: 'Фото рядом' })}
-                                    </Button>
-                                    <Button
-                                        mode={'link'}
-                                        onClick={handleUploadPhotoClick}
-                                    >
-                                        {t('upload-photo')}
-                                    </Button>
-                                </>
-                            }
-                        />
-                    </FileDropZone>
-
-                    <Container title={t('comments-title')}>
-                        <PlaceCommentList placeId={place?.id} />
-                    </Container>
-
-                    <PlaceActivity
-                        placeId={place?.id}
-                        hidePlaceName={true}
-                        hideCover={true}
-                    />
-                </div>
-
-                <aside className={styles.sidebar}>
-                    <PlaceInfoSidebar place={place} />
-                    <PlaceCollections placeId={place?.id} />
-                    <PlaceVisited place={place} />
-                </aside>
-            </div>
-
-            {!!nearPlaces?.length && (
-                <div className={styles.nearPlaces}>
-                    <Carousel options={{ dragFree: true, loop: true }}>
-                        {nearPlaces.map((nearPlace) => (
-                            <PlaceCard
-                                key={nearPlace.id}
-                                place={nearPlace}
+                {/* Two columns on desktop; on phones the main column dissolves (display: contents) and
+                    the blocks take the explicit order of the .order* classes, the sidebar card among them */}
+                <div className={styles.pageLayout}>
+                    <div className={styles.mainColumn}>
+                        <FileDropZone
+                            className={styles.orderPhotos}
+                            label={t('photo-drop-label', {
+                                defaultValue: 'Перетащите фотографии сюда, чтобы загрузить'
+                            })}
+                            hint={t('photo-drop-hint', { defaultValue: 'JPG, PNG, GIF или WEBP, до 10 МБ' })}
+                            onDrop={handleDropPhotos}
+                        >
+                            <PhotoGallery
+                                variant={'mosaic'}
+                                title={localPhotos.length ? `${t('photos')} (${localPhotos.length})` : t('photos')}
+                                photos={localPhotos}
+                                uploadingPhotos={uploadingPhotos}
+                                onPhotoDelete={setLocalPhotos}
+                                action={
+                                    <>
+                                        <Button
+                                            mode={'link'}
+                                            onClick={handleNearbyPhotosClick}
+                                        >
+                                            {t('photos-nearby-short', { defaultValue: 'Рядом' })}
+                                        </Button>
+                                        <Button
+                                            mode={'link'}
+                                            onClick={handleUploadPhotoClick}
+                                        >
+                                            {t('add', { defaultValue: 'Добавить' })}
+                                        </Button>
+                                    </>
+                                }
                             />
-                        ))}
-                    </Carousel>
+                        </FileDropZone>
 
-                    <Button
-                        size={'medium'}
-                        mode={'secondary'}
-                        noIndex={true}
-                        stretched={true}
-                        link={`/places?lat=${place?.lat}&lon=${place?.lon}&sort=distance&order=ASC`}
-                    >
-                        {t('all-places-nearby')}
-                    </Button>
+                        <div className={styles.orderDescription}>
+                            <PlaceDescription
+                                placeId={place?.id}
+                                content={place?.content}
+                                tags={place?.tags}
+                            />
+                        </div>
+
+                        <div className={styles.orderRate}>
+                            <PlaceRatePrompt
+                                placeId={place?.id}
+                                authorId={place?.author?.id}
+                            />
+                        </div>
+
+                        <div className={cn(styles.orderNearby, !nearPlaces?.length && styles.hidden)}>
+                            <NearbyPlaces
+                                places={nearPlaces}
+                                lat={place?.lat}
+                                lon={place?.lon}
+                            />
+                        </div>
+
+                        <div className={cn(styles.orderRelated, (relatedPlaces?.length ?? 0) < 3 && styles.hidden)}>
+                            <RelatedPlaces
+                                places={relatedPlaces}
+                                category={place?.category}
+                                location={relatedLocation}
+                            />
+                        </div>
+
+                        <Section
+                            className={styles.orderComments}
+                            title={commentsCount ? `${t('comments-title')} (${commentsCount})` : t('comments-title')}
+                        >
+                            <PlaceCommentList placeId={place?.id} />
+                        </Section>
+
+                        <div className={styles.orderHistory}>
+                            <PlaceActivity
+                                placeId={place?.id}
+                                hidePlaceName={true}
+                                hideCover={true}
+                            />
+                        </div>
+                    </div>
+
+                    <aside className={styles.sidebar}>
+                        <PlaceSidebar
+                            place={place}
+                            nearPlaces={nearPlaces}
+                        >
+                            <PlaceVisited place={place} />
+                            <PlaceCollections placeId={place?.id} />
+                        </PlaceSidebar>
+                    </aside>
                 </div>
-            )}
+            </div>
 
             {nearbyPhotosOpen && place?.id && (
                 <NearbyPhotosDialog
@@ -402,13 +472,23 @@ const PlacePage: NextPage<PlacePageProps> = ({ ratingCount, place, photoList, ne
     )
 }
 
+const PlacePage: NextPage<PlacePageProps> = (props) => (
+    <PlacePageContent
+        key={props.place?.id}
+        {...props}
+    />
+)
+
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<PlacePageProps>> => {
             const rawParam = typeof context.params?.id === 'string' ? context.params.id : undefined
             const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
-            const translations = await serverSideTranslations(locale)
+            // Started now, awaited with the data: a local file read, but a serial one otherwise.
+            // The no-op catch keeps an early 404/301 return from leaving an unhandled rejection.
+            const translationsPromise = serverSideTranslations(locale)
+            translationsPromise.catch(() => undefined)
 
             if (typeof rawParam !== 'string') {
                 return { notFound: true }
@@ -453,24 +533,71 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 }
             }
 
-            const [{ data: ratingData }, { data: photosData }, { data: _commentsData }, { data: nearPlaces }] =
-                await Promise.all([
-                    store.dispatch(API.endpoints.ratingGetList.initiate(id)),
-                    store.dispatch(API.endpoints.photosGetList.initiate({ place: id })),
-                    store.dispatch(API.endpoints.commentsGetList.initiate({ place: id })),
-                    store.dispatch(
-                        API.endpoints.placesGetList.initiate({
-                            excludePlaces: [id],
-                            lat: placeData?.lat,
-                            limit: NEAR_PLACES_COUNT,
-                            lon: placeData?.lon,
-                            order: ApiType.SortOrders.ASC,
-                            sort: ApiType.SortFields.Distance
-                        })
-                    )
-                ])
+            // "Ещё {category}: {region}": the place's region, or nothing (then the block is hidden)
+            const relatedLocation: RelatedPlacesLocation | null =
+                placeData?.category && placeData.address?.region?.id
+                    ? {
+                          id: placeData.address.region.id,
+                          name: placeData.address.region.name,
+                          slug: placeData.address.region.slug,
+                          type: 'region'
+                      }
+                    : null
+
+            // One round trip for everything the page shows: the related list is requested with
+            // room for the nearby places and filtered here instead of waiting for their ids;
+            // the sidebar blocks (visited, collections) and the history count are prefetched so
+            // they are in the server HTML instead of popping in after hydration
+            const [
+                { data: ratingData },
+                { data: photosData },
+                { data: _commentsData },
+                { data: nearPlaces },
+                { data: relatedData },
+                ,
+                ,
+                ,
+                translations
+            ] = await Promise.all([
+                store.dispatch(API.endpoints.ratingGetList.initiate(id)),
+                store.dispatch(API.endpoints.photosGetList.initiate({ place: id })),
+                store.dispatch(API.endpoints.commentsGetList.initiate({ place: id })),
+                store.dispatch(
+                    API.endpoints.placesGetList.initiate({
+                        excludePlaces: [id],
+                        lat: placeData?.lat,
+                        limit: NEAR_PLACES_COUNT,
+                        lon: placeData?.lon,
+                        order: ApiType.SortOrders.ASC,
+                        sort: ApiType.SortFields.Distance
+                    })
+                ),
+                relatedLocation
+                    ? store.dispatch(
+                          API.endpoints.placesGetList.initiate({
+                              category: placeData?.category,
+                              excludePlaces: [id],
+                              lat: placeData?.lat,
+                              limit: RELATED_PLACES_COUNT + NEAR_PLACES_COUNT,
+                              lon: placeData?.lon,
+                              order: ApiType.SortOrders.ASC,
+                              region: relatedLocation.id,
+                              sort: ApiType.SortFields.Distance
+                          })
+                      )
+                    : Promise.resolve({ data: undefined }),
+                store.dispatch(API.endpoints.visitedGetUsersList.initiate(id)),
+                store.dispatch(API.endpoints.collectionsGetList.initiate({ limit: IN_COLLECTIONS_LIMIT, placeId: id })),
+                store.dispatch(API.endpoints.activityGetList.initiate({ countOnly: true, place: id })),
+                translationsPromise
+            ])
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
+
+            const nearIds = new Set(nearPlaces?.items?.map((item) => item.id) ?? [])
+            const relatedPlaces = relatedData?.items
+                ?.filter((item) => !nearIds.has(item.id))
+                .slice(0, RELATED_PLACES_COUNT)
 
             return {
                 props: {
@@ -478,7 +605,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     nearPlaces: nearPlaces?.items ?? null,
                     photoList: photosData?.items,
                     place: placeData,
-                    ratingCount: ratingData?.count ?? 0
+                    ratingCount: ratingData?.count ?? 0,
+                    relatedLocation,
+                    relatedPlaces: relatedPlaces ?? null
                 }
             }
         }

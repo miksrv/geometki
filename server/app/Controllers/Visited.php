@@ -162,7 +162,6 @@ class Visited extends ResourceController
             $place->bookmarks = (int) $place->bookmarks;
             $place->title     = $placeContent->title($place->id);
             $place->content   = strip_tags(html_entity_decode($placeContent->content($place->id), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-            $place->category  = $formatter->formatCategory($place, $locale);
 
             $cover = $formatter->formatCover($place->id, (int) $place->photos);
             if ($cover) {

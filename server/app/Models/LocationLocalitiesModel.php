@@ -28,6 +28,8 @@ class LocationLocalitiesModel extends ApplicationBaseModel
         'country_id',
         'region_id',
         'district_id',
+        'osm_type',
+        'osm_id',
         'title_en',
         'title_ru',
     ];
@@ -39,6 +41,8 @@ class LocationLocalitiesModel extends ApplicationBaseModel
     protected $deletedField  = 'deleted_at';
 
     protected $validationRules = [
+        'osm_type' => 'permit_empty|in_list[node,way,relation]',
+        'osm_id'   => 'permit_empty|integer',
         'title_en' => 'required|string|max_length[100]',
         'title_ru' => 'required|string|max_length[100]',
     ];

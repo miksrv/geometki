@@ -1,10 +1,9 @@
 import React from 'react'
-import { Container } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
-import { UserAvatar } from '@/components/shared'
+import { Section, UserAvatar } from '@/components/shared'
 
 import styles from './styles.module.sass'
 
@@ -29,7 +28,10 @@ export const PlaceVisited: React.FC<PlaceVisitedProps> = ({ place }) => {
     }
 
     return (
-        <Container title={`${t('visited-here')} (${totalCount})`}>
+        <Section
+            level={3}
+            title={`${t('visited-here')} (${totalCount})`}
+        >
             {!!visibleUsers?.length && (
                 <div className={styles.avatarGrid}>
                     {visibleUsers.map((user) => (
@@ -41,6 +43,6 @@ export const PlaceVisited: React.FC<PlaceVisitedProps> = ({ place }) => {
                     ))}
                 </div>
             )}
-        </Container>
+        </Section>
     )
 }

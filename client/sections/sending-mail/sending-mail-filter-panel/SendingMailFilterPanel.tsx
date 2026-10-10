@@ -5,10 +5,9 @@ import { Input, Select, SelectOptionType } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiType } from '@/api'
+import { ListingToolbar, ListingToolbarGroup } from '@/components/shared'
 
 import { SendingMailFilterType } from './types'
-
-import styles from './styles.module.sass'
 
 interface SendingMailFilterPanelProps {
     status?: ApiType.SendingMail.SendingMailStatus
@@ -44,22 +43,24 @@ export const SendingMailFilterPanel: React.FC<SendingMailFilterPanelProps> = ({ 
     )
 
     return (
-        <div className={styles.component}>
-            <Select
-                clearable={true}
-                placeholder={t('sending-mail-admin-filter-status')}
-                options={statusOptions}
-                value={status ?? ''}
-                onSelect={handleChangeStatus}
-            />
+        <ListingToolbar>
+            <ListingToolbarGroup>
+                <Select
+                    clearable={true}
+                    placeholder={t('sending-mail-admin-filter-status')}
+                    options={statusOptions}
+                    value={status ?? ''}
+                    onSelect={handleChangeStatus}
+                />
 
-            <Input
-                clearable={true}
-                placeholder={t('sending-mail-admin-filter-email')}
-                defaultValue={email ?? ''}
-                onChange={(e) => handleChangeEmail(e.target.value)}
-                size={'medium'}
-            />
-        </div>
+                <Input
+                    clearable={true}
+                    placeholder={t('sending-mail-admin-filter-email')}
+                    defaultValue={email ?? ''}
+                    onChange={(e) => handleChangeEmail(e.target.value)}
+                    size={'medium'}
+                />
+            </ListingToolbarGroup>
+        </ListingToolbar>
     )
 }

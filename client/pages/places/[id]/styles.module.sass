@@ -1,34 +1,63 @@
 @use '../../../styles/variables' as variables
 
+// The place page (DESIGN.md → Place page, features/24-place-page-redesign.md): hero → actions
+// row → two columns of boxless sections; on phones one explicit order and room at the
+// bottom for the sticky actions bar (PlaceActions)
 .pageLayout
     display: grid
-    grid-template-columns: 1fr 300px
-    gap: 0 8px
+    grid-template-columns: minmax(0, 1fr) 320px
+    gap: 0 var(--space-6)
     align-items: flex-start
+    margin-top: var(--space-6)
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
-        grid-template-columns: 1fr
+        display: flex
+        flex-direction: column
+        // `flex-start` above is for the grid rows; in the column it would size every block
+        // by its content (the photo strip is five 200px tiles wide) and stretch the page
+        align-items: stretch
+        gap: var(--space-5)
+        margin-top: var(--space-5)
 
 .mainColumn
     min-width: 0
     display: flex
     flex-direction: column
-    gap: 8px
+    gap: var(--space-6)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: contents
+
+        // Every block of the column is at most the column: a scrolling strip inside scrolls
+        & > *
+            min-width: 0
+            max-width: 100%
 
 .sidebar
     min-width: 0
-    display: flex
-    flex-direction: column
-    gap: 8px
     position: sticky
     top: 60px
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
         position: static
-        margin-top: 10px
+        order: 4
 
-.nearPlaces
-    display: flex
-    flex-direction: column
-    gap: 8px
-    margin-top: -4px
+// A wrapper whose block rendered nothing must not leave a gap in the column
+.hidden
+    display: none
+
+@media only screen and (max-width: variables.$mobileMaxWidth)
+    .orderPhotos
+        order: 1
+    .orderDescription
+        order: 2
+    .orderRate
+        order: 3
+    .orderNearby
+        order: 5
+    .orderRelated
+        order: 6
+    .orderComments
+        order: 7
+    .orderHistory
+        order: 8

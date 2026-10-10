@@ -3,26 +3,44 @@
 
 .placeDescription
     position: relative
-    padding: 15px
-
 
 .emptyContent
-    text-align: center
-    padding: 20px 10px 10px
-    width: 100%
+    display: flex
+    align-items: center
+    gap: var(--space-1)
     color: var(--text-color-secondary)
+    font-size: variables.$fontSizeHeadline
 
 .formElement
-    margin-top: 15px
+    margin-top: var(--space-4)
 
 // Rendered markdown: the same typography as the collection article
 .content
     +prose
 
+    // Collapsed: a fixed height with the last lines fading out, the full text stays in the DOM
+    &.clamped
+        max-height: 300px
+        overflow: hidden
+        mask-image: linear-gradient(to bottom, #000 calc(100% - 72px), transparent)
+
+// Plain text in the link colour, flush with the prose: no button chrome, no padding
+.readMore
+    display: block
+    margin-top: var(--space-2)
+    font-size: var(--font-size)
+    font-weight: var(--font-weight-semibold)
+    color: var(--link-color)
+    cursor: pointer
+
+    &:hover
+        color: var(--link-color-hover)
+        text-decoration: underline
+
 .tagList
-    margin-top: 12px
+    margin-top: var(--space-3)
     display: flex
     flex-wrap: wrap
-
-    li
-        margin-right: 5px
+    gap: var(--space-1) var(--space-2)
+    list-style: none
+    padding: 0

@@ -294,11 +294,11 @@ export const API = createApi({
         }),
 
         /** Controller: Categories v*/
-        categoriesGetList: builder.query<ApiType.Categories.Response, Maybe<ApiType.Categories.Request>>({
-            query: (params) => `categories${encodeQueryData(params)}`
-        }),
-        categoriesGetTop: builder.query<ApiType.Categories.TopResponse, Maybe<ApiType.Categories.TopRequest>>({
-            query: (params) => `categories/top${encodeQueryData(params)}`
+        categoriesGetLocations: builder.query<
+            ApiType.Locations.CategoryLocationsResponse,
+            ApiType.Locations.CategoryLocationsRequest
+        >({
+            query: ({ name, ...params }) => `categories/${name}/locations${encodeQueryData(params)}`
         }),
 
         /** Controller: Comments **/
@@ -356,6 +356,26 @@ export const API = createApi({
                 method: 'PUT',
                 url: 'location'
             })
+        }),
+
+        /** Controller: Locations — the landing-page API (features/20-location-seo-pages.md) **/
+        locationsResolve: builder.query<ApiType.Locations.ResolveResponse, ApiType.Locations.ResolveRequest>({
+            query: (params) => `locations/resolve${encodeQueryData(params)}`
+        }),
+        locationsGetCategories: builder.query<
+            ApiType.Locations.CategoriesResponse,
+            ApiType.Locations.LocationTypeIdRequest
+        >({
+            query: ({ type, id }) => `locations/${type}/${id}/categories`
+        }),
+        locationsGetChildren: builder.query<
+            ApiType.Locations.ChildrenResponse,
+            ApiType.Locations.LocationTypeIdRequest
+        >({
+            query: ({ type, id }) => `locations/${type}/${id}/children`
+        }),
+        locationsGetSummary: builder.query<ApiType.Locations.SummaryResponse, ApiType.Locations.LocationTypeIdRequest>({
+            query: ({ type, id }) => `locations/${type}/${id}/summary`
         }),
 
         /** Controller: Notifications **/

@@ -5,6 +5,7 @@ Disallow: /auth
 Disallow: /unsubscribe
 Disallow: /places/create
 Disallow: /places/*/edit
+Disallow: /places/landing
 Disallow: /users/settings
 Disallow: /admin
 Disallow: /search

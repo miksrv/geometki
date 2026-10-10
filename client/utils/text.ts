@@ -13,6 +13,33 @@ export const truncateText = (text?: string, maxLength: number = 300) => {
 }
 
 /**
+ * Cuts a text for a meta description: whole sentences while they fit in `maxLength`, else
+ * whole words with an ellipsis. A snippet that ends mid-sentence reads as broken in the SERP.
+ */
+export const truncateAtSentence = (text?: string, maxLength: number = 155): string => {
+    if (!text) {
+        return ''
+    }
+
+    const normalized = text.replace(/\s+/g, ' ').trim()
+
+    if (normalized.length <= maxLength) {
+        return normalized
+    }
+
+    const head = normalized.slice(0, maxLength + 1)
+    const sentenceEnd = Math.max(head.lastIndexOf('. '), head.lastIndexOf('! '), head.lastIndexOf('? '))
+
+    if (sentenceEnd > maxLength / 3) {
+        return head.slice(0, sentenceEnd + 1)
+    }
+
+    const words = truncateText(normalized, maxLength - 1) ?? ''
+
+    return `${words.replace(/[\s,;:—-]+$/, '')}…`
+}
+
+/**
  * Removed markdown from text
  * @param text
  */

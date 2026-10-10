@@ -1,5 +1,5 @@
 import React from 'react'
-import { cn, Container } from 'simple-react-ui-kit'
+import { Container } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
@@ -10,13 +10,10 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, EmptyState, MediaTileGrid, PageHeader } from '@/components/shared'
-import { Pagination } from '@/components/ui'
+import { AppLayout, EmptyState, MediaTileGrid, PageHeader, PaginationBar } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { CollectionCard, CreateCollectionButton } from '@/sections/collections'
 import { buildHreflangTags } from '@/utils/seo'
-
-import styles from '@/sections/collections/styles.module.sass'
 
 export const COLLECTIONS_PER_PAGE = 20
 
@@ -31,32 +28,39 @@ const CollectionsPage: NextPage<CollectionsPageProps> = ({ region, currentPage, 
     const { t, i18n } = useTranslation()
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
-    const title = t('nav-collections', { defaultValue: 'Коллекции' })
+    const pageSuffix = currentPage > 1 ? ` - ${t('page')} ${currentPage}` : ''
+    const title = t('nav-collections', { defaultValue: 'Коллекции' }) + pageSuffix
+    // Every page is its own canonical, indexable URL (the same rule as /places): a canonical
+    // pointing at page 1 would tell crawlers pages 2+ are duplicates and drop them
+    const canonicalQuery = currentPage > 1 ? `?page=${currentPage}` : ''
+    const canonicalPage = `${canonicalUrl}collections${canonicalQuery}`
+    const description = t('collections_index-description', {
+        defaultValue: 'Тематические подборки мест от путешественников: коллекции с картой и фото'
+    })
 
     return (
         <AppLayout>
             <Head>
                 {generateNextSeo({
                     title,
-                    description: t('collections_index-description', {
-                        defaultValue: 'Тематические подборки мест от путешественников: коллекции с картой и фото'
-                    }),
-                    canonical: `${canonicalUrl}collections`,
+                    description,
+                    canonical: canonicalPage,
                     noindex: !!region,
                     openGraph: {
                         locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
                         siteName: t('geotags'),
                         title,
                         type: 'website',
-                        url: `${canonicalUrl}collections`
+                        url: canonicalPage
                     },
-                    additionalLinkTags: buildHreflangTags('collections')
+                    additionalLinkTags: buildHreflangTags('collections', canonicalQuery)
                 })}
             </Head>
 
             <PageHeader
                 title={title}
-                actions={<CreateCollectionButton />}
+                lede={currentPage === 1 ? t('collections_index-lede', { defaultValue: description }) : undefined}
+                actions={<CreateCollectionButton size={'small'} />}
             />
 
             {items.length ? (
@@ -80,22 +84,13 @@ const CollectionsPage: NextPage<CollectionsPageProps> = ({ region, currentPage, 
                 </Container>
             )}
 
-            <Container className={cn('paginationContainer', count <= COLLECTIONS_PER_PAGE ? 'hide' : '')}>
-                <div className={styles.countContainer}>
-                    {t('nav-collections', { defaultValue: 'Коллекции' })}: <strong>{count}</strong>
-                </div>
-
-                <Pagination
-                    currentPage={currentPage}
-                    captionPage={t('page')}
-                    captionNextPage={t('next-page')}
-                    captionPrevPage={t('prev-page')}
-                    totalItemsCount={count}
-                    perPage={COLLECTIONS_PER_PAGE}
-                    linkPart={'collections'}
-                    urlParam={{ region: region ?? undefined }}
-                />
-            </Container>
+            <PaginationBar
+                currentPage={currentPage}
+                totalItemsCount={count}
+                perPage={COLLECTIONS_PER_PAGE}
+                linkPart={'collections'}
+                urlParam={{ region: region ?? undefined }}
+            />
         </AppLayout>
     )
 }
@@ -121,6 +116,11 @@ export const getServerSideProps = wrapper.getServerSideProps(
             )
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
+
+            // A page past the end is not a page: 404 instead of an empty, indexable listing
+            if (currentPage > 1 && !data?.items?.length) {
+                return { notFound: true }
+            }
 
             return {
                 props: {

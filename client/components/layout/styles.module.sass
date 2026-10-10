@@ -2,7 +2,6 @@
 @use '../../styles/animations'
 
 $appBarHeight: 50px
-$bottomNavHeight: 56px
 
 .appLayout
     width: 100%
@@ -36,8 +35,10 @@ $bottomNavHeight: 56px
         gap: 15px
         flex: 1
 
+        // The room for the bottom navigation is the footer's padding (it comes after main);
+        // keeping it here as well doubled the gap above the footer rule
         @media only screen and (max-width: variables.$mobileMaxWidth)
-            padding: $appBarHeight 10px calc(#{$bottomNavHeight} + env(safe-area-inset-bottom, 0px) + 10px)
+            padding: $appBarHeight 10px 10px
 
     &.fullSize
         .main

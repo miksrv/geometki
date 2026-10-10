@@ -1,59 +1,62 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { Button, Icon, Popout, Spinner } from 'simple-react-ui-kit'
+import React, { useMemo } from 'react'
+import { cn, Icon } from 'simple-react-ui-kit'
 
-import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { openAuthDialog } from '@/app/applicationSlice'
-import { useAppDispatch, useAppSelector } from '@/app/store'
-import { AddToCollectionButton, BookmarkButton, CategoryIcon } from '@/components/shared'
+import { useAppSelector } from '@/app/store'
 import { Breadcrumbs } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
-import { dateToUnixTime } from '@/utils/helpers'
+import { categoryImage, getCategoryTitle } from '@/utils/categories'
+import {
+    addDecimalPoint,
+    buildCategoryHref,
+    buildLocationHref,
+    buildPlacesHref,
+    dateToUnixTime,
+    formatThousands,
+    getLandingFlags
+} from '@/utils/helpers'
 
 import styles from './styles.module.sass'
-
-const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
-    ssr: false
-})
 
 interface PlaceHeroProps {
     place?: ApiModel.Place
     coverHash?: number
-    onPhotoUploadClick?: (event?: React.MouseEvent) => void
-    onChangePlaceCoverClick?: (event?: React.MouseEvent) => void
+    /** The toolbar (`PlaceActions`) continues the cover below: square bottom corners */
+    attached?: boolean
 }
 
 type PlaceAddress = {
     id?: number
     name?: string
+    slug?: string | null
     type: ApiType.LocationTypes
 }
 
-export const PlaceHero: React.FC<PlaceHeroProps> = ({
-    place,
-    coverHash,
-    onPhotoUploadClick,
-    onChangePlaceCoverClick
-}) => {
-    const router = useRouter()
-    const dispatch = useAppDispatch()
+/** Anchor of the rate prompt (`PlaceRatePrompt`): the rating in the facts line scrolls there */
+export const RATE_ANCHOR = 'rate'
+
+const addressTypes: ApiType.LocationTypes[] = ['country', 'region', 'district', 'locality']
+
+/**
+ * The hero of the place page: the cover with the breadcrumbs on its top gradient and, on
+ * the bottom one, the h1, the address line and the facts line (rating · category · views ·
+ * distance). Every fact is a link; the actions are the toolbar under the cover (`PlaceActions`).
+ */
+export const PlaceHero: React.FC<PlaceHeroProps> = ({ place, coverHash, attached }) => {
     const { t } = useTranslation()
 
-    const isAuth = useAppSelector((state) => state.auth.isAuth)
-    const userRole = useAppSelector((state) => state.auth.user?.role)
-
-    const [removePlace, { isLoading: removeLoading, isSuccess: removeSuccess }] = API.usePlaceDeleteMutation()
-
-    const [showRemoveDialog, setShowRemoveDialog] = useState<boolean>(false)
+    const userId = useAppSelector((state) => state.auth.user?.id)
+    const { data: ratingData } = API.useRatingGetListQuery(place?.id ?? '', { skip: !place?.id })
 
     const coverHashString = coverHash || dateToUnixTime(place?.updated?.date)
-    const placeAddress: PlaceAddress[] = useMemo(() => {
-        const addressTypes: ApiType.LocationTypes[] = ['country', 'region', 'district', 'locality']
+    const landingFlags = getLandingFlags()
+
+    // Country → locality, only the levels the place has
+    const placeAddress = useMemo(() => {
         const address: PlaceAddress[] = []
 
         addressTypes.forEach((type) => {
@@ -61,6 +64,7 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                 address.push({
                     id: place?.address[type]?.id,
                     name: place?.address[type]?.name,
+                    slug: place?.address[type]?.slug,
                     type
                 })
             }
@@ -69,40 +73,49 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
         return address
     }, [place?.address])
 
-    const handleEditPlaceClick = (event: React.MouseEvent) => {
-        if (!isAuth) {
+    // The most specific level with an id — last in `placeAddress`
+    const mostSpecificAddress = [...placeAddress]
+        .reverse()
+        .find((item): item is PlaceAddress & { id: number } => !!item.id)
+
+    const ratingValue = ratingData?.rating ?? place?.rating
+    const ratingCount = ratingData?.count ?? 0
+    // The author cannot rate the place: a plain fact for them, a link to the prompt for everyone else
+    const isAuthor = !!userId && !!place?.author?.id && userId === place.author.id
+
+    // Only the number is bold, the count after the dot is plain
+    const ratingText = ratingCount ? (
+        <>
+            <strong>{addDecimalPoint(ratingValue)}</strong>
+            {` · ${t('place-votes-count', { count: ratingCount, defaultValue: '{{count}} оценок' })}`}
+        </>
+    ) : (
+        t('place-no-votes-yet', { defaultValue: 'Оценок пока нет' })
+    )
+
+    const handleRateClick = (event: React.MouseEvent) => {
+        const target = document.getElementById(RATE_ANCHOR)
+
+        if (target) {
             event.preventDefault()
-            dispatch(openAuthDialog())
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' })
         }
     }
 
-    useEffect(() => {
-        if (removeSuccess) {
-            void router.push('/places')
-        }
-    }, [removeSuccess])
-
     return (
-        <section className={styles.placeHeader}>
-            {removeLoading && (
-                <div className={styles.loader}>
-                    <Spinner />
-                </div>
+        <section className={cn(styles.hero, attached && styles.attached)}>
+            {place?.cover && (
+                <Image
+                    src={`${IMG_HOST}${place.cover.full}?d=${coverHashString}`}
+                    alt={place.title || ''}
+                    fill={true}
+                    priority={true}
+                    fetchPriority={'high'}
+                    style={{ objectFit: 'cover' }}
+                    // The hero spans the content column: full viewport below --width-max (1260px), 1228px above
+                    sizes={'(max-width: 1260px) 100vw, 1228px'}
+                />
             )}
-
-            <div className={styles.image}>
-                {place?.cover && (
-                    <Image
-                        src={`${IMG_HOST}${place.cover.full}?d=${coverHashString}`}
-                        alt={place.title || ''}
-                        fill={true}
-                        priority={true}
-                        style={{ objectFit: 'cover' }}
-                        // The hero spans the content column: full viewport below --width-max (1260px), 1228px above
-                        sizes={'(max-width: 1260px) 100vw, 1228px'}
-                    />
-                )}
-            </div>
 
             <div className={styles.topPanel}>
                 <Breadcrumbs
@@ -110,136 +123,127 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                     links={[
                         { link: '/places', text: t('nav-places', { defaultValue: 'Места' }) },
                         ...(place?.category
-                            ? [{ link: `/places?category=${place.category.name}`, text: place.category.title ?? '' }]
+                            ? [
+                                  {
+                                      // The most specific location of the place + the category
+                                      // (features/20-location-seo-pages.md) when the pair pages
+                                      // exist; otherwise the plain category link, as before them.
+                                      link: buildPlacesHref(
+                                          {
+                                              category: place.category,
+                                              defaultOrder: ApiType.SortOrders.DESC,
+                                              defaultSort: ApiType.SortFields.Trending,
+                                              location:
+                                                  landingFlags.combinations && mostSpecificAddress
+                                                      ? {
+                                                            id: mostSpecificAddress.id,
+                                                            slug: mostSpecificAddress.slug,
+                                                            type: mostSpecificAddress.type
+                                                        }
+                                                      : null
+                                          },
+                                          landingFlags
+                                      ).href,
+                                      text: getCategoryTitle(t, place.category)
+                                  }
+                              ]
                             : [])
                     ]}
                 />
-
-                <div className={styles.actionButtons}>
-                    <Popout
-                        className={styles.contextMenu}
-                        closeOnChildrenClick={true}
-                        trigger={
-                            <Button
-                                icon={'VerticalDots'}
-                                size={'medium'}
-                                mode={'secondary'}
-                                tooltip={t('place_menu', { defaultValue: 'Действия с местом' })}
-                            />
-                        }
-                    >
-                        <ul className={'contextListMenu'}>
-                            <li>
-                                <Link href={`/map#${place?.lat},${place?.lon},14`}>
-                                    {/* eslint-disable-next-line react/jsx-max-depth */}
-                                    <Icon name={'Map'} />
-                                    {t('open-on-map')}
-                                </Link>
-                            </li>
-                            <li>
-                                <button
-                                    type={'button'}
-                                    onClick={onPhotoUploadClick}
-                                >
-                                    {/* eslint-disable-next-line react/jsx-max-depth */}
-                                    <Icon name={'Camera'} />
-                                    {t('upload-photo')}
-                                </button>
-                            </li>
-                            <li>
-                                <button
-                                    type={'button'}
-                                    onClick={onChangePlaceCoverClick}
-                                >
-                                    {/* eslint-disable-next-line react/jsx-max-depth */}
-                                    <Icon name={'Photo'} />
-                                    {t('change-cover')}
-                                </button>
-                            </li>
-                            <li>
-                                <Link
-                                    href={`/places/${place?.id}/edit`}
-                                    onClick={handleEditPlaceClick}
-                                >
-                                    {/* eslint-disable-next-line react/jsx-max-depth */}
-                                    <Icon name={'EditLocation'} />
-                                    {t('edit')}
-                                </Link>
-                            </li>
-                            {userRole === 'admin' && (
-                                <li>
-                                    <button
-                                        type={'button'}
-                                        onClick={() => setShowRemoveDialog(true)}
-                                    >
-                                        <Icon name={'Close'} />
-                                        {t('delete')}
-                                    </button>
-                                </li>
-                            )}
-                        </ul>
-                    </Popout>
-                </div>
             </div>
 
             <div className={styles.bottomPanel}>
-                <div className={styles.titleRow}>
-                    {place?.category && (
-                        <CategoryIcon
-                            category={place.category}
-                            size={40}
-                            className={styles.category}
-                        />
-                    )}
+                <div className={styles.text}>
+                    <h1>{place?.title}</h1>
 
-                    <div className={styles.textContent}>
-                        <h1>{place?.title}</h1>
+                    {(!!placeAddress.length || !!place?.address?.street) && (
                         <div className={styles.address}>
-                            {placeAddress.map((address, i) => (
+                            {place?.address?.street && <>{`${place.address.street}, `}</>}
+                            {[...placeAddress].reverse().map((address, i, all) => (
                                 <span key={`address${address.type}`}>
                                     <Link
-                                        href={`/places?${address.type}=${address.id}`}
+                                        href={
+                                            address.id
+                                                ? buildLocationHref(
+                                                      { id: address.id, slug: address.slug, type: address.type },
+                                                      landingFlags
+                                                  )
+                                                : '/places'
+                                        }
                                         title={`${t('all-geotags-at-address')} ${address.name}`}
                                     >
                                         {address.name}
                                     </Link>
-                                    {placeAddress.length - 1 !== i && ', '}
+                                    {all.length - 1 !== i && ', '}
                                 </span>
                             ))}
-
-                            {place?.address?.street && <>{`, ${place.address.street}`}</>}
                         </div>
-                    </div>
-                </div>
+                    )}
 
-                <div className={styles.actions}>
-                    <BookmarkButton
-                        size={'medium'}
-                        placeId={place?.id}
-                    />
-                    <AddToCollectionButton
-                        size={'medium'}
-                        placeId={place?.id}
-                    />
+                    {/* The dots between the facts sit on the list items, outside the links */}
+                    <ul className={styles.facts}>
+                        <li className={styles.rating}>
+                            {isAuthor ? (
+                                <span className={styles.fact}>
+                                    <Icon name={'StarFilled'} />
+                                    {ratingText}
+                                </span>
+                            ) : (
+                                <a
+                                    href={`#${RATE_ANCHOR}`}
+                                    className={styles.fact}
+                                    title={t('rate-this-place', { defaultValue: 'Оценить место' })}
+                                    onClick={handleRateClick}
+                                >
+                                    <Icon name={'StarFilled'} />
+                                    {ratingText}
+                                </a>
+                            )}
+                        </li>
+
+                        {place?.category && (
+                            <li>
+                                <Link
+                                    href={buildCategoryHref(place.category, landingFlags)}
+                                    className={styles.fact}
+                                    title={`${t('all-places-in-category', { defaultValue: 'Все места категории' })} ${getCategoryTitle(t, place.category)}`}
+                                >
+                                    <Image
+                                        src={categoryImage(place.category).src}
+                                        alt={''}
+                                        width={16}
+                                        height={16}
+                                    />
+                                    {getCategoryTitle(t, place.category)}
+                                </Link>
+                            </li>
+                        )}
+
+                        <li>
+                            <span className={styles.fact}>
+                                <Icon name={'Eye'} />
+                                {t('place-views-count', {
+                                    count: place?.views ?? 0,
+                                    formatted: formatThousands(place?.views ?? 0),
+                                    defaultValue: '{{formatted}} просмотров'
+                                })}
+                            </span>
+                        </li>
+
+                        {!!place?.distance && (
+                            <li>
+                                <span className={styles.fact}>
+                                    <Icon name={'Ruler'} />
+                                    {t('distance-from-you', {
+                                        distance: formatThousands(place.distance),
+                                        defaultValue: '{{distance}} км от вас'
+                                    })}
+                                </span>
+                            </li>
+                        )}
+                    </ul>
                 </div>
             </div>
-
-            {showRemoveDialog && (
-                <ConfirmationDialog
-                    open={showRemoveDialog}
-                    message={t('delete-place-confirmation')}
-                    onCancel={() => {
-                        setShowRemoveDialog(false)
-                    }}
-                    onConfirm={async () => {
-                        if (place?.id) {
-                            void removePlace(place.id)
-                        }
-
-                        setShowRemoveDialog(false)
-                    }}
-                />
-            )}
         </section>
     )
 }

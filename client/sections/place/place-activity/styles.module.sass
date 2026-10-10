@@ -1,0 +1,28 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/mixins' as *
+
+.history
+    min-width: 0
+
+    // The button inside the Section h2 inherits its font: the title reads exactly like the
+    // other section titles of the page
+    .toggle
+        +buttonReset
+        display: inline-flex
+        align-items: center
+        gap: var(--space-2)
+        font: inherit
+        letter-spacing: inherit
+        color: inherit
+
+        .chevron
+            width: 18px
+            height: 18px
+            fill: var(--icon-color-secondary)
+            transition: transform var(--duration-slow) var(--ease)
+
+        &.open .chevron
+            transform: rotate(180deg)
+
+        &:hover
+            color: var(--link-color)

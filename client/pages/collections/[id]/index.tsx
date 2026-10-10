@@ -239,7 +239,7 @@ const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: initial
                 id: place.id,
                 lat: place.lat,
                 lon: place.lon,
-                category: place.category?.name as ApiModel.Categories
+                category: place.category as ApiModel.Categories
             })),
         [collection?.places]
     )

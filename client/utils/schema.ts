@@ -3,6 +3,7 @@ import { LocalBusiness, Person } from 'schema-dts'
 import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
 import { formatDateISO } from '@/utils/date'
+import { buildPlaceUrl } from '@/utils/place'
 import { removeMarkdown } from '@/utils/text'
 
 // Categories that represent commercial venues with business hours
@@ -18,7 +19,7 @@ const getPlaceSchemaType = (category?: ApiModel.Categories): string => {
 
 export const PlaceSchema = (place: ApiModel.Place, canonicalUrl?: string): unknown | LocalBusiness => ({
     '@context': 'https://schema.org',
-    '@type': getPlaceSchemaType(place.category?.name),
+    '@type': getPlaceSchemaType(place.category),
     address: {
         '@type': 'PostalAddress',
         addressCountry: place.address?.country?.name,
@@ -51,7 +52,10 @@ export const PlaceSchema = (place: ApiModel.Place, canonicalUrl?: string): unkno
         userInteractionCount: place.views
     },
     name: place.title,
-    url: canonicalUrl ? `${canonicalUrl}places/${place.id}` : undefined
+    // The canonical `{id}-{slug}` URL (a bare id is a 301), and the same `@id` the place page
+    // declares on itself, so the entity of a list and the entity of its page are one
+    '@id': canonicalUrl ? `${canonicalUrl}${buildPlaceUrl(place.id, place.slug).replace(/^\//, '')}` : undefined,
+    url: canonicalUrl ? `${canonicalUrl}${buildPlaceUrl(place.id, place.slug).replace(/^\//, '')}` : undefined
 })
 
 export const UserSchema = (user: ApiModel.User, canonicalUrl?: string): unknown | Person => ({

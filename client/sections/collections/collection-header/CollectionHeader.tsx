@@ -113,14 +113,14 @@ export const CollectionHeader: React.FC<CollectionHeaderProps> = ({
                         {editMode ? (
                             <>
                                 <Button
-                                    size={'medium'}
+                                    size={'small'}
                                     mode={'secondary'}
                                     disabled={saving}
                                     label={t('cancel')}
                                     onClick={onCancel}
                                 />
                                 <Button
-                                    size={'medium'}
+                                    size={'small'}
                                     mode={'primary'}
                                     icon={'CheckCircle'}
                                     loading={saving}
@@ -131,7 +131,7 @@ export const CollectionHeader: React.FC<CollectionHeaderProps> = ({
                             </>
                         ) : (
                             <Button
-                                size={'medium'}
+                                size={'small'}
                                 mode={'secondary'}
                                 icon={'Pencil'}
                                 label={t('collections_edit-button', { defaultValue: 'Редактировать' })}
@@ -143,7 +143,7 @@ export const CollectionHeader: React.FC<CollectionHeaderProps> = ({
                             trigger={
                                 <Button
                                     icon={'VerticalDots'}
-                                    size={'medium'}
+                                    size={'small'}
                                     mode={'secondary'}
                                     tooltip={t('collections_menu', { defaultValue: 'Действия с коллекцией' })}
                                 />

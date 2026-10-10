@@ -46,10 +46,15 @@ jest.mock('next/link', () => {
 })
 
 jest.mock('@/utils/categories', () => ({
-    categoryImage: (name: string) => ({ src: `/images/poi/${name}.png` })
+    categoryImage: (name: string) => ({ src: `/images/poi/${name}.png` }),
+    getCategoryTitle: (_t: unknown, name: string) => (name === 'cave' ? 'Пещера' : name)
 }))
 
-const category: ApiModel.Category = { name: 'cave' as ApiModel.Categories, title: 'Пещера' }
+jest.mock('next-i18next/pages', () => ({
+    useTranslation: () => ({ t: (key: string, defaultValue?: string) => defaultValue ?? key })
+}))
+
+const category = 'cave' as ApiModel.Categories
 
 describe('CategoryIcon', () => {
     it('links to the places of the category, named after it', () => {

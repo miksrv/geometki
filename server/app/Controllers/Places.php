@@ -15,6 +15,7 @@ use App\Libraries\ActivityLibrary;
 use App\Models\ActivityModel;
 use App\Models\CollectionsModel;
 use App\Models\CollectionsPlacesModel;
+use App\Models\LocationSlugsModel;
 use App\Models\OsmCandidatesModel;
 use App\Models\PhotosModel;
 use App\Models\PlacesModel;
@@ -58,8 +59,10 @@ class Places extends ResourceController
     /**
      * Return a paginated, filterable list of places.
      *
-     * GET /places — optional query params: sort, order, category, limit, offset,
-     * author, country, region, district, locality, search, tag, bookmarkUser,
+     * GET /places — optional query params: sort, order, category (comma-
+     * separated list accepted), limit, offset, author, country, region,
+     * district, locality, location (a location slug — see GET /locations/resolve
+     * — in addition to the id-based params), search, tag, bookmarkUser,
      * lat, lon, excludePlaces.
      *
      * @throws \Exception
@@ -191,7 +194,6 @@ class Places extends ResourceController
             $place->comments  = (int) $place->comments;
             $place->bookmarks = (int) $place->bookmarks;
             $place->title     = $placeContent->title($place->id);
-            $place->category  = $formatter->formatCategory($place, $locale);
 
             if ($coordinates && $place->distance) {
                 $place->distance = $formatter->formatDistance($place->distance);
@@ -266,8 +268,6 @@ class Places extends ResourceController
             'avatar'   => $avatarLibrary->buildPath($placeData->user_id, $placeData->user_avatar, 'small'),
         ];
 
-        $placeData->category = $formatter->formatCategory($placeData, $locale);
-
         $cover = $formatter->formatCover($id, (int) $placeData->photos);
         if ($cover) {
             $placeData->cover = $cover;
@@ -308,7 +308,6 @@ class Places extends ResourceController
             $placeData->region_en, $placeData->region_ru,
             $placeData->district_en, $placeData->district_ru,
             $placeData->city_en, $placeData->city_ru,
-            $placeData->category_en, $placeData->category_ru,
             $placeData->visit_radius_m, $placeData->verification_exempt,
         );
 
@@ -342,7 +341,7 @@ class Places extends ResourceController
         $input  = $this->request->getJSON();
         $rules  = [
             'title'    => 'required|min_length[8]|max_length[200]',
-            'category' => 'required|is_not_unique[category.name]',
+            'category' => 'required|in_list[' . implode(',', config('Categories')->names) . ']',
             'lat'      => 'numeric|min_length[3]',
             'lon'      => 'numeric|min_length[3]',
         ];
@@ -472,7 +471,7 @@ class Places extends ResourceController
         $input  = $this->request->getJSON();
         $rules  = [
             'title'    => 'if_exist|required|min_length[8]|max_length[200]',
-            'category' => 'if_exist|required|is_not_unique[category.name]',
+            'category' => 'if_exist|required|in_list[' . implode(',', config('Categories')->names) . ']',
             'lat'      => 'if_exist|numeric|min_length[3]',
             'lon'      => 'if_exist|numeric|min_length[3]',
         ];
@@ -545,16 +544,28 @@ class Places extends ResourceController
             // Check and update coordinates, address and location
             if ($lat !== $placeData->lat || $lon !== $placeData->lon) {
                 $geocoder = new Geocoder();
-                $geocoder->coordinates($lat, $lon);
+                $geocoded = $geocoder->coordinates($lat, $lon);
 
                 $place->lat = $lat;
                 $place->lon = $lon;
-                $place->address_ru  = $geocoder->addressRu;
-                $place->address_en  = $geocoder->addressEn;
-                $place->country_id  = $geocoder->countryId;
-                $place->region_id   = $geocoder->regionId;
-                $place->district_id = $geocoder->districtId;
-                $place->locality_id = ($geocoder->localityId > 0) ? $geocoder->localityId : null;
+
+                // Only overwrite address/location when geocoding actually
+                // succeeded — on failure (e.g. Nominatim down), leave the
+                // place's previous address/location fields untouched rather
+                // than wiping them with the geocoder's unset null defaults.
+                if ($geocoded) {
+                    $place->address_ru  = $geocoder->addressRu;
+                    $place->address_en  = $geocoder->addressEn;
+                    $place->country_id  = $geocoder->countryId;
+                    $place->region_id   = $geocoder->regionId;
+                    $place->district_id = $geocoder->districtId;
+                    $place->locality_id = ($geocoder->localityId > 0) ? $geocoder->localityId : null;
+                } else {
+                    log_message('warning', 'Places::update geocoding failed for place {id} at {lat},{lon} — keeping its previous address/location.', [
+                        'id' => $id, 'lat' => $lat, 'lon' => $lon,
+                    ]);
+                }
+
                 $hasChanges = true;
                 $shouldRecordActivity = true;
             }
@@ -835,6 +846,7 @@ class Places extends ResourceController
         $region   = $this->request->getGet('region', FILTER_SANITIZE_NUMBER_INT);
         $district = $this->request->getGet('district', FILTER_SANITIZE_NUMBER_INT);
         $locality = $this->request->getGet('locality', FILTER_SANITIZE_NUMBER_INT);
+        $location = $this->request->getGet('location', FILTER_SANITIZE_SPECIAL_CHARS);
         $limit    = abs($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 20);
         $offset   = abs($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0);
         $category = $this->request->getGet('category', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -859,8 +871,35 @@ class Places extends ResourceController
             $placesModel->where(['places.locality_id' => $locality]);
         }
 
+        // Location by slug (/places/{slug}-style landing pages) — in addition
+        // to, not instead of, the id-based params above. An unknown slug
+        // matches nothing, same as any other filter that found nothing.
+        if ($location) {
+            $slugRow = (new LocationSlugsModel())->findBySlug($location);
+            $column  = $slugRow ? [
+                'country'  => 'places.country_id',
+                'region'   => 'places.region_id',
+                'district' => 'places.district_id',
+                'locality' => 'places.locality_id',
+            ][$slugRow->type] : null;
+
+            if ($column) {
+                $placesModel->where([$column => $slugRow->entity_id]);
+            } else {
+                $placesModel->where('1 = 0', null, false);
+            }
+        }
+
         if ($category) {
-            $placesModel->where(['places.category' => $category]);
+            // Comma-separated list (features/20-location-seo-pages.md: "category
+            // принимает список через запятую"); a single value still works as before.
+            $categories = array_values(array_filter(array_map('trim', explode(',', $category))));
+
+            if (count($categories) > 1) {
+                $placesModel->whereIn('places.category', $categories);
+            } elseif ($categories) {
+                $placesModel->where(['places.category' => $categories[0]]);
+            }
         }
 
         if ($author) {

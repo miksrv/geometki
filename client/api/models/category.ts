@@ -23,17 +23,3 @@ export enum Categories {
     mountain = 'mountain',
     camping = 'camping'
 }
-
-export type Category = {
-    name: Categories
-    title: string
-    content?: string
-    count?: number
-}
-
-export type TopCategory = Category & {
-    cover?: {
-        full?: string
-        preview: string
-    }
-}

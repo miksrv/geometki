@@ -29,6 +29,10 @@ class PlaceFormatterLibrary
     /**
      * Build the nested address object from raw location columns.
      *
+     * `slug` is the location's path segment for the landing pages
+     * (features/20-location-seo-pages.md), null until
+     * `php spark locations:rebuild`/the geocoder has assigned one.
+     *
      * @param object $row
      * @param string $locale
      * @return object
@@ -41,6 +45,7 @@ class PlaceFormatterLibrary
             $address->country = [
                 'id'   => (int) $row->country_id,
                 'name' => $row->{"country_$locale"},
+                'slug' => $row->country_slug ?? null,
             ];
         }
 
@@ -48,6 +53,7 @@ class PlaceFormatterLibrary
             $address->region = [
                 'id'   => (int) $row->region_id,
                 'name' => $row->{"region_$locale"},
+                'slug' => $row->region_slug ?? null,
             ];
         }
 
@@ -55,6 +61,7 @@ class PlaceFormatterLibrary
             $address->district = [
                 'id'   => (int) $row->district_id,
                 'name' => $row->{"district_$locale"},
+                'slug' => $row->district_slug ?? null,
             ];
         }
 
@@ -62,25 +69,11 @@ class PlaceFormatterLibrary
             $address->locality = [
                 'id'   => (int) $row->locality_id,
                 'name' => $row->{"city_$locale"},
+                'slug' => $row->city_slug ?? null,
             ];
         }
 
         return $address;
-    }
-
-    /**
-     * Build the category array from raw category columns.
-     *
-     * @param object $row
-     * @param string $locale
-     * @return array
-     */
-    public function formatCategory(object $row, string $locale): array
-    {
-        return [
-            'name'  => $row->category,
-            'title' => $row->{"category_$locale"},
-        ];
     }
 
     /**
@@ -141,12 +134,12 @@ class PlaceFormatterLibrary
     public function cleanupFields(object $row): void
     {
         unset(
-            $row->address_en, $row->address_ru, $row->category_en, $row->category_ru,
+            $row->address_en, $row->address_ru,
             $row->user_id, $row->user_name, $row->user_avatar,
-            $row->country_id, $row->country_en, $row->country_ru,
-            $row->region_id, $row->region_en, $row->region_ru,
-            $row->district_id, $row->district_en, $row->district_ru,
-            $row->locality_id, $row->city_en, $row->city_ru,
+            $row->country_id, $row->country_en, $row->country_ru, $row->country_slug,
+            $row->region_id, $row->region_en, $row->region_ru, $row->region_slug,
+            $row->district_id, $row->district_en, $row->district_ru, $row->district_slug,
+            $row->locality_id, $row->city_en, $row->city_ru, $row->city_slug,
             $row->created_at, $row->updated_at, $row->deleted_at,
             $row->visit_radius_m, $row->verification_exempt
         );

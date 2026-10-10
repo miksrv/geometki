@@ -38,6 +38,13 @@ describe('buildHreflangTags', () => {
         expect(enTag?.href).toBe('https://geometki.com/en')
     })
 
+    it('keeps the canonical query on every alternate, so page 2 points at page 2', () => {
+        const tags = buildHreflangTags('places', '?page=2')
+        expect(tags.find((t) => t.hrefLang === 'ru')?.href).toBe('https://geometki.com/places?page=2')
+        expect(tags.find((t) => t.hrefLang === 'en')?.href).toBe('https://geometki.com/en/places?page=2')
+        expect(tags.find((t) => t.hrefLang === 'x-default')?.href).toBe('https://geometki.com/places?page=2')
+    })
+
     it('all tags have rel="alternate"', () => {
         const tags = buildHreflangTags('about')
         tags.forEach((tag) => expect(tag.rel).toBe('alternate'))

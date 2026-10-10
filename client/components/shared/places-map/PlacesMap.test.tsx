@@ -9,6 +9,7 @@ import { PlacesMap } from './PlacesMap'
 const mockMap = jest.fn()
 
 jest.mock('simple-react-ui-kit', () => ({
+    cn: (...args: Array<string | undefined | false | null>) => args.filter(Boolean).join(' '),
     Container: ({ children, className }: { children: React.ReactNode; className?: string }) => (
         <div className={className}>{children}</div>
     ),

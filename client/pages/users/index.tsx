@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo } from 'react'
-import { Container } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
@@ -11,8 +10,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, PageHeader, UsersList } from '@/components/shared'
-import { Pagination } from '@/components/ui'
+import { AppLayout, PageHeader, PaginationBar, UsersList } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { UsersFilterPanel, UsersFilterType } from '@/sections/user'
 import { encodeQueryData } from '@/utils/helpers'
@@ -45,6 +43,7 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
     }
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
+    const canonicalQuery = currentPage > 1 ? `?page=${currentPage}` : ''
 
     const title = useMemo(
         () => t('users') + (currentPage && currentPage > 1 ? ` - ${t('page')} ${currentPage}` : ''),
@@ -71,7 +70,7 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
                         ?.map(({ name }) => name)
                         ?.join(', ')
                         ?.substring(0, 220)}`,
-                    canonical: `${canonicalUrl}users${currentPage && currentPage > 1 ? '?page=' + currentPage : ''}`,
+                    canonical: `${canonicalUrl}users${canonicalQuery}`,
                     noindex: true,
                     nofollow: false,
                     openGraph: {
@@ -83,40 +82,31 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
                         siteName: t('geotags'),
                         title,
                         type: 'website',
-                        url: `${canonicalUrl}users`
+                        url: `${canonicalUrl}users${canonicalQuery}`
                     },
                     twitter: { cardType: 'summary_large_image' },
-                    additionalLinkTags: buildHreflangTags('users')
+                    additionalLinkTags: buildHreflangTags('users', canonicalQuery)
                 })}
             </Head>
 
             <PageHeader title={title} />
 
-            <Container style={{ padding: '10px' }}>
-                <UsersFilterPanel
-                    search={search ?? undefined}
-                    sort={sort}
-                    order={order}
-                    onChange={handleChangeFilter}
-                />
-            </Container>
+            <UsersFilterPanel
+                search={search ?? undefined}
+                sort={sort}
+                order={order}
+                onChange={handleChangeFilter}
+            />
 
             <UsersList users={usersList} />
 
-            <Container className={'paginationContainer'}>
-                <div>
-                    {t('users_count')}: <strong>{usersCount}</strong>
-                </div>
-                <Pagination
-                    currentPage={currentPage}
-                    captionPage={t('page')}
-                    captionNextPage={t('next-page')}
-                    captionPrevPage={t('prev-page')}
-                    totalItemsCount={usersCount}
-                    perPage={USERS_PER_PAGE}
-                    linkPart={'users'}
-                />
-            </Container>
+            <PaginationBar
+                currentPage={currentPage}
+                totalItemsCount={usersCount}
+                perPage={USERS_PER_PAGE}
+                linkPart={'users'}
+                urlParam={initialFilter}
+            />
         </AppLayout>
     )
 }

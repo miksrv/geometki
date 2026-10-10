@@ -21,8 +21,9 @@ import i18Config from '../next-i18next.config'
 
 import 'dayjs/locale/ru'
 
-// Kit tokens first, project overrides after
+// Kit tokens and component styles first, project overrides after
 import 'simple-react-ui-kit/theme.css'
+import 'simple-react-ui-kit/styles.css'
 import '@/styles/theme.css'
 import '@/styles/globals.sass'
 

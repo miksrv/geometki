@@ -14,7 +14,7 @@ This directory documents proposed features for Geometki. The existing system alr
 | [06](./06-seasonal-events.md) | **Seasonal Events & Campaigns** | ⏳ Pending | Medium | Medium | `ActivityLibrary::push()` hook |
 | [07](./07-social-kudos-endorsements.md) | **Social Kudos & Peer Endorsements** | ⏳ Pending | Low | Medium | Reputation field, notifications |
 | 08 | **Tags Page Redesign** | ✅ Done | Low–Medium | High | Existing tag list API + unused search endpoint |
-| [09](./09-categories-page-redesign.md) | **Categories Page Redesign** | ⏳ Pending | Low–Medium | High | Existing category list API + category images |
+| [09](./09-place-categories.md) | **Place Categories** (niche taxonomy: 23 categories re-cut for unusual places) | ⏳ Pending | Medium | Very High | Category enum, locales, OSM candidates whitelist, landing pages (20) |
 | 10 | **Trending Places & Personalized Recommendations** | ✅ Done | Low–Medium | High | `views` counter, `rating`/`bookmarks`/`comments` fields |
 | 11 | **Places to Explore from OpenStreetMap & Wikidata** (1.13.0; the original "ghost places & capture" spec was replaced by the implementation, see `server/API.md`, "OSM Candidates") | ✅ Done | Medium–High | Very High | `OsmCollector`, `OsmScoring`, `osm_candidates` table |
 | [12](./12-follow-system-personalized-feed.md) | **Follow System & Personalized Activity Feed** | ⏳ Pending | Medium | Very High | Activity feed, user profiles, notification system |
@@ -27,6 +27,7 @@ This directory documents proposed features for Geometki. The existing system alr
 | [19](./19-admin-sent-emails.md) | **Admin: Sent Emails Dashboard** | ✅ Done | Low | Low | `sending_mail` table, existing mail controller, `SessionLibrary` auth |
 | [22](./22-xp-snackbar-notifications.md) | **XP Snackbar & Notification Groups** | 🔄 In Progress | Low–Medium | High | Existing snackbar, `notificationSlice`, `LevelProgress` component |
 | [23](./23-map-tools-from-nakarte.md) | **Map Tools from nakarte.me** (panoramas, elevation profile, Wikimedia layer fixes) | ⏳ Pending | Medium | High | `/maps` ruler & area tools, Wikimedia Commons layer |
+| [24](./24-place-page-redesign.md) | **Place Page Redesign** (sections instead of containers, guest-first order, explicit rating prompt, nearby/related blocks) | ⏳ Pending | Medium | Very High | `PlaceHero`, `PhotoGallery`, `Rating`, `placesGetList`, landing pages (20) |
 
 ## Recommended Implementation Order
 

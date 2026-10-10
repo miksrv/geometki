@@ -10,7 +10,14 @@ import { CategoryIcon } from '@/components/shared/category-icon'
 import { MediaTile, mediaTileStyles } from '@/components/shared/media-tile'
 import { IMG_HOST } from '@/config/env'
 import { addressToString } from '@/utils/address'
-import { addDecimalPoint, buildPlaceUrl, dateToUnixTime, numberFormatter } from '@/utils/helpers'
+import {
+    addDecimalPoint,
+    buildLocationHref,
+    buildPlaceUrl,
+    dateToUnixTime,
+    getLandingFlags,
+    numberFormatter
+} from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -30,6 +37,8 @@ export interface PlaceCardProps {
     headingLevel?: 2 | 3
     /** Preload the cover (above-the-fold tiles only) */
     priority?: boolean
+    /** Tile only: the cover's `sizes` when the tile is not in the three-column grid (carousels) */
+    sizes?: string
     /** Row only: element before the thumbnail, e.g. a position number */
     leading?: React.ReactNode
     /** Controls: on the right of a row, or in the top-right corner over a tile's cover (owner actions) */
@@ -54,6 +63,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
     distanceLabel,
     headingLevel = 2,
     priority,
+    sizes,
     leading,
     actions,
     footer,
@@ -175,6 +185,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
             href={href}
             title={place.title ?? ''}
             priority={priority}
+            sizes={sizes}
             className={className}
             top={
                 place.category || actions ? (
@@ -211,7 +222,14 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                     {address.map((item, i, array) => (
                         <span key={`address${item.type}${place.id}`}>
                             <Link
-                                href={`/places?${item.type}=${item.id}`}
+                                href={
+                                    item.type
+                                        ? buildLocationHref(
+                                              { id: item.id, slug: item.slug, type: item.type },
+                                              getLandingFlags()
+                                          )
+                                        : '/places'
+                                }
                                 title={`${t('all-geotags-at-address')} ${item.name}`}
                             >
                                 {item.name}

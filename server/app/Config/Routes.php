@@ -110,11 +110,9 @@ $routes->options('stats', static function () {});
 
 /** Categories Controller **/
 $routes->group('categories', static function ($routes) {
-    $routes->get('/', 'Categories::list');
-    $routes->get('top', 'Categories::top');
+    $routes->get('(:segment)/locations', 'Categories::locations/$1');
 
-    $routes->options('/', static function () {});
-    $routes->options('top', static function () {});
+    $routes->options('(:segment)/locations', static function () {});
 });
 
 /** Rating Controller **/
@@ -182,6 +180,17 @@ $routes->group('location', static function ($routes) {
 
     $routes->options('/', static function () {});
     $routes->options('(:any)', static function () {});
+});
+
+/** Locations Controller — the landing-page API (features/20-location-seo-pages.md) **/
+$routes->group('locations', static function ($routes) {
+    $routes->get('resolve', 'Locations::resolve');
+    $routes->get('(:segment)/(:num)/categories', 'Locations::categories/$1/$2');
+    $routes->get('(:segment)/(:num)/children', 'Locations::children/$1/$2');
+    $routes->get('(:segment)/(:num)/summary', 'Locations::summary/$1/$2');
+
+    $routes->options('resolve', static function () {});
+    $routes->options('(:segment)/(:num)/(:segment)', static function () {});
 });
 
 /** SendingMailManage Controller **/

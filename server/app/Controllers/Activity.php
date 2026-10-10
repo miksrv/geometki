@@ -4,7 +4,6 @@ namespace App\Controllers;
 
 use App\Libraries\AvatarLibrary;
 use App\Libraries\PlacesContent;
-use App\Models\CategoryModel;
 use App\Models\ActivityModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -44,6 +43,15 @@ class Activity extends ResourceController
         $author   = $this->request->getGet('author', FILTER_SANITIZE_SPECIAL_CHARS);
         $place    = $this->request->getGet('place', FILTER_SANITIZE_SPECIAL_CHARS);
 
+        // Total rows for the author/place filters (not groups): the collapsed "history" row
+        // of the place page. The unfiltered feed never pays for a COUNT of the whole table.
+        $count = ($author || $place) ? $this->model->getActivityCount($author, $place) : null;
+
+        // countOnly=true: the number alone, no rows fetched, no view counters touched
+        if ($this->request->getGet('countOnly') === 'true') {
+            return $this->respond(['items' => [], 'has_more' => false, 'count' => (int) $count]);
+        }
+
         $placeContent  = new PlacesContent(500);
         $activityData  = $this->model->getActivityList($lastDate, $author, $place, min($limit + 1, 40), $offset);
 
@@ -78,7 +86,13 @@ class Activity extends ResourceController
             $this->model->incrementViews($activityIds);
         }
 
-        return $this->respond(['items' => $groupedData, 'has_more' => $hasMore]);
+        $response = ['items' => $groupedData, 'has_more' => $hasMore];
+
+        if ($count !== null) {
+            $response['count'] = $count;
+        }
+
+        return $this->respond($response);
     }
 
     /**
@@ -154,9 +168,6 @@ class Activity extends ResourceController
      */
     protected function groupSimilarActivities(array $activityData, ?PlacesContent $placeContent = null): array
     {
-        $categoriesModel = new CategoryModel();
-        $categoriesData  = $categoriesModel->findAll();
-
         $groupData = [];
 
         if (empty($activityData)) {
@@ -219,27 +230,20 @@ class Activity extends ResourceController
                 'photos'  => []
             ];
 
-            if ($placeContent && $categoriesData) {
-                $findCategory = array_search($item->category, array_column($categoriesData, 'name'));
+            if ($placeContent && $item->category) {
+                $coverPreviewFile = UPLOAD_PHOTOS . $item->place_id . '/cover_preview.jpg';
 
-                if ($findCategory !== false) {
-                    $coverPreviewFile = UPLOAD_PHOTOS . $item->place_id . '/cover_preview.jpg';
-
-                    $currentGroup->place = (object) [
-                        'id'         => $item->place_id,
-                        'slug'       => $item->place_slug ?? null,
-                        'title'      => $placeContent->get($item->place_id, 'title', $item->created_at),
-                        'content'    => $placeContent->get($item->place_id, 'content', $item->created_at),
-                        'difference' => (int) $placeContent->get($item->place_id, 'delta', $item->created_at),
-                        'category'   => (object) [
-                            'name'  => $categoriesData[$findCategory]->name,
-                            'title' => $categoriesData[$findCategory]->title,
-                        ],
-                        'cover'      => file_exists($coverPreviewFile) ? (object) [
-                            'preview' => PATH_PHOTOS . $item->place_id . '/cover_preview.jpg',
-                        ] : null,
-                    ];
-                }
+                $currentGroup->place = (object) [
+                    'id'         => $item->place_id,
+                    'slug'       => $item->place_slug ?? null,
+                    'title'      => $placeContent->get($item->place_id, 'title', $item->created_at),
+                    'content'    => $placeContent->get($item->place_id, 'content', $item->created_at),
+                    'difference' => (int) $placeContent->get($item->place_id, 'delta', $item->created_at),
+                    'category'   => $item->category,
+                    'cover'      => file_exists($coverPreviewFile) ? (object) [
+                        'preview' => PATH_PHOTOS . $item->place_id . '/cover_preview.jpg',
+                    ] : null,
+                ];
             }
 
             if ($item->user_id) {

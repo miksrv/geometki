@@ -14,7 +14,7 @@ import { useAppDispatch, useAppSelector } from '@/app/store'
 import { PhotoGallery, PhotoUploader } from '@/components/shared'
 import type { PhotoUploaderHandle } from '@/components/shared/photo-uploader'
 import { ContentEditor, FileDropZone, ImageUploader, ScreenSpinner } from '@/components/ui'
-import { categoryImage } from '@/utils/categories'
+import { categoryImage, getCategoryOptions } from '@/utils/categories'
 
 import styles from './styles.module.sass'
 
@@ -97,7 +97,6 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
     const tags = watch('tags')
 
     const { data: poiListData } = API.usePoiGetListQuery()
-    const { data: categoryData } = API.useCategoriesGetListQuery()
 
     const [searchTags, { data: searchResult, isLoading: searchLoading }] = API.useTagsGetSearchMutation()
 
@@ -141,15 +140,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
         void debouncedSearchTags(text)
     }
 
-    const categoryOptions = useMemo(
-        () =>
-            categoryData?.items?.map((item) => ({
-                image: categoryImage(item.name),
-                key: item.name,
-                value: item.title
-            })),
-        [categoryData?.items]
-    )
+    const categoryOptions = useMemo(() => getCategoryOptions(t), [t])
 
     const selectedCategory = categoryOptions?.find(({ key }) => key === category)
 

@@ -101,6 +101,11 @@ class Rating extends ResourceController
                 return $this->failNotFound(lang('Rating.placeNotFound'));
             }
 
+            // Rating your own place would feed your own reputation
+            if ($this->session->user?->id && $this->session->user->id === $placesData->user_id) {
+                return $this->failForbidden(lang('Rating.ownPlace'));
+            }
+
             helper('rating');
 
             // Let's calculate a new rating for the place

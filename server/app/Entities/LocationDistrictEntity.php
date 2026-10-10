@@ -9,6 +9,8 @@ class LocationDistrictEntity extends Entity {
         'id'         => null,
         'country_id' => null,
         'region_id'  => null,
+        'osm_type'   => null,
+        'osm_id'     => null,
         'title_en'   => null,
         'title_ru'   => null,
     ];
@@ -23,6 +25,8 @@ class LocationDistrictEntity extends Entity {
         'id'         => 'integer',
         'country_id' => 'integer',
         'region_id'  => 'integer',
+        'osm_type'   => '?string',
+        'osm_id'     => '?integer',
         'title_en'   => 'string',
         'title_ru'   => 'string',
     ];

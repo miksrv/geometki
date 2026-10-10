@@ -1,5 +1,4 @@
 import React from 'react'
-import { Container } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
 import Head from 'next/head'
@@ -10,8 +9,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, PageHeader, PhotoGallery, UserAvatar } from '@/components/shared'
-import { Pagination } from '@/components/ui'
+import { AppLayout, PageHeader, PaginationBar, PhotoGallery, UserAvatar } from '@/components/shared'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
 import { buildHreflangTags } from '@/utils/seo'
@@ -84,21 +82,12 @@ const UserPhotosPage: React.FC<UserPhotosPageProps> = ({ id, user, photosList, p
                 showAll={true}
             />
 
-            <Container className={'paginationContainer'}>
-                <div>
-                    {t('photos')}: <strong>{photosCount ?? 0}</strong>
-                </div>
-
-                <Pagination
-                    currentPage={currentPage}
-                    captionPage={t('page')}
-                    captionNextPage={t('next-page')}
-                    captionPrevPage={t('prev-page')}
-                    totalItemsCount={photosCount}
-                    perPage={PHOTOS_PER_PAGE}
-                    linkPart={`users/${id}/photos`}
-                />
-            </Container>
+            <PaginationBar
+                currentPage={currentPage}
+                totalItemsCount={photosCount}
+                perPage={PHOTOS_PER_PAGE}
+                linkPart={`users/${id}/photos`}
+            />
         </AppLayout>
     )
 }

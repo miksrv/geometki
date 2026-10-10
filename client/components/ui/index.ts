@@ -3,6 +3,7 @@ export { type BreadcrumbLink, Breadcrumbs, type BreadcrumbsProps } from './bread
 export { Carousel } from './carousel'
 export { ContentEditor } from './content-editor'
 export { Counter } from './counter'
+export { ExpandableText } from './expandable-text'
 export { FileDropZone } from './file-drop-zone'
 export { ImageUploader } from './image-uploader'
 export { Pagination, type PaginationProps } from './pagination'

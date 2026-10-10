@@ -13,7 +13,7 @@ const mockPlace: Partial<ApiModel.Place> = {
     lon: 37.62,
     views: 50,
     content: '**Bold** content',
-    category: { name: ApiModel.Categories.museum, title: 'Museum' },
+    category: ApiModel.Categories.museum,
     address: {
         country: { id: 'ru', name: 'Russia' },
         region: { id: 'reg1', name: 'Moscow Oblast' },
@@ -46,7 +46,7 @@ describe('PlaceSchema', () => {
     it('uses TouristAttraction type for non-commercial categories', () => {
         const nonCommercialPlace = {
             ...mockPlace,
-            category: { name: ApiModel.Categories.monument, title: 'Monument' }
+            category: ApiModel.Categories.monument
         }
         const schema = PlaceSchema(nonCommercialPlace as ApiModel.Place)
         expect((schema as Record<string, unknown>)['@type']).toBe('TouristAttraction')

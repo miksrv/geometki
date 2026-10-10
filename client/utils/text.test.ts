@@ -1,4 +1,4 @@
-import { isValidJSON, removeMarkdown, truncateText } from './text'
+import { isValidJSON, removeMarkdown, truncateAtSentence, truncateText } from './text'
 
 describe('truncateText', () => {
     it('returns undefined when text is undefined', () => {
@@ -106,5 +106,28 @@ describe('isValidJSON', () => {
 
     it('returns false for the string "undefined"', () => {
         expect(isValidJSON('undefined')).toBe(false)
+    })
+})
+
+describe('truncateAtSentence', () => {
+    it('returns a short text as is, whitespace normalized', () => {
+        expect(truncateAtSentence('Короткий  текст.\nВторая строка.', 155)).toBe('Короткий текст. Вторая строка.')
+    })
+
+    it('keeps whole sentences while they fit', () => {
+        const text =
+            'Первое предложение про пещеры. Второе предложение про гроты. Третье предложение, которое уже не влезает в лимит.'
+
+        expect(truncateAtSentence(text, 70)).toBe('Первое предложение про пещеры. Второе предложение про гроты.')
+    })
+
+    it('falls back to whole words with an ellipsis when the first sentence is too long', () => {
+        const text = 'Одно очень длинное предложение без точки, которое тянется и тянется дальше лимита'
+
+        expect(truncateAtSentence(text, 40)).toBe('Одно очень длинное предложение без…')
+    })
+
+    it('returns an empty string without a text', () => {
+        expect(truncateAtSentence(undefined)).toBe('')
     })
 })

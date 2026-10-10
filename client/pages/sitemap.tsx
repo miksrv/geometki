@@ -5,7 +5,7 @@ import { GetServerSidePropsResult, NextPage } from 'next'
 import { API } from '@/api'
 import { wrapper } from '@/app/store'
 import { SITE_LINK } from '@/config/env'
-import { buildCollectionUrl, buildPlaceUrl } from '@/utils/helpers'
+import { buildCollectionUrl, buildPlaceUrl, getLandingFlags } from '@/utils/helpers'
 
 type SitemapDynamicPage = {
     link: string
@@ -23,7 +23,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 console.error('Sitemap: failed to load places/users', error)
             }
 
-            const staticPages = ['map', 'places', 'users', 'categories', 'tags']
+            const staticPages = ['map', 'places', 'users', 'tags']
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
@@ -44,6 +44,38 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     link: buildCollectionUrl(collection.id, collection.slug).replace(/^\//, ''),
                     update: new Date(collection.updated.date).toISOString()
                 })) || []
+
+            // Landing pages (features/20-location-seo-pages.md), per flag — the API already
+            // only returns indexable (placesCount >= threshold) entries, and a location/pair
+            // without a slug yet is skipped: there is no page for it.
+            const flags = getLandingFlags()
+
+            const categoryLandingPages: SitemapDynamicPage[] = flags.categories
+                ? (data?.categories ?? []).map((item) => ({
+                      link: `places/${item.name}`,
+                      update: new Date(item.updated.date).toISOString()
+                  }))
+                : []
+
+            const locationLandingPages: SitemapDynamicPage[] = flags.locations
+                ? (data?.locations ?? [])
+                      .filter((item) => item.slug)
+                      .map((item) => ({
+                          link: `places/${item.slug}`,
+                          update: new Date(item.updated.date).toISOString()
+                      }))
+                : []
+
+            const pairLandingPages: SitemapDynamicPage[] = flags.combinations
+                ? (data?.locationCategories ?? [])
+                      .filter((item) => item.slug)
+                      .map((item) => ({
+                          link: `places/${item.slug}/${item.category}`,
+                          update: new Date(item.updated.date).toISOString()
+                      }))
+                : []
+
+            const landingPages = [...categoryLandingPages, ...locationLandingPages, ...pairLandingPages]
 
             // Normalize base URL to always have a trailing slash
             const base = SITE_LINK?.endsWith('/') ? SITE_LINK : `${SITE_LINK}/`
@@ -92,7 +124,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 .join('')
 
             // Dynamic pages (RU + EN paired with hreflang)
-            sitemap += [...placesPages, ...usersPages]
+            sitemap += [...placesPages, ...usersPages, ...landingPages]
                 .map((page) =>
                     makeUrlNode(page.link, page.update, 'daily', '0.7', makeHreflang(page.link, `en/${page.link}`))
                 )
@@ -101,7 +133,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             // Collections: RU only — the /en page stays noindex until an English title exists (phase 3)
             sitemap += collectionsPages.map((page) => makeUrlNode(page.link, page.update, 'daily', '0.7')).join('')
 
-            sitemap += [...placesPages, ...usersPages]
+            sitemap += [...placesPages, ...usersPages, ...landingPages]
                 .map((page) =>
                     makeUrlNode(
                         `en/${page.link}`,

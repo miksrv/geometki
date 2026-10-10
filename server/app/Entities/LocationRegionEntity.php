@@ -8,6 +8,9 @@ class LocationRegionEntity extends Entity {
     protected $attributes = [
         'id'         => null,
         'country_id' => null,
+        'osm_type'   => null,
+        'osm_id'     => null,
+        'iso_code'   => null,
         'title_en'   => null,
         'title_ru'   => null,
     ];
@@ -21,6 +24,9 @@ class LocationRegionEntity extends Entity {
     protected $casts = [
         'id'         => 'integer',
         'country_id' => 'integer',
+        'osm_type'   => '?string',
+        'osm_id'     => '?integer',
+        'iso_code'   => '?string',
         'title_en'   => 'string',
         'title_ru'   => 'string',
     ];

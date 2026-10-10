@@ -23,6 +23,8 @@ export interface MediaTileProps {
     covers?: string[]
     /** Preload the cover (above-the-fold tiles only) */
     priority?: boolean
+    /** The cover's `sizes`: the default is the three-column grid; carousels pass their slide width */
+    sizes?: string
     /** Content of the top gradient band (collections show the author there, places the category icon) */
     top?: React.ReactNode
     /** Content of the bottom gradient band: title, subline, stats */
@@ -43,6 +45,7 @@ export const MediaTile: React.FC<MediaTileProps> = ({
     title,
     coverSrc,
     covers,
+    sizes = '(max-width: 768px) 100vw, 33vw',
     priority,
     top,
     children,
@@ -75,6 +78,7 @@ export const MediaTile: React.FC<MediaTileProps> = ({
                                     quality={75}
                                     fill
                                     priority={priority}
+                                    fetchPriority={priority ? 'high' : undefined}
                                     sizes={
                                         mosaic.length === 1
                                             ? '(max-width: 768px) 100vw, 33vw'
@@ -93,7 +97,8 @@ export const MediaTile: React.FC<MediaTileProps> = ({
                             quality={75}
                             fill
                             priority={priority}
-                            sizes={'(max-width: 768px) 100vw, 33vw'}
+                            fetchPriority={priority ? 'high' : undefined}
+                            sizes={sizes}
                             src={coverSrc}
                         />
                     )

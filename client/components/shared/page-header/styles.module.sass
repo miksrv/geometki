@@ -7,6 +7,11 @@
     gap: 8px 12px
     margin-top: 15px
 
+    // With a block beside the text the two columns align at the top, not the middle
+    &.withAside
+        align-items: flex-start
+        gap: 16px 24px
+
 .leading
     flex-shrink: 0
     display: flex
@@ -19,11 +24,23 @@
     flex-direction: column
     gap: 4px
 
+.titleRow
+    display: flex
+    align-items: center
+    gap: 8px 12px
+
+    @media (max-width: variables.$mobileMaxWidth)
+        flex-wrap: wrap
+
 .title
+    flex: 1
+    min-width: 0
     margin: 0
     font-size: var(--font-size-title-page)
-    font-weight: 500
+    font-weight: 600
     line-height: 1.2
+    letter-spacing: -0.01em
+    text-wrap: balance
     color: var(--text-color-primary)
     overflow: hidden
     text-overflow: ellipsis
@@ -34,19 +51,32 @@
     color: var(--text-color-secondary)
     line-height: 1.5
 
+// The lede reads as body text: primary colour, on the full width of the text column
+.lede
+    margin-top: 6px
+    font-size: variables.$fontSizeParagraph
+    line-height: 1.55
+    color: var(--text-color-primary)
+
 .actions
     display: flex
     align-items: center
     gap: 8px
     flex-shrink: 0
     margin-left: auto
-    // Fold the control height into the title's line box so the h1 sits at the same
-    // vertical position as on pages without actions (kit `medium` controls are taller
-    // than one line of the page title)
-    margin-block: calc((var(--font-size-title-page) * 1.2 - var(--size-control-medium, var(--size-medium))) / 2)
+    // Fold the control height into the title's line box so the title line stays exactly
+    // as tall as on pages without actions (a kit `small` control is 28px, the h1 line ~26px)
+    margin-block: calc((var(--font-size-title-page) * 1.2 - var(--size-control-small, var(--size-small))) / 2)
 
     @media (max-width: variables.$mobileMaxWidth)
         // Under the title instead of squeezing it
         flex-basis: 100%
         margin-left: 0
         margin-block: 0
+
+.aside
+    flex: 0 0 340px
+    min-width: 0
+
+    @media (max-width: variables.$mobileMaxWidth)
+        flex-basis: 100%
