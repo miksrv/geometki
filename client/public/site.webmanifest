@@ -1,19 +1,83 @@
 {
-   "name":"Геометки",
-   "short_name":"Геометки",
-   "icons":[
-      {
-         "src":"/android-chrome-192x192.png",
-         "sizes":"192x192",
-         "type":"image/png"
-      },
-      {
-         "src":"/android-chrome-512x512.png",
-         "sizes":"512x512",
-         "type":"image/png"
-      }
-   ],
-   "theme_color":"#ebedf0",
-   "background_color":"#ebedf0",
-   "display":"standalone"
+    "id": "/",
+    "name": "Геометки",
+    "short_name": "Геометки",
+    "description": "Тысячи интересных мест и достопримечательностей по России: природные объекты, горные вершины, водопады, заброшенные здания, исторические памятники и храмы. Находи скрытые места с GPS-координатами, фотографиями и описаниями от реальных путешественников.",
+    "lang": "ru",
+    "dir": "ltr",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "theme_color": "#ffffff",
+    "background_color": "#f1f2f4",
+    "categories": [
+        "travel",
+        "navigation",
+        "social"
+    ],
+    "icons": [
+        {
+            "src": "/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/maskable-icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/maskable-icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Карта",
+            "short_name": "Карта",
+            "url": "/map",
+            "icons": [
+                {
+                    "src": "/android-chrome-192x192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Места",
+            "short_name": "Места",
+            "url": "/places",
+            "icons": [
+                {
+                    "src": "/android-chrome-192x192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Добавить место",
+            "short_name": "Добавить место",
+            "url": "/places/create",
+            "icons": [
+                {
+                    "src": "/android-chrome-192x192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ]
 }

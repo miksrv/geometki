@@ -39,6 +39,9 @@ export default defineConfig([
             '**/dist/**',
             '**/coverage/**',
 
+            // Service worker: plain browser script served from /public, not part of the TS project
+            'public/sw.js',
+
             // WebPack
             // '**/webpack.config.js',
 

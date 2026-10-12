@@ -2,6 +2,8 @@
 @use '../../styles/animations'
 
 $appBarHeight: 50px
+// The fixed app bar grows by the top safe area (see app-bar/styles.module.sass)
+$appBarOffset: calc(#{$appBarHeight} + env(safe-area-inset-top, 0px))
 
 .appLayout
     width: 100%
@@ -29,7 +31,7 @@ $appBarHeight: 50px
         width: 100%
         max-width: var(--width-max)
         margin: 0 auto
-        padding: $appBarHeight 16px 20px
+        padding: $appBarOffset 16px 20px
         display: flex
         flex-direction: column
         gap: 15px
@@ -38,12 +40,12 @@ $appBarHeight: 50px
         // The room for the bottom navigation is the footer's padding (it comes after main);
         // keeping it here as well doubled the gap above the footer rule
         @media only screen and (max-width: variables.$mobileMaxWidth)
-            padding: $appBarHeight 10px 10px
+            padding: $appBarOffset 10px 10px
 
     &.fullSize
         .main
             max-width: 100%
-            padding: $appBarHeight 0 0
+            padding: $appBarOffset 0 0
             gap: 0
 
     &.fitViewport

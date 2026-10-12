@@ -9,7 +9,10 @@ $inlineSearchMinWidth: 1024px
     color: var(--text-color-primary)
     background-color: var(--container-background)
     box-shadow: 0 1px 0 var(--border), var(--shadow-sm)
-    height: $appBarHeight
+    // The bar's 50px are its content box: the safe-area padding (viewport-fit=cover in
+    // _app.tsx) keeps the content clear of the notch and the iOS status bar
+    height: calc(#{$appBarHeight} + env(safe-area-inset-top, 0px))
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px)
     position: fixed
     // Search and buttons stay compact inside the 50px bar
     --size-control-medium: 32px
@@ -155,7 +158,8 @@ $inlineSearchMinWidth: 1024px
     top: 0
     left: 0
     right: 0
-    height: $appBarHeight
+    height: calc(#{$appBarHeight} + env(safe-area-inset-top, 0px))
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px)
     background-color: var(--container-background)
     box-shadow: 0 1px 0 var(--border), var(--shadow-sm)
     z-index: 460

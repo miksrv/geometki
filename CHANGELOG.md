@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.15.1
+
+### Patch Changes
+
+- App: the site works offline as an installed app: an offline page instead of the browser error, faster repeat launches
+- App: app manifest in Russian and English with shortcuts to Map, Places and Add place
+- App: icons fit the Android and iOS home screen without white or black corners
+- App: the top bar and bottom navigation stay clear of the notch and the iOS status bar
+- App: the browser bar colour follows the theme chosen on the site
+
 ## 1.15.0
 
 ### Minor Changes

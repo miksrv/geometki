@@ -26,6 +26,10 @@ html
 body
     background-color: var(--body-background)
     margin: 0
+    // viewport-fit=cover (pages/_app.tsx): in landscape the content stays clear of the notch;
+    // the fixed bars pad themselves
+    padding-left: env(safe-area-inset-left, 0px)
+    padding-right: env(safe-area-inset-right, 0px)
     line-height: 1.5
     font-size: var(--font-size)
     letter-spacing: var(--letter-spacing)
@@ -148,11 +152,11 @@ a
 .mainLayout
     .mapContainer
         width: 100%
-        height: calc(100vh - 50px)
+        height: calc(100vh - 50px - env(safe-area-inset-top, 0px))
 
         @media only screen and (max-width: variables.$mobileMaxWidth)
             // Leave room for the fixed bottom navigation
-            height: calc(100dvh - 50px - 56px - env(safe-area-inset-bottom, 0px))
+            height: calc(100dvh - 50px - env(safe-area-inset-top, 0px) - 56px - env(safe-area-inset-bottom, 0px))
 
 .mainHeader
     @media only screen and (max-width: variables.$mobileMaxWidth)

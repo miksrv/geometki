@@ -5,7 +5,7 @@
 *.css
 README.md
 eslint.config.mjs
-site.webmanifest
+*.webmanifest
 node_modules
 out
 coverage

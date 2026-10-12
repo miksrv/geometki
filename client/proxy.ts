@@ -108,6 +108,8 @@ export const proxy = (request: NextRequest) => {
     return NextResponse.next({ request: { headers: sanitizedHeaders } })
 }
 
+// Static files from /public the proxy has nothing to do with: images, the PWA manifests, the
+// service worker and its offline page
 export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)']
+    matcher: ['/((?!api|_next/static|_next/image|.*\\.png$|.*\\.webmanifest$|sw\\.js$|offline\\.html$).*)']
 }
