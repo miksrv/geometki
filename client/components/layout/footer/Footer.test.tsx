@@ -26,16 +26,10 @@ jest.mock('../language-switcher', () => ({
 }))
 
 jest.mock('@/utils/helpers', () => ({
-    formatDate: (_date: Date | string, format: string) => {
-        if (format === 'YYYY') {
-            return '2026'
-        }
-        return '01.01.2026, 00:00'
-    }
+    formatDate: () => '2026'
 }))
 
 jest.mock('@/package.json', () => ({ version: '1.5.0' }), { virtual: true })
-jest.mock('@/update', () => new Date('2026-01-01'), { virtual: true })
 
 describe('Footer', () => {
     describe('rendering', () => {
@@ -62,13 +56,17 @@ describe('Footer', () => {
 
         it('renders the current year', () => {
             render(<Footer />)
-            // Use getAllByText since the year appears in the copyright text and the update date
-            expect(screen.getAllByText(/2026/).length).toBeGreaterThan(0)
+            expect(screen.getByText(/2026/)).toBeInTheDocument()
         })
 
         it('renders the version number', () => {
             render(<Footer />)
             expect(screen.getByText('1.5.0')).toBeInTheDocument()
+        })
+
+        it('renders the version without the build date', () => {
+            render(<Footer />)
+            expect(screen.getByText('1.5.0').parentElement).toHaveTextContent(/^v1\.5\.0$/)
         })
 
         it('renders the MikSoft favicon image', () => {

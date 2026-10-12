@@ -1,0 +1,83 @@
+{
+    "id": "/",
+    "name": "Geometki",
+    "short_name": "Geometki",
+    "description": "Thousands of interesting places and attractions across Russia: natural landmarks, mountain peaks, waterfalls, abandoned buildings, historical monuments and temples. Discover hidden places with GPS coordinates, photos and descriptions from real travelers.",
+    "lang": "en",
+    "dir": "ltr",
+    "start_url": "/en",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "theme_color": "#ffffff",
+    "background_color": "#f1f2f4",
+    "categories": [
+        "travel",
+        "navigation",
+        "social"
+    ],
+    "icons": [
+        {
+            "src": "/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/maskable-icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/maskable-icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Map",
+            "short_name": "Map",
+            "url": "/en/map",
+            "icons": [
+                {
+                    "src": "/android-chrome-192x192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Places",
+            "short_name": "Places",
+            "url": "/en/places",
+            "icons": [
+                {
+                    "src": "/android-chrome-192x192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Add place",
+            "short_name": "Add place",
+            "url": "/en/places/create",
+            "icons": [
+                {
+                    "src": "/android-chrome-192x192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ]
+}

@@ -8,7 +8,6 @@ import { useTranslation } from 'next-i18next/pages'
 import { API, ApiModel } from '@/api'
 import { APIPastvu } from '@/api/apiPastvu'
 import { APIWikimediaCommons } from '@/api/apiWikimediaCommons'
-import { openAuthDialog } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import { getErrorMessage } from '@/utils/api'
@@ -44,9 +43,10 @@ interface NearbyPhotosDialogProps {
 }
 
 /**
- * "Фото рядом": Wikimedia Commons and PastVu photos around a place, nearest first.
- * The positions of these photos are rough, so the user decides by the picture itself:
- * a click on a tile links the photo to the place or unlinks it, without a save button.
+ * "Фото рядом": Wikimedia Commons and PastVu photos around a place, nearest first, open to
+ * everyone. A click on a tile shows the photo in the lightbox. Signed-in users also get a small
+ * button in the tile's corner that links the photo to the place or unlinks it, without a save
+ * button: the positions of these photos are rough, so the user decides by the picture itself.
  */
 export const NearbyPhotosDialog: React.FC<NearbyPhotosDialogProps> = ({ place, open, onClose, onLink, onUnlink }) => {
     const { t, i18n } = useTranslation()
@@ -107,12 +107,7 @@ export const NearbyPhotosDialog: React.FC<NearbyPhotosDialogProps> = ({ place, o
         )
 
     const handleToggle = async (photo: NearbyPhoto) => {
-        if (!isAuth) {
-            dispatch(openAuthDialog())
-            return
-        }
-
-        if (pending.includes(photo.key)) {
+        if (!isAuth || pending.includes(photo.key)) {
             return
         }
 
@@ -203,6 +198,9 @@ export const NearbyPhotosDialog: React.FC<NearbyPhotosDialogProps> = ({ place, o
                     {photos.map((photo, index) => {
                         const linked = links.has(photo.key)
                         const isPending = pending.includes(photo.key)
+                        const toggleLabel = linked
+                            ? t('nearby-photos_unlink', { defaultValue: 'Убрать из фотографий места' })
+                            : t('nearby-photos_link', { defaultValue: 'Добавить в фотографии места' })
 
                         return (
                             <li
@@ -211,14 +209,9 @@ export const NearbyPhotosDialog: React.FC<NearbyPhotosDialogProps> = ({ place, o
                             >
                                 <button
                                     type={'button'}
-                                    className={styles.toggle}
-                                    aria-pressed={linked}
-                                    title={
-                                        linked
-                                            ? t('nearby-photos_unlink', { defaultValue: 'Убрать из фотографий места' })
-                                            : t('nearby-photos_link', { defaultValue: 'Добавить в фотографии места' })
-                                    }
-                                    onClick={() => void handleToggle(photo)}
+                                    className={styles.view}
+                                    title={t('nearby-photos_zoom', { defaultValue: 'Посмотреть' })}
+                                    onClick={() => setLightboxIndex(index)}
                                 >
                                     <Image
                                         src={photo.preview}
@@ -241,14 +234,19 @@ export const NearbyPhotosDialog: React.FC<NearbyPhotosDialogProps> = ({ place, o
 
                                 <span className={styles.distance}>{formatDistance(photo.distance, i18n.language)}</span>
 
-                                <button
-                                    type={'button'}
-                                    className={styles.zoom}
-                                    title={t('nearby-photos_zoom', { defaultValue: 'Посмотреть' })}
-                                    onClick={() => setLightboxIndex(index)}
-                                >
-                                    <Icon name={'Search'} />
-                                </button>
+                                {isAuth === true && (
+                                    <button
+                                        type={'button'}
+                                        className={cn(styles.toggle, linked && styles.toggleLinked)}
+                                        aria-pressed={linked}
+                                        aria-label={toggleLabel}
+                                        title={toggleLabel}
+                                        disabled={isPending}
+                                        onClick={() => void handleToggle(photo)}
+                                    >
+                                        <Icon name={linked ? 'Close' : 'PlusCircle'} />
+                                    </button>
+                                )}
                             </li>
                         )
                     })}

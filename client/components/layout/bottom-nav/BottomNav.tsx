@@ -5,8 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
-import { openAuthDialog } from '@/app/applicationSlice'
-import { useAppDispatch, useAppSelector } from '@/app/store'
+import useRequireAuth from '@/hooks/useRequireAuth'
 
 import styles from './styles.module.sass'
 
@@ -29,13 +28,14 @@ export const isBottomNavItemActive = (pathname: string, match: string): boolean 
  * Mobile-only bottom navigation: the same four sections as the desktop app bar with
  * the primary "add place" action in the center, within thumb reach. The profile lives
  * behind the avatar in the app bar, the activity feed behind the home page widget.
+ *
+ * Icons only, like the tab bars of the big mobile apps: the labels stay as aria-label for
+ * screen readers. A tap on the section you are already at the root of scrolls it to the top.
  */
 export const BottomNav: React.FC = () => {
     const { t } = useTranslation('components.bottom-nav')
     const router = useRouter()
-    const dispatch = useAppDispatch()
-
-    const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const requireAuth = useRequireAuth()
 
     // Kept strictly symmetric: 2 items, the primary "add place" action in the
     // center, 2 items — so the center button is visually centered on all widths.
@@ -54,9 +54,15 @@ export const BottomNav: React.FC = () => {
     ]
 
     const handleClick = (event: React.MouseEvent, item: BottomNavItem) => {
-        if (item.auth && isAuth !== true) {
+        if (item.auth) {
+            requireAuth(event)
+            return
+        }
+
+        // Already at the root of this section: back to the top instead of reloading it
+        if (router.pathname === item.href && window.scrollY > 0) {
             event.preventDefault()
-            dispatch(openAuthDialog())
+            window.scrollTo({ behavior: 'smooth', top: 0 })
         }
     }
 
@@ -74,11 +80,12 @@ export const BottomNav: React.FC = () => {
                         href={item.href}
                         className={cn(styles.navItem, item.primary && styles.primary, active && styles.active)}
                         aria-current={active ? 'page' : undefined}
-                        aria-label={item.primary ? item.label : undefined}
+                        aria-label={item.label}
                         onClick={(event) => handleClick(event, item)}
                     >
-                        <Icon name={item.icon} />
-                        {!item.primary && <span>{item.label}</span>}
+                        <span className={styles.indicator}>
+                            {item.primary ? <span className={styles.plus} /> : <Icon name={item.icon} />}
+                        </span>
                     </Link>
                 )
             })}

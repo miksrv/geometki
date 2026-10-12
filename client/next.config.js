@@ -7,6 +7,15 @@ const nextConfig = {
     async redirects() {
         return [{ destination: '/places', permanent: true, source: '/categories' }]
     },
+    // The service worker must not stay in the HTTP cache: a stale copy delays the next release
+    async headers() {
+        return [
+            {
+                headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
+                source: '/sw.js'
+            }
+        ]
+    },
     i18n: { ...i18n, localeDetection: false },
     // Authorization does not work in this mode
     reactStrictMode: false,

@@ -8,6 +8,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { API, ApiType } from '@/api'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch } from '@/app/store'
+import useRequireAuth from '@/hooks/useRequireAuth'
 import { getErrorMessage } from '@/utils/api'
 import { buildPlaceUrl } from '@/utils/helpers'
 
@@ -35,6 +36,7 @@ type AdminAction = 'link' | 'unlink' | 'reject'
 export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdmin }) => {
     const { t, i18n } = useTranslation()
     const dispatch = useAppDispatch()
+    const requireAuth = useRequireAuth()
     const groupTitles = useGroupTitles()
     const groupHints = useGroupHints()
 
@@ -258,6 +260,7 @@ export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdm
                         icon={'PlusCircle'}
                         link={`/places/create?candidate=${candidate.id}`}
                         noIndex={true}
+                        onClick={requireAuth}
                         label={t('osm-candidates_create', { defaultValue: 'Создать геометку' })}
                     />
                 )}

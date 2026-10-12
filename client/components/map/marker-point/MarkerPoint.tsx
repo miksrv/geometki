@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
-import { useAppDispatch, useAppSelector } from '@/app/store'
+import { useAppDispatch } from '@/app/store'
 import { AddToCollectionButton, BookmarkButton, PlacePlate } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
 import { categoryImage } from '@/utils/categories'
@@ -35,8 +35,6 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
     const [getPlaceItem, { data: poiData }] = API.useLazyPoiGetItemQuery()
     const [bookmarkReady, setBookmarkReady] = useState(false)
     const [nearbyPhotosOpen, setNearbyPhotosOpen] = useState(false)
-
-    const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const placeMarkerIcon = useMemo(
         () =>
@@ -123,17 +121,15 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
                                     size={'small'}
                                     hideLabel={true}
                                 />
-                                {/* Linking photos is for signed-in users only */}
-                                {isAuth && (
-                                    <Button
-                                        mode={'secondary'}
-                                        size={'small'}
-                                        icon={'Photo'}
-                                        disabled={!poiData}
-                                        tooltip={t('nearby-photos_title', { defaultValue: 'Фото рядом' })}
-                                        onClick={() => setNearbyPhotosOpen(true)}
-                                    />
-                                )}
+                                {/* Open to everyone, linking inside the dialog is for signed-in users */}
+                                <Button
+                                    mode={'secondary'}
+                                    size={'small'}
+                                    icon={'Photo'}
+                                    disabled={!poiData}
+                                    tooltip={t('nearby-photos_title', { defaultValue: 'Фото рядом' })}
+                                    onClick={() => setNearbyPhotosOpen(true)}
+                                />
                             </div>
 
                             <div

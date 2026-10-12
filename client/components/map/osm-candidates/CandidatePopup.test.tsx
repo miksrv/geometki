@@ -72,7 +72,7 @@ jest.mock('simple-react-ui-kit', () => ({
     Icon: () => null
 }))
 
-jest.mock('@/app/store', () => ({ useAppDispatch: () => jest.fn() }))
+jest.mock('@/app/store', () => ({ useAppDispatch: () => jest.fn(), useAppSelector: () => true }))
 jest.mock('@/app/notificationSlice', () => ({ Notify: jest.fn() }))
 
 const mockLink = jest.fn()

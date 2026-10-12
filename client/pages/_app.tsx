@@ -14,8 +14,11 @@ import { generateDefaultSeo } from 'next-seo/pages'
 import { ThemeProvider } from 'next-themes'
 
 import { wrapper } from '@/app/store'
+import { ThemeColor } from '@/components/layout/theme-color/ThemeColor'
 import { LOCAL_STORAGE } from '@/config/constants'
+import packageInfo from '@/package.json'
 import * as LocalStorage from '@/utils/localstorage'
+import { registerServiceWorker } from '@/utils/serviceWorker'
 
 import i18Config from '../next-i18next.config'
 
@@ -51,6 +54,10 @@ const App = ({ Component, pageProps }: AppProps) => {
         }
     }, [])
 
+    useEffect(() => {
+        registerServiceWorker(packageInfo.version)
+    }, [])
+
     // useReportWebVitals((metric) => {
     //     console.log(metric)
     // })
@@ -64,23 +71,21 @@ const App = ({ Component, pageProps }: AppProps) => {
                     name={'mobile-web-app-capable'}
                     content={'yes'}
                 />
+                {/* viewport-fit=cover: the page reaches under the notch and the home indicator, the fixed
+                    bars keep their content clear with env(safe-area-inset-*) */}
                 <meta
                     name={'viewport'}
-                    content={'width=device-width, initial-scale=1'}
+                    content={'width=device-width, initial-scale=1, viewport-fit=cover'}
                 />
-                <meta
-                    name={'theme-color'}
-                    content={'#ebedf0'}
-                    media={'(prefers-color-scheme: light)'}
-                />
-                <meta
-                    name={'theme-color'}
-                    content={'#1b1b1b'}
-                    media={'(prefers-color-scheme: dark)'}
-                />
+                {/* iOS installed app: an opaque status bar above the page with dark text. With
+                    black-translucent the text is white and unreadable over the white app bar */}
                 <meta
                     name={'apple-mobile-web-app-status-bar-style'}
-                    content={'black-translucent'}
+                    content={'default'}
+                />
+                <meta
+                    name={'apple-mobile-web-app-title'}
+                    content={i18n.language === 'en' ? 'Geometki' : 'Геометки'}
                 />
                 <link
                     rel={'apple-touch-icon'}
@@ -106,9 +111,11 @@ const App = ({ Component, pageProps }: AppProps) => {
                 />
                 <link
                     rel={'manifest'}
-                    href={'/site.webmanifest'}
+                    href={i18n.language === 'en' ? '/site.en.webmanifest' : '/site.webmanifest'}
                 />
             </Head>
+
+            <ThemeColor />
 
             <Provider store={store}>
                 <Component {...pageProps} />

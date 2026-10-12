@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.15.1
+
+### Patch Changes
+
+- App: the site works offline as an installed app: an offline page instead of the browser error, faster repeat launches
+- App: app manifest in Russian and English with shortcuts to Map, Places and Add place
+- App: icons fit the Android and iOS home screen without white or black corners
+- App: the top bar and bottom navigation stay clear of the notch and the iOS status bar
+- App: the browser bar colour follows the theme chosen on the site
+- Places: Add place on the home page and on map candidates asks guests to sign in instead of opening the places list
+- Places: Nearby photos are open to guests; a click on a photo opens it full size, linking is a corner button for signed-in users
+- Footer: shows only the version, without the build date
+- Mobile: icon-only bottom navigation with a highlighted current section, a filled Add button and a translucent background
+- Mobile: a tap on the current section scrolls back to the top; notifications no longer cover the bottom navigation
+
 ## 1.15.0
 
 ### Minor Changes
