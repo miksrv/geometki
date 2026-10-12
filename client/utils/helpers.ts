@@ -7,6 +7,7 @@ export { buildPlaceUrl, parsePlaceId } from './place'
 export {
     buildCategoryHref,
     buildLocationHref,
+    buildPairHref,
     buildPlacesHref,
     getLandingFlags,
     isLandingSegment,
