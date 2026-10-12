@@ -156,7 +156,7 @@ a
 
         @media only screen and (max-width: variables.$mobileMaxWidth)
             // Leave room for the fixed bottom navigation
-            height: calc(100dvh - 50px - env(safe-area-inset-top, 0px) - 56px - env(safe-area-inset-bottom, 0px))
+            height: calc(100dvh - 50px - env(safe-area-inset-top, 0px) - #{variables.$bottomNavHeight} - env(safe-area-inset-bottom, 0px))
 
 .mainHeader
     @media only screen and (max-width: variables.$mobileMaxWidth)

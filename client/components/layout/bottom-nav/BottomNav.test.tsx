@@ -128,6 +128,41 @@ describe('BottomNav', () => {
         expect(store.getState().application.showAuthDialog).toBe(false)
     })
 
+    it('shows icons only, the labels are for screen readers', () => {
+        renderWithStore(<BottomNav />)
+        const nav = screen.getByRole('navigation', { name: 'Основная навигация' })
+        expect(nav).toHaveTextContent('')
+        nav.querySelectorAll('a').forEach((link) => expect(link).toHaveAttribute('aria-label'))
+    })
+
+    it('scrolls back to the top on a tap on the current section', () => {
+        mockRouter.pathname = '/places'
+        const scrollTo = jest.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+        Object.defineProperty(window, 'scrollY', { configurable: true, value: 400 })
+        renderWithStore(<BottomNav />)
+
+        const notCancelled = fireEvent.click(screen.getByRole('link', { name: 'Места' }))
+
+        expect(notCancelled).toBe(false)
+        expect(scrollTo).toHaveBeenCalledWith({ behavior: 'smooth', top: 0 })
+        scrollTo.mockRestore()
+        Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
+    })
+
+    it('navigates as usual from a nested page of the section', () => {
+        mockRouter.pathname = '/users/[id]'
+        const scrollTo = jest.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+        Object.defineProperty(window, 'scrollY', { configurable: true, value: 400 })
+        renderWithStore(<BottomNav />)
+
+        const notCancelled = fireEvent.click(screen.getByRole('link', { name: 'Люди' }))
+
+        expect(notCancelled).toBe(true)
+        expect(scrollTo).not.toHaveBeenCalled()
+        scrollTo.mockRestore()
+        Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
+    })
+
     it('does not open the auth dialog for public sections', () => {
         const { store } = renderWithStore(<BottomNav />, { store: guestStore() })
 

@@ -9,7 +9,7 @@
     color: var(--text-color-secondary)
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
-        padding: 0 10px calc(56px + env(safe-area-inset-bottom, 0px) + 10px)
+        padding: 0 10px calc(#{variables.$bottomNavHeight} + env(safe-area-inset-bottom, 0px) + 10px)
 
     .inner
         display: flex

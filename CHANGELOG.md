@@ -12,6 +12,8 @@
 - Places: Add place on the home page and on map candidates asks guests to sign in instead of opening the places list
 - Places: Nearby photos are open to guests; a click on a photo opens it full size, linking is a corner button for signed-in users
 - Footer: shows only the version, without the build date
+- Mobile: icon-only bottom navigation with a highlighted current section, a filled Add button and a translucent background
+- Mobile: a tap on the current section scrolls back to the top; notifications no longer cover the bottom navigation
 
 ## 1.15.0
 

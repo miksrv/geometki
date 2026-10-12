@@ -11,6 +11,10 @@
     width: 100%
     z-index: 505
 
+    // Above the bottom navigation, not over it
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        bottom: calc(#{variables.$bottomNavHeight} + env(safe-area-inset-bottom, 0px))
+
     .notification
         border-radius: var(--border-radius)
         box-shadow: var(--shadow-lg)

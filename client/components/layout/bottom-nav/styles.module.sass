@@ -1,7 +1,5 @@
 @use '../../../styles/variables' as variables
 
-$bottomNavHeight: 56px
-
 .bottomNav
     display: none
 
@@ -13,56 +11,98 @@ $bottomNavHeight: 56px
         right: 0
         bottom: 0
         z-index: 450
-        height: calc(#{$bottomNavHeight} + env(safe-area-inset-bottom, 0px))
+        height: calc(#{variables.$bottomNavHeight} + env(safe-area-inset-bottom, 0px))
         padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px)
         background-color: var(--container-background)
         border-top: var(--container-border-separator)
-        box-shadow: 0 -2px 8px rgba(0, 0, 0, .06)
+
+        // Translucent and blurred like the native tab bars: the page shows through as it scrolls
+        @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+            background-color: color-mix(in srgb, var(--container-background) 85%, transparent)
+            -webkit-backdrop-filter: saturate(180%) blur(16px)
+            backdrop-filter: saturate(180%) blur(16px)
 
 .navItem
     flex: 1
     display: flex
-    flex-direction: column
     align-items: center
     justify-content: center
-    gap: 2px
     min-width: 0
-    padding: 0 2px
     text-decoration: none
     color: var(--text-color-secondary)
-    font-size: 11px
-    line-height: 1.2
-    transition: color .15s ease-out
     -webkit-tap-highlight-color: transparent
+    // No double-tap zoom delay on the tabs
+    touch-action: manipulation
 
-    span
-        max-width: 100%
-        white-space: nowrap
-        overflow: hidden
-        text-overflow: ellipsis
+    &:hover
+        color: var(--text-color-primary)
+
+    &:focus-visible
+        outline: none
+
+        .indicator
+            outline: 2px solid var(--color-main)
+            outline-offset: 2px
+
+    // Press feedback
+    &:active .indicator
+        transform: scale(.92)
+
+    &.active
+        color: var(--color-main)
+
+        .indicator
+            background-color: var(--color-main-background)
+
+// The pill around the icon: the active section's highlight, the focus ring and the press scale
+.indicator
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 56px
+    height: 32px
+    border-radius: 16px
+    transition: background-color .15s ease-out, transform .1s ease-out
 
     svg
         width: 24px
         height: 24px
         fill: currentColor
 
-    &:hover,
-    &:focus-visible
-        color: var(--text-color-primary)
-        outline: none
+    @media (prefers-reduced-motion: reduce)
+        transition: none
 
-    &.active
-        color: var(--color-main)
+// The primary "add place" action: a filled button with a plus
+.primary
+    .indicator
+        width: 48px
+        height: 36px
+        border-radius: 12px
+        background-color: var(--color-main)
+        box-shadow: 0 2px 6px color-mix(in srgb, var(--color-main) 40%, transparent)
 
-    &.primary
-        color: var(--color-main)
+    &:hover .indicator
+        background-color: var(--color-main-hover)
 
-        svg
-            width: 36px
-            height: 36px
-            fill: currentColor
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .15))
+.plus
+    position: relative
+    width: 18px
+    height: 18px
 
-        &:hover,
-        &:focus-visible
-            color: var(--color-main-hover)
+    &::before,
+    &::after
+        content: ''
+        position: absolute
+        left: 50%
+        top: 50%
+        background-color: #fff
+        border-radius: 1px
+        transform: translate(-50%, -50%)
+
+    &::before
+        width: 18px
+        height: 2.5px
+
+    &::after
+        width: 2.5px
+        height: 18px
