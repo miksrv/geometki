@@ -1,9 +1,7 @@
 import React from 'react'
 import * as ReactLeaflet from 'react-leaflet'
 
-import { createElementObject, createTileLayerComponent, updateGridLayer, withPane } from '@react-leaflet/core'
-
-import { HillshadeGridLayer, HillshadeGridLayerOptions } from './HillshadeGridLayer'
+import { FallbackTileLayer } from '../fallback-tile-layer'
 
 export const DEFAULT_HILLSHADE_OPACITY = 0.6
 
@@ -13,11 +11,6 @@ const HILLSHADE_URL =
 
 // Above the base tiles (200), below the vector shapes and markers (400)
 const PANE_Z_INDEX = 250
-
-const HillshadeTiles = createTileLayerComponent<HillshadeGridLayer, HillshadeGridLayerOptions>(
-    (options, context) => createElementObject(new HillshadeGridLayer(withPane(options, context)), context),
-    updateGridLayer
-)
 
 interface HillshadeLayerProps {
     opacity?: number
@@ -36,7 +29,7 @@ export const HillshadeLayer: React.FC<HillshadeLayerProps> = ({ opacity = DEFAUL
         name={'hillshade'}
         style={{ mixBlendMode: dark ? 'screen' : 'multiply', pointerEvents: 'none', zIndex: PANE_Z_INDEX }}
     >
-        <HillshadeTiles
+        <FallbackTileLayer
             attribution={'Hillshade &copy; Esri'}
             url={HILLSHADE_URL.replace('{service}', dark ? 'World_Hillshade_Dark' : 'World_Hillshade')}
             opacity={opacity}

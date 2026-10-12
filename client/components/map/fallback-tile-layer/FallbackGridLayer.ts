@@ -1,6 +1,6 @@
 import { Coords, DoneCallback, GridLayer, GridLayerOptions } from 'leaflet'
 
-export interface HillshadeGridLayerOptions extends GridLayerOptions {
+export interface FallbackGridLayerOptions extends GridLayerOptions {
     url: string
 }
 
@@ -8,19 +8,30 @@ export interface HillshadeGridLayerOptions extends GridLayerOptions {
 const MAX_FALLBACK_LEVELS = 4
 
 /**
- * The tile service has its data to different zooms in different regions (zoom 16 near Moscow, 13 near
- * Orenburg). With `blankTile=false` it answers 404 where it has no data, and such a tile is cut out of
- * the nearest level that has it, stretched. The tiles that answered 404 are remembered by their parent,
+ * Tiles for services whose data goes to different zooms in different places: the ESRI hillshade (zoom 16
+ * near Moscow, 13 near Orenburg), old Wayback imagery. Where the service answers 404, the tile is cut out
+ * of the nearest level up that has it, stretched. The tiles that answered 404 are remembered by their parent,
  * so the neighbours start right from the level with data instead of failing the same way first.
  */
-export class HillshadeGridLayer extends GridLayer {
-    private readonly url: string
+export class FallbackGridLayer extends GridLayer {
+    private url: string
     // "z/x/y" of tiles whose children are known to have no data
     private readonly noChildren = new Set<string>()
 
-    public constructor({ url, ...options }: HillshadeGridLayerOptions) {
+    public constructor({ url, ...options }: FallbackGridLayerOptions) {
         super(options)
         this.url = url
+    }
+
+    /** Shows other tiles, e.g. another imagery release */
+    public setUrl(url: string) {
+        if (url !== this.url) {
+            this.url = url
+            this.noChildren.clear()
+            this.redraw()
+        }
+
+        return this
     }
 
     protected createTile(coords: Coords, done: DoneCallback): HTMLElement {
@@ -61,7 +72,7 @@ export class HillshadeGridLayer extends GridLayer {
                 if (levelsUp < MAX_FALLBACK_LEVELS && z > 0) {
                     load(levelsUp + 1)
                 } else {
-                    done(new Error(`No hillshade tile for ${this.key(coords.z, coords.x, coords.y)}`), tile)
+                    done(new Error(`No tile for ${this.key(coords.z, coords.x, coords.y)}`), tile)
                 }
             }
 

@@ -89,6 +89,10 @@ jest.mock('./hillshade-layer', () => ({
     HillshadeLayer: () => null
 }))
 
+jest.mock('./wayback', () => ({
+    Wayback: () => <div data-testid={'wayback'} />
+}))
+
 jest.mock('./historical-photos', () => ({
     HistoricalPhotos: () => <div data-testid={'historical-photos'} />
 }))
@@ -219,6 +223,26 @@ describe('InteractiveMap', () => {
                         b.getAttribute('data-icon') === 'FullscreenOut'
                 )
             expect(btn).toBeInTheDocument()
+        })
+
+        it('shows the imagery archive in place of the base map while its button is on', () => {
+            render(<InteractiveMap enableWayback />)
+            const button = () => screen.getAllByRole('button').find((b) => b.getAttribute('data-icon') === 'Time')!
+
+            expect(screen.getByTestId('tile-layer')).toBeInTheDocument()
+            expect(screen.queryByTestId('wayback')).not.toBeInTheDocument()
+
+            fireEvent.click(button())
+            expect(screen.getByTestId('wayback')).toBeInTheDocument()
+            expect(screen.queryByTestId('tile-layer')).not.toBeInTheDocument()
+
+            fireEvent.click(button())
+            expect(screen.queryByTestId('wayback')).not.toBeInTheDocument()
+        })
+
+        it('has no imagery archive button by default', () => {
+            render(<InteractiveMap />)
+            expect(screen.queryAllByRole('button').some((b) => b.getAttribute('data-icon') === 'Time')).toBe(false)
         })
 
         it('renders the user position button when userLatLon is provided', () => {

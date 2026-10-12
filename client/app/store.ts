@@ -5,6 +5,7 @@ import { combineReducers, configureStore, UnknownAction } from '@reduxjs/toolkit
 
 import { API } from '@/api/api'
 import { APIPastvu } from '@/api/apiPastvu'
+import { APIWayback } from '@/api/apiWayback'
 import { APIWikimediaCommons } from '@/api/apiWikimediaCommons'
 import { APIWikipedia } from '@/api/apiWikipedia'
 import { sanitizeForSerialization } from '@/utils/sanitizeState'
@@ -21,6 +22,7 @@ const combinedReducer = combineReducers({
     notification: notificationSlice,
     [API.reducerPath]: API.reducer,
     [APIPastvu.reducerPath]: APIPastvu.reducer,
+    [APIWayback.reducerPath]: APIWayback.reducer,
     [APIWikimediaCommons.reducerPath]: APIWikimediaCommons.reducer,
     [APIWikipedia.reducerPath]: APIWikipedia.reducer
 })
@@ -92,6 +94,18 @@ const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) 
                     ...payload[APIPastvu.reducerPath]?.provided
                 }
             },
+            [APIWayback.reducerPath]: {
+                ...state?.[APIWayback.reducerPath],
+                ...payload[APIWayback.reducerPath],
+                queries: {
+                    ...state?.[APIWayback.reducerPath]?.queries,
+                    ...payload[APIWayback.reducerPath]?.queries
+                },
+                provided: {
+                    ...state?.[APIWayback.reducerPath]?.provided,
+                    ...payload[APIWayback.reducerPath]?.provided
+                }
+            },
             [APIWikimediaCommons.reducerPath]: {
                 ...state?.[APIWikimediaCommons.reducerPath],
                 ...payload[APIWikimediaCommons.reducerPath],
@@ -131,6 +145,7 @@ export const makeStore = () =>
             getDefaultMiddleware().concat(
                 API.middleware,
                 APIPastvu.middleware,
+                APIWayback.middleware,
                 APIWikimediaCommons.middleware,
                 APIWikipedia.middleware,
                 errorMiddleware

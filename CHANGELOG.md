@@ -5,6 +5,7 @@
 ### Minor Changes
 
 - Map: new Relief layer with adjustable intensity over any base map
+- Map: new Past imagery tool: satellite images of the place from 2014 to today, by date
 - Map: base map options in the layers panel look like the other checkboxes and follow the dark theme
 
 ## 1.14.3
