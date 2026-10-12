@@ -16,8 +16,10 @@
         background-color: var(--container-background)
         border-top: var(--container-border-separator)
 
-        // Translucent and blurred like the native tab bars: the page shows through as it scrolls
-        @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+        // Translucent and blurred like the native tab bars: the page shows through as it scrolls.
+        // color-mix is checked too: with var() inside, a browser without it (Safari < 16.2) would
+        // not drop the declaration but compute it to a fully transparent background
+        @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) and (background-color: color-mix(in srgb, red 50%, transparent))
             background-color: color-mix(in srgb, var(--container-background) 85%, transparent)
             -webkit-backdrop-filter: saturate(180%) blur(16px)
             backdrop-filter: saturate(180%) blur(16px)
