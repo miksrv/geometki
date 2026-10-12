@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.14.3
+
+### Patch Changes
+
+- SEO: closed geo-sorted place lists and English service pages to crawlers
+
 ## 1.14.2
 
 ### Patch Changes
