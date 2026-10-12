@@ -6,7 +6,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { RadioButton } from '@/components/ui'
 
 import { AVAILABLE_MAP_LAYERS } from '../layers'
-import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum } from '../types'
+import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum, MapTrailsLayerEnum } from '../types'
 
 import styles from '../styles.module.sass'
 
@@ -22,6 +22,8 @@ interface LayerSwitcherControlProps {
     hillshadeOpacity?: number
     onSwitchHillshade?: (enabled: boolean) => void
     onChangeHillshadeOpacity?: (opacity: number) => void
+    trails?: MapTrailsLayerEnum[]
+    onSwitchTrails?: (layers: MapTrailsLayerEnum[]) => void
 }
 
 export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
@@ -35,7 +37,9 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
     hillshade,
     hillshadeOpacity = 1,
     onSwitchHillshade,
-    onChangeHillshadeOpacity
+    onChangeHillshadeOpacity,
+    trails,
+    onSwitchTrails
 }) => {
     const { t } = useTranslation('common')
 
@@ -118,6 +122,12 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
         [MapAdditionalLayersEnum.WIKIPEDIA]: t('map-type_Wikipedia', { defaultValue: 'Wikipedia' })
     }
 
+    const titleTrailsLayer: Record<MapTrailsLayerEnum, string> = {
+        [MapTrailsLayerEnum.HIKING]: t('map-overlay_TrailsHiking', { defaultValue: 'Пешие маршруты' }),
+        [MapTrailsLayerEnum.CYCLING]: t('map-overlay_TrailsCycling', { defaultValue: 'Веломаршруты' }),
+        [MapTrailsLayerEnum.SLOPES]: t('map-overlay_TrailsSlopes', { defaultValue: 'Лыжные трассы' })
+    }
+
     useEffect(() => {
         document.addEventListener('mousedown', handleClickOutside)
 
@@ -178,6 +188,22 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
                             <span>{Math.round(hillshadeOpacity * 100)}%</span>
                         </li>
                     )}
+                    {Object.values(MapTrailsLayerEnum).map((type) => (
+                        <li key={type}>
+                            <Checkbox
+                                id={`trails-${type}`}
+                                label={titleTrailsLayer[type]}
+                                checked={!!trails?.includes(type)}
+                                onChange={() =>
+                                    onSwitchTrails?.(
+                                        trails?.includes(type)
+                                            ? trails.filter((layer) => layer !== type)
+                                            : [...(trails || []), type]
+                                    )
+                                }
+                            />
+                        </li>
+                    ))}
                 </ul>
 
                 {!hideAdditionalLayers && (

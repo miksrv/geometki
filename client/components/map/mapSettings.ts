@@ -3,7 +3,13 @@ import { LOCAL_STORAGE } from '@/config/constants'
 import * as LocalStorage from '@/utils/localstorage'
 
 import { isMapLayerAvailable } from './layers'
-import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum, MapPositionType } from './types'
+import {
+    MapAdditionalLayersEnum,
+    MapLayersEnum,
+    MapObjectsTypeEnum,
+    MapPositionType,
+    MapTrailsLayerEnum
+} from './types'
 
 /** The user's map choices kept between visits of the map page */
 export type MapSettings = {
@@ -15,6 +21,7 @@ export type MapSettings = {
     osmCandidatesCollapsed?: boolean
     hillshade?: boolean
     hillshadeOpacity?: number
+    trails?: MapTrailsLayerEnum[]
 }
 
 const STORAGE_KEY = LOCAL_STORAGE.MAP_SETTINGS as 'MAP_SETTINGS'
@@ -70,8 +77,17 @@ const readMapSettings = (): MapSettings => {
         return { position: legacyPosition }
     }
 
-    const { position, layer, type, additionalLayers, categories, osmCandidatesCollapsed, hillshade, hillshadeOpacity } =
-        stored as Record<string, unknown>
+    const {
+        position,
+        layer,
+        type,
+        additionalLayers,
+        categories,
+        osmCandidatesCollapsed,
+        hillshade,
+        hillshadeOpacity,
+        trails
+    } = stored as Record<string, unknown>
 
     return {
         position: toPosition(position) ?? legacyPosition,
@@ -84,6 +100,7 @@ const readMapSettings = (): MapSettings => {
                 : undefined,
         // A layer saved where its key was set (e.g. production) may be unavailable here
         layer: isOneOf(MapLayersEnum, layer) && isMapLayerAvailable(layer) ? layer : undefined,
+        trails: onlyKnown(MapTrailsLayerEnum, trails),
         osmCandidatesCollapsed: typeof osmCandidatesCollapsed === 'boolean' ? osmCandidatesCollapsed : undefined,
         type: isOneOf(MapObjectsTypeEnum, type) ? type : undefined
     }

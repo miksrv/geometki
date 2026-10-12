@@ -6,6 +6,7 @@ import { combineReducers, configureStore, UnknownAction } from '@reduxjs/toolkit
 import { API } from '@/api/api'
 import { APIPastvu } from '@/api/apiPastvu'
 import { APIWayback } from '@/api/apiWayback'
+import { APIWaymarkedTrails } from '@/api/apiWaymarkedTrails'
 import { APIWikimediaCommons } from '@/api/apiWikimediaCommons'
 import { APIWikipedia } from '@/api/apiWikipedia'
 import { sanitizeForSerialization } from '@/utils/sanitizeState'
@@ -23,6 +24,7 @@ const combinedReducer = combineReducers({
     [API.reducerPath]: API.reducer,
     [APIPastvu.reducerPath]: APIPastvu.reducer,
     [APIWayback.reducerPath]: APIWayback.reducer,
+    [APIWaymarkedTrails.reducerPath]: APIWaymarkedTrails.reducer,
     [APIWikimediaCommons.reducerPath]: APIWikimediaCommons.reducer,
     [APIWikipedia.reducerPath]: APIWikipedia.reducer
 })
@@ -106,6 +108,18 @@ const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) 
                     ...payload[APIWayback.reducerPath]?.provided
                 }
             },
+            [APIWaymarkedTrails.reducerPath]: {
+                ...state?.[APIWaymarkedTrails.reducerPath],
+                ...payload[APIWaymarkedTrails.reducerPath],
+                queries: {
+                    ...state?.[APIWaymarkedTrails.reducerPath]?.queries,
+                    ...payload[APIWaymarkedTrails.reducerPath]?.queries
+                },
+                provided: {
+                    ...state?.[APIWaymarkedTrails.reducerPath]?.provided,
+                    ...payload[APIWaymarkedTrails.reducerPath]?.provided
+                }
+            },
             [APIWikimediaCommons.reducerPath]: {
                 ...state?.[APIWikimediaCommons.reducerPath],
                 ...payload[APIWikimediaCommons.reducerPath],
@@ -146,6 +160,7 @@ export const makeStore = () =>
                 API.middleware,
                 APIPastvu.middleware,
                 APIWayback.middleware,
+                APIWaymarkedTrails.middleware,
                 APIWikimediaCommons.middleware,
                 APIWikipedia.middleware,
                 errorMiddleware

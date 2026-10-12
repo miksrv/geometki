@@ -8,6 +8,8 @@
 - Map: new Past imagery tool: satellite images of the place from 2014 to today, by date
 - Map: base map options in the layers panel look like the other checkboxes and follow the dark theme
 - Map: smaller map buttons of the same size, in the style of the site's panels and buttons
+- Map: new Hiking trails, Cycling routes and Ski slopes layers from Waymarked Trails
+- Map: a click on a trail shows its card (length, operator, links) and highlights the whole route
 
 ## 1.14.3
 

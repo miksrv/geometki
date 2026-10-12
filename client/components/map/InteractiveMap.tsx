@@ -32,7 +32,15 @@ import { MarkerUser } from './marker-user'
 import { OsmCandidates } from './osm-candidates'
 import { PlaceMark } from './place-mark'
 import { Ruler } from './ruler'
-import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum, MapPositionType, MarkerPinData } from './types'
+import { TrailsInfo, TrailsLayer } from './trails-layer'
+import {
+    MapAdditionalLayersEnum,
+    MapLayersEnum,
+    MapObjectsTypeEnum,
+    MapPositionType,
+    MapTrailsLayerEnum,
+    MarkerPinData
+} from './types'
 import { Wayback } from './wayback'
 import { WikimediaCommons } from './wikimedia-commons'
 import { Wikipedia } from './wikipedia'
@@ -181,6 +189,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
     const [hillshadeOpacity, setHillshadeOpacity] = useState<number>(
         (storeMapSettings && savedSettings.hillshadeOpacity) || DEFAULT_HILLSHADE_OPACITY
     )
+    const [trails, setTrails] = useState<MapTrailsLayerEnum[]>((storeMapSettings && savedSettings.trails) || [])
 
     const handleUserPosition = () => {
         if (userLatLon?.lat && userLatLon.lon) {
@@ -262,6 +271,14 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
         if (storeMapSettings) {
             saveMapSettings({ hillshadeOpacity: opacity })
+        }
+    }
+
+    const handleSwitchTrails = (layers: MapTrailsLayerEnum[]) => {
+        setTrails(layers)
+
+        if (storeMapSettings) {
+            saveMapSettings({ trails: layers })
         }
     }
 
@@ -497,6 +514,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         />
                     )}
 
+                    {!!trails.length && <TrailsLayer trails={trails} />}
+
                     {placeMark && (
                         <PlaceMark
                             {...placeMark}
@@ -553,6 +572,13 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     {enableRuler && activeTool === 'ruler' && <Ruler />}
 
                     {enableAreaMeasure && activeTool === 'area' && <AreaMeasure />}
+
+                    {!!trails.length && (
+                        <TrailsInfo
+                            trails={trails}
+                            disabled={!!activeTool}
+                        />
+                    )}
 
                     <div className={styles.leftControls}>
                         {onClickCreatePlace && (
@@ -676,6 +702,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
                                 hillshadeOpacity={hillshadeOpacity}
                                 onSwitchHillshade={handleSwitchHillshade}
                                 onChangeHillshadeOpacity={handleChangeHillshadeOpacity}
+                                trails={trails}
+                                onSwitchTrails={handleSwitchTrails}
                             />
                         )}
                     </div>
