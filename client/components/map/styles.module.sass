@@ -13,6 +13,10 @@
     width: 100%
     height: 100%
     border-radius: var(--border-radius)
+    // One size for every control on the map: the zoom buttons (globals.sass), the zoom level,
+    // the buttons of the left and right columns. Icons keep the kit's size
+    --map-control-size: 30px
+    --map-zoom-level-height: 22px
 
     & > div
         border-radius: var(--border-radius)
@@ -23,29 +27,30 @@
     .leftControls, .rightControls, .bottomControls
         position: absolute
         z-index: 402
-        // Below the zoom control: "+", the zoom level, "−"
-        top: 114px
+        // Below the zoom control ("+", the zoom level, "−": two buttons, the level and the bar's
+        // 1px borders, see globals.sass) and an 8px gap
+        top: calc(10px + 2 * var(--map-control-size) - 2px + var(--map-zoom-level-height) + 8px)
         left: 10px
         height: calc(100% - 20px)
 
         button
-            padding: 8px 9px
-            min-height: 33px
+            width: var(--map-control-size)
+            height: var(--map-control-size)
+            min-height: 0
+            padding: 0
             border: var(--input-border) !important
-            background-color: var(--surface-2)
+            // The surface of the map's panels (coordinates, layers, wayback), not a grey chip
+            background-color: var(--container-background)
 
+            // Same ink as the AppBar's icon buttons (the notifications bell)
             svg
-                fill: var(--icon-color-primary)
+                fill: var(--text-color-primary)
 
             &:hover
                 background-color: var(--dropdown-background-color-hover)
 
-                svg
-                    fill: var(--icon-color-primary-hover)
-
-            // A button with its own icon (children) instead of a kit one: square like the icon-only ones
+            // A button with its own icon (children) instead of a kit one
             &.customIconControl
-                aspect-ratio: 1
                 justify-content: center
 
             // A tool that is on (the ruler, the area measure): main colour instead of the control surface
@@ -61,7 +66,7 @@
         display: flex
         flex-direction: column
         align-items: flex-start
-        gap: 5px
+        gap: 6px
 
     // Open panels are absolutely positioned at the top right of the column, over the buttons
     .rightControls
@@ -92,25 +97,15 @@
                 display: none
 
     &.compact
-        :global(.leaflet-control-zoom-in), :global(.leaflet-control-zoom-out)
-            width: 26px !important
-            height: 26px !important
-            line-height: 26px !important
+        --map-control-size: 26px
+        --map-zoom-level-height: 20px
 
         // The zoom level of the zoom-level control
         :global(.leaflet-control-zoom) > div
-            width: 26px
-            height: 20px
-            line-height: 20px
             font-size: 10px
 
         .leftControls, .rightControls, .bottomControls
-            top: 90px
-
             button
-                padding: 4px 5.5px
-                min-height: 26px
-
                 svg
                     width: 14px
                     height: 14px

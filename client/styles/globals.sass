@@ -226,28 +226,27 @@ a
         border-radius: var(--border-radius)
         box-shadow: none !important
 
+        // --map-control-size comes from the map container (components/map/styles.module.sass);
+        // minus the bar's 1px borders, so the bar is as wide as the other map buttons
         a
-            background-color: var(--surface-2)
+            background-color: var(--container-background)
             border-bottom: var(--input-border)
             border-bottom-color: var(--input-border-color)
-            width: 34px !important
-            height: 34px !important
-            line-height: 30px !important
+            width: calc(var(--map-control-size, 30px) - 2px) !important
+            height: calc(var(--map-control-size, 30px) - 2px) !important
+            line-height: calc(var(--map-control-size, 30px) - 4px) !important
 
             span
-                color: var(--icon-color-primary)
-                font-size: 20px
+                color: var(--text-color-primary)
+                font-size: 18px
 
             &.leaflet-disabled
-                background-color: var(--surface-2) !important
+                background-color: var(--container-background) !important
                 opacity: .5
                 cursor: not-allowed
 
             &:hover
                 background-color: var(--dropdown-background-color-hover)
-
-                span
-                    color: var(--icon-color-primary-hover)
 
 .leaflet-touch .leaflet-bar a:first-child
     border-top-left-radius: var(--border-radius) !important

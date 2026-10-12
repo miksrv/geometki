@@ -1,13 +1,13 @@
 // Same cell as the zoom buttons above and below it (see .leaflet-bar in globals.sass), but not clickable
 .zoomLevel
-    width: 34px
-    height: 24px
-    line-height: 24px
+    width: calc(var(--map-control-size, 30px) - 2px)
+    height: var(--map-zoom-level-height, 22px)
+    line-height: calc(var(--map-zoom-level-height, 22px) - 1px)
     text-align: center
     font-size: var(--font-size-small)
     font-weight: 600
     color: var(--text-color-primary)
-    background-color: var(--surface-2)
+    background-color: var(--container-background)
     border-bottom: var(--input-border)
     border-bottom-color: var(--input-border-color)
     cursor: default
