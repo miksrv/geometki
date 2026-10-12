@@ -1,0 +1,105 @@
+// Own corner: the bottom-left one is taken by the layers' panels and the coordinates
+.panel
+    position: absolute
+    z-index: 1000
+    right: 10px
+    bottom: 10px
+    width: 260px
+    max-width: calc(100% - 20px)
+    box-sizing: border-box
+    display: flex
+    flex-direction: column
+    gap: 6px
+    padding: 8px 10px
+    font-size: 12px
+    background: var(--container-background)
+    color: var(--text-color-primary)
+    border: var(--input-border)
+    border-radius: var(--border-radius)
+    cursor: default
+
+.header
+    display: flex
+    align-items: center
+    gap: 6px
+
+    b
+        flex: 1
+
+.spinner
+    width: 14px
+    height: 14px
+
+.panel .header button.close
+    padding: 0 2px
+    border: none
+    background: none
+    font-size: 12px
+    line-height: 1
+    color: var(--text-color-secondary)
+    cursor: pointer
+
+    &:hover
+        color: var(--text-color-primary)
+
+.dateRow
+    display: flex
+    align-items: center
+    gap: 6px
+
+
+// Small arrows in the size of the date
+.step
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 22px
+    height: 22px
+    padding: 0
+    border: none
+    border-radius: var(--border-radius)
+    background: none
+    cursor: pointer
+
+    svg
+        width: 18px
+        height: 18px
+        fill: var(--icon-color-primary)
+
+    &:hover:not(:disabled)
+        background-color: var(--dropdown-background-color-hover)
+
+    &:focus-visible
+        outline: var(--focus-outline)
+
+    &:disabled
+        opacity: .35
+        cursor: default
+
+.date
+    flex: 1
+    text-align: center
+    font-size: var(--font-size)
+    font-weight: 500
+
+.slider
+    width: 100%
+    margin: 0
+    accent-color: var(--color-main)
+    cursor: pointer
+
+.years
+    display: flex
+    justify-content: space-between
+    margin-top: -4px
+    color: var(--text-color-secondary)
+
+.hint
+    color: var(--text-color-secondary)
+
+.error
+    color: var(--color-red)
+
+.attribution
+    font-size: 10px
+    color: var(--text-color-secondary)

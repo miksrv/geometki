@@ -259,6 +259,7 @@ const MapPage: NextPage<object> = () => {
                     enableFullScreen={true}
                     enableRuler={true}
                     enableAreaMeasure={true}
+                    enableWayback={true}
                     enableCoordsControl={true}
                     enableLayersSwitcher={true}
                     enableOsmCandidates={true}

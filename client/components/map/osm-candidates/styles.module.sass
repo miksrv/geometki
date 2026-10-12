@@ -63,13 +63,15 @@
     display: inline-flex
 
 .collapsedButton
-    padding: 8px 9px !important
-    min-height: 33px
+    width: var(--map-control-size, 30px)
+    height: var(--map-control-size, 30px)
+    min-height: 0
+    padding: 0 !important
     border: var(--input-border) !important
-    background-color: var(--surface-2) !important
+    background-color: var(--container-background) !important
 
     svg
-        fill: var(--icon-color-primary)
+        fill: var(--text-color-primary)
 
     &:hover
         background-color: var(--dropdown-background-color-hover) !important

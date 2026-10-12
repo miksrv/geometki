@@ -80,8 +80,12 @@ describe('RadioButton', () => {
                     id={'pick-me'}
                 />
             )
-            const label = screen.getByText('Pick me')
-            expect(label).toHaveAttribute('for', 'pick-me')
+            expect(screen.getByLabelText('Pick me')).toHaveAttribute('id', 'pick-me')
+        })
+
+        it('labels the input without an id too', () => {
+            render(<RadioButton label={'Pick me'} />)
+            expect(screen.getByLabelText('Pick me')).toHaveAttribute('type', 'radio')
         })
     })
 })

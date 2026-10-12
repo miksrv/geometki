@@ -16,6 +16,7 @@ import { ContextMenu } from './context-menu'
 import { CoordinatesControl } from './coordinates-control'
 import { FitBounds } from './fit-bounds'
 import { HeatmapLayer } from './heatmap-layer'
+import { DEFAULT_HILLSHADE_OPACITY, HillshadeLayer } from './hillshade-layer'
 import { HistoricalPhotos } from './historical-photos'
 import { LayerSwitcherControl } from './layer-switcher-control'
 import { createLayerStatusStore, LayersStatus } from './layers-status'
@@ -31,7 +32,16 @@ import { MarkerUser } from './marker-user'
 import { OsmCandidates } from './osm-candidates'
 import { PlaceMark } from './place-mark'
 import { Ruler } from './ruler'
-import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum, MapPositionType, MarkerPinData } from './types'
+import { TrailsInfo, TrailsLayer } from './trails-layer'
+import {
+    MapAdditionalLayersEnum,
+    MapLayersEnum,
+    MapObjectsTypeEnum,
+    MapPositionType,
+    MapTrailsLayerEnum,
+    MarkerPinData
+} from './types'
+import { Wayback } from './wayback'
 import { WikimediaCommons } from './wikimedia-commons'
 import { Wikipedia } from './wikipedia'
 import { ZoomLevel } from './zoom-level'
@@ -52,6 +62,8 @@ type MapProps = {
     /** "Линейка" button: measuring distances on the map */
     enableRuler?: boolean
     enableAreaMeasure?: boolean
+    /** "Снимки прошлых лет" button: the satellite imagery archive in place of the base map */
+    enableWayback?: boolean
     enableCoordsControl?: boolean
     enableCategoryControl?: boolean
     enableLayersSwitcher?: boolean
@@ -130,6 +142,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
     enableFullScreen,
     enableRuler,
     enableAreaMeasure,
+    enableWayback,
     enableCoordsControl,
     enableCategoryControl,
     enableLayersSwitcher,
@@ -170,6 +183,13 @@ export const InteractiveMap: React.FC<MapProps> = ({
     const [additionalLayers, setAdditionalLayers] = useState<MapAdditionalLayersEnum[] | undefined>(
         storeMapSettings ? savedSettings.additionalLayers : undefined
     )
+    // Not kept between visits: a tool, like the ruler
+    const [wayback, setWayback] = useState<boolean>(false)
+    const [hillshade, setHillshade] = useState<boolean>(!!(storeMapSettings && savedSettings.hillshade))
+    const [hillshadeOpacity, setHillshadeOpacity] = useState<number>(
+        (storeMapSettings && savedSettings.hillshadeOpacity) || DEFAULT_HILLSHADE_OPACITY
+    )
+    const [trails, setTrails] = useState<MapTrailsLayerEnum[]>((storeMapSettings && savedSettings.trails) || [])
 
     const handleUserPosition = () => {
         if (userLatLon?.lat && userLatLon.lon) {
@@ -213,6 +233,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
     const handleSwitchMapLayer = (layer: MapLayersEnum) => {
         setMapLayer(layer)
+        // Picking a base map leaves the imagery archive
+        setWayback(false)
 
         if (storeMapSettings) {
             saveMapSettings({ layer })
@@ -233,6 +255,30 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
         if (storeMapSettings) {
             saveMapSettings({ additionalLayers: layers ?? [] })
+        }
+    }
+
+    const handleSwitchHillshade = (enabled: boolean) => {
+        setHillshade(enabled)
+
+        if (storeMapSettings) {
+            saveMapSettings({ hillshade: enabled })
+        }
+    }
+
+    const handleChangeHillshadeOpacity = (opacity: number) => {
+        setHillshadeOpacity(opacity)
+
+        if (storeMapSettings) {
+            saveMapSettings({ hillshadeOpacity: opacity })
+        }
+    }
+
+    const handleSwitchTrails = (layers: MapTrailsLayerEnum[]) => {
+        setTrails(layers)
+
+        if (storeMapSettings) {
+            saveMapSettings({ trails: layers })
         }
     }
 
@@ -385,75 +431,90 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         <Wikipedia onPhotoClick={onPhotoClick} />
                     )}
 
-                    {mapLayer === MapLayersEnum.CARTO_DARK && (
-                        <ReactLeaflet.TileLayer
-                            attribution='&copy; <a href="https://carto.com">CartoDB</a>'
-                            url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+                    {enableWayback && wayback ? (
+                        <Wayback onClose={() => setWayback(false)} />
+                    ) : (
+                        <>
+                            {mapLayer === MapLayersEnum.CARTO_DARK && (
+                                <ReactLeaflet.TileLayer
+                                    attribution='&copy; <a href="https://carto.com">CartoDB</a>'
+                                    url='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+                                />
+                            )}
+                            {mapLayer === MapLayersEnum.CARTO_LIGHT && (
+                                <ReactLeaflet.TileLayer
+                                    attribution='&copy; <a href="https://carto.com">CartoDB</a>'
+                                    url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
+                                />
+                            )}
+                            {mapLayer === MapLayersEnum.ESRI_SAT && (
+                                <ReactLeaflet.TileLayer
+                                    attribution='Tiles &copy; Esri'
+                                    url='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                                    maxZoom={19}
+                                />
+                            )}
+                            {mapLayer === MapLayersEnum.OCM && (
+                                <ReactLeaflet.TileLayer
+                                    attribution='Open Cycle Map'
+                                    url={`https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${CYCLEMAP_TOKEN}`}
+                                />
+                            )}
+                            {mapLayer === MapLayersEnum.OPEN_TOPO && (
+                                <ReactLeaflet.TileLayer
+                                    attribution='&copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
+                                    url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+                                    maxZoom={17}
+                                />
+                            )}
+                            {mapLayer === MapLayersEnum.YANDEX_SAT && (
+                                <ReactLeaflet.TileLayer
+                                    attribution='&copy; Яндекс'
+                                    url='https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}'
+                                    maxZoom={19}
+                                />
+                            )}
+                            {mapLayer === MapLayersEnum.MAPBOX && (
+                                <ReactLeaflet.TileLayer
+                                    attribution='&copy; <a href="https://www.mapbox.com">Mapbox</a> '
+                                    url={`https://api.mapbox.com/styles/v1/miksoft/cli4uhd5b00bp01r6eocm21rq/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`}
+                                />
+                            )}
+                            {mapLayer === MapLayersEnum.OSM && (
+                                <ReactLeaflet.TileLayer
+                                    attribution={'Open Street Map'}
+                                    url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                                />
+                            )}
+                            {mapLayer === MapLayersEnum.GOOGLE_MAP && (
+                                <ReactLeaflet.TileLayer
+                                    attribution={'Google Maps'}
+                                    url={'https://www.google.cn/maps/vt?lyrs=m@189&gl=cn&x={x}&y={y}&z={z}'}
+                                />
+                            )}
+                            {mapLayer === MapLayersEnum.GOOGLE_SAT && (
+                                <ReactLeaflet.TileLayer
+                                    attribution={'Google Maps Satellite'}
+                                    url={'https://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}'}
+                                />
+                            )}
+                            {mapLayer === MapLayersEnum.MAPBOX_SAT && (
+                                <ReactLeaflet.TileLayer
+                                    attribution='&copy; <a href="https://www.mapbox.com">Mapbox</a> '
+                                    url={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`}
+                                />
+                            )}
+                        </>
+                    )}
+
+                    {hillshade && (
+                        <HillshadeLayer
+                            opacity={hillshadeOpacity}
+                            dark={!(enableWayback && wayback) && mapLayer === MapLayersEnum.CARTO_DARK}
                         />
                     )}
-                    {mapLayer === MapLayersEnum.CARTO_LIGHT && (
-                        <ReactLeaflet.TileLayer
-                            attribution='&copy; <a href="https://carto.com">CartoDB</a>'
-                            url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
-                        />
-                    )}
-                    {mapLayer === MapLayersEnum.ESRI_SAT && (
-                        <ReactLeaflet.TileLayer
-                            attribution='Tiles &copy; Esri'
-                            url='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                            maxZoom={19}
-                        />
-                    )}
-                    {mapLayer === MapLayersEnum.OCM && (
-                        <ReactLeaflet.TileLayer
-                            attribution='Open Cycle Map'
-                            url={`https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${CYCLEMAP_TOKEN}`}
-                        />
-                    )}
-                    {mapLayer === MapLayersEnum.OPEN_TOPO && (
-                        <ReactLeaflet.TileLayer
-                            attribution='&copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
-                            url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
-                            maxZoom={17}
-                        />
-                    )}
-                    {mapLayer === MapLayersEnum.YANDEX_SAT && (
-                        <ReactLeaflet.TileLayer
-                            attribution='&copy; Яндекс'
-                            url='https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}'
-                            maxZoom={19}
-                        />
-                    )}
-                    {mapLayer === MapLayersEnum.MAPBOX && (
-                        <ReactLeaflet.TileLayer
-                            attribution='&copy; <a href="https://www.mapbox.com">Mapbox</a> '
-                            url={`https://api.mapbox.com/styles/v1/miksoft/cli4uhd5b00bp01r6eocm21rq/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`}
-                        />
-                    )}
-                    {mapLayer === MapLayersEnum.OSM && (
-                        <ReactLeaflet.TileLayer
-                            attribution={'Open Street Map'}
-                            url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-                        />
-                    )}
-                    {mapLayer === MapLayersEnum.GOOGLE_MAP && (
-                        <ReactLeaflet.TileLayer
-                            attribution={'Google Maps'}
-                            url={'https://www.google.cn/maps/vt?lyrs=m@189&gl=cn&x={x}&y={y}&z={z}'}
-                        />
-                    )}
-                    {mapLayer === MapLayersEnum.GOOGLE_SAT && (
-                        <ReactLeaflet.TileLayer
-                            attribution={'Google Maps Satellite'}
-                            url={'https://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}'}
-                        />
-                    )}
-                    {mapLayer === MapLayersEnum.MAPBOX_SAT && (
-                        <ReactLeaflet.TileLayer
-                            attribution='&copy; <a href="https://www.mapbox.com">Mapbox</a> '
-                            url={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`}
-                        />
-                    )}
+
+                    {!!trails.length && <TrailsLayer trails={trails} />}
 
                     {placeMark && (
                         <PlaceMark
@@ -511,6 +572,13 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     {enableRuler && activeTool === 'ruler' && <Ruler />}
 
                     {enableAreaMeasure && activeTool === 'area' && <AreaMeasure />}
+
+                    {!!trails.length && (
+                        <TrailsInfo
+                            trails={trails}
+                            disabled={!!activeTool}
+                        />
+                    )}
 
                     <div className={styles.leftControls}>
                         {onClickCreatePlace && (
@@ -575,6 +643,22 @@ export const InteractiveMap: React.FC<MapProps> = ({
                             </Button>
                         )}
 
+                        {enableWayback && (
+                            <Button
+                                size={controlsSize}
+                                mode={'secondary'}
+                                className={cn(wayback && styles.activeControl)}
+                                icon={'Time'}
+                                aria-pressed={wayback}
+                                tooltip={
+                                    wayback
+                                        ? t('wayback_close', { defaultValue: 'Выключить снимки прошлых лет' })
+                                        : t('wayback_open', { defaultValue: 'Снимки прошлых лет' })
+                                }
+                                onClick={() => setWayback(!wayback)}
+                            />
+                        )}
+
                         {userLatLon && (
                             <Button
                                 size={controlsSize}
@@ -607,13 +691,20 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
                         {enableLayersSwitcher && (
                             <LayerSwitcherControl
-                                currentLayer={mapLayer}
+                                // No base map is on while the imagery archive is: any of them, the last one too, leaves it
+                                currentLayer={enableWayback && wayback ? undefined : mapLayer}
                                 currentType={mapType}
                                 hideAdditionalLayers={hideAdditionalLayers}
                                 additionalLayers={additionalLayers}
                                 onSwitchMapLayer={handleSwitchMapLayer}
                                 onSwitchMapType={handleSwitchMapType}
                                 onSwitchAdditionalLayers={handleSwitchAdditionalLayers}
+                                hillshade={hillshade}
+                                hillshadeOpacity={hillshadeOpacity}
+                                onSwitchHillshade={handleSwitchHillshade}
+                                onChangeHillshadeOpacity={handleChangeHillshadeOpacity}
+                                trails={trails}
+                                onSwitchTrails={handleSwitchTrails}
                             />
                         )}
                     </div>

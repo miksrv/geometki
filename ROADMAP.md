@@ -37,6 +37,20 @@ Target definition: *a field game for curious people — an ever-incomplete map o
 - **Photo challenges and community albums** with voting. Spec: feature 14.
 - **Streak freeze** — consumable that protects a streak for one missed day.
 
+## Map as a tool
+
+`/map` should be where users plan trips, not just browse markers. nakarte-style tools (panoramas, elevation profile, azimuth, GPX) are in feature 23; these build on our own content and personal data instead.
+
+- **Personal layers.** "All / Visited / Bookmarked / Mine" toggle on the map, a check mark on visited markers. `ListRequest` already takes `visited`, `bookmarks`, `author`; `pages/map.tsx` passes only categories. "Not visited yet" needs a negative filter on the server.
+- **Collection as a map layer.** `/map?collection=<id>` shows only its places and fits the bounds; "Show on map" button on the collection page.
+- **More filters:** photos only, minimum rating, new this month.
+- **Viewport list panel.** Places in the current view as cards (side panel on desktop, bottom sheet on mobile), sorted by rating or distance, hover highlights the marker.
+- **Map search.** Jump to a city or address via the server geocoder (Nominatim + Yandex), with our places in the results.
+- **"What's here?" in the context menu.** Reverse-geocoded address, nearest places, Wikipedia articles and Commons photos for a clicked point in one card.
+- **Trail and relief overlays.** Waymarked Trails (hiking, cycling, ski; CC BY-SA with attribution) and a semi-transparent hillshade over any base layer.
+- **Trip planner.** Pick several places, build a road route (OSRM / GraphHopper / OpenRouteService) with order, distance and travel time; save as a collection, export GPX, open in Yandex Navigator.
+- **Fog of war.** Personal explored-area layer. Spec: feature 17.
+
 ## Quick wins
 
 - **"Your place was viewed N times this week"** notification when a place gets 20+ views in a week (views are already logged).

@@ -11,6 +11,11 @@ type ApiErrorPayload = {
 
 const NOTIFICATION_TTL_MS = 10_000
 
+// `API.reducerPath`, not imported: api.ts imports the store, which imports this middleware.
+// Only the project's API has the error envelope and the user's actions behind its requests; the external
+// services of the map layers (Pastvu, Wikipedia, Waymarked Trails, Wayback) fail silently
+const API_ACTION_PREFIX = 'api/'
+
 /**
  * Message from the documented API error envelope `{ messages: { error } }`.
  * Anything else (HTML error pages, plain text, proxy responses) is ignored —
@@ -46,14 +51,14 @@ const getGenericServerErrorMessage = (): string =>
     'На сервере произошла ошибка, попробуйте ещё раз позже'
 
 /**
- * RTK Query middleware that turns rejected API requests into error notifications.
+ * RTK Query middleware that turns rejected requests of the project API into error notifications.
  *
  * Only two sources are ever displayed: a string payload (endpoints whose
  * `transformErrorResponse` already extracted the message) and the API error
  * envelope. Server-side failures without an envelope get a generic message.
  */
 export const errorMiddleware: Middleware = (api) => (next) => (action) => {
-    if (isRejectedWithValue(action)) {
+    if (isRejectedWithValue(action) && action.type.startsWith(API_ACTION_PREFIX)) {
         const payload = action.payload
 
         let errorMessage: string | undefined

@@ -44,6 +44,8 @@ const toFormValues = (values?: ApiType.Places.PostItemRequest): PlaceFormValues 
 interface PlaceFormProps {
     placeId?: string
     loading?: boolean
+    /** Fields and saving are off, without the screen spinner of `loading`: e.g. while the values load */
+    disabled?: boolean
     values?: ApiType.Places.PostItemRequest
     /** Server-side validation errors, shown on their fields */
     errors?: PlaceFormErrors
@@ -56,6 +58,7 @@ interface PlaceFormProps {
 export const PlaceForm: React.FC<PlaceFormProps> = ({
     placeId,
     loading,
+    disabled,
     values,
     errors,
     onSubmit,
@@ -220,6 +223,8 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
         .map((error) => error?.message)
         .filter((message): message is string => !!message)
 
+    const locked = loading || disabled
+
     return (
         <section className={styles.component}>
             {loading && <ScreenSpinner />}
@@ -250,7 +255,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                             name={field.name}
                             label={t('input_geotag-label')}
                             placeholder={t('input_geotag-placeholder')}
-                            disabled={loading}
+                            disabled={locked}
                             value={field.value}
                             error={fieldState.error?.message}
                             onKeyDown={handleKeyPress}
@@ -271,7 +276,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                             required={true}
                             label={t('input_category-label')}
                             placeholder={t('input_category-placeholder')}
-                            disabled={loading}
+                            disabled={locked}
                             error={fieldState.error?.message}
                             value={selectedCategory?.key}
                             options={categoryOptions}
@@ -293,7 +298,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                             label={t('input_tags-label')}
                             placeholder={t('input_tags-placeholder')}
                             notFoundCaption={t('nothing-found')}
-                            disabled={loading}
+                            disabled={locked}
                             value={field.value}
                             loading={searchLoading}
                             options={tagsWithCustom}
@@ -338,7 +343,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                     control={control}
                     render={({ field }) => (
                         <ContentEditor
-                            disabled={loading}
+                            disabled={locked}
                             value={field.value}
                             onChange={(text) => field.onChange(text || '')}
                         />
@@ -351,7 +356,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                     className={styles.formElement}
                     label={t('photo-drop-label', { defaultValue: 'Перетащите фотографии сюда, чтобы загрузить' })}
                     hint={t('photo-drop-hint', { defaultValue: 'JPG, PNG, GIF или WEBP, до 10 МБ' })}
-                    disabled={loading}
+                    disabled={locked}
                     onDrop={(files) => uploaderRef.current?.upload(files)}
                 >
                     {localPhotos.length || uploadingPhotos?.length ? (
@@ -366,7 +371,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                         </div>
                     ) : (
                         <ImageUploader
-                            disabled={loading}
+                            disabled={locked}
                             onClick={() => inputFileRef?.current?.click()}
                         />
                     )}
@@ -379,7 +384,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                     mode={'primary'}
                     label={t('save')}
                     // Photos still uploading would not be attached to the new place
-                    disabled={loading || !!uploadingPhotos?.length}
+                    disabled={locked || !!uploadingPhotos?.length}
                     onClick={() => void submit()}
                 />
 

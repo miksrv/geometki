@@ -1,0 +1,145 @@
+@use '../../../styles/variables' as variables
+
+.trailsPopup
+    & > div:first-of-type
+        border-radius: var(--border-radius)
+
+        & > div
+            margin: 0
+
+        & > p
+            margin: 0 !important
+
+    & > a:first-of-type
+        top: 10px !important
+        right: 10px !important
+
+    .content
+        width: 260px
+        display: flex
+        flex-direction: column
+        gap: 8px
+        padding: 8px 6px 6px
+
+    .header
+        display: flex
+        align-items: center
+        gap: 8px
+        padding-right: 20px
+
+    .symbol
+        flex-shrink: 0
+        width: 28px
+        height: 28px
+        object-fit: contain
+
+    .title
+        margin: 0
+        padding-right: 20px
+        font-size: variables.$fontSizeHeadline
+        font-weight: 600
+        line-height: 1.3
+
+    .header .title
+        padding-right: 0
+
+    .meta
+        display: block
+        font-size: 12px
+        color: var(--text-color-secondary, #666)
+
+    .name
+        display: block
+        font-weight: 600
+
+    .list
+        display: flex
+        flex-direction: column
+        margin: 0 -6px
+        padding: 0
+        max-height: 240px
+        overflow-y: auto
+        list-style: none
+
+        button
+            display: flex
+            align-items: center
+            gap: 8px
+            width: 100%
+            padding: 6px
+            border: none
+            border-radius: var(--border-radius)
+            background: none
+            color: inherit
+            font: inherit
+            text-align: left
+            cursor: pointer
+
+            &:hover
+                background-color: var(--container-hover-background, rgba(0, 0, 0, 0.05))
+
+    .back
+        align-self: flex-start
+        padding: 0
+        border: none
+        background: none
+        color: var(--color-main)
+        font: inherit
+        font-size: 12px
+        cursor: pointer
+
+    .facts
+        display: grid
+        grid-template-columns: auto minmax(0, 1fr)
+        gap: 2px 10px
+        margin: 0
+        font-size: 13px
+
+        dt
+            color: var(--text-color-secondary, #666)
+
+        // Long values (an operator given as a link) are cut, the whole text is in the tooltip
+        dd
+            margin: 0
+            overflow: hidden
+            white-space: nowrap
+            text-overflow: ellipsis
+
+    .description
+        margin: 0
+        font-size: 12px
+        line-height: 1.5
+        color: var(--text-color-secondary, #666)
+        overflow-wrap: anywhere
+
+    .links
+        display: flex
+        flex-wrap: wrap
+        gap: 4px 12px
+        font-size: 12px
+
+        a
+            display: inline-flex
+            align-items: center
+            gap: 2px
+
+        a, button
+            padding: 0
+            border: none
+            background: none
+            color: var(--color-main)
+            font: inherit
+            text-decoration: none
+            cursor: pointer
+
+            &:hover
+                text-decoration: underline
+
+    .skeletonLine
+        height: 11px
+        border-radius: 3px
+
+    .skeletonLineShort
+        height: 11px
+        width: 55%
+        border-radius: 3px

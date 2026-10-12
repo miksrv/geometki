@@ -6,7 +6,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { RadioButton } from '@/components/ui'
 
 import { AVAILABLE_MAP_LAYERS } from '../layers'
-import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum } from '../types'
+import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum, MapTrailsLayerEnum } from '../types'
 
 import styles from '../styles.module.sass'
 
@@ -18,6 +18,12 @@ interface LayerSwitcherControlProps {
     onSwitchMapLayer?: (layer: MapLayersEnum) => void
     onSwitchMapType?: (type: MapObjectsTypeEnum) => void
     onSwitchAdditionalLayers?: (layer?: MapAdditionalLayersEnum[]) => void
+    hillshade?: boolean
+    hillshadeOpacity?: number
+    onSwitchHillshade?: (enabled: boolean) => void
+    onChangeHillshadeOpacity?: (opacity: number) => void
+    trails?: MapTrailsLayerEnum[]
+    onSwitchTrails?: (layers: MapTrailsLayerEnum[]) => void
 }
 
 export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
@@ -27,7 +33,13 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
     additionalLayers,
     onSwitchMapLayer,
     onSwitchMapType,
-    onSwitchAdditionalLayers
+    onSwitchAdditionalLayers,
+    hillshade,
+    hillshadeOpacity = 1,
+    onSwitchHillshade,
+    onChangeHillshadeOpacity,
+    trails,
+    onSwitchTrails
 }) => {
     const { t } = useTranslation('common')
 
@@ -110,6 +122,12 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
         [MapAdditionalLayersEnum.WIKIPEDIA]: t('map-type_Wikipedia', { defaultValue: 'Wikipedia' })
     }
 
+    const titleTrailsLayer: Record<MapTrailsLayerEnum, string> = {
+        [MapTrailsLayerEnum.HIKING]: t('map-overlay_TrailsHiking', { defaultValue: 'Пешие маршруты' }),
+        [MapTrailsLayerEnum.CYCLING]: t('map-overlay_TrailsCycling', { defaultValue: 'Веломаршруты' }),
+        [MapTrailsLayerEnum.SLOPES]: t('map-overlay_TrailsSlopes', { defaultValue: 'Лыжные трассы' })
+    }
+
     useEffect(() => {
         document.addEventListener('mousedown', handleClickOutside)
 
@@ -132,7 +150,7 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
             onWheelCapture={(e) => e.stopPropagation()}
         >
             <div ref={layersContainerRef}>
-                <ul className={cn(styles.mapLayersList, hideAdditionalLayers && styles.noMarginBottom)}>
+                <ul className={styles.mapLayersList}>
                     {AVAILABLE_MAP_LAYERS.map((layer) => (
                         <li key={layer}>
                             <RadioButton
@@ -140,6 +158,49 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
                                 label={titleMapLayer[layer]}
                                 checked={currentLayer === layer}
                                 onChange={handleSwitchMapLayer}
+                            />
+                        </li>
+                    ))}
+                </ul>
+
+                <ul className={cn(styles.mapOverlaysList, hideAdditionalLayers && styles.noMarginBottom)}>
+                    <li>
+                        <Checkbox
+                            id={'hillshade'}
+                            label={t('map-overlay_Hillshade', { defaultValue: 'Рельеф' })}
+                            checked={!!hillshade}
+                            onChange={() => onSwitchHillshade?.(!hillshade)}
+                        />
+                    </li>
+                    {hillshade && (
+                        <li className={styles.overlayOpacity}>
+                            <input
+                                type={'range'}
+                                min={20}
+                                max={100}
+                                step={5}
+                                value={Math.round(hillshadeOpacity * 100)}
+                                aria-label={t('map-overlay_HillshadeOpacity', {
+                                    defaultValue: 'Насыщенность рельефа'
+                                })}
+                                onChange={(event) => onChangeHillshadeOpacity?.(Number(event.target.value) / 100)}
+                            />
+                            <span>{Math.round(hillshadeOpacity * 100)}%</span>
+                        </li>
+                    )}
+                    {Object.values(MapTrailsLayerEnum).map((type) => (
+                        <li key={type}>
+                            <Checkbox
+                                id={`trails-${type}`}
+                                label={titleTrailsLayer[type]}
+                                checked={!!trails?.includes(type)}
+                                onChange={() =>
+                                    onSwitchTrails?.(
+                                        trails?.includes(type)
+                                            ? trails.filter((layer) => layer !== type)
+                                            : [...(trails || []), type]
+                                    )
+                                }
                             />
                         </li>
                     ))}

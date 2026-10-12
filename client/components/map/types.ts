@@ -24,6 +24,13 @@ export enum MapAdditionalLayersEnum {
     WIKIPEDIA = 'Wikipedia'
 }
 
+// Waymarked Trails overlays: the value is the tile set's name in the tile URL
+export enum MapTrailsLayerEnum {
+    HIKING = 'hiking',
+    CYCLING = 'cycling',
+    SLOPES = 'slopes'
+}
+
 export type MapPositionType = {
     lat: number
     lon: number
