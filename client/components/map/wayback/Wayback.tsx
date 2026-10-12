@@ -5,11 +5,12 @@ import { Icon, Spinner } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
-import { APIWayback, WAYBACK_TILE_URL, WaybackRelease } from '@/api/apiWayback'
+import { WAYBACK_TILE_URL, WaybackRelease } from '@/api/apiWayback'
 import { formatDate } from '@/utils/date'
 
 import { FallbackTileLayer } from '../fallback-tile-layer'
 
+import { useLocalChanges, WaybackTile } from './useLocalChanges'
 import { centerTile, pickRelease } from './utils'
 
 import styles from './styles.module.sass'
@@ -34,7 +35,7 @@ export const Wayback: React.FC<WaybackProps> = ({ onClose }) => {
     const panelRef = useRef<HTMLDivElement>(null)
     const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-    const [tile, setTile] = useState<ReturnType<typeof centerTile>>()
+    const [tile, setTile] = useState<WaybackTile>()
     const [chosen, setChosen] = useState<WaybackRelease>()
     // The imagery on the screen: it stays under the next one until all the next one's tiles are loaded,
     // so switching the date does not blink white
@@ -67,11 +68,11 @@ export const Wayback: React.FC<WaybackProps> = ({ onClose }) => {
         }
     }, [])
 
-    const { data, isFetching, isError } = APIWayback.useGetLocalChangesQuery(tile!, { skip: !tile })
+    const { changes, isFetching, isError } = useLocalChanges(tile)
 
     // Oldest first: the slider goes from the past on the left to today on the right
-    const releases = [...(data ?? [])].reverse()
-    const current = pickRelease(data ?? [], chosen)
+    const releases = [...changes].reverse()
+    const current = pickRelease(changes, chosen)
     const index = current ? releases.indexOf(current) : -1
 
     const targetUrl = current ? WAYBACK_TILE_URL.replace('{release}', String(current.id)) : CURRENT_IMAGERY_URL

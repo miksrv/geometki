@@ -9,14 +9,15 @@ export type WaybackRelease = {
 
 type WaybackConfig = Record<string, { itemTitle: string }>
 
-type WaybackTilemap = {
+export type WaybackTilemap = {
     /** [1] when the release has the tile */
     data: number[]
     /** The release the tile was actually taken from, when it is an older one */
     select?: number[]
 }
 
-export type RequestGetLocalChanges = {
+export type RequestGetTilemap = {
+    release: number
     z: number
     x: number
     y: number
@@ -38,72 +39,48 @@ export const parseWaybackConfig = (config: WaybackConfig): WaybackRelease[] =>
 /**
  * The releases in which the imagery of a tile changed, newest first. Most releases repeat the tile
  * of an older one, and the tilemap says which one: so the walk jumps from a release straight to
- * the one its tile came from and goes on from the release before it, one request per change
+ * the one its tile came from and goes on from the release before it, one request per change.
+ * `onChange` gets the list after each found change, `isCancelled` stops the walk between requests
  */
 export const collectLocalChanges = async (
     releases: WaybackRelease[],
-    getTilemap: (release: number) => Promise<WaybackTilemap>
+    getTilemap: (release: number) => Promise<WaybackTilemap>,
+    onChange?: (changes: WaybackRelease[]) => void,
+    isCancelled?: () => boolean
 ): Promise<WaybackRelease[]> => {
     const indexById = new Map(releases.map((release, index) => [release.id, index]))
     const changes: WaybackRelease[] = []
 
-    for (let index = 0; index < releases.length; ) {
+    for (let index = 0; index < releases.length && !isCancelled?.(); ) {
         const tilemap = await getTilemap(releases[index].id)
 
-        if (!tilemap.data?.[0]) {
+        if (!tilemap.data?.[0] || isCancelled?.()) {
             break
         }
 
         const sourceIndex = indexById.get(tilemap.select?.[0] ?? releases[index].id) ?? index
 
         changes.push(releases[sourceIndex])
+        onChange?.([...changes])
         index = Math.max(sourceIndex, index) + 1
     }
 
     return changes
 }
 
-// The list of releases is the same for every tile: asked once per page
-let releasesRequest: Promise<WaybackRelease[]> | undefined
-
 export const APIWayback = createApi({
     baseQuery: fetchBaseQuery({ baseUrl: '' }),
     endpoints: (builder) => ({
-        getLocalChanges: builder.query<WaybackRelease[], RequestGetLocalChanges>({
-            queryFn: async ({ z, x, y }, _api, _options, baseQuery) => {
-                const fetchJson = async <T>(url: string): Promise<T> => {
-                    const result = await baseQuery(url)
-
-                    if (result.error) {
-                        throw result.error
-                    }
-
-                    return result.data as T
-                }
-
-                try {
-                    releasesRequest ??= fetchJson<WaybackConfig>(CONFIG_URL).then(parseWaybackConfig)
-
-                    const releases = await releasesRequest.catch((error) => {
-                        releasesRequest = undefined
-                        throw error
-                    })
-
-                    return {
-                        data: await collectLocalChanges(releases, (release) =>
-                            fetchJson<WaybackTilemap>(`${TILEMAP_URL}/${release}/${z}/${y}/${x}`)
-                        )
-                    }
-                } catch (error) {
-                    return {
-                        error: {
-                            error: String((error as { status?: unknown })?.status ?? error),
-                            status: 'FETCH_ERROR'
-                        }
-                    }
-                }
-            },
-            keepUnusedDataFor: 3600
+        // The same for every tile: asked once per page
+        getReleases: builder.query<WaybackRelease[], void>({
+            keepUnusedDataFor: 3600,
+            query: () => CONFIG_URL,
+            transformResponse: parseWaybackConfig
+        }),
+        // Kept for an hour: coming back to a place walks its releases again without requests
+        getTilemap: builder.query<WaybackTilemap, RequestGetTilemap>({
+            keepUnusedDataFor: 3600,
+            query: ({ release, z, x, y }) => `${TILEMAP_URL}/${release}/${z}/${y}/${x}`
         })
     }),
     reducerPath: 'APIWayback'

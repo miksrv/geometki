@@ -28,8 +28,11 @@ jest.mock('@/utils/date', () => ({ formatDate: (date: string) => date }))
 const mockQuery = jest.fn()
 
 jest.mock('@/api/apiWayback', () => ({
-    APIWayback: { useGetLocalChangesQuery: (...args: unknown[]) => mockQuery(...args) },
     WAYBACK_TILE_URL: 'wayback/{release}/{z}/{y}/{x}'
+}))
+
+jest.mock('./useLocalChanges', () => ({
+    useLocalChanges: (...args: unknown[]) => mockQuery(...args)
 }))
 
 // The layer reports its url, and "loads" on a click
@@ -52,11 +55,11 @@ const releases = [
 const layerUrls = () => screen.getAllByTestId('layer').map((layer) => layer.getAttribute('data-url'))
 
 describe('Wayback', () => {
-    beforeEach(() => mockQuery.mockReturnValue({ data: releases, isError: false, isFetching: false }))
+    beforeEach(() => mockQuery.mockReturnValue({ changes: releases, isError: false, isFetching: false }))
 
     it('asks for the changes of the tile under the center', () => {
         render(<Wayback />)
-        expect(mockQuery).toHaveBeenLastCalledWith({ x: 42798, y: 21716, z: 16 }, { skip: false })
+        expect(mockQuery).toHaveBeenLastCalledWith({ x: 42798, y: 21716, z: 16 })
     })
 
     it('keeps the shown imagery under the next one until the next one is loaded', () => {

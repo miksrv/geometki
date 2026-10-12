@@ -12,11 +12,11 @@ jest.mock('next-i18next/pages', () => ({
 
 const REJECTED_TYPE = 'api/executeQuery/rejected'
 
-const rejectedWithValue = (payload: unknown) => ({
+const rejectedWithValue = (payload: unknown, type = REJECTED_TYPE) => ({
     error: { message: 'Rejected' },
     meta: { rejectedWithValue: true, requestId: 'req-1', requestStatus: 'rejected' as const },
     payload,
-    type: REJECTED_TYPE
+    type
 })
 
 const createStore = () =>
@@ -35,6 +35,19 @@ describe('errorMiddleware', () => {
 
     afterEach(() => {
         jest.useRealTimers()
+    })
+
+    it('ignores the failures of the external services', () => {
+        const store = createStore()
+
+        store.dispatch(
+            rejectedWithValue({ data: '<html>502</html>', status: 502 }, 'APIWaymarkedTrails/executeQuery/rejected')
+        )
+        store.dispatch(
+            rejectedWithValue({ error: 'SyntaxError', status: 'PARSING_ERROR' }, 'APIWayback/executeQuery/rejected')
+        )
+
+        expect(messagesOf(store)).toStrictEqual([])
     })
 
     it('shows the message from the API error envelope', () => {

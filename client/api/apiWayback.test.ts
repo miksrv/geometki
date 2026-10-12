@@ -43,4 +43,28 @@ describe('collectLocalChanges', () => {
 
         expect((await collectLocalChanges(releases, getTilemap)).map(({ id }) => id)).toEqual([5, 4, 3])
     })
+
+    it('reports the list after each change', async () => {
+        const sources: Record<number, number> = { 1: 1, 2: 1, 3: 3, 4: 3, 5: 5 }
+        const onChange = jest.fn()
+
+        await collectLocalChanges(releases, async (release) => ({ data: [1], select: [sources[release]] }), onChange)
+
+        expect(onChange.mock.calls.map(([changes]) => changes.map(({ id }: WaybackRelease) => id))).toEqual([
+            [5],
+            [5, 3],
+            [5, 3, 1]
+        ])
+    })
+
+    it('stops when cancelled', async () => {
+        let cancelled = false
+        const getTilemap = jest.fn(async () => {
+            cancelled = true
+            return { data: [1] }
+        })
+
+        expect(await collectLocalChanges(releases, getTilemap, undefined, () => cancelled)).toEqual([])
+        expect(getTilemap).toHaveBeenCalledTimes(1)
+    })
 })

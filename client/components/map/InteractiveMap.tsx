@@ -691,7 +691,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
                         {enableLayersSwitcher && (
                             <LayerSwitcherControl
-                                currentLayer={mapLayer}
+                                // No base map is on while the imagery archive is: any of them, the last one too, leaves it
+                                currentLayer={enableWayback && wayback ? undefined : mapLayer}
                                 currentType={mapType}
                                 hideAdditionalLayers={hideAdditionalLayers}
                                 additionalLayers={additionalLayers}
