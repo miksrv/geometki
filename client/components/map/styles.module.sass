@@ -150,7 +150,7 @@
             line-height: 1
             pointer-events: none
 
-        .mapLayersList, .mapPointsTypeList, .mapCategoryList, .mapAdditionalList
+        .mapLayersList, .mapOverlaysList, .mapPointsTypeList, .mapCategoryList, .mapAdditionalList
             margin: -10px -10px 5px
 
             &.noMarginBottom
@@ -172,13 +172,35 @@
                 margin-bottom: 4px
                 padding-bottom: 4px
 
-        .mapPointsTypeList, .mapAdditionalList
+        .mapOverlaysList, .mapPointsTypeList, .mapAdditionalList
             margin-top: 5px
             padding-top: 5px
             border-top: var(--container-border-separator)
 
         .mapAdditionalList
             margin-bottom: -10px
+
+        .overlayOpacity
+            display: flex
+            align-items: center
+            gap: 8px
+            padding-left: 30px
+
+            &:hover
+                background-color: transparent
+
+            input
+                flex: 1
+                min-width: 0
+                margin: 0
+                accent-color: var(--color-main)
+                cursor: pointer
+
+            span
+                min-width: 34px
+                text-align: right
+                font-size: var(--font-size-small)
+                color: var(--text-color-secondary)
 
 .loader
     position: absolute

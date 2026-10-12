@@ -438,6 +438,8 @@
     "fullscreen-enter": "Fullscreen",
     "my-location": "My location",
     "map-layers": "Map layers",
+    "map-overlay_Hillshade": "Relief",
+    "map-overlay_HillshadeOpacity": "Relief intensity",
     "map-category-filter": "Filter by category",
     "map-category-filter-selected": "{{title}}: {{selected}} of {{total}} selected",
     "coordinates-cursor": "Cursor coordinates",

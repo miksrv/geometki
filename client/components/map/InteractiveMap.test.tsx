@@ -84,6 +84,11 @@ jest.mock('./heatmap-layer', () => ({
     HeatmapLayer: () => <div data-testid={'heatmap-layer'} />
 }))
 
+jest.mock('./hillshade-layer', () => ({
+    DEFAULT_HILLSHADE_OPACITY: 0.6,
+    HillshadeLayer: () => null
+}))
+
 jest.mock('./historical-photos', () => ({
     HistoricalPhotos: () => <div data-testid={'historical-photos'} />
 }))

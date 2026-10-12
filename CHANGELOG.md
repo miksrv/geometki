@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.15.0
+
+### Minor Changes
+
+- Map: new Relief layer with adjustable intensity over any base map
+
 ## 1.14.3
 
 ### Patch Changes

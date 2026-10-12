@@ -16,6 +16,7 @@ import { ContextMenu } from './context-menu'
 import { CoordinatesControl } from './coordinates-control'
 import { FitBounds } from './fit-bounds'
 import { HeatmapLayer } from './heatmap-layer'
+import { DEFAULT_HILLSHADE_OPACITY, HillshadeLayer } from './hillshade-layer'
 import { HistoricalPhotos } from './historical-photos'
 import { LayerSwitcherControl } from './layer-switcher-control'
 import { createLayerStatusStore, LayersStatus } from './layers-status'
@@ -170,6 +171,10 @@ export const InteractiveMap: React.FC<MapProps> = ({
     const [additionalLayers, setAdditionalLayers] = useState<MapAdditionalLayersEnum[] | undefined>(
         storeMapSettings ? savedSettings.additionalLayers : undefined
     )
+    const [hillshade, setHillshade] = useState<boolean>(!!(storeMapSettings && savedSettings.hillshade))
+    const [hillshadeOpacity, setHillshadeOpacity] = useState<number>(
+        (storeMapSettings && savedSettings.hillshadeOpacity) || DEFAULT_HILLSHADE_OPACITY
+    )
 
     const handleUserPosition = () => {
         if (userLatLon?.lat && userLatLon.lon) {
@@ -233,6 +238,22 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
         if (storeMapSettings) {
             saveMapSettings({ additionalLayers: layers ?? [] })
+        }
+    }
+
+    const handleSwitchHillshade = (enabled: boolean) => {
+        setHillshade(enabled)
+
+        if (storeMapSettings) {
+            saveMapSettings({ hillshade: enabled })
+        }
+    }
+
+    const handleChangeHillshadeOpacity = (opacity: number) => {
+        setHillshadeOpacity(opacity)
+
+        if (storeMapSettings) {
+            saveMapSettings({ hillshadeOpacity: opacity })
         }
     }
 
@@ -455,6 +476,13 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         />
                     )}
 
+                    {hillshade && (
+                        <HillshadeLayer
+                            opacity={hillshadeOpacity}
+                            dark={mapLayer === MapLayersEnum.CARTO_DARK}
+                        />
+                    )}
+
                     {placeMark && (
                         <PlaceMark
                             {...placeMark}
@@ -614,6 +642,10 @@ export const InteractiveMap: React.FC<MapProps> = ({
                                 onSwitchMapLayer={handleSwitchMapLayer}
                                 onSwitchMapType={handleSwitchMapType}
                                 onSwitchAdditionalLayers={handleSwitchAdditionalLayers}
+                                hillshade={hillshade}
+                                hillshadeOpacity={hillshadeOpacity}
+                                onSwitchHillshade={handleSwitchHillshade}
+                                onChangeHillshadeOpacity={handleChangeHillshadeOpacity}
                             />
                         )}
                     </div>

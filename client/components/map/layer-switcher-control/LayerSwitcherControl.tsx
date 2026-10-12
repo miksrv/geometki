@@ -18,6 +18,10 @@ interface LayerSwitcherControlProps {
     onSwitchMapLayer?: (layer: MapLayersEnum) => void
     onSwitchMapType?: (type: MapObjectsTypeEnum) => void
     onSwitchAdditionalLayers?: (layer?: MapAdditionalLayersEnum[]) => void
+    hillshade?: boolean
+    hillshadeOpacity?: number
+    onSwitchHillshade?: (enabled: boolean) => void
+    onChangeHillshadeOpacity?: (opacity: number) => void
 }
 
 export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
@@ -27,7 +31,11 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
     additionalLayers,
     onSwitchMapLayer,
     onSwitchMapType,
-    onSwitchAdditionalLayers
+    onSwitchAdditionalLayers,
+    hillshade,
+    hillshadeOpacity = 1,
+    onSwitchHillshade,
+    onChangeHillshadeOpacity
 }) => {
     const { t } = useTranslation('common')
 
@@ -132,7 +140,7 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
             onWheelCapture={(e) => e.stopPropagation()}
         >
             <div ref={layersContainerRef}>
-                <ul className={cn(styles.mapLayersList, hideAdditionalLayers && styles.noMarginBottom)}>
+                <ul className={styles.mapLayersList}>
                     {AVAILABLE_MAP_LAYERS.map((layer) => (
                         <li key={layer}>
                             <RadioButton
@@ -143,6 +151,33 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
                             />
                         </li>
                     ))}
+                </ul>
+
+                <ul className={cn(styles.mapOverlaysList, hideAdditionalLayers && styles.noMarginBottom)}>
+                    <li>
+                        <Checkbox
+                            id={'hillshade'}
+                            label={t('map-overlay_Hillshade', { defaultValue: 'Рельеф' })}
+                            checked={!!hillshade}
+                            onChange={() => onSwitchHillshade?.(!hillshade)}
+                        />
+                    </li>
+                    {hillshade && (
+                        <li className={styles.overlayOpacity}>
+                            <input
+                                type={'range'}
+                                min={20}
+                                max={100}
+                                step={5}
+                                value={Math.round(hillshadeOpacity * 100)}
+                                aria-label={t('map-overlay_HillshadeOpacity', {
+                                    defaultValue: 'Насыщенность рельефа'
+                                })}
+                                onChange={(event) => onChangeHillshadeOpacity?.(Number(event.target.value) / 100)}
+                            />
+                            <span>{Math.round(hillshadeOpacity * 100)}%</span>
+                        </li>
+                    )}
                 </ul>
 
                 {!hideAdditionalLayers && (
