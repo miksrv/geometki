@@ -5,6 +5,7 @@
 ### Minor Changes
 
 - Map: new Relief layer with adjustable intensity over any base map
+- Map: base map options in the layers panel look like the other checkboxes and follow the dark theme
 
 ## 1.14.3
 
