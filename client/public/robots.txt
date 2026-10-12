@@ -9,9 +9,20 @@ Disallow: /places/landing
 Disallow: /users/settings
 Disallow: /admin
 Disallow: /search
+Disallow: /en/auth
+Disallow: /en/unsubscribe
+Disallow: /en/places/create
+Disallow: /en/places/*/edit
+Disallow: /en/places/landing
+Disallow: /en/users/settings
+Disallow: /en/admin
+Disallow: /en/search
+# Geo-sorted place lists (/places?lat=…&lon=…): one URL per place × every page, all noindex
+Disallow: /places?*lat=
+Disallow: /en/places?*lat=
 
-# Yandex: treat geo-filter params as non-significant for deduplication
-User-agent: Yandex
+# Yandex: treat geo-filter params as non-significant for deduplication. Kept in this group:
+# a separate "User-agent: Yandex" group would make Yandex ignore every rule above.
 Clean-param: lat&lon&sort&order /places
 Clean-param: lat&lon&sort&order /en/places
 
