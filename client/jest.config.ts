@@ -9,7 +9,6 @@ const config: Config.InitialOptions = {
         '!**/types.ts',
         '!**/*.types.ts',
         '!**/proxy.ts',
-        '!**/update.ts',
         '!**/store.ts',
         '!**/env.ts',
         '!**/node_modules/**',

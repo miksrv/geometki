@@ -117,7 +117,8 @@ async function cacheFirst(request, cacheName) {
 
 async function staleWhileRevalidate(event, cacheName) {
     const cache = await caches.open(cacheName)
-    const cached = await cache.match(event.request)
+    // All caches, not only this one: the offline page's icon lives in the precache
+    const cached = await caches.match(event.request)
 
     const network = fetch(event.request)
         .then(async (response) => {
