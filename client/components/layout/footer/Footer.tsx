@@ -4,7 +4,6 @@ import { cn } from 'simple-react-ui-kit'
 import Image from 'next/image'
 
 import packageInfo from '@/package.json'
-import { update } from '@/update'
 import { formatDate } from '@/utils/helpers'
 
 import { LanguageSwitcher } from '../language-switcher'
@@ -36,7 +35,7 @@ export const Footer: React.FC<{ className?: string }> = ({ className }) => (
                 </span>
                 <span className={styles.version}>
                     {'v'}
-                    <span>{packageInfo.version}</span> <span>{`(${formatDate(update, 'DD.MM.YYYY, HH:mm')})`}</span>
+                    <span>{packageInfo.version}</span>
                 </span>
             </div>
 
