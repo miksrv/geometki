@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Container, Message, Spinner } from 'simple-react-ui-kit'
+import { Container, Message } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
@@ -133,21 +133,18 @@ const CreatePlacePage: NextPage<object> = () => {
                     </Message>
                 )}
 
-                {candidateId && candidateLoading ? (
-                    <Spinner />
-                ) : (
-                    <PlaceForm
-                        // A new form once the candidate is loaded: its values are the form's defaults
-                        key={candidate?.id ?? presetCategory ?? 'new'}
-                        values={formValues}
-                        loading={isLoading || isSuccess || clickedButton}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        errors={validationErrors as any}
-                        onSubmit={handleSubmit}
-                        onCancel={handleCancel}
-                        onDirtyChange={setIsDirty}
-                    />
-                )}
+                <PlaceForm
+                    // A new form once the candidate is loaded: its values are the form's defaults
+                    key={candidate?.id ?? presetCategory ?? 'new'}
+                    values={formValues}
+                    loading={isLoading || isSuccess || clickedButton}
+                    disabled={!!candidateId && candidateLoading}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    errors={validationErrors as any}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
+                    onDirtyChange={setIsDirty}
+                />
 
                 <ConfirmationDialog {...leaveDialogProps} />
             </Container>

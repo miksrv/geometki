@@ -10,6 +10,7 @@
 - Map: smaller map buttons of the same size, in the style of the site's panels and buttons
 - Map: new Hiking trails, Cycling routes and Ski slopes layers from Waymarked Trails
 - Map: a click on a trail shows its card (length, operator, links) and highlights the whole route
+- Places: creating a place from a map candidate shows the form at once, locked while the candidate loads, instead of a huge loader
 
 ## 1.14.3
 
