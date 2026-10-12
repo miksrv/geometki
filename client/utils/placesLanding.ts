@@ -142,6 +142,10 @@ export const buildCategoryHref = (categoryName: string, flags: LandingFlags): st
 export const buildLocationHref = (location: LandingLocationRef, flags: LandingFlags): string =>
     buildPlacesHref({ location, ...NO_SORT_FILTER }, flags).href
 
+/** A category within a location (the related-locations list, the category chips of a location page, …) — `/places/{slug}/{category}` only with the `combinations` flag on, otherwise the legacy `/places?category=…&region=…` */
+export const buildPairHref = (location: LandingLocationRef, categoryName: string, flags: LandingFlags): string =>
+    buildPlacesHref({ category: categoryName, location, ...NO_SORT_FILTER }, flags).href
+
 /**
  * Request header name `proxy.ts` sets (to a per-instance secret only it knows, not just the
  * literal `'1'`) on a request it rewrites to `pages/places/landing/[...slug].tsx` (via

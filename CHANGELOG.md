@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.14.2
+
+### Patch Changes
+
+- Places: links to a category within a location on landing pages no longer lead to a 404 page
+
 ## 1.14.1
 
 ### Patch Changes

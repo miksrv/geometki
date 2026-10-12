@@ -3,6 +3,7 @@ import { ApiType } from '@/api'
 import {
     buildCategoryHref,
     buildLocationHref,
+    buildPairHref,
     buildPlacesHref,
     getLandingFlags,
     isLandingSegment,
@@ -286,5 +287,25 @@ describe('buildLocationHref', () => {
 
     it('falls back to the query param with the flag on but no slug yet', () => {
         expect(buildLocationHref(unslugged, LOCATIONS_ON)).toBe('/places?region=9')
+    })
+})
+
+describe('buildPairHref', () => {
+    it('stays the legacy query params with every flag off', () => {
+        expect(buildPairHref(bashkortostan, 'cave', ALL_OFF)).toBe('/places?category=cave&region=2')
+    })
+
+    it('stays the legacy query params with only the category pages on', () => {
+        expect(buildPairHref(bashkortostan, 'cave', CATEGORIES_ON)).toBe('/places?category=cave&region=2')
+    })
+
+    it('keeps the category a query param on a location path until the combinations ship', () => {
+        expect(buildPairHref(bashkortostan, 'cave', CATEGORIES_AND_LOCATIONS_ON)).toBe(
+            '/places/bashkortostan?category=cave'
+        )
+    })
+
+    it('becomes a pair path with every flag on', () => {
+        expect(buildPairHref(bashkortostan, 'cave', ALL_ON)).toBe('/places/bashkortostan/cave')
     })
 })

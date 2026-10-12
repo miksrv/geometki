@@ -27,6 +27,7 @@ import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { PlaceFilterPanel, PlacesFilterType } from '@/sections/place'
 import { getCategoryContent, getCategoryLandingTitle, getCategoryTitle, isCategoryName } from '@/utils/categories'
 import {
+    buildPairHref,
     buildPlacesHref,
     buildPlaceUrl,
     encodeQueryData,
@@ -765,7 +766,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         queryCategories: [],
                         relatedLocations: (relatedData?.items ?? []).filter(hasSlug).map((item) => ({
                             count: item.placesCount,
-                            href: `/places/${item.slug}/${categoryData!.name}`,
+                            href: buildPairHref(item, categoryData!.name, flags),
                             key: `${item.type}-${item.id}`,
                             title: item.title
                         })),
@@ -830,7 +831,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         categoryName: null,
                         chips: (chipsData?.items ?? []).map((item) => ({
                             count: item.count,
-                            href: `/places/${locationData!.slug}/${item.name}`,
+                            href: buildPairHref(locationData!, item.name, flags),
                             key: item.name,
                             // The localized label is resolved at render time (getCategoryTitle)
                             title: item.name
@@ -922,7 +923,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         .filter((item) => item.name !== categoryData!.name)
                         .map((item) => ({
                             count: item.count,
-                            href: `/places/${locationData!.slug}/${item.name}`,
+                            href: buildPairHref(locationData!, item.name, flags),
                             key: item.name,
                             // The localized label is resolved at render time (getCategoryTitle)
                             title: item.name
@@ -949,7 +950,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         .filter(hasSlug)
                         .map((item) => ({
                             count: item.placesCount,
-                            href: `/places/${item.slug}/${categoryData!.name}`,
+                            href: buildPairHref(item, categoryData!.name, flags),
                             key: `${item.type}-${item.id}`,
                             title: item.title
                         })),
