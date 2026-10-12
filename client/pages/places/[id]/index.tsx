@@ -146,14 +146,6 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
         }
     }
 
-    const handleNearbyPhotosClick = () => {
-        if (!isAuth) {
-            dispatch(openAuthDialog())
-        } else {
-            setNearbyPhotosOpen(true)
-        }
-    }
-
     const handleDropPhotos = (files: File[]) => {
         if (!isAuth) {
             dispatch(openAuthDialog())
@@ -369,7 +361,7 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                                     <>
                                         <Button
                                             mode={'link'}
-                                            onClick={handleNearbyPhotosClick}
+                                            onClick={() => setNearbyPhotosOpen(true)}
                                         >
                                             {t('photos-nearby-short', { defaultValue: 'Рядом' })}
                                         </Button>

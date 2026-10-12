@@ -10,6 +10,7 @@
 - App: the top bar and bottom navigation stay clear of the notch and the iOS status bar
 - App: the browser bar colour follows the theme chosen on the site
 - Places: Add place on the home page and on map candidates asks guests to sign in instead of opening the places list
+- Places: Nearby photos are open to guests; a click on a photo opens it full size, linking is a corner button for signed-in users
 
 ## 1.15.0
 
