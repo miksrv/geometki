@@ -10,8 +10,8 @@ import { JsonLdScript } from 'next-seo'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { openAuthDialog, setLocale } from '@/app/applicationSlice'
-import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
+import { setLocale } from '@/app/applicationSlice'
+import { wrapper } from '@/app/store'
 import {
     AppLayout,
     EmptyState,
@@ -24,6 +24,7 @@ import {
 import type { LocationLinkListItem } from '@/components/shared/location-link-list'
 import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
+import useRequireAuth from '@/hooks/useRequireAuth'
 import { PlaceFilterPanel, PlacesFilterType } from '@/sections/place'
 import { getCategoryContent, getCategoryLandingTitle, getCategoryTitle, isCategoryName } from '@/utils/categories'
 import {
@@ -129,18 +130,10 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
     placesList
 }) => {
     const { t, i18n } = useTranslation()
-    const dispatch = useAppDispatch()
-    const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const requireAuth = useRequireAuth()
 
     // A guest is asked to sign in first, like the "Add place" button of the app bar: the create
     // page itself sends guests away to /places
-    const handleAddFirstPlace = (event: React.MouseEvent) => {
-        if (isAuth !== true) {
-            event.preventDefault()
-            dispatch(openAuthDialog())
-        }
-    }
-
     // The category's texts come from the client catalogue (utils/categories.ts): the plural
     // page name for the h1/title, the short label for chips, the intro text for the lede.
     const categoryTitle = categoryName ? getCategoryLandingTitle(t, categoryName) : null
@@ -511,7 +504,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                             <Button
                                 mode={'primary'}
                                 link={`/places/create?category=${categoryName}`}
-                                onClick={handleAddFirstPlace}
+                                onClick={requireAuth}
                             >
                                 {t('landing-category-empty-action', { defaultValue: 'Добавить место' })}
                             </Button>

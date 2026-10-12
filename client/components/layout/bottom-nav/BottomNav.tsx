@@ -5,8 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
-import { openAuthDialog } from '@/app/applicationSlice'
-import { useAppDispatch, useAppSelector } from '@/app/store'
+import useRequireAuth from '@/hooks/useRequireAuth'
 
 import styles from './styles.module.sass'
 
@@ -33,9 +32,7 @@ export const isBottomNavItemActive = (pathname: string, match: string): boolean 
 export const BottomNav: React.FC = () => {
     const { t } = useTranslation('components.bottom-nav')
     const router = useRouter()
-    const dispatch = useAppDispatch()
-
-    const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const requireAuth = useRequireAuth()
 
     // Kept strictly symmetric: 2 items, the primary "add place" action in the
     // center, 2 items — so the center button is visually centered on all widths.
@@ -54,9 +51,8 @@ export const BottomNav: React.FC = () => {
     ]
 
     const handleClick = (event: React.MouseEvent, item: BottomNavItem) => {
-        if (item.auth && isAuth !== true) {
-            event.preventDefault()
-            dispatch(openAuthDialog())
+        if (item.auth) {
+            requireAuth(event)
         }
     }
 

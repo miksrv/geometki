@@ -10,6 +10,7 @@ import { API, ApiType } from '@/api'
 import { openAuthDialog, setUserLocation } from '@/app/applicationSlice'
 import { logoutUser } from '@/app/logoutUser'
 import { useAppDispatch, useAppSelector } from '@/app/store'
+import useRequireAuth from '@/hooks/useRequireAuth'
 import { round } from '@/utils/helpers'
 
 import { AppAuthChecker } from './AppAuthChecker'
@@ -35,6 +36,7 @@ export const isNavItemActive = (pathname: string, href: string): boolean =>
 export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
     const { t } = useTranslation('components.app-bar')
     const dispatch = useAppDispatch()
+    const requireAuth = useRequireAuth()
     const router = useRouter()
     const geolocation = useGeolocation()
 
@@ -53,13 +55,6 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
     const handleLoginClick = (event: React.MouseEvent) => {
         event.preventDefault()
         dispatch(openAuthDialog())
-    }
-
-    const handleAddPlaceClick = (event: React.MouseEvent) => {
-        if (appAuth.isAuth !== true) {
-            event.preventDefault()
-            dispatch(openAuthDialog())
-        }
     }
 
     const handleLogout = () => {
@@ -118,7 +113,7 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
                         label={t('add-place_button', { defaultValue: 'Добавить место' })}
                         tooltip={t('add-place_title', { defaultValue: 'Добавить новое место на карту' })}
                         className={styles.addButton}
-                        onClick={handleAddPlaceClick}
+                        onClick={requireAuth}
                     />
 
                     {appAuth.isAuth === true && <NotificationList />}

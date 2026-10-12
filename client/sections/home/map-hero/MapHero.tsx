@@ -7,6 +7,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
 import { IMG_HOST } from '@/config/env'
+import useRequireAuth from '@/hooks/useRequireAuth'
 import { buildPlaceUrl } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
@@ -29,6 +30,7 @@ const formatNumber = (n: number): string => n.toLocaleString('ru-RU')
 
 export const MapHero: React.FC<MapHeroProps> = ({ stats, places }) => {
     const { t } = useTranslation()
+    const requireAuth = useRequireAuth()
 
     const pins = places?.filter((p) => p.cover).slice(0, 6) ?? []
 
@@ -54,6 +56,7 @@ export const MapHero: React.FC<MapHeroProps> = ({ stats, places }) => {
                             mode={'primary'}
                             size={'large'}
                             link={'/places/create'}
+                            onClick={requireAuth}
                         >
                             {t('hero-cta-add')}
                             <Icon name={'PlusCircle'} />

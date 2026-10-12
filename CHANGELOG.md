@@ -9,6 +9,7 @@
 - App: icons fit the Android and iOS home screen without white or black corners
 - App: the top bar and bottom navigation stay clear of the notch and the iOS status bar
 - App: the browser bar colour follows the theme chosen on the site
+- Places: Add place on the home page and on map candidates asks guests to sign in instead of opening the places list
 
 ## 1.15.0
 
