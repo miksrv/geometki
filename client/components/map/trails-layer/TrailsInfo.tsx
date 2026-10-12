@@ -47,15 +47,16 @@ export const TrailsInfo: React.FC<TrailsInfoProps> = ({ trails, disabled }) => {
     const requestRef = useRef(0)
 
     const [getByArea] = APIWaymarkedTrails.useLazyGetByAreaQuery()
-    const { data: details, isFetching } = APIWaymarkedTrails.useGetRelationQuery(
+    // `currentData`: while another route loads (or fails), the previous one's card is not shown for it
+    const { currentData: details, isFetching } = APIWaymarkedTrails.useGetRelationQuery(
         selected ? { id: selected.id, locale, map: selected.map } : skipToken
     )
 
-    const lines = selected && details?.id === selected.id ? collectRouteLines(details.route) : []
+    const lines = details ? collectRouteLines(details.route) : []
 
     const map = useMapEvents({
         click: async (event) => {
-            if (disabled || map.getZoom() < TRAILS_INFO_MIN_ZOOM) {
+            if (disabled || map.getZoom() < TRAILS_INFO_MIN_ZOOM || !isOnMap(event.originalEvent.target as Node)) {
                 return
             }
 
@@ -94,6 +95,10 @@ export const TrailsInfo: React.FC<TrailsInfoProps> = ({ trails, disabled }) => {
             setSelected(list.length === 1 ? list[0] : undefined)
         }
     })
+
+    // Clicks on the map's buttons and panels reach the map too: only a click on the map itself counts
+    // (the trails and hillshade panes have `pointer-events: none`), see the ruler
+    const isOnMap = (target: Node) => target === map.getContainer() || !!map.getPane('mapPane')?.contains(target)
 
     const handleClose = () => {
         setPosition(undefined)
@@ -214,7 +219,7 @@ export const TrailsInfo: React.FC<TrailsInfoProps> = ({ trails, disabled }) => {
                                 </div>
                             </div>
 
-                            {isFetching || !details ? (
+                            {isFetching ? (
                                 <>
                                     <Skeleton className={styles.skeletonLine} />
                                     <Skeleton className={styles.skeletonLineShort} />
@@ -222,13 +227,13 @@ export const TrailsInfo: React.FC<TrailsInfoProps> = ({ trails, disabled }) => {
                             ) : (
                                 <>
                                     <dl className={styles.facts}>
-                                        {!!details.route?.length && (
+                                        {!!details?.route?.length && (
                                             <>
                                                 <dt>{t('trails-info_Length', { defaultValue: 'Длина' })}</dt>
                                                 <dd>{formatDistance(details.route.length, locale)}</dd>
                                             </>
                                         )}
-                                        {details.operator && (
+                                        {details?.operator && (
                                             <>
                                                 <dt>{t('trails-info_Operator', { defaultValue: 'Оператор' })}</dt>
                                                 <dd title={details.operator}>{details.operator}</dd>
@@ -236,10 +241,12 @@ export const TrailsInfo: React.FC<TrailsInfoProps> = ({ trails, disabled }) => {
                                         )}
                                     </dl>
 
-                                    {details.description && <p className={styles.description}>{details.description}</p>}
+                                    {details?.description && (
+                                        <p className={styles.description}>{details.description}</p>
+                                    )}
 
                                     <div className={styles.links}>
-                                        {!!details.bbox && (
+                                        {!!details?.bbox && (
                                             <button
                                                 type={'button'}
                                                 onClick={handleShowWhole}
