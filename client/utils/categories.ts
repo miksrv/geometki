@@ -77,6 +77,10 @@ export const getCategoryTitle = (t: CategoryTranslate, name: ApiModel.Categories
 export const getCategoryLandingTitle = (t: CategoryTranslate, name: ApiModel.Categories | string): string =>
     translate(t, `categoryCatalogue.${name}.landing`, getCategoryTitle(t, name))
 
+/** The short plural name: "Пещеры" — chips and tiles where the landing name is too long */
+export const getCategoryShortTitle = (t: CategoryTranslate, name: ApiModel.Categories | string): string =>
+    translate(t, `categoryCatalogue.${name}.short`, getCategoryTitle(t, name))
+
 /** The landing page's intro text; '' when the locale has none */
 export const getCategoryContent = (t: CategoryTranslate, name: ApiModel.Categories | string): string => {
     const content = translate(t, `categoryCatalogue.${name}.content`, '')

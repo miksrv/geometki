@@ -1,0 +1,90 @@
+@use '../../../styles/variables' as variables
+
+// White on the brand gradient in both themes
+.join
+    display: grid
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr)
+    gap: 32px
+    align-items: center
+    padding: 36px 40px
+    border-radius: var(--radius-lg)
+    background: linear-gradient(120deg, #2b5b93 0%, #3770b1 55%, #4b8bd0 100%)
+    color: #ffffff
+
+    @media (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+        gap: var(--space-5)
+        padding: var(--space-6) var(--space-4)
+
+.title
+    margin: 0
+    color: inherit
+    font-size: 28px
+    font-weight: 700
+    line-height: 1.15
+    letter-spacing: -0.01em
+    text-wrap: balance
+
+    @media (max-width: variables.$mobileMaxWidth)
+        font-size: var(--font-size-title-page)
+
+.text
+    max-width: 520px
+    margin: 10px 0 var(--space-5)
+    font-size: var(--font-size-prose)
+    color: rgba(255, 255, 255, 0.88)
+
+.actions
+    display: flex
+    flex-wrap: wrap
+    gap: 10px
+
+.primary
+    background: #ffffff !important
+    color: #1d2a3a !important
+
+.secondary
+    border-color: rgba(255, 255, 255, 0.4) !important
+    background: rgba(255, 255, 255, 0.12) !important
+    color: #ffffff !important
+
+    svg
+        fill: #ffffff !important
+
+// The icon on its own plate, centred on the two lines of text
+.perkIcon
+    flex: none
+    display: grid
+    place-items: center
+    width: 40px
+    height: 40px
+    border-radius: var(--border-radius)
+    background: rgba(255, 255, 255, 0.16)
+
+    svg
+        width: 24px
+        height: 24px
+        fill: #ffffff
+
+.perks
+    display: flex
+    flex-direction: column
+    gap: 10px
+    margin: 0
+    padding: 0
+    list-style: none
+
+    li
+        display: flex
+        align-items: center
+        gap: var(--space-3)
+        padding: var(--space-3) 14px
+        border-radius: var(--border-radius)
+        background: rgba(255, 255, 255, 0.12)
+
+    b
+        display: block
+
+    span
+        font-size: variables.$fontSizeHeadline
+        color: rgba(255, 255, 255, 0.8)

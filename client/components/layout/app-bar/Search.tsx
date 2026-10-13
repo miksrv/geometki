@@ -1,21 +1,14 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Button, cn } from 'simple-react-ui-kit'
 
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
-import { API, ApiType } from '@/api'
-import { Autocomplete, AutocompleteOption } from '@/components/ui'
-import { categoryImage } from '@/utils/categories'
-import { buildPlaceUrl } from '@/utils/helpers'
+import { ApiType } from '@/api'
+import { Autocomplete } from '@/components/ui'
+import useSiteSearch from '@/hooks/useSiteSearch'
 
 import styles from './styles.module.sass'
-
-enum SuggestionType {
-    PLACE = 'place',
-    LOCATION = 'location',
-    COORDINATES = 'coordinates'
-}
 
 /**
  * Global site search.
@@ -28,53 +21,11 @@ export const Search: React.FC = () => {
     const { t } = useTranslation()
     const router = useRouter()
 
-    const urlQuery = (router.query.q as string) ?? ''
-    const [inputValue, setInputValue] = useState<string>(urlQuery)
+    const { reset, ...search } = useSiteSearch()
     const [overlayOpen, setOverlayOpen] = useState<boolean>(false)
     const overlayRef = useRef<HTMLDivElement>(null)
     // Element that opened the overlay; Button (simple-react-ui-kit) doesn't accept a ref
     const triggerButtonRef = useRef<HTMLElement | null>(null)
-
-    useEffect(() => {
-        setInputValue(urlQuery)
-    }, [urlQuery])
-
-    const isOnSearchPage = router.pathname === '/search'
-    const inputMatchesUrl = inputValue.trim() === urlQuery.trim()
-    const skipSuggestions = isOnSearchPage && inputMatchesUrl
-
-    const { data: suggestData, isFetching } = API.useSearchSuggestQuery(inputValue, {
-        skip: inputValue.length < 2 || skipSuggestions
-    })
-
-    const options = useMemo<Array<AutocompleteOption<ApiType.Search.Suggestion>>>(
-        () =>
-            suggestData?.suggestions?.map((suggestion) => {
-                if (suggestion.type === SuggestionType.PLACE) {
-                    return {
-                        title: suggestion.title,
-                        type: SuggestionType.PLACE,
-                        image: suggestion.category ? categoryImage(suggestion.category) : undefined,
-                        value: suggestion
-                    }
-                }
-
-                if (suggestion.type === SuggestionType.LOCATION) {
-                    return {
-                        title: suggestion.title,
-                        type: SuggestionType.LOCATION,
-                        value: suggestion
-                    }
-                }
-
-                return {
-                    title: `${suggestion.lat}, ${suggestion.lon}`,
-                    type: SuggestionType.COORDINATES,
-                    value: suggestion
-                }
-            }) ?? [],
-        [suggestData?.suggestions]
-    )
 
     const handleOpenOverlay = (event: React.MouseEvent<HTMLButtonElement>) => {
         triggerButtonRef.current = event.currentTarget
@@ -83,42 +34,8 @@ export const Search: React.FC = () => {
 
     const handleCloseOverlay = () => {
         setOverlayOpen(false)
-        setInputValue(urlQuery)
+        reset()
         triggerButtonRef.current?.focus()
-    }
-
-    const handleSearch = (value: string) => {
-        setInputValue(value)
-    }
-
-    const navigateToSearch = async (q: string) => {
-        const trimmed = q.trim()
-
-        if (trimmed) {
-            await router.push(`/search?q=${encodeURIComponent(trimmed)}`)
-        }
-    }
-
-    const handleSelect = async (option?: AutocompleteOption<ApiType.Search.Suggestion>) => {
-        if (!option) {
-            return
-        }
-
-        const suggestion = option.value
-
-        if (suggestion.type === SuggestionType.PLACE) {
-            await router.push(buildPlaceUrl(suggestion.id, suggestion.slug))
-            return
-        }
-
-        const zoom = suggestion.type === SuggestionType.COORDINATES ? 14 : 12
-        const hash = `${suggestion.lat},${suggestion.lon},${zoom}?m=${suggestion.lat},${suggestion.lon}`
-
-        if (router.pathname === '/map') {
-            await router.replace({ hash, pathname: '/map' })
-        } else {
-            await router.push(`/map#${hash}`)
-        }
     }
 
     // Close the mobile overlay on Escape and on outside click
@@ -162,15 +79,8 @@ export const Search: React.FC = () => {
             placeholder={placeholder}
             debounceDelay={300}
             leftIcon={'Search'}
-            hideArrow={!options.length || !inputValue.length}
-            loading={isFetching}
-            inputValue={inputValue}
-            options={options}
             autoFocus={autoFocus}
-            onSearch={handleSearch}
-            onSelect={handleSelect}
-            suppressDropdown={skipSuggestions}
-            onEnterPress={(value) => void navigateToSearch(value)}
+            {...search}
         />
     )
 

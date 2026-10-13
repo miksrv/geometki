@@ -1,19 +1,13 @@
-.hexagon
-    display: flex
-    align-items: center
-    justify-content: center
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)
+.badge
+    display: block
     flex-shrink: 0
+    overflow: visible
 
-.hexagonInner
-    display: flex
-    align-items: center
-    justify-content: center
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)
-
+// White digits with an outline in the rim colour (the `stroke` attribute) painted under the fill
 .level
-    font-size: 11px
+    fill: #ffffff
     font-weight: 700
-    color: #fff
-    line-height: 1
+    paint-order: stroke
+    stroke-linejoin: round
+    font-variant-numeric: tabular-nums
     user-select: none

@@ -1,0 +1,39 @@
+@use '../../../styles/variables' as variables
+
+.tabs
+    margin-bottom: var(--space-3)
+
+.locate
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    justify-content: space-between
+    gap: var(--space-3)
+    padding: var(--space-6)
+    border: 1px dashed var(--border-strong)
+    border-radius: var(--border-radius)
+
+    p
+        margin: 0
+        color: var(--text-color-secondary)
+
+    @media (max-width: variables.$mobileMaxWidth)
+        padding: var(--space-4)
+
+.loaders
+    display: grid
+    grid-template-columns: repeat(3, minmax(0, 1fr))
+    gap: 10px
+
+    @media (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+
+        & > :not(:first-child)
+            display: none
+
+    & > *
+        margin: 0
+
+.empty
+    margin: 0
+    color: var(--text-color-secondary)

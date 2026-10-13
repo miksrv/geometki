@@ -1,0 +1,41 @@
+@use '../../../styles/variables' as variables
+
+// A free slot of the tile grid: the tile's size, a dashed frame instead of a cover
+.create
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+    gap: var(--space-2)
+    padding: var(--space-6)
+    background: transparent
+    background-image: none
+    box-shadow: none
+    border: 1px dashed var(--border-strong)
+    color: var(--text-color-primary)
+    text-align: center
+
+    &:hover
+        border-color: var(--color-main)
+        color: var(--text-color-primary)
+        text-decoration: none
+
+    @media (max-width: variables.$mobileMaxWidth)
+        height: auto
+
+.icon
+    display: grid
+    place-items: center
+    width: 52px
+    height: 52px
+    border-radius: 50%
+    background: var(--color-main-background)
+
+    svg
+        width: 26px
+        height: 26px
+        fill: var(--color-main)
+
+.text
+    max-width: 260px
+    color: var(--text-color-secondary)

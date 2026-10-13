@@ -11,6 +11,9 @@
 - Activity feed: redesigned as stories: a new place with its photos, photo albums, reviews, ratings, collections, achievements and new levels
 - Activity feed: day headings, filters (places, photos, reviews, collections, achievements) and a "This week" summary with the most active people
 - Home page: the activity widget shows the latest big events and the week's summary
+- Home page: redesigned for newcomers: search, categories with place counts, popular, new and nearby places, how the site works, collections, popular regions and a sign-up block
+- Home page: signed-in users get a personal panel with their level, progress and counters, and interesting objects nearby that are not on the map yet
+- Levels: redesigned level badges, crisp at any size with a larger number
 - Profile: activity calendar for the last year with the year's totals and streaks of active days
 - Place page: the change history shows photos, reviews and ratings the same way as the feed
 - Search: results show the first two lines of the place description

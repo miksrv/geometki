@@ -1,5 +1,35 @@
 @use '../styles/variables' as variables
 
+// The blocks are sections, `--space-6` apart (`--space-5` on phones) like on every page;
+// the first one keeps the same distance from the app bar as a page header
+.home
+    display: flex
+    flex-direction: column
+    gap: var(--space-6)
+    margin-top: var(--space-3)
+
+    & > *
+        min-width: 0
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        gap: var(--space-5)
+
+// Signed-in user: the feed wide, the "unexplored" and the people on the side
+.userColumns
+    display: grid
+    grid-template-columns: minmax(0, 1fr) 360px
+    gap: var(--space-4)
+    align-items: start
+
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+
+.sideColumn
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+    min-width: 0
+
 .twoColumns
     display: grid
     // minmax(0, 1fr): columns never grow past the screen because of long content
@@ -18,59 +48,3 @@
     flex-direction: column
     gap: var(--space-3)
     margin-top: var(--space-2)
-
-.mapHero
-    position: relative
-    display: block
-    width: 100%
-    min-height: 200px
-    overflow: hidden
-    border-radius: var(--border-radius)
-
-.mapHeroImage
-    object-fit: cover
-    object-position: center
-
-.mapHeroOverlay
-    position: absolute
-    inset: 0
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.72) 100%)
-    z-index: 1
-
-.mapHeroContent
-    position: relative
-    z-index: 2
-    display: flex
-    flex-direction: column
-    gap: 8px
-    padding: 20px 16px 16px
-
-.mapHeroTitle
-    margin: 0
-    font-size: variables.$fontSizeTitleH2
-    font-weight: 600
-    line-height: 1.25
-
-    a
-        color: #ffffff
-        text-decoration: none
-
-        &:hover
-            text-decoration: underline
-
-.mapHeroSubtitle
-    margin: 0
-    font-size: variables.$fontSizeParagraph
-    color: rgba(255, 255, 255, 0.82)
-    line-height: 1.6
-
-.mapHeroCta
-    display: inline-block
-    margin-top: 4px
-    font-size: variables.$fontSizeParagraph
-    font-weight: 500
-    color: #ffffff
-    text-decoration: none
-
-    &:hover
-        text-decoration: underline

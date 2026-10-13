@@ -103,6 +103,31 @@ re-implement them.
   pages have no map: places there are nationwide. Filter changes build the canonical path
   (`utils/placesLanding.ts` `buildPlacesHref`) instead of `/places?…` once the relevant flag
   is on.
+- **Home page** (`pages/index.tsx`, blocks in `sections/home`): its blocks are sections,
+  `--space-6` apart (`--space-5` on phones) like on every page, the first one `--space-3` under
+  the app bar. One page, two sets of blocks chosen by `isAuth` (never by user agent: a crawler
+  is a guest and gets the guest page; the title, canonical and JSON-LD are the same for both).
+  Guest: `HomeHero` (the photo `images/pages/home-hero.jpg` with the h1 — the one display-size
+  h1 of the site, 40px / 28px on phones — the lead, the site search (`useSiteSearch`, the same
+  as the app bar), the three fullest categories as chips plus "Рядом со мной", the live numbers
+  of `/stats`) → `HomeCategories` (tiles of every category with places and their counts, twelve
+  shown, six on phones, the rest hidden but still in the markup for the links) → `HomePlaces`
+  ("Куда поехать": button `Tabs` popular this week / new / nearby over a `Carousel` of
+  `PlaceCard` tiles; nearby asks for the location on its button only) → `HomeHowItWorks` (three
+  step cards, each with a picture made of real pieces of the site — the fullest category icons,
+  the "Я здесь был(а)" button, growing `LevelBadge`s — and the experience the step brings as the
+  server counts it) → `HomeCollections` (`CollectionCard`s in a
+  `MediaTileGrid`; a short row ends with a dashed "make your own" tile) → the regions
+  `LocationLinkList` → the feed (three stories) and people `Container`s → `HomeJoin` (the brand
+  gradient band with the sign-up button). Signed-in user: `HomeWelcome` (a card: the 96px square
+  avatar as on the profile → three lines: the greeting h1, a 13px line "since {year} · the
+  experience left to the next level", the `LevelBadge` + kit `Progress` + "experience / next"
+  → the places / photos / visits counters on the right, each a link to that list of the
+  profile, under the rest on phones; no action buttons — adding a place is in the app bar) → a
+  `1fr 360px` grid of the feed and a side column with `HomeUnexplored` (OSM candidates around
+  the visitor's location, picker-style rows, each a link to the map there) and the people → the
+  categories as a `LocationLinkList` with counts → `HomePlaces` → `HomeCollections`. Chips and
+  pills here have the `--border-radius` corners of every pill on the site, never round ends.
 - **Sections, not containers.** The parts of one entity (its description, photos,
   comments, history, the facts about it) are `Section`s (`components/shared/section`, the
   same `title` / `action` / `footer` slots as the kit `Container`, a kit candidate): an h2
@@ -324,9 +349,9 @@ Where it is: `/activity` — `PageHeader`, then a `1fr 320px` grid: type
 filter `Tabs` (links `?type=places|photos|reviews|collections|achievements`) above the feed
 grouped by day with infinite scroll (`useInfiniteScroll`), `FeedPulse` in the sticky right
 column (first on phones). Home page — a `Container` with the compact pulse and the five
-latest stories of weight 2+ — in a `Container`, next to the "Активные пользователи"
-container, as an exception to "lists never sit inside a `Container`": the two home widgets
-are a pair of titled blocks. Profile (`sections/user/user-activity`) — `ContributionCalendar`
+latest stories of weight 2+, next to the "Активные пользователи" container (the main column
+of the signed-in layout), as an exception to "lists never sit inside a `Container`": the
+home widgets are titled blocks. Profile (`sections/user/user-activity`) — `ContributionCalendar`
 across the page, then the same `1fr 320px` grid: the author's feed by day and
 `ContributionSummary` in the sticky column.
 Place page — the collapsed "История изменений" row: compact stories without the place,

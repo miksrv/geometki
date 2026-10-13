@@ -5,7 +5,8 @@ import { render, screen } from '@testing-library/react'
 import { NotificationIcon } from './NotificationIcon'
 
 jest.mock('simple-react-ui-kit', () => ({
-    Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
+    Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />,
+    useTooltip: () => ({ tooltip: null, triggerProps: {} })
 }))
 
 jest.mock('next/image', () => {
