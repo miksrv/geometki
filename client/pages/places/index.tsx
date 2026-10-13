@@ -21,6 +21,7 @@ import { buildPlacesHref, encodeQueryData, getLandingFlags } from '@/utils/helpe
 import { PlaceSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { getDistanceOrigin } from '@/utils/userLocation'
 
 const DEFAULT_SORT = ApiType.SortFields.Trending
 const DEFAULT_ORDER = ApiType.SortOrders.DESC
@@ -392,6 +393,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             const lat = parseFloat(context.query.lat as string) || null
             const lon = parseFloat(context.query.lon as string) || null
+            const distanceOrigin = getDistanceOrigin(lat, lon, cookies)
 
             const tag = (context.query.tag as string) || null
             const defaultSort = cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT
@@ -513,10 +515,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     category,
                     country,
                     district,
-                    lat,
+                    lat: distanceOrigin?.lat,
                     limit: POST_PER_PAGE,
                     locality,
-                    lon,
+                    lon: distanceOrigin?.lon,
                     offset: (currentPage - 1) * POST_PER_PAGE,
                     order: order,
                     region,

@@ -15,7 +15,7 @@ jest.mock('next-i18next/pages', () => ({
     })
 }))
 
-const { HISTORICAL_PHOTOS, WIKIMEDIA_COMMONS, WIKIPEDIA, HEATMAP } = MapAdditionalLayersEnum
+const { HISTORICAL_PHOTOS, WIKIMEDIA_COMMONS, WIKIPEDIA } = MapAdditionalLayersEnum
 
 const storeWith = (statuses: LayerStatuses): LayerStatusStore => {
     const store = createLayerStatusStore()
@@ -34,12 +34,12 @@ const renderStatus = (layers: MapAdditionalLayersEnum[], statuses: LayerStatuses
 
 describe('LayersStatus', () => {
     it('renders nothing without external layers', () => {
-        const { container } = renderStatus([HEATMAP])
+        const { container } = renderStatus([])
         expect(container).toBeEmptyDOMElement()
     })
 
     it('shows a row for each turned on external layer, in a fixed order', () => {
-        renderStatus([WIKIPEDIA, HEATMAP, HISTORICAL_PHOTOS])
+        renderStatus([WIKIPEDIA, HISTORICAL_PHOTOS])
         const rows = screen.getByRole('status').children
         expect(rows).toHaveLength(2)
         expect(rows[0]).toHaveTextContent('Исторические фото')

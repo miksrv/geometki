@@ -59,7 +59,7 @@ const nextConfig = {
     output: 'standalone',
     trailingSlash: false,
 
-    transpilePackages: ['@uiw/react-md-editor', 'leaflet', 'leaflet.heat'],
+    transpilePackages: ['@uiw/react-md-editor', 'leaflet'],
 
     // Type-check only the app sources during build, tests are covered by Jest
     typescript: {

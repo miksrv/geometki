@@ -110,9 +110,6 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
     }
 
     const titleAdditionalMapType: Record<MapAdditionalLayersEnum, string> = {
-        [MapAdditionalLayersEnum.HEATMAP]: t('map-type_Heatmap', {
-            defaultValue: 'Explorations'
-        }),
         [MapAdditionalLayersEnum.HISTORICAL_PHOTOS]: t('map-type_HistoricalPhotos', {
             defaultValue: 'Historical Photos'
         }),

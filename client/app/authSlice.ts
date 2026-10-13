@@ -36,19 +36,31 @@ const authSlice = createSlice({
 
             if (payload?.auth && !!payload.token) {
                 void setCookie(AUTH_COOKIES.TOKEN, payload.token, { maxAge: COOKIE_MAX_AGE })
-                void setCookie(AUTH_COOKIES.SESSION, payload?.session ?? '', { maxAge: COOKIE_MAX_AGE })
             } else {
                 void deleteCookie(AUTH_COOKIES.TOKEN)
+            }
+
+            // An anonymous visitor keeps their session too: without the cookie every visit
+            // would start a new one on the server
+            if (payload?.session) {
+                void setCookie(AUTH_COOKIES.SESSION, payload.session, { maxAge: COOKIE_MAX_AGE })
+            } else {
                 void deleteCookie(AUTH_COOKIES.SESSION)
             }
         },
         logout: (state) => {
+            // Signing out drops the session tied to the account; an anonymous visitor (the server
+            // saying "not signed in") keeps theirs
+            if (state.isAuth === true) {
+                state.session = undefined
+                void deleteCookie(AUTH_COOKIES.SESSION)
+            }
+
             state.token = undefined
             state.user = undefined
             state.isAuth = false
 
             void deleteCookie(AUTH_COOKIES.TOKEN)
-            void deleteCookie(AUTH_COOKIES.SESSION)
         },
         saveSession: (state, { payload }: PayloadAction<string>) => {
             state.session = payload

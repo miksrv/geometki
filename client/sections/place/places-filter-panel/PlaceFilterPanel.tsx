@@ -7,6 +7,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
 import { ListingToolbar, ListingToolbarGroup } from '@/components/shared'
+import useUserLocation from '@/hooks/useUserLocation'
 import { getCategoryOptions } from '@/utils/categories'
 
 import { PlacesFilterType } from './types'
@@ -30,7 +31,7 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
 }) => {
     const { t } = useTranslation()
 
-    const userLocation = useAppSelector((state) => state.application.userLocation)
+    const { request: requestUserLocation } = useUserLocation()
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const [searchAddress, { data: addressData, isLoading: addressLoading }] = API.useLocationGetSearchMutation()
@@ -42,11 +43,10 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                 .filter((s) => !(s === ApiType.SortFields.Recommended && !isAuth))
                 .filter((s) => !(s === ApiType.SortFields.Trending && isAuth))
                 .map((s) => ({
-                    disabled: s === ApiType.SortFields.Distance && (!userLocation?.lat || !userLocation.lon),
                     key: s,
                     value: t(`sort_${s}`)
                 })),
-        [isAuth, userLocation]
+        [isAuth]
     )
 
     const orderOptions: Array<SelectOptionType<string>> = useMemo(
@@ -75,8 +75,15 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
         return results
     }, [addressData, location])
 
-    const handleChangeSort = (selected: Array<SelectOptionType<string>> | undefined) => {
-        onChange?.('sort', selected?.[0]?.key)
+    const handleChangeSort = async (selected: Array<SelectOptionType<string>> | undefined) => {
+        const value = selected?.[0]?.key
+
+        // Sorting by distance is what asks the browser for the location; without it the sort stays
+        if (value === ApiType.SortFields.Distance && !(await requestUserLocation())) {
+            return
+        }
+
+        onChange?.('sort', value)
     }
 
     const handleChangeOrder = (selected: Array<SelectOptionType<string>> | undefined) => {

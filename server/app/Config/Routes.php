@@ -19,7 +19,6 @@ $routes->get('/', static function () {
 $routes->group('poi', static function ($routes) {
     $routes->get('/', 'Poi::list');
     $routes->get('photos', 'Poi::photos');
-    $routes->get('users', 'Poi::users');
     $routes->get('(:alphanum)', 'Poi::show/$1');
 
     $routes->options('/', static function () {});

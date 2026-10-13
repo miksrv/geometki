@@ -28,7 +28,8 @@ The activity feed (home page and `/activity`) gets a tab toggle:
   "Follow 3 explorers to unlock your personalized feed" linking to `/users`.
 - A "Near you" block on top of Following: the 3 latest activities within 5 km, so users with no
   follows still get local relevance.
-- The last known location is the session's `lat`/`lon` (`sessions` table), no new columns needed.
+- The location is the visitor's current one, sent with the request (`lat`/`lon`, from the client's
+  `location` cookie); without it the block is hidden. The server keeps no anonymous locations.
 
 ## Server
 

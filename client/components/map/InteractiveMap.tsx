@@ -9,13 +9,13 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
 import { CYCLEMAP_TOKEN, MAPBOX_TOKEN } from '@/config/env'
+import useUserLocation from '@/hooks/useUserLocation'
 
 import { AreaMeasure } from './area-measure'
 import { CategoryControl } from './category-control'
 import { ContextMenu } from './context-menu'
 import { CoordinatesControl } from './coordinates-control'
 import { FitBounds } from './fit-bounds'
-import { HeatmapLayer } from './heatmap-layer'
 import { DEFAULT_HILLSHADE_OPACITY, HillshadeLayer } from './hillshade-layer'
 import { HistoricalPhotos } from './historical-photos'
 import { LayerSwitcherControl } from './layer-switcher-control'
@@ -74,7 +74,8 @@ type MapProps = {
     /** Keep the chosen map layer, objects type and additional layers between visits (see mapSettings) */
     storeMapSettings?: boolean
     fullMapLink?: string
-    userLatLon?: ApiType.Coordinates
+    /** The "My location" button and the visitor's marker; the browser is asked on the button click only */
+    enableUserLocation?: boolean
     onChangeCategories?: (categories?: ApiModel.Categories[]) => void
     onChangeMapType?: (type?: MapObjectsTypeEnum) => void
     onChangeBounds?: (bounds: LatLngBounds, zoom: number) => void
@@ -151,7 +152,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
     enableOsmCandidates,
     storeMapSettings,
     fullMapLink,
-    userLatLon,
+    enableUserLocation,
     onChangeCategories,
     onChangeMapType,
     onChangeBounds,
@@ -163,6 +164,12 @@ export const InteractiveMap: React.FC<MapProps> = ({
     const { t } = useTranslation()
     const router = useRouter()
     const mapRef = useRef<Map>(null)
+    const {
+        loading: userLocationLoading,
+        location: userLatLon,
+        refresh: refreshUserLocation,
+        request: requestUserLocation
+    } = useUserLocation()
 
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false)
     // One measuring tool at a time: both take over the map clicks
@@ -191,11 +198,20 @@ export const InteractiveMap: React.FC<MapProps> = ({
     )
     const [trails, setTrails] = useState<MapTrailsLayerEnum[]>((storeMapSettings && savedSettings.trails) || [])
 
-    const handleUserPosition = () => {
-        if (userLatLon?.lat && userLatLon.lon) {
-            mapRef.current?.setView([userLatLon.lat, userLatLon.lon], DEFAULT_MAP_ZOOM)
+    const handleUserPosition = async () => {
+        const coordinates = await requestUserLocation()
+
+        if (coordinates) {
+            mapRef.current?.setView([coordinates.lat, coordinates.lon], DEFAULT_MAP_ZOOM)
         }
     }
+
+    // A location granted before is brought up to date without a prompt
+    useEffect(() => {
+        if (enableUserLocation) {
+            void refreshUserLocation()
+        }
+    }, [enableUserLocation])
 
     // The external layers report their loading state here, outside of the map's state:
     // only the LayersStatus panel re-renders on a report, not the map with all its markers
@@ -415,8 +431,6 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         options={props.boundsOptions}
                     />
 
-                    {additionalLayers?.includes(MapAdditionalLayersEnum.HEATMAP) && <HeatmapLayer />}
-
                     {additionalLayers?.includes(MapAdditionalLayersEnum.HISTORICAL_PHOTOS) && (
                         <HistoricalPhotos onPhotoClick={onPhotoClick} />
                     )}
@@ -581,6 +595,19 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     )}
 
                     <div className={styles.leftControls}>
+                        {/* Right under the zoom: the first thing to reach for on a map */}
+                        {enableUserLocation && (
+                            <Button
+                                size={controlsSize}
+                                mode={'secondary'}
+                                icon={'Position'}
+                                loading={userLocationLoading}
+                                disabled={userLocationLoading}
+                                tooltip={t('my-location', { defaultValue: 'Моё местоположение' })}
+                                onClick={() => void handleUserPosition()}
+                            />
+                        )}
+
                         {onClickCreatePlace && (
                             <Button
                                 size={controlsSize}
@@ -659,16 +686,6 @@ export const InteractiveMap: React.FC<MapProps> = ({
                             />
                         )}
 
-                        {userLatLon && (
-                            <Button
-                                size={controlsSize}
-                                mode={'secondary'}
-                                icon={'Position'}
-                                tooltip={t('my-location', { defaultValue: 'Моё местоположение' })}
-                                onClick={handleUserPosition}
-                            />
-                        )}
-
                         {fullMapLink && (
                             <Button
                                 size={controlsSize}
@@ -724,7 +741,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         {enableCoordsControl && <CoordinatesControl coordinates={mapPosition} />}
                     </div>
 
-                    {userLatLon && <MarkerUser coordinates={userLatLon} />}
+                    {enableUserLocation && userLatLon && <MarkerUser coordinates={userLatLon} />}
                     <div
                         className={styles.loader}
                         style={{ display: loading ? 'block' : 'none' }}

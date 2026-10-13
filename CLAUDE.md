@@ -62,7 +62,9 @@ CodeIgniter 4 REST API following MVC pattern:
 - `app/Commands/` — spark CLI jobs (`trending:refresh`, `osm:collect`, `digest:weekly`, `feed:rebuild`, …)
 - `app/Database/Migrations/` — schema migrations; always create new migrations, never edit existing ones
 
-**Auth:** JWT in the `Authorization` header (`app/Libraries/SessionLibrary.php`); the `Session` header identifies anonymous sessions.
+**Auth:** JWT in the `Authorization` header (`app/Libraries/SessionLibrary.php`); the `Session` header identifies anonymous sessions. Sessions hold no coordinates.
+
+**Visitor location:** asked from the browser only on the visitor's action (`client/hooks/useUserLocation.ts`: the map's "My location" button, sorting by distance), never on page load. It lives in the client's `location` cookie and goes to the API as explicit `lat`/`lon` (SSR reads the cookie, `client/utils/userLocation.ts`). Only a signed-in user's last point is stored (`users.last_lat/last_lon`, `PUT /location`), not shown anywhere.
 
 **Activity and the feed:** `ActivityLibrary` writes every user action to the `activity` table — the log behind XP, achievements, notifications, the digest and place history. At the same moment it attaches the row to a story in the `feed` table (`FeedLibrary`, grouping rules in `FeedAggregator`), so `GET /feed` reads ready stories with one indexed query; achievements and new levels are stories of their own. After changing the grouping rules run `php spark feed:rebuild`.
 
@@ -71,7 +73,7 @@ CodeIgniter 4 REST API following MVC pattern:
 - **API communication:** All frontend API calls go through RTK Query in `api/api.ts`. Add new endpoints there, not via `fetch`/`axios` directly.
 - **Error format:** API returns `{ messages: { error?: string, [field]: string } }` — handle accordingly.
 - **Image uploads:** Flow is temp upload → attach to entity. Server stores files in `server/public/uploads/`.
-- **Map:** Leaflet via `react-leaflet` with Leaflet.heat for heatmaps. Map components must be dynamically imported (`next/dynamic` with `ssr: false`) because Leaflet requires `window`.
+- **Map:** Leaflet via `react-leaflet`. Map components must be dynamically imported (`next/dynamic` with `ssr: false`) because Leaflet requires `window`.
 - **Categories:** there is no `category` table. The server only whitelists the keys (`server/app/Config/Categories.php`, `in_list` validation) and returns the key (`category: "waterfall"`); there is no categories listing endpoint and no `/categories` page — the filter on `/places` and the category icons on cards are the way into a category. The catalogue is on the client: keys in `client/api/models/category.ts` (`ApiModel.Categories`), icons `client/public/images/poi/<key>.png` and colours wired up in `client/utils/categories.ts`, texts in `public/locales/<lang>/common.json` under `categoryCatalogue.<name>` (`title` label, `landing` page name, `content` intro). Adding a category touches the enum, an icon, a colour, both locales and the server config.
 
 ## Environment

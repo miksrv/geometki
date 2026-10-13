@@ -45,6 +45,7 @@ import {
 } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { getUserLocationFromCookies } from '@/utils/userLocation'
 
 import styles from './styles.module.sass'
 
@@ -500,7 +501,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
-            const { data: placeData, isError } = await store.dispatch(API.endpoints.placesGetItem.initiate({ id }))
+            const { data: placeData, isError } = await store.dispatch(
+                API.endpoints.placesGetItem.initiate({ id, ...getUserLocationFromCookies(cookies) })
+            )
 
             if (isError) {
                 return { notFound: true }

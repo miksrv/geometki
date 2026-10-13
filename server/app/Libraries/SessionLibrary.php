@@ -1,17 +1,25 @@
 <?php namespace App\Libraries;
 
 use App\Entities\UserEntity;
-use App\Models\SessionsHistoryModel;
 use App\Models\SessionsModel;
 use App\Models\UsersModel;
+use CodeIgniter\I18n\Time;
 use Config\Services;
-use JetBrains\PhpStorm\NoReturn;
 use ReflectionException;
 
+/**
+ * The visitor's session: a signed-in user (JWT in `Authorization`) or an anonymous visitor
+ * (id in the `Session` header). The session row keeps no coordinates: the visitor's location
+ * lives on the client and comes with each request that needs it as explicit `lat`/`lon`.
+ */
 class SessionLibrary {
+    /**
+     * How often a returning visitor's session row and the user's `activity_at` are refreshed.
+     * The client polls `/auth/me` every minute; the "online" mark on avatars uses a 15-minute window.
+     */
+    public const UPDATE_INTERVAL = 5 * 60;
+
     public string | null $id = null;
-    public float | null $lat = null;
-    public float | null $lon = null;
     public UserEntity | null $user = null;
     public object | null $settings = null;
     public bool $isAuth = false;
@@ -19,6 +27,7 @@ class SessionLibrary {
     private \CodeIgniter\HTTP\IncomingRequest|\CodeIgniter\HTTP\CLIRequest $request;
     private SessionsModel $model;
     private string $ip;
+    private ?object $row = null;
 
     public function __construct() {
         helper('auth');
@@ -27,44 +36,41 @@ class SessionLibrary {
         $this->request = Services::request();
 
         $token   = $this->request->getServer('HTTP_AUTHORIZATION') ?? null;
-        $session = $this->request->getHeaderLine('Session') ?? null;
+        $session = trim(str_replace('"', '', $this->request->getHeaderLine('Session')));
 
         $this->ip   = $this->request->getIPAddress();
         $this->user = validateAuthToken($token);
 
-//        if (
-//            $this->request->getUserAgent()->getAgentString() === 'node' &&
-//            $this->ip === $this->request->getServer('REMOTE_ADDR')
-//        ) {
-//            return ;
-//        }
-
         if ($this->user) {
-            $this->isAuth = true;
-            $this->model->where('user_id', $this->user->id);
+            $this->isAuth   = true;
             $this->settings = $this->user->settings;
 
             unset($this->user->password, $this->user->settings);
-        } else {
-            if ($session) {
-                $this->model->where('id', str_replace('"', '', $session));
+
+            // This device's session when the client sent it, else the user's latest one: a user
+            // on two devices keeps two rows, and their polls do not overwrite each other's IP
+            if ($session !== '') {
+                $this->row = $this->model
+                    ->select('id, user_id, user_ip, updated_at')
+                    ->where(['id' => $session, 'user_id' => $this->user->id])
+                    ->first();
             }
-            // No session token present: skip lookup — a new session will be created on update()
+
+            $this->row ??= $this->model
+                ->select('id, user_id, user_ip, updated_at')
+                ->where('user_id', $this->user->id)
+                ->orderBy('updated_at', 'DESC')
+                ->first();
+        } elseif ($session !== '') {
+            // An anonymous session that has since been tied to an account is not reused anonymously
+            $this->row = $this->model
+                ->select('id, user_id, user_ip, updated_at')
+                ->where(['id' => $session, 'user_id' => null])
+                ->first();
         }
+        // No user and no session id: no lookup, a new session is created on update()
 
-        $sessionData = $this->model->orderBy('updated_at', 'DESC')->first();
-
-        if ($sessionData) {
-            $this->id  = $sessionData->id;
-            $this->lat = $sessionData->lat ?? null;
-            $this->lon = $sessionData->lon ?? null;
-        }
-
-        // Debug logging
-//        log_message('debug', 'SessionLibrary: Request = ' . $this->request->getMethod() . ' ' . $this->request->getUri()->getPath());
-//        log_message('debug', 'SessionLibrary: Authorization header = ' . ($token ?? 'null'));
-//        log_message('debug', 'SessionLibrary: Session header = ' . ($session ?? 'null'));
-//        log_message('debug', 'SessionLibrary: User = ' . ($this->user ? json_encode(['id' => $this->user->id, 'name' => $this->user->name ?? null]) : 'null'));
+        $this->id = $this->row?->id;
     }
 
     /**
@@ -75,74 +81,83 @@ class SessionLibrary {
 
         $this->user   = $user;
         $this->isAuth = true;
-        $this->update();
+        $this->update(true);
 
         return $this;
     }
 
     /**
+     * Mark the visitor as active: refresh the session row (or create one) and the user's
+     * `activity_at`. A returning visitor is written at most once per UPDATE_INTERVAL, unless
+     * the IP or the signed-in user changed, or $force is set.
+     *
      * @throws ReflectionException
      */
-    public function update(): static {
-        if ($this->user) {
-            $usersModel = new UsersModel();
-            $usersModel->updateUserActivity($this->user->id);
-        }
+    public function update(bool $force = false): static {
+        if (!$this->id) {
+            $session = new \App\Entities\SessionEntity();
+            $session->id      = bin2hex(random_bytes(16));
+            $session->user_ip = $this->ip;
+            $session->user_id = $this->user?->id;
 
-        if ($this->id) {
-            $updateSession = new \App\Entities\SessionEntity();
-            $updateSession->updated_at = time();
-            $updateSession->user_ip    = $this->ip;
+            $this->model->insert($session);
 
-            if ($this->user && $this->user->id) {
-                $updateSession->user_id = $this->user->id;
-            }
-
-            $this->model->update($this->id, $updateSession);
+            $this->id = $session->id;
+            $this->markUserActive();
 
             return $this;
         }
 
-        $session = new \App\Entities\SessionEntity();
-        $session->id      = bin2hex(random_bytes(16));
-        $session->user_ip = $this->ip;
-        $session->user_id = $this->user ? $this->user->id : null;
+        $userChanged = $this->user && $this->row?->user_id !== $this->user->id;
+        $ipChanged   = $this->row?->user_ip !== $this->ip;
 
-        $this->model->insert($session);
+        if (!$force && !$userChanged && !$ipChanged && !$this->isStale()) {
+            return $this;
+        }
 
-        $this->id = $session->id;
+        $data = ['user_ip' => $this->ip];
+
+        if ($this->user) {
+            $data['user_id'] = $this->user->id;
+        }
+
+        $this->model->update($this->id, $data);
+        $this->markUserActive();
 
         return $this;
     }
 
     /**
-     * @param float $lat
-     * @param float $lon
-     * @return void
-     * @throws ReflectionException
+     * Save the signed-in user's last known position (not shown anywhere yet). Writes only when
+     * the user has moved further than UsersModel::LOCATION_MIN_DISTANCE from the saved point.
+     *
+     * @return bool Whether the position was saved.
      */
-    #[NoReturn] public function updateLocation(float $lat, float $lon): void {
-        if ($this->id &&
-            $lat && $lon &&
-            ($this->lat !== $lat || $this->lon !== $lon)
-        ) {
-            $model = new SessionsModel();
-            $model->update($this->id, [
-                'lat' => $lat,
-                'lon' => $lon,
-            ]);
-
-            if ($this->lat !== null && $this->lon !== null) {
-                $historyModel = new SessionsHistoryModel();
-                $historyModel->insert([
-                    'session_id' => $this->id,
-                    'lat'        => $lat,
-                    'lon'        => $lon
-                ]);
-            }
-
-            $this->lat = $lat;
-            $this->lon = $lon;
+    public function updateLocation(float $lat, float $lon): bool {
+        if (!$this->isAuth || !$this->user) {
+            return false;
         }
+
+        return (new UsersModel())->updateLastLocation($this->user->id, $lat, $lon);
+    }
+
+    private function isStale(): bool {
+        $updatedAt = $this->row?->updated_at;
+
+        if (!$updatedAt) {
+            return true;
+        }
+
+        $timestamp = $updatedAt instanceof Time ? $updatedAt->getTimestamp() : strtotime((string) $updatedAt);
+
+        return time() - $timestamp >= self::UPDATE_INTERVAL;
+    }
+
+    private function markUserActive(): void {
+        if (!$this->user) {
+            return;
+        }
+
+        (new UsersModel())->updateUserActivity($this->user->id);
     }
 }

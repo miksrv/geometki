@@ -19,6 +19,7 @@ import { MapHero } from '@/sections/home'
 import { PlaceSchema, UserSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { getUserLocationFromCookies } from '@/utils/userLocation'
 
 import styles from './index.module.sass'
 
@@ -179,6 +180,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 await Promise.all([
                     store.dispatch(
                         API.endpoints.placesGetList.initiate({
+                            ...getUserLocationFromCookies(cookies),
                             limit: 6,
                             order: ApiType.SortOrders.DESC,
                             sort: ApiType.SortFields.ViewsWeek

@@ -62,8 +62,11 @@ const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) 
             ...state, // old client state
 
             // application can be hydrated
-            application:
-                payload.application ?? state?.application ?? combinedReducer(undefined, { type: '' }).application,
+            // The visitor's location is known only on the client: the server state has none
+            application: {
+                ...(payload.application ?? state?.application ?? combinedReducer(undefined, { type: '' }).application),
+                userLocation: state?.application?.userLocation ?? payload.application?.userLocation
+            },
 
             // notification can be hydrated
             notification:

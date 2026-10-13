@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
-import { useAppDispatch } from '@/app/store'
+import { useAppDispatch, useAppSelector } from '@/app/store'
 import { AddToCollectionButton, BookmarkButton, PlacePlate } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
 import { categoryImage } from '@/utils/categories'
@@ -30,6 +30,7 @@ interface MarkerPointProps {
 const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView }) => {
     const { t } = useTranslation('common')
     const dispatch = useAppDispatch()
+    const userLocation = useAppSelector((state) => state.application.userLocation)
 
     // Cached per place: reopening the same popup does not refetch the card
     const [getPlaceItem, { data: poiData }] = API.useLazyPoiGetItemQuery()
@@ -51,7 +52,7 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
             return
         }
 
-        const { data } = await getPlaceItem(place.id, true)
+        const { data } = await getPlaceItem({ id: place.id, lat: userLocation?.lat, lon: userLocation?.lon }, true)
 
         // The POI response already carries the bookmark state for signed-in users: seed the
         // BookmarkButton cache with it before the button gets its placeId, so it does not

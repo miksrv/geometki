@@ -400,15 +400,6 @@ final class EntitiesTest extends CIUnitTestCase
         $this->assertInstanceOf(SessionEntity::class, $session);
     }
 
-    public function testSessionEntityLatLonCastToFloat(): void
-    {
-        $session = new SessionEntity();
-        $session->fill(['lat' => '55.1', 'lon' => '37.9']);
-
-        $this->assertIsFloat($session->lat);
-        $this->assertIsFloat($session->lon);
-    }
-
     // =========================================================================
     // ActivityEntity
     // =========================================================================

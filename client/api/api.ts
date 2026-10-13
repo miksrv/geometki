@@ -564,10 +564,10 @@ export const API = createApi({
         }),
 
         /** Controller: POI **/
-        poiGetItem: builder.query<ApiType.POI.PoiItemResponse, string>({
+        poiGetItem: builder.query<ApiType.POI.PoiItemResponse, ApiType.POI.PoiItemRequest>({
             // The popup shows the bookmark state and counter: refetch it when the bookmark is toggled
-            providesTags: (res, err, id) => [{ id, type: 'Bookmarks' }],
-            query: (item) => `poi/${item}`
+            providesTags: (res, err, { id }) => [{ id, type: 'Bookmarks' }],
+            query: ({ id, ...params }) => `poi/${id}${encodeQueryData(params)}`
         }),
         poiGetList: builder.query<ApiType.POI.PlacesListResponse, Maybe<ApiType.POI.ListRequest>>({
             query: (params) => `poi${encodeQueryData(params)}`
@@ -577,9 +577,6 @@ export const API = createApi({
             Maybe<Omit<ApiType.POI.ListRequest, 'categories'>>
         >({
             query: (params) => `poi/photos${encodeQueryData(params)}`
-        }),
-        poiGetUsers: builder.query<ApiType.POI.UsersListResponse, void>({
-            query: () => 'poi/users'
         }),
 
         /** Controller: Search **/

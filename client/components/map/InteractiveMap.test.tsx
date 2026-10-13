@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { InteractiveMap } from './InteractiveMap'
 
@@ -63,9 +63,20 @@ jest.mock('@/config/constants', () => ({
         MAP_SETTINGS: 'mapSettings',
         LOCALE: 'locale',
         THEME: 'theme',
-        RETURN_PATH: 'returnPath',
-        LOCATION: 'location'
+        RETURN_PATH: 'returnPath'
     }
+}))
+
+const mockUserLocation = {
+    loading: false,
+    location: undefined as { lat: number; lon: number } | undefined,
+    refresh: jest.fn(),
+    request: jest.fn()
+}
+
+jest.mock('@/hooks/useUserLocation', () => ({
+    __esModule: true,
+    default: () => mockUserLocation
 }))
 
 jest.mock('./category-control', () => ({
@@ -78,10 +89,6 @@ jest.mock('./context-menu', () => ({
 
 jest.mock('./coordinates-control', () => ({
     CoordinatesControl: () => <div data-testid={'coordinates-control'} />
-}))
-
-jest.mock('./heatmap-layer', () => ({
-    HeatmapLayer: () => <div data-testid={'heatmap-layer'} />
 }))
 
 jest.mock('./hillshade-layer', () => ({
@@ -245,10 +252,29 @@ describe('InteractiveMap', () => {
             expect(screen.queryAllByRole('button').some((b) => b.getAttribute('data-icon') === 'Time')).toBe(false)
         })
 
-        it('renders the user position button when userLatLon is provided', () => {
-            render(<InteractiveMap userLatLon={{ lat: 51.765, lon: 55.099 }} />)
+        it('has no user position button by default', () => {
+            render(<InteractiveMap />)
+            expect(screen.queryAllByRole('button').some((b) => b.getAttribute('data-icon') === 'Position')).toBe(false)
+        })
+
+        it('renders the user position button before the location is known', () => {
+            mockUserLocation.location = undefined
+            render(<InteractiveMap enableUserLocation={true} />)
             const btn = screen.getAllByRole('button').find((b) => b.getAttribute('data-icon') === 'Position')
             expect(btn).toBeInTheDocument()
+        })
+
+        it('asks for the location only on the user position button click', async () => {
+            mockUserLocation.refresh.mockClear()
+            mockUserLocation.request.mockClear().mockResolvedValue({ lat: 51.765, lon: 55.099 })
+            render(<InteractiveMap enableUserLocation={true} />)
+            expect(mockUserLocation.request).not.toHaveBeenCalled()
+            expect(mockUserLocation.refresh).toHaveBeenCalledTimes(1)
+
+            const btn = screen.getAllByRole('button').find((b) => b.getAttribute('data-icon') === 'Position')
+            fireEvent.click(btn!)
+
+            await waitFor(() => expect(mockUserLocation.request).toHaveBeenCalledTimes(1))
         })
     })
 
@@ -268,9 +294,11 @@ describe('InteractiveMap', () => {
             expect(screen.getByTestId('marker-point-cluster')).toBeInTheDocument()
         })
 
-        it('renders MarkerUser when userLatLon is provided', () => {
-            render(<InteractiveMap userLatLon={{ lat: 51.765, lon: 55.099 }} />)
+        it('renders MarkerUser when the user location is known', () => {
+            mockUserLocation.location = { lat: 51.765, lon: 55.099 }
+            render(<InteractiveMap enableUserLocation={true} />)
             expect(screen.getByTestId('marker-user')).toBeInTheDocument()
+            mockUserLocation.location = undefined
         })
 
         it('renders MarkerPhoto for each photo', () => {

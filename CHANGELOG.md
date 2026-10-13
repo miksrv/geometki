@@ -15,7 +15,13 @@
 - Place page: the change history shows photos, reviews and ratings the same way as the feed
 - Search: results show the first two lines of the place description
 - SEO: the activity feed is listed in the sitemap, and /sitemap.xml works without a web server rewrite
-- Optimized place pages, lists, search and the activity feed
+- Privacy: the site asks for your location only when you need it: "My location" on the map or sorting by distance
+- Map: the "My location" button is always shown, right under the zoom buttons
+- Map: your marker shows your avatar, with a short card and coordinates on click
+- Map: removed the "Travelers" layer
+- Places: distances to places are kept between visits once you have shared your location
+- Achievements: "Streak" counts days with activity, like the profile calendar
+- Optimized place pages, lists, search, the activity feed and visitor sessions
 
 ## 1.15.1
 

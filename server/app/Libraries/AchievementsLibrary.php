@@ -375,14 +375,17 @@ class AchievementsLibrary
             }
 
             case 'login_streak': {
-                $rows = $db->query(
-                    "SELECT DISTINCT DATE(sh.created_at) AS day
-                     FROM sessions_history sh
-                     INNER JOIN sessions s ON s.id = sh.session_id
-                     WHERE s.user_id = ?
-                     ORDER BY day ASC",
-                    [$userId]
-                )->getResultArray();
+                // Days with activity, counted like the profile's contribution calendar
+                // (Feed::calendar()): in the site's time zone, bookmarks left out
+                $offset = (new \DateTimeZone(SITE_TIMEZONE))->getOffset(new \DateTimeImmutable('now'));
+                $rows   = $db->table('activity')
+                    ->select('DISTINCT DATE(created_at + INTERVAL ' . $offset . ' SECOND) AS day', false)
+                    ->where('user_id', $userId)
+                    ->where('deleted_at', null)
+                    ->where('type !=', 'bookmark')
+                    ->orderBy('day', 'ASC')
+                    ->get()
+                    ->getResultArray();
 
                 if (empty($rows)) {
                     return 0;

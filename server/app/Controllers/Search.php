@@ -5,7 +5,6 @@ namespace App\Controllers;
 use App\Libraries\Geocoder;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
-use App\Libraries\SessionLibrary;
 use App\Models\PlacesModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -22,13 +21,6 @@ use Geocoder\Exception\Exception;
  */
 class Search extends ResourceController
 {
-    protected SessionLibrary $session;
-
-    public function __construct()
-    {
-        $this->session = new SessionLibrary();
-    }
-
     /**
      * Full search across places, geocoder locations, and coordinate detection.
      *
@@ -117,10 +109,7 @@ class Search extends ResourceController
 
                 if ($lat && $lon) {
                     $distanceSQL          = $placesModel->makeDistanceSQL($lat, $lon);
-                    $coordinatesAvailable = true;
-                } elseif ($this->session->lat && $this->session->lon) {
-                    $distanceSQL          = $placesModel->makeDistanceSQL($this->session->lat, $this->session->lon);
-                    $coordinatesAvailable = true;
+                    $coordinatesAvailable = $distanceSQL !== '';
                 }
 
                 $placesModel->applyListSelect($distanceSQL);
@@ -140,7 +129,7 @@ class Search extends ResourceController
                 // Apply explicit sort override when requested
                 $validSorts = ['views', 'rating', 'comments', 'bookmarks', 'distance', 'created_at', 'updated_at'];
                 if (!$sort) {
-                    $sort = ($lat || $this->session->lat) ? 'distance' : 'relevance';
+                    $sort = $coordinatesAvailable ? 'distance' : 'relevance';
                 }
 
                 if (in_array($sort, $validSorts, true) && in_array(strtoupper($order), ['ASC', 'DESC'], true)) {

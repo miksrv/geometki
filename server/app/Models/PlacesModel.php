@@ -105,7 +105,7 @@ class PlacesModel extends ApplicationBaseModel
      */
     public function makeDistanceSQL(?float $lat, ?float $lon): string
     {
-        if (!$lat || !$lon) {
+        if (!$lat || !$lon || abs($lat) > 90 || abs($lon) > 180) {
             return '';
         }
 

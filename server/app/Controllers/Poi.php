@@ -8,7 +8,6 @@ use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Models\PhotosModel;
 use App\Models\PlacesModel;
-use App\Models\SessionsModel;
 use App\Models\UsersBookmarksModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -17,7 +16,7 @@ use CodeIgniter\RESTful\ResourceController;
  * Poi (Points of Interest) controller
  *
  * Supplies lightweight marker data for the map view: place pin list, photo
- * heat-map markers, a miniature place card, and online-user heatmap coordinates.
+ * markers and a miniature place card.
  * Optionally clusters markers server-side via the Cluster library.
  *
  * @package App\Controllers
@@ -147,7 +146,7 @@ class Poi extends ResourceController
     /**
      * Return a miniature place card for the map popup.
      *
-     * GET /poi/:id
+     * GET /poi/:id — optional query params: lat, lon (the visitor's position, for the distance).
      *
      * @param int|string|null $id Place primary key.
      *
@@ -164,7 +163,10 @@ class Poi extends ResourceController
         }
 
         $placesModel = new PlacesModel();
-        $coordinates = $placesModel->makeDistanceSQL($sessionLib->lat, $sessionLib->lon);
+        $coordinates = $placesModel->makeDistanceSQL(
+            $this->request->getGet('lat', FILTER_VALIDATE_FLOAT) ?: null,
+            $this->request->getGet('lon', FILTER_VALIDATE_FLOAT) ?: null
+        );
         $placeData   = $placesModel
             ->select('id, slug, rating, views, photos, cover_external_id, comments, bookmarks' . $coordinates)
             ->find($id);
@@ -192,32 +194,6 @@ class Poi extends ResourceController
         }
 
         return $this->respond($placeData);
-    }
-
-    /**
-     * Return current online-user coordinates for the heatmap layer.
-     *
-     * GET /poi/users — returns up to 500 [lat, lon] pairs from active sessions.
-     *
-     * @return ResponseInterface
-     */
-    public function users(): ResponseInterface
-    {
-        $sessionsModel = new SessionsModel();
-        $sessionsData  = $sessionsModel
-            ->select('lat, lon')
-            ->where(['lat !=' => null, 'lon !=' => null])
-            ->findAll(500);
-
-        if (!$sessionsData) {
-            return $this->respond(['items' => []]);
-        }
-
-        foreach ($sessionsData as $key => $item) {
-            $sessionsData[$key] = [$item->lat, $item->lon];
-        }
-
-        return $this->respond(['items' => $sessionsData]);
     }
 
     /**

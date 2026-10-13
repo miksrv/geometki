@@ -193,7 +193,7 @@ describe('MarkerPoint', () => {
                 { result: true }
             )
         )
-        expect(getPlaceItem).toHaveBeenCalledWith('place-1', true)
+        expect(getPlaceItem).toHaveBeenCalledWith({ id: 'place-1', lat: undefined, lon: undefined }, true)
         expect(screen.getByText('Place')).toBeInTheDocument()
     })
 

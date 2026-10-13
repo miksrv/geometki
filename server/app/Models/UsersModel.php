@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Entities\UserEntity;
+use App\Libraries\OsmScoring;
 use CodeIgniter\I18n\Time;
-use Exception;
 use ReflectionException;
 
 /**
@@ -111,23 +111,58 @@ class UsersModel extends ApplicationBaseModel
         return [$newUser, true];
     }
 
+    /** Smallest move, in metres, that replaces the saved last location (updateLastLocation()). */
+    public const LOCATION_MIN_DISTANCE = 200;
+
     /**
      * Update the activity_at timestamp for a user without altering updated_at.
      *
      * @param string $userId
      * @return void
-     * @throws ReflectionException
-     * @throws Exception
      */
     public function updateUserActivity(string $userId): void
     {
-        $userData = $this->select('updated_at')->find($userId);
+        $this->db->table($this->table)
+            ->where('id', $userId)
+            ->update(['activity_at' => Time::now()->toDateTimeString()]);
+    }
 
-        $user = new UserEntity();
-        $user->updated_at  = $userData->updated_at;
-        $user->activity_at = Time::now();
+    /**
+     * Save the user's last known position without altering updated_at. The point is kept for
+     * future features (the explorer map, features/17-personal-fog-of-war-explorer-map.md) and is
+     * never returned by the API. A move shorter than LOCATION_MIN_DISTANCE is ignored.
+     *
+     * @return bool Whether the position was saved.
+     */
+    public function updateLastLocation(string $userId, float $lat, float $lon): bool
+    {
+        $lat  = round($lat, 6);
+        $lon  = round($lon, 6);
+        $last = $this->db->table($this->table)
+            ->select('last_lat, last_lon')
+            ->where('id', $userId)
+            ->get()
+            ->getRow();
 
-        $this->update($userId, $user);
+        if (!$last) {
+            return false;
+        }
+
+        if ($last->last_lat !== null && $last->last_lon !== null
+            && OsmScoring::distance((float) $last->last_lat, (float) $last->last_lon, $lat, $lon) < self::LOCATION_MIN_DISTANCE
+        ) {
+            return false;
+        }
+
+        $this->db->table($this->table)
+            ->where('id', $userId)
+            ->update([
+                'last_lat'         => $lat,
+                'last_lon'         => $lon,
+                'last_location_at' => Time::now()->toDateTimeString(),
+            ]);
+
+        return true;
     }
 
     /**
