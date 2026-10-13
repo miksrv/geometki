@@ -1,4 +1,4 @@
-/** The niche taxonomy of features/09-place-categories.md, mirrored by the server's `Config\Categories` */
+/** The niche category taxonomy, mirrored by the server's `Config\Categories` */
 export enum Categories {
     // Nature
     mountain = 'mountain',

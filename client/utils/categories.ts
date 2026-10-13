@@ -48,7 +48,7 @@ export const isCategoryName = (value: unknown): value is ApiModel.Categories =>
     typeof value === 'string' && (CATEGORY_NAMES as string[]).includes(value)
 
 /**
- * Retired keys => the key that took their places (features/09-place-categories.md). Only for
+ * Retired keys => the key that took their places. Only for
  * the 301 of old `/places?category=` links, which have been indexed for years; the category
  * landing pages never went live under these keys.
  */

@@ -381,7 +381,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const rawCategory = context.query.category
             const queryCategory = (Array.isArray(rawCategory) ? rawCategory[0] : rawCategory) || ''
 
-            // A retired category key (features/09-place-categories.md) is replaced with the key
+            // A retired category key (`RENAMED_CATEGORIES`) is replaced with the key
             // that took its places: the landing 301 below then goes straight to its page, and
             // the other cases get a 301 to the same listing with the new key
             const requestedCategories = queryCategory ? queryCategory.split(',').map((name) => name.trim()) : []

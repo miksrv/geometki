@@ -18,7 +18,6 @@ yarn eslint:check     # Check ESLint violations
 yarn eslint:fix       # Auto-fix ESLint violations
 yarn prettier:check   # Check formatting
 yarn prettier:fix     # Auto-format code
-yarn locales:build    # Rebuild i18n translation files (see the warning under i18n)
 ```
 
 Run a single test file: `yarn test utils/helpers.test.ts`. If almost every suite fails with `React.act is not a function`, the shell has `NODE_ENV=production`; run `NODE_ENV=test yarn test`.
@@ -49,7 +48,7 @@ Uses **Next.js Pages Router** (not App Router) with **Redux Toolkit + RTK Query*
 - `styles/` — Global SASS; `theme.css` holds project token overrides on top of `simple-react-ui-kit/theme.css` (imported first in `pages/_app.tsx`)
 - `DESIGN.md` — the client design system: layers (kit primitives vs domain components), layouts, the `MediaTile` / `PlaceCard` / `CollectionCard` rules and UI patterns. Read it before adding or changing any user-facing component; one component per entity, variants for layout.
 
-**i18n:** `next-i18next` (import from `next-i18next/pages`) with Russian (default, `/`) and English (`/en`) locales, one namespace: `public/locales/<lang>/common.json`. `yarn locales:build` runs i18next-scanner with `removeUnusedKeys: true`, so it deletes keys used only through template strings, e.g. `categoryCatalogue.<name>.*` (`utils/categories.ts`); check the diff and restore them, or edit the JSON by hand.
+**i18n:** `next-i18next` (import from `next-i18next/pages`) with Russian (default, `/`) and English (`/en`) locales, one namespace: `public/locales/<lang>/common.json`. There is no extraction script: whoever changes UI text keeps both locale files in sync by hand — add every new key to `ru` and `en` (with a real English translation), and delete keys that are no longer used, minding keys built from template strings, e.g. `categoryCatalogue.<name>.*` (`utils/categories.ts`).
 
 ### Server
 
