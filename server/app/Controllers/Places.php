@@ -26,7 +26,6 @@ use App\Models\PlacesContentModel;
 use App\Models\TagsModel;
 use App\Models\UsersBookmarksModel;
 use CodeIgniter\Files\File;
-use CodeIgniter\I18n\Time;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use Geocoder\Exception\Exception;
@@ -421,7 +420,7 @@ class Places extends ResourceController
             $content->title    = $placeTitle;
             $content->content  = $placeContent;
 
-            $placesContentModel->insert($content);
+            $placesContentModel->saveContent($content);
 
             $activity = new ActivityLibrary();
             $activity->place($newPlaceId);
@@ -461,8 +460,8 @@ class Places extends ResourceController
      * Update place content, tags, category, and/or coordinates.
      *
      * PUT /places/:id — auth required.
-     * Manages content versioning: edits within 3 months of the last edit by the
-     * same author overwrite the existing version; older edits create a new version.
+     * The text is saved per locale and logged as a revision; edits by the same author
+     * within 24 hours update their last revision (PlacesContentModel::saveContent()).
      *
      * @param string|null $id Place primary key.
      *
@@ -513,7 +512,6 @@ class Places extends ResourceController
 
             // Save place content
             if ($updatedContent || $updatedTitle) {
-                $contentModel = new PlacesContentModel();
                 $placeEntity  = new \App\Entities\PlaceContentEntity();
                 $placeEntity->locale   = $locale;
                 $placeEntity->place_id = $id;
@@ -525,22 +523,7 @@ class Places extends ResourceController
                     $placeEntity->delta = strlen($updatedContent) - strlen($placeContent->content($id));
                 }
 
-                // If the author of the last edit is the same as the current one,
-                // then you need to check when the content was last edited
-                if ($placeContent->author($id) === $this->session->user?->id && $placeContent->locale($id) === $locale) {
-                    $time = new Time('now');
-                    $diff = $time->difference($placeContent->updated($id));
-
-                    // If the last time a user edited this content was less than or equal to 3 months,
-                    // then we will simply update the data and will not add a new version
-                    if (abs($diff->getMonths()) <= 3) {
-                        $contentModel->update($placeContent->id($id), $placeEntity);
-                    } else {
-                        $contentModel->insert($placeEntity);
-                    }
-                } else {
-                    $contentModel->insert($placeEntity);
-                }
+                (new PlacesContentModel())->saveContent($placeEntity);
 
                 $shouldRecordActivity = true;
             }

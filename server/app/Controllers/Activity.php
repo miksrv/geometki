@@ -72,7 +72,7 @@ class Activity extends ResourceController
             $activityIds[] = $item->id;
         }
 
-        $placeContent->translate($placesIds, true);
+        $placeContent->translate($placesIds);
 
         // Add more elements until they can be grouped together.
         $this->addNextActivityItems($activityData);
@@ -236,9 +236,9 @@ class Activity extends ResourceController
                 $currentGroup->place = (object) [
                     'id'         => $item->place_id,
                     'slug'       => $item->place_slug ?? null,
-                    'title'      => $placeContent->get($item->place_id, 'title', $item->created_at),
-                    'content'    => $placeContent->get($item->place_id, 'content', $item->created_at),
-                    'difference' => (int) $placeContent->get($item->place_id, 'delta', $item->created_at),
+                    'title'      => $placeContent->get($item->place_id, 'title'),
+                    'content'    => $placeContent->get($item->place_id, 'content'),
+                    'difference' => (int) $placeContent->get($item->place_id, 'delta'),
                     'category'   => $item->category,
                     'cover'      => file_exists($coverPreviewFile) ? (object) [
                         'preview' => PATH_PHOTOS . $item->place_id . '/cover_preview.jpg',

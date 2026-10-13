@@ -23,12 +23,8 @@ use Config\Services;
 class PlacesContent {
 
     protected array $places = [];
-    protected array $versions = [];
     public array $placeIds = [];
     protected int $trim;
-    protected string $search;
-
-    protected bool $keepVersions = false;
 
     private PlacesContentModel $model;
 
@@ -55,27 +51,32 @@ class PlacesContent {
      *
      * Results are ranked by a combined score that weights title matches higher
      * than content matches and boosts popular places (views) and locale affinity.
+     * A place matches by its text in any locale and is then shown in the request
+     * locale, like everywhere else (translate()).
      *
      * @param string $term
      * @return void
      */
     public function search(string $term): void {
-        $this->search = $term;
+        $db = db_connect();
 
         if (mb_strlen($term) <= 3) {
             // FULLTEXT requires at least 3-4 characters depending on ft_min_word_len;
             // fall back to LIKE for short terms to avoid missing results.
-            $data = $this->model
-                ->like('title', $term)
-                ->orLike('content', $term)
-                ->orderBy('created_at', 'DESC')
-                ->findAll();
+            $like = '%' . $db->escapeLikeString($term) . '%';
+            $rows = $db->query("
+                SELECT pc.place_id
+                FROM places_content pc
+                JOIN places p ON p.id = pc.place_id AND p.deleted_at IS NULL
+                WHERE pc.title LIKE ? ESCAPE '!' OR pc.content LIKE ? ESCAPE '!'
+                GROUP BY pc.place_id
+                ORDER BY MAX(pc.updated_at) DESC
+            ", [$like, $like])->getResult();
 
-            $this->_prepareOutput($data);
+            $this->translate(array_column($rows, 'place_id'));
             return;
         }
 
-        $db     = db_connect();
         $locale = Services::request()->getLocale();
 
         // Split into words (≥3 chars), add wildcard to each; prepend exact-phrase
@@ -94,16 +95,11 @@ class PlacesContent {
             $booleanQuery = '"' . $term . '" ' . implode('* ', $words) . '*';
         }
 
+        // One row per place: the best score among its locales
         $sql = "
             SELECT
                 pc.place_id,
-                pc.title,
-                pc.content,
-                pc.user_id,
-                pc.locale,
-                pc.created_at,
-                pc.updated_at,
-                (
+                MAX(
                     CASE WHEN pc.locale = ? THEN 2 ELSE 1 END
                     *
                     (
@@ -122,48 +118,47 @@ class PlacesContent {
             ORDER BY final_score DESC
         ";
 
-        $result = $db->query($sql, [
+        $rows = $db->query($sql, [
             $locale,
             $booleanQuery,
             $booleanQuery,
             $booleanQuery,
             $booleanQuery,
-        ]);
+        ])->getResult();
 
-        $data = $result->getResult();
-
-        $this->_prepareOutput($data);
+        $this->translate(array_column($rows, 'place_id'));
     }
 
     /**
-     * When we request translations for all places, we can immediately indicate whether we should store content
-     * versions for each translation or not (these versions are needed so that when requesting an activity,
-     * we can compare the translation of the place on the date the activity was added)
+     * Load the text of the given places: the request locale, or the other one when a place
+     * has no text in it. Keeps the order of $placeIds in $this->placeIds (search relevance).
      * @param array $placeIds
-     * @param bool $keepVersions
      * @return void
      */
-    public function translate(array $placeIds, bool $keepVersions = false): void {
-        $this->placeIds = array_unique($placeIds);
+    public function translate(array $placeIds): void {
+        $this->placeIds = array_values(array_unique($placeIds));
 
         if (empty($this->placeIds)) {
             return ;
         }
 
-        // Setting a global variable
-        // #TODO
-        $this->keepVersions = $keepVersions === true;
-
-        // Fetch only the latest content record per (place_id, locale) pair to avoid
-        // loading all historical versions for every place.
         $data = $this->model
             ->whereIn('place_id', $this->placeIds)
-            ->where('created_at = (SELECT MAX(pc2.created_at) FROM places_content pc2 WHERE pc2.place_id = places_content.place_id AND pc2.locale = places_content.locale)')
-            ->orderBy('created_at', 'DESC')
             ->findAll();
 
+        $locale   = Services::request()->getLocale();
+        $byLocale = [];
+
+        foreach ($data as $item) {
+            $byLocale[$item->place_id][$item->locale] = $item;
+        }
+
         foreach ($this->placeIds as $placeId) {
-            $this->places[$placeId] = $this->_findPlaceContent($placeId, $data);
+            $texts = $byLocale[$placeId] ?? [];
+
+            if (!empty($texts)) {
+                $this->places[$placeId] = $texts[$locale] ?? reset($texts);
+            }
         }
     }
 
@@ -186,114 +181,15 @@ class PlacesContent {
     }
 
     /**
-     * Return author ID for translation place by ID
-     * @param string $placeId
-     * @return string
-     */
-    public function author(string $placeId): string {
-        return $this->get($placeId, 'user_id');
-    }
-
-    /**
-     * Return locale for translation place by ID
-     * @param string $placeId
-     * @return string
-     */
-    public function locale(string $placeId): string {
-        return $this->get($placeId, 'locale');
-    }
-
-    /**
-     * Return updated time for translation place by ID
-     * @param string $placeId
-     * @return string
-     */
-    public function updated(string $placeId): string {
-        return $this->get($placeId, 'updated_at');
-    }
-
-    /**
-     * Return updated time for translation place by ID
-     * @param string $placeId
-     * @return string
-     */
-    public function id(string $placeId): string {
-        return $this->get($placeId, 'id');
-    }
-
-    /**
      * @param string $id
      * @param string $field
-     * @param string|null $version
      * @return string|null
      */
-    public function get(string $id, string $field, string $version = null): string | null {
-        if ($version && isset($this->versions[$id])) {
-            $findKey = array_search($version, array_column($this->versions[$id], 'created_at'));
-
-            if ($findKey !== false) {
-                return $this->versions[$id][$findKey]->{$field};
-            }
-        }
-
+    public function get(string $id, string $field): string | null {
         if (isset($this->places[$id])) {
             return $this->places[$id]->{$field};
         }
 
         return '';
-    }
-
-    /**
-     * Prepares an array $this->places containing translations for each location.
-     * Also, if $this->placeIds is empty, then fill it with the found IDs of places for
-     * which matches to the search criteria were found.
-     * @param array $data translations data for all places (by array of IDs)
-     * @return array|void
-     */
-    protected function _prepareOutput(array $data) {
-        if (empty($data)) {
-            return $this->places;
-        }
-
-        foreach ($data as $item) {
-            // While searching through each translation - if a translation has already been found for the location
-            // (and it was added to the general array of ready-made translations)
-            // and if the date of the added translation is greater than the date of the current searched region -
-            // we add such a translation to the history and move on.
-            if (
-                isset($this->places[$item->place_id]) &&
-                strtotime($this->places[$item->place_id]->created_at) > strtotime($item->created_at)
-            ) {
-                if ($this->keepVersions) {
-                    $this->versions[$item->place_id][] = $item;
-                }
-
-                continue;
-            }
-
-            $this->placeIds[] = $item->place_id;
-            $this->places[$item->place_id] = $item;
-        }
-    }
-
-    /**
-     * @param string $placeId
-     * @param array $data
-     * @return array|void
-     */
-    private function _findPlaceContent(string $placeId, array $data) {
-        $request = Services::request();
-
-        foreach ($data as $item) {
-            if ($item->place_id === $placeId && $item->locale === $request->getLocale()) {
-                return $item;
-            }
-        }
-
-        foreach ($data as $item) {
-            if ($item->place_id === $placeId && $item->locale === ($request->getLocale() === 'ru' ? 'en' : 'ru')) {
-                return $item;
-            }
-        }
     }
 }

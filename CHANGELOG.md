@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.15.2
+
+### Patch Changes
+
+- Search: found places no longer show an outdated title or description
+- Optimized place pages, lists, search and the activity feed
+
 ## 1.15.1
 
 ### Patch Changes
