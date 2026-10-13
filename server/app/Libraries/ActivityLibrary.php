@@ -9,6 +9,7 @@ use App\Models\UsersModel;
 use CodeIgniter\I18n\Time;
 use Exception;
 use ReflectionException;
+use Throwable;
 
 const ACTIVITY_FLOOD_MIN = 35;
 const EMAIL_NOTIFY_FLOOD_HOURS = 5;
@@ -204,6 +205,13 @@ class ActivityLibrary {
         $session->update();
 
         $activityId = $model->getLastGeneratedId();
+
+        // The feed is a view of the log: a failure there must not fail the action itself
+        try {
+            (new FeedLibrary())->attach($activityId, $type, $attributedUserId, $placeId, $collectionId, $timeNow->getTimestamp());
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+        }
 
         // If user authorized - add user experience
         if ($isAttributedAuth && $attributedUserId) {

@@ -121,6 +121,16 @@ const MODIFIER_COVER = 2;
 const MODIFIER_EDIT = 5;
 const MODIFIER_COMMENT = 5;
 
+/*
+ | --------------------------------------------------------------------------
+ | Site time zone
+ | --------------------------------------------------------------------------
+ | Times are stored in UTC (Config\App::$appTimezone); calendar days people see — the
+ | contribution calendar, the day headings of the feed — are days of the site's zone, the
+ | same on the server and in every browser (client: SITE_UTC_OFFSET in config/constants.ts).
+ */
+defined('SITE_TIMEZONE') || define('SITE_TIMEZONE', 'Europe/Moscow');
+
 
 const AUTH_TYPE_NATIVE = 'native';
 const AUTH_TYPE_GOOGLE = 'google';

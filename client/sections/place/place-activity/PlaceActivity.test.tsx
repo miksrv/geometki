@@ -35,58 +35,99 @@ jest.mock('@/components/shared', () => ({
         </section>
     ),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ActivityList: ({ activities, plain }: any) => (
-        <ul
-            data-testid={'activity-list'}
-            data-plain={String(plain)}
-        >
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {activities.map((item: any, index: number) => (
-                <li key={index}>{item.type}</li>
-            ))}
-        </ul>
+    FeedList: ({ stories, density, hidePlace, footer }: any) => (
+        <div>
+            <ul
+                data-testid={'feed-list'}
+                data-density={density}
+                data-hide-place={String(hidePlace)}
+            >
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {stories.map((story: any) => (
+                    <li key={story.id}>{story.type}</li>
+                ))}
+            </ul>
+            {footer}
+        </div>
     )
 }))
 
 jest.mock('@/api', () => ({
-    API: { useActivityGetListQuery: jest.fn() }
+    API: { useFeedGetListInfiniteQuery: jest.fn(), useFeedGetStoriesQuery: jest.fn() }
 }))
 
-const useList = jest.mocked(API.useActivityGetListQuery)
+const useCount = jest.mocked(API.useFeedGetStoriesQuery)
+const useList = jest.mocked(API.useFeedGetListInfiniteQuery)
 
 describe('PlaceActivity', () => {
-    // Stable results: the component keeps `data` in an effect's deps, a fresh object per
-    // render would loop
-    const countResult = { data: { items: [], count: 14 } }
-    const skippedResult = { data: undefined, isLoading: false, isFetching: false }
-    const listResult = {
-        data: { items: [{ type: 'photo' }, { type: 'edit' }], has_more: false, count: 14 },
-        isLoading: false,
-        isFetching: false
-    }
+    const fetchNextPage = jest.fn()
 
-    beforeEach(() => {
-        useList.mockImplementation(((args: { countOnly?: boolean }, opts?: { skip?: boolean }) =>
-            args.countOnly ? countResult : opts?.skip ? skippedResult : listResult) as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const listResult = (hasNextPage: boolean) => ({
+        data: {
+            pageParams: [''],
+            pages: [
+                {
+                    count: 14,
+                    items: [
+                        { id: 's1', type: 'photo' },
+                        { id: 's2', type: 'edit' }
+                    ]
+                }
+            ]
+        },
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage: false,
+        isLoading: false
     })
 
-    it('renders collapsed with the count and loads the list only on click', () => {
+    beforeEach(() => {
+        fetchNextPage.mockReset()
+        useCount.mockReturnValue({ data: { count: 14, items: [] } } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        useList.mockImplementation(((args: unknown, opts?: { skip?: boolean }) =>
+            opts?.skip ? { data: undefined, hasNextPage: false } : listResult(false)) as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    })
+
+    it('renders collapsed with the count and loads the history only on click', () => {
         render(<PlaceActivity placeId={'p1'} />)
 
         const toggle = screen.getByRole('button', { name: /История изменений/ })
 
         expect(toggle).toHaveAttribute('aria-expanded', 'false')
         expect(toggle).toHaveTextContent('(14)')
-        expect(screen.queryByTestId('activity-list')).toBeNull()
-
-        // The list request is skipped while collapsed
-        const listCalls = useList.mock.calls.filter(([args]) => !(args as { countOnly?: boolean })?.countOnly)
-        expect(listCalls.every(([, opts]) => opts?.skip)).toBe(true)
+        expect(screen.queryByTestId('feed-list')).toBeNull()
+        expect(useList.mock.calls.every(([, opts]) => opts?.skip)).toBe(true)
+        expect(useCount).toHaveBeenCalledWith({ countOnly: true, place: 'p1' }, { skip: false })
 
         fireEvent.click(toggle)
 
         expect(toggle).toHaveAttribute('aria-expanded', 'true')
-        expect(screen.getByTestId('activity-list')).toHaveAttribute('data-plain', 'true')
+        expect(screen.getByTestId('feed-list')).toHaveAttribute('data-density', 'compact')
+        expect(screen.getByTestId('feed-list')).toHaveAttribute('data-hide-place', 'true')
         expect(screen.getAllByRole('listitem')).toHaveLength(2)
+        expect(useList).toHaveBeenLastCalledWith({ limit: 10, place: 'p1' }, { skip: false })
+    })
+
+    it('loads the next page with "show more"', () => {
+        useList.mockImplementation((() => listResult(true)) as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+
+        render(<PlaceActivity placeId={'p1'} />)
+        fireEvent.click(screen.getByRole('button', { name: /История изменений/ }))
+        fireEvent.click(screen.getByRole('button', { name: 'show-more' }))
+
+        expect(fetchNextPage).toHaveBeenCalledTimes(1)
+    })
+
+    it('has no "show more" on the last page', () => {
+        render(<PlaceActivity placeId={'p1'} />)
+        fireEvent.click(screen.getByRole('button', { name: /История изменений/ }))
+
+        expect(screen.queryByRole('button', { name: 'show-more' })).toBeNull()
+    })
+
+    it('skips both requests without a place', () => {
+        render(<PlaceActivity />)
+
+        expect(useCount).toHaveBeenCalledWith({ countOnly: true, place: undefined }, { skip: true })
     })
 })

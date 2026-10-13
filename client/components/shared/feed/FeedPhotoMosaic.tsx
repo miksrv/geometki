@@ -1,0 +1,105 @@
+import React, { useState } from 'react'
+import { cn } from 'simple-react-ui-kit'
+
+import Image from 'next/image'
+import { useTranslation } from 'next-i18next/pages'
+
+import { ApiModel } from '@/api'
+import { PhotoLightbox } from '@/components/shared/photo-lightbox'
+import { IMG_HOST } from '@/config/env'
+
+import type { FeedDensity } from './FeedStory'
+
+import styles from './styles.module.sass'
+
+export interface FeedPhotoMosaicProps {
+    photos: ApiModel.Photo[]
+    /** All photos of the story; more than shown puts "+N" on the last tile */
+    total?: number
+    /**
+     * `grid` — the photos are the story (1 — wide, 2 — two columns, 3 — a tall one and two,
+     * 4+ — 2×2); `strip` — a row of thumbnails under a place card
+     */
+    layout?: 'grid' | 'strip'
+    density?: FeedDensity
+    /** The place the photos are of: their alt text and button names */
+    placeTitle?: string
+}
+
+const SHOWN: Record<'grid' | 'strip', Record<FeedDensity, number>> = {
+    grid: { compact: 4, full: 4 },
+    strip: { compact: 4, full: 6 }
+}
+
+/**
+ * The photos of a feed story; any tile opens the lightbox with all the story's photos.
+ */
+export const FeedPhotoMosaic: React.FC<FeedPhotoMosaicProps> = ({
+    photos,
+    total,
+    layout = 'grid',
+    density = 'full',
+    placeTitle
+}) => {
+    const { t } = useTranslation()
+
+    const [photoIndex, setPhotoIndex] = useState<number>()
+    const [showLightbox, setShowLightbox] = useState(false)
+
+    const shown = photos.slice(0, SHOWN[layout][density])
+    const more = Math.max(0, (total ?? photos.length) - shown.length)
+
+    return (
+        <>
+            <div
+                className={cn(
+                    styles.mosaic,
+                    layout === 'strip' ? styles.strip : styles.grid,
+                    density === 'compact' && styles.mosaicCompact
+                )}
+                data-count={shown.length}
+            >
+                {shown.map((photo, index) => {
+                    const name = placeTitle
+                        ? t('feed-photo-alt', { number: index + 1, title: placeTitle })
+                        : `${t('photo', { defaultValue: 'Фото' })} ${index + 1}`
+                    const hasMore = more > 0 && index === shown.length - 1
+
+                    return (
+                        <button
+                            key={photo.id ?? photo.preview}
+                            type={'button'}
+                            className={styles.mosaicCell}
+                            onClick={() => {
+                                setPhotoIndex(index)
+                                setShowLightbox(true)
+                            }}
+                            aria-label={hasMore ? `${name}, ${t('feed-photo-more', { count: more })}` : name}
+                        >
+                            <Image
+                                src={`${IMG_HOST}${photo.preview}`}
+                                alt={name}
+                                fill
+                                sizes={layout === 'strip' ? '120px' : '(max-width: 1024px) 100vw, 920px'}
+                                className={styles.mosaicImage}
+                            />
+                            {hasMore && (
+                                <span
+                                    className={styles.mosaicMore}
+                                    aria-hidden={true}
+                                >{`+${more}`}</span>
+                            )}
+                        </button>
+                    )
+                })}
+            </div>
+
+            <PhotoLightbox
+                photos={photos}
+                photoIndex={photoIndex}
+                showLightbox={showLightbox}
+                onCloseLightBox={() => setShowLightbox(false)}
+            />
+        </>
+    )
+}

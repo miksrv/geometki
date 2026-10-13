@@ -16,7 +16,8 @@ import {
     buildPlaceUrl,
     dateToUnixTime,
     getLandingFlags,
-    numberFormatter
+    numberFormatter,
+    removeMarkdown
 } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
@@ -171,6 +172,8 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                         )}
                         {stats(styles.rowStat)}
                     </div>
+
+                    {place.content && <p className={styles.rowExcerpt}>{removeMarkdown(place.content)}</p>}
 
                     {footer && <div className={styles.footer}>{footer}</div>}
                 </div>

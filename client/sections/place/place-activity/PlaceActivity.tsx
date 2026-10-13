@@ -1,47 +1,38 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { Button, cn, Icon } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
-import { API, ApiModel } from '@/api'
-import { ActivityList, Section } from '@/components/shared'
+import { API } from '@/api'
+import { FeedList, Section } from '@/components/shared'
+import { flattenFeedPages } from '@/utils/feed'
 
 import styles from './styles.module.sass'
 
-const ACTIVITY_LIMIT = 10
+const HISTORY_LIMIT = 10
 
 interface PlaceActivityProps {
     placeId?: string
-    hidePlaceName?: boolean
-    hideCover?: boolean
 }
 
 /**
  * "История изменений (N)": a collapsed row at the end of the place page. The page prefetches
- * the count on the server (a count-only request: no rows, no view counters touched); the
- * list itself loads on the first click.
+ * the count on the server (a count-only request, no stories); the history itself — the feed
+ * stories of the place, without the place attached — loads on the first click.
  */
-export const PlaceActivity: React.FC<PlaceActivityProps> = ({ placeId, hidePlaceName, hideCover }) => {
+export const PlaceActivity: React.FC<PlaceActivityProps> = ({ placeId }) => {
     const { t } = useTranslation()
 
     const [open, setOpen] = useState<boolean>(false)
-    const [offset, setOffset] = useState<number>(0)
-    const [allItems, setAllItems] = useState<ApiModel.Activity[]>([])
 
-    const { data: countData } = API.useActivityGetListQuery({ countOnly: true, place: placeId }, { skip: !placeId })
+    const { data: countData } = API.useFeedGetStoriesQuery({ countOnly: true, place: placeId }, { skip: !placeId })
 
-    const { data, isLoading, isFetching } = API.useActivityGetListQuery(
-        { place: placeId, limit: ACTIVITY_LIMIT, offset },
+    const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = API.useFeedGetListInfiniteQuery(
+        { limit: HISTORY_LIMIT, place: placeId },
         { skip: !placeId || !open }
     )
 
-    const count = data?.count ?? countData?.count
-
-    useEffect(() => {
-        if (data?.items) {
-            setAllItems((prev) => (offset === 0 ? data.items : [...prev, ...data.items]))
-        }
-    }, [data])
+    const count = data?.pages[0]?.count ?? countData?.count
 
     return (
         <Section
@@ -64,21 +55,19 @@ export const PlaceActivity: React.FC<PlaceActivityProps> = ({ placeId, hidePlace
             }
         >
             {open && (
-                <ActivityList
-                    plain={true}
-                    activities={allItems}
-                    loading={isLoading}
-                    compact={true}
-                    hidePlaceName={hidePlaceName}
-                    hideCover={hideCover}
+                <FeedList
+                    stories={flattenFeedPages(data?.pages)}
+                    loading={isLoading || isFetchingNextPage}
+                    density={'compact'}
+                    hidePlace={true}
                     footer={
-                        data?.has_more ? (
+                        hasNextPage ? (
                             <Button
                                 mode={'secondary'}
                                 stretched={true}
-                                disabled={isFetching}
-                                loading={isFetching}
-                                onClick={() => setOffset((prev) => prev + ACTIVITY_LIMIT)}
+                                disabled={isFetchingNextPage}
+                                loading={isFetchingNextPage}
+                                onClick={() => fetchNextPage()}
                             >
                                 {t('show-more')}
                             </Button>

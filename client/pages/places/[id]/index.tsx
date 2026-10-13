@@ -422,11 +422,7 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                         </Section>
 
                         <div className={styles.orderHistory}>
-                            <PlaceActivity
-                                placeId={place?.id}
-                                hidePlaceName={true}
-                                hideCover={true}
-                            />
+                            <PlaceActivity placeId={place?.id} />
                         </div>
                     </div>
 
@@ -587,7 +583,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     : Promise.resolve({ data: undefined }),
                 store.dispatch(API.endpoints.visitedGetUsersList.initiate(id)),
                 store.dispatch(API.endpoints.collectionsGetList.initiate({ limit: IN_COLLECTIONS_LIMIT, placeId: id })),
-                store.dispatch(API.endpoints.activityGetList.initiate({ countOnly: true, place: id })),
+                store.dispatch(API.endpoints.feedGetStories.initiate({ countOnly: true, place: id })),
                 translationsPromise
             ])
 

@@ -39,7 +39,6 @@ Applied in `LevelsLibrary::push()`. Note that `LevelsLibrary::calculate()` recom
 
 - `current_streak`, `longest_streak` added to `GET /users/{id}` (`UserEntity`); no new endpoints.
 - `UserHeader`: flame icon with day count next to level and reputation; tooltip with current/longest streak and active multiplier.
-- Optional: 90-day activity heatmap on the profile from the `activity` table.
 
 ## Streak Freeze (optional)
 

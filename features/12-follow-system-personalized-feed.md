@@ -22,7 +22,7 @@ The activity feed (home page and `/activity`) gets a tab toggle:
 | Mode | Content |
 |------|---------|
 | **Following** | Activity of followed users + activity within 5 km of the user's last known location |
-| **Global** | Current behaviour: all activity, newest first |
+| **Global** | Current behaviour: all stories, newest-updated first |
 
 - "Following" is the default for users who follow 3+ people; others see Global with a nudge
   "Follow 3 explorers to unlock your personalized feed" linking to `/users`.
@@ -39,7 +39,8 @@ The activity feed (home page and `/activity`) gets a tab toggle:
   - `DELETE /users/{id}/follow`
   - `GET /users/{id}/followers`, `GET /users/{id}/following`: paginated `{ id, name, avatar, level }`.
   - `GET /users/me/suggestions`
-  - `GET /activity?filter=following`: activity of followed users OR places within the 5 km box.
+  - `GET /feed?following=1`: stories of followed users OR of places within the 5 km box (a
+    filter in `App\Models\FeedModel::visibleStories()`).
   - `GET /users/{id}` adds `followersCount`, `followingCount`, `isFollowing` (when authenticated).
 - New activity/notification type `follow` / `new_follower` (enum migration).
 - Rate limit: max 50 new follows per hour per user.
@@ -48,7 +49,7 @@ The activity feed (home page and `/activity`) gets a tab toggle:
 
 - Profile (`/users/[id]`): "N followers / N following" (open a paginated list) and a
   Follow / Following button (hover shows "Unfollow"); hidden on your own profile.
-- Feed: Global / Following tabs, choice remembered in `localStorage`.
+- Feed: Global / Following tabs next to the type filters of `/activity`, choice remembered in `localStorage`.
 - `/users`: "Suggested for you" block for authenticated users and a "Following" filter.
 - RTK Query: `followUser`, `unfollowUser` (invalidate the user and the activity feed),
   `getFollowers`, `getFollowing`, `getSuggestedUsers`.
@@ -56,7 +57,7 @@ The activity feed (home page and `/activity`) gets a tab toggle:
 ## Implementation order
 
 1. `users_follows`, follow/unfollow endpoints, profile counts.
-2. `GET /activity?filter=following`.
+2. `GET /feed?following=1`.
 3. Follow button and followers/following lists on the profile.
 4. Feed tabs.
 5. Suggestions endpoint and UI.

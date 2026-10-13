@@ -42,5 +42,13 @@ export const PLACE_COVER_MIN_HEIGHT = 133
  */
 export const INFINITE_SCROLL_ROOT_MARGIN = '0px 0px 1000px 0px'
 
+/**
+ * UTC offset of the site's time zone (Europe/Moscow, no daylight saving), in minutes. Calendar
+ * days people see — the day headings of the feed, the contribution calendar — are days of this
+ * zone, so the server render and the browser agree whatever zone either is in (server:
+ * SITE_TIMEZONE in server/app/Config/Constants.php)
+ */
+export const SITE_UTC_OFFSET = 180
+
 /** The phone layout breakpoint, the same as `$mobileMaxWidth` in `styles/variables.sass` */
 export const MOBILE_MAX_WIDTH = 768

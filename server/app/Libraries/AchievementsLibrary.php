@@ -476,6 +476,12 @@ class AchievementsLibrary
             );
         }
 
+        try {
+            (new FeedLibrary())->achievement($userId, $achievement->id);
+        } catch (\Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+        }
+
         $notify = new NotifyLibrary();
         $notify->push('achievements', $userId, null, [
             'title_en' => $achievement->title_en,

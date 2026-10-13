@@ -115,6 +115,11 @@ export const getServerSideProps = wrapper.getServerSideProps(
             // Homepage
             sitemap += makeUrlNode('', STATIC_LASTMOD, 'daily', '1.0', makeHreflang('', 'en'))
 
+            // Activity feed: changes all day, like the homepage (its ?type= filters are noindex)
+            sitemap += ['activity', 'en/activity']
+                .map((url) => makeUrlNode(url, STATIC_LASTMOD, 'daily', '0.6', makeHreflang('activity', 'en/activity')))
+                .join('')
+
             // Static pages (RU + EN paired with hreflang)
             sitemap += staticPages
                 .map((url) => makeUrlNode(url, STATIC_LASTMOD, 'monthly', '0.8', makeHreflang(url, `en/${url}`)))

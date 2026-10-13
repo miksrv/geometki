@@ -8,6 +8,13 @@
 - Places: a place without a translation says it shows the original, with a Translate link for signed-in users
 - Places: saving a translation no longer copies the original title or description into it
 - SEO: untranslated place pages are no longer indexed or listed in the sitemap as a language version
+- Activity feed: redesigned as stories: a new place with its photos, photo albums, reviews, ratings, collections, achievements and new levels
+- Activity feed: day headings, filters (places, photos, reviews, collections, achievements) and a "This week" summary with the most active people
+- Home page: the activity widget shows the latest big events and the week's summary
+- Profile: activity calendar for the last year with the year's totals and streaks of active days
+- Place page: the change history shows photos, reviews and ratings the same way as the feed
+- Search: results show the first two lines of the place description
+- SEO: the activity feed is listed in the sitemap, and /sitemap.xml works without a web server rewrite
 - Optimized place pages, lists, search and the activity feed
 
 ## 1.15.1

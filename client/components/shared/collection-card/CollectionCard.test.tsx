@@ -178,4 +178,35 @@ describe('CollectionCard', () => {
 
         expect(screen.queryByRole('link', { name: /Все коллекции в регионе/ })).not.toBeInTheDocument()
     })
+    it('leaves the author out when showAuthor is off (a feed story shows it in its head)', () => {
+        render(
+            <CollectionCard
+                collection={baseCollection}
+                showAuthor={false}
+            />
+        )
+        expect(screen.queryByTestId('user-avatar')).toBeNull()
+    })
+
+    it('renders without an author, as a feed story sends it', () => {
+        const { author, ...withoutAuthor } = baseCollection
+        void author
+        render(
+            <CollectionCard
+                collection={withoutAuthor}
+                showAuthor={false}
+            />
+        )
+        expect(screen.getByText('Водопады Краснодарского края')).toBeInTheDocument()
+    })
+
+    it('renders the title as h3 inside another titled block', () => {
+        render(
+            <CollectionCard
+                collection={baseCollection}
+                headingLevel={3}
+            />
+        )
+        expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('Водопады Краснодарского края')
+    })
 })

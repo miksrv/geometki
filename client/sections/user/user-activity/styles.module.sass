@@ -1,0 +1,29 @@
+@use '../../../styles/variables' as variables
+
+// The feed with a sticky side column, as on the feed page; on phones the column comes first
+.layout
+    display: grid
+    grid-template-columns: minmax(0, 1fr) 320px
+    gap: var(--space-6)
+    align-items: start
+
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+        gap: var(--space-4)
+
+.main
+    min-width: 0
+
+.aside
+    position: sticky
+    top: 60px
+    grid-column: 2
+    grid-row: 1
+
+    &:empty
+        display: none
+
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        position: static
+        grid-column: auto
+        grid-row: auto

@@ -125,11 +125,14 @@ $routes->group('rating', static function ($routes) {
     $routes->options('(:alphanum)', static function () {});
 });
 
-/** Activity Controller **/
-$routes->group('activity', static function ($routes) {
-    $routes->get('/', 'Activity::list');
+/** Feed Controller **/
+$routes->group('feed', static function ($routes) {
+    $routes->get('/', 'Feed::list');
+    $routes->get('pulse', 'Feed::pulse');
+    $routes->get('calendar', 'Feed::calendar');
 
     $routes->options('/', static function () {});
+    $routes->options('(:segment)', static function () {});
 });
 
 /** Users Controller **/

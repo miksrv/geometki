@@ -62,7 +62,8 @@ jest.mock('@/utils/helpers', () => ({
     buildPlaceUrl: jest.requireActual('@/utils/place').buildPlaceUrl,
     dateToUnixTime: jest.fn().mockReturnValue(1700000000),
     getLandingFlags: jest.fn().mockReturnValue({ categories: false, combinations: false, locations: false }),
-    numberFormatter: jest.fn((value: number) => String(value))
+    numberFormatter: jest.fn((value: number) => String(value)),
+    removeMarkdown: jest.requireActual('@/utils/text').removeMarkdown
 }))
 
 jest.mock('@/components/shared/category-icon', () => ({
@@ -213,6 +214,38 @@ describe('PlaceCard', () => {
             expect(screen.getByText('#1')).toBeInTheDocument()
             expect(screen.getByText('note')).toBeInTheDocument()
             expect(screen.getByRole('button', { name: 'act' })).toBeInTheDocument()
+        })
+
+        it('shows the start of the description as plain text after the address', () => {
+            const { container } = render(
+                <PlaceCard
+                    place={{ ...place, content: 'A **deep** cave with an underground lake' }}
+                    variant={'row'}
+                />
+            )
+
+            const excerpt = screen.getByText('A deep cave with an underground lake')
+            expect(excerpt.tagName).toBe('P')
+            expect(container.textContent?.indexOf('Russia')).toBeLessThan(container.textContent?.indexOf('A deep') ?? 0)
+        })
+
+        it('has no description line without a description', () => {
+            const { container } = render(
+                <PlaceCard
+                    place={place}
+                    variant={'row'}
+                />
+            )
+
+            expect(container.querySelector('p')).toBeNull()
+        })
+    })
+
+    describe('tile description', () => {
+        it('is never shown on a tile', () => {
+            render(<PlaceCard place={{ ...place, content: 'A deep cave' }} />)
+
+            expect(screen.queryByText('A deep cave')).toBeNull()
         })
     })
 })

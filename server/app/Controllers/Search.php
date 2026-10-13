@@ -165,28 +165,16 @@ class Search extends ResourceController
 
                 $formatter = new PlaceFormatterLibrary();
                 foreach ($orderedList as $place) {
-                    $place->address   = $formatter->formatAddress($place, $locale);
-                    $place->rating    = (int) $place->rating;
-                    $place->views     = (int) $place->views;
-                    $place->photos    = (int) $place->photos;
-                    $place->comments  = (int) $place->comments;
-                    $place->bookmarks = (int) $place->bookmarks;
-                    $place->title     = $placeContent->title($place->id);
-
                     if ($coordinatesAvailable && isset($place->distance) && $place->distance !== null) {
                         $place->distance = $formatter->formatDistance($place->distance);
                     }
 
-                    $cover = $formatter->formatCover($place->id, (int) $place->photos, $place->cover_external_id ?? null);
-                    if ($cover) {
-                        $place->cover = $cover;
-                    }
-
-                    if (!empty($place->updated)) {
-                        $place->updated = new \DateTime((string) $place->updated);
-                    }
-
-                    $formatter->cleanupFields($place);
+                    $formatter->formatListRow(
+                        $place,
+                        $locale,
+                        $placeContent->title($place->id),
+                        $placeContent->content($place->id)
+                    );
 
                     $formattedPlaces[] = $place;
                 }

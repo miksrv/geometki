@@ -1,0 +1,405 @@
+@use '../../../styles/variables' as variables
+
+// The feed: a column of story cards on the page background, split into days
+
+.feed
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+    min-width: 0
+
+.day
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+
+    & + &
+        margin-top: var(--space-3)
+
+.dayHeading
+    margin: 0
+    font-size: var(--font-size-small)
+    font-weight: var(--font-weight-semibold)
+    letter-spacing: .04em
+    text-transform: uppercase
+    color: var(--text-color-secondary)
+
+.footer
+    margin-top: var(--space-1)
+
+.empty
+    margin: 0
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
+
+// Story card
+
+.story
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+    min-width: 0
+    padding: var(--space-4)
+    background: var(--container-background)
+    border-radius: var(--container-radius)
+    box-shadow: var(--container-shadow)
+
+    // Compact stories (edits, ratings, visits): the same card, tighter
+    &.minor
+        gap: var(--space-2)
+        padding: var(--space-3) var(--space-4)
+
+    // Compact density sits inside another block (the home page container, the place
+    // history section): no card of its own, a rule between the stories
+    &.compact
+        padding: 0
+        background: none
+        border-radius: 0
+        box-shadow: none
+
+    &.compact + &.compact
+        padding-top: var(--space-3)
+        border-top: 1px solid var(--border)
+
+.head
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    min-width: 0
+
+.avatar
+    flex-shrink: 0
+
+.headline
+    flex: 1
+    min-width: 0
+
+.line
+    margin: 0
+    font-size: var(--font-size)
+    line-height: 1.4
+    color: var(--text-color-primary)
+    overflow-wrap: anywhere
+
+.author
+    font-weight: var(--font-weight-semibold)
+    color: var(--text-color-primary)
+
+    @at-root a#{&}:hover
+        text-decoration: underline
+
+.action
+    color: var(--text-color-secondary)
+
+.subject
+    color: var(--text-color-primary)
+
+    &:hover
+        text-decoration: underline
+
+.time
+    display: block
+    margin-top: 2px
+    font-size: var(--font-size-small)
+    color: var(--text-color-secondary)
+
+.body
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+    min-width: 0
+
+.excerpt
+    display: -webkit-box
+    margin: 0
+    overflow: hidden
+    font-size: var(--font-size)
+    line-height: 1.55
+    color: var(--text-color-primary)
+    -webkit-box-orient: vertical
+    -webkit-line-clamp: 3
+    line-clamp: 3
+
+.quote
+    margin: 0
+    padding: var(--space-3) var(--space-4)
+    background: var(--surface-2)
+    border-left: 3px solid var(--color-main)
+    border-radius: 0 var(--border-radius) var(--border-radius) 0
+
+.quoteText
+    display: -webkit-box
+    margin: 0
+    overflow: hidden
+    font-size: var(--font-size)
+    line-height: 1.55
+    white-space: pre-line
+    overflow-wrap: anywhere
+    color: var(--text-color-primary)
+    -webkit-box-orient: vertical
+    -webkit-line-clamp: 6
+    line-clamp: 6
+
+    // A narrow column (home page, place history): fewer lines
+    .compact &
+        -webkit-line-clamp: 4
+        line-clamp: 4
+
+// Place and collection tiles (MediaTile) are sized for the three-column grid: flex-basis
+// a third and a margin. In the story's column the basis would be their height — zero
+// (inside .body: one class more than MediaTile's own .tile, whatever the CSS order)
+.body .placeTile,
+.body .collection > *
+    flex: none
+    margin: 0
+
+.places
+    display: flex
+    flex-direction: column
+    gap: var(--space-2)
+
+.more
+    font-size: var(--font-size-small)
+    color: var(--text-color-secondary)
+
+.score
+    display: inline-flex
+    gap: 1px
+    vertical-align: middle
+
+.star
+    width: 14px
+    height: 14px
+    fill: var(--icon-color-secondary)
+
+.starFilled
+    fill: var(--color-orange)
+
+// Achievement and level: a badge on a grey plate
+
+.award
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    padding: var(--space-3)
+    color: var(--text-color-primary)
+    background: var(--surface-2)
+    border-radius: var(--border-radius)
+    text-decoration: none
+    transition: background-color var(--duration-fast) var(--ease)
+
+    // The plate is a link to the achievements: it shows by the background, not an underline
+    @at-root a#{&}:hover
+        text-decoration: none
+        background: var(--surface-3)
+
+.awardText
+    display: flex
+    flex-direction: column
+    gap: 2px
+    min-width: 0
+
+.awardTitle
+    font-size: var(--font-size-large)
+    font-weight: var(--font-weight-semibold)
+
+.tier
+    font-size: var(--font-size-small)
+    font-weight: var(--font-weight-semibold)
+
+.tier-bronze
+    color: var(--color-tier-bronze)
+
+.tier-silver
+    color: var(--color-tier-silver)
+
+.tier-gold
+    color: var(--color-tier-gold)
+
+// Photos: a mosaic when the photos are the story, a strip of thumbnails under a place card
+
+.mosaic
+    display: grid
+    gap: 4px
+    overflow: hidden
+    border-radius: var(--border-radius)
+
+.grid
+    height: 360px
+    grid-template-columns: 1fr
+    grid-template-rows: 1fr
+
+    &[data-count='2']
+        grid-template-columns: 1fr 1fr
+
+    &[data-count='3']
+        grid-template-columns: 2fr 1fr
+        grid-template-rows: 1fr 1fr
+
+        .mosaicCell:first-child
+            grid-row: span 2
+
+    &[data-count='4']
+        grid-template-columns: 1fr 1fr
+        grid-template-rows: 1fr 1fr
+
+    &.mosaicCompact
+        height: 200px
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        height: 260px
+
+.strip
+    grid-template-columns: repeat(6, 1fr)
+
+    // Four on narrow columns and phones: six would be under a finger's 48px
+    &.mosaicCompact
+        grid-template-columns: repeat(4, 1fr)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: repeat(4, 1fr)
+
+    .mosaicCell
+        aspect-ratio: 1
+
+.mosaicCell
+    position: relative
+    min-width: 0
+    min-height: 0
+    padding: 0
+    overflow: hidden
+    cursor: pointer
+    background: var(--surface-2)
+    border: 0
+
+    &:hover .mosaicImage
+        transform: scale(1.03)
+
+    &:focus-visible
+        outline: var(--focus-outline)
+        outline-offset: -2px
+
+.mosaicImage
+    object-fit: cover
+    transition: transform var(--duration-base) var(--ease)
+
+.mosaicMore
+    position: absolute
+    inset: 0
+    display: flex
+    align-items: center
+    justify-content: center
+    font-size: var(--font-size-title-section)
+    font-weight: var(--font-weight-semibold)
+    color: #ffffff
+    background: rgba(0, 0, 0, .5)
+    pointer-events: none
+
+// Pulse
+
+.pulse
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+    padding: var(--space-4)
+    background: var(--container-background)
+    border-radius: var(--container-radius)
+    box-shadow: var(--container-shadow)
+
+    &.pulseCompact
+        gap: var(--space-1)
+        padding: 0
+        background: none
+        box-shadow: none
+
+.pulseHeader
+    display: flex
+    flex-wrap: wrap
+    align-items: baseline
+    justify-content: space-between
+    gap: var(--space-1) var(--space-3)
+
+.pulsePeriod
+    font-size: var(--font-size-large)
+    font-weight: var(--font-weight-semibold)
+
+.pulseUpdated
+    display: inline-flex
+    align-items: center
+    gap: 6px
+    font-size: var(--font-size-small)
+    color: var(--text-color-secondary)
+
+.liveDot
+    flex-shrink: 0
+    width: 8px
+    height: 8px
+    background: var(--color-green)
+    border-radius: 50%
+    animation: live 2s ease-out infinite
+
+    @media (prefers-reduced-motion: reduce)
+        animation: none
+
+@keyframes live
+    0%
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-green) 60%, transparent)
+    70%, 100%
+        box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-green) 0%, transparent)
+
+.pulseStats
+    display: grid
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr))
+    gap: var(--space-3)
+    margin: 0
+
+.pulseStat
+    display: flex
+    flex-direction: column-reverse
+
+.pulseValue
+    margin: 0
+    font-size: var(--font-size-title-page)
+    font-weight: var(--font-weight-semibold)
+    line-height: 1.1
+    color: var(--text-color-primary)
+
+.pulseLabel
+    font-size: var(--font-size-small)
+    color: var(--text-color-secondary)
+
+.pulsePeople
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: var(--space-2)
+
+.pulsePeopleText
+    font-size: var(--font-size-small)
+    color: var(--text-color-secondary)
+
+.pulseLine
+    margin: 0
+    font-size: var(--font-size-secondary)
+    color: var(--text-color-primary)
+
+// Loader
+
+.loaderAvatar
+    flex-shrink: 0
+    width: 36px
+    height: 36px
+    border-radius: 50%
+
+.loaderLine
+    width: 60%
+    height: 14px
+    margin-bottom: 6px
+
+.loaderTime
+    width: 30%
+    height: 12px
+
+.loaderMedia
+    width: 100%
+    height: 160px

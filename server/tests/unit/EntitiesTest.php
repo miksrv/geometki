@@ -420,11 +420,11 @@ final class EntitiesTest extends CIUnitTestCase
         $this->assertInstanceOf(ActivityEntity::class, $activity);
     }
 
-    public function testActivityEntityDefaultViewsIsZero(): void
+    public function testActivityEntityHasNoStoryByDefault(): void
     {
         $activity = new ActivityEntity();
 
-        $this->assertSame(0, $activity->views);
+        $this->assertNull($activity->feed_id);
     }
 
     public function testActivityEntityFillSetsType(): void
@@ -435,13 +435,12 @@ final class EntitiesTest extends CIUnitTestCase
         $this->assertSame('place', $activity->type);
     }
 
-    public function testActivityEntityViewsCastToInteger(): void
+    public function testActivityEntityFillSetsStory(): void
     {
         $activity = new ActivityEntity();
-        $activity->fill(['views' => '7']);
+        $activity->fill(['feed_id' => 'abc123']);
 
-        $this->assertIsInt($activity->views);
-        $this->assertSame(7, $activity->views);
+        $this->assertSame('abc123', $activity->feed_id);
     }
 
     // =========================================================================

@@ -54,15 +54,17 @@ Uses **Next.js Pages Router** (not App Router) with **Redux Toolkit + RTK Query*
 
 CodeIgniter 4 REST API following MVC pattern:
 
-- `app/Controllers/` — One controller per resource (Places, Auth, Users, Photos, Activity, etc.)
+- `app/Controllers/` — One controller per resource (Places, Auth, Users, Photos, Feed, etc.)
 - `app/Models/` — Data access (CI4 Model ORM)
 - `app/Entities/` — Domain models with typed properties
 - `app/Config/Routes.php` — All route definitions grouped by resource
 - `app/Filters/CorsFilter.php` — CORS handling for all preflight requests
-- `app/Commands/` — spark CLI jobs (`trending:refresh`, `osm:collect`, `digest:weekly`, …)
+- `app/Commands/` — spark CLI jobs (`trending:refresh`, `osm:collect`, `digest:weekly`, `feed:rebuild`, …)
 - `app/Database/Migrations/` — schema migrations; always create new migrations, never edit existing ones
 
 **Auth:** JWT in the `Authorization` header (`app/Libraries/SessionLibrary.php`); the `Session` header identifies anonymous sessions.
+
+**Activity and the feed:** `ActivityLibrary` writes every user action to the `activity` table — the log behind XP, achievements, notifications, the digest and place history. At the same moment it attaches the row to a story in the `feed` table (`FeedLibrary`, grouping rules in `FeedAggregator`), so `GET /feed` reads ready stories with one indexed query; achievements and new levels are stories of their own. After changing the grouping rules run `php spark feed:rebuild`.
 
 ### Key Patterns
 

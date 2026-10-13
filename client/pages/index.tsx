@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button } from 'simple-react-ui-kit'
+import { Button, Container } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
@@ -12,7 +12,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { ActivityList, AppLayout, PlaceCard, UsersList } from '@/components/shared'
+import { AppLayout, FeedList, FeedPulse, PlaceCard, UsersList } from '@/components/shared'
 import { Carousel } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
 import { MapHero } from '@/sections/home'
@@ -22,14 +22,18 @@ import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
 import styles from './index.module.sass'
 
+/** Stories in the home page widget: the latest big events, the small ones are on /activity */
+const HOME_FEED_LIMIT = 5
+
 interface IndexPageProps {
     placesList: ApiModel.Place[]
     usersList: ApiModel.User[]
-    activityList: ApiModel.Activity[]
+    feedStories: ApiModel.FeedStory[]
+    feedPulse?: ApiType.Feed.PulseResponse
     stats?: ApiType.Stats.GetResponse
 }
 
-const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList, activityList, stats }) => {
+const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList, feedStories, feedPulse, stats }) => {
     const { t, i18n } = useTranslation()
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
@@ -119,20 +123,28 @@ const IndexPage: NextPage<IndexPageProps> = ({ placesList, usersList, activityLi
             />
 
             <div className={styles.twoColumns}>
-                <ActivityList
-                    scrollable={true}
-                    compact={true}
+                <Container
                     title={t('activity-feed')}
-                    activities={activityList}
                     action={
                         <Link
                             href={'/activity'}
-                            title={t('news-feed')}
+                            title={t('activity-feed')}
                         >
                             {t('all')}
                         </Link>
                     }
-                />
+                >
+                    <div className={styles.feedWidget}>
+                        <FeedPulse
+                            pulse={feedPulse}
+                            compact={true}
+                        />
+                        <FeedList
+                            stories={feedStories}
+                            density={'compact'}
+                        />
+                    </div>
+                </Container>
 
                 <UsersList
                     compact={true}
@@ -163,7 +175,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
-            const [{ data: placesList }, { data: usersList }, { data: stats }, { data: activityList }] =
+            const [{ data: placesList }, { data: usersList }, { data: stats }, { data: feed }, { data: feedPulse }] =
                 await Promise.all([
                     store.dispatch(
                         API.endpoints.placesGetList.initiate({
@@ -174,7 +186,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     ),
                     store.dispatch(API.endpoints.usersGetList.initiate({ limit: 15 })),
                     store.dispatch(API.endpoints.statsGetSummary.initiate()),
-                    store.dispatch(API.endpoints.activityGetList.initiate({ limit: 40 }))
+                    store.dispatch(API.endpoints.feedGetStories.initiate({ limit: HOME_FEED_LIMIT, weight: 2 })),
+                    store.dispatch(API.endpoints.feedGetPulse.initiate())
                 ])
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
@@ -182,7 +195,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
             return {
                 props: {
                     ...translations,
-                    activityList: activityList?.items || [],
+                    feedPulse: feedPulse ?? undefined,
+                    feedStories: feed?.items || [],
                     placesList: placesList?.items || [],
                     stats: stats ?? undefined,
                     usersList: usersList?.items || []
