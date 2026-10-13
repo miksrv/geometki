@@ -63,7 +63,7 @@ class Places extends ResourceController
      * separated list accepted), limit, offset, author, country, region,
      * district, locality, location (a location slug — see GET /locations/resolve
      * — in addition to the id-based params), search, tag, bookmarkUser,
-     * lat, lon, excludePlaces.
+     * lat, lon, excludePlaces, missingLocale (places with no text in that locale).
      *
      * @throws \Exception
      *
@@ -305,7 +305,10 @@ class Places extends ResourceController
         }
 
         $placeData->title   = $placeContent->title($id);
-        $placeData->content = strip_tags(html_entity_decode($placeContent->content($id), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $placeData->content = $this->plainContent($placeContent->content($id));
+        // The locale of title/content: differs from the request locale when the place has no text in it
+        $placeData->locale  = $placeContent->locale($id);
+        $placeData->locales = $placeContent->locales($id);
 
         $placeData->visitRadiusM       = (int) $placeData->visit_radius_m;
         $placeData->verificationExempt = (bool) $placeData->verification_exempt;
@@ -325,6 +328,32 @@ class Places extends ResourceController
         $this->model->recordView($id, $userId, $placeData->updated);
 
         return $this->respond($placeData);
+    }
+
+    /**
+     * Return the current title and description of a place in every locale it has one in.
+     *
+     * GET /places/:id/texts — no fallback between locales: a missing locale is simply
+     * not in the list. Used to edit or translate the text of a specific locale.
+     *
+     * @param string|null $id Place primary key.
+     *
+     * @return ResponseInterface
+     */
+    public function texts($id = null): ResponseInterface
+    {
+        if (!$id || !$this->model->find($id)) {
+            return $this->failNotFound();
+        }
+
+        $items = array_map(static fn($text) => [
+            'locale'  => $text->locale,
+            'title'   => $text->title,
+            'content' => $this->plainContent($text->content),
+            'updated' => $text->updated_at,
+        ], (new PlacesContentModel())->findTexts($id));
+
+        return $this->respond(['items' => $items]);
     }
 
     /**
@@ -459,9 +488,15 @@ class Places extends ResourceController
     /**
      * Update place content, tags, category, and/or coordinates.
      *
-     * PUT /places/:id — auth required.
+     * PATCH /places/:id — auth required.
      * The text is saved per locale and logged as a revision; edits by the same author
      * within 24 hours update their last revision (PlacesContentModel::saveContent()).
+     * The text locale is the `locale` body field, or the request locale (`Locale` header)
+     * when it is not given. A field left out keeps its current value in that same locale;
+     * a locale the place has no text in yet needs a title (and a description, when the
+     * place has one in another locale), so a translation never inherits the original text.
+     * Edits by a `bot` user leave no activity, notifications or XP, never regenerate an existing
+     * slug, and a text-only bot edit does not touch the place's updated_at.
      *
      * @param string|null $id Place primary key.
      *
@@ -476,9 +511,10 @@ class Places extends ResourceController
             return $this->failUnauthorized();
         }
 
-        $locale = $this->request->getLocale();
         $input  = $this->request->getJSON();
+        $locale = $input?->locale ?? $this->request->getLocale();
         $rules  = [
+            'locale'   => 'if_exist|in_list[' . implode(',', config('App')->supportedLocales) . ']',
             'title'    => 'if_exist|required|min_length[8]|max_length[200]',
             'category' => 'if_exist|required|in_list[' . implode(',', config('Categories')->names) . ']',
             'lat'      => 'if_exist|numeric|min_length[3]',
@@ -493,20 +529,42 @@ class Places extends ResourceController
 
         try {
             $placeTags    = new PlaceTags();
-            $placeContent = new PlacesContent();
+            $contentModel = new PlacesContentModel();
             $activity     = new ActivityLibrary();
             $placeData    = $this->model->find($id);
+            $placeTexts   = $placeData ? $contentModel->findTexts($id) : [];
+            $isBot        = $this->session->user?->role === 'bot';
 
-            $placeContent->translate([$id]);
-
-            if (!$placeContent->title($id) || !$placeData) {
+            if (!$placeData || empty($placeTexts)) {
                 return $this->failValidationErrors(lang('Places.updatePointNotExist'));
             }
 
-            // Save place tags
-            $updatedTags    = isset($input->tags) ? $placeTags->saveTags($input->tags, $id) : null;
+            // The text being edited is the one in $locale only: never the fallback in another locale
+            $currentText = array_values(array_filter($placeTexts, static fn($text) => $text->locale === $locale))[0] ?? null;
+
             $updatedContent = isset($input->content) ? strip_tags(html_entity_decode($input->content)) : null;
             $updatedTitle   = isset($input->title) ? strip_tags(html_entity_decode($input->title)) : null;
+
+            // A new translation has nothing to keep: what is left out would stay empty
+            if (!$currentText && ($updatedContent || $updatedTitle)) {
+                $hasOtherContent = !empty(array_filter($placeTexts, static fn($text) => trim((string) $text->content) !== ''));
+                $errors          = [];
+
+                if (empty($updatedTitle)) {
+                    $errors['title'] = lang('Places.translationTitleRequired');
+                }
+
+                if (empty($updatedContent) && $hasOtherContent) {
+                    $errors['content'] = lang('Places.translationContentRequired');
+                }
+
+                if ($errors) {
+                    return $this->failValidationErrors($errors);
+                }
+            }
+
+            // Save place tags
+            $updatedTags = isset($input->tags) ? $placeTags->saveTags($input->tags, $id) : null;
 
             $shouldRecordActivity = false;
 
@@ -516,14 +574,14 @@ class Places extends ResourceController
                 $placeEntity->locale   = $locale;
                 $placeEntity->place_id = $id;
                 $placeEntity->user_id  = $this->session->user?->id;
-                $placeEntity->title    = !empty($updatedTitle) ? $updatedTitle : $placeContent->title($id);
-                $placeEntity->content  = !empty($updatedContent) ? $updatedContent : $placeContent->content($id);
+                $placeEntity->title    = !empty($updatedTitle) ? $updatedTitle : $currentText?->title;
+                $placeEntity->content  = !empty($updatedContent) ? $updatedContent : (string) $currentText?->content;
 
                 if ($updatedContent) {
-                    $placeEntity->delta = strlen($updatedContent) - strlen($placeContent->content($id));
+                    $placeEntity->delta = strlen($updatedContent) - strlen((string) $currentText?->content);
                 }
 
-                (new PlacesContentModel())->saveContent($placeEntity);
+                $contentModel->saveContent($placeEntity);
 
                 $shouldRecordActivity = true;
             }
@@ -570,8 +628,9 @@ class Places extends ResourceController
                 $shouldRecordActivity = true;
             }
 
-            // The slug follows the Russian title; other locales only fill it in when it is missing
-            if (!empty($updatedTitle) && ($locale === 'ru' || empty($placeData->slug))) {
+            // The slug follows the Russian title; other locales only fill it in when it is missing.
+            // A bot never moves a place to another URL: it only fills a missing slug in
+            if (!empty($updatedTitle) && (($locale === 'ru' && !$isBot) || empty($placeData->slug))) {
                 $place->slug = generatePlaceSlug($updatedTitle);
                 $hasChanges = true;
             }
@@ -580,16 +639,19 @@ class Places extends ResourceController
             // where nothing substantive changed but we still need to record the edit time
             if ($hasChanges) {
                 $this->model->update($id, $place);
-            } else {
+            } elseif (!$isBot) {
                 $this->model->touch($id);
             }
 
-            // Record activity and send notifications once for all edit types
-            if ($shouldRecordActivity) {
+            // Record activity and send notifications once for all edit types; a bot's edits are silent
+            if ($shouldRecordActivity && !$isBot) {
                 $activity->owner($placeData->user_id)->edit($id);
             }
 
-            $return = ['content' => !empty($updatedContent) ? $updatedContent : $placeContent->content($id)];
+            $return = [
+                'content' => !empty($updatedContent) ? $updatedContent : (string) $currentText?->content,
+                'locale'  => $locale,
+            ];
 
             if (isset($input->tags)) {
                 $return['tags'] = $updatedTags;
@@ -875,6 +937,7 @@ class Places extends ResourceController
         $limit    = abs($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 20);
         $offset   = abs($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0);
         $category = $this->request->getGet('category', FILTER_SANITIZE_SPECIAL_CHARS);
+        $missing  = $this->request->getGet('missingLocale', FILTER_SANITIZE_SPECIAL_CHARS);
 
         if (!$this->coordinatesAvailable) {
             $sortingFields = array_diff($sortingFields, ['distance']);
@@ -931,6 +994,16 @@ class Places extends ResourceController
             $placesModel->where(['places.user_id' => $author]);
         }
 
+        // Places still waiting for a translation into this locale
+        if ($missing && in_array($missing, config('App')->supportedLocales, true)) {
+            $placesModel->where(
+                'NOT EXISTS (SELECT 1 FROM places_content pcm WHERE pcm.place_id = places.id AND pcm.locale = '
+                . db_connect()->escape($missing) . ')',
+                null,
+                false
+            );
+        }
+
         if ($exclude) {
             $exclude = explode(',', $exclude);
             $placesModel->whereNotIn('places.id', $exclude);
@@ -972,6 +1045,16 @@ class Places extends ResourceController
      *
      * @return array Editor user objects with id, name, and avatar.
      */
+    /**
+     * A place description as the API returns it: entities decoded, tags stripped.
+     * One rule for GET /places/:id and GET /places/:id/texts, so the edit form compares
+     * against exactly what it was given.
+     */
+    protected function plainContent(?string $content): string
+    {
+        return strip_tags(html_entity_decode((string) $content, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    }
+
     protected function editors(string $placeId, string $excludeUserId): array
     {
         $model = new ActivityModel();

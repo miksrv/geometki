@@ -49,4 +49,14 @@ describe('buildHreflangTags', () => {
         const tags = buildHreflangTags('about')
         tags.forEach((tag) => expect(tag.rel).toBe('alternate'))
     })
+
+    it('returns the pair when the content exists in both locales', () => {
+        expect(buildHreflangTags('places/123', '', ['ru', 'en'])).toHaveLength(3)
+    })
+
+    it('returns no tags when the content exists in one locale only', () => {
+        expect(buildHreflangTags('places/123', '', ['ru'])).toStrictEqual([])
+        expect(buildHreflangTags('places/123', '', ['en'])).toStrictEqual([])
+        expect(buildHreflangTags('places/123', '', [])).toStrictEqual([])
+    })
 })

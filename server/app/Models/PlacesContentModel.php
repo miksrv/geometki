@@ -52,6 +52,20 @@ class PlacesContentModel extends ApplicationBaseModel
     protected $beforeInsert   = ['generateId'];
 
     /**
+     * The current texts of a place in every locale it has one in.
+     *
+     * @return PlaceContentEntity[]
+     */
+    public function findTexts(string $placeId): array
+    {
+        return $this
+            ->select('locale, title, content, updated_at')
+            ->where('place_id', $placeId)
+            ->orderBy('locale', 'ASC')
+            ->findAll();
+    }
+
+    /**
      * Save the current text of a place in one locale and log it as a revision.
      *
      * $content->delta is the change in content length made by this edit; a revision

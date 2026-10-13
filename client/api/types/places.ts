@@ -28,6 +28,8 @@ export interface ListRequest {
     /** A single category name, or several joined with a comma (features/20-location-seo-pages.md: 2+ categories stay a query param) */
     category?: string | null
     excludePlaces?: string[]
+    /** Only places with no text in this locale yet */
+    missingLocale?: ApiType.Locale
 }
 
 export interface ListResponse {
@@ -49,6 +51,8 @@ export interface PatchCoverRequest {
 
 export interface PostItemRequest {
     id?: string
+    /** The locale of `title`/`content` on edit; the interface locale when left out */
+    locale?: ApiType.Locale
     title?: string
     content?: string
     category?: string
@@ -62,7 +66,12 @@ export interface PostItemRequest {
 
 export interface PatchItemResponse {
     content?: string
+    locale?: ApiType.Locale
     tags?: string[]
+}
+
+export interface TextsResponse {
+    items?: ApiModel.PlaceText[]
 }
 
 export interface PostItemResponse {

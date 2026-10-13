@@ -52,7 +52,7 @@ export type ActivityType =
 
 export type Locale = 'en' | 'ru'
 
-export type UserRole = 'user' | 'moderator' | 'admin'
+export type UserRole = 'user' | 'moderator' | 'admin' | 'bot'
 
 export type AuthService = 'google' | 'yandex' | 'vk' | 'native'
 

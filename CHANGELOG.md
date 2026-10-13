@@ -1,10 +1,13 @@
 # Changelog
 
-## 1.15.2
+## 1.16.0
 
-### Patch Changes
+### Minor Changes
 
 - Search: found places no longer show an outdated title or description
+- Places: a place without a translation says it shows the original, with a Translate link for signed-in users
+- Places: saving a translation no longer copies the original title or description into it
+- SEO: untranslated place pages are no longer indexed or listed in the sitemap as a language version
 - Optimized place pages, lists, search and the activity feed
 
 ## 1.15.1

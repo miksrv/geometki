@@ -57,6 +57,9 @@ class Users extends ResourceController
         $userLevels = new LevelsLibrary();
         $usersModel = new UsersModel();
 
+        // Bot accounts make automated edits, they are not members of the community
+        $usersModel->where('role !=', 'bot');
+
         if ($search !== '') {
             $usersModel->like('name', $search);
         }

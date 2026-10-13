@@ -42,6 +42,7 @@ $routes->group('osm-candidates', static function ($routes) {
 /** Places Controller **/
 $routes->group('places', static function ($routes) {
     $routes->get('/', 'Places::list');
+    $routes->get('(:alphanum)/texts', 'Places::texts/$1');
     $routes->get('(:alphanum)', 'Places::show/$1');
     $routes->post('/', 'Places::create');
     $routes->patch('cover/(:alphanum)', 'Places::cover/$1');

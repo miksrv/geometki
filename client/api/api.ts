@@ -513,6 +513,10 @@ export const API = createApi({
                     id: undefined
                 })}`
         }),
+        placesGetTexts: builder.query<ApiType.Places.TextsResponse, string>({
+            providesTags: (result, error, id) => [{ id, type: 'Places' }],
+            query: (id) => `places/${id}/texts`
+        }),
         placesGetList: builder.query<ApiType.Places.ListResponse, Maybe<ApiType.Places.ListRequest>>({
             providesTags: ['Places'],
             query: (params) => `places${encodeQueryData(params)}`

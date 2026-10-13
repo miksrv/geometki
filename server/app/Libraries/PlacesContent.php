@@ -23,6 +23,8 @@ use Config\Services;
 class PlacesContent {
 
     protected array $places = [];
+    /** @var array<string, string[]> Locales each place has a text in */
+    protected array $locales = [];
     public array $placeIds = [];
     protected int $trim;
 
@@ -157,7 +159,8 @@ class PlacesContent {
             $texts = $byLocale[$placeId] ?? [];
 
             if (!empty($texts)) {
-                $this->places[$placeId] = $texts[$locale] ?? reset($texts);
+                $this->places[$placeId]  = $texts[$locale] ?? reset($texts);
+                $this->locales[$placeId] = array_keys($texts);
             }
         }
     }
@@ -178,6 +181,25 @@ class PlacesContent {
      */
     public function content(string $placeId): string | null {
         return $this->get($placeId, 'content');
+    }
+
+    /**
+     * The locale of the text title() and content() return: the request locale,
+     * or the one the place falls back to when it has no text in it.
+     * @param string $placeId
+     * @return string|null
+     */
+    public function locale(string $placeId): string | null {
+        return $this->places[$placeId]->locale ?? null;
+    }
+
+    /**
+     * All locales the place has a text in.
+     * @param string $placeId
+     * @return string[]
+     */
+    public function locales(string $placeId): array {
+        return $this->locales[$placeId] ?? [];
     }
 
     /**

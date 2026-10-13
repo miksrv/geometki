@@ -716,5 +716,11 @@
             "landing": "Waterfalls and rapids",
             "content": "This category includes various natural waterfalls - unique natural formations characterized by water falling from a height and creating characteristic sound effects. Natural waterfalls are the result of natural processes such as erosion and hydrological phenomena and are important components of ecosystems. They are of interest to tourists and the scientific community as objects of beauty and research."
         }
-    }
+    },
+    "language-name-ru": "Russian",
+    "language-name-en": "English",
+    "translate": "Translate",
+    "place-text-untranslated": "No translation yet, showing the original ({{language}})",
+    "place-translation-new": "There is no text in this language yet ({{language}})",
+    "place-translation-original": "Fill in the title and the description. Original ({{language}}): “{{title}}”"
 }
