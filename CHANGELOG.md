@@ -22,6 +22,7 @@
 - Map: the "My location" button is always shown, right under the zoom buttons
 - Map: your marker shows your avatar, with a short card and coordinates on click
 - Map: removed the "Travelers" layer
+- Map: the popup of a new interesting place is clearer: short facts instead of the rating points, a smaller "Create a geotag" button under a short explanation
 - Places: distances to places are kept between visits once you have shared your location
 - Achievements: "Streak" counts days with activity, like the profile calendar
 - Optimized place pages, lists, search, the activity feed and visitor sessions

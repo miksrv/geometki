@@ -137,7 +137,7 @@ const photo = {
 describe('CandidatePopup', () => {
     beforeEach(() => jest.clearAllMocks())
 
-    it('shows the place, its type, settlement and why it got its rating', () => {
+    it('shows the place, its type, settlement and the facts about it without points', () => {
         render(<CandidatePopup candidate={candidate()} />)
 
         expect(screen.getByRole('heading', { name: 'Жертвам репрессий' })).toBeInTheDocument()
@@ -147,10 +147,31 @@ describe('CandidatePopup', () => {
             'title',
             'О месте много известно: есть статья, фото или охранный статус'
         )
+        expect(screen.getByText('Найдена статья в Википедии')).toBeInTheDocument()
+        expect(screen.queryByText('Тип: Монумент')).not.toBeInTheDocument()
+        expect(screen.queryByText('Рейтинг интереса')).not.toBeInTheDocument()
+        expect(screen.queryByText('+4')).not.toBeInTheDocument()
+    })
+
+    it('shows an admin the rating with its points', () => {
+        render(
+            <CandidatePopup
+                candidate={candidate()}
+                isAdmin={true}
+            />
+        )
+
         expect(screen.getByText('Рейтинг интереса')).toBeInTheDocument()
         expect(screen.getByText('11')).toBeInTheDocument()
-        expect(screen.getByText('Найдена статья в Википедии: Памятник жертвам репрессий')).toBeInTheDocument()
+        expect(screen.getByText('Тип: Монумент')).toBeInTheDocument()
         expect(screen.getByText('+4')).toBeInTheDocument()
+    })
+
+    it('does not repeat the Wikipedia fact next to the article link', () => {
+        render(<CandidatePopup candidate={candidate({ breakdown: [{ code: 'wiki', points: 5 }] })} />)
+
+        expect(screen.queryByText('Есть статья в Википедии')).not.toBeInTheDocument()
+        expect(screen.getByText('Википедия')).toHaveAttribute('href', expect.stringContaining('ru.wikipedia.org'))
     })
 
     it('shows the elevation in meters, never in kilometers', () => {
@@ -167,7 +188,12 @@ describe('CandidatePopup', () => {
     })
 
     it('has no rating block without a breakdown', () => {
-        render(<CandidatePopup candidate={candidate({ breakdown: [] })} />)
+        render(
+            <CandidatePopup
+                candidate={candidate({ breakdown: [] })}
+                isAdmin={true}
+            />
+        )
 
         expect(screen.queryByText('Рейтинг интереса')).not.toBeInTheDocument()
     })
@@ -197,6 +223,7 @@ describe('CandidatePopup', () => {
         render(
             <CandidatePopup
                 candidate={candidate({ heritage: '5610009000', osmId: null, osmType: null, source: 'wikidata' })}
+                isAdmin={true}
             />
         )
 
@@ -205,24 +232,24 @@ describe('CandidatePopup', () => {
         expect(screen.getByText('Wikidata')).toHaveAttribute('href', 'https://www.wikidata.org/wiki/Q1')
     })
 
-    it('links to the OSM object with a short label', () => {
+    it('links to the OSM object and shows Wikidata only to admins', () => {
         render(<CandidatePopup candidate={candidate()} />)
 
-        expect(screen.getByText('OSM')).toHaveAttribute('href', 'https://www.openstreetmap.org/node/42')
-    })
-
-    it('has no sources block without sources', () => {
-        const { container } = render(
-            <CandidatePopup candidate={candidate({ osmId: null, osmType: null, wikidata: null, wikipedia: null })} />
-        )
-
-        expect(container.querySelector('footer')).not.toBeInTheDocument()
+        expect(screen.getByText('OpenStreetMap')).toHaveAttribute('href', 'https://www.openstreetmap.org/node/42')
+        expect(screen.queryByText('Wikidata')).not.toBeInTheDocument()
     })
 
     it('links to the new place form prefilled from the candidate', () => {
         render(<CandidatePopup candidate={candidate()} />)
 
+        expect(screen.getByText('Этого места ещё нет на Геометках')).toBeInTheDocument()
         expect(screen.getByText('Создать геометку')).toHaveAttribute('href', '/places/create?candidate=cand123456789')
+    })
+
+    it('invites to describe an unexplored place first', () => {
+        render(<CandidatePopup candidate={candidate({ tier: 'explore' })} />)
+
+        expect(screen.getByText('О месте почти ничего не известно. Опишите его первым')).toBeInTheDocument()
     })
 
     it('has no admin tools for users', () => {

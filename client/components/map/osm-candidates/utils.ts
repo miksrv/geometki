@@ -94,10 +94,7 @@ export const breakdownText = (
         case 'wiki':
             return t('osm-candidates_score-wiki', { defaultValue: 'Есть статья в Википедии' })
         case 'nearbyWiki':
-            return t('osm-candidates_score-nearby-wiki', {
-                defaultValue: 'Найдена статья в Википедии: {{value}}',
-                value: item.value
-            })
+            return t('osm-candidates_score-nearby-wiki', { defaultValue: 'Найдена статья в Википедии' })
         case 'sitelinks':
             return t('osm-candidates_score-sitelinks', {
                 defaultValue: 'Статьи на {{value}} языках',
