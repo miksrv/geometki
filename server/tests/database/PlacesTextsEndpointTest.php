@@ -85,9 +85,10 @@ final class PlacesTextsEndpointTest extends CIUnitTestCase
                 'null'       => true,
             ],
             'locale' => [
-                'type'    => 'ENUM("ru", "en")',
-                'default' => 'ru',
-                'null'    => false,
+                'type'       => 'ENUM',
+                'constraint' => ['ru', 'en'],
+                'default'    => 'ru',
+                'null'       => false,
             ],
             'title' => [
                 'type'       => 'VARCHAR',
