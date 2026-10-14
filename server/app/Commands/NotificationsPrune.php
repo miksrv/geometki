@@ -11,8 +11,7 @@
  *   cd server
  *   php spark notifications:prune [days]
  *
- * Add to cron (daily):
- *   40 4 * * * cd /path/to/server && php spark notifications:prune >> /dev/null 2>&1
+ * Not scheduled: run it by hand when the table has grown (once a year is plenty).
  */
 
 namespace App\Commands;

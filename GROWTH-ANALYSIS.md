@@ -68,8 +68,7 @@ Principles of a self-populating site:
 4. **No radius geosearch, no spatial index.** "Nearby places without photos" cannot be computed cheaply.
 5. **No export or embed.** No GeoJSON, GPX, KML, RSS or embed widget.
 6. **Ratings are gameable.** Anonymous votes change the author's reputation; changing a vote adds reputation again.
-7. `system:generate-users-online` fakes online status for `@geometki.com` accounts — a trust risk if it runs in production.
-8. Smaller: EXIF not stripped from originals (privacy), temp uploads never cleaned, cron schedule exists only in doc comments, `visit` gives no XP.
+7. Smaller: EXIF not stripped from originals (privacy), temp uploads never cleaned, `visit` gives no XP.
 
 Assets already in the code to build on: versions in `places_content` (history, rollback, review queue), the `moderator` role and soft deletes, OSM candidates (stubs), Pastvu / Wikipedia / Wikimedia Commons layers ("create a place from this article / old photo"), EXIF GPS + `GET /poi/photos` ("create a place from a photo"), achievements with seasonal windows and `DigestService` (campaign tooling).
 
