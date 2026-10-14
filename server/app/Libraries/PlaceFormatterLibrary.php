@@ -119,6 +119,44 @@ class PlaceFormatterLibrary
     }
 
     /**
+     * Turn a row of PlacesModel::applyListSelect() into a place list item
+     * (ApiModel.PlaceListItem on the client), in place: address, counters, title and
+     * cover; the raw columns go. Distance is the caller's business.
+     *
+     * @param object      $place
+     * @param string      $locale
+     * @param string      $title   The place title in the request locale (PlacesContent)
+     * @param string|null $content The start of the description (a trimming PlacesContent), for
+     *                             lists shown as rows — search, the feed — where the card has
+     *                             two lines of it; tile lists leave it out
+     */
+    public function formatListRow(object $place, string $locale, string $title, ?string $content = null): void
+    {
+        $place->address   = $this->formatAddress($place, $locale);
+        $place->rating    = (int) $place->rating;
+        $place->views     = (int) $place->views;
+        $place->photos    = (int) $place->photos;
+        $place->comments  = (int) $place->comments;
+        $place->bookmarks = (int) $place->bookmarks;
+        $place->title     = $title;
+
+        if ($content !== null && $content !== '') {
+            $place->content = $content;
+        }
+
+        $cover = $this->formatCover($place->id, (int) $place->photos, $place->cover_external_id ?? null);
+        if ($cover) {
+            $place->cover = $cover;
+        }
+
+        if (!empty($place->updated)) {
+            $place->updated = new \DateTime((string) $place->updated);
+        }
+
+        $this->cleanupFields($place);
+    }
+
+    /**
      * Round distance to 1 decimal place, or return null.
      *
      * @param mixed $raw

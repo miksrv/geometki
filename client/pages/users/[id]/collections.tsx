@@ -10,9 +10,17 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, EmptyState, MediaTileGrid, PageHeader, PaginationBar, UserAvatar } from '@/components/shared'
+import {
+    AppLayout,
+    CollectionCard,
+    EmptyState,
+    MediaTileGrid,
+    PageHeader,
+    PaginationBar,
+    UserAvatar
+} from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
-import { CollectionCard, CreateCollectionButton } from '@/sections/collections'
+import { CreateCollectionButton } from '@/sections/collections'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
 import { buildHreflangTags } from '@/utils/seo'
 

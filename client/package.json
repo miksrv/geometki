@@ -1,6 +1,6 @@
 {
     "name": "geometki",
-    "version": "1.15.1",
+    "version": "1.16.0",
     "private": true,
     "engines": {
         "node": ">=20.11.0"
@@ -15,8 +15,7 @@
         "eslint:check": "eslint",
         "eslint:fix": "eslint --fix",
         "prettier:check": "prettier --check .",
-        "prettier:fix": "prettier --write .",
-        "locales:build": "i18next-scanner --config i18next-scanner.config.js"
+        "prettier:fix": "prettier --write ."
     },
     "dependencies": {
         "@react-leaflet/core": "^3.0.0",
@@ -28,7 +27,6 @@
         "embla-carousel-react": "^8.6.0",
         "i18next": "^26.2.0",
         "leaflet": "^1.9.4",
-        "leaflet.heat": "^0.2.0",
         "lodash-es": "^4.18.1",
         "next": "16.3.8",
         "next-i18next": "^16.0.6",
@@ -40,7 +38,6 @@
         "react": "19.3.0",
         "react-dom": "19.3.0",
         "react-hook-form": "^7.89.0",
-        "react-hook-geolocation": "^1.1.0",
         "react-i18next": "^17.0.8",
         "react-image-crop": "^11.1.2",
         "react-leaflet": "^5.0.0",
@@ -81,7 +78,6 @@
         "eslint-plugin-react-hooks": "^7.1.1",
         "eslint-plugin-simple-import-sort": "^13.0.0",
         "globals": "^17.6.0",
-        "i18next-scanner": "^4.6.0",
         "identity-obj-proxy": "^3.0.0",
         "jest": "^30.4.2",
         "jest-environment-jsdom": "^30.4.1",

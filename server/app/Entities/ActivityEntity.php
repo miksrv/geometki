@@ -6,8 +6,8 @@ use CodeIgniter\Entity\Entity;
 
 class ActivityEntity extends Entity {
     protected $attributes = [
+        'feed_id'    => null,
         'type'       => null,
-        'views'      => 0,
         'session_id' => null,
         'user_id'    => null,
         'photo_id'   => null,
@@ -24,8 +24,8 @@ class ActivityEntity extends Entity {
     ];
 
     protected $casts = [
+        'feed_id'    => '?string',
         'type'       => 'string',
-        'views'      => 'integer',
         'session_id' => 'string',
         'user_id'    => 'string',
         'photo_id'   => 'string',

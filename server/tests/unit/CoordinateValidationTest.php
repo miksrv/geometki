@@ -2,7 +2,6 @@
 
 use App\Entities\PlaceEntity;
 use App\Entities\PhotoEntity;
-use App\Entities\SessionEntity;
 use CodeIgniter\Test\CIUnitTestCase;
 
 /**
@@ -214,21 +213,6 @@ final class CoordinateValidationTest extends CIUnitTestCase
 
         $this->assertEqualsWithDelta($place->lat, $photo->lat, 0.000001);
         $this->assertEqualsWithDelta($place->lon, $photo->lon, 0.000001);
-    }
-
-    // =========================================================================
-    // SessionEntity coordinate storage (SessionLibrary stores user geolocation)
-    // =========================================================================
-
-    public function testSessionEntityStoresCoordinatesAsFloat(): void
-    {
-        $session = new SessionEntity();
-        $session->fill(['lat' => '48.8566', 'lon' => '2.3522']);
-
-        $this->assertIsFloat($session->lat);
-        $this->assertIsFloat($session->lon);
-        $this->assertEqualsWithDelta(48.8566, $session->lat, 0.0001);
-        $this->assertEqualsWithDelta(2.3522,  $session->lon, 0.0001);
     }
 
     // =========================================================================

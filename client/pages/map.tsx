@@ -39,7 +39,6 @@ const MapPage: NextPage<object> = () => {
     const router = useRouter()
     const dispatch = useAppDispatch()
 
-    const location = useAppSelector((state) => state.application.userLocation)
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const [initMapCoords, setInitMapCoords] = useState<LatLngExpression>()
@@ -273,7 +272,7 @@ const MapPage: NextPage<object> = () => {
                     onClickCreatePlace={handleCreatePlace}
                     onChangeMapType={setMapType}
                     onChangeBounds={debounceSetMapBounds}
-                    userLatLon={location}
+                    enableUserLocation={true}
                 />
             </div>
         </AppLayout>

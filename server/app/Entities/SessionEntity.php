@@ -9,8 +9,6 @@ class SessionEntity extends Entity {
         'id'      => null,
         'user_id' => null,
         'user_ip' => null,
-        'lat'     => null,
-        'lon'     => null,
     ];
 
     protected $dates = [
@@ -23,7 +21,5 @@ class SessionEntity extends Entity {
         'id'      => 'string',
         'user_id' => 'string',
         'user_ip' => 'string',
-        'lat'     => 'float',
-        'lon'     => 'float',
     ];
 }

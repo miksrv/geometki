@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React from 'react'
 import { Button } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult } from 'next'
@@ -12,10 +12,9 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { ActivityList, AppLayout, PhotoGallery } from '@/components/shared'
-import { INFINITE_SCROLL_ROOT_MARGIN } from '@/config/constants'
+import { AppLayout, PhotoGallery } from '@/components/shared'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
-import { UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
+import { UserActivity, UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
 import { formatDateISO } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 
@@ -30,39 +29,6 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
     const { t, i18n } = useTranslation()
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
-
-    const [lastDate, setLastDate] = useState<string>()
-    const sentinelRef = useRef<HTMLDivElement>(null)
-
-    const { data, isFetching } = API.useActivityGetInfinityListQuery({
-        author: user?.id,
-        date: lastDate
-    })
-
-    useEffect(() => {
-        const el = sentinelRef.current
-        if (!el) {
-            return
-        }
-
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (!entry.isIntersecting || isFetching || !data?.items.length) {
-                    return
-                }
-
-                setLastDate(data.items[data.items.length - 1].created?.date)
-            },
-            { rootMargin: INFINITE_SCROLL_ROOT_MARGIN }
-        )
-
-        observer.observe(el)
-        return () => observer.disconnect()
-    }, [data, isFetching])
-
-    useEffect(() => {
-        setLastDate(undefined)
-    }, [id])
 
     const breadCrumbSchema = {
         '@context': 'https://schema.org',
@@ -176,11 +142,7 @@ const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }
                 }
             />
 
-            <ActivityList
-                activities={data?.items}
-                loading={isFetching}
-            />
-            <div ref={sentinelRef} />
+            <UserActivity userId={id} />
         </AppLayout>
     )
 }
@@ -208,11 +170,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 })
             )
 
-            await store.dispatch(
-                API.endpoints.activityGetInfinityList.initiate({
-                    author: id
-                })
-            )
+            await Promise.all([
+                store.dispatch(API.endpoints.feedGetList.initiate({ author: id })),
+                store.dispatch(API.endpoints.feedGetCalendar.initiate({ author: id }))
+            ])
 
             if (isError) {
                 return { notFound: true }

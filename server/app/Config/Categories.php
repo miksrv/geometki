@@ -15,7 +15,7 @@ use CodeIgniter\Config\BaseConfig;
 class Categories extends BaseConfig
 {
     /**
-     * The niche taxonomy of features/09-place-categories.md: 23 keys, one
+     * The niche category taxonomy: 23 keys, one
      * category per place.
      *
      * @var string[]

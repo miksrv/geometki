@@ -1,3 +1,5 @@
+import { deleteCookie, setCookie } from 'cookies-next'
+
 import { ApiModel } from '@/api'
 
 import authReducer, { login, logout, saveSession } from './authSlice'
@@ -45,6 +47,15 @@ describe('authSlice', () => {
             expect(state.user).toStrictEqual(mockUser)
         })
 
+        it('keeps the session cookie of an anonymous visitor', () => {
+            jest.mocked(setCookie).mockClear()
+
+            authReducer({ ...initialState }, login({ auth: false, session: 'anon-sess' }))
+
+            expect(setCookie).toHaveBeenCalledWith('session', 'anon-sess', expect.anything())
+            expect(setCookie).not.toHaveBeenCalledWith('token', expect.anything(), expect.anything())
+        })
+
         it('clears auth state when payload has auth=false', () => {
             const existingState = {
                 isAuth: true,
@@ -85,8 +96,19 @@ describe('authSlice', () => {
             expect(state.isAuth).toBe(false)
             expect(state.token).toBeUndefined()
             expect(state.user).toBeUndefined()
-            // session is not cleared by logout
-            expect(state.session).toBe('sess-123')
+            // the session tied to the account goes with it
+            expect(state.session).toBeUndefined()
+            expect(deleteCookie).toHaveBeenCalledWith('session')
+        })
+
+        it('keeps an anonymous visitor session and its cookie', () => {
+            jest.mocked(deleteCookie).mockClear()
+
+            const state = authReducer({ ...initialState, session: 'anon-sess' }, logout())
+
+            expect(state.isAuth).toBe(false)
+            expect(state.session).toBe('anon-sess')
+            expect(deleteCookie).not.toHaveBeenCalledWith('session')
         })
     })
 

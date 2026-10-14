@@ -48,18 +48,21 @@ export const UsersList: React.FC<UsersListProps> = ({ users, scrollable, compact
                     />
                 </div>
 
-                {/* Mobile-only: level badge positioned top-right */}
+                {/* Mobile and compact: level badge without the progress bar */}
                 <div className={styles.mobileLevelBadge}>
                     <LevelBadge
                         level={user.levelData?.level}
-                        size={28}
+                        size={compact ? 22 : 28}
+                        showTooltip={compact}
                     />
                 </div>
 
-                {/* Desktop: level badge + progress + xp range */}
-                <div className={styles.levelCol}>
-                    <LevelProgress levelData={user.levelData} />
-                </div>
+                {/* Desktop: level badge + progress + xp range (hidden in compact) */}
+                {!compact && (
+                    <div className={styles.levelCol}>
+                        <LevelProgress levelData={user.levelData} />
+                    </div>
+                )}
 
                 {/* Total XP (desktop, hidden in compact) */}
                 {!compact && (

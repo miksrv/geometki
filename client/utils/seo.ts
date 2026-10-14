@@ -1,3 +1,4 @@
+import type { Locale } from '@/api/types'
 import { SITE_LINK } from '@/config/env'
 
 /**
@@ -6,8 +7,14 @@ import { SITE_LINK } from '@/config/env'
  * @param query - The canonical query string, `?` included (e.g. '?page=2'), so that a paginated
  *   page's alternates point at the same page in the other locale, not at page 1 — hreflang
  *   must name the canonical URL of each locale version.
+ * @param locales - The locales the page content really exists in, every locale by default. A place
+ *   with a text in one language only has no other language version, so it gets no tags at all.
  */
-export const buildHreflangTags = (path: string, query = '') => {
+export const buildHreflangTags = (path: string, query = '', locales: Locale[] = ['ru', 'en']) => {
+    if (!locales.includes('ru') || !locales.includes('en')) {
+        return []
+    }
+
     const base = SITE_LINK?.endsWith('/') ? SITE_LINK : `${SITE_LINK}/`
     const ruUrl = (path ? `${base}${path}` : base) + query
     const enUrl = (path ? `${base}en/${path}` : `${base}en`) + query

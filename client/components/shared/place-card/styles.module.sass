@@ -17,11 +17,14 @@
 .thumbLink
     position: relative
     flex-shrink: 0
+    // As tall as the text beside it (title, address, two lines of description), never
+    // shorter than the base size; the cover is cropped to fit
+    align-self: stretch
     display: flex
     align-items: center
     justify-content: center
     width: 120px
-    height: 80px
+    min-height: 80px
     border-radius: var(--border-radius)
     overflow: hidden
     background: var(--surface-2)
@@ -32,7 +35,7 @@
 
     .small &
         width: 96px
-        height: 72px
+        min-height: 72px
         border-radius: var(--radius-sm)
 
 .body
@@ -98,6 +101,18 @@
     overflow: hidden
     text-overflow: ellipsis
     white-space: nowrap
+
+// The start of the description under the address: at most two lines (search, the feed)
+.rowExcerpt
+    display: -webkit-box
+    margin: 0
+    overflow: hidden
+    font-size: variables.$fontSizeHeadline
+    line-height: 1.45
+    color: var(--text-color-primary)
+    -webkit-box-orient: vertical
+    -webkit-line-clamp: 2
+    line-clamp: 2
 
 .footer
     min-width: 0

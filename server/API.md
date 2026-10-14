@@ -14,7 +14,7 @@ Most read endpoints are public. Write operations require authentication.
 Authorization: Bearer <token>
 ```
 
-Guests are tracked by a `Session` header carrying the anonymous session id (the `session` value returned by `GET /auth/me`). It does not authenticate; it ties rating votes and the stored location (`PUT /location`) to a visitor.
+Guests are tracked by a `Session` header carrying the anonymous session id (the `session` value returned by `GET /auth/me`). It does not authenticate; it ties rating votes and activity to a visitor.
 
 **Locale** — send a `Locale: ru` or `Locale: en` header (default `ru`); translated fields are returned in that language.
 
@@ -377,7 +377,7 @@ List places with optional filtering, sorting, and pagination.
 }
 ```
 
-Note: `distance` (km) is only present when `lat`/`lon` query parameters are provided or when the user session has a known location. `cover` is only present when a cover image exists. `address` sub-fields are only present when geocoding data is available; each sub-field's `slug` is the location's path segment for the landing pages (see `GET /locations/resolve`) and is `null` until a slug has been assigned.
+Note: `distance` (km) is only present when `lat`/`lon` query parameters are provided. `cover` is only present when a cover image exists. `address` sub-fields are only present when geocoding data is available; each sub-field's `slug` is the location's path segment for the landing pages (see `GET /locations/resolve`) and is `null` until a slug has been assigned.
 
 ---
 
@@ -695,28 +695,9 @@ Get photo geo-coordinates for map rendering, optionally clustered.
 
 ---
 
-#### `GET /poi/users`
-
-Get the geo-coordinates of recently active user sessions for heatmap display. Returns up to 500 coordinate pairs.
-
-**Auth required:** No
-
-**Response:**
-
-```json
-{
-  "items": [
-    [51.7686, 55.1014],
-    [55.7558, 37.6173]
-  ]
-}
-```
-
----
-
 #### `GET /poi/:id`
 
-Get lightweight details for a single place (used as map popup data). Distance is computed from the session's stored location.
+Get lightweight details for a single place (used as map popup data). Optional query params `lat`, `lon` (the visitor's position): when given, the response has `distance` (km).
 
 **Auth required:** No
 
@@ -1930,22 +1911,27 @@ An unknown `id` returns an empty body.
 
 #### `PUT /location`
 
-Update the current user session's geographic coordinates. Used to improve distance calculations and the heatmap of active users.
+Save the signed-in user's last known position. Called by the client only after the user has asked for their location (the map's "My location" button, sorting by distance). The point is not returned by any endpoint; it is kept for the future explorer map (`features/17-personal-fog-of-war-explorer-map.md`). A move shorter than 200 m from the saved point is not written. Anonymous visitors' positions are not stored: pass `lat`/`lon` to the endpoints that compute a distance instead.
 
-**Auth required:** No (session-based)
+**Auth required:** Yes
 
 **Request body (JSON):**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| lat | float | Yes | Latitude |
-| lon | float | Yes | Longitude |
+| lat | float | Yes | Latitude, -90…90 |
+| lon | float | Yes | Longitude, -180…180 |
 
 ```json
 { "lat": 51.7686, "lon": 55.1014 }
 ```
 
 **Response:** `200 OK` with empty body.
+
+**Error responses:**
+
+- `400` — Invalid coordinates
+- `401` — Not signed in
 
 ---
 
@@ -2644,4 +2630,4 @@ Spark commands (`php spark <command>`), not accessible over HTTP:
 - **IDs** — Place and user IDs are alphanumeric strings (not sequential integers). Place IDs are 13 characters long.
 - **Locale** — The `Locale` header selects between Russian (`ru`, default) and English (`en`). Translated fields such as `title`, `content`, and address names respond in that locale (a place's `category` is a language-neutral key; the client translates it).
 - **Image paths** — Image paths in responses are relative paths on the server; prepend the API base URL to construct absolute URLs. Linked external photos (Wikimedia Commons, PastVu) are the exception: their URLs are absolute.
-- **Distance** — The `distance` field (km) uses the Haversine formula. It is only returned when either the request includes `lat`/`lon` query parameters or the session has a stored location from `PUT /location`.
+- **Distance** — The `distance` field (km) uses the Haversine formula. It is only returned when the request includes `lat`/`lon` query parameters; the server never falls back to a stored location.

@@ -13,6 +13,7 @@ import { AppLayout, PageHeader, PaginationBar, PlacesList, PlacesMap, UserAvatar
 import { SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
 import { buildHreflangTags } from '@/utils/seo'
+import { getUserLocationFromCookies } from '@/utils/userLocation'
 
 export const PLACES_PER_PAGE = 21
 
@@ -20,14 +21,18 @@ interface UserPlacesPageProps {
     id: string
     currentPage: number
     user?: ApiModel.User
+    /** The visitor's location from the cookie, so the client query reuses the SSR one */
+    userLocation: ApiType.Coordinates | null
 }
 
-const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage }) => {
+const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage, userLocation }) => {
     const { t, i18n } = useTranslation()
 
     const { data, isLoading } = API.usePlacesGetListQuery({
         author: id,
+        lat: userLocation?.lat,
         limit: PLACES_PER_PAGE,
+        lon: userLocation?.lon,
         offset: (currentPage - 1) * PLACES_PER_PAGE
     })
 
@@ -113,6 +118,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             store.dispatch(setLocale(locale))
 
+            const userLocation = getUserLocationFromCookies(context.req.cookies) ?? null
+
             const { data: userData, isError } = await store.dispatch(API.endpoints.usersGetItem.initiate(id))
 
             if (isError) {
@@ -122,7 +129,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
             await store.dispatch(
                 API.endpoints.placesGetList.initiate({
                     author: id,
+                    lat: userLocation?.lat,
                     limit: PLACES_PER_PAGE,
+                    lon: userLocation?.lon,
                     offset: (currentPage - 1) * PLACES_PER_PAGE
                 })
             )
@@ -134,7 +143,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     ...translations,
                     id,
                     currentPage,
-                    user: userData
+                    user: userData,
+                    userLocation
                 }
             }
         }

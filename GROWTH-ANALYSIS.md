@@ -56,8 +56,7 @@ Principles of a self-populating site:
 7. **No onboarding** after registration.
 8. **Trust and legal gaps.** No About, Rules, Privacy Policy or content licence pages; no consent checkbox at registration.
 9. Logged-in users see "Delete / Rotate" on other people's photos on the place page (`PhotoGallery` checks only `isAuth`); the server rejects it with an error.
-10. The geolocation prompt appears on any page on first visit, with no context (`useGeolocation()` in AppBar).
-11. "Create geotag" in the map context menu is hidden from anonymous users with no hint it exists.
+10. "Create geotag" in the map context menu is hidden from anonymous users with no hint it exists.
 
 ---
 

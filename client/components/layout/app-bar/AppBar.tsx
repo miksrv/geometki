@@ -1,17 +1,14 @@
-import React, { useEffect } from 'react'
-import useGeolocation from 'react-hook-geolocation'
+import React from 'react'
 import { Button, cn } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
-import { API, ApiType } from '@/api'
-import { openAuthDialog, setUserLocation } from '@/app/applicationSlice'
+import { openAuthDialog } from '@/app/applicationSlice'
 import { logoutUser } from '@/app/logoutUser'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import useRequireAuth from '@/hooks/useRequireAuth'
-import { round } from '@/utils/helpers'
 
 import { AppAuthChecker } from './AppAuthChecker'
 import { Logo } from './Logo'
@@ -38,12 +35,8 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
     const dispatch = useAppDispatch()
     const requireAuth = useRequireAuth()
     const router = useRouter()
-    const geolocation = useGeolocation()
 
     const appAuth = useAppSelector((state) => state.auth)
-    const userLocation = useAppSelector((state) => state.application.userLocation)
-
-    const [updateLocation] = API.useLocationPutCoordinatesMutation()
 
     const navItems: NavItem[] = [
         { href: '/map', label: t('nav-map', { defaultValue: 'Карта' }) },
@@ -60,21 +53,6 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
     const handleLogout = () => {
         dispatch(logoutUser())
     }
-
-    useEffect(() => {
-        const updateLat = round(geolocation.latitude, 3)
-        const updateLng = round(geolocation.longitude, 3)
-
-        if (updateLat && updateLng && updateLat !== userLocation?.lat && updateLng !== userLocation?.lon) {
-            const data: ApiType.Coordinates = {
-                lat: updateLat,
-                lon: updateLng
-            }
-
-            dispatch(setUserLocation(data))
-            void updateLocation(data)
-        }
-    }, [geolocation.latitude, geolocation.longitude])
 
     return (
         <header className={cn(styles.appBar, fullSize && styles.fullSize)}>

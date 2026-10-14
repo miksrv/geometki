@@ -7,6 +7,13 @@ const nextConfig = {
     async redirects() {
         return [{ destination: '/places', permanent: true, source: '/categories' }]
     },
+    // robots.txt and search consoles point to /sitemap.xml; the page is pages/sitemap.tsx.
+    // On production nginx rewrites it too, this keeps it working without that (local, other
+    // hosts). No `locale: false`: with it the destination misses the internal locale prefix and
+    // 404s; /en/sitemap.xml serves the same document, both locales are in it
+    async rewrites() {
+        return [{ destination: '/sitemap', source: '/sitemap.xml' }]
+    },
     // The service worker must not stay in the HTTP cache: a stale copy delays the next release
     async headers() {
         return [
@@ -52,7 +59,7 @@ const nextConfig = {
     output: 'standalone',
     trailingSlash: false,
 
-    transpilePackages: ['@uiw/react-md-editor', 'leaflet', 'leaflet.heat'],
+    transpilePackages: ['@uiw/react-md-editor', 'leaflet'],
 
     // Type-check only the app sources during build, tests are covered by Jest
     typescript: {

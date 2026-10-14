@@ -1,0 +1,110 @@
+@use '../../../styles/variables' as variables
+
+// Avatar | three lines of text | counters; on phones the counters go under the rest
+.welcome
+    display: grid
+    grid-template-columns: auto minmax(0, 1fr) auto
+    align-items: center
+    gap: var(--space-5)
+    padding: var(--space-5)
+    border-radius: var(--border-radius)
+    background: var(--surface-1)
+    box-shadow: var(--container-shadow)
+
+    @media (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: auto minmax(0, 1fr)
+        gap: var(--space-4) var(--space-3)
+        padding: var(--space-4)
+
+// The profile's avatar look (sections/user/user-header): a big rounded square
+.avatar
+    display: block
+
+    img
+        display: block
+        width: 96px
+        height: 96px
+        border-radius: var(--border-radius)
+        border: var(--container-border-separator)
+        object-fit: cover
+
+    @media (max-width: variables.$mobileMaxWidth)
+        img
+            width: 64px
+            height: 64px
+
+.text
+    display: flex
+    flex-direction: column
+    gap: var(--space-1)
+    min-width: 0
+
+.title
+    margin: 0
+    font-size: var(--font-size-title-page)
+    font-weight: 600
+    line-height: 1.25
+    letter-spacing: -0.01em
+
+.facts
+    margin: 0
+    font-size: variables.$fontSizeHeadline
+    color: var(--text-color-secondary)
+
+.progress
+    display: flex
+    // The level on the left, the bar and the numbers centred on it
+    align-items: center
+    gap: var(--space-2)
+    max-width: 440px
+
+.bar
+    display: flex
+    flex-direction: column
+    gap: var(--space-1)
+    flex: 1
+    min-width: 0
+
+.experience
+    font-size: variables.$fontSizeCaption
+    color: var(--text-color-secondary)
+    white-space: nowrap
+
+// Big numbers over captions, each a link to that list of the profile
+.counters
+    display: flex
+    gap: var(--space-2)
+
+    @media (max-width: variables.$mobileMaxWidth)
+        grid-column: 1 / -1
+        display: grid
+        grid-template-columns: repeat(3, minmax(0, 1fr))
+
+.counter
+    display: flex
+    flex-direction: column
+    align-items: center
+    text-align: center
+    min-width: 104px
+    padding: var(--space-3) var(--space-4)
+    border-radius: var(--border-radius)
+    background: var(--surface-2)
+    color: var(--text-color-primary)
+
+    &:hover
+        background: var(--color-main-background)
+        color: var(--color-main)
+        text-decoration: none
+
+    b
+        font-size: var(--font-size-title-page)
+        font-weight: 600
+        line-height: 1.2
+
+    span
+        font-size: variables.$fontSizeCaption
+        color: var(--text-color-secondary)
+
+    @media (max-width: variables.$mobileMaxWidth)
+        min-width: 0
+        padding: var(--space-2) var(--space-3)

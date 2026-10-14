@@ -18,7 +18,6 @@ yarn eslint:check     # Check ESLint violations
 yarn eslint:fix       # Auto-fix ESLint violations
 yarn prettier:check   # Check formatting
 yarn prettier:fix     # Auto-format code
-yarn locales:build    # Rebuild i18n translation files (see the warning under i18n)
 ```
 
 Run a single test file: `yarn test utils/helpers.test.ts`. If almost every suite fails with `React.act is not a function`, the shell has `NODE_ENV=production`; run `NODE_ENV=test yarn test`.
@@ -49,29 +48,33 @@ Uses **Next.js Pages Router** (not App Router) with **Redux Toolkit + RTK Query*
 - `styles/` — Global SASS; `theme.css` holds project token overrides on top of `simple-react-ui-kit/theme.css` (imported first in `pages/_app.tsx`)
 - `DESIGN.md` — the client design system: layers (kit primitives vs domain components), layouts, the `MediaTile` / `PlaceCard` / `CollectionCard` rules and UI patterns. Read it before adding or changing any user-facing component; one component per entity, variants for layout.
 
-**i18n:** `next-i18next` (import from `next-i18next/pages`) with Russian (default, `/`) and English (`/en`) locales, one namespace: `public/locales/<lang>/common.json`. `yarn locales:build` runs i18next-scanner with `removeUnusedKeys: true`, so it deletes keys used only through template strings, e.g. `categoryCatalogue.<name>.*` (`utils/categories.ts`); check the diff and restore them, or edit the JSON by hand.
+**i18n:** `next-i18next` (import from `next-i18next/pages`) with Russian (default, `/`) and English (`/en`) locales, one namespace: `public/locales/<lang>/common.json`. There is no extraction script: whoever changes UI text keeps both locale files in sync by hand — add every new key to `ru` and `en` (with a real English translation), and delete keys that are no longer used, minding keys built from template strings, e.g. `categoryCatalogue.<name>.*` (`utils/categories.ts`).
 
 ### Server
 
 CodeIgniter 4 REST API following MVC pattern:
 
-- `app/Controllers/` — One controller per resource (Places, Auth, Users, Photos, Activity, etc.)
+- `app/Controllers/` — One controller per resource (Places, Auth, Users, Photos, Feed, etc.)
 - `app/Models/` — Data access (CI4 Model ORM)
 - `app/Entities/` — Domain models with typed properties
 - `app/Config/Routes.php` — All route definitions grouped by resource
 - `app/Filters/CorsFilter.php` — CORS handling for all preflight requests
-- `app/Commands/` — spark CLI jobs (`trending:refresh`, `osm:collect`, `digest:weekly`, …)
+- `app/Commands/` — spark CLI jobs (`trending:refresh`, `osm:collect`, `digest:weekly`, `feed:rebuild`, …)
 - `app/Database/Migrations/` — schema migrations; always create new migrations, never edit existing ones
 
-**Auth:** JWT in the `Authorization` header (`app/Libraries/SessionLibrary.php`); the `Session` header identifies anonymous sessions.
+**Auth:** JWT in the `Authorization` header (`app/Libraries/SessionLibrary.php`); the `Session` header identifies anonymous sessions. Sessions hold no coordinates.
+
+**Visitor location:** asked from the browser only on the visitor's action (`client/hooks/useUserLocation.ts`: the map's "My location" button, sorting by distance), never on page load. It lives in the client's `location` cookie and goes to the API as explicit `lat`/`lon` (SSR reads the cookie, `client/utils/userLocation.ts`). Only a signed-in user's last point is stored (`users.last_lat/last_lon`, `PUT /location`), not shown anywhere.
+
+**Activity and the feed:** `ActivityLibrary` writes every user action to the `activity` table — the log behind XP, achievements, notifications, the digest and place history. At the same moment it attaches the row to a story in the `feed` table (`FeedLibrary`, grouping rules in `FeedAggregator`), so `GET /feed` reads ready stories with one indexed query; achievements and new levels are stories of their own. After changing the grouping rules run `php spark feed:rebuild`.
 
 ### Key Patterns
 
 - **API communication:** All frontend API calls go through RTK Query in `api/api.ts`. Add new endpoints there, not via `fetch`/`axios` directly.
 - **Error format:** API returns `{ messages: { error?: string, [field]: string } }` — handle accordingly.
 - **Image uploads:** Flow is temp upload → attach to entity. Server stores files in `server/public/uploads/`.
-- **Map:** Leaflet via `react-leaflet` with Leaflet.heat for heatmaps. Map components must be dynamically imported (`next/dynamic` with `ssr: false`) because Leaflet requires `window`.
-- **Categories:** there is no `category` table. The server only whitelists the keys (`server/app/Config/Categories.php`, `in_list` validation) and returns the key (`category: "waterfall"`); there is no categories listing endpoint and no `/categories` page — the filter on `/places` and the category icons on cards are the way into a category. The catalogue is on the client: keys in `client/api/models/category.ts` (`ApiModel.Categories`), icons `client/public/images/poi/<key>.png` and colours wired up in `client/utils/categories.ts`, texts in `public/locales/<lang>/common.json` under `categoryCatalogue.<name>` (`title` label, `landing` page name, `content` intro). Adding a category touches the enum, an icon, a colour, both locales and the server config.
+- **Map:** Leaflet via `react-leaflet`. Map components must be dynamically imported (`next/dynamic` with `ssr: false`) because Leaflet requires `window`.
+- **Categories:** there is no `category` table. The server only whitelists the keys (`server/app/Config/Categories.php`, `in_list` validation) and returns the key (`category: "waterfall"`); there is no categories listing endpoint (only the places count per category in `GET /stats`) and no `/categories` page — the filter on `/places` and the category icons on cards are the way into a category. The catalogue is on the client: keys in `client/api/models/category.ts` (`ApiModel.Categories`), icons `client/public/images/poi/<key>.png` and colours wired up in `client/utils/categories.ts`, texts in `public/locales/<lang>/common.json` under `categoryCatalogue.<name>` (`title` label, `short` plural name for chips and tiles, `landing` page name, `content` intro). Adding a category touches the enum, an icon, a colour, both locales and the server config.
 
 ## Environment
 

@@ -43,10 +43,10 @@ Pick from the table; no ad-hoc `em` or odd pixel sizes.
 
 ## 2. Two layers
 
-| Layer             | Lives in                                               | Knows about                    | Examples                                                                                 |
-| ----------------- | ------------------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------------------------- |
-| Primitives        | `simple-react-ui-kit` (separate repo, Storybook there) | Nothing domain-specific        | `Button`, `Input`, `Select`, `Dialog`, `Container`, `Popout`, `Icon`, `Skeleton`, tokens |
-| Domain components | `client/components/shared`                             | `ApiModel` types, routes, i18n | `PlaceCard`, `CollectionCard`, `MediaTile`, `UserAvatar`, `CategoryIcon`, `EmptyState`   |
+| Layer             | Lives in                                               | Knows about                    | Examples                                                                                            |
+| ----------------- | ------------------------------------------------------ | ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Primitives        | `simple-react-ui-kit` (separate repo, Storybook there) | Nothing domain-specific        | `Button`, `Input`, `Select`, `Dialog`, `Container`, `Popout`, `Icon`, `Skeleton`, tokens            |
+| Domain components | `client/components/shared`                             | `ApiModel` types, routes, i18n | `PlaceCard`, `CollectionCard`, `FeedStory`, `MediaTile`, `UserAvatar`, `CategoryIcon`, `EmptyState` |
 
 Page-specific composition lives in `client/sections/<area>` (e.g. `sections/collections`),
 pages themselves in `client/pages`. Sections may compose domain components; they must not
@@ -103,6 +103,31 @@ re-implement them.
   pages have no map: places there are nationwide. Filter changes build the canonical path
   (`utils/placesLanding.ts` `buildPlacesHref`) instead of `/places?…` once the relevant flag
   is on.
+- **Home page** (`pages/index.tsx`, blocks in `sections/home`): its blocks are sections,
+  `--space-6` apart (`--space-5` on phones) like on every page, the first one `--space-3` under
+  the app bar. One page, two sets of blocks chosen by `isAuth` (never by user agent: a crawler
+  is a guest and gets the guest page; the title, canonical and JSON-LD are the same for both).
+  Guest: `HomeHero` (the photo `images/pages/home-hero.jpg` with the h1 — the one display-size
+  h1 of the site, 40px / 28px on phones — the lead, the site search (`useSiteSearch`, the same
+  as the app bar), the three fullest categories as chips plus "Рядом со мной", the live numbers
+  of `/stats`) → `HomeCategories` (tiles of every category with places and their counts, twelve
+  shown, six on phones, the rest hidden but still in the markup for the links) → `HomePlaces`
+  ("Куда поехать": button `Tabs` popular this week / new / nearby over a `Carousel` of
+  `PlaceCard` tiles; nearby asks for the location on its button only) → `HomeHowItWorks` (three
+  step cards, each with a picture made of real pieces of the site — the fullest category icons,
+  the "Я здесь был(а)" button, growing `LevelBadge`s — and the experience the step brings as the
+  server counts it) → `HomeCollections` (`CollectionCard`s in a
+  `MediaTileGrid`; a short row ends with a dashed "make your own" tile) → the regions
+  `LocationLinkList` → the feed (three stories) and people `Container`s → `HomeJoin` (the brand
+  gradient band with the sign-up button). Signed-in user: `HomeWelcome` (a card: the 96px square
+  avatar as on the profile → three lines: the greeting h1, a 13px line "since {year} · the
+  experience left to the next level", the `LevelBadge` + kit `Progress` + "experience / next"
+  → the places / photos / visits counters on the right, each a link to that list of the
+  profile, under the rest on phones; no action buttons — adding a place is in the app bar) → a
+  `1fr 360px` grid of the feed and a side column with `HomeUnexplored` (OSM candidates around
+  the visitor's location, picker-style rows, each a link to the map there) and the people → the
+  categories as a `LocationLinkList` with counts → `HomePlaces` → `HomeCollections`. Chips and
+  pills here have the `--border-radius` corners of every pill on the site, never round ends.
 - **Sections, not containers.** The parts of one entity (its description, photos,
   comments, history, the facts about it) are `Section`s (`components/shared/section`, the
   same `title` / `action` / `footer` slots as the kit `Container`, a kit candidate): an h2
@@ -115,7 +140,9 @@ re-implement them.
   pages (`LocationLinkList`). They carry a `title` and an optional `action`. Page chrome —
   the page header, filters, lists, pagination — sits on the page background, never in a
   `Container`. Empty states are a single line in place of the content, never an empty box.
-- **Breakpoint.** One: `$mobileMaxWidth` (768px). Below it columns stack and side action
+- **Breakpoint.** One: `$mobileMaxWidth` (768px). The one exception is the feed's side column
+  (`/activity`, the profile), which goes on top below `$feedSideColumnMaxWidth` (1024px): next
+  to it the feed column would be under ~500px. Below 768px columns stack and side action
   groups wrap under the content.
 
 ## 4. Page header and breadcrumbs
@@ -185,7 +212,8 @@ The one card for a place.
 The heading level is the `headingLevel` prop (2 by default, 3 inside another titled block).
 
 Invariant order of parts in both variants: cover → category icon → title → address →
-stats row. The category is never a text label on a card: a tile shows its icon (16px) in
+stats row. A row then shows at most two lines of the description (`content`, 13px, markdown
+stripped) when the list sends it — search and the feed do, tile lists do not. The category is never a text label on a card: a tile shows its icon (16px) in
 the top-left corner over the cover, a row puts it (16px) before the title; the name is the
 icon's tooltip and accessible name (see `CategoryIcon`). Stats order is fixed: rating, distance, views, photos. A card is about the place:
 it never shows who added it or when, and list responses (`ApiModel.PlaceListItem`) do not
@@ -269,7 +297,7 @@ suggestions; small on purpose, so the category does not outweigh the cover and t
 breadcrumbs name the category in text (and the schema.org `BreadcrumbList` has the same
 category level), so the sidebar facts have no category row.
 
-### `CollectionCard` (`sections/collections/collection-card`)
+### `CollectionCard` (`components/shared/collection-card`)
 
 `MediaTile` with a **cover mosaic** instead of one cover: the covers of the first places
 in the author's order that have photos, up to four (`collection.covers` from the API).
@@ -278,7 +306,71 @@ stacked on the right, four make a 2×2 grid. The mosaic is what tells a collecti
 a place tile at a glance; it is derived on the server and follows the membership and order
 automatically, so there is no cover setting — the author changes it by reordering the
 places. On top: author + update time; below: title, region link and a stats row (places,
-views).
+views). `showAuthor={false}` drops the author where it is already shown (a feed story);
+`headingLevel={3}` inside another titled block, as for `PlaceCard`.
+
+### Activity feed (`components/shared/feed`)
+
+The feed shows that the site is alive. The server sends ready **stories** — a group of
+events of one author (a new place with its photos, a batch of ratings, a review) or an
+achievement / a new level (`ApiModel.FeedStory`; grouping rules in
+`server/app/Libraries/FeedAggregator.php`), so the client never groups anything.
+
+- `FeedStory` — one card per story, the same for every kind: a head (avatar, author link,
+  what happened, time ago) and a body that depends on the kind. Bodies reuse the entity
+  components: a new place is a `PlaceCard` tile + the start of its description + a strip of
+  its photos; photos are a `FeedPhotoMosaic` (1 wide, 2 columns, 1 tall + 2, 2×2 with "+N",
+  any tile opens the lightbox) with the place as a `PlaceCard` row; a review is a quote with
+  the place row; ratings, visits and places added to a collection are up to three place rows
+  (a rating with the author's five read-only stars in the row footer) and "and N more"; a
+  collection is a `CollectionCard` without the author; an achievement / a level is its badge
+  on a `--surface-2` plate. The action never carries a grammatical gender: Russian uses a noun
+  phrase after a dash ("Мария — новое место"), English a verb ("Maria added a place").
+- Weight sets the size: 3 (a picture), 2 (a card), 1 — edits, ratings, visits — a tighter
+  card. The avatar is always `medium` (36px), the height of the two lines of the head. Cards
+  sit on the page background, `--container-shadow`, 12px apart, as wide as their column.
+- `density="compact"` puts the stories inside another block — the home page container, the
+  place history section: no card of their own, a rule between them, place tiles become rows
+  and descriptions are left out. `hidePlace` (the place history) drops the place from every
+  story, a rating moves its stars into the head.
+- Days are days of the site's time zone (Moscow, `SITE_UTC_OFFSET`), not the viewer's: the
+  server render and the browser group the same way, and the calendar (server `SITE_TIMEZONE`)
+  agrees with the feed. Relative times ("5 minutes ago") are `suppressHydrationWarning`.
+- Photos of a story are named after the place ("Усадьба — фото 2") in `alt` and in their
+  buttons; the last tile's button also says how many photos are left.
+- `FeedList` — the stories in order, under day headings ("Сегодня", "Вчера", "1 октября",
+  12px uppercase secondary) when `groupByDay`; two `FeedStoryLoader` skeletons while loading;
+  an empty feed is one line of text.
+- `FeedPulse` — "This week" (or "This month" when the week was quiet): the non-zero counts
+  as 22px numbers with captions, the most active people (`UserAvatarGroup`), "last activity
+  5 minutes ago" with a green live dot. `compact` is one line for the home page widget.
+
+Where it is: `/activity` — `PageHeader`, then a `1fr 320px` grid: type
+filter `Tabs` (links `?type=places|photos|reviews|collections|achievements`) above the feed
+grouped by day with infinite scroll (`useInfiniteScroll`), `FeedPulse` in the sticky right
+column (first on phones). Home page — a `Container` with the compact pulse and the five
+latest stories of weight 2+, next to the "Активные пользователи" container (the main column
+of the signed-in layout), as an exception to "lists never sit inside a `Container`": the
+home widgets are titled blocks. Profile (`sections/user/user-activity`) — `ContributionCalendar`
+across the page, then the same `1fr 320px` grid: the author's feed by day and
+`ContributionSummary` in the sticky column.
+Place page — the collapsed "История изменений" row: compact stories without the place,
+"Показать больше" loads the next page.
+
+### `ContributionCalendar` (`components/shared/contribution-calendar`)
+
+A year of a person's activity (`GET /feed/calendar`): a square per day, weeks as columns,
+the colour a share of `--color-main` by quartiles of the busiest day, month names over the
+columns, weekday names on the left, a "Less ▢▢▢▢ More" legend. One CSS grid stretched to
+the full width (about 20px squares on a desktop); a square is never under 10px, below that
+(phones) the year scrolls sideways, opened at the latest weeks. Weeks start on Monday in
+Russian and on Sunday in English. A `Container` titled with the year's total, the year's
+count in its `action`: on the page background the empty squares (`--surface-2`) would merge
+with it.
+
+`ContributionSummary` — "The year in numbers", counted on the client from the same calendar:
+actions, active days, the longest and the current run of days in a row (22px numbers in a
+2×2 grid, the `FeedPulse` look) and the busiest day. Renders nothing for an empty year.
 
 ## 6. Patterns
 
@@ -333,7 +425,7 @@ views).
   whole rows; only the outer corners of the whole grid are rounded, tiles are square; previews are 700×500. The first 8 are shown and the rest collapse behind
   "Ещё фотографии"; a page of photos passes `showAll`.
 - **Tabs** (`components/ui/tabs`, the user profile: activity, achievements, places,
-  bookmarks, visited, collections, photos): a bar on a card (`--container-shadow`,
+  bookmarks, visited, collections, photos; the filters of `/activity`): a bar on a card (`--container-shadow`,
   4px padding) of items styled like the app bar navigation — 36px high (32px on phones),
   secondary text, `--surface-2` on hover, `--color-main` on `--color-main-background` for the
   active one. Tabs that are pages are links (`href`, `aria-current="page"`), never

@@ -108,36 +108,6 @@ export const API = createApi({
             }
         }),
 
-        /** Controller: Activity **/
-        activityGetInfinityList: builder.query<
-            ApiType.Activity.GetListResponse,
-            Maybe<ApiType.Activity.GetListRequest>
-        >({
-            forceRefetch: ({ currentArg, previousArg }) => currentArg !== previousArg,
-            merge: (currentCache, newItems, { arg }) => {
-                if (arg?.date) {
-                    currentCache.items.push(...newItems.items)
-                } else {
-                    currentCache.items = newItems.items
-                }
-            },
-            providesTags: (result, error, arg) => [{ id: arg?.author || arg?.place || 'LIST', type: 'Activity' }],
-            query: (params) => `activity${encodeQueryData(params)}`,
-            serializeQueryArgs: ({ endpointName, queryArgs }) => {
-                if (queryArgs?.author) {
-                    return `${endpointName}_author_${queryArgs.author}`
-                }
-                if (queryArgs?.place) {
-                    return `${endpointName}_place_${queryArgs.place}`
-                }
-                return endpointName
-            }
-        }),
-        activityGetList: builder.query<ApiType.Activity.GetListResponse, Maybe<ApiType.Activity.GetListRequest>>({
-            providesTags: (result, error, arg) => [{ id: arg?.place || arg?.author, type: 'Activity' }],
-            query: (params) => `activity${encodeQueryData(params)}`
-        }),
-
         /** Controller: Auth **/
         authGetMe: builder.query<ApiType.Auth.LoginResponse, void>({
             providesTags: ['Profile'],
@@ -243,6 +213,7 @@ export const API = createApi({
             invalidatesTags: (res, err, arg) => [
                 { id: arg.id, type: 'Collections' },
                 { type: 'CollectionMembership' },
+                { type: 'Feed' },
                 { type: 'Notifications' }
             ],
             query: ({ id, placeIds }) => ({
@@ -307,7 +278,7 @@ export const API = createApi({
             query: (params) => `comments${encodeQueryData(params)}`
         }),
         commentsPost: builder.mutation<void, ApiType.Comments.PostRequest>({
-            invalidatesTags: () => ['Comments', 'Notifications'],
+            invalidatesTags: () => ['Comments', 'Feed', 'Notifications'],
             query: (data) => ({
                 body: data,
                 method: 'POST',
@@ -471,8 +442,32 @@ export const API = createApi({
             transformErrorResponse: extractErrorMessage
         }),
 
+        /** Controller: Feed **/
+        feedGetList: builder.infiniteQuery<ApiType.Feed.ListResponse, ApiType.Feed.ListRequest, string>({
+            infiniteQueryOptions: {
+                getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+                initialPageParam: ''
+            },
+            providesTags: (result, error, arg) => [{ id: arg?.author || arg?.place || 'LIST', type: 'Feed' }],
+            query: ({ pageParam, queryArg }) => `feed${encodeQueryData({ ...queryArg, cursor: pageParam })}`
+        }),
+        /** One page without paging: the home page widget, the count of the place history (`countOnly`) */
+        feedGetStories: builder.query<ApiType.Feed.ListResponse, ApiType.Feed.ListRequest>({
+            providesTags: (result, error, arg) => [{ id: arg?.author || arg?.place || 'LIST', type: 'Feed' }],
+            query: (params) => `feed${encodeQueryData(params)}`
+        }),
+        feedGetPulse: builder.query<ApiType.Feed.PulseResponse, void>({
+            providesTags: [{ id: 'PULSE', type: 'Feed' }],
+            query: () => 'feed/pulse'
+        }),
+        feedGetCalendar: builder.query<ApiType.Feed.CalendarResponse, ApiType.Feed.CalendarRequest>({
+            providesTags: (result, error, arg) => [{ id: arg.author, type: 'Feed' }],
+            query: (params) => `feed/calendar${encodeQueryData(params)}`
+        }),
+
         /** Controller: Photos **/
         photoDeleteItem: builder.mutation<ApiType.Photos.DeleteResponse, ApiType.Photos.DeleteRequest>({
+            invalidatesTags: (res, err, arg) => (arg?.temporary ? [] : ['Feed']),
             query: (params) => ({
                 method: 'DELETE',
                 url: `photos/${params?.temporary ? 'temporary/' : ''}${params?.id}`
@@ -482,7 +477,7 @@ export const API = createApi({
         photoPostUpload: builder.mutation<ApiType.Photos.UploadResponse, ApiType.Photos.UploadRequest>({
             invalidatesTags: (res, err, arg) => [
                 { id: arg.place, type: 'Photos' },
-                { id: arg.place, type: 'Activity' },
+                { type: 'Feed' },
                 { type: 'Notifications' }
             ],
             query: (data) => ({
@@ -513,12 +508,20 @@ export const API = createApi({
                     id: undefined
                 })}`
         }),
+        placesGetTexts: builder.query<ApiType.Places.TextsResponse, string>({
+            providesTags: (result, error, id) => [{ id, type: 'Places' }],
+            query: (id) => `places/${id}/texts`
+        }),
         placesGetList: builder.query<ApiType.Places.ListResponse, Maybe<ApiType.Places.ListRequest>>({
             providesTags: ['Places'],
             query: (params) => `places${encodeQueryData(params)}`
         }),
         placesPatchCover: builder.mutation<void, ApiType.Places.PatchCoverRequest>({
-            invalidatesTags: (res, err, arg) => [{ id: arg.placeId, type: 'Places' }, { type: 'Notifications' }],
+            invalidatesTags: (res, err, arg) => [
+                { id: arg.placeId, type: 'Places' },
+                { type: 'Feed' },
+                { type: 'Notifications' }
+            ],
             query: (data) => ({
                 body: data,
                 method: 'PATCH',
@@ -535,7 +538,7 @@ export const API = createApi({
         placesPatchItem: builder.mutation<ApiType.Places.PatchItemResponse, ApiType.Places.PostItemRequest>({
             invalidatesTags: (res, err, arg) => [
                 { id: arg.id, type: 'Places' },
-                { type: 'Activity' },
+                { type: 'Feed' },
                 { type: 'Notifications' }
             ],
             query: (data) => ({
@@ -548,7 +551,7 @@ export const API = createApi({
         placesPostItem: builder.mutation<ApiType.Places.PostItemResponse, Omit<ApiType.Places.PostItemRequest, 'id'>>({
             invalidatesTags: [
                 { type: 'Places' },
-                { type: 'Activity' },
+                { type: 'Feed' },
                 { type: 'Notifications' },
                 { type: 'OsmCandidates' }
             ],
@@ -561,10 +564,10 @@ export const API = createApi({
         }),
 
         /** Controller: POI **/
-        poiGetItem: builder.query<ApiType.POI.PoiItemResponse, string>({
+        poiGetItem: builder.query<ApiType.POI.PoiItemResponse, ApiType.POI.PoiItemRequest>({
             // The popup shows the bookmark state and counter: refetch it when the bookmark is toggled
-            providesTags: (res, err, id) => [{ id, type: 'Bookmarks' }],
-            query: (item) => `poi/${item}`
+            providesTags: (res, err, { id }) => [{ id, type: 'Bookmarks' }],
+            query: ({ id, ...params }) => `poi/${id}${encodeQueryData(params)}`
         }),
         poiGetList: builder.query<ApiType.POI.PlacesListResponse, Maybe<ApiType.POI.ListRequest>>({
             query: (params) => `poi${encodeQueryData(params)}`
@@ -574,9 +577,6 @@ export const API = createApi({
             Maybe<Omit<ApiType.POI.ListRequest, 'categories'>>
         >({
             query: (params) => `poi/photos${encodeQueryData(params)}`
-        }),
-        poiGetUsers: builder.query<ApiType.POI.UsersListResponse, void>({
-            query: () => 'poi/users'
         }),
 
         /** Controller: Search **/
@@ -595,7 +595,7 @@ export const API = createApi({
             query: (item) => `rating/${item}`
         }),
         ratingPutScore: builder.mutation<ApiType.Rating.PutResponse, ApiType.Rating.PutRequest>({
-            invalidatesTags: [{ type: 'Rating' }, { type: 'Activity' }, { type: 'Notifications' }],
+            invalidatesTags: [{ type: 'Rating' }, { type: 'Feed' }, { type: 'Notifications' }],
             query: (data) => ({
                 body: data,
                 method: 'PUT',
@@ -665,7 +665,11 @@ export const API = createApi({
             query: (item) => `visited/${item}`
         }),
         visitedPutPlace: builder.mutation<ApiType.Visited.PutResponse, ApiType.Visited.PutRequest>({
-            invalidatesTags: (res, err, arg) => [{ id: arg.place, type: 'Visited' }, { type: 'Notifications' }],
+            invalidatesTags: (res, err, arg) => [
+                { id: arg.place, type: 'Visited' },
+                { type: 'Feed' },
+                { type: 'Notifications' }
+            ],
             query: (data) => ({
                 body: data,
                 method: 'PUT',
@@ -690,12 +694,12 @@ export const API = createApi({
         'Achievements',
         'AchievementsManage',
         'AchievementsProgress',
-        'Activity',
         'Bookmarks',
         'CollectionMembership',
         'Collections',
         'Comments',
         'ExternalPhotos',
+        'Feed',
         'Notifications',
         'OsmCandidates',
         'Photos',

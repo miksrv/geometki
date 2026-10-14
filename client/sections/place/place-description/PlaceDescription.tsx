@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
-import { API } from '@/api'
+import { API, ApiType } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
@@ -43,12 +43,17 @@ interface DescriptionFormValues {
 interface PlaceDescriptionProps {
     placeId?: string
     content?: string
+    /** The locale of `content`: another one than the interface locale when the place is not translated */
+    locale?: ApiType.Locale
     tags?: string[]
 }
 
-export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, content, tags }) => {
+export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, content, locale, tags }) => {
     const dispatch = useAppDispatch()
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
+
+    // The shown text is the original in another language: editing it here edits that original
+    const isUntranslated = !!locale && locale !== i18n.language
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
@@ -129,6 +134,7 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
         const result = await updatePlace({
             content: values.content,
             id: placeId!,
+            locale,
             tags: !equalsArrays(values.tags, localTags) ? values.tags : undefined
         })
 
@@ -209,6 +215,19 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
             }
         >
             {isLoading && <ScreenSpinner />}
+
+            {isUntranslated && !editorMode && (
+                <div className={styles.untranslated}>
+                    {t('place-text-untranslated', { language: t(`language-name-${locale}`) })}
+                    {/* The edit page is for signed-in users only: guests would just bounce back */}
+                    {isAuth && (
+                        <>
+                            {' · '}
+                            <Link href={`/places/${placeId}/edit?lang=${i18n.language}`}>{t('translate')}</Link>
+                        </>
+                    )}
+                </div>
+            )}
 
             {isAuth && editorMode ? (
                 <Controller

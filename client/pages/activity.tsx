@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React from 'react'
+import { Button } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
@@ -9,58 +10,72 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { ActivityList, AppLayout, PageHeader } from '@/components/shared'
-import { INFINITE_SCROLL_ROOT_MARGIN } from '@/config/constants'
+import { AppLayout, FeedList, FeedPulse, PageHeader } from '@/components/shared'
+import { Tabs } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { FEED_FILTERS, FeedFilter, feedFilterTypes, flattenFeedPages, isFeedFilter } from '@/utils/feed'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 
-const ActivityPage: NextPage<object> = () => {
+import styles from './activity.module.sass'
+
+interface ActivityPageProps {
+    filter: FeedFilter | null
+}
+
+const FILTER_LABELS: Record<FeedFilter, string> = {
+    achievements: 'feed-filter-achievements',
+    collections: 'feed-filter-collections',
+    photos: 'feed-filter-photos',
+    places: 'feed-filter-places',
+    reviews: 'feed-filter-reviews'
+}
+
+const feedRequest = (filter: FeedFilter | null): ApiType.Feed.ListRequest => ({
+    types: feedFilterTypes(filter ?? undefined)
+})
+
+const ActivityPage: NextPage<ActivityPageProps> = ({ filter }) => {
     const { t, i18n } = useTranslation()
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
 
-    const [lastDate, setLastDate] = useState<string>()
-    const sentinelRef = useRef<HTMLDivElement>(null)
+    const { data, isFetching, isFetchingNextPage, isError, isLoading, hasNextPage, fetchNextPage } =
+        API.useFeedGetListInfiniteQuery(feedRequest(filter))
+    // A page after the first failed (the first failing leaves the feed empty)
+    const nextPageFailed = isError && !!data?.pages.length
+    const { data: pulse } = API.useFeedGetPulseQuery()
 
-    const { data, isFetching } = API.useActivityGetInfinityListQuery({ date: lastDate })
+    const sentinelRef = useInfiniteScroll({
+        hasMore: hasNextPage,
+        loading: isFetching,
+        failed: nextPageFailed,
+        onLoadMore: fetchNextPage
+    })
 
-    useEffect(() => {
-        const el = sentinelRef.current
-        if (!el) {
-            return
-        }
-
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (!entry.isIntersecting || isFetching) {
-                    return
-                }
-
-                const cursorDate = data?.items[data.items.length - 1]?.created?.date
-                if (cursorDate) {
-                    setLastDate(cursorDate)
-                }
-            },
-            { rootMargin: INFINITE_SCROLL_ROOT_MARGIN }
-        )
-
-        observer.observe(el)
-        return () => observer.disconnect()
-    }, [data, isFetching])
+    const tabs = [
+        { href: '/activity', key: 'all', label: t('feed-filter-all', { defaultValue: 'Всё' }) },
+        ...(Object.keys(FEED_FILTERS) as FeedFilter[]).map((key) => ({
+            href: `/activity?type=${key}`,
+            key,
+            label: t(FILTER_LABELS[key])
+        }))
+    ]
 
     return (
         <AppLayout>
             <Head>
                 {generateNextSeo({
-                    title: t('news-feed'),
+                    title: t('activity-feed'),
                     description: t('activity-description'),
                     canonical: `${canonicalUrl}activity`,
+                    noindex: !!filter,
                     openGraph: {
                         description: t('activity-description'),
                         locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
                         siteName: t('geotags'),
-                        title: t('news-feed'),
+                        title: t('activity-feed'),
                         type: 'website',
                         url: `${canonicalUrl}activity`
                     },
@@ -69,34 +84,64 @@ const ActivityPage: NextPage<object> = () => {
                 })}
             </Head>
 
-            <PageHeader title={t('news-feed')} />
+            <PageHeader title={t('activity-feed')} />
 
-            <ActivityList
-                activities={data?.items}
-                loading={isFetching}
-            />
-            <div ref={sentinelRef} />
+            <div className={styles.layout}>
+                <aside className={styles.aside}>
+                    <FeedPulse pulse={pulse} />
+                </aside>
+
+                <div className={styles.main}>
+                    <Tabs
+                        tabs={tabs}
+                        activeTab={filter ?? 'all'}
+                        aria-label={t('feed-filters', { defaultValue: 'Что показывать' })}
+                    />
+
+                    <FeedList
+                        stories={flattenFeedPages(data?.pages)}
+                        loading={isLoading || isFetchingNextPage}
+                        groupByDay={true}
+                        emptyText={t('feed-empty', { defaultValue: 'Здесь пока ничего не произошло' })}
+                        footer={
+                            nextPageFailed ? (
+                                <Button
+                                    mode={'secondary'}
+                                    stretched={true}
+                                    onClick={() => fetchNextPage()}
+                                >
+                                    {t('feed-retry', { defaultValue: 'Не удалось загрузить. Повторить' })}
+                                </Button>
+                            ) : undefined
+                        }
+                    />
+                    <div ref={sentinelRef} />
+                </div>
+            </div>
         </AppLayout>
     )
 }
 
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
-        async (context): Promise<GetServerSidePropsResult<object>> => {
+        async (context): Promise<GetServerSidePropsResult<ActivityPageProps>> => {
             const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const translations = await serverSideTranslations(locale)
+            const filter = isFeedFilter(context.query.type) ? context.query.type : null
 
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
-            await store.dispatch(API.endpoints.activityGetInfinityList.initiate({}))
-
-            await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
+            await Promise.all([
+                store.dispatch(API.endpoints.feedGetList.initiate(feedRequest(filter))),
+                store.dispatch(API.endpoints.feedGetPulse.initiate())
+            ])
 
             return {
                 props: {
-                    ...translations
+                    ...translations,
+                    filter
                 }
             }
         }

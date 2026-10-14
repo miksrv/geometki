@@ -45,6 +45,7 @@ import {
 } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { getUserLocationFromCookies } from '@/utils/userLocation'
 
 import styles from './styles.module.sass'
 
@@ -122,6 +123,10 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     const placePath = buildPlaceUrl(place?.id ?? '', place?.slug)
     const pagePlaceUrl = `${canonicalUrl}${placePath.replace(/^\//, '')}`
+    // A place with no text in the interface locale shows its original: that page is no language
+    // version of its own, so it is noindex, canonicalises to the original and gets no hreflang pair
+    const isUntranslated = !!place?.locale && place.locale !== i18n.language
+    const originalPlaceUrl = SITE_LINK + (place?.locale === 'en' ? 'en/' : '') + placePath.replace(/^\//, '')
 
     const handleSaveCover = () => {
         setTimeout(() => setCoverHash(Math.floor(Date.now() / 1000)), 400)
@@ -279,7 +284,9 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                 {generateNextSeo({
                     title: place?.title,
                     description: placeDescription,
-                    canonical: pagePlaceUrl,
+                    canonical: isUntranslated ? originalPlaceUrl : pagePlaceUrl,
+                    noindex: isUntranslated,
+                    nofollow: false,
                     openGraph: {
                         article: {
                             authors: [`${SITE_LINK}users/${place?.author?.id}`],
@@ -305,14 +312,14 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                                 width: photo.width
                             })) ?? [])
                         ],
-                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
+                        locale: (place?.locale ?? i18n.language) === 'ru' ? 'ru_RU' : 'en_US',
                         siteName: t('geotags'),
                         title: place?.title,
                         type: 'article',
-                        url: pagePlaceUrl
+                        url: isUntranslated ? originalPlaceUrl : pagePlaceUrl
                     },
                     twitter: { cardType: 'summary_large_image' },
-                    additionalLinkTags: buildHreflangTags(placePath.replace(/^\//, ''))
+                    additionalLinkTags: buildHreflangTags(placePath.replace(/^\//, ''), '', place?.locales)
                 })}
             </Head>
 
@@ -380,6 +387,7 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                             <PlaceDescription
                                 placeId={place?.id}
                                 content={place?.content}
+                                locale={place?.locale}
                                 tags={place?.tags}
                             />
                         </div>
@@ -415,11 +423,7 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                         </Section>
 
                         <div className={styles.orderHistory}>
-                            <PlaceActivity
-                                placeId={place?.id}
-                                hidePlaceName={true}
-                                hideCover={true}
-                            />
+                            <PlaceActivity placeId={place?.id} />
                         </div>
                     </div>
 
@@ -497,7 +501,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
-            const { data: placeData, isError } = await store.dispatch(API.endpoints.placesGetItem.initiate({ id }))
+            const { data: placeData, isError } = await store.dispatch(
+                API.endpoints.placesGetItem.initiate({ id, ...getUserLocationFromCookies(cookies) })
+            )
 
             if (isError) {
                 return { notFound: true }
@@ -580,7 +586,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     : Promise.resolve({ data: undefined }),
                 store.dispatch(API.endpoints.visitedGetUsersList.initiate(id)),
                 store.dispatch(API.endpoints.collectionsGetList.initiate({ limit: IN_COLLECTIONS_LIMIT, placeId: id })),
-                store.dispatch(API.endpoints.activityGetList.initiate({ countOnly: true, place: id })),
+                store.dispatch(API.endpoints.feedGetStories.initiate({ countOnly: true, place: id })),
                 translationsPromise
             ])
 

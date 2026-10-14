@@ -1,3 +1,5 @@
+import { setCookie } from 'cookies-next'
+
 import type { Locale } from '@/api/types'
 
 import applicationReducer, {
@@ -9,6 +11,7 @@ import applicationReducer, {
 } from './applicationSlice'
 
 jest.mock('cookies-next', () => ({
+    getCookie: jest.fn(),
     setCookie: jest.fn()
 }))
 
@@ -93,6 +96,12 @@ describe('applicationSlice', () => {
             const state = applicationReducer({ ...initialState }, setUserLocation(coords))
 
             expect(state.userLocation).toStrictEqual(coords)
+        })
+
+        it('keeps the location in a cookie for 30 days', () => {
+            applicationReducer({ ...initialState }, setUserLocation({ lat: 55.75, lon: 37.61 }))
+
+            expect(setCookie).toHaveBeenCalledWith('location', '55.75;37.61', { maxAge: 30 * 24 * 60 * 60 })
         })
     })
 })

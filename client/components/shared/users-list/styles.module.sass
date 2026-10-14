@@ -5,6 +5,7 @@
 
     @media only screen and (min-width: #{variables.$mobileMaxWidth + 1})
         height: 460px
+        overflow-x: hidden
         overflow-y: auto
         padding-right: 4px
 
@@ -25,13 +26,18 @@
         border-bottom: none
         padding-bottom: 0
 
+    // Compact (narrow side column): name, level badge and reputation only
     &.compact
-        grid-template-columns: minmax(190px, 2fr) minmax(150px, 2fr) minmax(80px, 1fr)
-        grid-template-areas: "user level reputation"
+        grid-template-columns: minmax(0, 1fr) auto auto
+        grid-template-areas: "user badge reputation"
+        column-gap: 12px
 
-        @media only screen and (max-width: variables.$mobileMaxWidth)
-            grid-template-columns: 1fr auto
-            grid-template-areas: "user badge"
+        .mobileLevelBadge
+            display: block
+            align-self: center
+
+        .reputationCol
+            display: flex
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
         grid-template-columns: 1fr auto

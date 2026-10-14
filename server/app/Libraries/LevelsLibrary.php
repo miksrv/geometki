@@ -143,6 +143,14 @@ class LevelsLibrary {
         if ($calcLevel->level !== (int) $userData->level) {
             $notify->push('level', $userId, $activity, $calcLevel);
             $userModel->update($userData->id, ['level' => $calcLevel->level, 'experience' => $userData->experience]);
+
+            if ($calcLevel->level > (int) $userData->level) {
+                try {
+                    (new FeedLibrary())->level($userId, $calcLevel->level);
+                } catch (\Throwable $e) {
+                    log_message('error', '{exception}', ['exception' => $e]);
+                }
+            }
         } else {
             $levelIndex  = array_search($calcLevel->level, array_column($this->userLevels, 'level'));
             $nextLevelXp = ($levelIndex !== false && isset($this->userLevels[$levelIndex + 1]))

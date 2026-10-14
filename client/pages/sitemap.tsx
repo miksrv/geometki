@@ -2,7 +2,7 @@ import React from 'react'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 
-import { API } from '@/api'
+import { API, ApiType } from '@/api'
 import { wrapper } from '@/app/store'
 import { SITE_LINK } from '@/config/env'
 import { buildCollectionUrl, buildPlaceUrl, getLandingFlags } from '@/utils/helpers'
@@ -10,6 +10,8 @@ import { buildCollectionUrl, buildPlaceUrl, getLandingFlags } from '@/utils/help
 type SitemapDynamicPage = {
     link: string
     update: string
+    /** The locales the page exists in: a place untranslated into a locale has no page in it */
+    locales?: ApiType.Locale[]
 }
 
 const SiteMap: NextPage<object> = () => <></>
@@ -30,6 +32,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const placesPages: SitemapDynamicPage[] =
                 data?.places?.map((place) => ({
                     link: buildPlaceUrl(place.id, place.slug).replace(/^\//, ''),
+                    locales: place.locales,
                     update: new Date(place.updated.date).toISOString()
                 })) || []
 
@@ -112,6 +115,11 @@ export const getServerSideProps = wrapper.getServerSideProps(
             // Homepage
             sitemap += makeUrlNode('', STATIC_LASTMOD, 'daily', '1.0', makeHreflang('', 'en'))
 
+            // Activity feed: changes all day, like the homepage (its ?type= filters are noindex)
+            sitemap += ['activity', 'en/activity']
+                .map((url) => makeUrlNode(url, STATIC_LASTMOD, 'daily', '0.6', makeHreflang('activity', 'en/activity')))
+                .join('')
+
             // Static pages (RU + EN paired with hreflang)
             sitemap += staticPages
                 .map((url) => makeUrlNode(url, STATIC_LASTMOD, 'monthly', '0.8', makeHreflang(url, `en/${url}`)))
@@ -123,26 +131,25 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 )
                 .join('')
 
+            const dynamicPages = [...placesPages, ...usersPages, ...landingPages]
+            // A page without `locales` exists in both; one in a single locale gets no hreflang pair
+            const hasLocale = (page: SitemapDynamicPage, locale: ApiType.Locale) =>
+                !page.locales || page.locales.includes(locale)
+            const pageHreflang = (page: SitemapDynamicPage) =>
+                hasLocale(page, 'ru') && hasLocale(page, 'en') ? makeHreflang(page.link, `en/${page.link}`) : undefined
+
             // Dynamic pages (RU + EN paired with hreflang)
-            sitemap += [...placesPages, ...usersPages, ...landingPages]
-                .map((page) =>
-                    makeUrlNode(page.link, page.update, 'daily', '0.7', makeHreflang(page.link, `en/${page.link}`))
-                )
+            sitemap += dynamicPages
+                .filter((page) => hasLocale(page, 'ru'))
+                .map((page) => makeUrlNode(page.link, page.update, 'daily', '0.7', pageHreflang(page)))
                 .join('')
 
             // Collections: RU only — the /en page stays noindex until an English title exists (phase 3)
             sitemap += collectionsPages.map((page) => makeUrlNode(page.link, page.update, 'daily', '0.7')).join('')
 
-            sitemap += [...placesPages, ...usersPages, ...landingPages]
-                .map((page) =>
-                    makeUrlNode(
-                        `en/${page.link}`,
-                        page.update,
-                        'daily',
-                        '0.7',
-                        makeHreflang(page.link, `en/${page.link}`)
-                    )
-                )
+            sitemap += dynamicPages
+                .filter((page) => hasLocale(page, 'en'))
+                .map((page) => makeUrlNode(`en/${page.link}`, page.update, 'daily', '0.7', pageHreflang(page)))
                 .join('')
 
             sitemap += '</urlset>'

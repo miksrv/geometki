@@ -65,11 +65,8 @@ jest.mock('simple-react-ui-kit', () => ({
     Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />
 }))
 
-jest.mock('react-hook-geolocation', () => () => ({ latitude: null, longitude: null }))
-
 jest.mock('@/api', () => ({
     API: {
-        useLocationPutCoordinatesMutation: jest.fn().mockReturnValue([jest.fn()]),
         util: { resetApiState: jest.fn(() => ({ type: 'api/resetApiState' })) }
     },
     ApiType: {}

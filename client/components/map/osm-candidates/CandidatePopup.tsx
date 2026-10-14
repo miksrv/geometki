@@ -17,6 +17,16 @@ import { breakdownText, candidateGroup, displayName, formatPoints, settlementTex
 
 import styles from './styles.module.sass'
 
+/** Score signals that tell a visitor something about the place; the rest (tags, contours, names) are for us */
+const VISITOR_FACTS = new Set<ApiType.OsmCandidates.BreakdownCode>([
+    'wiki',
+    'nearbyWiki',
+    'sitelinks',
+    'protected',
+    'salt',
+    'lakeSize'
+])
+
 const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
     ssr: false
 })
@@ -30,8 +40,9 @@ type AdminAction = 'link' | 'unlink' | 'reject'
 
 /**
  * Popup of an OSM candidate on the map: the cover (a Commons photo with its credits, or an OSM image),
- * what and where the object is, why it got its rating, the "create a place" action and the sources.
- * Admins also see the objects that are already on Geometki and can link, unlink or hide them.
+ * what and where the object is, a few facts about it, the sources and the "create a place" action.
+ * Admins also see the rating with its points, the objects that are already on Geometki
+ * and can link, unlink or hide them.
  */
 export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdmin }) => {
     const { t, i18n } = useTranslation()
@@ -67,20 +78,25 @@ export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdm
 
     const articleUrl = candidate.wikipedia ? wikipediaUrl(candidate.wikipedia) : undefined
 
+    // The article link already says there is an article
+    const facts = candidate.breakdown.filter(
+        (item) => item.points > 0 && VISITOR_FACTS.has(item.code) && !(item.code === 'wiki' && articleUrl)
+    )
+
     const sources = [
-        candidate.osmType && candidate.osmId
-            ? {
-                  href: `https://www.openstreetmap.org/${candidate.osmType}/${candidate.osmId}`,
-                  label: 'OSM'
-              }
-            : undefined,
         articleUrl
             ? {
                   href: articleUrl,
                   label: t('osm-candidates_wikipedia', { defaultValue: 'Википедия' })
               }
             : undefined,
-        candidate.wikidata
+        candidate.osmType && candidate.osmId
+            ? {
+                  href: `https://www.openstreetmap.org/${candidate.osmType}/${candidate.osmId}`,
+                  label: 'OpenStreetMap'
+              }
+            : undefined,
+        isAdmin && candidate.wikidata
             ? { href: `https://www.wikidata.org/wiki/${candidate.wikidata}`, label: 'Wikidata' }
             : undefined
     ].filter((source): source is { href: string; label: string } => !!source)
@@ -202,6 +218,33 @@ export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdm
                     )}
                 </div>
 
+                {facts.length > 0 && (
+                    <ul className={styles.facts}>
+                        {facts.map((item, index) => (
+                            <li key={`${item.code}${index}`}>
+                                <Icon name={'CheckCircle'} />
+                                <span>{breakdownText(t, item, candidate)}</span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+
+                {sources.length > 0 && (
+                    <div className={styles.sources}>
+                        {sources.map((source) => (
+                            <a
+                                key={source.label}
+                                href={source.href}
+                                target={'_blank'}
+                                rel={'noreferrer'}
+                            >
+                                {source.label}
+                                <Icon name={'External'} />
+                            </a>
+                        ))}
+                    </div>
+                )}
+
                 {candidate.place && (
                     <div className={styles.callout}>
                         <span className={styles.calloutLabel}>
@@ -253,19 +296,29 @@ export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdm
                 )}
 
                 {candidate.status !== 'linked' && (
-                    <Button
-                        stretched={true}
-                        mode={'primary'}
-                        size={'medium'}
-                        icon={'PlusCircle'}
-                        link={`/places/create?candidate=${candidate.id}`}
-                        noIndex={true}
-                        onClick={requireAuth}
-                        label={t('osm-candidates_create', { defaultValue: 'Создать геометку' })}
-                    />
+                    <div className={styles.cta}>
+                        {candidate.status === 'open' && (
+                            <span className={styles.ctaText}>
+                                {candidate.tier === 'explore'
+                                    ? t('osm-candidates_cta-explore', {
+                                          defaultValue: 'О месте почти ничего не известно. Опишите его первым'
+                                      })
+                                    : t('osm-candidates_cta', { defaultValue: 'Этого места ещё нет на Геометках' })}
+                            </span>
+                        )}
+                        <Button
+                            stretched={true}
+                            mode={'primary'}
+                            size={'small'}
+                            link={`/places/create?candidate=${candidate.id}`}
+                            noIndex={true}
+                            onClick={requireAuth}
+                            label={t('osm-candidates_create', { defaultValue: 'Создать геометку' })}
+                        />
+                    </div>
                 )}
 
-                {candidate.breakdown.length > 0 && (
+                {isAdmin && candidate.breakdown.length > 0 && (
                     <details className={styles.rating}>
                         <summary>
                             <Icon
@@ -294,22 +347,6 @@ export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdm
                             ))}
                         </ul>
                     </details>
-                )}
-
-                {sources.length > 0 && (
-                    <footer className={styles.sources}>
-                        {sources.map((source) => (
-                            <a
-                                key={source.label}
-                                href={source.href}
-                                target={'_blank'}
-                                rel={'noreferrer'}
-                            >
-                                {source.label}
-                                <Icon name={'External'} />
-                            </a>
-                        ))}
-                    </footer>
                 )}
 
                 {isAdmin && (

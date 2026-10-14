@@ -37,9 +37,10 @@ export const PlaceSchema = (place: ApiModel.Place, canonicalUrl?: string): unkno
               }
           }
         : {}),
-    dateModified: formatDateISO(place?.updated?.date),
-    datePublished: formatDateISO(place?.created?.date),
-    description: removeMarkdown(place.content),
+    // Lists send no text and no creation date: leave the fields out rather than empty
+    dateModified: formatDateISO(place?.updated?.date) || undefined,
+    datePublished: formatDateISO(place?.created?.date) || undefined,
+    description: removeMarkdown(place.content) || undefined,
     geo: {
         '@type': 'GeoCoordinates',
         latitude: place.lat,

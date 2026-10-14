@@ -1,1 +1,0 @@
-export { HeatmapLayer } from './HeatmapLayer'

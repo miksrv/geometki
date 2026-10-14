@@ -349,6 +349,42 @@ article.popup
 .negative
     color: var(--color-red)
 
+.facts
+    display: flex
+    flex-direction: column
+    gap: 2px
+    margin: 0
+    padding: 0
+    list-style: none
+    font-size: var(--font-size-secondary)
+    line-height: 1.4
+
+    li
+        display: flex
+        align-items: flex-start
+        gap: 6px
+        overflow-wrap: anywhere
+
+    svg
+        flex-shrink: 0
+        width: 14px
+        height: 14px
+        margin-top: 2px
+        fill: var(--color-green)
+
+// The "create a place" action: a line of text over a small full-width button
+.cta
+    display: flex
+    flex-direction: column
+    gap: var(--space-2)
+    padding-top: var(--space-3)
+    border-top: 1px solid var(--border)
+
+.ctaText
+    font-size: var(--font-size-secondary)
+    line-height: 1.4
+    color: var(--text-color-secondary)
+
 .sources
     display: flex
     flex-wrap: wrap

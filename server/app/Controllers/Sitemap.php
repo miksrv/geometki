@@ -44,12 +44,27 @@ class Sitemap extends ResourceController
         $usersModel       = new UsersModel();
         $collectionsModel = new CollectionsModel();
 
-        $places      = $placesModel->select('id, slug, updated_at as updated')->findAll();
-        $users       = $usersModel->select('id, updated_at as updated')->findAll();
+        // locales: the languages a place has a text in, only those are its language versions.
+        // lastmod counts text edits too: a bot's translation adds a language version
+        // without touching places.updated_at
+        $places      = $placesModel
+            ->select('id, slug')
+            ->select(
+                'GREATEST(places.updated_at, COALESCE((SELECT MAX(pc.updated_at) FROM places_content pc WHERE pc.place_id = places.id), places.updated_at)) as updated, '
+                . '(SELECT GROUP_CONCAT(pc.locale) FROM places_content pc WHERE pc.place_id = places.id) as locales',
+                false
+            )
+            ->findAll();
+        // Bot accounts have no profile worth indexing
+        $users       = $usersModel->select('id, updated_at as updated')->where('role !=', 'bot')->findAll();
         $collections = $collectionsModel
             ->select('id, slug, updated_at as updated')
             ->where(['hidden' => 0, 'indexable' => 1])
             ->findAll();
+
+        foreach ($places as $place) {
+            $place->locales = $place->locales ? explode(',', $place->locales) : [];
+        }
 
         foreach ([...$places, ...$users, ...$collections] as $row) {
             if (!empty($row->updated)) {

@@ -1,5 +1,4 @@
 export { AddPlacesDialog } from './add-places-dialog'
-export { CollectionCard } from './collection-card'
 export { CollectionDescription } from './collection-description'
 export { CollectionHeader } from './collection-header'
 export { CollectionPlacesList } from './collection-places-list'

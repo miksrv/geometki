@@ -6,7 +6,7 @@
 
 Reward users for showing up consistently. A streak counts consecutive calendar days with at least one qualifying action. Longer streaks multiply earned XP.
 
-Already exists: the achievements `streak` (metric `login_streak`, 7/30/60 days, computed from `sessions_history`), `regular` and `dedicated` (metric `days_active`). This feature adds a visible streak counter and an XP multiplier, not more streak badges.
+Already exists: the achievements `streak` (metric `login_streak`, 7/30/60 days, consecutive days with activity, counted like the profile's contribution calendar), `regular` and `dedicated` (metric `days_active`). This feature adds a visible streak counter and an XP multiplier, not more streak badges.
 
 ## Streak Tracking
 
@@ -39,7 +39,6 @@ Applied in `LevelsLibrary::push()`. Note that `LevelsLibrary::calculate()` recom
 
 - `current_streak`, `longest_streak` added to `GET /users/{id}` (`UserEntity`); no new endpoints.
 - `UserHeader`: flame icon with day count next to level and reputation; tooltip with current/longest streak and active multiplier.
-- Optional: 90-day activity heatmap on the profile from the `activity` table.
 
 ## Streak Freeze (optional)
 

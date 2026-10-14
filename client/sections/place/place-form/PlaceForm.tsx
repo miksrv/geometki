@@ -10,7 +10,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { Notify } from '@/app/notificationSlice'
-import { useAppDispatch, useAppSelector } from '@/app/store'
+import { useAppDispatch } from '@/app/store'
 import { PhotoGallery, PhotoUploader } from '@/components/shared'
 import type { PhotoUploaderHandle } from '@/components/shared/photo-uploader'
 import { ContentEditor, FileDropZone, ImageUploader, ScreenSpinner } from '@/components/ui'
@@ -70,8 +70,6 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
 
     const inputFileRef = useRef<HTMLInputElement>(null)
     const uploaderRef = useRef<PhotoUploaderHandle>(null)
-
-    const location = useAppSelector((state) => state.application.userLocation)
 
     const {
         control,
@@ -331,7 +329,7 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                     storeMapPosition={!placeId}
                     zoom={mapCenter ? 15 : undefined}
                     center={mapCenter}
-                    userLatLon={location}
+                    enableUserLocation={true}
                     onChangeBounds={debounceSetMapBounds}
                 />
             </div>

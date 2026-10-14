@@ -1,0 +1,30 @@
+@use '../styles/variables' as variables
+
+// The feed column at a readable width with the pulse beside it; on phones the pulse
+// comes first, above the filters
+.layout
+    display: grid
+    grid-template-columns: minmax(0, 1fr) 320px
+    gap: var(--space-6)
+    align-items: start
+
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+        gap: var(--space-4)
+
+.main
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+    min-width: 0
+
+.aside
+    position: sticky
+    top: 60px
+    grid-column: 2
+    grid-row: 1
+
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        position: static
+        grid-column: auto
+        grid-row: auto

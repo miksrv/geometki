@@ -7,9 +7,11 @@ use App\Entities\ActivityEntity;
 /**
  * Model for the `activity` table.
  *
- * Records user-generated events (place creation, edits, photos, ratings,
- * comments). Supports soft-deletion and provides methods for listing,
- * filtering, and incrementing view counters.
+ * The log of user actions (place creation, edits, photos, ratings, comments,
+ * visits, bookmarks, collections): the source of XP, achievements, notifications,
+ * the weekly digest and the place history. The public feed is built from it at
+ * write time (App\Libraries\FeedLibrary, `feed_id` is the story a row belongs to).
+ * Supports soft-deletion.
  *
  * @package App\Models
  */
@@ -21,10 +23,14 @@ class ActivityModel extends ApplicationBaseModel
     protected $returnType       = ActivityEntity::class;
     protected $useSoftDeletes   = true;
 
-    /** @var array<int, string> */
+    /**
+     * `feed_id` is not here on purpose: FeedLibrary sets it with its own query, so writing
+     * an action never depends on the feed schema (the API is deployed before its migration).
+     *
+     * @var array<int, string>
+     */
     protected $allowedFields = [
         'type',
-        'views',
         'session_id',
         'user_id',
         'photo_id',
@@ -70,81 +76,6 @@ class ActivityModel extends ApplicationBaseModel
     }
 
     /**
-     * Get an activity list with optional filters and cursor-based pagination.
-     *
-     * @param string|null $lastDate  Return activities created before this datetime.
-     * @param string|null $userId   Filter by user ID.
-     * @param string|null $placeId  Filter by place ID.
-     * @param int         $limit    Records to return (capped at 100).
-     * @param int         $offset   Records to skip.
-     * @return array<int, object>
-     */
-    public function getActivityList(
-        ?string $lastDate = null,
-        ?string $userId = null,
-        ?string $placeId = null,
-        int $limit = 20,
-        int $offset = 0
-    ): array {
-        $model = $this->select(
-            'activity.*, places.id as place_id, places.slug as place_slug, places.category, users.id as user_id, users.name as user_name,
-            users.avatar as user_avatar, photos.filename, photos.extension, photos.width, photos.height, rating.value, comments.content as comment_text,
-            collections.slug as collection_slug, collections.title as collection_title'
-        )
-            ->join('places', 'activity.place_id = places.id', 'left')
-            ->join('photos', 'activity.photo_id = photos.id', 'left')
-            ->join('users', 'activity.user_id = users.id', 'left')
-            ->join('rating', 'activity.rating_id = rating.id', 'left')
-            ->join('comments', 'activity.comment_id = comments.id', 'left')
-            ->join('collections', 'activity.collection_id = collections.id', 'left');
-
-        if ($lastDate) {
-            $model->where('activity.created_at < ', $lastDate);
-        }
-
-        if ($userId) {
-            $model->where('activity.user_id', $userId);
-        }
-
-        if ($placeId) {
-            $model->where('activity.place_id', $placeId);
-        }
-
-//        return $model->whereIn('activity.type', ['photo', 'place', 'rating', 'edit', 'comment', 'cover'])
-        // Bookmarks are private: they exist only to notify the place author
-        return $model
-            ->where('activity.type !=', 'bookmark')
-            ->orderBy('activity.created_at', 'DESC')
-            ->orderBy('activity.type', 'DESC')
-            ->findAll(min(abs($limit), 100), abs($offset));
-    }
-
-    /**
-     * Number of activity rows the feed would show for the same filters as
-     * getActivityList() (bookmarks excluded): the "История изменений (N)"
-     * counter on the place page, which renders collapsed and must not load
-     * the list itself to show the number.
-     *
-     * @param string|null $userId
-     * @param string|null $placeId
-     * @return int
-     */
-    public function getActivityCount(?string $userId = null, ?string $placeId = null): int
-    {
-        $model = $this->where('activity.type !=', 'bookmark');
-
-        if ($userId) {
-            $model->where('activity.user_id', $userId);
-        }
-
-        if ($placeId) {
-            $model->where('activity.place_id', $placeId);
-        }
-
-        return (int) $model->countAllResults();
-    }
-
-    /**
      * Whether a 'collection' (created) activity has already been recorded
      * for the given collection. Used to fire that activity only once, when
      * the collection first reaches the minimum place count.
@@ -157,61 +88,5 @@ class ActivityModel extends ApplicationBaseModel
         return (bool) $this
             ->where(['type' => 'collection', 'collection_id' => $collectionId])
             ->countAllResults();
-    }
-
-    /**
-     * Increment the view counter for a set of activity IDs.
-     *
-     * @param array<int, string> $ids  List of activity IDs to increment.
-     * @return void
-     */
-    public function incrementViews(array $ids): void
-    {
-        if (empty($ids)) {
-            return;
-        }
-
-        $this->set('views', 'views + 1', false)
-            ->whereIn('id', $ids)
-            ->update();
-    }
-
-    /**
-     * Get the next activity items for a specific user and place after a given date,
-     * excluding already-loaded IDs.
-     *
-     * @param array<int, string> $activityIds  Activity IDs to exclude.
-     * @param string             $createdAt    Return activities created on or after this datetime.
-     * @param string             $userId       Filter by user ID.
-     * @param string             $placeId      Filter by place ID.
-     * @param int                $limit        Records to return (default 15).
-     * @return array<int, object>
-     */
-    public function getNextActivityItems(
-        array $activityIds,
-        string $createdAt,
-        string $userId,
-        string $placeId,
-        int $limit = 15
-    ): array {
-        return $this->select(
-            'activity.*, places.id as place_id, places.slug as place_slug, places.category, users.id as user_id, users.name as user_name,
-            users.avatar as user_avatar, photos.filename, photos.extension, photos.width, photos.height,
-            rating.value, comments.content as comment_text,
-            collections.slug as collection_slug, collections.title as collection_title'
-        )
-            ->join('places', 'activity.place_id = places.id', 'left')
-            ->join('photos', 'activity.photo_id = photos.id', 'left')
-            ->join('users', 'activity.user_id = users.id', 'left')
-            ->join('rating', 'activity.rating_id = rating.id', 'left')
-            ->join('comments', 'activity.comment_id = comments.id', 'left')
-            ->join('collections', 'activity.collection_id = collections.id', 'left')
-            ->whereNotIn('activity.id', $activityIds)
-            ->where('activity.created_at >=', $createdAt)
-            ->where('activity.user_id', $userId)
-            ->where('activity.place_id', $placeId)
-            ->where('activity.type !=', 'bookmark')
-            ->orderBy('activity.created_at', 'ASC')
-            ->findAll($limit);
     }
 }

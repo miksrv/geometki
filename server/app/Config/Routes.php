@@ -19,7 +19,6 @@ $routes->get('/', static function () {
 $routes->group('poi', static function ($routes) {
     $routes->get('/', 'Poi::list');
     $routes->get('photos', 'Poi::photos');
-    $routes->get('users', 'Poi::users');
     $routes->get('(:alphanum)', 'Poi::show/$1');
 
     $routes->options('/', static function () {});
@@ -42,6 +41,7 @@ $routes->group('osm-candidates', static function ($routes) {
 /** Places Controller **/
 $routes->group('places', static function ($routes) {
     $routes->get('/', 'Places::list');
+    $routes->get('(:alphanum)/texts', 'Places::texts/$1');
     $routes->get('(:alphanum)', 'Places::show/$1');
     $routes->post('/', 'Places::create');
     $routes->patch('cover/(:alphanum)', 'Places::cover/$1');
@@ -124,11 +124,14 @@ $routes->group('rating', static function ($routes) {
     $routes->options('(:alphanum)', static function () {});
 });
 
-/** Activity Controller **/
-$routes->group('activity', static function ($routes) {
-    $routes->get('/', 'Activity::list');
+/** Feed Controller **/
+$routes->group('feed', static function ($routes) {
+    $routes->get('/', 'Feed::list');
+    $routes->get('pulse', 'Feed::pulse');
+    $routes->get('calendar', 'Feed::calendar');
 
     $routes->options('/', static function () {});
+    $routes->options('(:segment)', static function () {});
 });
 
 /** Users Controller **/

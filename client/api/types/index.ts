@@ -1,10 +1,10 @@
 export * as Achievements from './achievements'
-export * as Activity from './activity'
 export * as Auth from './auth'
 export * as Bookmarks from './bookmarks'
 export * as Collections from './collections'
 export * as Comments from './comments'
 export * as ExternalPhotos from './externalPhotos'
+export * as Feed from './feed'
 export * as Location from './location'
 export * as Locations from './locations'
 export * as Notifications from './notifications'
@@ -52,7 +52,7 @@ export type ActivityType =
 
 export type Locale = 'en' | 'ru'
 
-export type UserRole = 'user' | 'moderator' | 'admin'
+export type UserRole = 'user' | 'moderator' | 'admin' | 'bot'
 
 export type AuthService = 'google' | 'yandex' | 'vk' | 'native'
 

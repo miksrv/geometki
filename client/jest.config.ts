@@ -33,7 +33,6 @@ const config: Config.InitialOptions = {
 
         // Map ESM-only packages to their manual CJS mocks
         '^simple-react-ui-kit$': '<rootDir>/__mocks__/simple-react-ui-kit.tsx',
-        '^lodash-es/(.*)$': 'lodash/$1',
 
         // Handle module aliases
         '^@/(.*)$': '<rootDir>/$1',
@@ -54,7 +53,8 @@ const config: Config.InitialOptions = {
         // https://jestjs.io/docs/configuration#transform-objectstring-pathtotransformer--pathtotransformer-object
         '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }]
     },
-    transformIgnorePatterns: ['/node_modules/', '^.+\\.module\\.(css|sass|scss)$']
+    // lodash-es is ESM only: babel-jest transpiles it like the project's own code
+    transformIgnorePatterns: ['/node_modules/(?!lodash-es/)', '^.+\\.module\\.(css|sass|scss)$']
 }
 
 export default config

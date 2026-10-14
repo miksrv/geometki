@@ -8,9 +8,9 @@ use CodeIgniter\Model;
 /**
  * Model for the `sessions` table.
  *
- * Tracks anonymous and authenticated visitor sessions, including their last
- * known IP address and coordinates. Auto-increment integer PK.
- * No soft-deletion — sessions are either active or removed.
+ * Tracks anonymous and authenticated visitor sessions and their last known IP
+ * address. String PK (32 hex chars). No soft-deletion: stale anonymous sessions
+ * are removed by `php spark sessions:prune`.
  *
  * @package App\Models
  */
@@ -27,8 +27,6 @@ class SessionsModel extends Model
         'id',
         'user_id',
         'user_ip',
-        'lat',
-        'lon',
     ];
 
     protected $useTimestamps = true;

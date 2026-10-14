@@ -1,4 +1,4 @@
-import { DateTime } from '@/api/types'
+import { DateTime, Locale } from '@/api/types'
 
 import { Address } from './address'
 import { Categories } from './category'
@@ -19,6 +19,10 @@ export type Place = {
     bookmarks?: number
     title: string
     content?: string
+    /** The locale of `title`/`content`: another one than the requested when the place has no text in it */
+    locale?: Locale
+    /** Every locale the place has a text in */
+    locales?: Locale[]
     difference?: number
     distance?: number
     author?: User
@@ -44,3 +48,11 @@ export type Place = {
  * `updated` stays only as the cover version source (see DESIGN.md).
  */
 export type PlaceListItem = Omit<Place, 'author' | 'editors'>
+
+/** The text of a place in one locale, exactly as saved: `GET /places/:id/texts` */
+export type PlaceText = {
+    locale: Locale
+    title: string
+    content: string
+    updated?: DateTime
+}

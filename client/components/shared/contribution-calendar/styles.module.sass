@@ -1,0 +1,118 @@
+// Contribution calendar: one grid — weekday names, then a column per week — stretched to
+// the full width; a square never gets smaller than 10px, below that the year scrolls
+
+.calendar
+    min-width: 0
+
+.total
+    font-size: var(--font-size-small)
+    color: var(--text-color-secondary)
+
+.scroll
+    overflow-x: auto
+    scrollbar-width: none
+
+    &::-webkit-scrollbar
+        display: none
+
+.graph
+    display: grid
+    grid-template-columns: auto repeat(var(--weeks), minmax(10px, 1fr))
+    grid-template-rows: auto repeat(7, auto)
+    gap: 3px
+    min-width: 640px
+    font-size: 10px
+    line-height: 1
+    color: var(--text-color-secondary)
+
+.weekday
+    grid-column: 1
+    align-self: center
+    padding-right: var(--space-1)
+
+.month
+    grid-row: 1
+    padding-bottom: 2px
+    white-space: nowrap
+
+.cell
+    display: block
+    aspect-ratio: 1
+    background: var(--surface-2)
+    border-radius: 3px
+
+    &[data-level='1']
+        background: color-mix(in srgb, var(--color-main) 30%, var(--surface-2))
+
+    &[data-level='2']
+        background: color-mix(in srgb, var(--color-main) 55%, var(--surface-2))
+
+    &[data-level='3']
+        background: color-mix(in srgb, var(--color-main) 80%, var(--surface-2))
+
+    &[data-level='4']
+        background: var(--color-main)
+
+    &.outside
+        visibility: hidden
+
+.legend
+    display: flex
+    align-items: center
+    justify-content: flex-end
+    gap: 3px
+    margin-top: var(--space-2)
+    font-size: var(--font-size-small)
+    color: var(--text-color-secondary)
+
+.legendCell
+    width: 10px
+    border-radius: 2px
+
+    &:first-of-type
+        margin-left: var(--space-1)
+
+    &:last-of-type
+        margin-right: var(--space-1)
+
+// Summary card: the same look as the feed pulse (a card with big numbers)
+
+.summary
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+    padding: var(--space-4)
+    background: var(--container-background)
+    border-radius: var(--container-radius)
+    box-shadow: var(--container-shadow)
+
+.summaryTitle
+    margin: 0
+    font-size: var(--font-size-large)
+    font-weight: var(--font-weight-semibold)
+
+.summaryStats
+    display: grid
+    grid-template-columns: 1fr 1fr
+    gap: var(--space-3)
+    margin: 0
+
+.summaryStat
+    display: flex
+    flex-direction: column-reverse
+
+.summaryValue
+    margin: 0
+    font-size: var(--font-size-title-page)
+    font-weight: var(--font-weight-semibold)
+    line-height: 1.1
+    color: var(--text-color-primary)
+
+.summaryLabel
+    font-size: var(--font-size-small)
+    color: var(--text-color-secondary)
+
+.summaryNote
+    margin: 0
+    font-size: var(--font-size-secondary)
+    color: var(--text-color-secondary)

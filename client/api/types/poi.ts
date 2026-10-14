@@ -1,5 +1,12 @@
 import { ApiModel } from '@/api'
 
+export type PoiItemRequest = {
+    id: string
+    /** The visitor's position, for the distance */
+    lat?: number
+    lon?: number
+}
+
 export type PoiItemResponse = Pick<
     ApiModel.Place,
     'id' | 'slug' | 'rating' | 'title' | 'views' | 'photos' | 'cover' | 'comments' | 'bookmarks' | 'distance'
@@ -27,8 +34,4 @@ export interface PlacesListResponse {
 export interface PhotosListResponse {
     items: ApiModel.PhotoMark[]
     count: number
-}
-
-export interface UsersListResponse {
-    items: string[][]
 }

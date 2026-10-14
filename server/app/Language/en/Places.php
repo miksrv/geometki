@@ -9,5 +9,7 @@ return [
     'coverSourceUnavailable'  => 'Could not load the photo from its source. Please try again later.',
     'createFailError'       => 'An error occurred while creating a geotag, please try saving again.',
     'updatePointNotExist'   => 'The geotag with this ID does not exist, please refresh the page',
+    'translationTitleRequired'   => 'A new translation needs a title',
+    'translationContentRequired' => 'A new translation needs a description: this place has one in another language',
     'createTransactionError' => 'An unexpected error occurred while saving the geotag, please try again',
 ];

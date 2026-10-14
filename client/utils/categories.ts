@@ -48,7 +48,7 @@ export const isCategoryName = (value: unknown): value is ApiModel.Categories =>
     typeof value === 'string' && (CATEGORY_NAMES as string[]).includes(value)
 
 /**
- * Retired keys => the key that took their places (features/09-place-categories.md). Only for
+ * Retired keys => the key that took their places. Only for
  * the 301 of old `/places?category=` links, which have been indexed for years; the category
  * landing pages never went live under these keys.
  */
@@ -76,6 +76,10 @@ export const getCategoryTitle = (t: CategoryTranslate, name: ApiModel.Categories
 /** The page name of the category landing: "Пещеры и гроты" — its h1 and title */
 export const getCategoryLandingTitle = (t: CategoryTranslate, name: ApiModel.Categories | string): string =>
     translate(t, `categoryCatalogue.${name}.landing`, getCategoryTitle(t, name))
+
+/** The short plural name: "Пещеры" — chips and tiles where the landing name is too long */
+export const getCategoryShortTitle = (t: CategoryTranslate, name: ApiModel.Categories | string): string =>
+    translate(t, `categoryCatalogue.${name}.short`, getCategoryTitle(t, name))
 
 /** The landing page's intro text; '' when the locale has none */
 export const getCategoryContent = (t: CategoryTranslate, name: ApiModel.Categories | string): string => {

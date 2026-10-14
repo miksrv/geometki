@@ -56,7 +56,12 @@ describe('mapSettings', () => {
     it('drops unknown and broken values', () => {
         store({
             mapSettings: {
-                additionalLayers: ['OsmCandidates', MapAdditionalLayersEnum.HEATMAP, MapAdditionalLayersEnum.HEATMAP],
+                additionalLayers: [
+                    'OsmCandidates',
+                    'Heatmap',
+                    MapAdditionalLayersEnum.WIKIPEDIA,
+                    MapAdditionalLayersEnum.WIKIPEDIA
+                ],
                 categories: 'engineering',
                 layer: 'Removed',
                 osmCandidatesCollapsed: 'yes',
@@ -66,7 +71,7 @@ describe('mapSettings', () => {
         })
 
         expect(getMapSettings()).toEqual({
-            additionalLayers: [MapAdditionalLayersEnum.HEATMAP],
+            additionalLayers: [MapAdditionalLayersEnum.WIKIPEDIA],
             categories: undefined,
             layer: undefined,
             osmCandidatesCollapsed: undefined,

@@ -54,6 +54,7 @@ import {
 import { PlaceSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { getDistanceOrigin } from '@/utils/userLocation'
 
 const DEFAULT_SORT = ApiType.SortFields.Trending
 const DEFAULT_ORDER = ApiType.SortOrders.DESC
@@ -585,6 +586,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const currentPage = Math.max(1, parseInt(context.query.page as string, 10) || 1)
             const lat = parseFloat(context.query.lat as string) || null
             const lon = parseFloat(context.query.lon as string) || null
+            const distanceOrigin = getDistanceOrigin(lat, lon, cookies)
             const tag = (context.query.tag as string) || null
             const defaultSort = cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT
             const sort = (context.query.sort as ApiType.SortFieldsType) || defaultSort
@@ -714,8 +716,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     store.dispatch(
                         API.endpoints.placesGetList.initiate({
                             category: categoryData!.name,
-                            lat,
+                            lat: distanceOrigin?.lat,
                             limit: POST_PER_PAGE,
+                            lon: distanceOrigin?.lon,
                             offset: (currentPage - 1) * POST_PER_PAGE,
                             order,
                             sort,
@@ -799,10 +802,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     store.dispatch(
                         API.endpoints.placesGetList.initiate({
                             category: queryCategoriesFromUrl.length ? queryCategoriesFromUrl.join(',') : undefined,
-                            lat,
+                            lat: distanceOrigin?.lat,
                             limit: POST_PER_PAGE,
                             location: locationData!.slug ?? undefined,
-                            lon,
+                            lon: distanceOrigin?.lon,
                             offset: (currentPage - 1) * POST_PER_PAGE,
                             order,
                             sort,
@@ -883,10 +886,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 store.dispatch(
                     API.endpoints.placesGetList.initiate({
                         category: categoryData!.name,
-                        lat,
+                        lat: distanceOrigin?.lat,
                         limit: POST_PER_PAGE,
                         location: locationData!.slug ?? undefined,
-                        lon,
+                        lon: distanceOrigin?.lon,
                         offset: (currentPage - 1) * POST_PER_PAGE,
                         order,
                         sort,

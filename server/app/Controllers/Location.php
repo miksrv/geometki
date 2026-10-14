@@ -11,12 +11,11 @@ use App\Models\LocationRegionsModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use Geocoder\Exception\Exception;
-use ReflectionException;
 
 /**
  * Location controller
  *
- * Provides location-related endpoints: updating user coordinates, searching
+ * Provides location-related endpoints: saving the signed-in user's last position, searching
  * administrative entities (country/region/district/city) by text, performing
  * geocoder-based geo-search, and fetching a single location by type and ID.
  *
@@ -25,25 +24,32 @@ use ReflectionException;
 class Location extends ResourceController
 {
     /**
-     * Update the coordinates stored in the current user's session.
+     * Save the signed-in user's last known position (not shown anywhere, kept for the explorer map).
      *
-     * POST /location/coordinates
-     * Expects JSON body with lat and lon fields.
-     *
-     * @throws ReflectionException
+     * PUT /location — JSON body: lat, lon. The client sends it only after the user has asked for
+     * their location (the map's "My location" button, sorting by distance). Anonymous visitors'
+     * positions are not stored: the client passes them with the requests that need a distance.
+     * A move shorter than UsersModel::LOCATION_MIN_DISTANCE is not written.
      *
      * @return ResponseInterface
      */
     public function coordinates(): ResponseInterface
     {
-        $input = $this->request->getJSON();
-        $lat = (float) $input->lat;
-        $lon = (float) $input->lon;
+        $session = new SessionLibrary();
 
-        if ($lat && $lon) {
-            $session = new SessionLibrary();
-            $session->updateLocation($lat, $lon);
+        if (!$session->isAuth) {
+            return $this->failUnauthorized();
         }
+
+        $input = $this->request->getJSON();
+        $lat   = filter_var($input->lat ?? null, FILTER_VALIDATE_FLOAT);
+        $lon   = filter_var($input->lon ?? null, FILTER_VALIDATE_FLOAT);
+
+        if ($lat === false || $lon === false || abs($lat) > 90 || abs($lon) > 180) {
+            return $this->failValidationErrors('Invalid coordinates');
+        }
+
+        $session->updateLocation($lat, $lon);
 
         return $this->respondUpdated();
     }

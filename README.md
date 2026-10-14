@@ -152,14 +152,14 @@ Run on pull requests to `main`:
 
 REST JSON API on CodeIgniter 4. JWT Bearer token in the `Authorization` header; errors come as `{ "messages": { "error": "...", "<field>": "..." } }`. Full endpoint reference: [`server/API.md`](server/API.md); live route list: `php spark routes`.
 
-Maintenance and cron commands are `spark` commands; list them with `php spark list` (e.g. `system:send-email`, `digest:weekly`, `achievements:evaluate`, `trending:refresh`, `osm:collect`).
+Maintenance and cron commands are `spark` commands; list them with `php spark list` (e.g. `system:send-email`, `digest:weekly`, `achievements:evaluate`, `trending:refresh`, `osm:collect`, `sessions:prune`).
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
 | Web frontend | Next.js 16, React 19, TypeScript, Redux Toolkit + RTK Query, simple-react-ui-kit |
-| Mapping | Leaflet, react-leaflet, Leaflet.heat |
+| Mapping | Leaflet, react-leaflet |
 | Styling | SASS / CSS Modules, dark/light theme |
 | i18n | next-i18next (Russian / English) |
 | API | CodeIgniter 4, PHP 8.2, MySQL |
