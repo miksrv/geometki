@@ -6,6 +6,8 @@
        - main
      paths:
        - 'server/**/*'
+   # Manual run from the Actions tab or `gh workflow run api-deploy.yml`
+   workflow_dispatch:
 
  # https://github.com/codeigniter4/CodeIgniter4/blob/develop/.github/workflows/deploy-apidocs.yml
  jobs:
@@ -60,8 +62,6 @@
          run: |
            lftp ${{ secrets.FTP_HOSTNAME }} <<'EOF'
            set cmd:fail-exit yes
-           set net:max-retries 3
-           set net:timeout 30
            put -O / .htaccess
            put -O / spark
            mirror -R --delete --parallel=10 app /app
