@@ -12,11 +12,10 @@
  *   php spark achievements:evaluate --user=abc123 # Evaluate single user by ID
  *   php spark achievements:evaluate --no-notify  # Skip notifications
  *
- * Cron example (runs every hour for recently active users):
- *   0 * * * * cd /path/to/server && php spark achievements:evaluate >> /dev/null 2>&1
- *
- * Daily full evaluation (runs at 3 AM):
- *   0 3 * * * cd /path/to/server && php spark achievements:evaluate --all >> /dev/null 2>&1
+ * Not scheduled: achievements are checked on every user action (ActivityLibrary →
+ * AchievementsLibrary::check). Run `--all` by hand after adding or changing an
+ * achievement, so users who already qualify get it; add `--no-notify` not to send everyone
+ * a notification (and a push, at any hour) about it.
  *
  * @package    App\Commands
  * @author     Geometki
@@ -95,7 +94,7 @@ class EvaluateAchievements extends BaseCommand
                 return;
             }
 
-            $awarded = $achievementsLib->evaluate($userId);
+            $awarded = $achievementsLib->evaluate($userId, !$noNotify);
 
             CLI::write(
                 "User {$userId}: " . count($awarded) . " achievement(s) awarded.",
@@ -134,7 +133,7 @@ class EvaluateAchievements extends BaseCommand
 
         foreach ($users as $user) {
             try {
-                $awarded = $achievementsLib->evaluate($user->id);
+                $awarded = $achievementsLib->evaluate($user->id, !$noNotify);
                 $totalAwarded += count($awarded);
 
                 if (count($awarded) > 0) {

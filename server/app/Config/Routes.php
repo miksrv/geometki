@@ -100,9 +100,23 @@ $routes->group('comments', static function ($routes) {
 
 /** Mail Controller **/
 $routes->group('mail', static function ($routes) {
-    $routes->get('unsubscribe', 'Mail::unsubscribe');
+    $routes->get('unsubscribe', 'Mail::status');
+    $routes->post('unsubscribe', 'Mail::unsubscribe');
 
     $routes->options('(:alphanum)', static function () {});
+});
+
+/** Push Controller **/
+$routes->group('push', static function ($routes) {
+    $routes->get('key', 'Push::key');
+    $routes->get('subscriptions/status', 'Push::status');
+    $routes->post('subscriptions', 'Push::subscribe');
+    $routes->delete('subscriptions', 'Push::unsubscribe');
+    $routes->post('subscriptions/renew', 'Push::renew');
+    $routes->post('test', 'Push::test');
+
+    $routes->options('(:alphanum)', static function () {});
+    $routes->options('subscriptions/(:alphanum)', static function () {});
 });
 
 /** Stats Controller **/
