@@ -83,6 +83,15 @@ class SessionLibrary {
         $this->isAuth = true;
         $this->update(true);
 
+        // A sign-in gives an address marked undeliverable another chance: a wrong mark
+        // heals itself, a dead mailbox costs one more rejected email at most
+        if (!empty($user->id)) {
+            \Config\Database::connect()->table('users')
+                ->where('id', $user->id)
+                ->where('email_bounced_at IS NOT NULL', null, false)
+                ->update(['email_bounced_at' => null]);
+        }
+
         return $this;
     }
 

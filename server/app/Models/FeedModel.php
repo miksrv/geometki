@@ -51,7 +51,7 @@ class FeedModel extends ApplicationBaseModel
     /**
      * A page of visible stories, newest-updated first.
      *
-     * @param array{author?: ?string, place?: ?string, types?: string[], minWeight?: int} $filters
+     * @param array{author?: ?string, place?: ?string, types?: string[], minWeight?: int, since?: string, until?: string} $filters
      * @param int                                        $limit
      * @param array{at: string, id: string}|null         $cursor Stories after this one (keyset)
      * @return array<int, object>
@@ -81,7 +81,7 @@ class FeedModel extends ApplicationBaseModel
     /**
      * Number of visible stories for the filters (the "History (N)" row of the place page).
      *
-     * @param array{author?: ?string, place?: ?string, types?: string[], minWeight?: int} $filters
+     * @param array{author?: ?string, place?: ?string, types?: string[], minWeight?: int, since?: string, until?: string} $filters
      */
     public function countStories(array $filters): int
     {
@@ -229,7 +229,7 @@ class FeedModel extends ApplicationBaseModel
     /**
      * The visibility rules and the filters, shared by the page and the count.
      *
-     * @param array{author?: ?string, place?: ?string, types?: string[], minWeight?: int} $filters
+     * @param array{author?: ?string, place?: ?string, types?: string[], minWeight?: int, since?: string, until?: string} $filters
      */
     protected function visibleStories(array $filters): BaseBuilder
     {
@@ -274,6 +274,15 @@ class FeedModel extends ApplicationBaseModel
 
         if (!empty($filters['minWeight'])) {
             $builder->where('feed.weight >=', (int) $filters['minWeight']);
+        }
+
+        // Stories that grew in a period (the weekly digest)
+        if (!empty($filters['since'])) {
+            $builder->where('feed.updated_at >=', $filters['since']);
+        }
+
+        if (!empty($filters['until'])) {
+            $builder->where('feed.updated_at <=', $filters['until']);
         }
 
         return $builder;

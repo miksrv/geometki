@@ -8,6 +8,7 @@ class SendingMailEntity extends Entity {
     protected $attributes = [
         'user_id'     => null,
         'activity_id' => null,
+        'type'        => null,
         'status'      => 'created',
         'email'       => null,
         'locale'      => 'ru',
@@ -23,13 +24,15 @@ class SendingMailEntity extends Entity {
     ];
 
     protected $casts = [
-        'user_id'     => 'string',
-        'activity_id' => 'string',
+        'user_id'     => '?string',
+        'activity_id' => '?string',
+        'type'        => '?string',
         'status'      => 'string',
-        'email'       => 'string',
+        'email'       => '?string',
         'locale'      => 'string',
-        'subject'     => 'string',
-        'message'     => 'string',
-        'sent_email'  => 'string',
+        'subject'     => '?string',
+        'message'     => '?string',
+        'sent_email'  => '?string',
+        'attempts'    => 'int',
     ];
 }

@@ -13,7 +13,10 @@
 namespace App\Commands;
 
 use App\Libraries\DigestService;
-use App\Models\SendingMail;
+use App\Libraries\Mail\DigestMail;
+use App\Libraries\Mail\MailQueue;
+use App\Libraries\Mail\MailText;
+use App\Libraries\NotificationSettings;
 use App\Models\UsersModel;
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
@@ -23,12 +26,13 @@ class WeeklyDigestCommand extends BaseCommand
     protected $group       = 'digest';
     protected $name        = 'digest:weekly';
     protected $description = 'Generate and queue weekly digest emails for all users';
-    protected $usage       = 'digest:weekly [--user <user_id>] [--dry-run]';
+    protected $usage       = 'digest:weekly [--user <user_id>] [--dry-run] [--force]';
     protected $options     = [
         '--user'    => 'Process only this user ID (for testing)',
         '--dry-run' => 'Print digest data without inserting into sending_mail',
         '--debug'   => 'Print step-by-step diagnostic output for each user',
         '--weeks'   => 'Look-back window in weeks (default: 1). Use --weeks 4 for testing on older data.',
+        '--force'   => 'Queue even for users who got a digest less than a week ago',
     ];
 
     /**
@@ -42,6 +46,8 @@ class WeeklyDigestCommand extends BaseCommand
     {
         $targetUserId = CLI::getOption('user') ?? self::DEBUG_USER_ID;
         $isDryRun     = CLI::getOption('dry-run') !== null;
+        $isForced     = CLI::getOption('force') !== null;
+        $minInterval  = config('Notifications')->digestMinIntervalDays;
 
         // Week window: configurable look-back (default 1 week, use --weeks N for testing)
         $weeks     = max(1, (int) (CLI::getOption('weeks') ?? 1));
@@ -49,8 +55,9 @@ class WeeklyDigestCommand extends BaseCommand
         $weekStart = date('Y-m-d H:i:s', strtotime("-{$weeks} weeks"));
 
         $usersModel    = new UsersModel();
-        $sendingMail   = new SendingMail();
+        $mailQueue     = new MailQueue();
         $digestService = new DigestService();
+        $settings      = new NotificationSettings();
 
         // Resolve user list
         if ($targetUserId !== null) {
@@ -60,6 +67,11 @@ class WeeklyDigestCommand extends BaseCommand
                 return;
             }
             $users = [$user];
+
+            if (!$isForced && (!empty($user->email_bounced_at) || !$settings->isEnabled($user->settings ?? null, 'email', 'digest'))) {
+                CLI::write("{$user->name} has the digest off or an undeliverable address (use --force to queue anyway)", 'yellow');
+                return;
+            }
         } else {
             // Find user_ids that actually have data this week —
             // activity by others on their places OR views in places_views_log.
@@ -96,11 +108,10 @@ class WeeklyDigestCommand extends BaseCommand
                 ->where('deleted_at IS NULL', null, false)
                 ->findAll();
 
-            // Filter out users who unsubscribed from the digest (settings.emailDigest = false).
-            // NULL settings means all notifications are enabled by default.
-            $users = array_values(array_filter($users, function ($user) {
-                return $user->settings->emailDigest ?? true;
-            }));
+            // Only users who want the digest and whose address works
+            $users = array_values(array_filter($users, static fn ($user) =>
+                empty($user->email_bounced_at) && $settings->isEnabled($user->settings ?? null, 'email', 'digest')
+            ));
         }
 
         if (empty($users)) {
@@ -155,7 +166,15 @@ class WeeklyDigestCommand extends BaseCommand
                 CLI::write('');
             }
 
-            $sections = $digestService->generateForUser($user->id, $weekStart, $weekEnd);
+            // Running twice in a week (by hand, a cron mistake) must not mail anyone twice
+            if (!$isForced && !empty($user->digest_sent_at) && strtotime((string) $user->digest_sent_at) > strtotime("-{$minInterval} days")) {
+                CLI::write("Skipping {$user->name}: got a digest on {$user->digest_sent_at}", 'yellow');
+                $skipped++;
+                continue;
+            }
+
+            $locale   = MailText::locale($user->locale ?? null);
+            $sections = $digestService->generateForUser($user->id, $weekStart, $weekEnd, $locale);
 
             // Skip if there is no personal data at all — sending only community
             // highlights to someone who was completely inactive makes no sense.
@@ -166,35 +185,10 @@ class WeeklyDigestCommand extends BaseCommand
                 continue;
             }
 
-            $locale = $user->locale ?? 'ru';
-
-            // Render the digest body (inner content only, NOT wrapped in email.php)
-            // SendEmail.php will wrap it in the email template when processing the queue.
-            helper('slug');
-            $digestHtml = view('email_digest', [
-                'userName' => $user->name,
-                'sections' => $sections,
-                'locale'   => $locale,
-            ]);
-
-            $subject = $locale === 'en'
-                ? 'Your week on Geometki'
-                : 'Ваша неделя на геометках';
-
-            // In debug mode, save the full HTML email to a file for visual inspection
-            // FOR DEBUG ONLY - this is not a real email preview, just a quick way to see the rendered content.
-//            if ($isDebug) {
-//                $fullHtml = view('email', [
-//                    'message'     => $digestHtml,
-//                    'preheader'   => $subject,
-//                    'unsubscribe' => 'https://geometki.com/unsubscribe?mail=0'
-//                ]);
-//
-//                $previewPath = WRITEPATH . 'digest_preview_' . $user->id . '.html';
-//                file_put_contents($previewPath, $fullHtml);
-//                CLI::write("  HTML preview saved: {$previewPath}", 'green');
-//                CLI::write('');
-//            }
+            // The body is rendered now (it needs this week's data); the queue
+            // wraps it in the email layout when sending
+            $digestHtml = DigestMail::body((string) $user->name, $sections, $locale);
+            $subject    = DigestMail::subject($locale, $sections);
 
             if ($isDryRun) {
                 CLI::write("--- Dry run for: {$user->name} ({$user->email}) ---", 'cyan');
@@ -205,18 +199,12 @@ class WeeklyDigestCommand extends BaseCommand
                 continue; // dry-run does not count as queued
             }
 
-            // Insert into the email queue (inner HTML only - SendEmail will wrap in email.php)
-            $sendingMail->insert([
-                'activity_id' => null,
-                'status'      => 'created',
-                'email'       => $user->email,
-                'locale'      => $locale,
-                'subject'     => $subject,
-                'message'     => $digestHtml,
-            ]);
+            $mailQueue->queueDigest($user, $subject, $digestHtml);
 
-            // Mark the user as having received a digest
-            $usersModel->update($user->id, ['digest_sent_at' => date('Y-m-d H:i:s')]);
+            // Not through the model: users.updated_at is the profile's "last modified" (sitemap)
+            \Config\Database::connect()->table('users')
+                ->where('id', $user->id)
+                ->update(['digest_sent_at' => date('Y-m-d H:i:s')]);
 
             CLI::write("Queued digest for: {$user->name} ({$user->email})", 'green');
             $queued++;

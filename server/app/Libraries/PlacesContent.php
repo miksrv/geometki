@@ -25,6 +25,9 @@ class PlacesContent {
     protected array $places = [];
     /** @var array<string, string[]> Locales each place has a text in */
     protected array $locales = [];
+
+    /** Locale set by forLocale(); null means the request locale */
+    protected ?string $forcedLocale = null;
     public array $placeIds = [];
     protected int $trim;
 
@@ -132,8 +135,20 @@ class PlacesContent {
     }
 
     /**
-     * Load the text of the given places: the request locale, or the other one when a place
-     * has no text in it. Keeps the order of $placeIds in $this->placeIds (search relevance).
+     * Show texts in this locale instead of the request one (emails built in CLI
+     * for recipients with different locales).
+     * @param string|null $locale
+     * @return static
+     */
+    public function forLocale(?string $locale): static {
+        $this->forcedLocale = $locale;
+
+        return $this;
+    }
+
+    /**
+     * Load the text of the given places: the request locale (or the forLocale() one), or the
+     * other one when a place has no text in it. Keeps the order of $placeIds in $this->placeIds (search relevance).
      * @param array $placeIds
      * @return void
      */
@@ -148,7 +163,7 @@ class PlacesContent {
             ->whereIn('place_id', $this->placeIds)
             ->findAll();
 
-        $locale   = Services::request()->getLocale();
+        $locale   = $this->forcedLocale ?? Services::request()->getLocale();
         $byLocale = [];
 
         foreach ($data as $item) {

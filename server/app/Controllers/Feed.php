@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-use App\Libraries\AvatarLibrary;
+use App\Libraries\FeedPulseLibrary;
 use App\Libraries\FeedPresenter;
 use App\Models\FeedModel;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -113,39 +113,19 @@ class Feed extends ResourceController
             return $this->respond($cached);
         }
 
-        $db = Database::connect();
-
-        $days   = 7;
-        $counts = [];
+        $db      = Database::connect();
+        $library = new FeedPulseLibrary();
 
         foreach ([7, 30] as $days) {
-            $since = date('Y-m-d H:i:s', strtotime("-$days days"));
-            $rows  = $db->table('activity')
-                ->select('type, COUNT(*) as cnt')
-                ->where('created_at >=', $since)
-                ->where('deleted_at', null)
-                ->where('type !=', 'bookmark')
-                ->groupBy('type')
-                ->get()
-                ->getResult();
+            $since  = date('Y-m-d H:i:s', strtotime("-$days days"));
+            $counts = $library->counts($since);
 
-            $counts = array_column($rows, 'cnt', 'type');
-
-            if (array_sum($counts) >= self::PULSE_MIN_EVENTS) {
+            if ($counts['total'] >= self::PULSE_MIN_EVENTS) {
                 break;
             }
         }
 
-        $people = $db->table('activity a')
-            ->select('u.id, u.name, u.avatar, COUNT(*) as cnt')
-            ->join('users u', 'u.id = a.user_id AND u.deleted_at IS NULL')
-            ->where('a.created_at >=', $since)
-            ->where('a.deleted_at', null)
-            ->where('a.type !=', 'bookmark')
-            ->groupBy('u.id')
-            ->orderBy('cnt', 'DESC')
-            ->get()
-            ->getResult();
+        $counts += $library->people($since, null, self::PULSE_USERS);
 
         // ORDER BY + LIMIT walks the created_at index back to the first match; MAX() with
         // these conditions scans the whole table
@@ -158,23 +138,21 @@ class Feed extends ResourceController
             ->get()
             ->getRow();
 
-        $avatars = new AvatarLibrary();
-
         $pulse = [
             'period'      => $days,
-            'places'      => (int) ($counts['place'] ?? 0),
-            'photos'      => (int) ($counts['photo'] ?? 0),
-            'comments'    => (int) ($counts['comment'] ?? 0),
-            'ratings'     => (int) ($counts['rating'] ?? 0),
-            'edits'       => (int) ($counts['edit'] ?? 0) + (int) ($counts['cover'] ?? 0),
-            'visits'      => (int) ($counts['visit'] ?? 0),
-            'collections' => (int) ($counts['collection'] ?? 0),
-            'authors'     => count($people),
-            'users'       => array_map(static fn (object $user) => [
-                'id'     => $user->id,
-                'name'   => $user->name,
-                'avatar' => $avatars->buildPath($user->id, $user->avatar, 'small'),
-            ], array_slice($people, 0, self::PULSE_USERS)),
+            'places'      => $counts['places'],
+            'photos'      => $counts['photos'],
+            'comments'    => $counts['comments'],
+            'ratings'     => $counts['ratings'],
+            'edits'       => $counts['edits'],
+            'visits'      => $counts['visits'],
+            'collections' => $counts['collections'],
+            'authors'     => $counts['authors'],
+            'users'       => array_map(static fn (array $user) => [
+                'id'     => $user['id'],
+                'name'   => $user['name'],
+                'avatar' => $user['avatar'],
+            ], $counts['users']),
             'updated'     => !empty($latest?->created_at) ? new \DateTime($latest->created_at) : null,
         ];
 

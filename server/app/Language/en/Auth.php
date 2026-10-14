@@ -9,10 +9,4 @@ return [
     'registrationError'    => 'An error occurred during registration, please try again',
 
     'magicLinkInvalidOrExpired' => 'This login link is invalid or has expired, please request a new one',
-    'magicLinkEmailSubject'     => 'Your Geometki sign-in link',
-    'magicLinkEmailTitle'       => 'Sign in to Geometki',
-    'magicLinkEmailIntro'       => 'Click the button below to sign in. This link is valid for 5 minutes.',
-    'magicLinkEmailButton'      => 'Sign in',
-    'magicLinkEmailExpiry'      => 'The link expires 5 minutes after this email was sent.',
-    'magicLinkEmailFooter'      => 'If you did not request this email, you can safely ignore it.',
 ];

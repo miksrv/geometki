@@ -3,8 +3,8 @@
 namespace App\Libraries;
 
 use App\Libraries\AchievementsLibrary;
+use App\Libraries\Mail\MailQueue;
 use App\Models\ActivityModel;
-use App\Models\SendingMail;
 use App\Models\UsersModel;
 use CodeIgniter\I18n\Time;
 use Exception;
@@ -12,7 +12,6 @@ use ReflectionException;
 use Throwable;
 
 const ACTIVITY_FLOOD_MIN = 35;
-const EMAIL_NOTIFY_FLOOD_HOURS = 5;
 
 class ActivityLibrary {
     private string $owner;
@@ -231,39 +230,17 @@ class ActivityLibrary {
                 log_message('error', '{exception}', ['exception' => $e]);
             }
 
-            // Get owner email settings
-            $userModel = new UsersModel();
-            $ownerUser = $userModel->getUserById($this->owner, true);
-            $settings  = $ownerUser->settings;
+            // Email: queued if the owner wants it; MailQueue groups and paces what follows
+            try {
+                $owner = (new UsersModel())
+                    ->select('id, email, email_bounced_at, locale, settings')
+                    ->find($this->owner);
 
-            /**
-             * Email Notifications
-             */
-            if (($settings->emailPhoto && $type === 'photo')
-                || ($settings->emailComment && $type === 'comment')
-                || ($settings->emailEdit && $type === 'edit')
-                || ($settings->emailRating && $type === 'rating')
-                || ($settings->emailCover && $type === 'cover')
-                || ($settings->emailBookmark && $type === 'bookmark')
-                || ($settings->emailVisit && $type === 'visit')
-            ) {
-                /**
-                 * When we send email as notification of any activity on the site, we
-                 * do not fill in subject and message, they are filled in themselves if activity_id is set
-                 */
-                $sendingEmailModel = new SendingMail();
-                $lastSendEmailTime = $sendingEmailModel->checkSendLastEmail($ownerUser->email);
-
-                if ($lastSendEmailTime && abs($timeNow->difference($lastSendEmailTime->created_at)->getHours()) <= EMAIL_NOTIFY_FLOOD_HOURS) {
-                    return ;
+                if ($owner) {
+                    (new MailQueue())->queueActivity($owner, $type, $activityId);
                 }
-
-                $email = new \App\Entities\SendingMailEntity();
-                $email->activity_id = $activityId;
-                $email->email       = $ownerUser->email;
-                $email->locale      = $ownerUser->locale;
-
-                $sendingEmailModel->insert($email);
+            } catch (Throwable $e) {
+                log_message('error', '{exception}', ['exception' => $e]);
             }
         }
     }

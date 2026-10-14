@@ -303,7 +303,7 @@ class FeedPresenter
             ->get()
             ->getResult();
 
-        $content = new PlacesContent(self::CONTENT_TRIM);
+        $content = (new PlacesContent(self::CONTENT_TRIM))->forLocale($this->locale);
         $content->translate(array_column($rows, 'id'));
 
         $formatter = new PlaceFormatterLibrary();
