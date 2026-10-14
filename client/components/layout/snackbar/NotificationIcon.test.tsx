@@ -98,6 +98,19 @@ describe('NotificationIcon', () => {
             const img = screen.getByRole('presentation')
             expect(img).toHaveAttribute('src', 'https://img.example.com/photos/preview.jpg')
         })
+
+        it('renders the place pin, not a broken image, for a place without a cover', () => {
+            render(
+                <NotificationIcon
+                    type={'comment' as any}
+                    id={'n1'}
+                    read={false}
+                    place={{ cover: null, id: 'p1', title: 'Test Place' } as any}
+                />
+            )
+            expect(screen.queryByRole('presentation')).not.toBeInTheDocument()
+            expect(screen.getByTestId('icon-Point')).toBeInTheDocument()
+        })
     })
 
     describe('achievements type without image', () => {

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 
 import { Notification } from './Notification'
 
@@ -238,8 +238,8 @@ describe('Notification', () => {
         })
     })
 
-    describe('showDate prop', () => {
-        it('renders the formatted date when showDate is true', () => {
+    describe('list variant', () => {
+        it('renders the formatted date', () => {
             const notification = {
                 ...baseNotification,
                 created: { date: '2024-01-15T10:00:00Z', timezone_type: 1, timezone: 'UTC' }
@@ -247,11 +247,129 @@ describe('Notification', () => {
             render(
                 <Notification
                     {...notification}
-                    showDate
+                    variant={'list'}
                 />
             )
             // The mock formatDate returns '15 January 2024, 10:00'
             expect(screen.getByText('15 January 2024, 10:00')).toBeInTheDocument()
+        })
+
+        it('does not render the date in a toast', () => {
+            const notification = {
+                ...baseNotification,
+                created: { date: '2024-01-15T10:00:00Z', timezone_type: 1, timezone: 'UTC' }
+            }
+            render(<Notification {...notification} />)
+            expect(screen.queryByText('15 January 2024, 10:00')).not.toBeInTheDocument()
+        })
+
+        it('shows the level badge icon in the list, unlike a toast', () => {
+            render(
+                <Notification
+                    id={'lvl'}
+                    type={'level'}
+                    meta={{ level: 4, title: 'Explorer' }}
+                    variant={'list'}
+                />
+            )
+            expect(screen.getByTestId('notification-icon')).toBeInTheDocument()
+            expect(screen.getByText('Explorer (4)')).toBeInTheDocument()
+        })
+
+        it('does not link a notification about the user to the place of the activity', () => {
+            render(
+                <Notification
+                    id={'ach'}
+                    type={'achievements'}
+                    meta={{ title: 'First photo' }}
+                    place={{ id: 'p1', title: 'Cool Spot' }}
+                    variant={'list'}
+                />
+            )
+            expect(screen.getByText('First photo')).toBeInTheDocument()
+            expect(screen.queryByRole('link')).not.toBeInTheDocument()
+        })
+    })
+
+    describe('toast accessibility', () => {
+        it('announces an error toast as an alert', () => {
+            render(
+                <Notification
+                    {...baseNotification}
+                    type={'error'}
+                />
+            )
+            expect(screen.getByRole('alert')).toBeInTheDocument()
+        })
+
+        it('leaves other toasts to the polite live region of the snackbar', () => {
+            render(<Notification {...baseNotification} />)
+            expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+        })
+    })
+
+    describe('auto-dismiss', () => {
+        beforeEach(() => {
+            jest.useFakeTimers()
+        })
+
+        afterEach(() => {
+            jest.useRealTimers()
+        })
+
+        it('closes the toast when its time is up', () => {
+            const onClose = jest.fn()
+            render(
+                <Notification
+                    {...baseNotification}
+                    autoDismissMs={1000}
+                    onClose={onClose}
+                />
+            )
+
+            act(() => jest.advanceTimersByTime(999))
+            expect(onClose).not.toHaveBeenCalled()
+
+            act(() => jest.advanceTimersByTime(1))
+            expect(onClose).toHaveBeenCalledWith('notif-1')
+        })
+
+        it('holds the countdown while the toast is hovered and resumes it with the time left', () => {
+            const onClose = jest.fn()
+            const { container } = render(
+                <Notification
+                    {...baseNotification}
+                    autoDismissMs={1000}
+                    onClose={onClose}
+                />
+            )
+
+            act(() => jest.advanceTimersByTime(600))
+            fireEvent.mouseEnter(container.firstChild as Element)
+            act(() => jest.advanceTimersByTime(5000))
+            expect(onClose).not.toHaveBeenCalled()
+
+            fireEvent.mouseLeave(container.firstChild as Element)
+            act(() => jest.advanceTimersByTime(399))
+            expect(onClose).not.toHaveBeenCalled()
+
+            act(() => jest.advanceTimersByTime(1))
+            expect(onClose).toHaveBeenCalledTimes(1)
+        })
+
+        it('holds the countdown while paused from outside (a hidden tab)', () => {
+            const onClose = jest.fn()
+            render(
+                <Notification
+                    {...baseNotification}
+                    autoDismissMs={1000}
+                    paused
+                    onClose={onClose}
+                />
+            )
+
+            act(() => jest.advanceTimersByTime(5000))
+            expect(onClose).not.toHaveBeenCalled()
         })
     })
 

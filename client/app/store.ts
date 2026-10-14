@@ -68,9 +68,9 @@ const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) 
                 userLocation: state?.application?.userLocation ?? payload.application?.userLocation
             },
 
-            // notification can be hydrated
+            // Toasts exist only on the client: the server state (always empty) must not wipe them on navigation
             notification:
-                payload.notification ?? state?.notification ?? combinedReducer(undefined, { type: '' }).notification,
+                state?.notification ?? payload.notification ?? combinedReducer(undefined, { type: '' }).notification,
 
             // Merged auth state preserving user data
             auth: mergedAuth,

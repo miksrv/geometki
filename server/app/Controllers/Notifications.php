@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Models\CollectionsModel;
@@ -9,18 +10,23 @@ use App\Models\PlacesModel;
 use App\Models\UsersNotificationsModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
-use ReflectionException;
+use JsonException;
 
 /**
  * Notifications controller
  *
- * Manages user notification feeds: recent unread notifications for snackbar
- * display, paginated full history, bulk clear, and automatic read-marking.
+ * Manages user notification feeds: recent unread notifications for toasts, the list behind
+ * the bell, marking as read and bulk clear. Reading never changes anything: notifications
+ * become read only through PATCH /notifications/read, when the client has shown them.
  *
  * @package App\Controllers
  */
 class Notifications extends ResourceController
 {
+    private const LIST_LIMIT_DEFAULT = 10;
+    private const LIST_LIMIT_MAX     = 50;
+    private const READ_IDS_MAX       = 100;
+
     private SessionLibrary $session;
 
     protected $model;
@@ -32,12 +38,9 @@ class Notifications extends ResourceController
     }
 
     /**
-     * Return recent unread notifications (last 15 min) for snackbar display.
+     * Return unread notifications of the toast window and the unread count for the badge.
      *
      * GET /notifications/updates — auth required.
-     * Also returns a count of older unread notifications.
-     *
-     * @throws ReflectionException
      *
      * @return ResponseInterface
      */
@@ -46,29 +49,20 @@ class Notifications extends ResourceController
         if (!$this->session->isAuth || !$this->session->user?->id) {
             return $this->failUnauthorized();
         }
-        $notifyData  = $this->model->getRecentUnread($this->session->user->id, 10);
-        $notifyCount = $this->model->countOlderUnread($this->session->user->id);
 
-        if (!$notifyData) {
-            return $this->respond([
-                'items' => [],
-                'count' => $notifyCount
-            ]);
-        }
+        $userId = $this->session->user->id;
 
         return $this->respond([
-            'items' => $this->formatNotifyList($notifyData),
-            'count' => $notifyCount
+            'items' => $this->formatNotifyList($this->model->getRecentUnread($userId, 10)),
+            'count' => $this->model->countUnread($userId)
         ]);
     }
 
     /**
-     * Return a paginated list of all notifications for the authenticated user.
+     * Return a page of the notification list of the authenticated user, newest first.
      *
-     * GET /notifications — auth required.
-     * Accepts query params: limit, offset.
-     *
-     * @throws ReflectionException
+     * GET /notifications/list — auth required.
+     * Query params: limit (1–50, default 10), cursor (`next` of the previous page).
      *
      * @return ResponseInterface
      */
@@ -78,29 +72,72 @@ class Notifications extends ResourceController
             return $this->failUnauthorized();
         }
 
-        $limit  = $this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 10;
-        $offset = $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0;
+        $userId = $this->session->user->id;
+        $limit  = (int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?: self::LIST_LIMIT_DEFAULT);
+        $limit  = max(1, min(self::LIST_LIMIT_MAX, $limit));
+        $cursor = $this->request->getGet('cursor');
+        $cursor = is_string($cursor) && ctype_alnum($cursor) ? $cursor : null;
 
-        $notifyData  = $this->model->getPaginatedByUser($this->session->user->id, (int) $limit, (int) $offset);
-        $notifyCount = $this->model->countByUser($this->session->user->id);
-
-        if (!$notifyData) {
-            return $this->respond([
-                'items' => [],
-                'count' => $notifyCount
-            ]);
-        }
+        $items = $this->model->getPageByUser($userId, $limit, $cursor);
 
         return $this->respond([
-            'items' => $this->formatNotifyList($notifyData),
-            'count' => $notifyCount
+            'items' => $this->formatNotifyList($items),
+            'count' => $this->model->countByUser($userId),
+            // A full page may have more after it; the client passes this back as `cursor`
+            'next'  => count($items) === $limit ? end($items)->id : null
         ]);
+    }
+
+    /**
+     * Mark notifications as read: the given ids, or all of them when no ids are passed.
+     *
+     * PATCH /notifications/read — auth required.
+     * Body: { ids?: string[] } (at most 100). Responds with the new unread count.
+     *
+     * @return ResponseInterface
+     */
+    public function read(): ResponseInterface
+    {
+        if (!$this->session->isAuth || !$this->session->user?->id) {
+            return $this->failUnauthorized();
+        }
+
+        $ids  = null;
+        $body = trim((string) $this->request->getBody());
+
+        if ($body !== '') {
+            try {
+                $input = json_decode($body, true, 4, JSON_THROW_ON_ERROR);
+            } catch (JsonException) {
+                return $this->failValidationErrors(lang('Notifications.invalidIds'));
+            }
+
+            if (is_array($input) && array_key_exists('ids', $input)) {
+                $ids = $input['ids'];
+
+                if (
+                    !is_array($ids)
+                    || count($ids) > self::READ_IDS_MAX
+                    || array_filter($ids, static fn ($id) => !is_string($id) || !ctype_alnum($id))
+                ) {
+                    return $this->failValidationErrors(lang('Notifications.invalidIds'));
+                }
+
+                $ids = array_values(array_unique($ids));
+            }
+        }
+
+        $userId = $this->session->user->id;
+
+        $this->model->markRead($userId, $ids);
+
+        return $this->respond(['count' => $this->model->countUnread($userId)]);
     }
 
     /**
      * Delete all notifications belonging to the authenticated user.
      *
-     * DELETE /notifications/clear — auth required.
+     * DELETE /notifications — auth required.
      *
      * @return ResponseInterface
      */
@@ -123,12 +160,9 @@ class Notifications extends ResourceController
     /**
      * Format a raw notification list into the API response shape.
      *
-     * Enriches each entry with place title, cover image, and read status.
-     * All unread notifications are immediately marked as read as a side-effect.
+     * Enriches each entry with the place (title, cover) or collection it is about.
      *
      * @param array $notifyData Raw notification rows from the model.
-     *
-     * @throws ReflectionException
      *
      * @return array Formatted notification objects.
      */
@@ -138,16 +172,15 @@ class Notifications extends ResourceController
             return [];
         }
 
-        $locale       = $this->request->getLocale();
-        $placeContent = new PlacesContent(350);
-        $placesData      = [];
+        $locale          = $this->request->getLocale();
+        $placeContent    = new PlacesContent(350);
+        $placesById      = [];
         $placesIds       = [];
-        $collectionsData = [];
+        $collectionsById = [];
         $collectionsIds  = [];
         $result          = [];
-        $unread          = [];
 
-        // In the adjacent activity table we will collect ID place, if the current notification is about a change in content
+        // Places and collections the notifications are about (level and achievement ones are about the user)
         foreach ($notifyData as $notify) {
             if ($notify->place_id && $notify->type !== 'level' && $notify->type !== 'achievements') {
                 $placesIds[] = $notify->place_id;
@@ -158,73 +191,70 @@ class Notifications extends ResourceController
             }
         }
 
-        // If we have collected IDs of places, we will get information about them from the database and download translations
         if ($placesIds) {
-            $placesModel = new PlacesModel();
-            $placesData  = $placesModel->select('id, slug, photos, cover_external_id')->whereIn('id', $placesIds)->findAll();
+            $placesIds = array_values(array_unique($placesIds));
+            $places    = (new PlacesModel())
+                ->select('id, slug, photos, cover_external_id')
+                ->whereIn('id', $placesIds)
+                ->findAll();
+
+            foreach ($places as $place) {
+                $placesById[$place->id] = $place;
+            }
+
             $placeContent->translate($placesIds);
         }
 
-        // If we have collected IDs of collections (collection / collection_place notifications), fetch their id/slug/title
         if ($collectionsIds) {
-            $collectionsModel = new CollectionsModel();
-            $collectionsData  = $collectionsModel->select('id, slug, title')->whereIn('id', $collectionsIds)->findAll();
+            $collections = (new CollectionsModel())
+                ->select('id, slug, title')
+                ->whereIn('id', array_values(array_unique($collectionsIds)))
+                ->findAll();
+
+            foreach ($collections as $collection) {
+                $collectionsById[$collection->id] = $collection;
+            }
         }
 
+        $formatter = new PlaceFormatterLibrary();
+
         foreach ($notifyData as $notify) {
-            // If the notification has not been read, add its ID to the array of unread notifications
-            if (!$notify->read) {
-                $unread[] = $notify->id;
+            $placeData      = $placesById[$notify->place_id ?? ''] ?? null;
+            $collectionData = $collectionsById[$notify->collection_id ?? ''] ?? null;
+
+            $meta = $notify->meta ?: null;
+            if ($meta && ($notify->type === 'achievements' || $notify->type === 'level')) {
+                $title = $locale === 'en' ? ($meta->title_en ?? '') : ($meta->title_ru ?? $meta->title_en ?? '');
+
+                $meta = $notify->type === 'achievements'
+                    ? ['title' => $title, 'image' => $meta->image ?? null]
+                    : ['title' => $title, 'level' => $meta->level ?? null];
             }
 
-            $findPlace = array_search($notify->place_id, array_column($placesData, 'id'));
-            $placeData = $findPlace !== false ? $placesData[$findPlace] : null;
-
-            $findCollection = array_search($notify->collection_id ?? null, array_column($collectionsData, 'id'));
-            $collectionData = $findCollection !== false ? $collectionsData[$findCollection] : null;
-            $meta = $notify->meta;
-            if ($meta) {
-                if ($notify->type === 'achievements') {
-                    $meta = [
-                        'title' => $locale === 'en' ? ($meta->title_en ?? '') : ($meta->title_ru ?? $meta->title_en ?? ''),
-                        'image' => $meta->image ?? null,
-                    ];
-                } elseif ($notify->type === 'level') {
-                    $meta = [
-                        'title' => $locale === 'en' ? ($meta->title_en ?? '') : ($meta->title_ru ?? $meta->title_en ?? ''),
-                        'level' => $meta->level ?? null,
-                    ];
-                }
-            }
-
-            $tempData  = [
+            $tempData = [
                 'id'       => $notify->id,
                 'type'     => $notify->type,
                 'activity' => $notify->activity_type,
-                'meta'     => $meta
+                'meta'     => $meta,
+                'read'     => (bool) $notify->read,
             ];
-
 
             if (isset($notify->created_at)) {
                 $tempData['created'] = $notify->created_at;
             }
 
-            if (isset($notify->read)) {
-                $tempData['read'] = $notify->read;
-            }
+            if ($placeData) {
+                $cover = $formatter->formatCover($placeData->id, (int) $placeData->photos, $placeData->cover_external_id);
 
-            if ($placeData && $placeData->id) {
                 $tempData['place'] = [
                     'id'    => $placeData->id,
                     'slug'  => $placeData->slug,
                     'title' => $placeContent->title($placeData->id),
-                    'cover' => ($placeData->photos || $placeData->cover_external_id) && file_exists(UPLOAD_PHOTOS . $placeData->id . '/cover.jpg') ? [
-                        'preview' => PATH_PHOTOS . $placeData->id . '/cover_preview.jpg',
-                    ] : null
+                    'cover' => $cover ? ['preview' => $cover['preview']] : null
                 ];
             }
 
-            if ($collectionData && $collectionData->id) {
+            if ($collectionData) {
                 $tempData['collection'] = [
                     'id'    => $collectionData->id,
                     'slug'  => $collectionData->slug,
@@ -233,11 +263,6 @@ class Notifications extends ResourceController
             }
 
             $result[] = $tempData;
-        }
-
-        // If our array of unread notifications is not empty, then we will mark all such notifications as read
-        if (!empty($unread)) {
-            $this->model->markRead($this->session->user->id, $unread);
         }
 
         return $result;

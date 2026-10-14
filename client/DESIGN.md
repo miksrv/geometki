@@ -447,9 +447,13 @@ actions, active days, the longest and the current run of days in a row (22px num
   parent. A kit primitive candidate.
 - **Empty states.** `EmptyState` with a title, one sentence and at most one action; copy
   differs for owners (what to do) and readers (what to expect).
-- **Notifications.** Success and error toasts via `Notify`; an entity link in the toast is
-  passed as `place` / `collection`, never embedded in the text. Raw API bodies are never
-  shown (see `app/errorMiddleware.ts`).
+- **Notifications.** Success and error toasts via `Notify` (`NotifyReplace` to update a toast
+  with the same id); an entity link in the toast is passed as `place` / `collection`, never
+  embedded in the text. Raw API bodies are never shown, and background requests (polling,
+  marking read) never toast (see `app/errorMiddleware.ts`). One component, `Notification`:
+  `variant="toast"` in the snackbar (at most four on screen, the rest queue; the countdown
+  pauses on hover, focus and a hidden tab; errors are `role="alert"`, the snackbar is a polite
+  live region) and `variant="list"` for the rows under the bell.
 - **Edit mode.** "Редактировать" in the page header or hero; in edit mode it becomes
   "Отмена" + "Готово" — the one place where text edits are confirmed or dropped (inline
   editors have no buttons of their own; list edits save as they happen). In edit mode lists show

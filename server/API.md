@@ -1739,7 +1739,7 @@ All notification endpoints require authentication and return `401` otherwise.
 
 #### `GET /notifications/updates`
 
-Get up to 10 unread notifications from the last 15 minutes (for Snackbar/toast display). Also returns a count of older unread notifications. All returned notifications are marked as read.
+Get up to 10 unread notifications from the last 15 minutes (for toasts), newest first, and the number of unread notifications (the bell badge). Nothing is marked as read: the client calls `PATCH /notifications/read` for the toasts it has shown.
 
 **Auth required:** Yes
 
@@ -1750,11 +1750,15 @@ Get up to 10 unread notifications from the last 15 minutes (for Snackbar/toast d
   "items": [
     {
       "id": "n1n2n3n4",
-      "type": "notification",
+      "type": "comment",
       "activity": "comment",
       "meta": null,
-      "created": "2025-11-10T08:55:00+00:00",
       "read": false,
+      "created": {
+        "date": "2025-11-10 08:55:00.000000",
+        "timezone_type": 3,
+        "timezone": "UTC"
+      },
       "place": {
         "id": "a1b2c3d4e5f6g",
         "slug": "vodopad-gadelsha",
@@ -1769,13 +1773,13 @@ Get up to 10 unread notifications from the last 15 minutes (for Snackbar/toast d
 }
 ```
 
-Note: `count` is the number of unread notifications older than 15 minutes (shown as a badge). `place` is omitted for `level` and `achievements` notification types, whose `meta` is `{ title, level }` / `{ title, image }`. Notifications about collections carry `collection: { id, slug, title }`.
+Note: `count` is the number of unread notifications shown in the list. `experience` notifications ("+N XP" after the user's own action) are toast-only: they come in `updates` but never in the list or `count`. `place` is omitted for `level` and `achievements` notification types, whose `meta` is `{ title, level }` / `{ title, image }`; `place.cover` is `null` for a place without a cover. Notifications about collections carry `collection: { id, slug, title }`.
 
 ---
 
 #### `GET /notifications/list`
 
-Get a paginated list of all notifications for the current user. All returned unread notifications are marked as read.
+Get a page of the current user's notifications, newest first (toast-only `experience` notifications are left out). Nothing is marked as read.
 
 **Auth required:** Yes
 
@@ -1783,10 +1787,26 @@ Get a paginated list of all notifications for the current user. All returned unr
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| limit | integer | No | Max results (default 10) |
-| offset | integer | No | Pagination offset (default 0) |
+| limit | integer | No | Page size, 1–50 (default 10) |
+| cursor | string | No | `next` of the previous page; omit for the first page |
 
-**Response:** Same shape as `GET /notifications/updates`; here `count` is the total number of the user's notifications.
+**Response:** Same shape as `GET /notifications/updates`, plus `next` — the cursor of the next page, `null` on the last one; here `count` is the total number of the user's notifications in the list.
+
+---
+
+#### `PATCH /notifications/read`
+
+Mark notifications as read.
+
+**Auth required:** Yes
+
+**Request body (JSON, optional):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| ids | string[] | No | Up to 100 notification IDs; without `ids` all the user's notifications are marked as read |
+
+**Response:** `{ "count": 0 }` — the new number of unread notifications. `400` for an invalid `ids`.
 
 ---
 
@@ -2622,6 +2642,7 @@ Spark commands (`php spark <command>`), not accessible over HTTP:
 | `trending:refresh` | Refresh place trending scores |
 | `interests:refresh` | Refresh user interest profiles |
 | `digest:weekly` | Queue weekly digest emails |
+| `notifications:prune` | Delete toast-only and old read notifications (cron, daily) |
 
 ---
 

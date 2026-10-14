@@ -28,18 +28,18 @@ export const NotificationIcon: React.FC<ApiModel.Notification> = ({ ...props }):
             alt={props.meta?.title ?? ''}
             size={26}
         />
-    ) : props.place ? (
+    ) : props.place?.cover?.preview ? (
         <Image
             className={styles.placeImage}
-            src={`${IMG_HOST}${props.place.cover?.preview}`}
+            src={`${IMG_HOST}${props.place.cover.preview}`}
             alt={''}
-            width={50}
-            height={42}
-            style={{
-                height: '100%',
-                objectFit: 'cover'
-            }}
+            // The square slot of the icon sets the size (styles.module.sass); 2x for sharp retina previews
+            width={80}
+            height={80}
         />
+    ) : props.place ? (
+        // A place without a cover: the place pin instead of a broken image
+        <Icon name={'Point'} />
     ) : (
         <></>
     )

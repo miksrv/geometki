@@ -12,9 +12,14 @@ jest.mock('next-i18next/pages', () => ({
 
 const REJECTED_TYPE = 'api/executeQuery/rejected'
 
-const rejectedWithValue = (payload: unknown, type = REJECTED_TYPE) => ({
+const rejectedWithValue = (payload: unknown, type = REJECTED_TYPE, endpointName = 'placesGetItem') => ({
     error: { message: 'Rejected' },
-    meta: { rejectedWithValue: true, requestId: 'req-1', requestStatus: 'rejected' as const },
+    meta: {
+        arg: { endpointName, type: 'query' },
+        rejectedWithValue: true,
+        requestId: 'req-1',
+        requestStatus: 'rejected' as const
+    },
     payload,
     type
 })
@@ -29,14 +34,6 @@ const messagesOf = (store: ReturnType<typeof createStore>) =>
     store.getState().notification.list.map(({ message }) => message)
 
 describe('errorMiddleware', () => {
-    beforeEach(() => {
-        jest.useFakeTimers()
-    })
-
-    afterEach(() => {
-        jest.useRealTimers()
-    })
-
     it('ignores the failures of the external services', () => {
         const store = createStore()
 
@@ -101,13 +98,24 @@ describe('errorMiddleware', () => {
         expect(messagesOf(store)).toStrictEqual([])
     })
 
-    it('removes the notification after the timeout', () => {
+    it('shows the same error once, however many requests fail with it', () => {
         const store = createStore()
 
         store.dispatch(rejectedWithValue({ data: { messages: { error: 'Temporary' } }, status: 500 }))
-        expect(messagesOf(store)).toHaveLength(1)
+        store.dispatch(rejectedWithValue({ data: { messages: { error: 'Temporary' } }, status: 500 }))
+        store.dispatch(rejectedWithValue({ data: { messages: { error: 'Other' } }, status: 400 }))
 
-        jest.advanceTimersByTime(10_000)
+        expect(messagesOf(store)).toStrictEqual(['Temporary', 'Other'])
+        expect(store.getState().notification.list[0].revision).toBe(1)
+    })
+
+    it('stays silent for background requests: notification polling and marking read', () => {
+        const store = createStore()
+
+        store.dispatch(rejectedWithValue({ data: 'down', status: 503 }, REJECTED_TYPE, 'notificationsGetUpdates'))
+        store.dispatch(
+            rejectedWithValue({ data: 'down', status: 503 }, 'api/executeMutation/rejected', 'notificationsPatchRead')
+        )
 
         expect(messagesOf(store)).toStrictEqual([])
     })

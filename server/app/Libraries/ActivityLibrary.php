@@ -224,8 +224,12 @@ class ActivityLibrary {
 
         // Send notification to place owner
         if (isset($this->owner) && $this->owner !== $attributedUserId) {
-            $notify = new NotifyLibrary();
-            $notify->push($type, $this->owner, $activityId);
+            // Like the feed, the in-app notification must not fail the action itself
+            try {
+                (new NotifyLibrary())->push($type, $this->owner, $activityId);
+            } catch (Throwable $e) {
+                log_message('error', '{exception}', ['exception' => $e]);
+            }
 
             // Get owner email settings
             $userModel = new UsersModel();

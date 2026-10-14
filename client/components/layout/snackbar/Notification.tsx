@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { cn, Icon, Tooltip } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
@@ -7,102 +7,139 @@ import { useTranslation } from 'next-i18next/pages'
 import { ApiModel } from '@/api'
 import { LevelProgress } from '@/components/shared/level-progress/LevelProgress'
 import { buildCollectionUrl, buildPlaceUrl, formatDate } from '@/utils/helpers'
-import { getActivityTitle } from '@/utils/notifications'
+import { getNotificationText, getNotificationTitle } from '@/utils/notifications'
 
 import { NotificationIcon } from './NotificationIcon'
 
 import styles from './styles.module.sass'
 
 interface NotificationProps extends ApiModel.Notification {
-    showDate?: boolean
+    /** `toast` — a snackbar toast; `list` — a row of the list under the bell, with the date */
+    variant?: 'toast' | 'list'
+    /** Toast: close after this many ms on screen; hovering or focusing the toast pauses the countdown */
+    autoDismissMs?: number
+    /** Toast: hold the countdown (e.g. while the browser tab is hidden) */
+    paused?: boolean
     onClose?: (id: string) => void
     onLoad?: (id: string) => void
 }
 
-const NO_ICON_TYPES = new Set(['success', 'error', 'warning', 'info', 'level', 'experience'])
+// Notifications about the user themselves: their text says it all, no place or collection link
+const ABOUT_USER_TYPES = new Set(['experience', 'level', 'achievements'])
 
-export const Notification: React.FC<NotificationProps> = ({ showDate, onClose, onLoad, ...props }) => {
+const NO_ICON_TYPES: Record<NonNullable<NotificationProps['variant']>, Set<string>> = {
+    list: new Set(['success', 'error', 'warning', 'info']),
+    toast: new Set(['success', 'error', 'warning', 'info', 'level', 'experience'])
+}
+
+export const Notification: React.FC<NotificationProps> = ({
+    variant = 'toast',
+    autoDismissMs,
+    paused,
+    onClose,
+    onLoad,
+    ...props
+}) => {
     const { t } = useTranslation()
+
+    const [hovered, setHovered] = useState<boolean>(false)
+    const [focused, setFocused] = useState<boolean>(false)
+    const remainingMs = useRef<number>(autoDismissMs ?? 0)
 
     useEffect(() => {
         onLoad?.(props.id)
     }, [])
 
-    const hideIcon = NO_ICON_TYPES.has(props.type ?? '')
+    // The countdown runs only while nobody is reading the toast (WCAG 2.2.1)
+    const countdownPaused = !!paused || hovered || focused
 
-    const resolvedTitle = (() => {
-        if (typeof props.title !== 'undefined') {
-            return props.title
+    useEffect(() => {
+        if (!autoDismissMs || !onClose || countdownPaused) {
+            return
         }
-        if (props.type === 'experience') {
-            const activityLabel = getActivityTitle(props.activity, t)
-            const xpLabel = props.meta?.value != null ? `+${props.meta.value} XP` : ''
-            return [activityLabel, xpLabel].filter(Boolean).join(' ')
+
+        const startedAt = Date.now()
+        const timer = setTimeout(() => onClose(props.id), Math.max(0, remainingMs.current))
+
+        return () => {
+            clearTimeout(timer)
+            remainingMs.current -= Date.now() - startedAt
         }
-        if (props.activity) {
-            return getActivityTitle(props.activity, t)
-        }
-        if (props.type && props.type !== 'success') {
-            return getActivityTitle(props.type, t)
-        }
-        return ''
-    })()
+    }, [countdownPaused])
+
+    const title = getNotificationTitle(props, t)
+    const text = getNotificationText(props, t)
+    const showLevelProgress =
+        variant === 'toast' &&
+        props.type === 'experience' &&
+        props.meta?.experience != null &&
+        props.meta?.nextLevel != null
+
+    const link = ABOUT_USER_TYPES.has(props.type ?? '') ? null : props.collection ? (
+        <Link
+            href={buildCollectionUrl(props.collection.id, props.collection.slug)}
+            title={props.collection.title}
+        >
+            {props.collection.title}
+        </Link>
+    ) : props.place ? (
+        <Link
+            href={buildPlaceUrl(props.place.id, props.place.slug)}
+            title={props.place.title}
+        >
+            {props.place.title}
+        </Link>
+    ) : null
 
     return (
-        <div className={cn(styles.notification, styles[props.type!], !props.read && styles.unread)}>
-            {!hideIcon && (
+        <div
+            className={cn(
+                styles.notification,
+                styles[variant],
+                props.type && styles[props.type],
+                !props.read && styles.unread
+            )}
+            // An error interrupts; anything else waits for the screen reader to finish (the snackbar is a polite live region)
+            role={variant === 'toast' && props.type === 'error' ? 'alert' : undefined}
+            onMouseEnter={variant === 'toast' ? () => setHovered(true) : undefined}
+            onMouseLeave={variant === 'toast' ? () => setHovered(false) : undefined}
+            onFocus={variant === 'toast' ? () => setFocused(true) : undefined}
+            onBlur={variant === 'toast' ? () => setFocused(false) : undefined}
+        >
+            {!NO_ICON_TYPES[variant].has(props.type ?? '') && (
                 <div className={styles.before}>
                     <NotificationIcon {...props} />
                 </div>
             )}
             <div className={styles.body}>
-                {!!resolvedTitle && <span className={styles.title}>{resolvedTitle}</span>}
-                {props.type === 'experience' && props.meta?.experience != null && props.meta?.nextLevel != null ? (
+                {!!title && <span className={styles.title}>{title}</span>}
+                {showLevelProgress ? (
                     <LevelProgress
                         levelData={{
-                            level: props.meta.level,
-                            experience: props.meta.experience,
-                            nextLevel: props.meta.nextLevel
+                            experience: props.meta?.experience,
+                            level: props.meta?.level,
+                            nextLevel: props.meta?.nextLevel
                         }}
                         badgeSize={18}
                     />
                 ) : (
-                    <span className={styles.content}>
-                        {props.message}
-                        {props.type === 'experience' ? (
-                            `+${props.meta?.value} ${t('notification_experience', { defaultValue: 'опыт' })}`
-                        ) : props.type === 'level' ? (
-                            `${props.meta?.title} (${props.meta?.level})`
-                        ) : props.type === 'achievements' ? (
-                            <span>{props.meta?.title ?? ''}</span>
-                        ) : props.collection ? (
-                            <Link
-                                href={buildCollectionUrl(props.collection.id, props.collection.slug)}
-                                title={props.collection.title}
-                            >
-                                {props.collection.title}
-                            </Link>
-                        ) : props.place ? (
-                            <Link
-                                href={buildPlaceUrl(props.place.id, props.place.slug)}
-                                title={props.place.title}
-                            >
-                                {props.place.title}
-                            </Link>
-                        ) : (
-                            <></>
-                        )}
-                    </span>
+                    (!!text || !!link) && (
+                        <span className={styles.content}>
+                            {text}
+                            {link}
+                        </span>
+                    )
                 )}
-                {showDate && (
-                    <div className={styles.datetime}>{formatDate(props.created?.date, t('date-time-format'))}</div>
+                {variant === 'list' && (
+                    <span className={styles.datetime}>{formatDate(props.created?.date, t('date-time-format'))}</span>
                 )}
             </div>
             {onClose && (
                 <Tooltip content={t('close', { defaultValue: 'Закрыть' })}>
                     <button
+                        type={'button'}
                         className={styles.closeButton}
-                        aria-label={t('close')}
+                        aria-label={t('close', { defaultValue: 'Закрыть' })}
                         onClick={() => onClose(props.id)}
                     >
                         <Icon name={'Close'} />

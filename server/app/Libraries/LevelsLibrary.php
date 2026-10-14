@@ -141,10 +141,12 @@ class LevelsLibrary {
         $notify    = new NotifyLibrary();
 
         if ($calcLevel->level !== (int) $userData->level) {
-            $notify->push('level', $userId, $activity, $calcLevel);
             $userModel->update($userData->id, ['level' => $calcLevel->level, 'experience' => $userData->experience]);
 
+            // A recalculation may also lower the level: only a new level is news
             if ($calcLevel->level > (int) $userData->level) {
+                $notify->push('level', $userId, $activity, $calcLevel);
+
                 try {
                     (new FeedLibrary())->level($userId, $calcLevel->level);
                 } catch (\Throwable $e) {

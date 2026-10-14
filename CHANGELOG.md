@@ -5,6 +5,14 @@
 ### Patch Changes
 
 - English version: translated the header, menus, sign-in forms, map controls and the 404 page that showed Russian text
+- Notifications: the list under the bell shows dates again, and no broken image for a place without a cover
+- Notifications: the bell counter shows all unread notifications and drops once you see them
+- Notifications: "+N experience" stays a toast and no longer fills the list
+- Toasts: no longer disappear on page change; pause on hover, focus and in a background tab
+- Toasts: at most four at a time, a repeated error shows once, no error toasts while the server is unreachable
+- Toasts: announced by screen readers
+- Toasts: square place covers, icons centred vertically
+- Optimized notifications
 
 ## 1.16.1
 

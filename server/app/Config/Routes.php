@@ -83,6 +83,7 @@ $routes->group('external-photos', static function ($routes) {
 $routes->group('notifications', static function ($routes) {
     $routes->get('updates', 'Notifications::updates');
     $routes->get('list', 'Notifications::list');
+    $routes->patch('read', 'Notifications::read');
     $routes->delete('/', 'Notifications::clear');
 
     $routes->options('/', static function () {});

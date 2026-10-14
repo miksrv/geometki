@@ -152,7 +152,7 @@ Run on pull requests to `main`:
 
 REST JSON API on CodeIgniter 4. JWT Bearer token in the `Authorization` header; errors come as `{ "messages": { "error": "...", "<field>": "..." } }`. Full endpoint reference: [`server/API.md`](server/API.md); live route list: `php spark routes`.
 
-Maintenance and cron commands are `spark` commands; list them with `php spark list` (e.g. `system:send-email`, `digest:weekly`, `achievements:evaluate`, `trending:refresh`, `osm:collect`, `sessions:prune`).
+Maintenance and cron commands are `spark` commands; list them with `php spark list` (e.g. `system:send-email`, `digest:weekly`, `achievements:evaluate`, `trending:refresh`, `osm:collect`, `sessions:prune`, `notifications:prune`).
 
 ## Tech Stack
 
