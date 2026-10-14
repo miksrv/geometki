@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.16.1
+
+### Patch Changes
+
+- API: fixed the place texts endpoint returning a server error
+
 ## 1.16.0
 
 ### Minor Changes

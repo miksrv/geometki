@@ -325,7 +325,7 @@ class Places extends ResourceController
             return $this->failNotFound();
         }
 
-        $items = array_map(static fn($text) => [
+        $items = array_map(fn($text) => [
             'locale'  => $text->locale,
             'title'   => $text->title,
             'content' => $this->plainContent($text->content),
