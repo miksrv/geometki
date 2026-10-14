@@ -129,6 +129,7 @@ const listResult = (items: Array<Record<string, unknown>>, extra: Record<string,
 describe('NotificationList', () => {
     beforeEach(() => {
         jest.clearAllMocks()
+        mockMarkRead.mockReturnValue({ unwrap: () => Promise.resolve({ count: 0 }) })
         mockList({ data: undefined, isFetching: false, isLoading: false })
     })
 
@@ -230,6 +231,31 @@ describe('NotificationList', () => {
 
             expect(mockMarkRead).toHaveBeenCalledTimes(1)
             expect(mockMarkRead).toHaveBeenCalledWith({ ids: ['n1'] })
+        })
+
+        it('marks the rows again after a failed request, with the next fetch of the list', async () => {
+            mockMarkRead.mockReturnValueOnce({ unwrap: () => Promise.reject(new Error('503')) })
+            mockList(listResult([{ id: 'n1', message: 'New', read: false, type: 'success' }]))
+
+            const { rerender, store } = renderWithStore(<NotificationList />)
+
+            await act(async () => {
+                fireEvent.click(screen.getByTestId('popout-trigger'))
+            })
+            expect(mockMarkRead).toHaveBeenCalledTimes(1)
+
+            // The list is fetched again (a new page, opening it again): the row is marked again
+            mockList(listResult([{ id: 'n1', message: 'New', read: false, type: 'success' }]))
+            await act(async () => {
+                rerender(
+                    <Provider store={store}>
+                        <NotificationList />
+                    </Provider>
+                )
+            })
+
+            expect(mockMarkRead).toHaveBeenCalledTimes(2)
+            expect(mockMarkRead).toHaveBeenLastCalledWith({ ids: ['n1'] })
         })
 
         it('loads the next page when the list is scrolled to its end', () => {

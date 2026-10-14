@@ -32,6 +32,19 @@ const combinedReducer = combineReducers({
 // 2. Process HYDRATE separately
 type RootReducerState = ReturnType<typeof combinedReducer>
 
+const mergeNotifications = (
+    client: RootReducerState['notification'] | undefined,
+    server: RootReducerState['notification'] | undefined
+): RootReducerState['notification'] => {
+    if (!client) {
+        return server ?? combinedReducer(undefined, { type: '' }).notification
+    }
+
+    const fresh = server?.list.filter(({ id }) => !client.list.some((item) => item.id === id)) ?? []
+
+    return fresh.length ? { ...client, list: [...client.list, ...fresh] } : client
+}
+
 const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) => RootReducerState = (
     state,
     action
@@ -68,9 +81,8 @@ const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) 
                 userLocation: state?.application?.userLocation ?? payload.application?.userLocation
             },
 
-            // Toasts exist only on the client: the server state (always empty) must not wipe them on navigation
-            notification:
-                state?.notification ?? payload.notification ?? combinedReducer(undefined, { type: '' }).notification,
+            // The client's toasts stay on navigation; the server adds only its own (an API error in getServerSideProps)
+            notification: mergeNotifications(state?.notification, payload.notification),
 
             // Merged auth state preserving user data
             auth: mergedAuth,

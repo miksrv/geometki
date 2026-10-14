@@ -48,7 +48,11 @@ export const NotificationList: React.FC = () => {
 
         if (unseen.length) {
             unseen.forEach((id) => markedRead.current.add(id))
-            void markRead({ ids: unseen })
+
+            // A failed request is retried with the next fetch of the list (opening it again, the next page)
+            markRead({ ids: unseen })
+                .unwrap()
+                .catch(() => unseen.forEach((id) => markedRead.current.delete(id)))
         }
     }, [open, isFetching, items, markRead])
 

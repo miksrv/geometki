@@ -2,7 +2,7 @@ import React from 'react'
 import { Provider } from 'react-redux'
 
 import { configureStore } from '@reduxjs/toolkit'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 
 import { API } from '@/api'
 import applicationReducer from '@/app/applicationSlice'
@@ -40,9 +40,20 @@ jest.mock('next-i18next/pages', () => ({
     useTranslation: () => ({ t: (key: string, opts?: { defaultValue?: string }) => opts?.defaultValue ?? key })
 }))
 
-jest.mock('./Notification', () => ({
-    Notification: ({ message }: any) => <div data-testid={'snackbar-notification'}>{message}</div>
-}))
+jest.mock('./Notification', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useEffect } = require('react')
+
+    return {
+        Notification: ({ id, message, onLoad }: any) => {
+            useEffect(() => {
+                onLoad?.(id)
+            }, [])
+
+            return <div data-testid={'snackbar-notification'}>{message}</div>
+        }
+    }
+})
 
 jest.mock('@/config/constants', () => ({
     LOCAL_STORAGE: {
@@ -97,31 +108,85 @@ describe('Snackbar', () => {
 
     describe('server notifications', () => {
         beforeEach(() => {
+            jest.useFakeTimers()
             jest.clearAllMocks()
         })
 
-        it('shows new server notifications as toasts and marks them read, once', () => {
+        afterEach(() => {
+            jest.useRealTimers()
+        })
+
+        const mockUpdates = (ids: string[], fulfilledTimeStamp = 1) =>
             jest.mocked(API.useNotificationsGetUpdatesQuery).mockReturnValue({
-                data: { count: 0, items: [{ id: 'srv-1', message: 'From server', type: 'comment' }] }
+                data: { count: 0, items: ids.map((id) => ({ id, message: id, type: 'comment' })) },
+                fulfilledTimeStamp
             } as any)
 
-            const { store, rerender } = renderWithStore(<Snackbar />, { auth: { isAuth: true } })
-
-            expect(store.getState().notification.list.map(({ id }) => id)).toStrictEqual(['srv-1'])
-            expect(mockMarkRead).toHaveBeenCalledWith({ ids: ['srv-1'] })
-
-            // The next poll returns the same notification before the read mark has landed
-
-            jest.mocked(API.useNotificationsGetUpdatesQuery).mockReturnValue({
-                data: { count: 0, items: [{ id: 'srv-1', message: 'From server', type: 'comment' }] }
-            } as any)
+        const rerenderWith = (rerender: (ui: React.ReactElement) => void, store: ReturnType<typeof makeStore>) =>
             rerender(
                 <Provider store={store}>
                     <Snackbar />
                 </Provider>
             )
 
+        it('shows new server notifications as toasts and marks them read once they are on screen', async () => {
+            mockMarkRead.mockReturnValue({ unwrap: () => Promise.resolve({ count: 0 }) })
+            mockUpdates(['srv-1'])
+
+            const { store, rerender } = renderWithStore(<Snackbar />, { auth: { isAuth: true } })
+
+            expect(store.getState().notification.list.map(({ id }) => id)).toStrictEqual(['srv-1'])
+
+            await act(async () => {
+                jest.runOnlyPendingTimers()
+            })
+            expect(mockMarkRead).toHaveBeenCalledWith({ ids: ['srv-1'] })
+
+            // The next poll returns the same notification: it is neither queued nor marked again
+            mockUpdates(['srv-1'], 2)
+            rerenderWith(rerender, store)
+
+            await act(async () => {
+                jest.runOnlyPendingTimers()
+            })
+            expect(store.getState().notification.list).toHaveLength(1)
             expect(mockMarkRead).toHaveBeenCalledTimes(1)
+        })
+
+        it('leaves the notifications queued behind the visible toasts unread', async () => {
+            mockMarkRead.mockReturnValue({ unwrap: () => Promise.resolve({ count: 0 }) })
+            mockUpdates(['q-1', 'q-2', 'q-3', 'q-4', 'q-5', 'q-6'])
+
+            const { store } = renderWithStore(<Snackbar />, { auth: { isAuth: true } })
+
+            await act(async () => {
+                jest.runOnlyPendingTimers()
+            })
+
+            expect(store.getState().notification.list).toHaveLength(6)
+            expect(mockMarkRead).toHaveBeenCalledTimes(1)
+            expect(mockMarkRead).toHaveBeenCalledWith({ ids: ['q-1', 'q-2', 'q-3', 'q-4'] })
+        })
+
+        it('retries a failed read mark with the next poll', async () => {
+            mockMarkRead.mockReturnValueOnce({ unwrap: () => Promise.reject(new Error('503')) })
+            mockMarkRead.mockReturnValue({ unwrap: () => Promise.resolve({ count: 0 }) })
+            mockUpdates(['r-1'])
+
+            const { store, rerender } = renderWithStore(<Snackbar />, { auth: { isAuth: true } })
+
+            await act(async () => {
+                jest.runOnlyPendingTimers()
+            })
+            expect(mockMarkRead).toHaveBeenCalledTimes(1)
+
+            mockUpdates([], 2)
+            await act(async () => {
+                rerenderWith(rerender, store)
+            })
+
+            expect(mockMarkRead).toHaveBeenCalledTimes(2)
+            expect(mockMarkRead).toHaveBeenLastCalledWith({ ids: ['r-1'] })
         })
 
         it('shows at most four toasts at once, the rest wait', () => {
