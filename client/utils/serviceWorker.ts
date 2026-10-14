@@ -1,7 +1,8 @@
 /**
  * Registers the service worker (public/sw.js) in production builds. The app version goes into
  * the script URL: a new release is a new script, so the browser installs it and the worker
- * drops the caches of the previous one. Registration waits for the page load, so it never
+ * drops the caches of the previous one. The API host goes there too: the worker renews push
+ * subscriptions with it. Registration waits for the page load, so it never
  * competes with the page's own requests.
  *
  * Outside production the worker is removed instead: one left on the origin by a production
@@ -9,7 +10,7 @@
  * its cache-first cache, and dev chunk names do not change with the code, so the page would run
  * stale scripts (hydration errors).
  */
-export const registerServiceWorker = (version: string): void => {
+export const registerServiceWorker = (version: string, apiHost?: string): void => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
         return
     }
@@ -20,7 +21,10 @@ export const registerServiceWorker = (version: string): void => {
     }
 
     const register = () => {
-        navigator.serviceWorker.register(`/sw.js?v=${encodeURIComponent(version)}`, { scope: '/' }).catch(() => {
+        // The API host lets the worker move a push subscription the browser replaced
+        const api = apiHost ? `&api=${encodeURIComponent(apiHost)}` : ''
+
+        navigator.serviceWorker.register(`/sw.js?v=${encodeURIComponent(version)}${api}`, { scope: '/' }).catch(() => {
             // Without the worker the site works as a regular one
         })
     }

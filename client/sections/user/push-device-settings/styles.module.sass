@@ -1,0 +1,28 @@
+@use '../../../styles/variables' as variables
+
+.device
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: 12px
+    margin-top: 8px
+    padding: 12px
+    border: var(--container-border-separator)
+    border-radius: var(--container-radius)
+
+.text
+    flex: 1 1 260px
+    min-width: 0
+
+.title
+    font-weight: 600
+
+.state
+    margin: 4px 0 0
+    color: var(--text-color-secondary)
+    font-size: variables.$fontSizeHeadline
+
+.actions
+    display: flex
+    flex-wrap: wrap
+    gap: 8px

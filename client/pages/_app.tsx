@@ -16,6 +16,7 @@ import { ThemeProvider } from 'next-themes'
 import { wrapper } from '@/app/store'
 import { ThemeColor } from '@/components/layout/theme-color/ThemeColor'
 import { LOCAL_STORAGE } from '@/config/constants'
+import { API_HOST } from '@/config/env'
 import packageInfo from '@/package.json'
 import * as LocalStorage from '@/utils/localstorage'
 import { registerServiceWorker } from '@/utils/serviceWorker'
@@ -55,7 +56,7 @@ const App = ({ Component, pageProps }: AppProps) => {
     }, [])
 
     useEffect(() => {
-        registerServiceWorker(packageInfo.version)
+        registerServiceWorker(packageInfo.version, API_HOST)
     }, [])
 
     // useReportWebVitals((metric) => {

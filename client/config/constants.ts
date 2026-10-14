@@ -30,6 +30,7 @@ export const LOCAL_STORAGE = {
     LOCALE: 'locale',
     MAP_CENTER: 'mapCenter',
     MAP_SETTINGS: 'mapSettings',
+    PUSH_PROMPT: 'pushPrompt',
     RETURN_PATH: 'returnPath',
     THEME: 'theme'
 }
