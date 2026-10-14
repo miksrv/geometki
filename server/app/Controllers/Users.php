@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Libraries\AvatarLibrary;
 use App\Libraries\LevelsLibrary;
+use App\Libraries\NotificationSettings;
 use App\Libraries\SessionLibrary;
 use App\Models\UsersModel;
 use App\Models\UsersVisitedPlacesModel;
@@ -243,15 +244,10 @@ class Users extends ResourceController
             $updateData['website'] = $input->website;
         }
 
-        if (isset($input->settings)) {
-            $defaultSettings = ['emailComment', 'emailEdit', 'emailPhoto', 'emailRating', 'emailCover', 'emailBookmark', 'emailVisit', 'emailDigest'];
+        if (isset($input->settings) && (is_object($input->settings) || is_array($input->settings))) {
+            $stored = $userModel->select('settings')->find($id)?->settings;
 
-            $updateData['settings'] = json_encode((object) array_combine($defaultSettings, array_map(function($setting) use ($input) {
-                $inputValue   = isset($input->settings->$setting) && is_bool($input->settings->$setting) ? $input->settings->$setting : null;
-                $sessionValue = $this->session->settings->$setting ?? true;
-
-                return $inputValue !== null ? $inputValue : $sessionValue;
-            }, $defaultSettings)));
+            $updateData['settings'] = json_encode((new NotificationSettings())->merge($stored, $input->settings));
         }
 
         if (empty($updateData)) {
