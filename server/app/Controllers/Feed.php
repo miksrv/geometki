@@ -23,7 +23,7 @@ class Feed extends ResourceController
 
     /** Story types the `types` filter accepts */
     private const TYPES = [
-        'place', 'photo', 'edit', 'comment', 'rating', 'visit',
+        'place', 'photo', 'photo_link', 'edit', 'comment', 'rating', 'visit',
         'collection', 'collection_place', 'achievement', 'level',
     ];
 

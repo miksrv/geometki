@@ -10,7 +10,7 @@ class LevelsLibrary {
 
     public object $statistic;
 
-    private array $types = ['place', 'photo', 'rating', 'edit', 'cover', 'comment'];
+    private array $types = ['place', 'photo', 'rating', 'edit', 'cover', 'comment', 'photo_link'];
 
 
     public function __construct() {
@@ -40,7 +40,8 @@ class LevelsLibrary {
             'rating'  => 0,
             'edit'    => 0,
             'cover'   => 0,
-            'comment' => 0
+            'comment' => 0,
+            'photo_link' => 0
         ];
 
         if ($activityData) {
@@ -59,6 +60,7 @@ class LevelsLibrary {
         $experience += $statistic->edit * MODIFIER_EDIT;
         $experience += $statistic->cover * MODIFIER_COVER;
         $experience += $statistic->comment * MODIFIER_COMMENT;
+        $experience += $statistic->photo_link * MODIFIER_PHOTO_LINK;
 
         // Add XP bonuses from earned achievements (only current tier per group)
         $db  = \Config\Database::connect();
@@ -132,6 +134,10 @@ class LevelsLibrary {
 
             case 'comment' :
                 $experience = MODIFIER_COMMENT;
+                break;
+
+            case 'photo_link' :
+                $experience = MODIFIER_PHOTO_LINK;
                 break;
         }
 

@@ -16,7 +16,7 @@ const ACTIVITY_FLOOD_MIN = 35;
 class ActivityLibrary {
     private string $owner;
 
-    protected array $types = ['photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark', 'collection', 'collection_place'];
+    protected array $types = ['photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark', 'collection', 'collection_place', 'photo_link'];
 
     public function owner(string $userId): static
     {
@@ -33,6 +33,19 @@ class ActivityLibrary {
     public function photo($photoId, $placeId): void
     {
         $this->_add('photo', $photoId, $placeId);
+    }
+
+    /**
+     * A PastVu or Wikimedia Commons photo linked to a place. Unlinking deletes the photo
+     * row and, by the foreign key, this activity row with it.
+     *
+     * @param string $externalPhotoId places_external_photos.id
+     * @param string $placeId
+     * @throws ReflectionException
+     */
+    public function photoLink(string $externalPhotoId, string $placeId): void
+    {
+        $this->_add('photo_link', null, $placeId, externalPhotoId: $externalPhotoId);
     }
 
     /**
@@ -130,7 +143,7 @@ class ActivityLibrary {
     }
 
     /**
-     * @param string $type One of: 'photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark', 'collection', 'collection_place'
+     * @param string $type One of: 'photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark', 'collection', 'collection_place', 'photo_link'
      * @param string|null $photoId
      * @param string|null $placeId
      * @param string|null $ratingId
@@ -138,6 +151,7 @@ class ActivityLibrary {
      * @param string|null $collectionId
      * @param string|null $asUserId Attribute the activity (and its XP/achievements)
      *                              to this user instead of the current session's user.
+     * @param string|null $externalPhotoId A linked PastVu / Commons photo (places_external_photos.id)
      * @throws ReflectionException
      * @throws Exception
      */
@@ -149,6 +163,7 @@ class ActivityLibrary {
         string|null $commentId = null,
         string|null $collectionId = null,
         string|null $asUserId = null,
+        string|null $externalPhotoId = null,
     ): void {
         if (!in_array($type, $this->types)) {
             return ;
@@ -195,6 +210,7 @@ class ActivityLibrary {
         $activity->session_id = !$isAttributedAuth ? $session->id : null;
         $activity->user_id    = $attributedUserId;
         $activity->photo_id   = $photoId;
+        $activity->external_photo_id = $externalPhotoId;
         $activity->place_id   = $placeId;
         $activity->rating_id  = $ratingId;
         $activity->comment_id = $commentId;

@@ -36,6 +36,7 @@ export type Coordinates = {
 
 export type ActivityType =
     | 'photo'
+    | 'photo_link'
     | 'place'
     | 'rating'
     | 'edit'

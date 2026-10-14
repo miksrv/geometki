@@ -4,6 +4,7 @@ namespace App\Libraries;
 
 use App\Models\CollectionsPlacesModel;
 use App\Models\FeedModel;
+use App\Models\PlacesExternalPhotosModel;
 use App\Models\PlacesModel;
 use Config\Database;
 
@@ -15,9 +16,10 @@ use Config\Database;
  * Story shape (ApiModel.FeedStory on the client):
  *   id, type, weight, created (first event), updated (last event), count (events),
  *   author?                       — absent for guests;
- *   place?                        — place, photo, edit, comment: the place (list item with
- *                                   `content`, the start of its description);
- *   photos?, photosCount?         — place, photo: the photos of the story;
+ *   place?                        — place, photo, photo_link, edit, comment: the place (list
+ *                                   item with `content`, the start of its description);
+ *   photos?, photosCount?         — place, photo, photo_link: the photos of the story, linked
+ *                                   PastVu / Commons ones with their source in `external`;
  *   changes?                      — edit: what changed, 'description' and/or 'cover';
  *   comment?                      — comment: {id, content};
  *   places?, placesCount?         — rating, visit, collection_place: the places, a rating
@@ -122,10 +124,11 @@ class FeedPresenter
         switch ($row->type) {
             case 'place':
             case 'photo':
+            case 'photo_link':
                 $place = $places[$row->place_id] ?? null;
                 $photos = $this->photos($events);
 
-                if (!$place || ($row->type === 'photo' && empty($photos))) {
+                if (!$place || ($row->type !== 'place' && empty($photos))) {
                     return null;
                 }
 
@@ -219,7 +222,8 @@ class FeedPresenter
     }
 
     /**
-     * The photos of a story's events (deleted ones have no file name and are skipped).
+     * The photos of a story's events (deleted ones have no file name and are skipped);
+     * linked ones point at the source servers and carry the credit in `external`.
      *
      * @param array<int, object> $events
      * @return array<int, array<string, mixed>>
@@ -229,6 +233,15 @@ class FeedPresenter
         $photos = [];
 
         foreach ($events as $event) {
+            if ($event->type === 'photo_link' && !empty($event->ep_id)) {
+                $photo = PlacesExternalPhotosModel::formatAsPhoto(self::linkedPhotoRow($event));
+                unset($photo['title'], $photo['created']);
+
+                $photos[] = $photo;
+
+                continue;
+            }
+
             if ($event->type !== 'photo' || empty($event->filename)) {
                 continue;
             }
@@ -247,6 +260,24 @@ class FeedPresenter
         }
 
         return $photos;
+    }
+
+    /**
+     * A places_external_photos row from the `ep_*` columns of an event.
+     *
+     * @return array<string, mixed>
+     */
+    private static function linkedPhotoRow(object $event): array
+    {
+        $row = ['place_id' => $event->place_id];
+
+        foreach ((array) $event as $column => $value) {
+            if (str_starts_with($column, 'ep_')) {
+                $row[substr($column, 3)] = $value;
+            }
+        }
+
+        return $row;
     }
 
     /**

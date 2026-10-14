@@ -17,6 +17,8 @@ class AchievementsLibrary
         'cover'   => ['photos_uploaded'],
         'rating'  => ['ratings_given'],
         'comment' => ['comments_written'],
+        // A linked photo is not an uploaded one: it moves only the experience and the days
+        'photo_link' => [],
     ];
 
     /**

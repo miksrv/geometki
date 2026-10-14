@@ -7,6 +7,8 @@ export const getActivityTitle = (type: ActivityType | undefined, t: TFunction): 
     switch (type) {
         case 'photo':
             return t('notification_photo', { defaultValue: 'Загружена новая фотография' })
+        case 'photo_link':
+            return t('notification_photo_link', { defaultValue: 'Привязана фотография' })
         case 'place':
             return t('notification_place', { defaultValue: 'Добавлена новая геометка' })
         case 'rating':

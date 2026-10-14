@@ -18,6 +18,7 @@
 - Email: the link in every email unsubscribes from that type of emails or from all of them
 - Optimized notifications
 - Activity feed and profile calendar: "Today" and "Yesterday" follow your time zone, not Moscow time
+- Activity feed: photos linked from PastVu and Wikimedia Commons show as a story of their own and bring a little experience; unlinking takes both back
 
 ## 1.16.1
 

@@ -150,7 +150,7 @@ export const buildCalendarWeeks = (
 export const FEED_FILTERS = {
     achievements: [FeedStoryTypes.Achievement, FeedStoryTypes.Level],
     collections: [FeedStoryTypes.Collection, FeedStoryTypes.CollectionPlace],
-    photos: [FeedStoryTypes.Photo],
+    photos: [FeedStoryTypes.Photo, FeedStoryTypes.PhotoLink],
     places: [FeedStoryTypes.Place],
     reviews: [FeedStoryTypes.Comment]
 } as const

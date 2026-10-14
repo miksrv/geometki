@@ -7,8 +7,8 @@ use App\Entities\ActivityEntity;
 /**
  * Model for the `activity` table.
  *
- * The log of user actions (place creation, edits, photos, ratings, comments,
- * visits, bookmarks, collections): the source of XP, achievements, notifications,
+ * The log of user actions (place creation, edits, photos, linked PastVu / Commons photos,
+ * ratings, comments, visits, bookmarks, collections): the source of XP, achievements, notifications,
  * the weekly digest and the place history. The public feed is built from it at
  * write time (App\Libraries\FeedLibrary, `feed_id` is the story a row belongs to).
  * Supports soft-deletion.
@@ -34,6 +34,7 @@ class ActivityModel extends ApplicationBaseModel
         'session_id',
         'user_id',
         'photo_id',
+        'external_photo_id',
         'place_id',
         'comment_id',
         'rating_id',
