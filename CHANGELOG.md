@@ -12,6 +12,10 @@
 - Toasts: at most four at a time, a repeated error shows once, no error toasts while the server is unreachable
 - Toasts: announced by screen readers
 - Toasts: square place covers, icons centred vertically
+- Push notifications: turn on in the settings or from the offer after adding a place, photo, rating or comment; no pushes at night, events on one place come together
+- Settings: one Email / Push table to choose the notifications for each channel
+- Email: new design of all emails; activity emails are grouped and skip what a push or the site already showed
+- Email: the link in every email unsubscribes from that type of emails or from all of them
 - Optimized notifications
 
 ## 1.16.1
