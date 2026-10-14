@@ -15,6 +15,10 @@ export const LEVEL_COLORS: Array<{ fill: string; border: string }> = [
     { fill: '#FFD700', border: '#B8860B' } // 28–30 grand legend
 ]
 
+// Request header the proxy sets to the request's locale: App Router pages (app/not-found.tsx)
+// have no Pages Router i18n and read the locale from it
+export const LOCALE_HEADER = 'x-locale'
+
 // Cookie keys for authentication (accessible on both client and server)
 export const AUTH_COOKIES = {
     SESSION: 'session',

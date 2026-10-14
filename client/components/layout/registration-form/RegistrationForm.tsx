@@ -25,7 +25,7 @@ interface RegistrationFormProps {
 }
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClickLogin }) => {
-    const { t } = useTranslation('components.app-bar.registration-form')
+    const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const router = useRouter()
 

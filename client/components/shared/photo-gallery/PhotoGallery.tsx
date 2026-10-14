@@ -60,7 +60,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     onPhotoUploadClick,
     ...props
 }) => {
-    const { t } = useTranslation('components.photo-gallery')
+    const { t } = useTranslation()
     const dispatch = useAppDispatch()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)

@@ -31,7 +31,7 @@ export const isNavItemActive = (pathname: string, href: string): boolean =>
     pathname === href || pathname.startsWith(`${href}/`)
 
 export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
-    const { t } = useTranslation('components.app-bar')
+    const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const requireAuth = useRequireAuth()
     const router = useRouter()

@@ -7,7 +7,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
-import { NotFoundPage } from '@/components/shared'
+import { getNotFoundTexts, NotFoundPage } from '@/components/shared/not-found-page'
 
 const Error404Page: NextPage = () => {
     const router = useRouter()
@@ -23,7 +23,10 @@ const Error404Page: NextPage = () => {
                 })}
             </Head>
 
-            <NotFoundPage onBack={() => router.back()} />
+            <NotFoundPage
+                texts={getNotFoundTexts(t)}
+                onBack={() => router.back()}
+            />
         </>
     )
 }

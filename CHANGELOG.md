@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.16.2
+
+### Patch Changes
+
+- English version: translated the header, menus, sign-in forms, map controls and the 404 page that showed Russian text
+
 ## 1.16.1
 
 ### Patch Changes

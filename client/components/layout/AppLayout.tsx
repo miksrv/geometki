@@ -37,7 +37,7 @@ interface AppLayoutProps {
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, fitViewport, children }) => {
-    const { t } = useTranslation('components.app-layout')
+    const { t } = useTranslation()
     const dispatch = useAppDispatch()
 
     const application = useAppSelector((store) => store.application)

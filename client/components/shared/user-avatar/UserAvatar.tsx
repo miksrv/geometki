@@ -11,7 +11,7 @@ import { getDimension, getInitials } from './utils'
 import styles from './styles.module.sass'
 
 export const UserAvatar: React.FC<UserAvatarProps> = (props) => {
-    const { t } = useTranslation('components.user-avatar')
+    const { t } = useTranslation()
     const { className, user, size, caption, showName, disableLink } = props
     const dimension = getDimension(size)
     const userProfileTitle = `${t('user-profile', { defaultValue: 'Профиль путешественника' })} ${user?.name}`

@@ -20,7 +20,7 @@ interface UsersListProps extends Pick<ContainerProps, 'title' | 'footer' | 'acti
 }
 
 export const UsersList: React.FC<UsersListProps> = ({ users, scrollable, compact, ...props }) => {
-    const { t, i18n } = useTranslation('components.users-list')
+    const { t, i18n } = useTranslation()
 
     if (!users?.length) {
         return (

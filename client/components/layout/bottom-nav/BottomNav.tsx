@@ -33,7 +33,7 @@ export const isBottomNavItemActive = (pathname: string, match: string): boolean 
  * screen readers. A tap on the section you are already at the root of scrolls it to the top.
  */
 export const BottomNav: React.FC = () => {
-    const { t } = useTranslation('components.bottom-nav')
+    const { t } = useTranslation()
     const router = useRouter()
     const requireAuth = useRequireAuth()
 

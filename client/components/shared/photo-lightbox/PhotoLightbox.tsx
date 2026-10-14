@@ -77,7 +77,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     showLightbox,
     onCloseLightBox
 }) => {
-    const { t } = useTranslation('components.photo-lightbox')
+    const { t } = useTranslation()
 
     const slides = useMemo(
         () =>
@@ -102,7 +102,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                                     className={styles.caption}
                                     caption={formatDate(
                                         photo.created?.date,
-                                        t('date_time_format', { defaultValue: 'D MMMM YYYY, HH:mm' })
+                                        t('date-time-format', { defaultValue: 'D MMMM YYYY, HH:mm' })
                                     )}
                                 />
                             )

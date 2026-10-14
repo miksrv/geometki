@@ -5,24 +5,27 @@ import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { NotFoundTexts } from './texts'
+
 import styles from '@/styles/not-found.module.sass'
 
 interface NotFoundPageProps {
+    texts: NotFoundTexts
+    /** The App Router has no i18n routing, its Link does not add the /en prefix by itself */
+    homeHref?: string
     onBack?: () => void
 }
 
-export const NotFoundPage: React.FC<NotFoundPageProps> = ({ onBack }) => (
+export const NotFoundPage: React.FC<NotFoundPageProps> = ({ texts, homeHref = '/', onBack }) => (
     <div className={styles.page}>
         <p className={styles.code}>{'404'}</p>
-        <h1 className={styles.title}>{'Место не найдено'}</h1>
-        <p className={styles.description}>
-            {'Похоже, вы забрели не туда. Возможно, это место было удалено, перемещено или никогда не существовало.'}
-        </p>
+        <h1 className={styles.title}>{texts.title}</h1>
+        <p className={styles.description}>{texts.description}</p>
 
         <div className={styles.image}>
             <Image
                 src={'/images/404.png'}
-                alt={'Страница не найдена'}
+                alt={texts.imageAlt}
                 width={340}
                 height={300}
                 priority
@@ -35,14 +38,14 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({ onBack }) => (
                     className={styles.backButton}
                     onClick={onBack}
                 >
-                    {'← Назад'}
+                    {`← ${texts.back}`}
                 </button>
             )}
             <Link
-                href={'/'}
+                href={homeHref}
                 className={styles.homeLink}
             >
-                {'Вернуться на начальную страницу'}
+                {texts.homeLink}
             </Link>
         </div>
     </div>

@@ -323,7 +323,7 @@ export const FeedStory: React.FC<FeedStoryProps> = ({ story, density = 'full', h
                         dateTime={story.updated?.date}
                         title={formatDate(
                             story.updated?.date,
-                            t('date_time_format', { defaultValue: 'D MMMM YYYY, HH:mm' })
+                            t('date-time-format', { defaultValue: 'D MMMM YYYY, HH:mm' })
                         )}
                     >
                         {timeAgo(story.updated?.date, false, i18n.language)}

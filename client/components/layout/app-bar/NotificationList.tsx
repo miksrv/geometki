@@ -13,7 +13,7 @@ import { NotificationListItem } from './NotificationListItem'
 import styles from './styles.module.sass'
 
 export const NotificationList: React.FC = () => {
-    const { t } = useTranslation('components.app-bar.notifications')
+    const { t } = useTranslation()
     const dispatch = useAppDispatch()
 
     const notifyContainerRef = useRef<HTMLDivElement>(null)

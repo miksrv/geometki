@@ -16,7 +16,7 @@ import { saveMapSettings } from '../mapSettings'
 import styles from './styles.module.sass'
 
 export const ContextMenu: React.FC = () => {
-    const { t } = useTranslation('components.interactive-map.context-menu')
+    const { t } = useTranslation()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
