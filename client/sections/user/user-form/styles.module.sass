@@ -12,6 +12,48 @@
         .header
             margin-bottom: 5px
 
+        .hint
+            margin: 8px 0 0
+            color: var(--text-color-secondary)
+            font-size: variables.$fontSizeHeadline
+
+        .notifications
+            width: 100%
+            margin-top: 12px
+            border-collapse: collapse
+
+            th,
+            td
+                padding: 8px 0
+                border-bottom: var(--container-border-separator)
+                text-align: center
+                font-weight: normal
+
+            th:first-child
+                text-align: left
+                padding-right: 12px
+
+            thead th
+                color: var(--text-color-secondary)
+                font-size: variables.$fontSizeHeadline
+
+            // The channel columns: just wide enough for the header and the switch
+            thead th:not(:first-child)
+                width: 64px
+
+            .notApplicable
+                color: var(--text-color-secondary)
+
+            // The kit's checkbox spans the cell and keeps a gap for its label: centre the box itself
+            .channelCheckbox
+                justify-content: center
+
+                label
+                    width: auto
+
+                    > span
+                        margin-right: 0
+
     .actions
         margin-top: 20px
         display: flex

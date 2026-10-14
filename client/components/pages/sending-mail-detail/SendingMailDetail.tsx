@@ -20,6 +20,7 @@ const getStatusBadgeClass = (
 ): string => {
     switch (status) {
         case 'completed':
+        case 'grouped':
             return styleMap.badgeCompleted
         case 'error':
             return styleMap.badgeError
@@ -27,6 +28,7 @@ const getStatusBadgeClass = (
             return styleMap.badgeProcess
         case 'created':
         case 'rejected':
+        case 'expired':
             return styleMap.badgeDefault
     }
 }
@@ -50,7 +52,7 @@ export const SendingMailDetail: React.FC<SendingMailDetailProps> = ({ id, onClos
                 <div className={styles.content}>
                     <div className={styles.header}>
                         <h3 className={styles.title}>
-                            {item?.activity?.type ? t(`notification_${item?.activity?.type}`) : item.subject}
+                            {item.subject || (item.activity?.type ? t(`notification_${item.activity.type}`) : '—')}
                         </h3>
                         <Badge
                             label={t(`sending-mail-status-${item.status}`)}
@@ -80,9 +82,26 @@ export const SendingMailDetail: React.FC<SendingMailDetailProps> = ({ id, onClos
 
                         <dt>{t('sending-mail-admin-col-processed-at')}</dt>
                         <dd>{formatDate(item.updated?.date, 'D MMM YYYY, HH:mm')}</dd>
+
+                        {item.sent && (
+                            <>
+                                <dt>{t('sending-mail-admin-modal-sent-at')}</dt>
+                                <dd>{formatDate(item.sent.date, 'D MMM YYYY, HH:mm')}</dd>
+                            </>
+                        )}
+
+                        <dt>{t('sending-mail-admin-modal-attempts')}</dt>
+                        <dd>{item.attempts}</dd>
+
+                        {item.groupId && (
+                            <>
+                                <dt>{t('sending-mail-admin-modal-group')}</dt>
+                                <dd>{item.groupId}</dd>
+                            </>
+                        )}
                     </dl>
 
-                    {item.status === 'error' && item.error && (
+                    {item.error && (
                         <div className={styles.section}>
                             <p className={styles.sectionLabel}>{t('sending-mail-admin-modal-error')}</p>
                             <Message

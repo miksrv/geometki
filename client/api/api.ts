@@ -305,12 +305,43 @@ export const API = createApi({
         }),
 
         /** Controller: Mail **/
-        mailGetUnsubscribe: builder.query<string, Maybe<string>>({
-            query: (mailId) => `mail/unsubscribe?mail=${mailId || ''}`,
+        mailGetUnsubscribe: builder.query<
+            ApiType.Mail.UnsubscribeStatusResponse,
+            ApiType.Mail.UnsubscribeStatusRequest
+        >({
+            query: (params) => `mail/unsubscribe${encodeQueryData(params)}`,
             transformErrorResponse: extractErrorMessage
         }),
-        mailGetUnsubscribeDigest: builder.query<string, Maybe<string>>({
-            query: (userId) => `mail/unsubscribe?digest=${userId || ''}`,
+        mailPostUnsubscribe: builder.mutation<ApiType.Mail.UnsubscribeResponse, ApiType.Mail.UnsubscribeRequest>({
+            invalidatesTags: ['Users'],
+            query: (body) => ({
+                body,
+                method: 'POST',
+                url: 'mail/unsubscribe'
+            }),
+            transformErrorResponse: extractErrorMessage
+        }),
+
+        /** Controller: Push **/
+        pushGetKey: builder.query<ApiType.Push.KeyResponse, void>({
+            query: () => 'push/key'
+        }),
+        pushGetStatus: builder.query<ApiType.Push.StatusResponse, string>({
+            providesTags: ['PushStatus'],
+            query: (endpoint) => `push/subscriptions/status${encodeQueryData({ endpoint })}`
+        }),
+        pushPostSubscription: builder.mutation<void, ApiType.Push.SubscribeRequest>({
+            invalidatesTags: ['PushStatus'],
+            query: (body) => ({ body, method: 'POST', url: 'push/subscriptions' }),
+            transformErrorResponse: extractErrorMessage
+        }),
+        pushDeleteSubscription: builder.mutation<void, string>({
+            invalidatesTags: ['PushStatus'],
+            query: (endpoint) => ({ body: { endpoint }, method: 'DELETE', url: 'push/subscriptions' }),
+            transformErrorResponse: extractErrorMessage
+        }),
+        pushPostTest: builder.mutation<ApiType.Push.TestResponse, void>({
+            query: () => ({ method: 'POST', url: 'push/test' }),
             transformErrorResponse: extractErrorMessage
         }),
 
@@ -722,6 +753,7 @@ export const API = createApi({
         'Photos',
         'Places',
         'Profile',
+        'PushStatus',
         'Rating',
         'SendingMail',
         'UserAchievements',

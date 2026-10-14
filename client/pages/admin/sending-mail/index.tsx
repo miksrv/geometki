@@ -35,6 +35,7 @@ const getStatusBadgeClass = (
 ): string => {
     switch (status) {
         case 'completed':
+        case 'grouped':
             return styleMap.badgeCompleted
         case 'error':
             return styleMap.badgeError
@@ -42,6 +43,7 @@ const getStatusBadgeClass = (
             return styleMap.badgeProcess
         case 'created':
         case 'rejected':
+        case 'expired':
             return styleMap.badgeDefault
     }
 }

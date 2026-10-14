@@ -1,7 +1,11 @@
 import { User } from '@/api/models'
 import { DateTime } from '@/api/types'
 
-export type SendingMailStatus = 'created' | 'process' | 'completed' | 'error' | 'rejected'
+/**
+ * created → process → completed | grouped (sent inside the email of `groupId`) | error |
+ * rejected (nothing to send, or the recipient turned it off) | expired (not sent in time)
+ */
+export type SendingMailStatus = 'created' | 'process' | 'completed' | 'grouped' | 'error' | 'rejected' | 'expired'
 
 export interface SendingMailActivity {
     type: string
@@ -13,8 +17,13 @@ export interface SendingMailItem {
     email: string | null
     subject: string | null
     error: string | null
+    /** Notification type: comment, photo, …, digest */
+    type: string | null
+    attempts: number
+    groupId: string | null
     created?: DateTime
     updated?: DateTime
+    sent?: DateTime | null
     user: Pick<User, 'id' | 'name' | 'avatar'>
     activity: SendingMailActivity | null
 }
