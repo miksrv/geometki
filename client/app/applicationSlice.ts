@@ -18,6 +18,8 @@ type ApplicationStateProps = {
     showOverlay?: boolean
     showAuthDialog?: boolean
     userLocation?: ApiType.Coordinates
+    /** The visitor's IANA time zone from the `tz` cookie, set by the server render (utils/timeZone.ts) */
+    timeZone?: string
     locale?: ApiType.Locale
     /** The user just did something worth hearing back about: offer push (PushPrompt) */
     pushPromptRequested?: boolean
@@ -64,6 +66,9 @@ const applicationSlice = createSlice({
         setLocale: (state, { payload }: PayloadAction<ApiType.Locale>) => {
             state.locale = payload
         },
+        setTimeZone: (state, { payload }: PayloadAction<string | undefined>) => {
+            state.timeZone = payload
+        },
         setUserLocation: (state, { payload }: PayloadAction<ApiType.Coordinates>) => {
             void setCookie(USER_LOCATION_COOKIE, serializeUserLocation(payload), { maxAge: USER_LOCATION_MAX_AGE })
 
@@ -91,7 +96,14 @@ const applicationSlice = createSlice({
     }
 })
 
-export const { toggleOverlay, closeAuthDialog, openAuthDialog, setLocale, setUserLocation, dismissPushPrompt } =
-    applicationSlice.actions
+export const {
+    toggleOverlay,
+    closeAuthDialog,
+    openAuthDialog,
+    setLocale,
+    setTimeZone,
+    setUserLocation,
+    dismissPushPrompt
+} = applicationSlice.actions
 
 export default applicationSlice.reducer

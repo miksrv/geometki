@@ -12,8 +12,8 @@ import {
     flattenFeedPages,
     groupStoriesByDay,
     isFeedFilter,
-    siteDay,
-    siteToday
+    localDay,
+    localToday
 } from './feed'
 
 import 'dayjs/locale/ru'
@@ -62,7 +62,17 @@ describe('feed utilities', () => {
             ])
 
             expect(days.map((day) => day.stories.map((item) => item.id))).toStrictEqual([['a'], ['b', 'c'], ['d']])
-            expect(days[0].date).toBe(siteToday())
+            expect(days[0].date).toBe(localToday())
+        })
+
+        it('splits by the days of the given time zone', () => {
+            // 03:30 UTC on the 14th is still the 13th in Los Angeles, already the 14th in Moscow
+            const stories = [story('a', '2026-10-14 03:30:00'), story('b', '2026-10-13 22:00:00')]
+
+            expect(groupStoriesByDay(stories, 'America/Los_Angeles').map((day) => day.date)).toStrictEqual([
+                '2026-10-13'
+            ])
+            expect(groupStoriesByDay(stories).map((day) => day.date)).toStrictEqual(['2026-10-14'])
         })
 
         it('returns no days without stories', () => {
@@ -71,12 +81,19 @@ describe('feed utilities', () => {
         })
     })
 
-    describe('siteDay', () => {
-        it('takes the day in Moscow time, wherever the code runs', () => {
+    describe('localDay', () => {
+        it('takes the day in Moscow time without a time zone, wherever the code runs', () => {
             // 22:30 UTC is 01:30 of the next day in Moscow
-            expect(siteDay('2026-10-13 22:30:00')).toBe('2026-10-14')
-            expect(siteDay('2026-10-13 20:59:59')).toBe('2026-10-13')
-            expect(siteDay(undefined)).toBe('')
+            expect(localDay('2026-10-13 22:30:00')).toBe('2026-10-14')
+            expect(localDay('2026-10-13 20:59:59')).toBe('2026-10-13')
+            expect(localDay(undefined)).toBe('')
+        })
+
+        it('takes the day in the given time zone', () => {
+            // 23:24 UTC is 16:24 in Los Angeles (summer time) and 08:24 of the next day in Tokyo
+            expect(localDay('2026-10-14 23:24:00', 'America/Los_Angeles')).toBe('2026-10-14')
+            expect(localDay('2026-10-14 06:59:59', 'America/Los_Angeles')).toBe('2026-10-13')
+            expect(localDay('2026-10-14 23:24:00', 'Asia/Tokyo')).toBe('2026-10-15')
         })
     })
 

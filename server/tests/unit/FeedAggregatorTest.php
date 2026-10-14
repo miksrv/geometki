@@ -288,4 +288,19 @@ final class FeedAggregatorTest extends CIUnitTestCase
         $this->assertNull(Feed::parseCursor('2026-10-13'));
         $this->assertNull(Feed::parseCursor("1760000000-x' OR 1=1"));
     }
+
+    public function testCalendarTakesTheViewersTimeZone(): void
+    {
+        $this->assertSame('America/Los_Angeles', Feed::timeZone('America/Los_Angeles')->getName());
+        $this->assertSame('Europe/Kiev', Feed::timeZone('Europe/Kiev')->getName());
+    }
+
+    public function testCalendarFallsBackToTheSiteTimeZone(): void
+    {
+        $this->assertSame(SITE_TIMEZONE, Feed::timeZone(null)->getName());
+        $this->assertSame(SITE_TIMEZONE, Feed::timeZone('')->getName());
+        $this->assertSame(SITE_TIMEZONE, Feed::timeZone('Mars/Olympus')->getName());
+        $this->assertSame(SITE_TIMEZONE, Feed::timeZone('+03:00')->getName());
+        $this->assertSame(SITE_TIMEZONE, Feed::timeZone(['Europe/Moscow'])->getName());
+    }
 }

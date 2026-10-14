@@ -162,9 +162,11 @@ class Feed extends ResourceController
     }
 
     /**
-     * GET /feed/calendar?author=ID — a user's events per day over the last year, for
-     * the contribution calendar of the profile. Days without events are not listed.
-     * Days are days of the site's time zone (SITE_TIMEZONE), `from` and `to` too.
+     * GET /feed/calendar?author=ID&tz=ZONE — a user's events per day over the last year,
+     * for the contribution calendar of the profile. Days without events are not listed.
+     * Days are days of the viewer's time zone `tz` (an IANA name; the site's time zone,
+     * SITE_TIMEZONE, when it is missing or unknown), `from` and `to` too. The zone's
+     * offset of today is used for the whole year.
      *
      * @return ResponseInterface
      */
@@ -176,7 +178,7 @@ class Feed extends ResourceController
             return $this->failValidationErrors('author is required');
         }
 
-        $zone   = new \DateTimeZone(SITE_TIMEZONE);
+        $zone   = self::timeZone($this->request->getGet('tz'));
         $today  = new \DateTimeImmutable('today', $zone);
         $first  = $today->modify('-' . (self::CALENDAR_DAYS - 1) . ' days');
         $offset = $zone->getOffset($today);
@@ -203,6 +205,19 @@ class Feed extends ResourceController
             'from'  => $first->format('Y-m-d'),
             'to'    => $today->format('Y-m-d'),
         ]);
+    }
+
+    /**
+     * The viewer's time zone by its IANA name (old names such as Europe/Kiev, which
+     * browsers still report, too), else the site's one.
+     */
+    public static function timeZone(mixed $name): \DateTimeZone
+    {
+        if (is_string($name) && in_array($name, \DateTimeZone::listIdentifiers(\DateTimeZone::ALL_WITH_BC), true)) {
+            return new \DateTimeZone($name);
+        }
+
+        return new \DateTimeZone(SITE_TIMEZONE);
     }
 
     /**

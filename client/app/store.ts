@@ -78,7 +78,9 @@ const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) 
             // The visitor's location is known only on the client: the server state has none
             application: {
                 ...(payload.application ?? state?.application ?? combinedReducer(undefined, { type: '' }).application),
-                userLocation: state?.application?.userLocation ?? payload.application?.userLocation
+                userLocation: state?.application?.userLocation ?? payload.application?.userLocation,
+                // Only pages with days set it on the server; the others keep the one already known
+                timeZone: payload.application?.timeZone ?? state?.application?.timeZone
             },
 
             // The client's toasts stay on navigation; the server adds only its own (an API error in getServerSideProps)

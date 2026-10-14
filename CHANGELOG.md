@@ -17,6 +17,7 @@
 - Email: new design of all emails; activity emails are grouped and skip what a push or the site already showed
 - Email: the link in every email unsubscribes from that type of emails or from all of them
 - Optimized notifications
+- Activity feed and profile calendar: "Today" and "Yesterday" follow your time zone, not Moscow time
 
 ## 1.16.1
 

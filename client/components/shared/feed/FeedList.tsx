@@ -4,7 +4,7 @@ import { cn } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
-import { dayHeading, groupStoriesByDay, siteToday } from '@/utils/feed'
+import { dayHeading, groupStoriesByDay, localToday } from '@/utils/feed'
 
 import { FeedDensity, FeedStory } from './FeedStory'
 import { FeedStoryLoader } from './FeedStoryLoader'
@@ -19,6 +19,8 @@ export interface FeedListProps {
     hidePlace?: boolean
     /** Split the stories by day under date headings (the feed page, the profile) */
     groupByDay?: boolean
+    /** IANA zone of the day headings, the viewer's one (utils/timeZone.ts); the site's by default */
+    timeZone?: string
     /** Line shown instead of the list when there are no stories */
     emptyText?: string
     /** Under the list: a "show more" button */
@@ -36,6 +38,7 @@ export const FeedList: React.FC<FeedListProps> = ({
     density = 'full',
     hidePlace,
     groupByDay,
+    timeZone,
     emptyText,
     footer,
     className
@@ -61,12 +64,12 @@ export const FeedList: React.FC<FeedListProps> = ({
             />
         ))
 
-    const today = siteToday()
+    const today = localToday(timeZone)
 
     return (
         <div className={cn(styles.feed, className)}>
             {groupByDay
-                ? groupStoriesByDay(stories).map((day, index) => {
+                ? groupStoriesByDay(stories, timeZone).map((day, index) => {
                       const heading = dayHeading(day.date, today, i18n.language)
                       // A story that grew while loaded can bring its day back further down
                       const id = `${idPrefix}-${day.date}-${index}`
