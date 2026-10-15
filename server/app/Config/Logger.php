@@ -38,7 +38,9 @@ class Logger extends BaseConfig
      *
      * @var int|list<int>
      */
-    public $threshold = (ENVIRONMENT === 'production') ? 4 : 9;
+    // Production logs warnings too: the app writes them for failures it survives
+    // (geocoding, OAuth avatars, unknown notification types, mail URLs not set)
+    public $threshold = (ENVIRONMENT === 'production') ? 5 : 9;
 
     /**
      * --------------------------------------------------------------------------

@@ -83,7 +83,9 @@ class Exceptions extends BaseConfig
      * The related `Config\Logger::$threshold` should be adjusted, if needed,
      * to capture logging the deprecations.
      */
-    public string $deprecationLogLevel = LogLevel::WARNING;
+    // NOTICE: production logs warnings (Config\Logger::$threshold = 5), PHP and library
+    // deprecations would flood it; they still show up in development (threshold 9)
+    public string $deprecationLogLevel = LogLevel::NOTICE;
 
     /*
      * DEFINE THE HANDLERS USED

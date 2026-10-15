@@ -94,6 +94,8 @@ class Push extends ResourceController
         }
 
         if (!config('Push')->isConfigured()) {
+            log_message('error', 'Push: VAPID keys (push.* in .env) are not set');
+
             return $this->failServerError(lang('Push.notConfigured'));
         }
 
@@ -183,6 +185,8 @@ class Push extends ResourceController
         $queue = new PushQueue();
 
         if (!$queue->isConfigured()) {
+            log_message('error', 'Push: VAPID keys (push.* in .env) are not set');
+
             return $this->failServerError(lang('Push.notConfigured'));
         }
 
