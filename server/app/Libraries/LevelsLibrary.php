@@ -23,10 +23,11 @@ class LevelsLibrary {
      *
      * The method is used when changing the gradation of levels (when you need to recalculate the levels of all users)
      * Or when the user adds/edits material
+     * @param bool $notify false: a silent recount (migrations), no "new level" notification
      * @return $this
      * @throws ReflectionException
      */
-    public function calculate(UserEntity $user): static {
+    public function calculate(UserEntity $user, bool $notify = true): static {
         $activityModel = new ActivityModel();
         $activityData  = $activityModel
             ->select('type, COUNT(*) as cnt')
@@ -84,7 +85,7 @@ class LevelsLibrary {
             $userModel = new UsersModel();
             $userModel->update($user->id, ['level' => $calcLevel->level, 'experience' => $experience]);
 
-             if ($calcLevel->level > (int) $user->level) {
+             if ($notify && $calcLevel->level > (int) $user->level) {
                  $notify = new NotifyLibrary();
                  $notify->push('level', $user->id, null, $calcLevel);
              }

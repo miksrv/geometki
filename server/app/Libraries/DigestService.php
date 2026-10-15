@@ -165,8 +165,12 @@ class DigestService
 
         $coverMap = [];
         $slugMap   = [];
+        $covers    = new PlaceFormatterLibrary();
         foreach ($placesData as $place) {
-            $coverMap[$place->id] = (int) ($place->photos ?? 0) > 0 || !empty($place->cover_external_id);
+            $coverMap[$place->id] = $covers->coverExists(
+                $place->id,
+                (int) ($place->photos ?? 0) > 0 || !empty($place->cover_external_id)
+            );
             $slugMap[$place->id]   = $place->slug;
         }
 

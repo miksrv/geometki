@@ -110,11 +110,12 @@ class AddPhotoLinkActivity extends Migration
         $usersModel = new UsersModel();
         $levels     = new LevelsLibrary();
 
+        // Silent: old links must not send "new level" notifications and pushes on deploy
         foreach (array_keys($users) as $userId) {
             $user = $usersModel->getUserById($userId);
 
             if ($user) {
-                $levels->calculate($user);
+                $levels->calculate($user, false);
             }
         }
     }

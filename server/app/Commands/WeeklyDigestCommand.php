@@ -199,7 +199,15 @@ class WeeklyDigestCommand extends BaseCommand
                 continue; // dry-run does not count as queued
             }
 
-            $mailQueue->queueDigest($user, $subject, $digestHtml);
+            // One user's failed insert (e.g. a body over the column size) must not stop the run
+            try {
+                $mailQueue->queueDigest($user, $subject, $digestHtml);
+            } catch (\Throwable $e) {
+                log_message('error', 'Digest for {user} not queued: {message}', ['user' => $user->id, 'message' => $e->getMessage()]);
+                CLI::write("Failed to queue digest for: {$user->name}", 'red');
+                $skipped++;
+                continue;
+            }
 
             // Not through the model: users.updated_at is the profile's "last modified" (sitemap)
             \Config\Database::connect()->table('users')

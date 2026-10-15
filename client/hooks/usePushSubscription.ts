@@ -55,10 +55,16 @@ const usePushSubscription = () => {
             return
         }
 
-        const registration = await Push.getRegistration()
+        try {
+            const registration = await Push.getRegistration()
 
-        setHasWorker(!!registration)
-        setEndpoint((await registration?.pushManager.getSubscription())?.endpoint ?? null)
+            setHasWorker(!!registration)
+            setEndpoint((await registration?.pushManager.getSubscription())?.endpoint ?? null)
+        } catch {
+            // Private mode and the like: the worker is not reachable, push is unavailable here
+            setHasWorker(false)
+            setEndpoint(null)
+        }
     }, [])
 
     // Read the device on mount and again when the user comes back to the tab: the worker

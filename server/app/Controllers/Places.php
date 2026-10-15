@@ -672,6 +672,8 @@ class Places extends ResourceController
         $collectionsPlacesModel = new CollectionsPlacesModel();
         $affectedCollectionIds  = $collectionsPlacesModel->collectionIdsForPlace($id);
 
+        (new PlaceTags())->deletePlace($id);
+
         // Remove all photos
         $photosModel = new PhotosModel();
         $photosModel->where('place_id', $id)->delete(null, true);

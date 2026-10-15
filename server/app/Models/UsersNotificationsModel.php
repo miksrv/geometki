@@ -75,6 +75,8 @@ class UsersNotificationsModel extends ApplicationBaseModel
             ->where('users_notifications.user_id', $userId)
             ->where('users_notifications.read', false)
             ->where('users_notifications.created_at >= DATE_SUB(NOW(), INTERVAL ' . self::TOAST_WINDOW_MINUTES . ' MINUTE)')
+            // Toast-only rows last: a burst of "+N experience" must not push real notifications out of the limit
+            ->orderBy("users_notifications.type IN ('" . implode("','", self::TOAST_ONLY_TYPES) . "')", 'ASC', false)
             ->orderBy('users_notifications.created_at', 'DESC')
             ->orderBy('users_notifications.id', 'DESC')
             ->findAll($limit);

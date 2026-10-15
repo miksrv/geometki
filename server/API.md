@@ -1075,7 +1075,7 @@ Delete a permanent photo. Only the photo's uploader or an admin may delete it.
 
 ### External Photos
 
-Wikimedia Commons and PastVu photos linked to places. The images are not downloaded: they are served from the source and shown in the place gallery together with the uploaded photos (`GET /photos?place=`). Linking gives no experience and is not shown in the activity feed.
+Wikimedia Commons and PastVu photos linked to places. The images are not downloaded: they are served from the source and shown in the place gallery together with the uploaded photos (`GET /photos?place=`). Linking is a `photo_link` activity: it gives a little experience (`MODIFIER_PHOTO_LINK`, 1 point) and shows in the activity feed as a story of its own; unlinking takes both back.
 
 #### `GET /external-photos`
 

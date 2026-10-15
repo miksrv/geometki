@@ -75,6 +75,13 @@ class PlaceTags {
     }
 
     /**
+     * Before a place is deleted: its places_tags rows would cascade away without lowering tags.count.
+     */
+    public function deletePlace(string $placeId): void {
+        $this->_deletePlaceTags($placeId);
+    }
+
+    /**
      * @throws ReflectionException
      */
     protected function _deletePlaceTags(string $placeId): void {

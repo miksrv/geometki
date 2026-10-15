@@ -121,7 +121,7 @@ const MODIFIER_COVER = 2;
 const MODIFIER_EDIT = 5;
 const MODIFIER_COMMENT = 5;
 // A PastVu or Wikimedia Commons photo linked to a place: less than an uploaded one, the file is not ours
-const MODIFIER_PHOTO_LINK = 3;
+const MODIFIER_PHOTO_LINK = 1;
 
 /*
  | --------------------------------------------------------------------------

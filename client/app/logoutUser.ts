@@ -2,6 +2,7 @@ import { API } from '@/api'
 import { unsubscribe as unsubscribePush } from '@/utils/push'
 
 import { logout } from './authSlice'
+import { deleteAllNotifications } from './notificationSlice'
 import type { AppDispatch, RootState } from './store'
 
 /**
@@ -16,6 +17,8 @@ export const logoutUser = () => (dispatch: AppDispatch, getState: () => RootStat
     dispatch(logout())
 
     if (wasAuth) {
+        // The previous user's toasts (an achievement, a comment) must not stay on screen
+        dispatch(deleteAllNotifications())
         dispatch(API.util.resetApiState())
     }
 }

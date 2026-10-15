@@ -102,6 +102,13 @@ class ReworkNotifications extends Migration
             [date('Y-m-d H:i:s', strtotime('-1 day'))]
         );
 
+        // Unsent digests of the old code hold a whole HTML document, the new queue would wrap it
+        // in the layout once more: drop them, the next weekly run builds new ones
+        $this->db->simpleQuery("
+            UPDATE `sending_mail` SET `status` = 'expired'
+            WHERE `type` = 'digest' AND `status` IN ('created', 'process')
+        ");
+
         $this->db->simpleQuery('
             ALTER TABLE `sending_mail`
                 ADD INDEX `sending_mail_queue` (`status`, `next_attempt_at`),
