@@ -216,15 +216,13 @@
 .tier-gold
     color: var(--color-tier-gold)
 
-// Photos: a mosaic when the photos are the story, a strip of thumbnails under a place card
+// Photos: one mosaic in every story
 
 .mosaic
     display: grid
     gap: 4px
     overflow: hidden
     border-radius: var(--border-radius)
-
-.grid
     height: 360px
     grid-template-columns: 1fr
     grid-template-rows: 1fr
@@ -248,19 +246,6 @@
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
         height: 260px
-
-.strip
-    grid-template-columns: repeat(6, 1fr)
-
-    // Four on narrow columns and phones: six would be under a finger's 48px
-    &.mosaicCompact
-        grid-template-columns: repeat(4, 1fr)
-
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        grid-template-columns: repeat(4, 1fr)
-
-    .mosaicCell
-        aspect-ratio: 1
 
 .mosaicCell
     position: relative

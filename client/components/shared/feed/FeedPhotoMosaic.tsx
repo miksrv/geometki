@@ -16,47 +16,32 @@ export interface FeedPhotoMosaicProps {
     photos: ApiModel.Photo[]
     /** All photos of the story; more than shown puts "+N" on the last tile */
     total?: number
-    /**
-     * `grid` — the photos are the story (1 — wide, 2 — two columns, 3 — a tall one and two,
-     * 4+ — 2×2); `strip` — a row of thumbnails under a place card
-     */
-    layout?: 'grid' | 'strip'
     density?: FeedDensity
     /** The place the photos are of: their alt text and button names */
     placeTitle?: string
 }
 
-const SHOWN: Record<'grid' | 'strip', Record<FeedDensity, number>> = {
-    grid: { compact: 4, full: 4 },
-    strip: { compact: 4, full: 6 }
-}
+/** Tiles of the mosaic; more photos put "+N" on the last one */
+const SHOWN = 4
 
 /**
- * The photos of a feed story; any tile opens the lightbox with all the story's photos.
+ * The photos of a feed story, the same in every story (new photos, linked photos, a new
+ * place): 1 — wide, 2 — two columns, 3 — a tall one and two, 4+ — 2×2. Any tile opens
+ * the lightbox with all the story's photos.
  */
-export const FeedPhotoMosaic: React.FC<FeedPhotoMosaicProps> = ({
-    photos,
-    total,
-    layout = 'grid',
-    density = 'full',
-    placeTitle
-}) => {
+export const FeedPhotoMosaic: React.FC<FeedPhotoMosaicProps> = ({ photos, total, density = 'full', placeTitle }) => {
     const { t } = useTranslation()
 
     const [photoIndex, setPhotoIndex] = useState<number>()
     const [showLightbox, setShowLightbox] = useState(false)
 
-    const shown = photos.slice(0, SHOWN[layout][density])
+    const shown = photos.slice(0, SHOWN)
     const more = Math.max(0, (total ?? photos.length) - shown.length)
 
     return (
         <>
             <div
-                className={cn(
-                    styles.mosaic,
-                    layout === 'strip' ? styles.strip : styles.grid,
-                    density === 'compact' && styles.mosaicCompact
-                )}
+                className={cn(styles.mosaic, density === 'compact' && styles.mosaicCompact)}
                 data-count={shown.length}
             >
                 {shown.map((photo, index) => {
@@ -82,7 +67,7 @@ export const FeedPhotoMosaic: React.FC<FeedPhotoMosaicProps> = ({
                                 unoptimized={isAbsoluteUrl(photo.preview)}
                                 alt={name}
                                 fill
-                                sizes={layout === 'strip' ? '120px' : '(max-width: 1024px) 100vw, 920px'}
+                                sizes={'(max-width: 1024px) 100vw, 920px'}
                                 className={styles.mosaicImage}
                             />
                             {hasMore && (

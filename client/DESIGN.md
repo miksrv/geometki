@@ -318,9 +318,10 @@ achievement / a new level (`ApiModel.FeedStory`; grouping rules in
 
 - `FeedStory` — one card per story, the same for every kind: a head (avatar, author link,
   what happened, time ago) and a body that depends on the kind. Bodies reuse the entity
-  components: a new place is a `PlaceCard` tile + the start of its description + a strip of
-  its photos; photos are a `FeedPhotoMosaic` (1 wide, 2 columns, 1 tall + 2, 2×2 with "+N",
-  any tile opens the lightbox) with the place as a `PlaceCard` row; a review is a quote with
+  components: photos are always one `FeedPhotoMosaic` (1 wide, 2 columns, 1 tall + 2, 2×2
+  with "+N", any tile opens the lightbox) — a new place is a `PlaceCard` tile + the start of
+  its description + the mosaic of its photos, a photo story is the mosaic with the place as
+  a `PlaceCard` row; a review is a quote with
   the place row; ratings, visits and places added to a collection are up to three place rows
   (a rating with the author's five read-only stars in the row footer) and "and N more"; a
   collection is a `CollectionCard` without the author; an achievement / a level is its badge
