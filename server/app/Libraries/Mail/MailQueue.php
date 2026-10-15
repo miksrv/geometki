@@ -70,7 +70,7 @@ class MailQueue
      */
     public function queueActivity(object $user, string $type, string $activityId): bool
     {
-        if (empty($user->email) || !empty($user->email_bounced_at) || !$this->settings->isEnabled($user->settings ?? null, self::CHANNEL, $type)) {
+        if (empty($user->email) || !empty($user->email_bounced_at) || $this->settings->isServiceEmail($user->email) || !$this->settings->isEnabled($user->settings ?? null, self::CHANNEL, $type)) {
             return false;
         }
 
@@ -91,6 +91,10 @@ class MailQueue
      */
     public function queueDigest(object $user, string $subject, string $body): void
     {
+        if ($this->settings->isServiceEmail($user->email ?? null)) {
+            return;
+        }
+
         $this->model->insert([
             'user_id' => $user->id,
             'type'    => 'digest',

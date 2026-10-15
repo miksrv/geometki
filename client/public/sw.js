@@ -12,7 +12,7 @@
  * The script is registered as /sw.js?v=<app version>&api=<API host> (pages/_app.tsx), so every
  * release installs a new worker with its own caches and the old ones are dropped on activation.
  *
- * Web push (features/16): shows the pushes the API sends (`push`), opens their page on a click
+ * Web push: shows the pushes the API sends (`push`), opens their page on a click
  * (`notificationclick`), and moves the subscription on the server when the browser replaces it
  * (`pushsubscriptionchange`; the worker has no auth token, the old endpoint is the proof).
  */

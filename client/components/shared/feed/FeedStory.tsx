@@ -175,7 +175,6 @@ export const FeedStory: React.FC<FeedStoryProps> = ({ story, density = 'full', h
                             <FeedPhotoMosaic
                                 photos={story.photos}
                                 total={photosCount}
-                                layout={hidePlace ? 'grid' : 'strip'}
                                 density={density}
                                 placeTitle={story.place?.title}
                             />

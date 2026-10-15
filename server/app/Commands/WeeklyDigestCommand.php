@@ -108,9 +108,11 @@ class WeeklyDigestCommand extends BaseCommand
                 ->where('deleted_at IS NULL', null, false)
                 ->findAll();
 
-            // Only users who want the digest and whose address works
+            // Only users who want the digest and whose address works; service accounts get none
             $users = array_values(array_filter($users, static fn ($user) =>
-                empty($user->email_bounced_at) && $settings->isEnabled($user->settings ?? null, 'email', 'digest')
+                empty($user->email_bounced_at)
+                && !$settings->isServiceEmail($user->email ?? null)
+                && $settings->isEnabled($user->settings ?? null, 'email', 'digest')
             ));
         }
 

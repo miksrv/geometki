@@ -11,6 +11,14 @@ function getPhotoLocation(string $file): ?object
         return null;
     }
 
+    // EXIF (and so GPS) is only read from JPEG and TIFF: on WebP and PNG exif_read_data()
+    // warns "File not supported", which ended up in the error log on every such upload
+    $type = @exif_imagetype($file);
+
+    if (!in_array($type, [IMAGETYPE_JPEG, IMAGETYPE_TIFF_II, IMAGETYPE_TIFF_MM], true)) {
+        return null;
+    }
+
     try {
         $info = exif_read_data($file);
 

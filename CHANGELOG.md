@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.16.4
+
+### Patch Changes
+
+- Activity feed: photos of a new place are laid out as the same mosaic as in photo stories
+- Server: updated dependencies with security fixes
+
 ## 1.16.3
 
 ### Patch Changes

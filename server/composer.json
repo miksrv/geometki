@@ -6,14 +6,14 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "codeigniter4/framework": "^4.6",
-        "firebase/php-jwt": "^6.10",
+        "codeigniter4/framework": "^4.7.5",
+        "firebase/php-jwt": "^7.0",
         "geocoder-php/nominatim-provider": "^5.7",
         "geocoder-php/yandex-provider": "^4.5",
-        "guzzlehttp/guzzle": "^7.8",
+        "guzzlehttp/guzzle": "^8.0",
         "minishlink/web-push": "^11.0",
         "nyholm/psr7": "^1.8",
-        "symfony/http-client": "^7.2"
+        "symfony/http-client": "^7.4"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",

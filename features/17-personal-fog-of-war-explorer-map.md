@@ -8,18 +8,11 @@ places. The mechanic behind Fog of World, Wandrer and CityStrides.
 
 ## What exists today
 
-The site no longer asks for the location on page load: only on the visitor's own action (the map's
-"My location" button, sorting places by distance; the "Я здесь был" button). Anonymous visitors'
-positions are not stored on the server at all (the client keeps them in the `location` cookie and
-sends `lat`/`lon` with the requests that need a distance). For a signed-in user `PUT /location`
-saves **one last point**: `users.last_lat`, `last_lon`, `last_location_at`
-(`UsersModel::updateLastLocation()`), rewritten only when the user has moved more than
-`UsersModel::LOCATION_MIN_DISTANCE` (200 m). It is never returned by the API. There is no position
-history: `sessions_history` and the session coordinates were removed (migration
-`MoveLocationOffSessions`).
-
-Sources of cleared tiles, then: that last point each time it changes, and "Я здесь был" visits with
-coordinates (`users_visited_places.lat/lon`). Without a mobile app coverage will be sparse.
+Only one last point of a signed-in user: `users.last_lat/last_lon/last_location_at`, written by
+`PUT /location` (`UsersModel::updateLastLocation()`) after a move of more than 200 m, never returned
+by the API. No position history; anonymous positions are not stored. Sources of cleared tiles: that
+point and "Я здесь был" visits with coordinates (`users_visited_places.lat/lon`); without a mobile
+app coverage will be sparse.
 
 ## Location history (to build first)
 
@@ -71,8 +64,7 @@ coordinates (`users_visited_places.lat/lon`). Without a mobile app coverage will
 
 ## Community heatmap (optional)
 
-The old "Путешественники" heatmap (`GET /poi/users`, raw session coordinates with no time limit)
-was removed as a privacy leak. If a community layer comes back, only as a k-anonymous aggregate: a
+Only as a k-anonymous aggregate (the old raw-coordinates heatmap was removed as a privacy leak): a
 nightly `heatmap_grid_cache` (~500 m cells, authenticated users only,
 `HAVING COUNT(DISTINCT user_id) >= 10`).
 

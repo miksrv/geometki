@@ -67,18 +67,6 @@ describe('FeedPhotoMosaic', () => {
         expect(screen.getAllByTestId('image')[0]).toHaveAttribute('data-src', 'https://img.test/p0_preview.jpg')
     })
 
-    it('shows six thumbnails in a strip', () => {
-        render(
-            <FeedPhotoMosaic
-                photos={photos}
-                layout={'strip'}
-            />
-        )
-
-        expect(screen.getAllByTestId('image')).toHaveLength(6)
-        expect(screen.getByText('+2')).toBeInTheDocument()
-    })
-
     it('has no counter when every photo is shown', () => {
         render(<FeedPhotoMosaic photos={photos.slice(0, 2)} />)
         expect(screen.queryByText(/^\+/)).toBeNull()

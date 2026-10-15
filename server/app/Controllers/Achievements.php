@@ -495,6 +495,8 @@ class Achievements extends ResourceController
         $newName = $id . '_' . time() . '.' . $file->getExtension();
 
         if (!$file->move($uploadPath, $newName)) {
+            log_message('error', 'Achievements: image {name} not saved to {path}', ['name' => $newName, 'path' => $uploadPath]);
+
             return $this->failServerError('Failed to save the image.');
         }
 

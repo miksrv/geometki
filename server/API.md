@@ -85,14 +85,6 @@ Register a new user with email and password.
 | email | string | Yes | Valid email address (6–50 chars) |
 | password | string | Yes | Password (8–50 chars) |
 
-```json
-{
-  "name": "traveler42",
-  "email": "user@example.com",
-  "password": "securepassword"
-}
-```
-
 **Response:**
 
 ```json
@@ -133,13 +125,6 @@ Authenticate with email and password.
 |-------|------|----------|-------------|
 | email | string | Yes | Registered email address |
 | password | string | Yes | Account password (8–50 chars) |
-
-```json
-{
-  "email": "user@example.com",
-  "password": "securepassword"
-}
-```
 
 **Response:** Same shape as `POST /auth/registration`.
 
@@ -459,6 +444,14 @@ A cover cut from a linked photo (see `PATCH /places/cover/:id`) also has `cover.
 
 ---
 
+#### `GET /places/:id/texts`
+
+The current title and description of a place in every locale it has one in, without falling back between locales (a missing locale is not listed). Used to edit or translate the text of one locale. **Auth required:** No
+
+**Response:** `{ "items": [{ "locale": "ru", "title": "…", "content": "…", "updated": "…" }] }`; `404` — place not found.
+
+---
+
 #### `POST /places`
 
 Create a new place.
@@ -477,18 +470,6 @@ Create a new place.
 | tags | array | No | Array of tag strings |
 | photos | array | No | Array of temporary photo filenames to attach |
 | candidate | string | No | OSM candidate id the place is created from: links the candidate to the new place and hides it from the map. Ignored (the place is still created) when the candidate is already taken, or the place is not the same object: it must stand within `linkRadius` (1 km) and have a similar title, or be of the same category within `sameCategoryRadius` (50 m) |
-
-```json
-{
-  "title": "Waterfall Gadelsha",
-  "category": "waterfall",
-  "lat": 51.7686,
-  "lon": 55.1014,
-  "content": "Beautiful waterfall in the southern Urals.",
-  "tags": ["waterfall", "ural"],
-  "photos": ["tmpfile123.jpg", "tmpfile456.jpg"]
-}
-```
 
 **Response:** `201 Created`
 
@@ -529,14 +510,6 @@ Update an existing place's content, category, coordinates, or tags.
 | lat | float | New latitude |
 | lon | float | New longitude |
 | tags | array | Replacement tag list |
-
-```json
-{
-  "title": "Updated Place Title",
-  "content": "Updated description.",
-  "tags": ["updated", "tag"]
-}
-```
 
 **Response:**
 
@@ -582,16 +555,6 @@ A linked photo can be a cover when it is at least 400×133 (a smaller photo is u
 | height | integer | Yes | Crop height (pixels) |
 
 The crop box is in the pixels of the image file: for a linked photo, of the file at its `full` URL (a PastVu file is a little taller than its size in the PastVu API). A box sticking out of the image by rounding is moved inside it.
-
-```json
-{
-  "photoId": "p1p2p3p4",
-  "x": 100,
-  "y": 50,
-  "width": 1280,
-  "height": 720
-}
-```
 
 **Response:** `200 OK` with empty body on success.
 
@@ -1235,20 +1198,11 @@ Get full profile for a single user, including gamification statistics.
     "comment": 8,
     "visited": 20
   },
-  "settings": {
-    "emailComment": true,
-    "emailEdit": true,
-    "emailPhoto": true,
-    "emailRating": true,
-    "emailCover": true,
-    "emailBookmark": true,
-    "emailVisit": true,
-    "emailDigest": true
-  }
+  "settings": { "emailComment": true, "pushComment": true, "…": "…" }
 }
 ```
 
-Note: `settings` is only included when the requesting user is viewing their own profile (session user ID matches `id`).
+`settings` (the keys of `PATCH /users/:id`) is only included on the user's own profile.
 
 **Error responses:**
 
@@ -1277,22 +1231,6 @@ Update user profile fields. Can only update your own profile.
 | oldPassword | string | Current password required when changing password |
 | newPassword | string | New password (8–50 chars) |
 | settings | object | Notification preferences: one boolean per `{channel}{Type}` of the types the channel carries (`app/Config/Notifications.php`): `emailComment`, `emailPhoto`, `emailRating`, `emailEdit`, `emailCover`, `emailBookmark`, `emailVisit`, `emailDigest`, `pushComment`, `pushPhoto`, `pushRating`, `pushEdit`, `pushCover`, `pushBookmark`, `pushVisit`, `pushAchievement`, `pushLevel`; omitted, unknown and non-boolean keys keep their current value |
-
-```json
-{
-  "name": "newname",
-  "website": "https://myblog.com",
-  "oldPassword": "currentpass",
-  "newPassword": "newpass123",
-  "settings": {
-    "emailComment": true,
-    "emailEdit": false,
-    "emailPhoto": true,
-    "emailRating": true,
-    "emailCover": false
-  }
-}
-```
 
 **Response:** `200 OK` with empty body. Changing the password requires both `oldPassword` and `newPassword`.
 
@@ -1349,16 +1287,6 @@ Crop and save the previously uploaded avatar. Creates small and medium size vari
 | width | integer | Yes | Crop width (pixels) |
 | height | integer | Yes | Crop height (pixels) |
 
-```json
-{
-  "filename": "u1u2u3u4.jpg",
-  "x": 50,
-  "y": 20,
-  "width": 300,
-  "height": 300
-}
-```
-
 **Response:**
 
 ```json
@@ -1414,13 +1342,6 @@ Submit or update a rating for a place.
 |-------|------|----------|-------------|
 | place | string | Yes | Place ID |
 | score | integer | Yes | Rating value, 1–5 |
-
-```json
-{
-  "place": "a1b2c3d4e5f6g",
-  "score": 5
-}
-```
 
 **Response:** `201 Created` for new vote, `200 OK` for updated vote.
 
@@ -1484,14 +1405,6 @@ Post a new comment on a place.
 | comment | string | Yes | Comment text (max 2000 chars, HTML stripped) |
 | answerId | string | No | ID of the comment being replied to (exactly 13 chars) |
 
-```json
-{
-  "placeId": "a1b2c3d4e5f6g",
-  "comment": "Great place! Highly recommend visiting.",
-  "answerId": null
-}
-```
-
 **Response:** `201 Created` with empty body.
 
 **Error responses:**
@@ -1552,7 +1465,7 @@ Turns the emails of the token's scope off, or every email with `scope: "all"`. S
 
 ### Push
 
-Web push notifications (features/16-weekly-digest-push-notifications.md). A browser's push subscription belongs to the user who enabled push on that device; a user may have several devices. What is pushed: activity on the user's places (as in email) plus new achievements and levels; which types go is the `push{Type}` settings (see `PATCH /users/:id`). Pushes are sent by `notifications:send`.
+Web push notifications. A browser's push subscription belongs to the user who enabled push on that device; a user may have several devices. What is pushed: activity on the user's places (as in email) plus new achievements and levels; which types go is the `push{Type}` settings (see `PATCH /users/:id`). Pushes are sent by `notifications:send`.
 
 #### `GET /push/key`
 
@@ -1614,69 +1527,51 @@ Send a test push to every device of the signed-in user at once.
 
 ---
 
-### Activity
+### Feed
 
-#### `GET /activity`
+Stories of what people do on the site: the `activity` log grouped into the `feed` table (`FeedLibrary`, rules in `FeedAggregator`; after changing them run `php spark feed:rebuild`).
 
-List site-wide activity feed, grouped by user and place. Results are paginated and support filtering.
+#### `GET /feed`
 
-**Auth required:** No
+A page of stories, the most recently updated first. **Auth required:** No
 
 **Query parameters:**
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| author | string | No | Filter by user ID |
-| place | string | No | Filter by place ID |
-| date | string | No | Return activities older than this date |
-| limit | integer | No | Max groups (default 9, max 40) |
-| offset | integer | No | Pagination offset (default 0) |
-| countOnly | `true` | No | Return only `count` for the `author` / `place` filters: no rows, no view counters touched |
+| author | string | No | Stories of this user ID |
+| place | string | No | The history of this place: only its events |
+| types | string | No | Comma-separated story types (see below) |
+| weight | integer | No | Minimum story weight (the home page sends `2`) |
+| limit | integer | No | Max stories (default 20, max 40) |
+| cursor | string | No | `next` of the previous page |
+| countOnly | `true` | No | Return only `count` |
 
-**Response:**
+**Response:** `{ "items": [story], "next": "<cursor>" | null, "count": 14 }` — `count` (stories) only with `author` or `place` on the first page.
 
-```json
-{
-  "items": [
-    {
-      "type": "photo",
-      "views": 5,
-      "created": "2025-11-05T12:00:00+00:00",
-      "author": {
-        "id": "u1u2u3u4",
-        "name": "traveler42",
-        "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg"
-      },
-      "place": {
-        "id": "a1b2c3d4e5f6g",
-        "slug": "vodopad-gadelsha",
-        "title": "Waterfall Gadelsha",
-        "content": "Beautiful waterfall...",
-        "difference": 0,
-        "category": "waterfall",
-        "cover": { "preview": "/uploads/photos/a1b2c3d4e5f6g/cover_preview.jpg" }
-      },
-      "photos": [
-        {
-          "full": "/uploads/photos/a1b2c3d4e5f6g/img001.jpg",
-          "preview": "/uploads/photos/a1b2c3d4e5f6g/img001_preview.jpg",
-          "width": 400,
-          "height": 300,
-          "placeId": "a1b2c3d4e5f6g"
-        }
-      ]
-    }
-  ],
-  "has_more": true,
-  "count": 14
-}
-```
+A story: `id`, `type`, `weight`, `created` (first event), `updated` (last event), `count` (events), `author?` and, by type:
 
-`has_more` tells whether another page follows; `count` is present only for a feed filtered by `author` or `place` and is the total number of activity rows (not groups) matching the filter, so a collapsed "history" block can show the number without loading the list (`countOnly=true` returns just that).
+- `place`, `photo`, `photo_link` — `place` (list item with the start of its `content`), `photos`, `photosCount` (linked photos carry `external`)
+- `edit` — `place`, `changes`: `description` and/or `cover`
+- `comment` — `place`, `comment: { id, content }`
+- `rating`, `visit`, `collection_place` — `places` (a rating story with the author's `value` for each), `placesCount`; `collection_place` also `collection`
+- `collection` — `collection`; `achievement` — `achievement: { id, title, image, tier }`; `level` — `level`
 
-Activity `type` values: `place` (new place created), `edit` (place content updated), `photo` (photo uploaded), `rating` (place rated), `comment` (comment posted), `cover` (cover image set), `visit` (place marked visited), `collection` (a collection reached 3 places), `collection_place` (a place added to someone else's collection). Bookmarks are recorded as activity but never returned in the feed.
+A story whose subject is gone (a deleted photo, comment or place) is left out. Bookmarks are never in the feed.
 
-Depending on the type, a group also carries `rating: { value }`, `comment: { content }`, or `collection: { id, slug, title }`.
+#### `GET /feed/pulse`
+
+What happened lately (cached for a minute): event counts for the last 7 days, or 30 when the week had fewer than 10 events. **Auth required:** No
+
+**Response:** `{ "period": 7, "places", "photos", "comments", "ratings", "edits", "visits", "collections", "authors", "users": [{ "id", "name", "avatar" }], "updated": "<latest event>" }` — `users` are the 8 most active people.
+
+#### `GET /feed/calendar`
+
+A user's events per day over the last 365 days, for the profile's contribution calendar; days without events are not listed. **Auth required:** No
+
+**Query parameters:** `author` (required), `tz` — the viewer's IANA time zone; days are its days (the site's, `SITE_TIMEZONE`, when missing or unknown).
+
+**Response:** `{ "items": [{ "date": "2026-10-01", "count": 3 }], "total": 120, "from": "2025-10-16", "to": "2026-10-15" }`; `400` without `author`.
 
 ---
 
@@ -1717,10 +1612,6 @@ Toggle a bookmark for a place. If the bookmark exists it is removed; otherwise i
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | placeId | string | Yes | Place ID |
-
-```json
-{ "placeId": "a1b2c3d4e5f6g" }
-```
 
 **Response:** `201 Created` when added, `200 OK` when removed.
 
@@ -1809,10 +1700,6 @@ Toggle a "visited" mark for a place. If already marked as visited, the mark is r
 | place | string | Yes | Place ID |
 | lat | float | No | User's current latitude |
 | lon | float | No | User's current longitude |
-
-```json
-{ "place": "a1b2c3d4e5f6g", "lat": 51.7686, "lon": 55.1014 }
-```
 
 **Response:** `201 Created` with `{ "visited": true, "verified": true }` when marked, `200 OK` with `{ "visited": false, "verified": false }` when unmarked.
 
@@ -2033,10 +1920,6 @@ Save the signed-in user's last known position. Called by the client only after t
 | lat | float | Yes | Latitude, -90…90 |
 | lon | float | Yes | Longitude, -180…180 |
 
-```json
-{ "lat": 51.7686, "lon": 55.1014 }
-```
-
 **Response:** `200 OK` with empty body.
 
 **Error responses:**
@@ -2048,7 +1931,7 @@ Save the signed-in user's last known position. Called by the client only after t
 
 ### Locations
 
-The landing-page API behind `/places/{location}`-style URLs (see `features/20-location-seo-pages.md`). Distinct from the `Location` (singular) endpoints above, which serve the existing filter UI.
+The landing-page API behind `/places/{location}`-style URLs. Distinct from the `Location` (singular) endpoints above, which serve the existing filter UI.
 
 Every response that represents a location, a category, or a location×category pair includes `placesCount` and `indexable` (`placesCount >= 5`, the site-wide indexing threshold) so the client and the sitemap never have to duplicate that rule. A location with 0 places is still returned normally by `GET /locations/resolve` (with `placesCount: 0`, `indexable: false`) — the client renders its own 404 rather than the API doing so, since the entity itself is real.
 
@@ -2169,7 +2052,7 @@ Ordered by `placesCount` descending.
 
 #### `GET /locations/:type/:id/summary`
 
-Data for the location page's auto-generated description (features/20-location-seo-pages.md, "Описание"): total places, the top categories, and the most recent place's creation date.
+Data for the location page's auto-generated description: total places, the top categories, and the most recent place's creation date.
 
 **Auth required:** No
 
@@ -2205,7 +2088,7 @@ There is no categories table and no listing endpoint: the server only whitelists
 
 #### `GET /categories/:name/locations`
 
-Top locations for a category — perelinking on the category landing page (features/20-location-seo-pages.md: "эта категория по регионам").
+Top locations for a category — cross-links on the category landing page ("this category by region").
 
 **Auth required:** No
 
@@ -2686,7 +2569,7 @@ One email: the list item plus `message` and `error`, wrapped in `{ "data": { ...
 
 #### `GET /sitemap`
 
-Returns the ids/slugs and last-modified timestamps of everything the client's XML sitemap (`client/pages/sitemap.tsx`) needs: places, users, indexable collections, and — for the landing pages of `features/20-location-seo-pages.md` — indexable categories, locations, and location×category pairs.
+Returns the ids/slugs and last-modified timestamps of everything the client's XML sitemap (`client/pages/sitemap.tsx`) needs: places, users, indexable collections, and — for the landing pages — indexable categories, locations, and location×category pairs.
 
 **Auth required:** No
 
@@ -2730,6 +2613,8 @@ Spark commands (`php spark <command>`), not accessible over HTTP:
 | `system:test-email` | Send every kind of email with sample data to an address (`--locale`, `--kind`) |
 | `email:preview` | Render every kind of email with sample data into `writable/email-preview/` |
 | `system:generate-place-slugs` | Backfill place slugs from their titles |
+| `content:revert` | Roll a place text back to an earlier revision |
+| `feed:rebuild` | Regroup the activity log into feed stories (after changing the grouping rules) |
 | `locations:rebuild` | Re-geocode every place, merge duplicate locations, assign slugs |
 | `osm:collect` | Collect OSM candidates for the queued tiles (cron, every minute) |
 | `osm:rescore` | Recalculate OSM candidate scores from the stored tags |
@@ -2738,6 +2623,7 @@ Spark commands (`php spark <command>`), not accessible over HTTP:
 | `interests:refresh` | Refresh user interest profiles |
 | `digest:weekly` | Queue weekly digest emails (cron, weekly; skips users who got one in the last 6 days unless `--force`). `notifications:send` sends them within the hosting limits — 500 an hour, 2000 a day; the rest wait in the queue (up to 6 days) |
 | `notifications:prune` | Delete toast-only and old read notifications (by hand, not scheduled) |
+| `notifications:prune-service` | Delete notifications, pushes and emails of service accounts |
 | `sessions:prune` | Delete stale anonymous sessions that left nothing behind (by hand, not scheduled) |
 
 ---

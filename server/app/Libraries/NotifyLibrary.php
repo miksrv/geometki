@@ -2,6 +2,7 @@
 
 use App\Entities\UserNotificationEntity;
 use App\Libraries\Push\PushQueue;
+use App\Models\UsersModel;
 use App\Models\UsersNotificationsModel;
 use ReflectionException;
 use Throwable;
@@ -31,6 +32,13 @@ class NotifyLibrary {
         if (!in_array($type, self::TYPES, true)) {
             log_message('warning', 'NotifyLibrary: unknown notification type "{type}"', ['type' => $type]);
 
+            return;
+        }
+
+        // Service accounts get nothing: neither the bell nor a push
+        $user = (new UsersModel())->select('email')->find($userId);
+
+        if ($user && (new NotificationSettings())->isServiceEmail($user->email ?? null)) {
             return;
         }
 

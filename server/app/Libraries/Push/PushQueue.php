@@ -18,7 +18,7 @@ use Throwable;
 
 /**
  * The push queue (`push_messages`): what gets queued, and how a
- * `notifications:send` run sends it (features/16-weekly-digest-push-notifications.md).
+ * `notifications:send` run sends it.
  *
  * - Every in-app notification of a pushable type is queued (NotifyLibrary), if
  *   the user wants it and has a device with push on.

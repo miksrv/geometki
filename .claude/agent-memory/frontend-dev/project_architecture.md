@@ -6,10 +6,6 @@ type: project
 
 Next.js 16 (Pages Router) with React 19, TypeScript 6. CLAUDE.md and client/DESIGN.md hold the overview; this file keeps what they don't.
 
-**State**: Redux Toolkit + RTK Query. Store and slices in `app/` (`store.ts`, `authSlice.ts`, `applicationSlice.ts`, `notificationSlice.ts`, `errorMiddleware.ts`). `api/api.ts` is monolithic (all project endpoints in one slice; an `injectEndpoints` split is not worth it). Extra RTK Query slices for map layers: `APIPastvu`, `APIWikimediaCommons`, `APIWikipedia`. SSR hydration via `next-redux-wrapper`.
-
-**Directories**: `app/` (store), `api/` (`api.ts`, `types/` = `ApiType`, `models/` = `ApiModel`), `config/` (`constants.ts`, `env.ts`), `hooks/`, `utils/` (pure functions by domain, barrel `helpers.ts`), `components/{layout,map,shared,ui,pages}`, `sections/{collections,home,place,sending-mail,user}`, `pages/`, `styles/` (`theme.css`, `globals.sass`, `variables.sass`, `mixins.sass`, `animations.sass`).
-
 **Import paths**:
 - Store hooks: `import { useAppDispatch, useAppSelector } from '@/app/store'`
 - API: `import { API, ApiModel, ApiType } from '@/api'`

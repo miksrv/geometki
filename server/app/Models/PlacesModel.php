@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Entities\PlaceEntity;
+use CodeIgniter\Database\Exceptions\DatabaseException;
+use Throwable;
 
 /**
  * Model for the `places` table.
@@ -231,8 +233,15 @@ class PlacesModel extends ApplicationBaseModel
     }
 
     /**
-     * Increment the views counter atomically, log to places_views_log
-     * (inside a transaction), and optionally track per-user views.
+     * Count a view: increment the views counter, log it to places_views_log and
+     * optionally track per-user views.
+     *
+     * Each statement commits on its own. In one transaction the place row stayed
+     * locked while the log row was awaited, and the hourly trending:refresh
+     * (UPDATE places JOIN places_views_log) takes the same locks in the opposite
+     * order - a deadlock that rolled the view back. A view is best effort: a
+     * deadlock is retried once, any other failure is logged and the page is
+     * still shown.
      *
      * The $updatedAt value is passed through so that the model timestamp is
      * preserved — the direct builder call bypasses the model's $updatedField
@@ -246,34 +255,64 @@ class PlacesModel extends ApplicationBaseModel
     public function recordView(string $placeId, ?string $userId, string $updatedAt): void
     {
         $db = \Config\Database::connect();
-        $db->transStart();
 
-        // Use builder() to bypass model validation for atomic increment.
-        $this->builder()
+        $this->withDeadlockRetry('views counter', fn () => $this->builder()
             ->set('views', 'views + 1', false)
             ->set('updated_at', $updatedAt)
             ->where('id', $placeId)
-            ->update();
+            ->update());
 
-        $db->query(
+        $this->withDeadlockRetry('views log', fn () => $db->query(
             'INSERT INTO places_views_log (place_id, view_date, count)
              VALUES (?, CURDATE(), 1)
              ON DUPLICATE KEY UPDATE count = count + 1',
             [$placeId]
-        );
+        ));
 
-        $db->transComplete();
-
-        // Best-effort per-user tracking — outside the transaction.
         if ($userId !== null) {
-            $db->query(
+            $this->withDeadlockRetry('user view', fn () => $db->query(
                 'INSERT INTO users_place_views (user_id, place_id, last_at)
                  VALUES (?, ?, NOW())
                  ON DUPLICATE KEY UPDATE last_at = NOW()',
                 [$userId, $placeId]
-            );
+            ));
 
-            $this->maybeRefreshUserInterests($userId);
+            try {
+                $this->maybeRefreshUserInterests($userId);
+            } catch (Throwable $e) {
+                log_message('error', 'recordView: interests of user {user} not refreshed: {exception}', [
+                    'user'      => $userId,
+                    'exception' => $e,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Run a single best-effort write, retrying it once on a MySQL deadlock (1213)
+     * or lock wait timeout (1205); a failure is logged, never thrown.
+     */
+    private function withDeadlockRetry(string $what, callable $write): void
+    {
+        for ($attempt = 1; ; $attempt++) {
+            try {
+                $write();
+
+                return;
+            } catch (DatabaseException $e) {
+                if ($attempt < 2 && in_array($e->getCode(), [1205, 1213], true)) {
+                    usleep(50_000);
+
+                    continue;
+                }
+
+                log_message('error', 'recordView: {what} not written: {exception}', [
+                    'what'      => $what,
+                    'exception' => $e,
+                ]);
+
+                return;
+            }
         }
     }
 

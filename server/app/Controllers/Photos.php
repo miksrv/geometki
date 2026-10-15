@@ -286,6 +286,11 @@ class Photos extends ResourceController
         $placesData  = $placesModel->select('id, photos, cover_external_id')->find($photoData->place_id);
 
         if (!$photosModel->delete($id, true)) {
+            log_message('error', 'Photos::delete: photo {id} not deleted: {errors}', [
+                'id'     => $id,
+                'errors' => json_encode($photosModel->errors()),
+            ]);
+
             return $this->failServerError(lang('Photos.deleteError'));
         }
 

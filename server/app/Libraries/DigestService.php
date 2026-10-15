@@ -129,7 +129,11 @@ class DigestService
                 GROUP BY pvl.place_id
             ", [$userId, $weekStart, $weekEnd])->getResultArray();
         } catch (\Throwable $e) {
-            // Table may not exist yet; proceed without view counts.
+            // The digest still goes out, only without view counts
+            log_message('error', 'DigestService: views of user {user} not counted: {exception}', [
+                'user'      => $userId,
+                'exception' => $e,
+            ]);
             $viewsRows = [];
         }
 

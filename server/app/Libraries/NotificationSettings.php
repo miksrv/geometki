@@ -146,6 +146,23 @@ class NotificationSettings
         return $this->config->channelTypes[$channel] ?? [];
     }
 
+    /**
+     * Whether the address belongs to a service account (Notifications::$serviceEmailDomains),
+     * which is never notified.
+     */
+    public function isServiceEmail(?string $email): bool
+    {
+        $at = strrpos((string) $email, '@');
+
+        if ($at === false) {
+            return false;
+        }
+
+        $domain = strtolower(trim(substr($email, $at + 1)));
+
+        return in_array($domain, array_map('strtolower', $this->config->serviceEmailDomains), true);
+    }
+
     public function isKnownType(string $type): bool
     {
         return in_array($type, $this->config->types, true);

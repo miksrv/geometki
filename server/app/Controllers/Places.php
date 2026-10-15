@@ -454,6 +454,8 @@ class Places extends ResourceController
             $db->transComplete();
 
             if (!$db->transStatus()) {
+                log_message('error', 'Places::create: transaction rolled back: {error}', ['error' => json_encode($db->error())]);
+
                 return $this->failServerError(lang('Places.createTransactionError'));
             }
 

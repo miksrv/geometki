@@ -22,6 +22,7 @@
 geometki/
 ├── client/     # Next.js 16 web application (TypeScript)
 ├── server/     # CodeIgniter 4 REST API (PHP 8.2)
+├── config/     # local MariaDB (docker-compose) and production nginx config
 └── features/   # Feature specs (see features/README.md)
 ```
 
@@ -136,7 +137,7 @@ pm2 start ecosystem.config.js && pm2 save
 Triggered when any file under `server/` changes ([`.github/workflows/api-deploy.yml`](.github/workflows/api-deploy.yml)):
 
 1. Sets up PHP 8.2 and runs `composer install --no-dev --optimize-autoloader`.
-2. Uploads `.htaccess`, `app/`, `vendor/`, `public/` and `writable/` to the server via LFTP (parallel FTP).
+2. Uploads `.htaccess`, `spark`, `app/`, `vendor/`, `public/` and `writable/` via LFTP (`app/` and `vendor/` mirrored with `--delete`).
 
 **Required secrets:** `FTP_HOSTNAME`, `FTP_USERNAME`, `FTP_PASSWORD`
 

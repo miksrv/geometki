@@ -14,7 +14,7 @@ use DateTimeZone;
 use Throwable;
 
 /**
- * Web push devices (features/16-weekly-digest-push-notifications.md).
+ * Web push devices.
  *
  * A browser's push subscription belongs to the user who enabled push on that
  * device. Removing and renewing a subscription take the endpoint itself as the
@@ -94,6 +94,8 @@ class Push extends ResourceController
         }
 
         if (!config('Push')->isConfigured()) {
+            log_message('error', 'Push: VAPID keys (push.* in .env) are not set');
+
             return $this->failServerError(lang('Push.notConfigured'));
         }
 
@@ -183,6 +185,8 @@ class Push extends ResourceController
         $queue = new PushQueue();
 
         if (!$queue->isConfigured()) {
+            log_message('error', 'Push: VAPID keys (push.* in .env) are not set');
+
             return $this->failServerError(lang('Push.notConfigured'));
         }
 

@@ -7,7 +7,7 @@ metadata:
 
 Audit of 2026-10-06 (live curl checks against geometki.com / api.geometki.com). Re-checked 2026-10-10.
 
-**Fixed since, do not re-flag:** `_document.tsx` with dynamic `<html lang>`; `PlaceSchema` gets `canonicalUrl`; fixed sitemap `lastmod`; hreflang on `/users/[id]/*`; homepage EN canonical slash; `maximum-scale=1` removed; robots.txt blocks /admin and /search; `WebSite`+`SearchAction` on homepage; no locale-flicker blank render; Analytics via next/script; Twitter cards. The `Sitemap::index` route is now in its own `sitemap` group (was wrongly under `visited`) — after deploys, confirm `curl https://api.geometki.com/sitemap` returns places/users. Place slugs and the landing pages were implemented (see project_geometki_context.md). The `/tags` and `/categories` pages were removed.
+**Fixed since, do not re-flag:** `_document.tsx` with dynamic `<html lang>`; `PlaceSchema` gets `canonicalUrl`; fixed sitemap `lastmod`; hreflang on `/users/[id]/*`; homepage EN canonical slash; `maximum-scale=1` removed; robots.txt blocks /admin and /search; `WebSite`+`SearchAction` on homepage; no locale-flicker blank render; Analytics via next/script; Twitter cards. Place slugs and the landing pages were implemented (see project_geometki_context.md). The `/tags` and `/categories` pages were removed.
 
 **Still open:**
 - No `rel="prev"`/`rel="next"` on paginated listings.

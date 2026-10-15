@@ -134,4 +134,15 @@ final class NotificationSettingsTest extends CIUnitTestCase
         $this->assertFalse($this->settings->isScopeEnabled($allActivityOff, 'email', 'activity'));
         $this->assertTrue($this->settings->isScopeEnabled($allActivityOff, 'email', 'all'));
     }
+
+    public function testServiceEmailsAreTheConfiguredDomains(): void
+    {
+        $this->assertTrue($this->settings->isServiceEmail('user2@geometki.com'));
+        $this->assertTrue($this->settings->isServiceEmail('Bot@GEOMETKI.com'));
+        $this->assertFalse($this->settings->isServiceEmail('user@gmail.com'));
+        $this->assertFalse($this->settings->isServiceEmail('user@mail.geometki.com'), 'a subdomain is not the domain');
+        $this->assertFalse($this->settings->isServiceEmail('user@geometki.com.evil.org'));
+        $this->assertFalse($this->settings->isServiceEmail(''));
+        $this->assertFalse($this->settings->isServiceEmail(null));
+    }
 }

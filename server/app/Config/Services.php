@@ -65,11 +65,11 @@ class Services extends BaseService
     public static function getSecretKey(): bool|array|string {
         $secret = getenv('auth.token.secret');
 
-        if (empty($secret) || strlen($secret) < 16) {
+        if (empty($secret) || strlen($secret) < 32) {
             log_message('critical', 'JWT secret is not configured or is too short');
 
             if (ENVIRONMENT === 'production') {
-                throw new \RuntimeException('JWT secret must be configured and at least 16 characters');
+                throw new \RuntimeException('JWT secret must be configured and at least 32 bytes (HS256)');
             }
 
             $secret = $secret ?: 'dev-only-insecure-secret-key-change-me';

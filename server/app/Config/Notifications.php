@@ -53,6 +53,15 @@ class Notifications extends BaseConfig
      */
     public array $defaults = [];
 
+    /**
+     * Service accounts: users with an email in these domains (user2@geometki.com)
+     * get no notifications at all — no in-app notification under the bell, no
+     * push, no email, no digest. What they do still notifies the real owners.
+     *
+     * @var string[]
+     */
+    public array $serviceEmailDomains = ['geometki.com'];
+
     // -------------------------------------------------------------------------
     // Email queue (`sending_mail`, processed by `notifications:send`)
     // -------------------------------------------------------------------------

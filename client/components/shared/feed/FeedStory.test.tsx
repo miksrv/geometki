@@ -82,10 +82,9 @@ jest.mock('@/components/shared/level-badge/LevelBadge', () => ({
 
 jest.mock('./FeedPhotoMosaic', () => ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    FeedPhotoMosaic: ({ photos, total, layout }: any) => (
+    FeedPhotoMosaic: ({ photos, total }: any) => (
         <div
             data-testid={'mosaic'}
-            data-layout={layout ?? 'grid'}
             data-total={total}
         >
             {photos.length}
@@ -204,7 +203,7 @@ describe('FeedStory', () => {
     })
 
     describe('body', () => {
-        it('shows a new place as a tile with its description and a strip of its photos', () => {
+        it('shows a new place as a tile with its description and a mosaic of its photos', () => {
             render(
                 <FeedStory
                     story={story({
@@ -217,11 +216,10 @@ describe('FeedStory', () => {
 
             expect(screen.getByTestId('place-card')).toHaveAttribute('data-variant', 'tile')
             expect(screen.getByText('Высокий водопад')).toBeInTheDocument()
-            expect(screen.getByTestId('mosaic')).toHaveAttribute('data-layout', 'strip')
             expect(screen.getByTestId('mosaic')).toHaveAttribute('data-total', '7')
         })
 
-        it('shows a new place with one photo without a strip: the photo is its cover', () => {
+        it('shows a new place with one photo without a mosaic: the photo is its cover', () => {
             render(<FeedStory story={story({ photos: [photo('a')], photosCount: 1, place: place('p1', 'Водопад') })} />)
 
             expect(screen.queryByTestId('mosaic')).toBeNull()
@@ -246,7 +244,6 @@ describe('FeedStory', () => {
                 />
             )
 
-            expect(screen.getByTestId('mosaic')).toHaveAttribute('data-layout', 'grid')
             expect(screen.getByTestId('place-card')).toHaveAttribute('data-variant', 'row')
         })
 
@@ -263,7 +260,6 @@ describe('FeedStory', () => {
             )
 
             expect(screen.getByText('feed-action-photo-link:2')).toBeInTheDocument()
-            expect(screen.getByTestId('mosaic')).toHaveAttribute('data-layout', 'grid')
             expect(screen.getByTestId('place-card')).toHaveAttribute('data-variant', 'row')
         })
 
@@ -362,8 +358,6 @@ describe('FeedStory', () => {
                     story={story({ photos: [photo('a')], photosCount: 1, place: place('p1', 'Водопад') })}
                 />
             )
-
-            expect(screen.getByTestId('mosaic')).toHaveAttribute('data-layout', 'grid')
         })
 
         it('puts the score of a rating into the head', () => {
