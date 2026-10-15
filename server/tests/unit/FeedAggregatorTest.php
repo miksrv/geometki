@@ -82,16 +82,65 @@ final class FeedAggregatorTest extends CIUnitTestCase
         $this->assertSame('links', FeedAggregator::match($this->event('photo_link'), [$story])?->id);
     }
 
-    public function testLinkedPhotoNeverJoinsUploadsOrANewPlace(): void
+    public function testLinkedPhotoJoinsUploadsOrANewPlaceOnlyInOneSitting(): void
     {
-        $stories = [$this->story('place', id: 'place-story'), $this->story('photo', id: 'photo-story')];
+        $later = self::T + FeedAggregator::SESSION_WINDOW + 1;
 
-        $this->assertNull(FeedAggregator::match($this->event('photo_link'), $stories));
+        $this->assertNull(FeedAggregator::match($this->event('photo_link', at: $later), [$this->story('place')]));
+        $this->assertNull(FeedAggregator::match($this->event('photo_link', at: $later), [$this->story('photo')]));
     }
 
-    public function testUploadedPhotoNeverJoinsLinkedPhotos(): void
+    public function testUploadedPhotoJoinsLinkedPhotosOnlyInOneSitting(): void
     {
-        $this->assertNull(FeedAggregator::match($this->event('photo'), [$this->story('photo_link')]));
+        $later = self::T + FeedAggregator::SESSION_WINDOW + 1;
+
+        $this->assertNull(FeedAggregator::match($this->event('photo', at: $later), [$this->story('photo_link')]));
+        $this->assertSame('s1', FeedAggregator::match($this->event('photo', at: self::T + 60), [$this->story('photo_link')])?->id);
+    }
+
+    // =========================================================================
+    // One sitting with a place
+    // =========================================================================
+
+    public function testPhotosLinkedRightAfterCreatingAPlaceJoinItsStory(): void
+    {
+        $place = $this->story('place', id: 'place-story');
+        $event = $this->event('photo_link', at: self::T + FeedAggregator::SESSION_WINDOW);
+
+        $this->assertSame('place-story', FeedAggregator::match($event, [$place])?->id);
+        $this->assertSame(['type' => 'place', 'weight' => 3], FeedAggregator::joinedType($event, $place));
+    }
+
+    public function testOneSittingPrefersTheNewPlaceStory(): void
+    {
+        $stories = [
+            $this->story('photo_link', id: 'links'),
+            $this->story('place', id: 'place-story'),
+            $this->story('edit', id: 'edits'),
+        ];
+
+        $this->assertSame('place-story', FeedAggregator::match($this->event('photo_link', at: self::T + 60), $stories)?->id);
+    }
+
+    public function testOneSittingTakesTheMostProminentKind(): void
+    {
+        $this->assertSame('photo', FeedAggregator::joinedType($this->event('photo_link'), $this->story('photo'))['type']);
+        $this->assertSame('photo', FeedAggregator::joinedType($this->event('photo'), $this->story('photo_link'))['type']);
+        $this->assertSame('photo_link', FeedAggregator::joinedType($this->event('photo_link'), $this->story('edit'))['type']);
+        $this->assertSame('photo_link', FeedAggregator::joinedType($this->event('edit'), $this->story('photo_link'))['type']);
+        $this->assertSame(['type' => 'edit', 'weight' => 1], FeedAggregator::joinedType($this->event('cover'), $this->story('edit')));
+    }
+
+    public function testEditsJoinPhotosOfThePlaceInOneSitting(): void
+    {
+        $this->assertSame('s1', FeedAggregator::match($this->event('edit', at: self::T + 300), [$this->story('photo')])?->id);
+        $this->assertNull(FeedAggregator::match($this->event('edit', at: self::T + FeedAggregator::SESSION_WINDOW + 1), [$this->story('photo')]));
+    }
+
+    public function testOneSittingIsAboutOnePlaceAndOneAuthor(): void
+    {
+        $this->assertNull(FeedAggregator::match($this->event('photo_link', place: 'p2', at: self::T + 60), [$this->story('place')]));
+        $this->assertNull(FeedAggregator::match($this->event('photo_link', user: 'u2', at: self::T + 60), [$this->story('place')]));
     }
 
     public function testLinkedPhotoOfAnotherPlaceOpensItsOwnStory(): void

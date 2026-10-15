@@ -12,12 +12,16 @@ namespace App\Libraries;
  *
  *  - place, comment — always a story of their own;
  *  - photo — joins the author's new-place story of that place, else their photo story of it;
- *  - photo_link — a PastVu / Commons photo linked to a place: joins only the author's
- *    linked-photos story of that place, never the uploads (the files are not ours);
+ *  - photo_link — a PastVu / Commons photo linked to a place: joins the author's
+ *    linked-photos story of that place; the uploads and the new place only in one sitting;
  *  - edit, cover — join the author's new-place story of that place (part of creating it),
  *    else their edit story of it ("updated the description and the cover");
  *  - rating, visit — one story per author across places ("rated 5 places"); guest
  *    ratings (no author) share one story;
+ *  - one sitting: within SESSION_WINDOW of a story's first event, photos, linked photos,
+ *    edits and covers of a place join the author's story of that place of any of these kinds
+ *    (new place, photos, linked photos, edits), so creating a place and linking photos to it
+ *    is one story; the story takes the most prominent kind (SESSION_STORIES);
  *  - collection_place — joins the "created a collection" story of that collection, else
  *    the author's story of adding places to it;
  *  - collection — fires once the collection has enough places, after they were added:
@@ -28,6 +32,15 @@ final class FeedAggregator
 {
     /** Seconds a story collects events for, counted from its first event */
     public const WINDOW = 86400;
+
+    /** Seconds within which all of an author's photos, linked photos and edits of a place make one story */
+    public const SESSION_WINDOW = 900;
+
+    /** Story kinds of one sitting with a place, the most prominent first: a merged story takes the first of them */
+    public const SESSION_STORIES = ['place', 'photo', 'photo_link', 'edit'];
+
+    /** Activity types that join any story of one sitting with their place (SESSION_STORIES) */
+    private const SESSION_EVENTS = ['photo', 'photo_link', 'edit', 'cover'];
 
     /** The story an event of each activity type opens when it joins none */
     public const STORY_TYPE = [
@@ -100,6 +113,10 @@ final class FeedAggregator
      */
     public static function joinableTypes(string $activityType): array
     {
+        if (in_array($activityType, self::SESSION_EVENTS, true)) {
+            return self::SESSION_STORIES;
+        }
+
         return self::JOINS[$activityType] ?? [];
     }
 
@@ -157,7 +174,8 @@ final class FeedAggregator
 
     /**
      * The type and weight a story takes when the event joins it: its own, unless the
-     * event promotes it (PROMOTES).
+     * event promotes it (PROMOTES) or is a more prominent kind of the same sitting
+     * (SESSION_STORIES: photos turn an edit story into a photo story).
      *
      * @return array{type: string, weight: int}
      */
@@ -165,6 +183,15 @@ final class FeedAggregator
     {
         if (in_array($story->type, self::PROMOTES[$event->type] ?? [], true)) {
             $type = self::STORY_TYPE[$event->type];
+
+            return ['type' => $type, 'weight' => self::WEIGHT[$type]];
+        }
+
+        $own  = array_search(self::STORY_TYPE[$event->type] ?? null, self::SESSION_STORIES, true);
+        $rank = array_search($story->type, self::SESSION_STORIES, true);
+
+        if ($own !== false && $rank !== false && $own < $rank) {
+            $type = self::SESSION_STORIES[$own];
 
             return ['type' => $type, 'weight' => self::WEIGHT[$type]];
         }
@@ -195,7 +222,8 @@ final class FeedAggregator
 
     /**
      * Same author (guests share one), within the story's window and about the same
-     * place or collection when the story is about one.
+     * place or collection when the story is about one. The window is a day for the joins
+     * of JOINS and SESSION_WINDOW for the other joins of one sitting.
      */
     private static function fits(object $event, object $story): bool
     {
@@ -210,7 +238,9 @@ final class FeedAggregator
 
         $age = $event->created_at - $story->created_at;
 
-        if ($age < 0 || $age > self::WINDOW) {
+        $window = in_array($story->type, self::JOINS[$event->type] ?? [], true) ? self::WINDOW : self::SESSION_WINDOW;
+
+        if ($age < 0 || $age > $window) {
             return false;
         }
 

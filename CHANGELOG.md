@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.16.3
+
+### Patch Changes
+
+- Activity feed: a new place and the photos linked to it are one story; photos, linked photos and edits of a place within 15 minutes come together
+- Email: repeated actions of one person on a place (several edits in a row) are one line with a count
+
 ## 1.16.2
 
 ### Patch Changes
