@@ -119,6 +119,7 @@ final class MailTest extends CIUnitTestCase
             'slug'       => null,
             'title'      => $title,
             'hasCover'   => false,
+            'actorId'    => 'u-traveler42',
             'actor'      => 'traveler42',
             'comment'    => null,
             'rating'     => null,
@@ -150,18 +151,19 @@ final class MailTest extends CIUnitTestCase
     public function testRepeatedActionsOfOnePersonAreOneLine(): void
     {
         $result = ActivityMail::render([
-            $this->event('edit', 'Водопад', ['actor' => 'Сергей']),
-            $this->event('edit', 'Водопад', ['actor' => 'Сергей']),
-            $this->event('cover', 'Водопад', ['actor' => 'Дима']),
-            $this->event('edit', 'Водопад', ['actor' => 'Сергей']),
-            $this->event('edit', 'Водопад', ['actor' => 'Дима']),
-            $this->event('comment', 'Водопад', ['actor' => 'Сергей', 'comment' => 'Раз']),
-            $this->event('comment', 'Водопад', ['actor' => 'Сергей', 'comment' => 'Два']),
+            $this->event('edit', 'Водопад', ['actorId' => 'u1', 'actor' => 'Сергей']),
+            $this->event('edit', 'Водопад', ['actorId' => 'u1', 'actor' => 'Сергей']),
+            $this->event('cover', 'Водопад', ['actorId' => 'u2', 'actor' => 'Дима']),
+            $this->event('edit', 'Водопад', ['actorId' => 'u1', 'actor' => 'Сергей']),
+            $this->event('edit', 'Водопад', ['actorId' => 'u2', 'actor' => 'Дима']),
+            $this->event('edit', 'Водопад', ['actorId' => 'u3', 'actor' => 'Сергей']),
+            $this->event('comment', 'Водопад', ['actorId' => 'u1', 'actor' => 'Сергей', 'comment' => 'Раз']),
+            $this->event('comment', 'Водопад', ['actorId' => 'u1', 'actor' => 'Сергей', 'comment' => 'Два']),
         ], 'Ann', 'ru');
 
-        $this->assertSame('На ваших местах 7 новых событий', $result['subject']);
-        $this->assertSame(1, substr_count($result['html'], 'Правка описания · Сергей'));
+        $this->assertSame('На ваших местах 8 новых событий', $result['subject']);
         $this->assertStringContainsString('Правка описания · Сергей · ×3', $result['html']);
+        $this->assertSame(2, substr_count($result['html'], 'Правка описания · Сергей'), 'a namesake is another person');
         $this->assertStringContainsString('Правка описания · Дима', $result['html']);
         $this->assertSame(2, substr_count($result['html'], 'Новый комментарий · Сергей'), 'comments stay apart');
     }

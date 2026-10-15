@@ -84,6 +84,7 @@ class MailSamples
             'slug'       => null,
             'title'      => $title,
             'hasCover'   => false,
+            'actorId'    => $actor !== null ? 'sample-' . $actor : null,
             'actor'      => $actor,
             'comment'    => $comment,
             'rating'     => $rating,
