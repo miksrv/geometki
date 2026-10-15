@@ -4,3 +4,6 @@
 .LSOverride
 .idea
 .playwright-mcp
+
+# local tooling, never committed
+/tools/orb-places/

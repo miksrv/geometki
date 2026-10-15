@@ -119,6 +119,7 @@ final class MailTest extends CIUnitTestCase
             'slug'       => null,
             'title'      => $title,
             'hasCover'   => false,
+            'actorId'    => 'u-traveler42',
             'actor'      => 'traveler42',
             'comment'    => null,
             'rating'     => null,
@@ -145,6 +146,26 @@ final class MailTest extends CIUnitTestCase
         $this->assertSame('На ваших местах 3 новых события', $result['subject']);
         $this->assertSame(1, substr_count($result['text'], 'Водопад ('), 'one block per place');
         $this->assertStringContainsString('Пещера', $result['text']);
+    }
+
+    public function testRepeatedActionsOfOnePersonAreOneLine(): void
+    {
+        $result = ActivityMail::render([
+            $this->event('edit', 'Водопад', ['actorId' => 'u1', 'actor' => 'Сергей']),
+            $this->event('edit', 'Водопад', ['actorId' => 'u1', 'actor' => 'Сергей']),
+            $this->event('cover', 'Водопад', ['actorId' => 'u2', 'actor' => 'Дима']),
+            $this->event('edit', 'Водопад', ['actorId' => 'u1', 'actor' => 'Сергей']),
+            $this->event('edit', 'Водопад', ['actorId' => 'u2', 'actor' => 'Дима']),
+            $this->event('edit', 'Водопад', ['actorId' => 'u3', 'actor' => 'Сергей']),
+            $this->event('comment', 'Водопад', ['actorId' => 'u1', 'actor' => 'Сергей', 'comment' => 'Раз']),
+            $this->event('comment', 'Водопад', ['actorId' => 'u1', 'actor' => 'Сергей', 'comment' => 'Два']),
+        ], 'Ann', 'ru');
+
+        $this->assertSame('На ваших местах 8 новых событий', $result['subject']);
+        $this->assertStringContainsString('Правка описания · Сергей · ×3', $result['html']);
+        $this->assertSame(2, substr_count($result['html'], 'Правка описания · Сергей'), 'a namesake is another person');
+        $this->assertStringContainsString('Правка описания · Дима', $result['html']);
+        $this->assertSame(2, substr_count($result['html'], 'Новый комментарий · Сергей'), 'comments stay apart');
     }
 
     public function testUserTextIsEscaped(): void
@@ -235,6 +256,35 @@ final class MailTest extends CIUnitTestCase
     {
         $this->assertStringEndsWith('/uploads/users/u1/a.png', MailUrls::upload('uploads/users/u1/a.png'));
         $this->assertSame('https://cdn.test/a.png', MailUrls::upload('https://cdn.test/a.png'));
+    }
+
+    public function testApiLinksWithoutBaseUrlPointToProductionNotLocalhost(): void
+    {
+        $names = ['app.baseURL', 'mail.imageHost'];
+        $saved = [];
+
+        foreach ($names as $name) {
+            $saved[$name] = [getenv($name), $_ENV[$name] ?? null, $_SERVER[$name] ?? null];
+            putenv($name);
+            unset($_ENV[$name], $_SERVER[$name]);
+        }
+
+        try {
+            $this->assertSame('https://api.geometki.com/uploads/places/p1/cover_preview.jpg', MailUrls::placeCover('p1'));
+            $this->assertStringStartsWith('https://api.geometki.com/mail/unsubscribe', MailUrls::oneClickUnsubscribe('a.b.c'));
+        } finally {
+            foreach ($saved as $name => [$process, $env, $server]) {
+                if ($process !== false) {
+                    putenv($name . '=' . $process);
+                }
+                if ($env !== null) {
+                    $_ENV[$name] = $env;
+                }
+                if ($server !== null) {
+                    $_SERVER[$name] = $server;
+                }
+            }
+        }
     }
 
     // -------------------------------------------------------------------------

@@ -8,7 +8,7 @@
  * @var string $headline
  * @var array<int, array{
  *     title: string, url: string, cover: ?string,
- *     events: array<int, array{type: string, actor: string, comment: ?string, rating: ?int}>
+ *     events: array<int, array{type: string, actor: string, comment: ?string, rating: ?int, count: int}>
  * }> $places
  * @var bool $single One event: show it in detail with the cover and a button
  */
@@ -60,7 +60,7 @@ $meta  = 'margin:4px 0 0;font-size:14px;color:#6d7885;';
                     <div><a href="<?= esc($place['url']) ?>" class="gm-link" style="font-size:16px;font-weight:bold;color:#2a73c7;text-decoration:none;"><?= esc($place['title']) ?></a></div>
                     <?php foreach ($place['events'] as $event): ?>
                         <p class="gm-muted" style="<?= $meta ?>">
-                            <?= esc(MailText::get($locale, 'event_' . $event['type'])) ?> · <?= esc($event['actor']) ?><?php if ($event['rating']): ?> · <?= (int) $event['rating'] ?>/5<?php endif; ?>
+                            <?= esc(MailText::get($locale, 'event_' . $event['type'])) ?> · <?= esc($event['actor']) ?><?php if ($event['count'] > 1): ?> · ×<?= (int) $event['count'] ?><?php endif; ?><?php if ($event['rating']): ?> · <?= (int) $event['rating'] ?>/5<?php endif; ?>
                         </p>
                         <?php if ($event['comment']): ?>
                             <p class="gm-quote" style="<?= $quote ?>margin-top:6px;"><?= esc(mb_strimwidth($event['comment'], 0, 160, '…')) ?></p>

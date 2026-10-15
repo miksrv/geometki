@@ -128,7 +128,12 @@ class FeedPresenter
                 $place = $places[$row->place_id] ?? null;
                 $photos = $this->photos($events);
 
-                if (!$place || ($row->type !== 'place' && empty($photos))) {
+                // Edits of one sitting outlive its photos (all deleted): the story shows them alone
+                if ($place && $row->type !== 'place' && empty($photos)) {
+                    return $this->edits($story, $place, $events);
+                }
+
+                if (!$place) {
                     return null;
                 }
 
@@ -142,17 +147,7 @@ class FeedPresenter
                 return $story;
 
             case 'edit':
-                if (!isset($places[$row->place_id]) || empty($events)) {
-                    return null;
-                }
-
-                $story['place']   = $places[$row->place_id]->item;
-                $story['changes'] = array_values(array_unique(array_map(
-                    static fn (object $event) => $event->type === 'cover' ? 'cover' : 'description',
-                    $events
-                )));
-
-                return $story;
+                return isset($places[$row->place_id]) ? $this->edits($story, $places[$row->place_id], $events) : null;
 
             case 'comment':
                 $comment = null;
@@ -219,6 +214,36 @@ class FeedPresenter
         }
 
         return null;
+    }
+
+    /**
+     * An edit story ("updated the description and the cover") from the edit and cover events,
+     * also of a story of one sitting whose photos are gone; null when it has none.
+     *
+     * @param array<string, mixed> $story
+     * @param array<int, object>   $events
+     * @return array<string, mixed>|null
+     */
+    protected function edits(array $story, object $place, array $events): ?array
+    {
+        $changes = [];
+
+        foreach ($events as $event) {
+            if ($event->type === 'edit' || $event->type === 'cover') {
+                $changes[] = $event->type === 'cover' ? 'cover' : 'description';
+            }
+        }
+
+        if (empty($changes)) {
+            return null;
+        }
+
+        $story['type']    = 'edit';
+        $story['weight']  = FeedAggregator::WEIGHT['edit'];
+        $story['place']   = $place->item;
+        $story['changes'] = array_values(array_unique($changes));
+
+        return $story;
     }
 
     /**

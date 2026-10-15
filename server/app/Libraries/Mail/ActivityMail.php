@@ -20,7 +20,7 @@ class ActivityMail
      * @param string[] $activityIds
      *
      * @return array<int, array{activityId: string, type: string, placeId: string, slug: ?string, title: string, hasCover: bool,
-     *     actor: ?string, comment: ?string, rating: ?int}>
+     *     actorId: ?string, actor: ?string, comment: ?string, rating: ?int}>
      */
     public static function loadEvents(array $activityIds, string $locale): array
     {
@@ -29,7 +29,7 @@ class ActivityMail
         }
 
         $rows = Database::connect()->table('activity a')
-            ->select('a.id, a.type, a.place_id, a.created_at, u.name AS actor, c.content AS comment, r.value AS rating,
+            ->select('a.id, a.type, a.place_id, a.created_at, a.user_id, u.name AS actor, c.content AS comment, r.value AS rating,
                 p.slug, p.photos, p.cover_external_id')
             ->join('places p', 'p.id = a.place_id AND p.deleted_at IS NULL')
             ->join('users u', 'u.id = a.user_id', 'left')
@@ -56,6 +56,7 @@ class ActivityMail
             'slug'     => $row->slug,
             'title'    => $content->title($row->place_id) ?: $row->place_id,
             'hasCover' => $covers->coverExists($row->place_id, (int) $row->photos > 0 || !empty($row->cover_external_id)),
+            'actorId'  => $row->user_id,
             'actor'    => $row->actor,
             'comment'  => $row->type === 'comment' ? $row->comment : null,
             'rating'   => $row->type === 'rating' && $row->rating !== null ? (int) $row->rating : null,
@@ -83,15 +84,38 @@ class ActivityMail
                 'events' => [],
             ];
 
+            $actor   = $event['actor'] ?: MailText::get($locale, 'guest');
+            $comment = $event['comment'] !== null ? trim($event['comment']) : null;
+
+            // Repeats of one action by one person (several edits in a row) are one line
+            // with a count; comments, ratings and guests (no one to tell apart) stay apart
+            $actorId = $event['actorId'] ?? null;
+            $repeat  = $comment === null && !$event['rating'] && $actorId ? $event['type'] . "\n" . $actorId : null;
+
+            if ($repeat !== null && isset($places[$event['placeId']]['repeats'][$repeat])) {
+                $places[$event['placeId']]['events'][$places[$event['placeId']]['repeats'][$repeat]]['count']++;
+
+                continue;
+            }
+
+            if ($repeat !== null) {
+                $places[$event['placeId']]['repeats'][$repeat] = count($places[$event['placeId']]['events']);
+            }
+
             $places[$event['placeId']]['events'][] = [
                 'type'    => $event['type'],
-                'actor'   => $event['actor'] ?: MailText::get($locale, 'guest'),
-                'comment' => $event['comment'] !== null ? trim($event['comment']) : null,
+                'actor'   => $actor,
+                'comment' => $comment,
                 'rating'  => $event['rating'],
+                'count'   => 1,
             ];
         }
 
-        $places = array_values($places);
+        $places = array_values(array_map(static function (array $place): array {
+            unset($place['repeats']);
+
+            return $place;
+        }, $places));
 
         if ($single) {
             $subject  = MailText::get($locale, 'subject_' . $events[0]['type'], ['place' => $events[0]['title']]);
