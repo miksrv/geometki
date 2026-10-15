@@ -59,4 +59,12 @@ class View extends BaseView
      * @var list<class-string<ViewDecoratorInterface>>
      */
     public array $decorators = [];
+
+    /**
+     * When true, Parser conditionals may only contain variables, literals,
+     * arithmetic, comparison and logical operators, and parentheses. Enable
+     * this when less-trusted users can edit Parser templates. Can be overridden per
+     * call with the `restrictConditionals` render option.
+     */
+    public bool $restrictParserConditionals = false;
 }

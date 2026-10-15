@@ -22,7 +22,7 @@ final class ValidatorHelpersTest extends CIUnitTestCase
         parent::setUp();
         $this->originalJwtSecret = getenv('auth.token.secret');
         $this->originalJwtLive   = getenv('auth.token.live');
-        putenv('auth.token.secret=test-secret-key');
+        putenv('auth.token.secret=test-secret-key-at-least-32-bytes-long');
         putenv('auth.token.live=3600');
     }
 

@@ -56,7 +56,7 @@ interface IndexPageProps {
     feedStories: ApiModel.FeedStory[]
     collections: ApiModel.Collection[]
     regions: ApiType.Locations.LocationChildItem[]
-    feedPulse?: ApiType.Feed.PulseResponse
+    feedPulse?: ApiType.Feed.PulseResponse | null
     stats?: ApiType.Stats.GetResponse
     /** The signed-in user with the statistic, for the welcome panel; undefined for a guest */
     currentUser?: ApiModel.User | null
@@ -122,7 +122,7 @@ const IndexPage: NextPage<IndexPageProps> = ({
         >
             <div className={styles.feedWidget}>
                 <FeedPulse
-                    pulse={feedPulse}
+                    pulse={feedPulse ?? undefined}
                     compact={true}
                 />
                 <FeedList
@@ -239,7 +239,7 @@ const IndexPage: NextPage<IndexPageProps> = ({
                 <div className={styles.home}>
                     <HomeHero
                         stats={stats}
-                        pulse={feedPulse}
+                        pulse={feedPulse ?? undefined}
                     />
 
                     <HomeCategories categories={stats?.categories} />
@@ -354,7 +354,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         .filter((item) => item.placesCount >= HOME_COLLECTION_MIN_PLACES && item.covers?.length)
                         .slice(0, HOME_COLLECTIONS_COUNT),
                     currentUser: currentUser ?? null,
-                    feedPulse: feedPulse ?? undefined,
+                    feedPulse: feedPulse ?? null,
                     feedStories: feed?.items || [],
                     latestPlaces: latest?.items || [],
                     popularPlaces: popular?.items || [],
