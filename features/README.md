@@ -12,7 +12,7 @@ Specs for open features. Shipped ones are removed; their history is in `CHANGELO
 - [13 — Regional Leaderboards](./13-regional-leaderboards.md)
 - [14 — Photo Challenges & Community Albums](./14-photo-challenges-community-albums.md)
 - [15 — Dynamic Place Freshness Badges](./15-dynamic-place-freshness-badges.md)
-- [16 — Weekly Digest Additions & Web Push](./16-weekly-digest-push-notifications.md)
+- [16 — Weekly Digest Additions & More Push Triggers](./16-weekly-digest-push-notifications.md)
 - [17 — Personal Fog of War & Explorer Map](./17-personal-fog-of-war-explorer-map.md)
 - [20 — Location SEO Pages](./20-location-seo-pages.md) — rules for the `/places/{location}/{category}` landings and the remaining launch steps
 - [21 — Search: Russian morphology](./21-search-redesign.md)

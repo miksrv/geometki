@@ -1,7 +1,7 @@
 # Geometki design system
 
 How the client UI is built and where each piece lives. Read this before adding or
-changing any user-facing component; `CLAUDE.md` points here for the same reason.
+changing any user-facing component.
 
 ## 1. Principles
 
@@ -78,8 +78,7 @@ re-implement them.
   or the toolbar (map link, route) is repeated there, and the creation date is only in the
   structured data. On phones the
   order is explicit (cover → photos → description → rate → the sidebar card → nearby →
-  related → comments → history); there is no sticky actions bar — phones already have the
-  bottom navigation, and a second fixed bar over it looked wrong. The rate
+  related → comments → history); no sticky actions bar (the bottom navigation is there). The rate
   prompt (`PlaceRatePrompt`, anchor `#rate`) is the only place with interactive stars:
   empty until hovered, a word per score; the average is a number in the hero meta line and
   never a star input.
@@ -92,8 +91,7 @@ re-implement them.
   the same tiles get small move/remove buttons over the top-right corner of the cover
   (`PlaceCard` `actions`), and a full-width "Добавить места" button follows the grid.
 - **Places listing / landing pages** (`pages/places/index.tsx` for `/places`, `pages/places/landing/[...slug].tsx`
-  for `/places/{category}`, `/places/{location}` and `/places/{location}/{category}` behind the
-  `NEXT_PUBLIC_LANDING_*` flags — see CLAUDE.md → Environment): one skeleton, all of it page
+  for the `NEXT_PUBLIC_LANDING_*` pages): one skeleton, all of it page
   chrome on the page background, no `Container` anywhere above the perelinking blocks:
   `PageHeader` with the places count as the meta line and (page 1 only) the lede — the
   category's text, or the location summary — and, on location/pair pages, `LandingMapPreview`
@@ -167,8 +165,8 @@ text on phones. The header sits on the page background: the lede is never boxed 
 The place page and the user profile use a hero instead. On the place page the same
 `Breadcrumbs`, the h1, the address and facts lines sit on the cover (`PlaceHero`) and the
 actions are the toolbar attached under it (`PlaceActions`); on the profile the h1 and actions are in the title row
-attached to the bottom of the profile card (`UserHeader`). The h1 size is one token everywhere (`--font-size-title-page` in `styles/theme.css`, 22px), so a
-list title and a hero title read as the same level, above the prose headings and container titles.
+attached to the bottom of the profile card (`UserHeader`). The h1 is `--font-size-title-page`
+everywhere, so a list title and a hero title read as the same level.
 
 Breadcrumbs appear only on nested pages, where the app bar cannot show where you are:
 
@@ -241,20 +239,15 @@ zoom, no layer switcher or category filter. Renders nothing without places. On t
 pages it sits under the tabs, so the tabs keep their place when switching to a tab
 without a map.
 
-`compact` (200px instead of 360/220px) and `fullMapQuery` (a query string appended before
-the `#lat,lon,zoom` hash of the "Открыть на большой карте" link, e.g. `?category=cave` — see
-`pages/map.tsx`) are additive props for `LandingMapPreview` below; the collection/user-pages
-usage is unaffected.
+`compact` (200px high) and `fullMapQuery` (a query string put before the `#lat,lon,zoom`
+hash of the "Открыть на большой карте" link, e.g. `?category=cave`) serve `LandingMapPreview`.
 
 ### `LandingMapPreview` (`components/shared/landing-map-preview`)
 
-The location/pair landing page's compact map block (features/20-location-seo-pages.md,
-"Шаблон страницы → Карта"), passed to `PageHeader` as its `aside`: wraps `PlacesMap`
-(`compact`) behind an `IntersectionObserver` gate, so Leaflet is only loaded once the block
-scrolls into view — the mobile first screen never pays for it. Takes the page's own place
-list (already fetched for the grid) as markers; renders nothing without placed places, same
-as `PlacesMap`. Category-only and `/places` pages have no map — places there are
-nationwide, a preview would not mean anything.
+The location/pair landing page's map, passed to `PageHeader` as its `aside`: `PlacesMap`
+(`compact`) behind an `IntersectionObserver` gate, so Leaflet loads only once the block
+scrolls into view. Markers are the page's own place list; renders nothing without places.
+Category-only and `/places` pages have no map.
 
 ### `PaginationBar` (`components/shared/pagination-bar`)
 
@@ -278,8 +271,7 @@ from it and own no layout of their own.
 
 A titled `Container` of link pills with an optional count — one component behind all four
 perelinking blocks of the landing template: category chips, child locations, "this
-category by region", "this category nearby" (features/20-location-seo-pages.md, "Шаблон
-страницы"). Renders nothing without items.
+category by region", "this category nearby". Renders nothing without items.
 
 ### `CategoryIcon` (`components/shared/category-icon`)
 
@@ -288,9 +280,8 @@ rounded square, 12% corner radius like the logo, white pictogram, no border). Ta
 category key (`ApiModel.Categories`, what the API returns) and resolves the label from the
 client catalogue (`utils/categories.ts` → `getCategoryTitle`); no component ever receives a
 category title from the API. Links to
-the category (`/places?category=…`, or `/places/{category}` once `NEXT_PUBLIC_LANDING_CATEGORIES`
-is on — see CLAUDE.md → Environment and `utils/placesLanding.ts`) with the category name in
-a kit `Tooltip` and as the link's name.
+the category (`buildCategoryHref`: `/places?category=…` or `/places/{category}`) with the
+category name in a kit `Tooltip` and as the link's name.
 The category's colour is the icon background itself; there is no separate colour map. Sizes in use: 16 (cards, search
 suggestions; small on purpose, so the category does not outweigh the cover and title),
 40 (place hero, next to the h1). The place page shows the icon once, in the hero; the
@@ -334,10 +325,7 @@ achievement / a new level (`ApiModel.FeedStory`; grouping rules in
   place history section: no card of their own, a rule between them, place tiles become rows
   and descriptions are left out. `hidePlace` (the place history) drops the place from every
   story, a rating moves its stars into the head.
-- Days are the viewer's days: the browser keeps its IANA zone in the `tz` cookie
-  (`utils/timeZone.ts`), `getServerSideProps` reads it into `application.timeZone`, so the
-  server render and the browser group the same way, and the calendar gets the same zone
-  (`GET /feed/calendar?tz=`). Without the cookie (the very first page) days are Moscow days.
+- Days are the viewer's days (the `tz` cookie, see CLAUDE.md → Visitor time zone).
   Relative times ("5 minutes ago") are `suppressHydrationWarning`.
 - Photos of a story are named after the place ("Усадьба — фото 2") in `alt` and in their
   buttons; the last tile's button also says how many photos are left.

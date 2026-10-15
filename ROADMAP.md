@@ -47,7 +47,6 @@ Target definition: *a field game for curious people — an ever-incomplete map o
 - **Viewport list panel.** Places in the current view as cards (side panel on desktop, bottom sheet on mobile), sorted by rating or distance, hover highlights the marker.
 - **Map search.** Jump to a city or address via the server geocoder (Nominatim + Yandex), with our places in the results.
 - **"What's here?" in the context menu.** Reverse-geocoded address, nearest places, Wikipedia articles and Commons photos for a clicked point in one card.
-- **Trail and relief overlays.** Waymarked Trails (hiking, cycling, ski; CC BY-SA with attribution) and a semi-transparent hillshade over any base layer.
 - **Trip planner.** Pick several places, build a road route (OSRM / GraphHopper / OpenRouteService) with order, distance and travel time; save as a collection, export GPX, open in Yandex Navigator.
 - **Fog of war.** Personal explored-area layer. Spec: feature 17.
 

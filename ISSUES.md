@@ -1,14 +1,11 @@
 # Issues
 
-Open bugs and improvements only. When an item is fixed or done, delete its line entirely
-(no strikethrough, no "done" marks). Written in English, one line per item.
+Open bugs and improvements only, one line each, in English. Delete an item's line when it is fixed.
 
 ## Bugs
 
 - Server: `GET /auth/me` called from the home page SSR (`client/pages/index.tsx`) runs `SessionLibrary::update()` with the Next server's IP, overwriting `sessions.user_ip` until the browser's next poll; forward `X-Forwarded-For` from SSR requests (or read the user id without `auth/me`). `user_ip` is not read anywhere yet.
-
 - Server: `Places::create` / `Places::update` ignore the result of `PlacesContentModel::saveContent()`, so a failed text save (e.g. two concurrent first saves of a new locale hitting the `place_locale` unique key) still answers 200; check it and fail the request.
-
 - Push: `Push::renew()` answers 404 when the old endpoint is no longer in `push_subscriptions`, but `PushQueue` deletes a device on the first 404/410 from the push service; when `pushsubscriptionchange` fires after that (common in Firefox) the new subscription is lost and the device silently stops getting pushes. Keep a tombstone (`endpoint_hash` → `user_id`) for expired devices for ~30 days so `renew` can find the owner.
 - Push: overlapping `notifications:send` runs (a push run may last 180 s, cron is every minute) can each claim rows of the same user and send them separately, breaking the 15-minute grouping; skip users with rows `process` under another `locked_by` when claiming, or take a per-user `GET_LOCK`.
 - Push (client): `PushOwnerCheck` (`PushPrompt.tsx`) can unsubscribe and delete a device the user re-enabled on `/users/settings` right after page load (it acts on the first `active: false` status while `enable()` re-posts the same endpoint); skip it while an enable is running.
@@ -24,10 +21,9 @@ Open bugs and improvements only. When an item is fixed or done, delete its line 
 - Home page (EN): many place and collection titles stay in Russian because they have no English text; prefer items with an English title in "Where to go" and the collections on `/en`, or transliterate.
 - Search: the short-term (≤3 characters) `LIKE` branch of `PlacesContent::search()` has no `LIMIT`, so a 1-character query scans and returns nearly every place; cap it.
 - Server tests: `GET /stats` has no test for the new `categories` field (counts per whitelisted category, soft-deleted places excluded).
-- Server CI: no static analysis; add PHPStan (level 0–1, `codeigniter/phpstan-codeigniter`, a baseline) to `api-checks`. Level 0 alone would have caught the `$this` inside a `static fn` in `Places::texts()` (HTTP 500 in 1.16.0).
+- Server CI: no static analysis; add PHPStan (level 0–1, `codeigniter/phpstan-codeigniter`, a baseline) to `api-checks`.
 - Server tests: almost no controller is called for real (only `PlacesTextsEndpointTest` uses `FeatureTestTrait`); most "unit" tests copy the logic into helpers. Add `FeatureTestTrait` smoke tests on SQLite that every public GET endpoint answers without 500.
 - Server tests: the migrations cannot run on an empty database (`AddActivity` references `comments` before `AddComments` creates it), so feature tests build tables by hand; fix it with a new migration so tests can run the full schema.
-- Process: 1.16.0 features went straight into the release PR (#358) with no review and no server tests; ship each feature through its own reviewed PR.
 - Email: only a synchronous rejection of the recipient at RCPT TO (5.1.1/2/3/6/10) marks `users.email_bounced_at` (cleared on the user's next sign-in); bounce and spam-complaint emails that arrive later in the `smtp.mail` mailbox are not processed. Read them (IMAP) or move to a provider with bounce webhooks.
 - Email: the settings hint "at most once every 5 hours" (`email-notifications-hint`) duplicates `Config\Notifications::$activityEmailIntervalHours`; send the interval from the API or keep them in sync by hand.
 - Server tests: the queues (`QueueRows` claim / stale release / ownership, `MailQueue::process()`, `PushQueue::process()`, `PushMessagesModel::outcomesByActivity`), `Mail::unsubscribe` and the push API have no database tests (checked by hand on a local database with fake transports); add them with the `FeatureTestTrait` tests above.
