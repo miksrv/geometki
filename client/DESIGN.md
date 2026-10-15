@@ -333,9 +333,11 @@ achievement / a new level (`ApiModel.FeedStory`; grouping rules in
   place history section: no card of their own, a rule between them, place tiles become rows
   and descriptions are left out. `hidePlace` (the place history) drops the place from every
   story, a rating moves its stars into the head.
-- Days are days of the site's time zone (Moscow, `SITE_UTC_OFFSET`), not the viewer's: the
-  server render and the browser group the same way, and the calendar (server `SITE_TIMEZONE`)
-  agrees with the feed. Relative times ("5 minutes ago") are `suppressHydrationWarning`.
+- Days are the viewer's days: the browser keeps its IANA zone in the `tz` cookie
+  (`utils/timeZone.ts`), `getServerSideProps` reads it into `application.timeZone`, so the
+  server render and the browser group the same way, and the calendar gets the same zone
+  (`GET /feed/calendar?tz=`). Without the cookie (the very first page) days are Moscow days.
+  Relative times ("5 minutes ago") are `suppressHydrationWarning`.
 - Photos of a story are named after the place ("Усадьба — фото 2") in `alt` and in their
   buttons; the last tile's button also says how many photos are left.
 - `FeedList` — the stories in order, under day headings ("Сегодня", "Вчера", "1 октября",
@@ -447,9 +449,13 @@ actions, active days, the longest and the current run of days in a row (22px num
   parent. A kit primitive candidate.
 - **Empty states.** `EmptyState` with a title, one sentence and at most one action; copy
   differs for owners (what to do) and readers (what to expect).
-- **Notifications.** Success and error toasts via `Notify`; an entity link in the toast is
-  passed as `place` / `collection`, never embedded in the text. Raw API bodies are never
-  shown (see `app/errorMiddleware.ts`).
+- **Notifications.** Success and error toasts via `Notify` (`NotifyReplace` to update a toast
+  with the same id); an entity link in the toast is passed as `place` / `collection`, never
+  embedded in the text. Raw API bodies are never shown, and background requests (polling,
+  marking read) never toast (see `app/errorMiddleware.ts`). One component, `Notification`:
+  `variant="toast"` in the snackbar (at most four on screen, the rest queue; the countdown
+  pauses on hover, focus and a hidden tab; errors are `role="alert"`, the snackbar is a polite
+  live region) and `variant="list"` for the rows under the bell.
 - **Edit mode.** "Редактировать" in the page header or hero; in edit mode it becomes
   "Отмена" + "Готово" — the one place where text edits are confirmed or dropped (inline
   editors have no buttons of their own; list edits save as they happen). In edit mode lists show

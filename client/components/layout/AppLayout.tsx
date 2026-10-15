@@ -11,6 +11,7 @@ import { useAppDispatch, useAppSelector } from '@/app/store'
 import { AppBar } from './app-bar'
 import { BottomNav } from './bottom-nav'
 import { Footer } from './footer'
+import { PushPrompt } from './push-prompt'
 import { Snackbar } from './snackbar'
 
 import styles from './styles.module.sass'
@@ -37,7 +38,7 @@ interface AppLayoutProps {
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, fitViewport, children }) => {
-    const { t } = useTranslation('components.app-layout')
+    const { t } = useTranslation()
     const dispatch = useAppDispatch()
 
     const application = useAppSelector((store) => store.application)
@@ -105,6 +106,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, fitVi
             <BottomNav />
 
             <Snackbar />
+
+            <PushPrompt />
         </div>
     )
 }

@@ -15,6 +15,8 @@ export const FeedStoryTypes = {
     Edit: 'edit',
     Level: 'level',
     Photo: 'photo',
+    /** PastVu / Wikimedia Commons photos linked to a place: shown from the source servers */
+    PhotoLink: 'photo_link',
     Place: 'place',
     Rating: 'rating',
     Visit: 'visit'
@@ -54,9 +56,9 @@ export type FeedStory = {
     count: number
     /** Absent for guests */
     author?: Pick<User, 'id' | 'name' | 'avatar'>
-    /** place, photo, edit, comment; `content` is the start of its description (markdown) */
+    /** place, photo, photo_link, edit, comment; `content` is the start of its description (markdown) */
     place?: PlaceListItem
-    /** place, photo */
+    /** place, photo, photo_link; linked photos carry their source in `external` */
     photos?: Photo[]
     photosCount?: number
     /** edit */

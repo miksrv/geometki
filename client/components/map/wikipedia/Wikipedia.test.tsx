@@ -63,7 +63,10 @@ jest.mock('leaflet', () => ({
 }))
 
 jest.mock('next-i18next/pages', () => ({
-    useTranslation: () => ({ i18n: { language: 'ru' } })
+    useTranslation: () => ({
+        i18n: { language: 'ru' },
+        t: (key: string, opts?: Record<string, unknown>) => opts?.defaultValue ?? key
+    })
 }))
 
 jest.mock('simple-react-ui-kit', () => ({

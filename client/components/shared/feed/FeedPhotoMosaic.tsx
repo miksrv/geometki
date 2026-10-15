@@ -6,7 +6,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { PhotoLightbox } from '@/components/shared/photo-lightbox'
-import { IMG_HOST } from '@/config/env'
+import { isAbsoluteUrl, resolveImageUrl } from '@/components/shared/photo-lightbox/utils'
 
 import type { FeedDensity } from './FeedStory'
 
@@ -77,7 +77,9 @@ export const FeedPhotoMosaic: React.FC<FeedPhotoMosaicProps> = ({
                             aria-label={hasMore ? `${name}, ${t('feed-photo-more', { count: more })}` : name}
                         >
                             <Image
-                                src={`${IMG_HOST}${photo.preview}`}
+                                src={resolveImageUrl(photo.preview) ?? ''}
+                                // Linked PastVu / Commons photos: their hosts are not allowed in the optimizer
+                                unoptimized={isAbsoluteUrl(photo.preview)}
                                 alt={name}
                                 fill
                                 sizes={layout === 'strip' ? '120px' : '(max-width: 1024px) 100vw, 920px'}

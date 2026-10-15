@@ -25,9 +25,9 @@ CodeIgniter 4 PHP REST API serving the geometki geolocation/POI platform.
 
 **Categories:** no table; `Config/Categories.php` whitelists the keys, names/texts live on the client. `Categories` controller only serves `GET /categories/:name/locations` (landing perelinking).
 
-**Library boundaries (app/Libraries):** `AvatarLibrary` (avatar paths/upload/variants), `PhotoLibrary` (photo processing, covers), `PlaceFormatterLibrary` (place response shaping: author, address, cover, distance), `ReputationLibrary`, `LevelsLibrary`, `AchievementsLibrary`, `ActivityLibrary`, `NotifyLibrary`, `EmailLibrary`, `PlacesContent`, `PlaceTags`, location dedup/slugs (`LocationMatcher`, `LocationMerge`, `LocationSlugLibrary`), OSM candidates (`OsmCollector`, `OsmScoring`, `OsmSourcesClient`, `OsmTiles`).
+**Library boundaries (app/Libraries):** `AvatarLibrary` (avatar paths/upload/variants), `PhotoLibrary` (photo processing, covers), `PlaceFormatterLibrary` (place response shaping: author, address, cover, distance), `ReputationLibrary`, `LevelsLibrary`, `AchievementsLibrary`, `ActivityLibrary`, `NotifyLibrary` (in-app notification + queues the push), `Mail/*` (MailQueue, Mailer, templates, unsubscribe tokens), `Push/*` (PushQueue, PushSender, PushPayload, PushEndpoint), `NotificationSettings`, `PlacesContent`, `PlaceTags`, location dedup/slugs (`LocationMatcher`, `LocationMerge`, `LocationSlugLibrary`), OSM candidates (`OsmCollector`, `OsmScoring`, `OsmSourcesClient`, `OsmTiles`).
 
-**Spark commands (app/Commands):** `trending:refresh`, `interests:refresh`, `achievements:evaluate`, `locations:rebuild`, `osm:collect`, `osm:rescore`, `digest:weekly`, `system:generate-place-slugs`, `system:calculate-tags-count`, `system:generate-users-online`, `system:send-email`, `system:test-email`.
+**Spark commands (app/Commands):** `trending:refresh`, `interests:refresh`, `achievements:evaluate`, `locations:rebuild`, `osm:collect`, `osm:rescore`, `digest:weekly`, `system:generate-place-slugs`, `notifications:send` (email queue + daily cleanup), `notifications:prune`, `sessions:prune`, `system:test-email`, `email:preview`.
 
 **Error handling convention:**
 - All user-visible strings go through `lang('File.key')` — no hardcoded English in controllers; key naming `ControllerName.camelCaseKey`

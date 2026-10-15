@@ -12,6 +12,8 @@ namespace App\Libraries;
  *
  *  - place, comment — always a story of their own;
  *  - photo — joins the author's new-place story of that place, else their photo story of it;
+ *  - photo_link — a PastVu / Commons photo linked to a place: joins only the author's
+ *    linked-photos story of that place, never the uploads (the files are not ours);
  *  - edit, cover — join the author's new-place story of that place (part of creating it),
  *    else their edit story of it ("updated the description and the cover");
  *  - rating, visit — one story per author across places ("rated 5 places"); guest
@@ -31,6 +33,7 @@ final class FeedAggregator
     public const STORY_TYPE = [
         'place'            => 'place',
         'photo'            => 'photo',
+        'photo_link'       => 'photo_link',
         'edit'             => 'edit',
         'cover'            => 'edit',
         'comment'          => 'comment',
@@ -43,6 +46,7 @@ final class FeedAggregator
     /** Stories an event of each activity type may join, the preferred first */
     public const JOINS = [
         'photo'            => ['place', 'photo'],
+        'photo_link'       => ['photo_link'],
         'edit'             => ['place', 'edit'],
         'cover'            => ['place', 'edit'],
         'rating'           => ['rating'],
@@ -57,13 +61,14 @@ final class FeedAggregator
     ];
 
     /**
-     * How prominent a story is: 3 — a card with a picture (new place, photos, collection),
+     * How prominent a story is: 3 — a card with a picture (new place, photos, linked photos, collection),
      * 2 — a card of its own (review, achievement, level), 1 — a compact line (edits,
      * ratings, visits, places added to a collection). The home page shows weight >= 2.
      */
     public const WEIGHT = [
         'place'            => 3,
         'photo'            => 3,
+        'photo_link'       => 3,
         'collection'       => 3,
         'comment'          => 2,
         'achievement'      => 2,
@@ -75,7 +80,7 @@ final class FeedAggregator
     ];
 
     /** Story types that are about one place (feed.place_id is set) */
-    private const PLACE_STORIES = ['place', 'photo', 'edit', 'comment'];
+    private const PLACE_STORIES = ['place', 'photo', 'photo_link', 'edit', 'comment'];
 
     /** Story types that are about one collection (feed.collection_id is set) */
     private const COLLECTION_STORIES = ['collection', 'collection_place'];
@@ -100,7 +105,7 @@ final class FeedAggregator
 
     /**
      * The column a story the event may join must match, as [column => value]: the place for
-     * photos, edits and covers, the collection for collection events, nothing for ratings
+     * photos, linked photos, edits and covers, the collection for collection events, nothing for ratings
      * and visits (their stories span places). Narrows the candidate query of the live path.
      *
      * @param object $event {type, place_id, collection_id}
@@ -109,7 +114,7 @@ final class FeedAggregator
     public static function subject(object $event): array
     {
         return match ($event->type) {
-            'photo', 'edit', 'cover'         => ['place_id' => $event->place_id ?? null],
+            'photo', 'photo_link', 'edit', 'cover' => ['place_id' => $event->place_id ?? null],
             'collection', 'collection_place' => ['collection_id' => $event->collection_id ?? null],
             default                          => [],
         };

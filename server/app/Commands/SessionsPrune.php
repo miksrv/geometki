@@ -10,8 +10,7 @@
  *   cd server
  *   php spark sessions:prune [days]
  *
- * Add to cron (daily):
- *   30 4 * * * cd /path/to/server && php spark sessions:prune >> /dev/null 2>&1
+ * Not scheduled: run it by hand when the table has grown (once a year is plenty).
  */
 
 namespace App\Commands;

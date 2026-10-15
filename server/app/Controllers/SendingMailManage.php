@@ -52,9 +52,12 @@ class SendingMailManage extends ResourceController
         $page     = (int) ($this->request->getGet('page') ?? 1);
         $limit    = (int) ($this->request->getGet('limit') ?? 20);
 
-        $allowedSort  = ['created_at', 'updated_at', 'status', 'email'];
+        // The client sorts by the keys of its list items; the column names are accepted too
+        $sortColumns  = ['created' => 'created_at', 'updated' => 'updated_at', 'sent' => 'sent_at'];
+        $allowedSort  = ['created_at', 'updated_at', 'sent_at', 'status', 'email'];
         $allowedOrder = ['asc', 'desc'];
 
+        $sort  = $sortColumns[$sort] ?? $sort;
         $sort  = in_array($sort, $allowedSort, true)  ? $sort  : 'created_at';
         $order = in_array($order, $allowedOrder, true) ? $order : 'desc';
         $limit = min(max(1, $limit), 100);
@@ -143,8 +146,12 @@ class SendingMailManage extends ResourceController
             'status'   => $row->status,
             'email'    => $row->email,
             'subject'  => $row->subject,
+            'type'     => $row->type,
+            'attempts' => (int) $row->attempts,
+            'groupId'  => $row->group_id,
             'created'  => $this->toDateTime($row->created_at),
             'updated'  => $this->toDateTime($row->updated_at),
+            'sent'     => $this->toDateTime($row->sent_at),
             'user'     => $this->extractUser($row),
             'activity' => $this->extractActivity($row),
         ];
@@ -166,8 +173,12 @@ class SendingMailManage extends ResourceController
             'subject' => $row->subject,
             'message' => $row->message,
             'error'   => $row->error,
+            'type'     => $row->type,
+            'attempts' => (int) $row->attempts,
+            'groupId'  => $row->group_id,
             'created'    => $this->toDateTime($row->created_at),
             'updated'    => $this->toDateTime($row->updated_at),
+            'sent'       => $this->toDateTime($row->sent_at),
             'user'       => $this->extractUser($row),
             'activity'   => $this->extractActivity($row),
         ];

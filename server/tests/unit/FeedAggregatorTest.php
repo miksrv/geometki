@@ -48,7 +48,7 @@ final class FeedAggregatorTest extends CIUnitTestCase
 
     public function testEveryOtherActivityTypeShows(): void
     {
-        foreach (['place', 'photo', 'edit', 'cover', 'comment', 'rating', 'visit', 'collection', 'collection_place'] as $type) {
+        foreach (['place', 'photo', 'photo_link', 'edit', 'cover', 'comment', 'rating', 'visit', 'collection', 'collection_place'] as $type) {
             $this->assertTrue(FeedAggregator::isFeedable($type), $type);
         }
     }
@@ -69,6 +69,44 @@ final class FeedAggregatorTest extends CIUnitTestCase
         $stories = [$this->story('comment')];
 
         $this->assertNull(FeedAggregator::match($this->event('comment'), $stories));
+    }
+
+    // =========================================================================
+    // Linked photos (PastVu, Wikimedia Commons)
+    // =========================================================================
+
+    public function testLinkedPhotoJoinsTheLinkedPhotosStoryOfThatPlace(): void
+    {
+        $story = $this->story('photo_link', id: 'links');
+
+        $this->assertSame('links', FeedAggregator::match($this->event('photo_link'), [$story])?->id);
+    }
+
+    public function testLinkedPhotoNeverJoinsUploadsOrANewPlace(): void
+    {
+        $stories = [$this->story('place', id: 'place-story'), $this->story('photo', id: 'photo-story')];
+
+        $this->assertNull(FeedAggregator::match($this->event('photo_link'), $stories));
+    }
+
+    public function testUploadedPhotoNeverJoinsLinkedPhotos(): void
+    {
+        $this->assertNull(FeedAggregator::match($this->event('photo'), [$this->story('photo_link')]));
+    }
+
+    public function testLinkedPhotoOfAnotherPlaceOpensItsOwnStory(): void
+    {
+        $this->assertNull(FeedAggregator::match($this->event('photo_link', place: 'p2'), [$this->story('photo_link')]));
+    }
+
+    public function testLinkedPhotosStoryIsAPictureCardAboutThePlace(): void
+    {
+        $story = FeedAggregator::open($this->event('photo_link'));
+
+        $this->assertSame('photo_link', $story->type);
+        $this->assertSame('p1', $story->place_id);
+        $this->assertSame(3, $story->weight);
+        $this->assertSame(['place_id' => 'p1'], FeedAggregator::subject($this->event('photo_link')));
     }
 
     // =========================================================================
@@ -287,5 +325,20 @@ final class FeedAggregatorTest extends CIUnitTestCase
         $this->assertNull(Feed::parseCursor(''));
         $this->assertNull(Feed::parseCursor('2026-10-13'));
         $this->assertNull(Feed::parseCursor("1760000000-x' OR 1=1"));
+    }
+
+    public function testCalendarTakesTheViewersTimeZone(): void
+    {
+        $this->assertSame('America/Los_Angeles', Feed::timeZone('America/Los_Angeles')->getName());
+        $this->assertSame('Europe/Kiev', Feed::timeZone('Europe/Kiev')->getName());
+    }
+
+    public function testCalendarFallsBackToTheSiteTimeZone(): void
+    {
+        $this->assertSame(SITE_TIMEZONE, Feed::timeZone(null)->getName());
+        $this->assertSame(SITE_TIMEZONE, Feed::timeZone('')->getName());
+        $this->assertSame(SITE_TIMEZONE, Feed::timeZone('Mars/Olympus')->getName());
+        $this->assertSame(SITE_TIMEZONE, Feed::timeZone('+03:00')->getName());
+        $this->assertSame(SITE_TIMEZONE, Feed::timeZone(['Europe/Moscow'])->getName());
     }
 }

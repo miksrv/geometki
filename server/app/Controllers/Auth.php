@@ -4,7 +4,9 @@ namespace App\Controllers;
 
 use App\Entities\UserEntity;
 use App\Libraries\AvatarLibrary;
-use App\Libraries\EmailLibrary;
+use App\Libraries\Mail\MagicLinkMail;
+use App\Libraries\Mail\Mailer;
+use App\Libraries\Mail\MailUrls;
 use App\Libraries\GoogleClient;
 use App\Libraries\LevelsLibrary;
 use App\Libraries\SessionLibrary;
@@ -311,21 +313,11 @@ class Auth extends ResourceController
         if (!$tokenModel->isRateLimited($email, $ip)) {
             $rawToken = $tokenModel->createToken($email, $returnPath, $ip);
 
-            $siteUrl = rtrim(getenv('app.siteUrl'), '/');
-            $link    = $siteUrl . '/auth?token=' . $rawToken . ($returnPath !== null ? '&return=' . rawurlencode($returnPath) : '');
+            $locale = $this->request->getLocale();
+            $link   = MailUrls::site($locale, '/auth?token=' . $rawToken . ($returnPath !== null ? '&return=' . rawurlencode($returnPath) : ''));
 
             try {
-                $subject = lang('Auth.magicLinkEmailSubject');
-                $body    = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;color:#1b1f27;">'
-                    . '<h2 style="margin:0 0 12px;">' . esc(lang('Auth.magicLinkEmailTitle')) . '</h2>'
-                    . '<p style="margin:0 0 16px;line-height:1.5;">' . esc(lang('Auth.magicLinkEmailIntro')) . '</p>'
-                    . '<p style="margin:0 0 16px;"><a href="' . esc($link) . '" style="display:inline-block;background:#3b82f6;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">'
-                    . esc(lang('Auth.magicLinkEmailButton')) . '</a></p>'
-                    . '<p style="margin:0 0 12px;color:#656d76;font-size:13px;line-height:1.5;">' . esc(lang('Auth.magicLinkEmailExpiry')) . '</p>'
-                    . '<p style="margin:0;color:#656d76;font-size:13px;line-height:1.5;">' . esc(lang('Auth.magicLinkEmailFooter')) . '</p>'
-                    . '</div>';
-
-                (new EmailLibrary())->send($email, $subject, $body);
+                (new Mailer())->send(MagicLinkMail::build($email, $link, $locale));
             } catch (Throwable $e) {
                 log_message('error', '[Auth] Failed to send magic link email: {exception}', ['exception' => $e]);
             }

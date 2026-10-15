@@ -51,7 +51,7 @@ class FeedModel extends ApplicationBaseModel
     /**
      * A page of visible stories, newest-updated first.
      *
-     * @param array{author?: ?string, place?: ?string, types?: string[], minWeight?: int} $filters
+     * @param array{author?: ?string, place?: ?string, types?: string[], minWeight?: int, since?: string, until?: string} $filters
      * @param int                                        $limit
      * @param array{at: string, id: string}|null         $cursor Stories after this one (keyset)
      * @return array<int, object>
@@ -81,7 +81,7 @@ class FeedModel extends ApplicationBaseModel
     /**
      * Number of visible stories for the filters (the "History (N)" row of the place page).
      *
-     * @param array{author?: ?string, place?: ?string, types?: string[], minWeight?: int} $filters
+     * @param array{author?: ?string, place?: ?string, types?: string[], minWeight?: int, since?: string, until?: string} $filters
      */
     public function countStories(array $filters): int
     {
@@ -96,7 +96,8 @@ class FeedModel extends ApplicationBaseModel
      * they point at, oldest first. A story of hundreds of events (an import) costs no more
      * than that; getStoryCounts() gives the totals. With $placeId only the rows about that
      * place (a rating story spans many places). Rows whose photo or comment is gone come
-     * back with empty columns; the caller skips them.
+     * back with empty columns; the caller skips them. A linked photo (`photo_link`) comes
+     * with its details as the `ep_*` columns; unlinking deletes its row.
      *
      * @param string[]    $feedIds
      * @param string|null $placeId
@@ -116,11 +117,17 @@ class FeedModel extends ApplicationBaseModel
                FROM (
                     SELECT a.id, a.feed_id, a.type, a.place_id, a.collection_id, a.created_at,
                            ph.id AS photo_id, ph.filename, ph.extension, ph.width, ph.height,
+                           ep.id AS ep_id, ep.source AS ep_source, ep.external_id AS ep_external_id,
+                           ep.title AS ep_title, ep.author AS ep_author, ep.license AS ep_license,
+                           ep.license_url AS ep_license_url, ep.year AS ep_year, ep.page_url AS ep_page_url,
+                           ep.full_url AS ep_full_url, ep.preview_url AS ep_preview_url,
+                           ep.width AS ep_width, ep.height AS ep_height, ep.created_at AS ep_created_at,
                            r.value AS rating,
                            cm.id AS comment_id, cm.content AS comment,
                            ROW_NUMBER() OVER (PARTITION BY a.feed_id ORDER BY a.created_at DESC, a.id DESC) AS n
                       FROM activity a
                       LEFT JOIN photos ph ON ph.id = a.photo_id AND ph.deleted_at IS NULL
+                      LEFT JOIN places_external_photos ep ON ep.id = a.external_photo_id
                       LEFT JOIN rating r ON r.id = a.rating_id AND r.deleted_at IS NULL
                       LEFT JOIN comments cm ON cm.id = a.comment_id AND cm.deleted_at IS NULL
                      WHERE a.feed_id IN ($ids) AND a.deleted_at IS NULL$place
@@ -132,7 +139,7 @@ class FeedModel extends ApplicationBaseModel
 
     /**
      * Totals of the given stories, whatever getStoryEvents() cut: events, photos still
-     * there, distinct places. With $placeId only the events about that place.
+     * there (uploaded and linked), distinct places. With $placeId only the events about that place.
      *
      * @param string[]    $feedIds
      * @param string|null $placeId
@@ -145,8 +152,9 @@ class FeedModel extends ApplicationBaseModel
         }
 
         $builder = $this->db->table('activity a')
-            ->select('a.feed_id, COUNT(*) AS events, COUNT(ph.id) AS photos, COUNT(DISTINCT a.place_id) AS places')
+            ->select('a.feed_id, COUNT(*) AS events, COUNT(ph.id) + COUNT(ep.id) AS photos, COUNT(DISTINCT a.place_id) AS places')
             ->join('photos ph', 'ph.id = a.photo_id AND ph.deleted_at IS NULL', 'left')
+            ->join('places_external_photos ep', 'ep.id = a.external_photo_id', 'left')
             ->whereIn('a.feed_id', $feedIds)
             ->where('a.deleted_at', null)
             ->groupBy('a.feed_id');
@@ -229,7 +237,7 @@ class FeedModel extends ApplicationBaseModel
     /**
      * The visibility rules and the filters, shared by the page and the count.
      *
-     * @param array{author?: ?string, place?: ?string, types?: string[], minWeight?: int} $filters
+     * @param array{author?: ?string, place?: ?string, types?: string[], minWeight?: int, since?: string, until?: string} $filters
      */
     protected function visibleStories(array $filters): BaseBuilder
     {
@@ -274,6 +282,15 @@ class FeedModel extends ApplicationBaseModel
 
         if (!empty($filters['minWeight'])) {
             $builder->where('feed.weight >=', (int) $filters['minWeight']);
+        }
+
+        // Stories that grew in a period (the weekly digest)
+        if (!empty($filters['since'])) {
+            $builder->where('feed.updated_at >=', $filters['since']);
+        }
+
+        if (!empty($filters['until'])) {
+            $builder->where('feed.updated_at <=', $filters['until']);
         }
 
         return $builder;

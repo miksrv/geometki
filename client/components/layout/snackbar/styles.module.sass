@@ -6,81 +6,37 @@
     bottom: 0
     display: flex
     flex-direction: column
-    user-select: none
     max-width: 300px
     width: 100%
     z-index: 505
+    // The empty container must not catch clicks meant for the page (the map) under it
+    pointer-events: none
 
     // Above the bottom navigation, not over it
     @media only screen and (max-width: variables.$mobileMaxWidth)
         bottom: calc(#{variables.$bottomNavHeight} + env(safe-area-inset-bottom, 0px))
 
-    .notification
-        border-radius: var(--border-radius)
-        box-shadow: var(--shadow-lg)
-        padding: 10px 6px 10px 12px
-
-        &.unread
-            transition: transform .32s cubic-bezier(0.4,0,0.2,1)
-            animation: snackbar-horizontal .34s cubic-bezier(0.4,0,0.2,1)
-
 .notification
     background-color: var(--container-background)
     display: flex
-    align-items: flex-start
     position: relative
     width: 100%
-    margin-bottom: 10px
-    border-top: 3px solid transparent
 
-    &.unread
-        background-color: var(--surface-2)
-
-    &.success
-        border-top-color: var(--color-green)
-
-        .content
-            color: var(--text-color-primary)
-
-    &.error
-        border-top-color: var(--color-red)
-
-        .content
-            color: var(--text-color-primary)
-
-    &.warning
-        border-top-color: var(--color-orange)
-
-        .content
-            color: var(--text-color-primary)
-
-    &.info
-        border-top-color: var(--link-color)
-
-        .content
-            color: var(--text-color-primary)
-
-    &.level,
-    &.experience
-        border-top-color: var(--link-color)
-
-        .content
-            color: var(--text-color-primary)
-
+    // A square slot: a cover, a badge and an icon take the same room and sit on the same axis
     .before
-        margin-right: 9px
-        margin-top: 2px
         display: flex
         align-items: center
+        justify-content: center
         flex-shrink: 0
 
         .placeImage
+            width: 100%
+            height: 100%
+            object-fit: cover
             border-radius: var(--border-radius)
 
         svg
             fill: var(--link-color)
-            width: 26px
-            height: 26px
 
     .body
         display: flex
@@ -88,31 +44,82 @@
         overflow: hidden
         align-items: flex-start
         flex-direction: column
+        min-width: 0
 
-        .title
-            font-size: var(--font-size-small)
-            color: var(--text-color-primary)
-            font-weight: 500
-            display: -webkit-box
-            flex: 1
-            width: 100%
-            -webkit-line-clamp: 3
-            -webkit-box-orient: vertical
+    .title
+        color: var(--text-color-primary)
+        width: 100%
+        overflow: hidden
+
+    .content
+        width: 100%
+
+        a
+            display: block
+            white-space: nowrap
+            text-overflow: ellipsis
             overflow: hidden
 
-        .content
-            a
-                display: block
-                white-space: pre
-                text-overflow: ellipsis
-                overflow: hidden
-                max-width: 195px
+    .datetime
+        font-size: variables.$fontSizeCaption
+        color: var(--text-color-secondary)
 
-        .datetime
-            font-size: variables.$fontSizeCaption
-            color: var(--text-color-secondary)
+// --- A toast of the snackbar ---
+
+.toast
+    align-items: center
+    margin-bottom: 10px
+    border-top: 3px solid transparent
+    border-radius: var(--border-radius)
+    box-shadow: var(--shadow-lg)
+    padding: 10px 6px 10px 12px
+    pointer-events: auto
+
+    &.unread
+        background-color: var(--surface-2)
+        animation: snackbar-horizontal .34s cubic-bezier(0.4,0,0.2,1)
+
+    @media (prefers-reduced-motion: reduce)
+        &.unread
+            animation: none
+
+    &.success
+        border-top-color: var(--color-green)
+
+    &.error
+        border-top-color: var(--color-red)
+
+    &.warning
+        border-top-color: var(--color-orange)
+
+    &.info,
+    &.level,
+    &.experience
+        border-top-color: var(--link-color)
+
+    .before
+        width: 40px
+        height: 40px
+        margin-right: 10px
+
+        svg
+            width: 26px
+            height: 26px
+
+    .title
+        font-size: var(--font-size-small)
+        font-weight: 500
+        display: -webkit-box
+        flex: 1
+        -webkit-line-clamp: 3
+        -webkit-box-orient: vertical
+
+    .content
+        color: var(--text-color-primary)
 
     .closeButton
+        // The row is centred on the icon; the close button stays in the top corner
+        align-self: flex-start
         flex-shrink: 0
         border: none
         background: none
@@ -132,6 +139,47 @@
             height: 16px
             fill: var(--icon-color-secondary)
 
+// --- A row of the notification list under the bell ---
+
+.list
+    align-items: center
+    gap: 8px
+    padding: 8px 10px
+    border-bottom: var(--container-border-separator)
+
+    &:last-of-type
+        border-bottom: none
+
+    &.unread
+        background-color: var(--surface-2)
+
+    .before
+        width: 32px
+        height: 32px
+
+        svg
+            width: 18px
+            height: 18px
+
+    .body
+        gap: 1px
+
+    .title
+        font-weight: 600
+        font-size: 13px
+        white-space: nowrap
+        text-overflow: ellipsis
+
+    .content
+        font-size: 12px
+        color: var(--text-color-secondary)
+
+        a
+            color: var(--link-color)
+
+    .datetime
+        font-size: 11px
+        opacity: 0.7
 
 @keyframes snackbar-horizontal
     0%

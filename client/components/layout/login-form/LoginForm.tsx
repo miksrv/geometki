@@ -29,7 +29,7 @@ interface LoginFormProps {
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuccessLogin }) => {
-    const { t } = useTranslation('components.app-layout.login-form')
+    const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const router = useRouter()
 

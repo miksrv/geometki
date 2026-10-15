@@ -70,6 +70,8 @@ export const FeedStory: React.FC<FeedStoryProps> = ({ story, density = 'full', h
                 return t('feed-action-place', { defaultValue: '— новое место' })
             case ApiModel.FeedStoryTypes.Photo:
                 return t('feed-action-photo', { count: photosCount, defaultValue: '— {{count}} новых фото' })
+            case ApiModel.FeedStoryTypes.PhotoLink:
+                return t('feed-action-photo-link', { count: photosCount, defaultValue: '— привязано фото: {{count}}' })
             case ApiModel.FeedStoryTypes.Edit:
                 if (story.changes?.length === 2) {
                     return t('feed-action-edit-both', { defaultValue: '— правка описания и обложки' })
@@ -182,6 +184,7 @@ export const FeedStory: React.FC<FeedStoryProps> = ({ story, density = 'full', h
                 )
 
             case ApiModel.FeedStoryTypes.Photo:
+            case ApiModel.FeedStoryTypes.PhotoLink:
                 return (
                     <>
                         {!!story.photos?.length && (
@@ -323,7 +326,7 @@ export const FeedStory: React.FC<FeedStoryProps> = ({ story, density = 'full', h
                         dateTime={story.updated?.date}
                         title={formatDate(
                             story.updated?.date,
-                            t('date_time_format', { defaultValue: 'D MMMM YYYY, HH:mm' })
+                            t('date-time-format', { defaultValue: 'D MMMM YYYY, HH:mm' })
                         )}
                     >
                         {timeAgo(story.updated?.date, false, i18n.language)}

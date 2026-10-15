@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server'
 // eslint-disable-next-line no-duplicate-imports
 import { NextResponse } from 'next/server'
 
-import { AUTH_COOKIES } from '@/config/constants'
+import { AUTH_COOKIES, LOCALE_HEADER } from '@/config/constants'
 import { getLandingFlags, isLandingSegment, LANDING_PROXY_HEADER } from '@/utils/placesLanding'
 
 // A per-server-instance secret, generated once when this module is first loaded and never
@@ -32,6 +32,8 @@ export const proxy = (request: NextRequest) => {
     // incoming headers.
     const sanitizedHeaders = new Headers(request.headers)
     sanitizedHeaders.delete(LANDING_PROXY_HEADER)
+    // The 404 page is an App Router page (app/not-found.tsx) and knows nothing of the /en prefix
+    sanitizedHeaders.set(LOCALE_HEADER, request.nextUrl.locale)
 
     // Direct access to the internal landing route (features/20-location-seo-pages.md):
     // handled first, before any other rule below reads the path, so nothing can ever serve

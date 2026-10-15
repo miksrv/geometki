@@ -56,7 +56,11 @@ class PlaceTags {
                     continue;
                 }
 
-                $this->tagsModel->update($tagData->id, ['count' => $tagData->count + 1]);
+                // In SQL, not read-modify-write: two places saved at once must both count
+                $this->tagsModel->builder()->where('id', $tagData->id)
+                    ->set('count', 'count + 1', false)
+                    ->set('updated_at', 'NOW()', false)
+                    ->update();
                 $this->placeTagsModel->insert([
                     'tag_id'   => $tagData->id,
                     'place_id' => $placeId
@@ -71,6 +75,13 @@ class PlaceTags {
     }
 
     /**
+     * Before a place is deleted: its places_tags rows would cascade away without lowering tags.count.
+     */
+    public function deletePlace(string $placeId): void {
+        $this->_deletePlaceTags($placeId);
+    }
+
+    /**
      * @throws ReflectionException
      */
     protected function _deletePlaceTags(string $placeId): void {
@@ -78,10 +89,10 @@ class PlaceTags {
             $this->placeTagsModel->deleteByPlaceId($placeId);
 
             foreach ($oldTagsData as $tag) {
-                $this->tagsModel->update(
-                    $tag->id,
-                    ['count' => $tag->count !== 0 ? $tag->count - 1 : 0]
-                );
+                $this->tagsModel->builder()->where('id', $tag->id)
+                    ->set('count', 'GREATEST(CAST(count AS SIGNED) - 1, 0)', false)
+                    ->set('updated_at', 'NOW()', false)
+                    ->update();
             }
         }
     }

@@ -6,7 +6,7 @@ import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
 import { openAuthDialog } from '@/app/applicationSlice'
-import { logoutUser } from '@/app/logoutUser'
+import { logoutUser, turnOffPushOnThisDevice } from '@/app/logoutUser'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import useRequireAuth from '@/hooks/useRequireAuth'
 
@@ -31,7 +31,7 @@ export const isNavItemActive = (pathname: string, href: string): boolean =>
     pathname === href || pathname.startsWith(`${href}/`)
 
 export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
-    const { t } = useTranslation('components.app-bar')
+    const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const requireAuth = useRequireAuth()
     const router = useRouter()
@@ -51,6 +51,7 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
     }
 
     const handleLogout = () => {
+        void dispatch(turnOffPushOnThisDevice())
         dispatch(logoutUser())
     }
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.16.2
+
+### Patch Changes
+
+- English version: translated the header, menus, sign-in forms, map controls and the 404 page that showed Russian text
+- Notifications: the list under the bell shows dates again, and no broken image for a place without a cover
+- Notifications: the bell counter shows all unread notifications and drops once you see them
+- Notifications: "+N experience" stays a toast and no longer fills the list
+- Toasts: no longer disappear on page change; pause on hover, focus and in a background tab
+- Toasts: at most four at a time, a repeated error shows once, no error toasts while the server is unreachable
+- Toasts: announced by screen readers
+- Toasts: square place covers, icons centred vertically
+- Push notifications: turn on in the settings or from the offer after adding a place, photo, rating or comment; no pushes at night, events on one place come together
+- Settings: one Email / Push table to choose the notifications for each channel
+- Email: new design of all emails; activity emails are grouped and skip what a push or the site already showed
+- Email: the link in every email unsubscribes from that type of emails or from all of them
+- Optimized notifications
+- Activity feed and profile calendar: "Today" and "Yesterday" follow your time zone, not Moscow time
+- Activity feed: photos linked from PastVu and Wikimedia Commons show as a story of their own and bring a little experience; unlinking takes both back
+
 ## 1.16.1
 
 ### Patch Changes

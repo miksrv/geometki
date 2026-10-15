@@ -16,7 +16,7 @@ interface CategoryControlProps {
 }
 
 export const CategoryControl: React.FC<CategoryControlProps> = ({ categories, onChangeCategories }) => {
-    const { t } = useTranslation('components.interactive-map.category-control')
+    const { t } = useTranslation()
 
     const layersContainerRef = useRef<HTMLUListElement>(null)
     const [open, setOpen] = useState<boolean>(false)

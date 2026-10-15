@@ -9,6 +9,9 @@ import { encodeQueryData } from '@/utils/url'
 
 type Maybe<T> = T | void
 
+/** Page size of the notification list under the bell */
+export const NOTIFICATIONS_PAGE_SIZE = 10
+
 type APIErrorType = {
     messages: {
         error?: string
@@ -302,12 +305,43 @@ export const API = createApi({
         }),
 
         /** Controller: Mail **/
-        mailGetUnsubscribe: builder.query<string, Maybe<string>>({
-            query: (mailId) => `mail/unsubscribe?mail=${mailId || ''}`,
+        mailGetUnsubscribe: builder.query<
+            ApiType.Mail.UnsubscribeStatusResponse,
+            ApiType.Mail.UnsubscribeStatusRequest
+        >({
+            query: (params) => `mail/unsubscribe${encodeQueryData(params)}`,
             transformErrorResponse: extractErrorMessage
         }),
-        mailGetUnsubscribeDigest: builder.query<string, Maybe<string>>({
-            query: (userId) => `mail/unsubscribe?digest=${userId || ''}`,
+        mailPostUnsubscribe: builder.mutation<ApiType.Mail.UnsubscribeResponse, ApiType.Mail.UnsubscribeRequest>({
+            invalidatesTags: ['Users'],
+            query: (body) => ({
+                body,
+                method: 'POST',
+                url: 'mail/unsubscribe'
+            }),
+            transformErrorResponse: extractErrorMessage
+        }),
+
+        /** Controller: Push **/
+        pushGetKey: builder.query<ApiType.Push.KeyResponse, void>({
+            query: () => 'push/key'
+        }),
+        pushGetStatus: builder.query<ApiType.Push.StatusResponse, string>({
+            providesTags: ['PushStatus'],
+            query: (endpoint) => `push/subscriptions/status${encodeQueryData({ endpoint })}`
+        }),
+        pushPostSubscription: builder.mutation<void, ApiType.Push.SubscribeRequest>({
+            invalidatesTags: ['PushStatus'],
+            query: (body) => ({ body, method: 'POST', url: 'push/subscriptions' }),
+            transformErrorResponse: extractErrorMessage
+        }),
+        pushDeleteSubscription: builder.mutation<void, string>({
+            invalidatesTags: ['PushStatus'],
+            query: (endpoint) => ({ body: { endpoint }, method: 'DELETE', url: 'push/subscriptions' }),
+            transformErrorResponse: extractErrorMessage
+        }),
+        pushPostTest: builder.mutation<ApiType.Push.TestResponse, void>({
+            query: () => ({ method: 'POST', url: 'push/test' }),
             transformErrorResponse: extractErrorMessage
         }),
 
@@ -357,30 +391,44 @@ export const API = createApi({
                 url: 'notifications'
             })
         }),
-        notificationsGetList: builder.query<
-            ApiType.Notifications.ListResponse,
-            Maybe<ApiType.Notifications.ListRequest>
-        >({
-            forceRefetch: ({ currentArg, previousArg }) => currentArg?.offset !== previousArg?.offset,
-            merge: (currentCache, newItems, { arg }) => {
-                const isFirstPage = (arg?.offset as number) === 0
-
-                if (isFirstPage) {
-                    currentCache.items = newItems.items ?? []
-                    currentCache.count = newItems.count
-                } else {
-                    const existingIds = new Set(currentCache.items?.map((i) => i.id))
-                    const fresh = (newItems.items ?? []).filter((i) => !existingIds.has(i.id))
-                    currentCache.items?.push(...fresh)
-                }
+        notificationsGetList: builder.infiniteQuery<ApiType.Notifications.ListResponse, void, string>({
+            infiniteQueryOptions: {
+                getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+                initialPageParam: '',
+                // A refetch (opening the list again, an invalidation) starts over from the newest page
+                refetchCachedPages: false
             },
             providesTags: ['Notifications'],
-            query: (params) => `notifications/list${encodeQueryData(params)}`,
-            serializeQueryArgs: ({ endpointName }) => endpointName
+            query: ({ pageParam }) =>
+                `notifications/list${encodeQueryData({ cursor: pageParam, limit: NOTIFICATIONS_PAGE_SIZE })}`
         }),
         notificationsGetUpdates: builder.query<ApiType.Notifications.ListResponse, void>({
             providesTags: ['Notifications'],
             query: () => 'notifications/updates'
+        }),
+        /** Not an invalidation: the open list keeps showing what was new, only the badge changes */
+        notificationsPatchRead: builder.mutation<
+            ApiType.Notifications.ReadResponse,
+            Maybe<ApiType.Notifications.ReadRequest>
+        >({
+            onQueryStarted: async (arg, { dispatch, queryFulfilled }) => {
+                try {
+                    const { data } = await queryFulfilled
+
+                    dispatch(
+                        API.util.updateQueryData('notificationsGetUpdates', undefined, (draft) => {
+                            draft.count = data.count
+                        })
+                    )
+                } catch {
+                    // The badge catches up on the next poll
+                }
+            },
+            query: (body) => ({
+                body: body ?? {},
+                method: 'PATCH',
+                url: 'notifications/read'
+            })
         }),
 
         /** Controller: OSM Candidates **/
@@ -705,6 +753,7 @@ export const API = createApi({
         'Photos',
         'Places',
         'Profile',
+        'PushStatus',
         'Rating',
         'SendingMail',
         'UserAchievements',

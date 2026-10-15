@@ -24,8 +24,10 @@ export const SendingMailFilterPanel: React.FC<SendingMailFilterPanelProps> = ({ 
             { key: 'created', value: t('sending-mail-status-created') },
             { key: 'process', value: t('sending-mail-status-process') },
             { key: 'completed', value: t('sending-mail-status-completed') },
+            { key: 'grouped', value: t('sending-mail-status-grouped') },
             { key: 'error', value: t('sending-mail-status-error') },
-            { key: 'rejected', value: t('sending-mail-status-rejected') }
+            { key: 'rejected', value: t('sending-mail-status-rejected') },
+            { key: 'expired', value: t('sending-mail-status-expired') }
         ],
         [t]
     )

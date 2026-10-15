@@ -17,7 +17,16 @@ class AchievementsLibrary
         'cover'   => ['photos_uploaded'],
         'rating'  => ['ratings_given'],
         'comment' => ['comments_written'],
+        // A linked photo is not an uploaded one: it moves only the experience and the days
+        'photo_link' => [],
     ];
+
+    /**
+     * Metrics any action can move (experience, level, active days, the streak) or that
+     * others move between the user's actions (reputation): checked on every action, so
+     * these achievements come without a scheduled `achievements:evaluate`.
+     */
+    private const ALWAYS_METRICS = ['experience_total', 'level_reached', 'reputation_score', 'days_active', 'login_streak'];
 
     /**
      * Check achievements triggered by a specific activity type.
@@ -27,7 +36,9 @@ class AchievementsLibrary
      */
     public function check(string $userId, string $activityType): void
     {
-        $relevantMetrics = $this->metricMap[$activityType] ?? null;
+        $relevantMetrics = isset($this->metricMap[$activityType])
+            ? [...$this->metricMap[$activityType], ...self::ALWAYS_METRICS]
+            : null;
 
         $achievementsModel     = new AchievementsModel();
         $userAchievementsModel = new UsersAchievementsModel();
@@ -105,10 +116,11 @@ class AchievementsLibrary
     /**
      * Full evaluation for one user. Returns newly earned achievement IDs.
      *
+     * @param bool $notify false: award silently, without a notification (and its push / email)
      * @return array
      * @throws ReflectionException
      */
-    public function evaluate(string $userId): array
+    public function evaluate(string $userId, bool $notify = true): array
     {
         $achievementsModel     = new AchievementsModel();
         $userAchievementsModel = new UsersAchievementsModel();
@@ -158,7 +170,7 @@ class AchievementsLibrary
                     ];
                 }
 
-                $this->awardAchievement($userId, $achievement, $progressSnapshot, $earnedGroupMap);
+                $this->awardAchievement($userId, $achievement, $progressSnapshot, $earnedGroupMap, $notify);
                 $awarded[] = $achievement->id;
                 $earnedGroupMap[$achievement->group_slug] = [
                     'achievement_id' => $achievement->id,
@@ -426,7 +438,8 @@ class AchievementsLibrary
         string $userId,
         object $achievement,
         array  $progressSnapshot,
-        array  $earnedGroupMap
+        array  $earnedGroupMap,
+        bool   $notify = true
     ): void {
         $userAchievementsModel = new UsersAchievementsModel();
         $isUpgrade             = isset($earnedGroupMap[$achievement->group_slug]);
@@ -485,8 +498,11 @@ class AchievementsLibrary
             log_message('error', '{exception}', ['exception' => $e]);
         }
 
-        $notify = new NotifyLibrary();
-        $notify->push('achievements', $userId, null, [
+        if (!$notify) {
+            return;
+        }
+
+        (new NotifyLibrary())->push('achievements', $userId, null, [
             'title_en' => $achievement->title_en,
             'title_ru' => $achievement->title_ru,
             'image'    => $achievement->image,

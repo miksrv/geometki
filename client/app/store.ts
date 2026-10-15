@@ -32,6 +32,19 @@ const combinedReducer = combineReducers({
 // 2. Process HYDRATE separately
 type RootReducerState = ReturnType<typeof combinedReducer>
 
+const mergeNotifications = (
+    client: RootReducerState['notification'] | undefined,
+    server: RootReducerState['notification'] | undefined
+): RootReducerState['notification'] => {
+    if (!client) {
+        return server ?? combinedReducer(undefined, { type: '' }).notification
+    }
+
+    const fresh = server?.list.filter(({ id }) => !client.list.some((item) => item.id === id)) ?? []
+
+    return fresh.length ? { ...client, list: [...client.list, ...fresh] } : client
+}
+
 const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) => RootReducerState = (
     state,
     action
@@ -65,12 +78,13 @@ const rootReducer: (state: RootReducerState | undefined, action: UnknownAction) 
             // The visitor's location is known only on the client: the server state has none
             application: {
                 ...(payload.application ?? state?.application ?? combinedReducer(undefined, { type: '' }).application),
-                userLocation: state?.application?.userLocation ?? payload.application?.userLocation
+                userLocation: state?.application?.userLocation ?? payload.application?.userLocation,
+                // Only pages with days set it on the server; the others keep the one already known
+                timeZone: payload.application?.timeZone ?? state?.application?.timeZone
             },
 
-            // notification can be hydrated
-            notification:
-                payload.notification ?? state?.notification ?? combinedReducer(undefined, { type: '' }).notification,
+            // The client's toasts stay on navigation; the server adds only its own (an API error in getServerSideProps)
+            notification: mergeNotifications(state?.notification, payload.notification),
 
             // Merged auth state preserving user data
             auth: mergedAuth,

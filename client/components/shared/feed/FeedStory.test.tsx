@@ -250,6 +250,23 @@ describe('FeedStory', () => {
             expect(screen.getByTestId('place-card')).toHaveAttribute('data-variant', 'row')
         })
 
+        it('shows linked photos as a mosaic with the place under it, under their own heading', () => {
+            render(
+                <FeedStory
+                    story={story({
+                        photos: [photo('a'), photo('b')],
+                        photosCount: 2,
+                        place: place('p1', 'Водопад'),
+                        type: 'photo_link'
+                    })}
+                />
+            )
+
+            expect(screen.getByText('feed-action-photo-link:2')).toBeInTheDocument()
+            expect(screen.getByTestId('mosaic')).toHaveAttribute('data-layout', 'grid')
+            expect(screen.getByTestId('place-card')).toHaveAttribute('data-variant', 'row')
+        })
+
         it('quotes a review', () => {
             render(
                 <FeedStory

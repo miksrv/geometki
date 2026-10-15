@@ -20,7 +20,7 @@ export interface RatingProps {
 }
 
 export const Rating: React.FC<RatingProps> = ({ className, value, voted, disabled, labels, onChange }) => {
-    const { t } = useTranslation('components.shared.rating')
+    const { t } = useTranslation()
     const groupName = useId()
     const [hoverRating, setHoverRating] = useState<number>()
 

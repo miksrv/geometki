@@ -130,10 +130,13 @@ a
     display: flex
     justify-content: center
     align-items: center
-    height: 100vh
+    min-height: 100vh
+    min-height: 100dvh
 
     .wrapper
-        width: 500px
+        width: 100%
+        max-width: 500px
+        padding: 0 16px
         text-align: center
 
     .header
@@ -147,6 +150,13 @@ a
 
     .description
         color: var(--text-color-secondary)
+
+    .actions
+        display: flex
+        flex-wrap: wrap
+        justify-content: center
+        gap: 8px
+        margin-top: 16px
 
 /* Index (map) page */
 .mainLayout

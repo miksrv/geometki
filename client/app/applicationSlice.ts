@@ -1,6 +1,6 @@
 import { getCookie, setCookie } from 'cookies-next'
 
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction, UnknownAction } from '@reduxjs/toolkit'
 
 import { ApiType } from '@/api'
 import { LOCAL_STORAGE } from '@/config/constants'
@@ -18,8 +18,25 @@ type ApplicationStateProps = {
     showOverlay?: boolean
     showAuthDialog?: boolean
     userLocation?: ApiType.Coordinates
+    /** The visitor's IANA time zone from the `tz` cookie, set by the server render (utils/timeZone.ts) */
+    timeZone?: string
     locale?: ApiType.Locale
+    /** The user just did something worth hearing back about: offer push (PushPrompt) */
+    pushPromptRequested?: boolean
 }
+
+/**
+ * Requests after which the push offer makes sense: the user added a place, a photo, a rating
+ * or a comment, and others' reactions to it are what push brings. Matched by the RTK Query
+ * action, not the endpoint objects, so this slice does not import the API.
+ */
+const PUSH_PROMPT_ENDPOINTS = new Set(['placesPostItem', 'photoPostUpload', 'ratingPutScore', 'commentsPost'])
+
+const isPushPromptTrigger = (action: UnknownAction): boolean =>
+    action.type === 'api/executeMutation/fulfilled' &&
+    PUSH_PROMPT_ENDPOINTS.has(
+        (action as UnknownAction & { meta?: { arg?: { endpointName?: string } } }).meta?.arg?.endpointName ?? ''
+    )
 
 export const getStorageLocale = (): string | undefined =>
     typeof window !== 'undefined'
@@ -49,6 +66,9 @@ const applicationSlice = createSlice({
         setLocale: (state, { payload }: PayloadAction<ApiType.Locale>) => {
             state.locale = payload
         },
+        setTimeZone: (state, { payload }: PayloadAction<string | undefined>) => {
+            state.timeZone = payload
+        },
         setUserLocation: (state, { payload }: PayloadAction<ApiType.Coordinates>) => {
             void setCookie(USER_LOCATION_COOKIE, serializeUserLocation(payload), { maxAge: USER_LOCATION_MAX_AGE })
 
@@ -56,10 +76,34 @@ const applicationSlice = createSlice({
         },
         toggleOverlay: (state, { payload }: PayloadAction<boolean>) => {
             state.showOverlay = payload
+        },
+        dismissPushPrompt: (state) => {
+            state.pushPromptRequested = false
         }
+    },
+    extraReducers: (builder) => {
+        builder
+            .addMatcher(isPushPromptTrigger, (state) => {
+                state.pushPromptRequested = true
+            })
+            // An offer earned by one account is not shown to the next one on this tab
+            .addMatcher(
+                (action: UnknownAction) => action.type === 'auth/logout',
+                (state) => {
+                    state.pushPromptRequested = false
+                }
+            )
     }
 })
 
-export const { toggleOverlay, closeAuthDialog, openAuthDialog, setLocale, setUserLocation } = applicationSlice.actions
+export const {
+    toggleOverlay,
+    closeAuthDialog,
+    openAuthDialog,
+    setLocale,
+    setTimeZone,
+    setUserLocation,
+    dismissPushPrompt
+} = applicationSlice.actions
 
 export default applicationSlice.reducer

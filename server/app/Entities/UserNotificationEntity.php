@@ -22,7 +22,7 @@ class UserNotificationEntity extends Entity {
     protected $casts = [
         'type'        => 'string',
         'read'        => 'boolean',
-        'meta'        => 'json',
+        'meta'        => '?json',
         'user_id'     => 'string',
         'activity_id' => 'string',
     ];

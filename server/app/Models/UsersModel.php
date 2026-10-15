@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Entities\UserEntity;
+use App\Libraries\NotificationSettings;
 use App\Libraries\OsmScoring;
 use CodeIgniter\I18n\Time;
 use ReflectionException;
@@ -187,20 +188,11 @@ class UsersModel extends ApplicationBaseModel
             )
             ->find($userId);
 
-        if (!$settings) {
+        if (!$settings || !$data) {
             return $data;
         }
 
-        $data->settings = (object) [
-            'emailComment'  => $data->settings->emailComment  ?? true,
-            'emailEdit'     => $data->settings->emailEdit     ?? true,
-            'emailPhoto'    => $data->settings->emailPhoto    ?? true,
-            'emailRating'   => $data->settings->emailRating   ?? true,
-            'emailCover'    => $data->settings->emailCover    ?? true,
-            'emailBookmark' => $data->settings->emailBookmark ?? true,
-            'emailVisit'    => $data->settings->emailVisit    ?? true,
-            'emailDigest'   => $data->settings->emailDigest   ?? true,
-        ];
+        $data->settings = (new NotificationSettings())->normalize($data->settings ?? null);
 
         return $data;
     }

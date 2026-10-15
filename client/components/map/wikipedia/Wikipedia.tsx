@@ -22,7 +22,7 @@ interface WikipediaProps {
 }
 
 export const Wikipedia: React.FC<WikipediaProps> = () => {
-    const { i18n } = useTranslation()
+    const { t, i18n } = useTranslation()
     const locale = i18n.language
 
     const [params, setParams] = useState<RequestGetByBounds | null>(null)
@@ -152,7 +152,7 @@ export const Wikipedia: React.FC<WikipediaProps> = () => {
                                                 target={'_blank'}
                                                 rel={'noreferrer'}
                                             >
-                                                {'Открыть на Wikipedia →'}
+                                                {`${t('open-in-wikipedia', { defaultValue: 'Открыть на Wikipedia' })} →`}
                                             </a>
                                         </>
                                     )

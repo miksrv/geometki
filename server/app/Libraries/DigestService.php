@@ -2,31 +2,23 @@
 
 namespace App\Libraries;
 
-use App\Models\ActivityModel;
+use App\Libraries\Mail\MailUrls;
+use App\Models\FeedModel;
 use App\Models\PlacesModel;
-use App\Models\UsersModel;
 use Config\Database;
 
 class DigestService
 {
-    private ActivityModel $activityModel;
-    private UsersModel    $usersModel;
-
-    public function __construct()
-    {
-        $this->activityModel = new ActivityModel();
-        $this->usersModel    = new UsersModel();
-    }
-
     /**
      * Generate digest sections for a user covering the given week window.
      *
      * @param string $userId
      * @param string $weekStart  MySQL-formatted datetime, e.g. '2026-03-31 00:00:00'
      * @param string $weekEnd    MySQL-formatted datetime, e.g. '2026-04-07 23:59:59'
+     * @param string|null $locale Locale of place titles (the recipient's); null means the request locale
      * @return array  Associative array of sections; only non-empty sections are included.
      */
-    public function generateForUser(string $userId, string $weekStart, string $weekEnd): array
+    public function generateForUser(string $userId, string $weekStart, string $weekEnd, ?string $locale = null): array
     {
         $sections = [];
 
@@ -35,12 +27,12 @@ class DigestService
             $sections['week_summary'] = $weekSummary;
         }
 
-        $placeActivity = $this->buildPlaceActivitySection($userId, $weekStart, $weekEnd);
+        $placeActivity = $this->buildPlaceActivitySection($userId, $weekStart, $weekEnd, $locale);
         if ($placeActivity !== null) {
             $sections['place_activity'] = $placeActivity;
         }
 
-        $sections['community'] = $this->buildCommunityHighlights($weekStart, $weekEnd);
+        $sections['site'] = $this->buildSiteWeek($weekStart, $weekEnd, $locale ?? 'ru');
 
         return $sections;
     }
@@ -80,24 +72,11 @@ class DigestService
             return null;
         }
 
-        // Check whether the user has been inactive for 14+ days
-        $user       = $this->usersModel->select('activity_at')->find($userId);
-        $isInactive = false;
-
-        if ($user && $user->activity_at) {
-            $activityAt = $user->activity_at instanceof \CodeIgniter\I18n\Time
-                ? $user->activity_at->getTimestamp()
-                : strtotime((string) $user->activity_at);
-
-            $isInactive = $activityAt <= strtotime('-14 days');
-        }
-
         return [
             'places_created'  => $placesCreated,
             'photos_uploaded' => $photosUploaded,
             'ratings_given'   => $ratingsGiven,
             'edits_made'      => $editsMade,
-            'is_inactive'     => $isInactive,
         ];
     }
 
@@ -110,7 +89,7 @@ class DigestService
      * @param string $weekEnd
      * @return array|null
      */
-    public function buildPlaceActivitySection(string $userId, string $weekStart, string $weekEnd): ?array
+    public function buildPlaceActivitySection(string $userId, string $weekStart, string $weekEnd, ?string $locale = null): ?array
     {
         $db = Database::connect();
 
@@ -175,7 +154,7 @@ class DigestService
         ));
 
         // Step 4: Fetch place titles and check for cover images
-        $placeContent = new PlacesContent();
+        $placeContent = (new PlacesContent())->forLocale($locale);
         $placeContent->translate($allPlaceIds);
 
         $placesModel = new PlacesModel();
@@ -186,8 +165,12 @@ class DigestService
 
         $coverMap = [];
         $slugMap   = [];
+        $covers    = new PlaceFormatterLibrary();
         foreach ($placesData as $place) {
-            $coverMap[$place->id] = (int) ($place->photos ?? 0) > 0 || !empty($place->cover_external_id);
+            $coverMap[$place->id] = $covers->coverExists(
+                $place->id,
+                (int) ($place->photos ?? 0) > 0 || !empty($place->cover_external_id)
+            );
             $slugMap[$place->id]   = $place->slug;
         }
 
@@ -198,7 +181,7 @@ class DigestService
             // Build cover URL if place has a cover: from its photos or a linked one
             $coverUrl = null;
             if ($coverMap[$placeId] ?? false) {
-                $coverUrl = 'https://api.geometki.com/' . PATH_PHOTOS . $placeId . '/cover.jpg';
+                $coverUrl = MailUrls::placeCover($placeId);
             }
 
             $result[] = [
@@ -224,62 +207,73 @@ class DigestService
         return array_slice($result, 0, 10);
     }
 
+    /** Highlights in the digest, and at most this many of one person */
+    public const HIGHLIGHTS       = 5;
+    public const HIGHLIGHTS_EACH  = 2;
+
+    /** Story types worth a line in the digest (the home page's weight >= 2 ones) */
+    private const HIGHLIGHT_TYPES = ['place', 'photo', 'collection', 'comment', 'achievement', 'level'];
+
+    /** The week of the site is the same for every recipient: built once per locale */
+    private ?array $pulse = null;
+    private array $highlights = [];
+
     /**
-     * Build platform-wide highlights for the week.
-     * Always returns an array (may have zeroed-out counters).
+     * The week on the site, like the feed summary of the home page: event counts and
+     * the most active people (FeedPulseLibrary), and the key stories of the feed.
      *
-     * @param string $weekStart
-     * @param string $weekEnd
-     * @return array
+     * @return array{pulse: array, highlights: array<int, array>}
      */
-    public function buildCommunityHighlights(string $weekStart, string $weekEnd): array
+    public function buildSiteWeek(string $weekStart, string $weekEnd, string $locale): array
     {
-        $db = Database::connect();
+        $this->pulse ??= (new FeedPulseLibrary())->build($weekStart, $weekEnd);
 
-        // Count new places added during the week
-        $newPlacesRow = $db->query(
-            "SELECT COUNT(*) AS cnt
-             FROM activity
-             WHERE type = 'place'
-               AND created_at BETWEEN ? AND ?
-               AND deleted_at IS NULL",
-            [$weekStart, $weekEnd]
-        )->getRow();
+        if (!isset($this->highlights[$locale])) {
+            $stories = (new FeedPresenter($locale))->present(
+                (new FeedModel())->getStories(['minWeight' => 2, 'since' => $weekStart, 'until' => $weekEnd], 40)
+            );
 
-        $newPlacesCount = (int) ($newPlacesRow->cnt ?? 0);
+            // Plain arrays, the shape GET /feed returns (the presenter mixes in row objects)
+            $this->highlights[$locale] = self::pickHighlights(json_decode(json_encode($stories), true));
+        }
 
-        // Find the user with most activity events during the week
-        $topUserRow = $db->query(
-            "SELECT a.user_id, COUNT(*) AS cnt
-             FROM activity a
-             WHERE a.created_at BETWEEN ? AND ?
-               AND a.user_id IS NOT NULL
-               AND a.deleted_at IS NULL
-             GROUP BY a.user_id
-             ORDER BY cnt DESC
-             LIMIT 1",
-            [$weekStart, $weekEnd]
-        )->getRow();
+        return ['pulse' => $this->pulse, 'highlights' => $this->highlights[$locale]];
+    }
 
-        $topUser = null;
-        if ($topUserRow && $topUserRow->user_id) {
-            $userRecord = $this->usersModel
-                ->select('id, name, level')
-                ->find($topUserRow->user_id);
+    /**
+     * The stories for the digest: the most prominent first (a new place, photos, a
+     * collection before a review or an achievement), newest first within a weight,
+     * no more than HIGHLIGHTS_EACH of one person.
+     *
+     * @param array<int, array> $stories FeedPresenter stories, newest first
+     *
+     * @return array<int, array>
+     */
+    public static function pickHighlights(array $stories, int $limit = self::HIGHLIGHTS, int $perAuthor = self::HIGHLIGHTS_EACH): array
+    {
+        $stories = array_values(array_filter($stories, static fn (array $story) => in_array($story['type'], self::HIGHLIGHT_TYPES, true)));
 
-            if ($userRecord) {
-                $topUser = [
-                    'id'             => $userRecord->id,
-                    'name'           => $userRecord->name,
-                    'level'          => $userRecord->level,
-                    'activity_count' => (int) $topUserRow->cnt,
-                ];
+        // usort is stable: the feed order stays within a weight
+        usort($stories, static fn (array $a, array $b) => ($b['weight'] ?? 0) <=> ($a['weight'] ?? 0));
+
+        $picked  = [];
+        $byAuthor = [];
+
+        foreach ($stories as $story) {
+            $author = $story['author']['id'] ?? '';
+
+            if (($byAuthor[$author] ?? 0) >= $perAuthor) {
+                continue;
+            }
+
+            $byAuthor[$author] = ($byAuthor[$author] ?? 0) + 1;
+            $picked[] = $story;
+
+            if (count($picked) >= $limit) {
+                break;
             }
         }
 
-        return [
-            'new_places_count' => $newPlacesCount,
-            'top_user'         => $topUser,
-        ];
+        return $picked;
     }
 }

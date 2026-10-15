@@ -12,6 +12,8 @@ import googleLogo from '@/public/images/google-logo.png'
 import vkLogo from '@/public/images/vk-logo.png'
 import yandexLogo from '@/public/images/yandex-logo.png'
 
+import { PushDeviceSettings } from '../push-device-settings'
+
 import styles from './styles.module.sass'
 
 interface UserFormProps {
@@ -28,16 +30,7 @@ type FormDataType = ApiType.Users.PatchRequest & { confirmPassword?: string }
 
 const TEXT_FIELDS = ['name', 'website', 'oldPassword', 'newPassword', 'confirmPassword'] as const
 
-const SETTINGS: Array<keyof ApiModel.UserSettings> = [
-    'emailPhoto',
-    'emailRating',
-    'emailComment',
-    'emailEdit',
-    'emailCover',
-    'emailBookmark',
-    'emailVisit',
-    'emailDigest'
-]
+const SETTINGS = ApiModel.userSettingKeys()
 
 export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onSubmit, onCancel, onDirtyChange }) => {
     const { t } = useTranslation()
@@ -46,7 +39,7 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
 
     const {
         control,
-        formState: { errors: formErrors, isDirty },
+        formState: { dirtyFields, errors: formErrors, isDirty },
         getValues,
         handleSubmit,
         reset,
@@ -55,7 +48,16 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
 
     const submit = handleSubmit((data) => {
         if (isDirty) {
-            onSubmit?.(data)
+            // Only the switches the user changed: an untouched one must not overwrite a change
+            // made elsewhere meanwhile (an unsubscribe link opened in another tab)
+            const changed = SETTINGS.filter((key) => dirtyFields.settings?.[key])
+
+            onSubmit?.({
+                ...data,
+                settings: changed.length
+                    ? Object.fromEntries(changed.map((key) => [key, data.settings?.[key]]))
+                    : undefined
+            })
         }
     })
 
@@ -159,24 +161,62 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
             </div>
 
             <div className={styles.section}>
-                <h3 className={styles.header}>{t('sending-notifications-by-email')}</h3>
-                {SETTINGS.map((setting) => (
-                    <Controller
-                        key={setting}
-                        name={`settings.${setting}`}
-                        control={control}
-                        render={({ field }) => (
-                            <Checkbox
-                                className={styles.settings}
-                                id={setting}
-                                label={t(`checkbox_${setting}`)}
-                                disabled={loading}
-                                checked={!!field.value}
-                                onChange={(event) => field.onChange(event.target.checked)}
-                            />
-                        )}
-                    />
-                ))}
+                <h3 className={styles.header}>{t('notifications-settings')}</h3>
+
+                <PushDeviceSettings />
+
+                <table className={styles.notifications}>
+                    <thead>
+                        <tr>
+                            <th scope={'col'}>{t('notifications-settings-type')}</th>
+                            {ApiModel.NotificationChannels.map((channel) => (
+                                <th
+                                    key={channel}
+                                    scope={'col'}
+                                >
+                                    {t(`notification-channel_${channel}`)}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {ApiModel.NotificationTypes.map((type) => (
+                            <tr key={type}>
+                                <th scope={'row'}>{t(`notification-type_${type}`)}</th>
+                                {ApiModel.NotificationChannels.map((channel) => (
+                                    <td key={channel}>
+                                        {ApiModel.NotificationChannelTypes[channel].includes(type) ? (
+                                            <Controller
+                                                name={`settings.${ApiModel.userSettingKey(channel, type)}`}
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Checkbox
+                                                        id={ApiModel.userSettingKey(channel, type)}
+                                                        className={styles.channelCheckbox}
+                                                        aria-label={`${t(`notification-channel_${channel}`)}: ${t(`notification-type_${type}`)}`}
+                                                        disabled={loading}
+                                                        checked={!!field.value}
+                                                        onChange={(event) => field.onChange(event.target.checked)}
+                                                    />
+                                                )}
+                                            />
+                                        ) : (
+                                            <span
+                                                className={styles.notApplicable}
+                                                aria-hidden={true}
+                                            >
+                                                —
+                                            </span>
+                                        )}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+
+                <p className={styles.hint}>{t('email-notifications-hint')}</p>
+                <p className={styles.hint}>{t('push-column-hint')}</p>
             </div>
 
             {!loading && !!values?.authType && (
@@ -287,16 +327,7 @@ const mapFormValues = (values?: FormDataType): FormDataType => ({
     name: values?.name ?? '',
     newPassword: '',
     oldPassword: '',
-    settings: {
-        emailComment: values?.settings?.emailComment ?? true,
-        emailCover: values?.settings?.emailCover ?? true,
-        emailBookmark: values?.settings?.emailBookmark ?? true,
-        emailVisit: values?.settings?.emailVisit ?? true,
-        emailDigest: values?.settings?.emailDigest ?? true,
-        emailEdit: values?.settings?.emailEdit ?? true,
-        emailPhoto: values?.settings?.emailPhoto ?? true,
-        emailPlace: values?.settings?.emailPlace ?? true,
-        emailRating: values?.settings?.emailRating ?? true
-    },
+    // A missing key means the notification is on
+    settings: Object.fromEntries(SETTINGS.map((key) => [key, values?.settings?.[key] ?? true])),
     website: values?.website ?? ''
 })

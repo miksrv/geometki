@@ -9,10 +9,4 @@ return [
     'registrationError'    => 'При регистрации произошла ошибка, попробуйте ещё раз',
 
     'magicLinkInvalidOrExpired' => 'Ссылка для входа недействительна или истекла, запросите новую',
-    'magicLinkEmailSubject'     => 'Ссылка для входа на Geometki',
-    'magicLinkEmailTitle'       => 'Вход на Geometki',
-    'magicLinkEmailIntro'       => 'Нажмите на кнопку ниже, чтобы войти. Ссылка действительна 5 минут.',
-    'magicLinkEmailButton'      => 'Войти',
-    'magicLinkEmailExpiry'      => 'Срок действия ссылки — 5 минут с момента отправки этого письма.',
-    'magicLinkEmailFooter'      => 'Если вы не запрашивали это письмо, просто проигнорируйте его.',
 ];

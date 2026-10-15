@@ -80,9 +80,27 @@ auth.vk.redirect = ''
 
 smtp.mail = ''
 smtp.host = ''
-smtp.port = 25
+smtp.port = 465
 smtp.user = ''
 smtp.pass = ''
+# smtp.crypto = 'ssl'    # 'ssl' (implicit TLS, port 465; default), 'tls' (STARTTLS, port 587) or ''
+# smtp.replyTo = ''      # optional Reply-To address
+
+# Signs unsubscribe links in emails; defaults to auth.token.secret.
+# Changing it — or auth.token.secret while this is unset — invalidates the
+# unsubscribe links of emails already sent. Set it to keep them across JWT secret rotations.
+# mail.unsubscribeSecret = ''
+# Where email images (place covers) are loaded from; defaults to app.baseURL.
+# mail.imageHost = 'https://api.geometki.com/'
+
+#--------------------------------------------------------------------
+# WEB PUSH
+#--------------------------------------------------------------------
+# Generate once with `php spark push:vapid`: new keys invalidate every push subscription.
+# Without them push is off (nothing is queued, the client hides the switch).
+# push.vapidPublicKey = ''
+# push.vapidPrivateKey = ''
+# push.vapidSubject = 'mailto:info@geometki.com'
 
 #--------------------------------------------------------------------
 # CONTENT SECURITY POLICY

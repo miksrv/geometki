@@ -1,0 +1,40 @@
+@use '../../../styles/variables' as variables
+
+// Bottom right on desktop, clear of the toasts (bottom left); on phones at the top, under the
+// app bar, clear of the toasts and the bottom navigation
+.prompt
+    position: fixed
+    // Over the page and the bottom navigation (450), under the app bar's search (460) and the toasts (505)
+    z-index: 455
+    right: 16px
+    bottom: 16px
+    width: calc(100% - 32px)
+    max-width: 380px
+    padding: var(--container-padding)
+    background: var(--container-background)
+    border-radius: var(--container-radius)
+    box-shadow: var(--popout-shadow)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        // Under the app bar: its height is $appBarHeight in components/layout/app-bar
+        top: calc(50px + 8px + env(safe-area-inset-top, 0px))
+        bottom: auto
+        left: 16px
+        right: 16px
+        width: auto
+        max-width: none
+
+.title
+    margin: 0
+    font-size: variables.$fontSizeTitleH2
+
+.text
+    margin: 8px 0 0
+    color: var(--text-color-secondary)
+
+.actions
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: 8px
+    margin-top: 12px

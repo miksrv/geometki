@@ -8,8 +8,8 @@ import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslation
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
-import { setLocale } from '@/app/applicationSlice'
-import { wrapper } from '@/app/store'
+import { setLocale, setTimeZone } from '@/app/applicationSlice'
+import { useAppSelector, wrapper } from '@/app/store'
 import { AppLayout, FeedList, FeedPulse, PageHeader } from '@/components/shared'
 import { Tabs } from '@/components/ui'
 import { SITE_LINK } from '@/config/env'
@@ -17,6 +17,7 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { FEED_FILTERS, FeedFilter, feedFilterTypes, flattenFeedPages, isFeedFilter } from '@/utils/feed'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { getTimeZoneFromCookies } from '@/utils/timeZone'
 
 import styles from './activity.module.sass'
 
@@ -46,6 +47,7 @@ const ActivityPage: NextPage<ActivityPageProps> = ({ filter }) => {
     // A page after the first failed (the first failing leaves the feed empty)
     const nextPageFailed = isError && !!data?.pages.length
     const { data: pulse } = API.useFeedGetPulseQuery()
+    const timeZone = useAppSelector((state) => state.application.timeZone)
 
     const sentinelRef = useInfiniteScroll({
         hasMore: hasNextPage,
@@ -102,6 +104,7 @@ const ActivityPage: NextPage<ActivityPageProps> = ({ filter }) => {
                         stories={flattenFeedPages(data?.pages)}
                         loading={isLoading || isFetchingNextPage}
                         groupByDay={true}
+                        timeZone={timeZone}
                         emptyText={t('feed-empty', { defaultValue: 'Здесь пока ничего не произошло' })}
                         footer={
                             nextPageFailed ? (
@@ -132,6 +135,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
+            store.dispatch(setTimeZone(getTimeZoneFromCookies(cookies)))
 
             await Promise.all([
                 store.dispatch(API.endpoints.feedGetList.initiate(feedRequest(filter))),

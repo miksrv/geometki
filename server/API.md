@@ -1075,7 +1075,7 @@ Delete a permanent photo. Only the photo's uploader or an admin may delete it.
 
 ### External Photos
 
-Wikimedia Commons and PastVu photos linked to places. The images are not downloaded: they are served from the source and shown in the place gallery together with the uploaded photos (`GET /photos?place=`). Linking gives no experience and is not shown in the activity feed.
+Wikimedia Commons and PastVu photos linked to places. The images are not downloaded: they are served from the source and shown in the place gallery together with the uploaded photos (`GET /photos?place=`). Linking is a `photo_link` activity: it gives a little experience (`MODIFIER_PHOTO_LINK`, 1 point) and shows in the activity feed as a story of its own; unlinking takes both back.
 
 #### `GET /external-photos`
 
@@ -1276,7 +1276,7 @@ Update user profile fields. Can only update your own profile.
 | website | string | Personal website URL (max 150 chars) |
 | oldPassword | string | Current password required when changing password |
 | newPassword | string | New password (8–50 chars) |
-| settings | object | Notification preferences (booleans: `emailComment`, `emailEdit`, `emailPhoto`, `emailRating`, `emailCover`, `emailBookmark`, `emailVisit`, `emailDigest`); omitted keys keep their current value |
+| settings | object | Notification preferences: one boolean per `{channel}{Type}` of the types the channel carries (`app/Config/Notifications.php`): `emailComment`, `emailPhoto`, `emailRating`, `emailEdit`, `emailCover`, `emailBookmark`, `emailVisit`, `emailDigest`, `pushComment`, `pushPhoto`, `pushRating`, `pushEdit`, `pushCover`, `pushBookmark`, `pushVisit`, `pushAchievement`, `pushLevel`; omitted, unknown and non-boolean keys keep their current value |
 
 ```json
 {
@@ -1503,9 +1503,11 @@ Post a new comment on a place.
 
 ### Mail
 
+Every notification email carries a signed unsubscribe token `{userId}.{scope}.{signature}`. The scope is a notification type (`comment`, `photo`, `rating`, `edit`, `cover`, `bookmark`, `visit`, `digest`), `activity` (every activity type) or `all`. The token is in the footer link (`{siteUrl}/unsubscribe?token=…`) and in the `List-Unsubscribe` header, whose one-click POST (RFC 8058) mail clients send straight to `POST /mail/unsubscribe`. Tokens do not expire; they are signed with `mail.unsubscribeSecret` (defaults to `auth.token.secret`).
+
 #### `GET /mail/unsubscribe`
 
-Unsubscribe link from notification emails. Turns off the email setting matching the activity the email was about (comment, edit, photo, rating, cover, bookmark, visit), or `emailDigest` for a digest email.
+What a link unsubscribes from and whether those emails are still on. Changes nothing: mail clients open links to scan them.
 
 **Auth required:** No
 
@@ -1513,13 +1515,102 @@ Unsubscribe link from notification emails. Turns off the email setting matching 
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| mail | string | Yes | ID of the sent email (`sending_mail` row) |
+| token | string | One of | Unsubscribe token from an email |
+| mail | string | One of | ID of a `sending_mail` row — the links of emails sent before tokens; they stop working when `notifications:send` deletes the row (90 days) |
 
-**Response:** A localized success message string.
+**Response:**
 
-**Error responses:**
+```json
+{ "token": "65cfa7cc34b74.comment.qLEw_exq3BSco2NYTSZ-Ow", "scope": "comment", "subscribed": true }
+```
 
-- `400` — No `mail` parameter, or the email / its user / its place is not found
+`subscribed` is `true` while any type of the scope is on. For a `mail` link, `token` is the token to POST.
+
+**Error responses:** `400` — invalid or forged token, unknown email or user
+
+#### `POST /mail/unsubscribe`
+
+Turns the emails of the token's scope off, or every email with `scope: "all"`. Sign-in links are not affected.
+
+**Auth required:** No
+
+**Request:** `token` in the query string (the one-click form post `List-Unsubscribe=One-Click`), or a JSON body:
+
+```json
+{ "token": "65cfa7cc34b74.comment.qLEw_exq3BSco2NYTSZ-Ow", "scope": "all" }
+```
+
+**Response:**
+
+```json
+{ "scope": "all", "subscribed": false }
+```
+
+**Error responses:** `400` — invalid or forged token
+
+---
+
+### Push
+
+Web push notifications (features/16-weekly-digest-push-notifications.md). A browser's push subscription belongs to the user who enabled push on that device; a user may have several devices. What is pushed: activity on the user's places (as in email) plus new achievements and levels; which types go is the `push{Type}` settings (see `PATCH /users/:id`). Pushes are sent by `notifications:send`.
+
+#### `GET /push/key`
+
+The VAPID public key for `PushManager.subscribe()`.
+
+**Auth required:** No
+
+**Response:** `{ "publicKey": "BJaY…" }` — `null` when push is not set up on the server.
+
+#### `GET /push/subscriptions/status`
+
+Whether this device's subscription is on for the signed-in user.
+
+**Auth required:** Yes
+
+**Query parameters:** `endpoint` — the subscription's endpoint.
+
+**Response:** `{ "active": true, "devices": 2 }` (`devices` — the user's devices with push on)
+
+#### `POST /push/subscriptions`
+
+Turn push on for this device: store its subscription, or take it over from another account.
+
+**Auth required:** Yes
+
+**Request:**
+
+```json
+{ "endpoint": "https://fcm.googleapis.com/fcm/send/…", "keys": { "p256dh": "BNcR…", "auth": "tBHI…" }, "timezone": "Europe/Moscow" }
+```
+
+`timezone` (IANA) sets the quiet hours (23:00–08:00 on the device's clock); a missing or invalid one keeps the stored one.
+
+**Response:** `201` `{ "active": true }`
+
+**Error responses:** `400` — not a valid subscription (the endpoint must be https); `500` — push is not set up on the server
+
+#### `DELETE /push/subscriptions`
+
+Turn push off for this device. Body `{ "endpoint": "…" }`. No auth: the endpoint is the proof, so signing out can remove it after the token is gone.
+
+**Response:** `{ "active": false }`
+
+#### `POST /push/subscriptions/renew`
+
+The browser replaced the subscription (`pushsubscriptionchange` in the service worker, which has no auth token): moves the record to the new one. Body `{ "oldEndpoint": "…", "subscription": { "endpoint": "…", "keys": { … } } }`.
+
+**Response:** `{ "active": true }`; `404` when the old endpoint is unknown
+
+#### `POST /push/test`
+
+Send a test push to every device of the signed-in user at once.
+
+**Auth required:** Yes
+
+**Response:** `{ "sent": 1, "devices": 1 }` (`sent` — devices the push reached; a device the push service no longer knows is deleted)
+
+**Error responses:** `404` — no device with push on; `500` — push is not set up or the push service failed
 
 ---
 
@@ -1739,7 +1830,7 @@ All notification endpoints require authentication and return `401` otherwise.
 
 #### `GET /notifications/updates`
 
-Get up to 10 unread notifications from the last 15 minutes (for Snackbar/toast display). Also returns a count of older unread notifications. All returned notifications are marked as read.
+Get up to 10 unread notifications from the last 15 minutes (for toasts), newest first, and the number of unread notifications (the bell badge). Nothing is marked as read: the client calls `PATCH /notifications/read` for the toasts it has shown.
 
 **Auth required:** Yes
 
@@ -1750,11 +1841,15 @@ Get up to 10 unread notifications from the last 15 minutes (for Snackbar/toast d
   "items": [
     {
       "id": "n1n2n3n4",
-      "type": "notification",
+      "type": "comment",
       "activity": "comment",
       "meta": null,
-      "created": "2025-11-10T08:55:00+00:00",
       "read": false,
+      "created": {
+        "date": "2025-11-10 08:55:00.000000",
+        "timezone_type": 3,
+        "timezone": "UTC"
+      },
       "place": {
         "id": "a1b2c3d4e5f6g",
         "slug": "vodopad-gadelsha",
@@ -1769,13 +1864,13 @@ Get up to 10 unread notifications from the last 15 minutes (for Snackbar/toast d
 }
 ```
 
-Note: `count` is the number of unread notifications older than 15 minutes (shown as a badge). `place` is omitted for `level` and `achievements` notification types, whose `meta` is `{ title, level }` / `{ title, image }`. Notifications about collections carry `collection: { id, slug, title }`.
+Note: `count` is the number of unread notifications shown in the list. `experience` notifications ("+N XP" after the user's own action) are toast-only: they come in `updates` but never in the list or `count`. `place` is omitted for `level` and `achievements` notification types, whose `meta` is `{ title, level }` / `{ title, image }`; `place.cover` is `null` for a place without a cover. Notifications about collections carry `collection: { id, slug, title }`.
 
 ---
 
 #### `GET /notifications/list`
 
-Get a paginated list of all notifications for the current user. All returned unread notifications are marked as read.
+Get a page of the current user's notifications, newest first (toast-only `experience` notifications are left out). Nothing is marked as read.
 
 **Auth required:** Yes
 
@@ -1783,10 +1878,26 @@ Get a paginated list of all notifications for the current user. All returned unr
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| limit | integer | No | Max results (default 10) |
-| offset | integer | No | Pagination offset (default 0) |
+| limit | integer | No | Page size, 1–50 (default 10) |
+| cursor | string | No | `next` of the previous page; omit for the first page |
 
-**Response:** Same shape as `GET /notifications/updates`; here `count` is the total number of the user's notifications.
+**Response:** Same shape as `GET /notifications/updates`, plus `next` — the cursor of the next page, `null` on the last one; here `count` is the total number of the user's notifications in the list.
+
+---
+
+#### `PATCH /notifications/read`
+
+Mark notifications as read.
+
+**Auth required:** Yes
+
+**Request body (JSON, optional):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| ids | string[] | No | Up to 100 notification IDs; without `ids` all the user's notifications are marked as read |
+
+**Response:** `{ "count": 0 }` — the new number of unread notifications. `400` for an invalid `ids`.
 
 ---
 
@@ -2514,7 +2625,7 @@ Upload an achievement image: `multipart/form-data` field `image`, PNG or SVG, un
 
 #### `GET /sending-mail/manage`
 
-The outgoing email queue.
+The outgoing email queue. Statuses: `created` (waiting; `next_attempt_at` may hold it back), `process` (claimed by a `notifications:send` run), `completed`, `grouped` (went out inside the email of `groupId`), `error` (out of attempts, or the address does not exist), `rejected` (nothing to send, or the recipient turned the notification off; the reason is in `error`), `expired` (not sent within 3 days).
 
 **Auth required:** Yes (admin)
 
@@ -2525,7 +2636,7 @@ The outgoing email queue.
 | status | string | No | Filter by status |
 | email | string | No | Filter by recipient |
 | date_from / date_to | string | No | Creation date range |
-| sort | string | No | `created_at` (default), `updated_at`, `status`, `email` |
+| sort | string | No | `created_at` (default), `updated_at`, `sent_at`, `status`, `email` |
 | order | string | No | `asc` or `desc` (default `desc`) |
 | page | integer | No | Page number (default 1) |
 | limit | integer | No | Page size (default 20, max 100) |
@@ -2539,9 +2650,13 @@ The outgoing email queue.
       "id": "m1m2m3m4",
       "status": "completed",
       "email": "user@example.com",
-      "subject": "New comment",
+      "subject": "New comment on “Gadelsha waterfall”",
+      "type": "comment",
+      "attempts": 1,
+      "groupId": null,
       "created": { "date": "2026-10-01 10:00:00.000000", "timezone_type": 3, "timezone": "UTC" },
       "updated": { "date": "2026-10-01 10:01:00.000000", "timezone_type": 3, "timezone": "UTC" },
+      "sent": { "date": "2026-10-01 10:01:00.000000", "timezone_type": 3, "timezone": "UTC" },
       "user": { "id": "u1u2u3u4", "name": "traveler42", "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg" },
       "activity": { "type": "comment" }
     }
@@ -2610,18 +2725,20 @@ Spark commands (`php spark <command>`), not accessible over HTTP:
 
 | Command | Description |
 |---------|-------------|
-| `system:send-email` | Process and send queued notification emails |
-| `system:test-email` | Send a test email to verify SMTP configuration |
-| `system:calculate-tags-count` | Recalculate the usage counter of all tags |
-| `system:generate-users-online` | Simulate activity for internal geometki.com accounts |
+| `notifications:send` | Send a batch of queued pushes, then of emails (an email skips an event a push already told about), and, once a day, delete queue rows older than 90 days and push devices that keep failing (`--cleanup` — now). Cron, every minute; overlapping runs are safe |
+| `push:vapid` | Generate the VAPID keys for web push (paste into `.env`; once — new keys invalidate every subscription) |
+| `system:test-email` | Send every kind of email with sample data to an address (`--locale`, `--kind`) |
+| `email:preview` | Render every kind of email with sample data into `writable/email-preview/` |
 | `system:generate-place-slugs` | Backfill place slugs from their titles |
 | `locations:rebuild` | Re-geocode every place, merge duplicate locations, assign slugs |
 | `osm:collect` | Collect OSM candidates for the queued tiles (cron, every minute) |
 | `osm:rescore` | Recalculate OSM candidate scores from the stored tags |
-| `achievements:evaluate` | Evaluate and award achievements |
+| `achievements:evaluate` | Evaluate and award achievements (by hand, `--all` after adding or changing an achievement; not scheduled) |
 | `trending:refresh` | Refresh place trending scores |
 | `interests:refresh` | Refresh user interest profiles |
-| `digest:weekly` | Queue weekly digest emails |
+| `digest:weekly` | Queue weekly digest emails (cron, weekly; skips users who got one in the last 6 days unless `--force`). `notifications:send` sends them within the hosting limits — 500 an hour, 2000 a day; the rest wait in the queue (up to 6 days) |
+| `notifications:prune` | Delete toast-only and old read notifications (by hand, not scheduled) |
+| `sessions:prune` | Delete stale anonymous sessions that left nothing behind (by hand, not scheduled) |
 
 ---
 

@@ -2,7 +2,7 @@ import React from 'react'
 import { Provider } from 'react-redux'
 
 import { configureStore } from '@reduxjs/toolkit'
-import { render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 
 import { API } from '@/api'
 import applicationReducer from '@/app/applicationSlice'
@@ -23,9 +23,14 @@ jest.mock('simple-react-ui-kit', () => ({
             {label ?? children}
         </button>
     ),
-    Popout: ({ trigger, children }: any) => (
+    Popout: ({ trigger, children, onOpenChange }: any) => (
         <div>
-            <div data-testid={'popout-trigger'}>{trigger}</div>
+            <div
+                data-testid={'popout-trigger'}
+                onClick={() => onOpenChange?.(true)}
+            >
+                {trigger}
+            </div>
             <div data-testid={'popout-content'}>{children}</div>
         </div>
     ),
@@ -54,13 +59,15 @@ jest.mock('cookies-next', () => ({
     deleteCookie: jest.fn()
 }))
 
+const mockMarkRead = jest.fn()
+const mockClear = jest.fn()
+
 jest.mock('@/api', () => ({
     API: {
-        useNotificationsDeleteMutation: jest.fn().mockReturnValue([jest.fn(), { isLoading: false, isSuccess: false }]),
-        useNotificationsGetListQuery: jest
-            .fn()
-            .mockReturnValue({ data: undefined, isLoading: false, isFetching: false }),
-        useNotificationsGetUpdatesQuery: jest.fn().mockReturnValue({ data: undefined })
+        useNotificationsDeleteMutation: jest.fn(() => [mockClear, { isLoading: false }]),
+        useNotificationsGetListInfiniteQuery: jest.fn(),
+        useNotificationsGetUpdatesQuery: jest.fn().mockReturnValue({ data: undefined }),
+        useNotificationsPatchReadMutation: jest.fn(() => [mockMarkRead])
     }
 }))
 
@@ -68,8 +75,15 @@ jest.mock('@/components/ui', () => ({
     Counter: ({ value }: { value: number }) => <span data-testid={'counter'}>{value}</span>
 }))
 
-jest.mock('./NotificationListItem', () => ({
-    NotificationListItem: ({ message }: { message: string }) => <div data-testid={'notification-item'}>{message}</div>
+jest.mock('@/components/layout/snackbar', () => ({
+    Notification: ({ message, variant }: { message: string; variant: string }) => (
+        <div
+            data-testid={'notification-item'}
+            data-variant={variant}
+        >
+            {message}
+        </div>
+    )
 }))
 
 jest.mock('@/config/constants', () => ({
@@ -95,17 +109,28 @@ const makeStore = (preloadedState?: Record<string, unknown>) =>
 
 const renderWithStore = (ui: React.ReactElement, preloadedState?: Record<string, unknown>) => {
     const store = makeStore(preloadedState)
-    return render(<Provider store={store}>{ui}</Provider>)
+    return { store, ...render(<Provider store={store}>{ui}</Provider>) }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockList = (value: Record<string, unknown>) =>
+    jest.mocked(API.useNotificationsGetListInfiniteQuery).mockReturnValue(value as any)
+
+const listResult = (items: Array<Record<string, unknown>>, extra: Record<string, unknown> = {}) => ({
+    data: { pageParams: [''], pages: [{ count: items.length, items, next: null }] },
+    fetchNextPage: jest.fn(),
+    hasNextPage: false,
+    isFetching: false,
+    isFetchingNextPage: false,
+    isLoading: false,
+    ...extra
+})
 
 describe('NotificationList', () => {
     beforeEach(() => {
         jest.clearAllMocks()
-        jest.mocked(API.useNotificationsGetListQuery).mockReturnValue({
-            data: undefined,
-            isLoading: false,
-            isFetching: false
-        })
+        mockMarkRead.mockReturnValue({ unwrap: () => Promise.resolve({ count: 0 }) })
+        mockList({ data: undefined, isFetching: false, isLoading: false })
     })
 
     describe('rendering', () => {
@@ -117,13 +142,15 @@ describe('NotificationList', () => {
         })
 
         it('does not render the counter when unread count is 0', () => {
-            jest.mocked(API.useNotificationsGetUpdatesQuery).mockReturnValue({ data: { count: 0 } })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            jest.mocked(API.useNotificationsGetUpdatesQuery).mockReturnValue({ data: { count: 0 } } as any)
             renderWithStore(<NotificationList />)
             expect(screen.queryByTestId('counter')).not.toBeInTheDocument()
         })
 
         it('renders the counter with unread count when counter > 0', () => {
-            jest.mocked(API.useNotificationsGetUpdatesQuery).mockReturnValue({ data: { count: 3 } })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            jest.mocked(API.useNotificationsGetUpdatesQuery).mockReturnValue({ data: { count: 3 } } as any)
             renderWithStore(<NotificationList />)
             expect(screen.getByTestId('counter')).toHaveTextContent('3')
         })
@@ -140,32 +167,130 @@ describe('NotificationList', () => {
     })
 
     describe('notifications list', () => {
-        it('renders notification items when data is available', () => {
-            jest.mocked(API.useNotificationsGetListQuery).mockReturnValue({
+        it('renders the items of every loaded page as list rows', () => {
+            mockList({
+                ...listResult([]),
                 data: {
-                    items: [
-                        { id: 'n1', type: 'success', message: 'First notification', read: false },
-                        { id: 'n2', type: 'success', message: 'Second notification', read: true }
-                    ],
-                    count: 2
-                },
-                isLoading: false,
-                isFetching: false
+                    pageParams: ['', 'n1'],
+                    pages: [
+                        {
+                            count: 2,
+                            items: [{ id: 'n1', message: 'First notification', read: false, type: 'success' }]
+                        },
+                        { count: 2, items: [{ id: 'n2', message: 'Second notification', read: true, type: 'success' }] }
+                    ]
+                }
             })
 
             renderWithStore(<NotificationList />)
-            expect(screen.getAllByTestId('notification-item')).toHaveLength(2)
+
+            const items = screen.getAllByTestId('notification-item')
+            expect(items).toHaveLength(2)
+            expect(items[0]).toHaveAttribute('data-variant', 'list')
         })
 
         it('renders spinner when loading', () => {
-            jest.mocked(API.useNotificationsGetListQuery).mockReturnValue({
-                data: undefined,
-                isLoading: true,
-                isFetching: false
-            })
+            mockList({ ...listResult([]), data: undefined, isLoading: true })
 
             renderWithStore(<NotificationList />)
             expect(screen.getByTestId('spinner')).toBeInTheDocument()
+        })
+
+        it('loads the list only while the popout is open', () => {
+            renderWithStore(<NotificationList />)
+            expect(API.useNotificationsGetListInfiniteQuery).toHaveBeenLastCalledWith(
+                undefined,
+                expect.objectContaining({ skip: true })
+            )
+
+            fireEvent.click(screen.getByTestId('popout-trigger'))
+
+            expect(API.useNotificationsGetListInfiniteQuery).toHaveBeenLastCalledWith(
+                undefined,
+                expect.objectContaining({ refetchOnMountOrArgChange: true, skip: false })
+            )
+        })
+
+        it('marks the unread rows shown in the open list as read, once', () => {
+            mockList(
+                listResult([
+                    { id: 'n1', message: 'New', read: false, type: 'success' },
+                    { id: 'n2', message: 'Old', read: true, type: 'success' }
+                ])
+            )
+
+            const { rerender, store } = renderWithStore(<NotificationList />)
+            expect(mockMarkRead).not.toHaveBeenCalled()
+
+            fireEvent.click(screen.getByTestId('popout-trigger'))
+            rerender(
+                <Provider store={store}>
+                    <NotificationList />
+                </Provider>
+            )
+
+            expect(mockMarkRead).toHaveBeenCalledTimes(1)
+            expect(mockMarkRead).toHaveBeenCalledWith({ ids: ['n1'] })
+        })
+
+        it('marks the rows again after a failed request, with the next fetch of the list', async () => {
+            mockMarkRead.mockReturnValueOnce({ unwrap: () => Promise.reject(new Error('503')) })
+            mockList(listResult([{ id: 'n1', message: 'New', read: false, type: 'success' }]))
+
+            const { rerender, store } = renderWithStore(<NotificationList />)
+
+            await act(async () => {
+                fireEvent.click(screen.getByTestId('popout-trigger'))
+            })
+            expect(mockMarkRead).toHaveBeenCalledTimes(1)
+
+            // The list is fetched again (a new page, opening it again): the row is marked again
+            mockList(listResult([{ id: 'n1', message: 'New', read: false, type: 'success' }]))
+            await act(async () => {
+                rerender(
+                    <Provider store={store}>
+                        <NotificationList />
+                    </Provider>
+                )
+            })
+
+            expect(mockMarkRead).toHaveBeenCalledTimes(2)
+            expect(mockMarkRead).toHaveBeenLastCalledWith({ ids: ['n1'] })
+        })
+
+        it('loads the next page when the list is scrolled to its end', () => {
+            const fetchNextPage = jest.fn()
+            mockList(
+                listResult([{ id: 'n1', message: 'First', read: true, type: 'success' }], {
+                    fetchNextPage,
+                    hasNextPage: true
+                })
+            )
+
+            renderWithStore(<NotificationList />)
+
+            const scroller = screen.getByTestId('notification-item').parentElement as HTMLElement
+            Object.defineProperty(scroller, 'scrollHeight', { value: 300 })
+            Object.defineProperty(scroller, 'clientHeight', { value: 280 })
+            fireEvent.scroll(scroller, { target: { scrollTop: 10 } })
+
+            expect(fetchNextPage).toHaveBeenCalledTimes(1)
+        })
+
+        it('clears the list and the toasts, and confirms it with a toast', async () => {
+            mockClear.mockReturnValue({ unwrap: () => Promise.resolve() })
+            mockList(listResult([{ id: 'n1', message: 'First', read: true, type: 'success' }]))
+
+            const { store } = renderWithStore(<NotificationList />, {
+                notification: { list: [{ id: 'old', message: 'Old toast', type: 'success' }] }
+            })
+
+            await act(async () => {
+                fireEvent.click(screen.getByText('Очистить список'))
+            })
+
+            expect(mockClear).toHaveBeenCalled()
+            expect(store.getState().notification.list.map(({ id }) => id)).toStrictEqual(['clearNotification'])
         })
     })
 })

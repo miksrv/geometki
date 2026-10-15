@@ -5,11 +5,14 @@ namespace App\Models;
 use App\Entities\SendingMailEntity;
 
 /**
- * Model for the `sending_mail` table.
+ * Model for the `sending_mail` table — the outgoing email queue.
  *
- * Tracks outbound email jobs: their status lifecycle (created → process →
- * completed / error), the email address, rendered subject and body, and any
- * delivery error message.
+ * Status lifecycle: created → process (claimed by a `notifications:send` run)
+ * → completed | grouped (sent inside another row's email) | error (out of
+ * attempts or undeliverable) | rejected (nothing to send or the recipient
+ * turned it off) | expired (not sent in time). A failed attempt goes back to
+ * created with a later next_attempt_at. Queue mechanics: QueueRows; what to send:
+ * App\Libraries\Mail\MailQueue.
  *
  * Note: the class is intentionally named SendingMail (without the Model suffix)
  * to preserve backward compatibility with the many existing call-sites.
@@ -18,6 +21,8 @@ use App\Entities\SendingMailEntity;
  */
 class SendingMail extends ApplicationBaseModel
 {
+    use QueueRows;
+
     protected $table            = 'sending_mail';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = false;
@@ -27,6 +32,8 @@ class SendingMail extends ApplicationBaseModel
     /** @var array<int, string> */
     protected $allowedFields = [
         'activity_id',
+        'user_id',
+        'type',
         'status',
         'email',
         'locale',
@@ -34,6 +41,12 @@ class SendingMail extends ApplicationBaseModel
         'message',
         'sent_email',
         'error',
+        'attempts',
+        'next_attempt_at',
+        'locked_by',
+        'locked_at',
+        'sent_at',
+        'group_id',
     ];
 
     protected $useTimestamps = true;
@@ -63,12 +76,13 @@ class SendingMail extends ApplicationBaseModel
         return $this
             ->select(
                 'sending_mail.id, sending_mail.activity_id, sending_mail.status,
-                sending_mail.email, sending_mail.subject,
+                sending_mail.email, sending_mail.subject, sending_mail.type, sending_mail.attempts,
+                sending_mail.sent_at, sending_mail.group_id,
                 sending_mail.created_at, sending_mail.updated_at,
                 users.id as user_id, users.name as user_name, users.avatar as user_avatar,
                 activity.type as activity_type'
             )
-            ->join('users', 'users.email = sending_mail.email', 'left')
+            ->join('users', 'users.id = sending_mail.user_id', 'left')
             ->join('activity', 'activity.id = sending_mail.activity_id', 'left');
     }
 
@@ -84,11 +98,12 @@ class SendingMail extends ApplicationBaseModel
             ->select(
                 'sending_mail.id, sending_mail.activity_id, sending_mail.status,
                 sending_mail.email, sending_mail.subject, sending_mail.message, sending_mail.error,
+                sending_mail.type, sending_mail.attempts, sending_mail.sent_at, sending_mail.group_id,
                 sending_mail.created_at, sending_mail.updated_at,
                 users.id as user_id, users.name as user_name, users.avatar as user_avatar,
                 activity.type as activity_type'
             )
-            ->join('users', 'users.email = sending_mail.email', 'left')
+            ->join('users', 'users.id = sending_mail.user_id', 'left')
             ->join('activity', 'activity.id = sending_mail.activity_id', 'left');
     }
 
@@ -157,23 +172,5 @@ class SendingMail extends ApplicationBaseModel
         }
 
         return $stats;
-    }
-
-    /**
-     * Return the most recent sending record for a given email address, filtered
-     * by whether it has an associated activity row.
-     *
-     * @param string $email     The recipient email address.
-     * @param bool   $activity  If true, require activity_id IS NOT NULL.
-     * @return object|array|null
-     */
-    public function checkSendLastEmail(string $email, bool $activity = true): object|array|null
-    {
-        return $this
-            ->select('created_at')
-            ->where('email', $email)
-            ->where($activity ? 'activity_id IS NOT NULL' : 'activity_id IS NULL')
-            ->orderBy('created_at', 'DESC')
-            ->first();
     }
 }

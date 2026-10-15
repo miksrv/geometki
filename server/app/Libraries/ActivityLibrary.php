@@ -3,8 +3,8 @@
 namespace App\Libraries;
 
 use App\Libraries\AchievementsLibrary;
+use App\Libraries\Mail\MailQueue;
 use App\Models\ActivityModel;
-use App\Models\SendingMail;
 use App\Models\UsersModel;
 use CodeIgniter\I18n\Time;
 use Exception;
@@ -12,12 +12,11 @@ use ReflectionException;
 use Throwable;
 
 const ACTIVITY_FLOOD_MIN = 35;
-const EMAIL_NOTIFY_FLOOD_HOURS = 5;
 
 class ActivityLibrary {
     private string $owner;
 
-    protected array $types = ['photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark', 'collection', 'collection_place'];
+    protected array $types = ['photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark', 'collection', 'collection_place', 'photo_link'];
 
     public function owner(string $userId): static
     {
@@ -34,6 +33,19 @@ class ActivityLibrary {
     public function photo($photoId, $placeId): void
     {
         $this->_add('photo', $photoId, $placeId);
+    }
+
+    /**
+     * A PastVu or Wikimedia Commons photo linked to a place. Unlinking deletes the photo
+     * row and, by the foreign key, this activity row with it.
+     *
+     * @param string $externalPhotoId places_external_photos.id
+     * @param string $placeId
+     * @throws ReflectionException
+     */
+    public function photoLink(string $externalPhotoId, string $placeId): void
+    {
+        $this->_add('photo_link', null, $placeId, externalPhotoId: $externalPhotoId);
     }
 
     /**
@@ -131,7 +143,7 @@ class ActivityLibrary {
     }
 
     /**
-     * @param string $type One of: 'photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark', 'collection', 'collection_place'
+     * @param string $type One of: 'photo', 'place', 'rating', 'edit', 'cover', 'comment', 'visit', 'bookmark', 'collection', 'collection_place', 'photo_link'
      * @param string|null $photoId
      * @param string|null $placeId
      * @param string|null $ratingId
@@ -139,6 +151,7 @@ class ActivityLibrary {
      * @param string|null $collectionId
      * @param string|null $asUserId Attribute the activity (and its XP/achievements)
      *                              to this user instead of the current session's user.
+     * @param string|null $externalPhotoId A linked PastVu / Commons photo (places_external_photos.id)
      * @throws ReflectionException
      * @throws Exception
      */
@@ -150,6 +163,7 @@ class ActivityLibrary {
         string|null $commentId = null,
         string|null $collectionId = null,
         string|null $asUserId = null,
+        string|null $externalPhotoId = null,
     ): void {
         if (!in_array($type, $this->types)) {
             return ;
@@ -196,6 +210,7 @@ class ActivityLibrary {
         $activity->session_id = !$isAttributedAuth ? $session->id : null;
         $activity->user_id    = $attributedUserId;
         $activity->photo_id   = $photoId;
+        $activity->external_photo_id = $externalPhotoId;
         $activity->place_id   = $placeId;
         $activity->rating_id  = $ratingId;
         $activity->comment_id = $commentId;
@@ -224,42 +239,24 @@ class ActivityLibrary {
 
         // Send notification to place owner
         if (isset($this->owner) && $this->owner !== $attributedUserId) {
-            $notify = new NotifyLibrary();
-            $notify->push($type, $this->owner, $activityId);
+            // Like the feed, the in-app notification must not fail the action itself
+            try {
+                (new NotifyLibrary())->push($type, $this->owner, $activityId);
+            } catch (Throwable $e) {
+                log_message('error', '{exception}', ['exception' => $e]);
+            }
 
-            // Get owner email settings
-            $userModel = new UsersModel();
-            $ownerUser = $userModel->getUserById($this->owner, true);
-            $settings  = $ownerUser->settings;
+            // Email: queued if the owner wants it; MailQueue groups and paces what follows
+            try {
+                $owner = (new UsersModel())
+                    ->select('id, email, email_bounced_at, locale, settings')
+                    ->find($this->owner);
 
-            /**
-             * Email Notifications
-             */
-            if (($settings->emailPhoto && $type === 'photo')
-                || ($settings->emailComment && $type === 'comment')
-                || ($settings->emailEdit && $type === 'edit')
-                || ($settings->emailRating && $type === 'rating')
-                || ($settings->emailCover && $type === 'cover')
-                || ($settings->emailBookmark && $type === 'bookmark')
-                || ($settings->emailVisit && $type === 'visit')
-            ) {
-                /**
-                 * When we send email as notification of any activity on the site, we
-                 * do not fill in subject and message, they are filled in themselves if activity_id is set
-                 */
-                $sendingEmailModel = new SendingMail();
-                $lastSendEmailTime = $sendingEmailModel->checkSendLastEmail($ownerUser->email);
-
-                if ($lastSendEmailTime && abs($timeNow->difference($lastSendEmailTime->created_at)->getHours()) <= EMAIL_NOTIFY_FLOOD_HOURS) {
-                    return ;
+                if ($owner) {
+                    (new MailQueue())->queueActivity($owner, $type, $activityId);
                 }
-
-                $email = new \App\Entities\SendingMailEntity();
-                $email->activity_id = $activityId;
-                $email->email       = $ownerUser->email;
-                $email->locale      = $ownerUser->locale;
-
-                $sendingEmailModel->insert($email);
+            } catch (Throwable $e) {
+                log_message('error', '{exception}', ['exception' => $e]);
             }
         }
     }

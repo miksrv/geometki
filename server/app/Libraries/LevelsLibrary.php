@@ -10,7 +10,7 @@ class LevelsLibrary {
 
     public object $statistic;
 
-    private array $types = ['place', 'photo', 'rating', 'edit', 'cover', 'comment'];
+    private array $types = ['place', 'photo', 'rating', 'edit', 'cover', 'comment', 'photo_link'];
 
 
     public function __construct() {
@@ -23,10 +23,11 @@ class LevelsLibrary {
      *
      * The method is used when changing the gradation of levels (when you need to recalculate the levels of all users)
      * Or when the user adds/edits material
+     * @param bool $notify false: a silent recount (migrations), no "new level" notification
      * @return $this
      * @throws ReflectionException
      */
-    public function calculate(UserEntity $user): static {
+    public function calculate(UserEntity $user, bool $notify = true): static {
         $activityModel = new ActivityModel();
         $activityData  = $activityModel
             ->select('type, COUNT(*) as cnt')
@@ -40,7 +41,8 @@ class LevelsLibrary {
             'rating'  => 0,
             'edit'    => 0,
             'cover'   => 0,
-            'comment' => 0
+            'comment' => 0,
+            'photo_link' => 0
         ];
 
         if ($activityData) {
@@ -59,6 +61,7 @@ class LevelsLibrary {
         $experience += $statistic->edit * MODIFIER_EDIT;
         $experience += $statistic->cover * MODIFIER_COVER;
         $experience += $statistic->comment * MODIFIER_COMMENT;
+        $experience += $statistic->photo_link * MODIFIER_PHOTO_LINK;
 
         // Add XP bonuses from earned achievements (only current tier per group)
         $db  = \Config\Database::connect();
@@ -82,7 +85,7 @@ class LevelsLibrary {
             $userModel = new UsersModel();
             $userModel->update($user->id, ['level' => $calcLevel->level, 'experience' => $experience]);
 
-             if ($calcLevel->level > (int) $user->level) {
+             if ($notify && $calcLevel->level > (int) $user->level) {
                  $notify = new NotifyLibrary();
                  $notify->push('level', $user->id, null, $calcLevel);
              }
@@ -133,6 +136,10 @@ class LevelsLibrary {
             case 'comment' :
                 $experience = MODIFIER_COMMENT;
                 break;
+
+            case 'photo_link' :
+                $experience = MODIFIER_PHOTO_LINK;
+                break;
         }
 
         $userData->experience += $experience;
@@ -141,10 +148,12 @@ class LevelsLibrary {
         $notify    = new NotifyLibrary();
 
         if ($calcLevel->level !== (int) $userData->level) {
-            $notify->push('level', $userId, $activity, $calcLevel);
             $userModel->update($userData->id, ['level' => $calcLevel->level, 'experience' => $userData->experience]);
 
+            // A recalculation may also lower the level: only a new level is news
             if ($calcLevel->level > (int) $userData->level) {
+                $notify->push('level', $userId, $activity, $calcLevel);
+
                 try {
                     (new FeedLibrary())->level($userId, $calcLevel->level);
                 } catch (\Throwable $e) {

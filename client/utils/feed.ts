@@ -2,7 +2,7 @@ import dayjs from 'dayjs'
 
 import { FeedStory, FeedStoryTypes } from '@/api/models/feed'
 import { CalendarDay, ListResponse } from '@/api/types/feed'
-import { SITE_UTC_OFFSET } from '@/config/constants'
+import { SITE_TIME_ZONE, zonedDay } from '@/utils/timeZone'
 
 /** Stories of one local day, newest first */
 export type FeedDay = {
@@ -22,12 +22,12 @@ export type CalendarCell = {
     outside: boolean
 }
 
-/** The day in the site's time zone (SITE_UTC_OFFSET) of a server (UTC) time */
-export const siteDay = (date?: string): string =>
-    date ? dayjs.utc(date).utcOffset(SITE_UTC_OFFSET).format('YYYY-MM-DD') : ''
+/** The day in the viewer's time zone (utils/timeZone.ts) of a server (UTC) time */
+export const localDay = (date?: string, timeZone: string = SITE_TIME_ZONE): string =>
+    date ? zonedDay(dayjs.utc(date).toDate(), timeZone) : ''
 
-/** Today in the site's time zone: the same on the server and in any browser */
-export const siteToday = (): string => dayjs().utcOffset(SITE_UTC_OFFSET).format('YYYY-MM-DD')
+/** Today in the viewer's time zone */
+export const localToday = (timeZone: string = SITE_TIME_ZONE): string => zonedDay(new Date(), timeZone)
 
 /**
  * The stories of all loaded pages as one list. A story that grew while the reader
@@ -50,12 +50,12 @@ export const flattenFeedPages = (pages?: ListResponse[]): FeedStory[] => {
     return stories
 }
 
-/** Stories split into days (of the site's time zone) by their last event, keeping the order */
-export const groupStoriesByDay = (stories?: FeedStory[]): FeedDay[] => {
+/** Stories split into days (of the viewer's time zone) by their last event, keeping the order */
+export const groupStoriesByDay = (stories?: FeedStory[], timeZone?: string): FeedDay[] => {
     const days: FeedDay[] = []
 
     stories?.forEach((story) => {
-        const date = siteDay(story.updated?.date)
+        const date = localDay(story.updated?.date, timeZone)
         const last = days[days.length - 1]
 
         if (last?.date === date) {
@@ -150,7 +150,7 @@ export const buildCalendarWeeks = (
 export const FEED_FILTERS = {
     achievements: [FeedStoryTypes.Achievement, FeedStoryTypes.Level],
     collections: [FeedStoryTypes.Collection, FeedStoryTypes.CollectionPlace],
-    photos: [FeedStoryTypes.Photo],
+    photos: [FeedStoryTypes.Photo, FeedStoryTypes.PhotoLink],
     places: [FeedStoryTypes.Place],
     reviews: [FeedStoryTypes.Comment]
 } as const

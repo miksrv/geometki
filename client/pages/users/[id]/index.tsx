@@ -10,13 +10,14 @@ import { JsonLdScript } from 'next-seo'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
-import { setLocale } from '@/app/applicationSlice'
+import { setLocale, setTimeZone } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
 import { AppLayout, PhotoGallery } from '@/components/shared'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { UserActivity, UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
 import { formatDateISO } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
+import { getTimeZoneFromCookies } from '@/utils/timeZone'
 
 interface UserPageProps {
     id: string
@@ -158,7 +159,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return { notFound: true }
             }
 
+            const timeZone = getTimeZoneFromCookies(context.req.cookies)
+
             store.dispatch(setLocale(locale))
+            store.dispatch(setTimeZone(timeZone))
 
             const { data: userData, isError } = await store.dispatch(API.endpoints.usersGetItem.initiate(id))
 
@@ -172,7 +176,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             await Promise.all([
                 store.dispatch(API.endpoints.feedGetList.initiate({ author: id })),
-                store.dispatch(API.endpoints.feedGetCalendar.initiate({ author: id }))
+                store.dispatch(API.endpoints.feedGetCalendar.initiate({ author: id, tz: timeZone }))
             ])
 
             if (isError) {

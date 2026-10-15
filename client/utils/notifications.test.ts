@@ -1,6 +1,6 @@
 import { TFunction } from 'i18next'
 
-import { getActivityTitle } from './notifications'
+import { getActivityTitle, getNotificationText, getNotificationTitle } from './notifications'
 
 const t = jest.fn(
     (key: string, opts?: Record<string, unknown>) => (opts?.defaultValue as string) ?? key
@@ -31,5 +31,40 @@ describe('getActivityTitle', () => {
         expect(getActivityTitle('experience', t)).toBe('')
         expect(getActivityTitle('info', t)).toBe('')
         expect(getActivityTitle('success', t)).toBe('')
+    })
+})
+
+describe('getNotificationTitle', () => {
+    it('prefers an explicit title, even an empty one', () => {
+        expect(getNotificationTitle({ id: '1', title: '', type: 'error' }, t)).toBe('')
+        expect(getNotificationTitle({ id: '1', title: 'Custom', type: 'photo' }, t)).toBe('Custom')
+    })
+
+    it('names the activity, then the type', () => {
+        expect(getNotificationTitle({ activity: 'photo', id: '1', type: 'comment' }, t)).toBe(
+            'Загружена новая фотография'
+        )
+        expect(getNotificationTitle({ id: '1', type: 'level' }, t)).toBe('Новый уровень!')
+    })
+
+    it('adds the XP to an experience notification', () => {
+        expect(getNotificationTitle({ activity: 'rating', id: '1', meta: { value: 5 }, type: 'experience' }, t)).toBe(
+            'Поставлена новая оценка +5 XP'
+        )
+    })
+})
+
+describe('getNotificationText', () => {
+    it('describes experience, level and achievement notifications', () => {
+        expect(getNotificationText({ id: '1', meta: { value: 5 }, type: 'experience' }, t)).toBe('+5 опыта')
+        expect(getNotificationText({ id: '1', meta: { level: 3, title: 'Scout' }, type: 'level' }, t)).toBe('Scout (3)')
+        expect(getNotificationText({ id: '1', meta: { title: 'First photo' }, type: 'achievements' }, t)).toBe(
+            'First photo'
+        )
+    })
+
+    it('falls back to the message', () => {
+        expect(getNotificationText({ id: '1', message: 'Saved', type: 'success' }, t)).toBe('Saved')
+        expect(getNotificationText({ id: '1', type: 'photo' }, t)).toBe('')
     })
 })

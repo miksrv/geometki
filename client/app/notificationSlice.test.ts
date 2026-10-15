@@ -1,16 +1,12 @@
 import { ApiModel } from '@/api'
 
 import notificationReducer, {
+    addNotification,
     deleteAllNotifications,
     deleteNotification,
+    NotifyReplace,
     setReadNotification
 } from './notificationSlice'
-
-// addNotification is internal to the slice — access it via the reducer by constructing the action manually
-const addNotification = (notification: ApiModel.Notification) => ({
-    payload: notification,
-    type: 'snackbar/addNotification'
-})
 
 describe('notificationSlice', () => {
     const initialState = {
@@ -96,6 +92,39 @@ describe('notificationSlice', () => {
             const state = notificationReducer(stateWithOne, setReadNotification('nonexistent'))
 
             expect(state.list).toHaveLength(1)
+        })
+
+        it('keeps the toast in its place on screen', () => {
+            const state = notificationReducer(
+                { ...initialState, list: [{ ...notifA, read: false }, notifB] },
+                setReadNotification('a')
+            )
+
+            expect(state.list.map(({ id }) => id)).toStrictEqual(['a', 'b'])
+        })
+    })
+
+    describe('addNotification without content', () => {
+        it('ignores a notification with neither a type nor a message', () => {
+            const state = notificationReducer({ ...initialState }, addNotification({ id: 'empty' }))
+
+            expect(state.list).toStrictEqual([])
+        })
+    })
+
+    describe('NotifyReplace', () => {
+        it('adds a new toast as unread', () => {
+            const state = notificationReducer({ ...initialState }, NotifyReplace(notifA))
+
+            expect(state.list).toStrictEqual([{ ...notifA, read: false }])
+        })
+
+        it('replaces the toast with the same id in place and bumps its revision', () => {
+            const first = notificationReducer({ ...initialState, list: [notifA, notifB] }, NotifyReplace(notifA))
+            const second = notificationReducer(first, NotifyReplace({ ...notifA, message: 'Updated' }))
+
+            expect(second.list.map(({ id }) => id)).toStrictEqual(['a', 'b'])
+            expect(second.list[0]).toMatchObject({ message: 'Updated', read: false, revision: 2 })
         })
     })
 })

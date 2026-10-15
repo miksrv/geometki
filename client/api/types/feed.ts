@@ -43,6 +43,8 @@ export interface PulseResponse {
 
 export interface CalendarRequest {
     author: string
+    /** IANA zone of the days, the viewer's one; the site's by default */
+    tz?: string
 }
 
 export interface CalendarDay {
