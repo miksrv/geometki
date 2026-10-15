@@ -147,6 +147,25 @@ final class MailTest extends CIUnitTestCase
         $this->assertStringContainsString('Пещера', $result['text']);
     }
 
+    public function testRepeatedActionsOfOnePersonAreOneLine(): void
+    {
+        $result = ActivityMail::render([
+            $this->event('edit', 'Водопад', ['actor' => 'Сергей']),
+            $this->event('edit', 'Водопад', ['actor' => 'Сергей']),
+            $this->event('cover', 'Водопад', ['actor' => 'Дима']),
+            $this->event('edit', 'Водопад', ['actor' => 'Сергей']),
+            $this->event('edit', 'Водопад', ['actor' => 'Дима']),
+            $this->event('comment', 'Водопад', ['actor' => 'Сергей', 'comment' => 'Раз']),
+            $this->event('comment', 'Водопад', ['actor' => 'Сергей', 'comment' => 'Два']),
+        ], 'Ann', 'ru');
+
+        $this->assertSame('На ваших местах 7 новых событий', $result['subject']);
+        $this->assertSame(1, substr_count($result['html'], 'Правка описания · Сергей'));
+        $this->assertStringContainsString('Правка описания · Сергей · ×3', $result['html']);
+        $this->assertStringContainsString('Правка описания · Дима', $result['html']);
+        $this->assertSame(2, substr_count($result['html'], 'Новый комментарий · Сергей'), 'comments stay apart');
+    }
+
     public function testUserTextIsEscaped(): void
     {
         $result = ActivityMail::render([
@@ -235,6 +254,35 @@ final class MailTest extends CIUnitTestCase
     {
         $this->assertStringEndsWith('/uploads/users/u1/a.png', MailUrls::upload('uploads/users/u1/a.png'));
         $this->assertSame('https://cdn.test/a.png', MailUrls::upload('https://cdn.test/a.png'));
+    }
+
+    public function testApiLinksWithoutBaseUrlPointToProductionNotLocalhost(): void
+    {
+        $names = ['app.baseURL', 'mail.imageHost'];
+        $saved = [];
+
+        foreach ($names as $name) {
+            $saved[$name] = [getenv($name), $_ENV[$name] ?? null, $_SERVER[$name] ?? null];
+            putenv($name);
+            unset($_ENV[$name], $_SERVER[$name]);
+        }
+
+        try {
+            $this->assertSame('https://api.geometki.com/uploads/places/p1/cover_preview.jpg', MailUrls::placeCover('p1'));
+            $this->assertStringStartsWith('https://api.geometki.com/mail/unsubscribe', MailUrls::oneClickUnsubscribe('a.b.c'));
+        } finally {
+            foreach ($saved as $name => [$process, $env, $server]) {
+                if ($process !== false) {
+                    putenv($name . '=' . $process);
+                }
+                if ($env !== null) {
+                    $_ENV[$name] = $env;
+                }
+                if ($server !== null) {
+                    $_SERVER[$name] = $server;
+                }
+            }
+        }
     }
 
     // -------------------------------------------------------------------------

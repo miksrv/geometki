@@ -83,15 +83,37 @@ class ActivityMail
                 'events' => [],
             ];
 
+            $actor   = $event['actor'] ?: MailText::get($locale, 'guest');
+            $comment = $event['comment'] !== null ? trim($event['comment']) : null;
+
+            // Repeats of one action by one person (several edits in a row)
+            // are one line with a count; comments and ratings stay apart
+            $repeat = $comment === null && !$event['rating'] ? $event['type'] . "\n" . $actor : null;
+
+            if ($repeat !== null && isset($places[$event['placeId']]['repeats'][$repeat])) {
+                $places[$event['placeId']]['events'][$places[$event['placeId']]['repeats'][$repeat]]['count']++;
+
+                continue;
+            }
+
+            if ($repeat !== null) {
+                $places[$event['placeId']]['repeats'][$repeat] = count($places[$event['placeId']]['events']);
+            }
+
             $places[$event['placeId']]['events'][] = [
                 'type'    => $event['type'],
-                'actor'   => $event['actor'] ?: MailText::get($locale, 'guest'),
-                'comment' => $event['comment'] !== null ? trim($event['comment']) : null,
+                'actor'   => $actor,
+                'comment' => $comment,
                 'rating'  => $event['rating'],
+                'count'   => 1,
             ];
         }
 
-        $places = array_values($places);
+        $places = array_values(array_map(static function (array $place): array {
+            unset($place['repeats']);
+
+            return $place;
+        }, $places));
 
         if ($single) {
             $subject  = MailText::get($locale, 'subject_' . $events[0]['type'], ['place' => $events[0]['title']]);

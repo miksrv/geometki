@@ -10,8 +10,10 @@ namespace App\Libraries\Mail;
 class MailUrls
 {
     private const DEFAULT_SITE = 'https://geometki.com';
+    private const DEFAULT_API  = 'https://api.geometki.com';
 
-    private static bool $warned = false;
+    private static bool $warned    = false;
+    private static bool $apiWarned = false;
 
     public static function siteRoot(): string
     {
@@ -113,7 +115,16 @@ class MailUrls
 
     public static function apiRoot(): string
     {
-        return rtrim((string) (self::setting('app.baseURL') ?: config('App')->baseURL ?: 'https://api.geometki.com/'), '/');
+        // Not config('App')->baseURL: without the setting it is the framework's
+        // localhost default, and emails would load covers from http://localhost:8080
+        $api = self::setting('app.baseURL');
+
+        if (!$api && ENVIRONMENT !== 'production' && !self::$apiWarned) {
+            self::$apiWarned = true;
+            log_message('warning', '[Mail] app.baseURL is not set: email images and unsubscribe links point to ' . self::DEFAULT_API);
+        }
+
+        return rtrim((string) ($api ?: self::DEFAULT_API), '/');
     }
 
     public static function imageRoot(): string
