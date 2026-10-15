@@ -8,7 +8,7 @@ use CodeIgniter\Database\Migration;
  * Adds the `bot` user role: an account for automated edits (e.g. machine translations of
  * place texts). Its place edits are saved and logged as revisions like anyone else's, but
  * leave no activity, notifications or XP, a text-only edit does not touch the place's
- * updated_at or change its slug (App\Controllers\Places::update()), and the account is
+ * updated_at (a new Russian title still moves the slug, App\Controllers\Places::update()), and the account is
  * left out of the users list and the sitemap.
  */
 class AddBotUserRole extends Migration

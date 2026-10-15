@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.16.5
+
+### Patch Changes
+
+- Places: a bot account's new Russian title moves the slug too, like anyone else's (old URLs redirect to the new one)
+
 ## 1.16.4
 
 ### Patch Changes
