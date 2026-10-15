@@ -609,9 +609,9 @@ class Places extends ResourceController
                 $shouldRecordActivity = true;
             }
 
-            // The slug follows the Russian title; other locales only fill it in when it is missing.
-            // A bot never moves a place to another URL: it only fills a missing slug in
-            if (!empty($updatedTitle) && (($locale === 'ru' && !$isBot) || empty($placeData->slug))) {
+            // The slug follows the Russian title, a bot's edit included (the client 301s old URLs);
+            // other locales only fill it in when it is missing
+            if (!empty($updatedTitle) && ($locale === 'ru' || empty($placeData->slug))) {
                 $place->slug = generatePlaceSlug($updatedTitle);
                 $hasChanges = true;
             }
