@@ -1,4 +1,3 @@
-export { Autocomplete, type AutocompleteOption } from './autocomplete'
 export { BottomSheet, type BottomSheetProps } from './bottom-sheet'
 export { type BreadcrumbLink, Breadcrumbs, type BreadcrumbsProps } from './breadcrumbs'
 export { Chip, type ChipProps } from './chip'

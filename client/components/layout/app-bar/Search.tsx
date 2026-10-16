@@ -1,96 +1,68 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Button, cn } from 'simple-react-ui-kit'
+import { Button } from 'simple-react-ui-kit'
 
-import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
-import { ApiType } from '@/api'
-import { Autocomplete } from '@/components/ui'
-import useSiteSearch from '@/hooks/useSiteSearch'
+import { SiteSearch, SiteSearchHandle, SiteSearchScreen } from '@/components/shared/site-search'
 
 import styles from './styles.module.sass'
 
+/** The width from which the field is in the bar (`$inlineSearchMinWidth` in the styles) */
+const INLINE_MIN_WIDTH = 1024
+
+const isTypingInto = (target: EventTarget | null) =>
+    target instanceof HTMLElement &&
+    (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+
 /**
- * Global site search.
- *
- * On wide screens the autocomplete field is always visible in the app bar.
- * On narrow screens it collapses into an icon button that opens a full-width
- * overlay with the same field, so the app bar stays uncluttered.
+ * The site search of the app bar. Wide screens: the `SiteSearch` field in the bar; narrower
+ * ones: an icon button that opens the full-screen search. "/" (outside text fields) and
+ * Ctrl/⌘ K open it from anywhere, on any keyboard layout.
  */
 export const Search: React.FC = () => {
     const { t } = useTranslation()
-    const router = useRouter()
 
-    const { reset, ...search } = useSiteSearch()
-    const [overlayOpen, setOverlayOpen] = useState<boolean>(false)
-    const overlayRef = useRef<HTMLDivElement>(null)
-    // Element that opened the overlay; Button (simple-react-ui-kit) doesn't accept a ref
-    const triggerButtonRef = useRef<HTMLElement | null>(null)
+    const fieldRef = useRef<SiteSearchHandle>(null)
+    const [screenOpen, setScreenOpen] = useState<boolean>(false)
 
-    const handleOpenOverlay = (event: React.MouseEvent<HTMLButtonElement>) => {
-        triggerButtonRef.current = event.currentTarget
-        setOverlayOpen(true)
-    }
-
-    const handleCloseOverlay = () => {
-        setOverlayOpen(false)
-        reset()
-        triggerButtonRef.current?.focus()
-    }
-
-    // Close the mobile overlay on Escape and on outside click
     useEffect(() => {
-        if (!overlayOpen) {
-            return
-        }
-
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                handleCloseOverlay()
-            }
-        }
+            const isSlash =
+                (event.key === '/' || (event.code === 'Slash' && !event.shiftKey)) &&
+                !event.metaKey &&
+                !event.ctrlKey &&
+                !event.altKey &&
+                !isTypingInto(event.target)
+            const isCommandK = (event.metaKey || event.ctrlKey) && event.code === 'KeyK'
 
-        const handleMouseDown = (event: MouseEvent) => {
-            if (overlayRef.current && !overlayRef.current.contains(event.target as Node)) {
-                handleCloseOverlay()
+            if (!isSlash && !isCommandK) {
+                return
+            }
+
+            event.preventDefault()
+
+            if (window.matchMedia(`(min-width: ${INLINE_MIN_WIDTH}px)`).matches) {
+                fieldRef.current?.focus()
+            } else {
+                setScreenOpen(true)
             }
         }
 
         document.addEventListener('keydown', handleKeyDown)
-        document.addEventListener('mousedown', handleMouseDown)
 
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown)
-            document.removeEventListener('mousedown', handleMouseDown)
-        }
-    }, [overlayOpen])
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [])
 
-    // Close the mobile overlay after navigation
-    useEffect(() => {
-        setOverlayOpen(false)
-    }, [router.asPath])
-
-    const placeholder = t('global-search-placeholder', { defaultValue: 'Поиск мест, координат' })
-
-    const renderField = (autoFocus?: boolean) => (
-        <Autocomplete<ApiType.Search.Suggestion>
-            className={styles.search}
-            notFoundCaption={t('nothing-found', { defaultValue: 'Ничего не найдено' })}
-            placeholder={placeholder}
-            debounceDelay={300}
-            leftIcon={'Search'}
-            autoFocus={autoFocus}
-            {...search}
-        />
-    )
+    const placeholder = t('global-search-placeholder', 'Места, города, координаты')
 
     return (
         <>
-            <div
-                className={styles.searchInline}
-                role={'search'}
-            >
-                {renderField()}
+            <div className={styles.searchInline}>
+                <SiteSearch
+                    ref={fieldRef}
+                    variant={'bar'}
+                    placeholder={placeholder}
+                />
             </div>
 
             <Button
@@ -100,34 +72,14 @@ export const Search: React.FC = () => {
                 className={styles.searchButton}
                 aria-label={placeholder}
                 tooltip={placeholder}
-                onClick={handleOpenOverlay}
+                onClick={() => setScreenOpen(true)}
             />
 
-            <div
-                className={cn(styles.searchOverlay, overlayOpen && styles.searchOverlayOpen)}
-                role={'search'}
-                aria-hidden={!overlayOpen}
-            >
-                <div
-                    ref={overlayRef}
-                    className={styles.searchOverlayInner}
-                >
-                    {overlayOpen && (
-                        <>
-                            {renderField(true)}
-
-                            <Button
-                                mode={'outline'}
-                                icon={'Close'}
-                                size={'medium'}
-                                aria-label={t('close', { defaultValue: 'Закрыть' })}
-                                tooltip={t('close-search', { defaultValue: 'Закрыть поиск' })}
-                                onClick={handleCloseOverlay}
-                            />
-                        </>
-                    )}
-                </div>
-            </div>
+            <SiteSearchScreen
+                open={screenOpen}
+                placeholder={placeholder}
+                onClose={() => setScreenOpen(false)}
+            />
         </>
     )
 }

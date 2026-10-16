@@ -1,4 +1,4 @@
-import { ApiModel } from '@/api'
+import { ApiModel, ApiType } from '@/api'
 
 export interface Request {
     q: string
@@ -41,7 +41,30 @@ export interface SuggestResponse {
     suggestions: Suggestion[]
 }
 
+/**
+ * `GET /search/suggest`, in this order: the point the query parses as, places (with the
+ * locality and region), the site's locations with places (`area`: their places listing),
+ * and only without them geocoder addresses (`location`: a point on the map)
+ */
 export type Suggestion =
-    | { type: 'place'; id: string; title: string; slug?: string | null; category?: ApiModel.Categories | null }
-    | { type: 'location'; title: string; lat: number; lon: number }
+    | {
+          type: 'place'
+          id: string
+          title: string
+          slug?: string | null
+          category?: ApiModel.Categories | null
+          /** "Locality, Region" */
+          address?: string | null
+      }
+    | {
+          type: 'area'
+          locationType: ApiType.LocationTypes
+          id: number
+          slug?: string | null
+          title: string
+          /** The region of a district or a locality */
+          region?: string | null
+          placesCount: number
+      }
+    | { type: 'location'; title: string; secondary?: string | null; lat: number; lon: number }
     | { type: 'coordinates'; lat: number; lon: number }

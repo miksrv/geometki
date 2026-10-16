@@ -4,110 +4,110 @@ import { fireEvent, render, screen } from '@testing-library/react'
 
 import { Search } from './Search'
 
-jest.mock('next/router', () => ({
-    useRouter: () => ({
-        pathname: '/',
-        asPath: '/',
-        query: {},
-        push: jest.fn().mockResolvedValue(true),
-        replace: jest.fn().mockResolvedValue(true)
-    })
-}))
-
-jest.mock('next-i18next', () => ({
-    useTranslation: () => ({
-        t: (key: string, opts?: Record<string, unknown>) => opts?.defaultValue ?? key
-    })
-}))
-
-jest.mock('@/api', () => ({
-    API: {
-        useSearchSuggestQuery: jest.fn().mockReturnValue({ data: undefined, isFetching: false })
-    },
-    ApiType: {}
+jest.mock('next-i18next/pages', () => ({
+    useTranslation: () => ({ t: (key: string, fallback?: string) => fallback ?? key })
 }))
 
 jest.mock('simple-react-ui-kit', () => ({
-    cn: (...args: string[]) => args.filter(Boolean).join(' '),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Button: ({ onClick, className, icon, ref, ...rest }: any) => (
+    Button: ({ onClick, className, ...rest }: any) => (
         <button
-            ref={ref}
             className={className}
-            data-icon={icon}
             aria-label={rest['aria-label']}
             onClick={onClick}
         />
     )
 }))
 
-jest.mock('@/components/ui', () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Autocomplete: ({ placeholder, className, autoFocus }: any) => (
-        <input
-            data-testid={'autocomplete'}
-            placeholder={placeholder}
-            className={className}
-            data-autofocus={autoFocus ? 'true' : 'false'}
-        />
-    ),
-    AutocompleteOption: {}
-}))
+const mockFocus = jest.fn()
+jest.mock('@/components/shared/site-search', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { forwardRef, useImperativeHandle } = require('react')
+
+    return {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        SiteSearch: forwardRef(({ variant, placeholder }: any, ref: any) => {
+            useImperativeHandle(ref, () => ({ focus: mockFocus }))
+
+            return (
+                <input
+                    data-testid={`site-search-${String(variant)}`}
+                    placeholder={placeholder}
+                />
+            )
+        }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        SiteSearchScreen: ({ open, onClose }: any) =>
+            open ? (
+                <div data-testid={'site-search-screen'}>
+                    <button onClick={onClose}>{'close'}</button>
+                </div>
+            ) : null
+    }
+})
+
+const setWideScreen = (wide: boolean) => {
+    window.matchMedia = jest.fn().mockReturnValue({ matches: wide }) as unknown as typeof window.matchMedia
+}
 
 describe('Search', () => {
-    describe('rendering', () => {
-        it('renders the autocomplete input', () => {
-            render(<Search />)
-            expect(screen.getByTestId('autocomplete')).toBeInTheDocument()
-        })
-
-        it('renders with the correct placeholder text', () => {
-            render(<Search />)
-            expect(screen.getByPlaceholderText('Поиск мест, координат')).toBeInTheDocument()
-        })
-
-        it('renders the compact search button for narrow screens', () => {
-            render(<Search />)
-            expect(screen.getByRole('button', { name: 'Поиск мест, координат' })).toBeInTheDocument()
-        })
-
-        it('does not render the overlay field until opened', () => {
-            render(<Search />)
-            expect(screen.getAllByTestId('autocomplete')).toHaveLength(1)
-        })
+    beforeEach(() => {
+        mockFocus.mockClear()
+        setWideScreen(true)
     })
 
-    describe('mobile overlay', () => {
-        it('opens the overlay with a focused field and closes it again', () => {
-            render(<Search />)
+    it('puts the field in the bar with the placeholder', () => {
+        render(<Search />)
 
-            fireEvent.click(screen.getByRole('button', { name: 'Поиск мест, координат' }))
-            const fields = screen.getAllByTestId('autocomplete')
-            expect(fields).toHaveLength(2)
-            expect(fields[1]).toHaveAttribute('data-autofocus', 'true')
+        expect(screen.getByTestId('site-search-bar')).toHaveAttribute('placeholder', 'Места, города, координаты')
+    })
 
-            fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }))
-            expect(screen.getAllByTestId('autocomplete')).toHaveLength(1)
-        })
+    it('opens the full-screen search from the icon button and closes it', () => {
+        render(<Search />)
 
-        it('closes the overlay on Escape', () => {
-            render(<Search />)
+        fireEvent.click(screen.getByRole('button', { name: 'Места, города, координаты' }))
+        expect(screen.getByTestId('site-search-screen')).toBeInTheDocument()
 
-            fireEvent.click(screen.getByRole('button', { name: 'Поиск мест, координат' }))
-            expect(screen.getAllByTestId('autocomplete')).toHaveLength(2)
+        fireEvent.click(screen.getByRole('button', { name: 'close' }))
+        expect(screen.queryByTestId('site-search-screen')).not.toBeInTheDocument()
+    })
 
-            fireEvent.keyDown(document, { key: 'Escape' })
-            expect(screen.getAllByTestId('autocomplete')).toHaveLength(1)
-        })
+    it('focuses the field on "/" on a wide screen', () => {
+        render(<Search />)
 
-        it('returns focus to the trigger button when the overlay closes', () => {
-            render(<Search />)
+        fireEvent.keyDown(document.body, { code: 'Slash', key: '/' })
 
-            const triggerButton = screen.getByRole('button', { name: 'Поиск мест, координат' })
-            fireEvent.click(triggerButton)
+        expect(mockFocus).toHaveBeenCalled()
+        expect(screen.queryByTestId('site-search-screen')).not.toBeInTheDocument()
+    })
 
-            fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }))
-            expect(triggerButton).toHaveFocus()
-        })
+    it('takes the slash key of any keyboard layout', () => {
+        render(<Search />)
+
+        fireEvent.keyDown(document.body, { code: 'Slash', key: '.' })
+
+        expect(mockFocus).toHaveBeenCalled()
+    })
+
+    it('opens the full-screen search on Ctrl+K on a narrow screen', () => {
+        setWideScreen(false)
+        render(<Search />)
+
+        fireEvent.keyDown(document.body, { code: 'KeyK', ctrlKey: true, key: 'k' })
+
+        expect(screen.getByTestId('site-search-screen')).toBeInTheDocument()
+    })
+
+    it('leaves "/" typed into a text field alone', () => {
+        render(
+            <>
+                <textarea data-testid={'comment'} />
+                <Search />
+            </>
+        )
+
+        fireEvent.keyDown(screen.getByTestId('comment'), { code: 'Slash', key: '/' })
+
+        expect(mockFocus).not.toHaveBeenCalled()
     })
 })

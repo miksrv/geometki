@@ -7,13 +7,19 @@
     display: flex
     flex-direction: column
     min-height: 440px
-    overflow: hidden
     border-radius: var(--radius-lg)
     background: #1f2b38
     color: #ffffff
 
     @media (max-width: variables.$mobileMaxWidth)
         min-height: 0
+
+// The photo is cut to the rounded corners here, not the hero: the search panel hangs out of it
+.backdrop
+    position: absolute
+    inset: 0
+    overflow: hidden
+    border-radius: inherit
 
 .image
     object-fit: cover
@@ -71,14 +77,10 @@
         margin-bottom: var(--space-5)
         font-size: variables.$fontSizeParagraph
 
-// The kit field keeps its own colours (the theme's), only taller here
+// The field and its panel keep the theme's colours over the photo
 .search
+    z-index: 2
     max-width: 600px
-    color: var(--text-color-primary)
-
-    :global(input)
-        height: 48px
-        font-size: variables.$fontSizeTitleH2
 
 .chips
     display: flex
@@ -128,6 +130,7 @@
     margin: 0
     padding: var(--space-4) 48px
     border-top: 1px solid rgba(255, 255, 255, 0.12)
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg)
     background: rgba(0, 0, 0, 0.32)
     backdrop-filter: blur(8px)
 

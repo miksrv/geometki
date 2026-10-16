@@ -1,0 +1,327 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/mixins' as *
+@use '../../../styles/typography' as type
+
+@mixin key
+    display: inline-grid
+    place-items: center
+    min-width: 20px
+    height: 20px
+    padding: 0 5px
+    box-sizing: border-box
+    border: 1px solid var(--border-strong)
+    border-bottom-width: 2px
+    border-radius: var(--radius-sm)
+    background: var(--surface-1)
+    color: var(--text-color-secondary)
+    font-family: var(--font-family), sans-serif
+    font-size: var(--font-size-micro)
+    font-weight: var(--font-weight-medium)
+    line-height: 1
+
+.siteSearch
+    position: relative
+    width: 100%
+    min-width: 0
+
+// --- The field ---
+
+.field
+    box-sizing: border-box
+    display: flex
+    align-items: center
+    gap: var(--space-2)
+    height: var(--size-control-medium, 40px)
+    padding: 0 var(--space-1) 0 var(--space-3)
+    border: 1px solid transparent
+    border-radius: var(--input-radius)
+    background: var(--surface-2)
+    color: var(--text-color-primary)
+    transition: border-color var(--duration-fast) var(--ease), background-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease)
+
+    &:focus-within
+        border-color: var(--color-main)
+        background: var(--input-background-color)
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-main) 18%, transparent)
+
+.input
+    flex: 1
+    min-width: 0
+    height: 100%
+    padding: 0
+    border: 0
+    outline: none
+    background: transparent
+    color: inherit
+    font-family: var(--font-family), sans-serif
+    font-size: var(--font-size)
+    -webkit-appearance: none
+    appearance: none
+
+    &::placeholder
+        color: var(--input-placeholder-color)
+        opacity: 1
+
+    &::-webkit-search-cancel-button,
+    &::-webkit-search-decoration
+        -webkit-appearance: none
+
+.fieldIcon
+    flex-shrink: 0
+    width: 18px
+    height: 18px
+    fill: var(--icon-color-secondary)
+
+.fieldButton
+    +buttonReset
+    display: grid
+    flex-shrink: 0
+    place-items: center
+    width: 28px
+    height: 28px
+    border-radius: var(--radius-full)
+    cursor: pointer
+
+    svg
+        width: 18px
+        height: 18px
+        fill: var(--icon-color-secondary)
+
+    &:hover,
+    &:focus-visible
+        outline: none
+        background: var(--surface-3)
+
+.spinner
+    flex-shrink: 0
+    width: 16px !important
+    height: 16px !important
+
+.shortcut
+    +key
+    flex-shrink: 0
+    margin-right: var(--space-1)
+
+    // A keyboard hint is for keyboards
+    @media (hover: none)
+        display: none
+
+// --- The panel ---
+
+.panel
+    position: absolute
+    top: calc(100% + 6px)
+    left: 0
+    z-index: var(--z-dropdown, 100)
+    display: flex
+    flex-direction: column
+    box-sizing: border-box
+    width: 100%
+    max-height: min(560px, calc(100vh - 120px))
+    overflow: hidden
+    border-radius: var(--popout-radius)
+    background: var(--container-background)
+    box-shadow: var(--popout-shadow)
+
+.list
+    flex: 1
+    min-height: 0
+    overflow-y: auto
+    overscroll-behavior: contain
+    padding: var(--space-1)
+
+.groupHead
+    display: flex
+    align-items: baseline
+    justify-content: space-between
+    gap: var(--space-2)
+    padding: var(--space-3) 10px var(--space-1)
+
+.groupLabel
+    +type.overline
+
+.groupAction
+    +buttonReset
+    padding: 0
+    color: var(--link-color)
+    font-family: var(--font-family), sans-serif
+    font-size: var(--font-size-secondary)
+    cursor: pointer
+
+    &:hover
+        color: var(--link-color-hover)
+        text-decoration: underline
+
+.option
+    display: flex
+    align-items: center
+    gap: 10px
+    min-height: 44px
+    padding: 6px 10px
+    border-radius: var(--radius-md)
+    color: var(--text-color-primary)
+    text-decoration: none
+    cursor: pointer
+
+    &:hover,
+    &:focus
+        color: var(--text-color-primary)
+        text-decoration: none
+
+.optionActive
+    background: var(--surface-2)
+
+.tile
+    display: grid
+    flex-shrink: 0
+    place-items: center
+    width: 32px
+    height: 32px
+    border-radius: var(--radius-lg)
+    background: var(--surface-2)
+
+    .optionActive &
+        background: var(--surface-3)
+
+    svg
+        width: 18px
+        height: 18px
+        fill: var(--icon-color-secondary)
+
+    img
+        border-radius: 4px
+
+.tileAccent,
+.optionActive .tileAccent
+    background: var(--color-main-background)
+
+    svg
+        fill: var(--color-main)
+
+.text
+    display: flex
+    flex: 1
+    flex-direction: column
+    min-width: 0
+
+.label
+    +truncate
+    font-size: var(--font-size)
+
+    mark
+        background: transparent
+        color: inherit
+        font-weight: var(--font-weight-semibold)
+
+.caption
+    +truncate
+    +type.caption
+
+.enterKey
+    +key
+    flex-shrink: 0
+
+.hint
+    padding: var(--space-3) 14px 0
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
+
+    &:last-child
+        padding-bottom: var(--space-3)
+
+.footer
+    display: flex
+    gap: var(--space-4)
+    padding: var(--space-2) 14px
+    border-top: 1px solid var(--border)
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-small)
+
+    span
+        display: inline-flex
+        align-items: center
+        gap: 4px
+
+    kbd
+        +key
+
+    @media (hover: none)
+        display: none
+
+// --- Variants ---
+
+// The app bar: a quiet field in the bar, a wider panel under it
+.bar
+    .panel
+        width: 440px
+
+// The home page: a big white field over the photo, the panel as wide as the field
+.hero
+    .field
+        height: 52px
+        padding-left: var(--space-4)
+        border-radius: var(--radius-lg)
+        background: var(--input-background-color)
+        box-shadow: var(--shadow-lg)
+
+        &:focus-within
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-main) 30%, transparent), var(--shadow-lg)
+
+    .input
+        font-size: var(--font-size-lead)
+
+    .fieldIcon
+        width: 22px
+        height: 22px
+
+    .panel
+        top: calc(100% + 8px)
+        max-height: min(480px, calc(100vh - 160px))
+
+// Phones: the whole screen, the field on top, rows to thumb
+.screen
+    display: flex
+    flex-direction: column
+    height: 100%
+
+    .field
+        flex-shrink: 0
+        height: 44px
+        margin: var(--space-2) 10px
+        padding-left: var(--space-1)
+
+    .input
+        // 16px keeps iOS from zooming into the field
+        font-size: 16px
+
+    .panel
+        position: static
+        flex: 1
+        width: auto
+        max-height: none
+        border-radius: 0
+        background: transparent
+        box-shadow: none
+
+    .list
+        padding: 0 var(--space-2) var(--space-6)
+
+    .option
+        min-height: 52px
+
+// The full-screen layer of `SiteSearchScreen`
+.screenLayer
+    position: fixed
+    inset: 0
+    z-index: var(--z-dialog, 1000)
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px)
+    background: var(--container-background)
+    animation: screenIn var(--duration-fast, 150ms) var(--ease, ease-out)
+
+    @media (prefers-reduced-motion: reduce)
+        animation: none
+
+@keyframes screenIn
+    from
+        opacity: 0
+        transform: translateY(8px)

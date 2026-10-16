@@ -7,8 +7,7 @@ import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiType } from '@/api'
-import { Autocomplete } from '@/components/ui'
-import useSiteSearch from '@/hooks/useSiteSearch'
+import { SiteSearch } from '@/components/shared/site-search'
 import useUserLocation from '@/hooks/useUserLocation'
 import { categoryImage, getCategoryShortTitle } from '@/utils/categories'
 import { buildCategoryHref, formatThousands, getLandingFlags } from '@/utils/helpers'
@@ -30,7 +29,6 @@ interface HomeHeroProps {
 export const HomeHero: React.FC<HomeHeroProps> = ({ stats, pulse }) => {
     const { t } = useTranslation()
     const router = useRouter()
-    const search = useSiteSearch()
     const { request: requestLocation, loading: locating } = useUserLocation()
 
     const actions = pulse
@@ -56,15 +54,17 @@ export const HomeHero: React.FC<HomeHeroProps> = ({ stats, pulse }) => {
 
     return (
         <section className={styles.hero}>
-            <Image
-                src={'/images/pages/home-hero.jpg'}
-                alt={''}
-                fill
-                priority
-                className={styles.image}
-                sizes={'(max-width: 1260px) 100vw, 1260px'}
-            />
-            <div className={styles.overlay} />
+            <div className={styles.backdrop}>
+                <Image
+                    src={'/images/pages/home-hero.jpg'}
+                    alt={''}
+                    fill
+                    priority
+                    className={styles.image}
+                    sizes={'(max-width: 1260px) 100vw, 1260px'}
+                />
+                <div className={styles.overlay} />
+            </div>
 
             <div className={styles.body}>
                 {actions > 0 && pulse && (
@@ -80,18 +80,12 @@ export const HomeHero: React.FC<HomeHeroProps> = ({ stats, pulse }) => {
                 <h1 className={styles.title}>{t('home-hero-title')}</h1>
                 <p className={styles.lead}>{t('home-hero-lead')}</p>
 
-                <div
+                <SiteSearch
+                    variant={'hero'}
                     className={styles.search}
-                    role={'search'}
-                >
-                    <Autocomplete<ApiType.Search.Suggestion>
-                        notFoundCaption={t('nothing-found', { defaultValue: 'Ничего не найдено' })}
-                        placeholder={t('home-hero-search-placeholder')}
-                        debounceDelay={300}
-                        leftIcon={'Search'}
-                        {...search}
-                    />
-                </div>
+                    placeholder={t('home-hero-search-placeholder')}
+                    screenMaxWidth={768}
+                />
 
                 <div className={styles.chips}>
                     {chips.map(({ name }) => (

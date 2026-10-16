@@ -10,6 +10,7 @@
 - Places: "Hide visited" for signed-in users; places you have been to are marked "You've been here"
 - Places: the count of places next to the title; the filters stay on screen while scrolling
 - Places: on phones a search bar and a filters sheet with "Show N places", a floating "Map" button and "Show more" instead of page numbers
+- Search: a new site search in the header and on the home page — "Places near me", recent searches and popular regions before typing; places with their address, regions and cities with their number of places, coordinates and addresses while typing; arrow keys, Enter and "/" or Ctrl/⌘ K; full screen on phones
 - Search: the same filters as on the places page — results as tabs with their counts, the categories found as chips with numbers, several at once, the sorting as presets and the applied filters as chips; on phones a filters sheet; the filters stay in the link
 - Search: sorting now orders all found places, not just the loaded ones, and "Near me" puts the nearest first
 - Place cards: the photo on top with the title, address and stats under it, a bookmark button right on the card

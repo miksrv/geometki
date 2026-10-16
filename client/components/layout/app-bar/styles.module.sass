@@ -142,58 +142,6 @@ $inlineSearchMinWidth: 1024px
     @media only screen and (min-width: $inlineSearchMinWidth)
         display: none !important
 
-.search
-    flex: 1
-
-    & > div > div
-        border: none !important
-
-    ul
-        top: 34px !important
-        box-shadow: var(--popout-shadow) !important
-        border: none !important
-
-.searchOverlay
-    position: fixed
-    top: 0
-    left: 0
-    right: 0
-    height: calc(#{$appBarHeight} + env(safe-area-inset-top, 0px))
-    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px)
-    background-color: var(--container-background)
-    box-shadow: 0 1px 0 var(--border), var(--shadow-sm)
-    z-index: 460
-    opacity: 0
-    visibility: hidden
-    transform: translateY(-6px)
-    transition: opacity .2s ease, transform .2s ease, visibility 0s linear .2s
-    pointer-events: none
-
-    &.searchOverlayOpen
-        opacity: 1
-        visibility: visible
-        transform: translateY(0)
-        transition: opacity .2s ease, transform .2s ease, visibility 0s linear 0s
-        pointer-events: all
-
-    @media only screen and (min-width: $inlineSearchMinWidth)
-        display: none
-
-    @media (prefers-reduced-motion: reduce)
-        transition: none
-
-.searchOverlayInner
-    display: flex
-    align-items: center
-    max-width: var(--width-max)
-    margin: 0 auto
-    height: 100%
-    padding: 0 16px
-    gap: 8px
-
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        padding: 0 10px
-
 // --- Notifications ---
 
 .notifyPopup

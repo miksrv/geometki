@@ -166,8 +166,8 @@ re-implement them.
   the app bar. One page, two sets of blocks chosen by `isAuth` (never by user agent: a crawler
   is a guest and gets the guest page; the title, canonical and JSON-LD are the same for both).
   Guest: `HomeHero` (the photo `images/pages/home-hero.jpg` with the h1 — the one `titleDisplay`
-  h1 of the site, 40px / 28px on phones — the lead, the site search (`useSiteSearch`, the same
-  as the app bar), the three fullest categories as chips plus "Рядом со мной", the live numbers
+  h1 of the site, 40px / 28px on phones — the lead, the site search (`SiteSearch variant="hero"`, the
+  same as the app bar), the three fullest categories as chips plus "Рядом со мной", the live numbers
   of `/stats`) → `HomeCategories` (tiles of every category with places and their counts, twelve
   shown, six on phones, the rest hidden but still in the markup for the links) → `HomePlaces`
   ("Куда поехать": button `Tabs` popular this week / new / nearby over a `ScrollRail variant="cards"` of
@@ -574,6 +574,22 @@ actions, active days, the longest and the current run of days in a row (22px num
   categories with places and those on, each with its number), `AppliedFilterList` (removable
   chips and "Сбросить всё") and `FiltersSheet` (the phone form sheet: sort pills, the category
   grid, the page's own rows; the page keeps the draft).
+- **Site search** (`components/shared/site-search`: `SiteSearch` + `SiteSearchScreen`, data in
+  `hooks/useSiteSearch`, the app bar and the home hero): a combobox, never a kit field. The panel
+  answers before anything is typed — "Места рядом со мной" (asks the browser), "Недавние" (the last
+  six searches and opened rows of this browser, `useSearchHistory`, with "Очистить"), "Популярные
+  регионы" — and from three characters on (`GET /search/suggest`, debounced, the previous answer
+  stays while the next loads): "Искать «…»" (the search page, also Enter with no row chosen), the
+  point of typed coordinates, "Места" (category icon, category and "locality, region"), "Регионы и
+  города" (the site's locations with places, their listing, the count), and only without them
+  addresses "На карте". The `OptionList` look: 32px tiles, 44px rows (52px full-screen), overline
+  group labels, the words of the query in semibold (`utils/highlight.ts`). Rows are links (a new
+  tab works); arrows go round through the field, Enter opens, Escape closes; a footer names the
+  keys on keyboard devices. Variants: `bar` (a quiet `--surface-2` field, 440px panel; "/" and
+  Ctrl/⌘ K focus it from anywhere), `hero` (52px white field with a big shadow; the hero cuts the
+  photo in `.backdrop`, so the panel hangs out of it), `screen` (phones: the whole screen, a back
+  button, 16px text against the iOS zoom). Narrow screens get the app bar icon button and the hero
+  field (`screenMaxWidth`) opening `SiteSearchScreen`.
 - **Search filters** (`SearchFilterPanel`, `sections/search`, `/search`): the same pieces
   over the results and the map. The URL is the only state (`?q=&type=&category=a,b&sort=`,
   `buildSearchHref`); the API is always asked for every kind of result, so the `type` is the
