@@ -1,4 +1,5 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 
 // Text over a photo: white on a dark gradient, whatever the theme
 .hero
@@ -44,7 +45,7 @@
     gap: var(--space-2)
     margin: 0 0 var(--space-3)
     font-size: variables.$fontSizeHeadline
-    font-weight: 600
+    font-weight: var(--font-weight-semibold)
     color: rgba(255, 255, 255, 0.85)
 
 .liveDot
@@ -56,16 +57,8 @@
 
 // The home page is the one place with a display-size h1: it is a landing, not a list
 .title
-    margin: 0
+    +type.titleDisplay
     color: inherit
-    font-size: 40px
-    font-weight: 700
-    line-height: 1.1
-    letter-spacing: -0.02em
-    text-wrap: balance
-
-    @media (max-width: variables.$mobileMaxWidth)
-        font-size: 28px
 
 .lead
     max-width: 560px
@@ -106,7 +99,7 @@
     color: #ffffff
     font: inherit
     font-size: variables.$fontSizeHeadline
-    font-weight: 500
+    font-weight: var(--font-weight-medium)
     cursor: pointer
     backdrop-filter: blur(6px)
 
@@ -151,9 +144,8 @@
 
     dd
         margin: 0
-        font-size: var(--font-size-title-page)
+        +type.stat
         font-weight: 700
-        line-height: 1.2
 
         @media (max-width: variables.$mobileMaxWidth)
             font-size: variables.$fontSizeTitleH1

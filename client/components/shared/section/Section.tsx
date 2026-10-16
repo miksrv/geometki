@@ -14,6 +14,8 @@ export interface SectionProps extends Omit<React.HTMLAttributes<HTMLElement>, 't
     footer?: React.ReactNode
     /** Keep the heading and the action on one line, cutting a long title with an ellipsis */
     truncateTitle?: boolean
+    /** The heading is for screen readers and the outline only: the content speaks for itself (the photos) */
+    titleHidden?: boolean
     className?: string
     children?: React.ReactNode
 }
@@ -30,6 +32,7 @@ export const Section: React.FC<SectionProps> = ({
     action,
     footer,
     truncateTitle,
+    titleHidden,
     className,
     children,
     ...props
@@ -45,7 +48,7 @@ export const Section: React.FC<SectionProps> = ({
             aria-labelledby={title ? titleId : props['aria-labelledby']}
         >
             {(title || action) && (
-                <div className={cn(styles.header, truncateTitle && styles.truncate)}>
+                <div className={cn(styles.header, truncateTitle && styles.truncate, titleHidden && styles.hidden)}>
                     {title && (
                         <Heading
                             id={titleId}

@@ -1,4 +1,5 @@
 export { Autocomplete, type AutocompleteOption } from './autocomplete'
+export { BottomSheet, type BottomSheetProps } from './bottom-sheet'
 export { type BreadcrumbLink, Breadcrumbs, type BreadcrumbsProps } from './breadcrumbs'
 export { Carousel } from './carousel'
 export { ContentEditor } from './content-editor'

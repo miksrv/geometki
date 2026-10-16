@@ -1,4 +1,5 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 
 // The feed: a column of story cards on the page background, split into days
 
@@ -344,9 +345,7 @@
 
 .pulseValue
     margin: 0
-    font-size: var(--font-size-title-page)
-    font-weight: var(--font-weight-semibold)
-    line-height: 1.1
+    +type.stat
     color: var(--text-color-primary)
 
 .pulseLabel

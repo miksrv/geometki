@@ -1,4 +1,5 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 
 // Avatar | three lines of text | counters; on phones the counters go under the rest
 .welcome
@@ -40,11 +41,7 @@
     min-width: 0
 
 .title
-    margin: 0
-    font-size: var(--font-size-title-page)
-    font-weight: 600
-    line-height: 1.25
-    letter-spacing: -0.01em
+    +type.titlePage
 
 .facts
     margin: 0
@@ -97,9 +94,7 @@
         text-decoration: none
 
     b
-        font-size: var(--font-size-title-page)
-        font-weight: 600
-        line-height: 1.2
+        +type.stat
 
     span
         font-size: variables.$fontSizeCaption

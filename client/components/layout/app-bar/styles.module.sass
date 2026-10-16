@@ -74,7 +74,7 @@ $inlineSearchMinWidth: 1024px
     height: 32px
     padding: 0 10px
     border-radius: var(--border-radius)
-    font-weight: 500
+    font-weight: var(--font-weight-medium)
     white-space: nowrap
     color: var(--text-color-primary)
     text-decoration: none
@@ -240,14 +240,18 @@ $inlineSearchMinWidth: 1024px
     display: inline-flex
 
 .userMenuPopout
+    // The name and the level over the rows, the same insets as the rows
     .userInfo
-        padding: 10px
-        font-size: variables.$fontSizeHeadline
+        display: flex
+        flex-direction: column
+        gap: var(--space-1)
         min-width: 220px
+        padding: var(--space-3) var(--space-4)
+        font-size: variables.$fontSizeHeadline
         border-bottom: var(--container-border-separator)
 
         .userName
-            font-weight: 600
+            font-weight: var(--font-weight-semibold)
 
         .levelImage
             vertical-align: middle

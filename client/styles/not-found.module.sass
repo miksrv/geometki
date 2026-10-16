@@ -1,4 +1,5 @@
 @use './variables' as variables
+@use './typography' as type
 
 .page
     display: flex
@@ -21,13 +22,11 @@
     letter-spacing: -4px
 
 .title
-    font-size: clamp(18px, 4vw, 26px)
-    font-weight: 700
-    color: var(--text-color-primary)
+    +type.titlePage
     margin: 6px 0 8px
 
 .description
-    font-size: clamp(12px, 2vw, 14px)
+    font-size: var(--font-size)
     color: var(--text-color-secondary)
     max-width: 500px
     line-height: 1.55
@@ -60,8 +59,8 @@
     color: #fff
     border: none
     border-radius: 8px
-    font-size: 15px
-    font-weight: 500
+    font-size: var(--font-size)
+    font-weight: var(--font-weight-medium)
     cursor: pointer
     text-decoration: none
     transition: background-color 0.2s ease
@@ -69,7 +68,7 @@
         background-color: #1a6fd4
 
 .homeLink
-    font-size: 13px
+    font-size: var(--font-size-secondary)
     color: var(--text-color-secondary)
     text-decoration: underline
     text-underline-offset: 3px

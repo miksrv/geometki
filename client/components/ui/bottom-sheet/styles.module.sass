@@ -1,0 +1,64 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+
+@keyframes sheet-up
+    from
+        transform: translateY(100%)
+
+    to
+        transform: translateY(0)
+
+@keyframes backdrop-in
+    from
+        opacity: 0
+
+    to
+        opacity: 1
+
+.root
+    position: fixed
+    inset: 0
+    z-index: var(--z-dialog)
+
+.backdrop
+    position: absolute
+    inset: 0
+    background: variables.$overlayBackground
+    animation: backdrop-in var(--duration-base) var(--ease)
+
+.sheet
+    position: absolute
+    left: 0
+    right: 0
+    bottom: 0
+    max-height: 80vh
+    overflow-y: auto
+    padding: var(--space-2) var(--space-2) calc(var(--space-3) + env(safe-area-inset-bottom, 0px))
+    background: var(--container-background)
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0
+    box-shadow: var(--shadow-md)
+    animation: sheet-up var(--duration-slow) var(--ease)
+
+    @media (prefers-reduced-motion: reduce)
+        animation: none
+
+    // The same `contextListMenu` rows as the desktop popouts, full width with 48px touch targets
+    :global(.contextListMenu)
+        min-width: 0
+        padding: 0
+
+        li > a, li > button
+            min-height: 48px
+
+// The grab handle: the sheet reads as a sheet
+.handle
+    display: block
+    width: 36px
+    height: 4px
+    margin: 0 auto var(--space-2)
+    border-radius: 2px
+    background: var(--border-strong)
+
+.title
+    padding: var(--space-1) var(--space-3) var(--space-2)
+    +type.overline
