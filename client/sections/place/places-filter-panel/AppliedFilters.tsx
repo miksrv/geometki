@@ -2,51 +2,35 @@ import React from 'react'
 import { Icon } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
-import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
-import { AppliedFilterList, AppliedFilterRow } from '@/components/shared/filter-panel'
+import { AppliedFilterList } from '@/components/shared/filter-panel'
 import type { AppliedFilter } from '@/components/shared/filter-panel/AppliedFilterList'
 import { categoryImage, getCategoryShortTitle } from '@/utils/categories'
 
 import { isFilterActive, isNearFilter } from './describeFilter'
 import { getSortLabel } from './sortPresets'
 import { PlacesFilterPatch, PlacesFilterState } from './types'
-import { LastPlacesSearch } from './usePlacesFilterMemory'
-
-import styles from './styles.module.sass'
 
 interface AppliedFiltersProps {
     filter: PlacesFilterState
     defaultSort: ApiType.SortFieldsType
-    lastSearch?: LastPlacesSearch | null
     buildHref: (patch: PlacesFilterPatch) => string
 }
 
 /**
- * What is applied, as removable chips with "Сбросить всё". With nothing applied,
- * the last search of this browser as a dashed "Продолжить: …" link — remembered, never
- * applied by itself.
+ * What is applied, as removable chips with "Сбросить всё"; with nothing applied, nothing
+ * (the "Продолжить: …" link lives in the toolbar row, see `ResumeSearch`).
  */
-export const AppliedFilters: React.FC<AppliedFiltersProps> = ({ filter, defaultSort, lastSearch, buildHref }) => {
+export const AppliedFilters: React.FC<AppliedFiltersProps> = ({ filter, defaultSort, buildHref }) => {
     const { t } = useTranslation()
 
     const near = isNearFilter(filter)
     const sortChanged = filter.sort !== defaultSort && !near
 
     if (!isFilterActive(filter) && !sortChanged && !near) {
-        return lastSearch ? (
-            <AppliedFilterRow>
-                <Link
-                    href={lastSearch.href}
-                    className={styles.resume}
-                >
-                    <Icon name={'Time'} />
-                    {t('filters-resume', 'Продолжить:')} <b>{lastSearch.label}</b>
-                </Link>
-            </AppliedFilterRow>
-        ) : null
+        return null
     }
 
     const filters: AppliedFilter[] = []
@@ -78,6 +62,7 @@ export const AppliedFilters: React.FC<AppliedFiltersProps> = ({ filter, defaultS
                     alt={''}
                     width={16}
                     height={16}
+                    unoptimized={true}
                 />
             ),
             key: `category-${name}`,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { IconTypes } from 'simple-react-ui-kit'
 
 import { useRouter } from 'next/router'
@@ -64,12 +64,23 @@ const useSiteSearch = (open: boolean) => {
     const { t } = useTranslation()
     const router = useRouter()
 
-    const urlQuery = router.pathname === '/search' ? ((router.query.q as string) ?? '') : ''
+    // `?q=a&q=b` comes as an array: the first one, like the search page reads it
+    const rawQuery = router.query.q
+    const urlQuery = router.pathname === '/search' ? ((Array.isArray(rawQuery) ? rawQuery[0] : rawQuery) ?? '') : ''
     const [query, setQuery] = useState<string>(urlQuery)
     const [debounced, setDebounced] = useState<string>(urlQuery.trim())
 
-    // After every navigation the field shows the query of the search page, elsewhere it is empty
-    useEffect(() => setQuery(urlQuery), [router.asPath])
+    // After every navigation the field shows the query of the search page, elsewhere it is empty;
+    // a filter or tab of the search page keeps `q` and leaves the text being typed alone
+    const shownUrlQuery = useRef(urlQuery)
+    useEffect(() => {
+        if (router.pathname === '/search' && shownUrlQuery.current === urlQuery) {
+            return
+        }
+
+        shownUrlQuery.current = urlQuery
+        setQuery(urlQuery)
+    }, [router.asPath])
 
     const text = query.trim()
 
@@ -84,7 +95,7 @@ const useSiteSearch = (open: boolean) => {
 
     const isTyping = text.length >= SEARCH_MIN_LENGTH
     const { data, isFetching } = API.useSearchSuggestQuery(debounced, {
-        skip: debounced.length < SEARCH_MIN_LENGTH
+        skip: !open || debounced.length < SEARCH_MIN_LENGTH
     })
     const { data: regions } = API.useLocationsGetChildrenQuery(
         { id: HOME_COUNTRY_ID, type: 'country' },

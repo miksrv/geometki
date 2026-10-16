@@ -142,6 +142,7 @@ export const FiltersSheet = <S extends string>({
                                     alt={''}
                                     width={28}
                                     height={28}
+                                    unoptimized={true}
                                 />
                                 {getCategoryShortTitle(t, name)}
                                 {counts && <span className={styles.sheetCount}>{counts[name] ?? 0}</span>}

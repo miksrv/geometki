@@ -19,10 +19,12 @@ interface AppliedFilterListProps {
     filters: AppliedFilter[]
     /** The list without any filter: "Сбросить всё" */
     resetHref: string
+    /** The links change only the URL's query of this page (see `Chip`) */
+    shallow?: boolean
 }
 
 /** What is applied, one removable chip per filter, and "Сбросить всё"; nothing — nothing */
-export const AppliedFilterList: React.FC<AppliedFilterListProps> = ({ filters, resetHref }) => {
+export const AppliedFilterList: React.FC<AppliedFilterListProps> = ({ filters, resetHref, shallow }) => {
     const { t } = useTranslation()
 
     if (!filters.length) {
@@ -40,11 +42,14 @@ export const AppliedFilterList: React.FC<AppliedFilterListProps> = ({ filters, r
                     label={filter.label}
                     aria-label={t('filters-remove', 'Убрать фильтр: {{name}}', { name: filter.label })}
                     href={filter.href}
+                    shallow={shallow}
                 />
             ))}
 
             <Link
                 href={resetHref}
+                shallow={shallow}
+                scroll={shallow ? false : undefined}
                 className={styles.reset}
             >
                 {t('filters-reset-all', 'Сбросить всё')}

@@ -44,7 +44,7 @@ interface SearchFilterPanelProps {
  * pieces: the results as `Tabs` with their numbers ("Все · Места 227 · Адреса 5"), the sort of
  * the places on the right, the categories found as a rail with their numbers, the applied
  * filters. Phones: the tabs with the round filters button, the rail, the filters sheet. Every
- * change is a link or a push of the URL.
+ * change is a shallow link or push of the URL.
  */
 export const SearchFilterPanel: React.FC<SearchFilterPanelProps> = ({ query, data }) => {
     const { t } = useTranslation()
@@ -61,6 +61,10 @@ export const SearchFilterPanel: React.FC<SearchFilterPanelProps> = ({ query, dat
     }, [sheetOpen])
 
     const href = (patch: SearchQueryPatch) => buildSearchHref(query, patch)
+
+    // A change of the filters keeps the page: the URL changes, the results are fetched on the client
+    // at once (no wait for `getServerSideProps`) and the page keeps its scroll
+    const pushFilters = (url: string) => void router.push(url, undefined, { scroll: false, shallow: true })
 
     const facets = data.places?.categories as Record<string, number> | undefined
     const placesFound = countFacets(facets, [])
@@ -103,6 +107,7 @@ export const SearchFilterPanel: React.FC<SearchFilterPanelProps> = ({ query, dat
             aria-label={t('search-results', 'Результаты')}
             activeTab={query.type}
             tabs={tabs}
+            shallow={true}
         />
     )
 
@@ -117,7 +122,7 @@ export const SearchFilterPanel: React.FC<SearchFilterPanelProps> = ({ query, dat
 
     const handleSort = async (sort: ApiType.Search.SortType) => {
         if (await allowSort(sort)) {
-            void router.push(href({ sort }))
+            pushFilters(href({ sort }))
         }
     }
 
@@ -129,6 +134,7 @@ export const SearchFilterPanel: React.FC<SearchFilterPanelProps> = ({ query, dat
                 alt={''}
                 width={16}
                 height={16}
+                unoptimized={true}
             />
         ),
         key: `category-${name}`,
@@ -195,6 +201,7 @@ export const SearchFilterPanel: React.FC<SearchFilterPanelProps> = ({ query, dat
                         counts={facets}
                         total={placesFound}
                         hrefFor={(categories) => href({ categories })}
+                        shallow={true}
                     />
                 )}
 
@@ -202,6 +209,7 @@ export const SearchFilterPanel: React.FC<SearchFilterPanelProps> = ({ query, dat
                     <AppliedFilterList
                         filters={applied}
                         resetHref={href({ categories: [], sort: DEFAULT_SEARCH_SORT })}
+                        shallow={true}
                     />
                 )}
             </FilterPanel>
@@ -230,7 +238,7 @@ export const SearchFilterPanel: React.FC<SearchFilterPanelProps> = ({ query, dat
                     onReset={() => setDraft({ categories: [], sort: DEFAULT_SEARCH_SORT })}
                     onApply={() => {
                         setSheetOpen(false)
-                        void router.push(href(draft))
+                        pushFilters(href(draft))
                     }}
                     onClose={() => setSheetOpen(false)}
                 />

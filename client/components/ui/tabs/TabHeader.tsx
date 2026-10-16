@@ -8,6 +8,7 @@ import styles from './styles.module.sass'
 interface TabHeaderProps {
     label?: string
     href?: string
+    shallow?: boolean
     isActive?: boolean
     onClick?: () => void
 }
@@ -15,12 +16,14 @@ interface TabHeaderProps {
 /**
  * One tab: a link when the tab is a page (`href`), a button when it only switches state.
  */
-const TabHeader: React.FC<TabHeaderProps> = ({ label, href, isActive, onClick }) => {
+const TabHeader: React.FC<TabHeaderProps> = ({ label, href, shallow, isActive, onClick }) => {
     const className = cn(styles.tabsHeaderItem, isActive && styles.active)
 
     return href ? (
         <Link
             href={href}
+            shallow={shallow}
+            scroll={shallow ? false : undefined}
             className={className}
             aria-current={isActive ? 'page' : undefined}
             onClick={onClick}

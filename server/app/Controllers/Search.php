@@ -24,8 +24,13 @@ use Geocoder\Exception\Exception;
  */
 class Search extends ResourceController
 {
+    // The most relevant found places the filter and the sort work over: nobody pages further,
+    // the counts are still over all of them
+    private const SEARCH_PLACES     = 50;
     private const SUGGEST_PLACES    = 5;
     private const SUGGEST_AREAS     = 3;
+    // Rows per location level before rankAreas() puts names starting with the query first
+    private const SUGGEST_AREA_ROWS = 10;
     private const SUGGEST_ADDRESSES = 2;
 
     /**
@@ -34,8 +39,9 @@ class Search extends ResourceController
      * GET /search?q=&type=all|location|coordinates|places&category=a,b&sort=&order=&lat=&lon=&limit=20&offset=0
      *
      * `places.categories` counts the found places per category before the category filter (the
-     * client's facets); the sort runs over all found places in its natural direction unless
-     * `order` is given, then the page is cut.
+     * client's facets) and `places.count` all found places with the filter — both over every
+     * match. The sort runs over the SEARCH_PLACES most relevant of them (`places.available`, what
+     * the pages reach) in its natural direction unless `order` is given, then the page is cut.
      *
      * @throws Exception
      *
@@ -86,7 +92,15 @@ class Search extends ResourceController
         // --- Places full-text search ---
         if ($type === 'all' || $type === 'places') {
             $placeContent = new PlacesContent(350);
-            $placeContent->search($q);
+
+            // Exact counts over every match; the rows themselves only for the most relevant ones
+            $found      = $placeContent->countByCategory($q);
+            $facets     = array_filter($found, static fn ($key) => $key !== '', ARRAY_FILTER_USE_KEY);
+            $categories = $category
+                ? array_values(array_intersect(array_map('trim', explode(',', $category)), config('Categories')->names))
+                : [];
+
+            $placeContent->search($q, self::SEARCH_PLACES, $categories, false);
 
             $allPlaceIds = $placeContent->placeIds;
 
@@ -96,8 +110,8 @@ class Search extends ResourceController
             }
             $coordinatesAvailable = $distanceSQL !== '';
 
-            // One light query over every found place: the facets, the filter and the sort are
-            // over the whole result, the page is cut after them
+            // One light query over the loaded places: the sort is over all of them, the page
+            // is cut after it
             $rows = [];
             if (!empty($allPlaceIds)) {
                 $byId = [];
@@ -119,12 +133,6 @@ class Search extends ResourceController
                 }
             }
 
-            $facets = SearchPlacesRanking::facets($rows);
-
-            $categories = $category
-                ? array_values(array_intersect(array_map('trim', explode(',', $category)), config('Categories')->names))
-                : [];
-            $rows = SearchPlacesRanking::filter($rows, $categories);
 
             if (!$sort) {
                 $sort = $coordinatesAvailable ? 'distance' : 'relevance';
@@ -134,8 +142,13 @@ class Search extends ResourceController
             }
             $rows = SearchPlacesRanking::sort($rows, $sort, $order);
 
-            $totalCount = count($rows);
+            $totalCount = $categories
+                ? array_sum(array_intersect_key($facets, array_flip($categories)))
+                : array_sum($found);
             $pagedIds   = array_column(array_slice($rows, $offset, $limit), 'id');
+
+            // The texts of the page only
+            $placeContent->translate($pagedIds);
 
             $formattedPlaces = [];
 
@@ -172,6 +185,7 @@ class Search extends ResourceController
             $result['places'] = [
                 'items'      => $formattedPlaces,
                 'count'      => $totalCount,
+                'available'  => count($rows),
                 'categories' => (object) $facets,
             ];
         }
@@ -269,7 +283,7 @@ class Search extends ResourceController
 
         // Places: the title in the request locale, the category and where the place is
         $placeContent = new PlacesContent(0);
-        $placeContent->search($q);
+        $placeContent->search($q, self::SUGGEST_PLACES);
 
         $topPlaceIds = array_slice($placeContent->placeIds, 0, self::SUGGEST_PLACES);
 
@@ -364,9 +378,10 @@ class Search extends ResourceController
         foreach ($levels as $type => [$table, $placesColumn, $hasRegion]) {
             $query = $db->table("{$table} t")
                 ->select(
-                    "t.id, t.title_{$locale} as title, ls.slug,
+                    "t.id, COALESCE(NULLIF(t.title_{$locale}, ''), t.title_ru, t.title_en) as title, ls.slug,
                     (SELECT COUNT(*) FROM places p WHERE p.{$placesColumn} = t.id AND p.deleted_at IS NULL) as placesCount"
-                    . ($hasRegion ? ", r.title_{$locale} as region" : '')
+                    . ($hasRegion ? ", COALESCE(NULLIF(r.title_{$locale}, ''), r.title_ru) as region" : ''),
+                    false
                 )
                 ->join('location_slugs ls', "ls.type = '{$type}' AND ls.entity_id = t.id", 'left')
                 ->groupStart()
@@ -381,7 +396,7 @@ class Search extends ResourceController
             $rows = $query
                 ->having('placesCount >', 0)
                 ->orderBy('placesCount', 'DESC')
-                ->limit(self::SUGGEST_AREAS)
+                ->limit(self::SUGGEST_AREA_ROWS)
                 ->get()
                 ->getResult();
 

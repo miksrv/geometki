@@ -13,6 +13,7 @@ export { PlaceReviews } from './place-reviews'
 export { PlaceVisited } from './place-visited'
 export {
     buildFilterHref,
+    getRequestOrder,
     PlaceFilterPanel,
     type PlacesFilterPatch,
     type PlacesFilterState,

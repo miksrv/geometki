@@ -5,8 +5,8 @@
 // The fixed app bar grows by the top safe area (components/layout/app-bar)
 $appBarOffset: calc(50px + env(safe-area-inset-top, 0px))
 
-// The panel on a translucent page background; it bleeds into the page's side padding so the
-// blur of a sticky panel reaches the edges, and its top padding (the room above the fields
+// The panel on a near-opaque page background (no backdrop blur: it repaints on every scroll
+// frame); it bleeds into the page's side padding so a sticky panel reaches the edges, and its top padding (the room above the fields
 // once it sticks) is pulled into the page's gap, so it starts as close as any other toolbar
 .panel
     z-index: 40
@@ -15,9 +15,7 @@ $appBarOffset: calc(50px + env(safe-area-inset-top, 0px))
     gap: var(--space-3)
     margin: calc(-1 * var(--space-3)) -16px 0
     padding: var(--space-3) 16px
-    background: color-mix(in srgb, var(--body-background) 92%, transparent)
-    backdrop-filter: blur(12px)
-    -webkit-backdrop-filter: blur(12px)
+    background: color-mix(in srgb, var(--body-background) 97%, transparent)
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
         margin: calc(-1 * var(--space-2)) -10px 0

@@ -60,6 +60,30 @@ class Bookmarks extends ResourceController
     }
 
     /**
+     * The IDs of every place in the authenticated user's bookmarks: one request lets each place
+     * card of any list (the feed, search, collections) show its bookmark without a check per card.
+     *
+     * GET /bookmarks/places
+     * Returns {"items": []} for unauthenticated requests.
+     *
+     * @return ResponseInterface
+     */
+    public function places(): ResponseInterface
+    {
+        if (!$this->session->isAuth || !$this->session->user) {
+            return $this->respond(['items' => []]);
+        }
+
+        $rows = (new UsersBookmarksModel())
+            ->asArray()
+            ->select('place_id')
+            ->where('user_id', $this->session->user->id)
+            ->findAll();
+
+        return $this->respond(['items' => array_values(array_filter(array_column($rows, 'place_id')))]);
+    }
+
+    /**
      * Toggle a place bookmark for the authenticated user.
      *
      * POST /bookmarks/set — auth required.

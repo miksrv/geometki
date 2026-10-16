@@ -88,8 +88,8 @@ re-implement them.
     - `PlaceHero` — "what is it and where": the `Breadcrumbs` (desktop) on the page background,
       then `PlaceCover`: the clean cover at 3:1 (at least 240px; cover files are 1800×600) with
       only a small credit over it, `--radius-xl` corners; no cover — no picture on desktop. On
-      phones it is an edge-to-edge 4:3 carousel (CSS scroll snap) of the cover and every photo
-      with a "1 / N" pill (it opens all the photos in the viewer grid) and a last slide inviting
+      phones it is an edge-to-edge 4:3 carousel (CSS scroll snap) of the cover and the first 8
+      photos with a "1 / N" pill of all of them (it opens all the photos in the viewer grid) and a last slide inviting
       to add photos; a tap opens that photo in the viewer. Under the picture, on the page background: the h1
       (`titlePage`) and one facts line — category (18px icon + name, a link to its
       places, in primary text), rating (a link to `#reviews`, or to `#rate` while unrated;
@@ -131,9 +131,10 @@ re-implement them.
       plate — the only interactive stars, empty until hovered, a word per score, none for the
       author — then the reviews and the field with a hint on what to write; a guest gets the
       same field, a tap opens the sign-in dialog.
-    - "Что ещё посмотреть" — `PlaceExplore`: button `Tabs` "Рядом" / "{category} · {region}"
-      over a `ScrollRail variant="cards"` of `PlaceCard` tiles; the link action follows the tab ("Все места
-      рядом" / "Все" to the location × category landing). Both lists stay in the HTML, the
+    - "Что ещё посмотреть" — `PlaceExplore`: button `Tabs` "Рядом" / the short category name
+      ("Инженерные сооружения") over a `ScrollRail variant="cards"` of `PlaceCard` tiles; the link
+      action follows the tab and carries the region ("Все места рядом" / "Все — Оренбургская
+      область" to the location × category landing). Both lists stay in the HTML, the
       inactive one `hidden` — they are internal links for crawlers. A region tab with fewer
       than three places is dropped.
     - "О месте" — `PlaceAbout` (`Container`): the byline (avatar, the author's name, then one
@@ -287,10 +288,11 @@ line up), the address (`secondary`, one line of links) and the stats (the rating
 as a gold `StarFilled` with a bold number, the distance as `--color-main` text without an icon).
 Over the cover: the one-tap bookmark in the top-right corner (`PlaceCardBookmark`, a 32px dark
 translucent circle, `--color-main` when on; a guest gets the sign-in dialog) and, for the
-visitor's visited places, a green "Вы были здесь" pill bottom-left. The bookmark and the pill
-read `bookmarked` / `visited` of `PlaceListItem`, which `GET /places` sends for a signed-in
-visitor only; where a list does not send them a signed-in visitor sees no bookmark, never a
-request per card. A card is about the place:
+visitor's visited places, a green "Вы были здесь" pill bottom-left. The bookmark is on a tile
+of any list: a signed-in visitor's state comes from `GET /bookmarks/places` (all their
+bookmarked IDs, one cached request for every card, refreshed by each toggle), `bookmarked` of
+`PlaceListItem` fills in until it loads — never a request per card. The pill reads `visited`,
+which `GET /places` sends for a signed-in visitor only. A card is about the place:
 it never shows who added it or when, and list responses (`ApiModel.PlaceListItem`) do not
 even carry `author`. Props: `distanceKm` / `distanceLabel` override the API distance;
 `actions` puts controls on the right of a row or over the top-right corner of a tile instead
@@ -548,19 +550,20 @@ actions, active days, the longest and the current run of days in a row (22px num
   where, what, in which order — and only one filter of the site's own data, "Скрыть
   посещённые" (signed in, `?notVisited=1`, noindex). The URL is the only state: every change is a
   `buildFilterHref` link or push on page 1 (`buildPlacesHref` underneath, so landing paths
-  win when the flags are on). The whole block is sticky under the app bar on a translucent,
-  blurred page background.
+  win when the flags are on). The whole block is sticky under the app bar on a near-opaque page
+  background (no `backdrop-filter`: it repaints on every scroll frame).
     - Desktop: one row — "Где" (`FieldTrigger` in a kit `Popout`: the search field, "Рядом со
       мной" (the distance sort over everything, asks the browser), "Везде", the three recent
       locations, the five fullest regions; typing shows found regions, districts and cities), the
       sort (`OptionList` of presets with their natural direction: popular now, for you (signed
       in), nearest, top rated, most viewed, newest, most discussed; there is no order control,
       `?order=` of old links is kept until the sort changes), the "Скрыть посещённые" `Switch`,
-      then `Tabs` "Список / Карта" on the right (the map gets the same single category). Under it
+      with nothing applied a dashed "Продолжить: …" link to the last filtered search of this
+      browser (read after mount: it sits in the row so the panel's height never changes), then
+      `Tabs` "Список / Карта" on the right (the map gets the same single category). Under it
       the category rail (`ScrollRail` of `Chip` links: "Все", then the categories in their themed
       groups, `CATEGORY_GROUPS`, split by rules; several can be on), then the applied filters
-      (removable `Chip`s and "Сбросить всё"; with nothing applied, a dashed "Продолжить: …" link
-      to the last filtered search of this browser). Filters apply at once.
+      (removable `Chip`s and "Сбросить всё"). Filters apply at once.
     - Phones: a round search bar "Где искать?" with the summary under it and a round filters
       button with a counter, over the same rail; the applied row is hidden. "Где" opens a
       `BottomSheet` with the same options (applies on pick); the filters open a form sheet —

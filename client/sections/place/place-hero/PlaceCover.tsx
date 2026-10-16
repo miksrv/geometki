@@ -10,6 +10,9 @@ import { IMG_HOST } from '@/config/env'
 
 import styles from './styles.module.sass'
 
+// A phone carousel carries the cover and this many photos; the "1 / N" counter leads to all of them
+const MAX_CAROUSEL_PHOTOS = 8
+
 const SOURCE_NAMES: Record<ApiModel.PhotoExternalSource, string> = {
     pastvu: 'PastVu',
     wikimedia: 'Wikimedia Commons'
@@ -62,6 +65,14 @@ const CoverCredit: React.FC<{ credit: ApiModel.PlaceCoverCredit }> = ({ credit }
  */
 const SlideImage: React.FC<ImageProps> = (props) => {
     const [loaded, setLoaded] = useState<boolean>(false)
+    const imageRef = useRef<HTMLImageElement>(null)
+
+    // A server-rendered image can finish loading before hydration: `onLoad` never fires then
+    useEffect(() => {
+        if (imageRef.current?.complete) {
+            setLoaded(true)
+        }
+    }, [])
 
     return (
         <>
@@ -73,6 +84,7 @@ const SlideImage: React.FC<ImageProps> = (props) => {
             )}
             <Image
                 {...props}
+                ref={imageRef}
                 alt={props.alt}
                 onLoad={() => setLoaded(true)}
                 onError={() => setLoaded(true)}
@@ -117,6 +129,9 @@ export const PlaceCover: React.FC<PlaceCoverProps> = ({
     const photoList = photos ?? []
     // The cover counts as the first picture: "1 / 6" for a cover and five photos
     const mediaCount = (cover ? 1 : 0) + photoList.length
+    // Only the first photos get a slide: a place with hundreds would bloat the HTML and the hydration
+    const slidePhotos = photoList.slice(0, MAX_CAROUSEL_PHOTOS)
+    const slideCount = (cover ? 1 : 0) + slidePhotos.length
 
     useEffect(() => {
         const track = trackRef.current
@@ -183,7 +198,7 @@ export const PlaceCover: React.FC<PlaceCoverProps> = ({
                     </button>
                 )}
 
-                {photoList.map((photo, index) => (
+                {slidePhotos.map((photo, index) => (
                     <button
                         key={photo.id}
                         type={'button'}
@@ -226,7 +241,7 @@ export const PlaceCover: React.FC<PlaceCoverProps> = ({
 
             {cover?.credit && <CoverCredit credit={cover.credit} />}
 
-            {mediaCount > 1 && current < mediaCount && (
+            {mediaCount > 1 && current < slideCount && (
                 <button
                     type={'button'}
                     className={styles.counter}

@@ -200,9 +200,8 @@
     width: 32px
     height: 32px
     border-radius: var(--radius-full)
-    background: rgba(20, 22, 26, 0.4)
-    backdrop-filter: blur(6px)
-    -webkit-backdrop-filter: blur(6px)
+    // Over a photo in both themes; no backdrop blur (a paint cost on every tile), so a bit darker
+    background: rgba(20, 22, 26, 0.55)
     transition: background-color var(--duration-fast) var(--ease)
 
     svg
@@ -211,7 +210,7 @@
         fill: #fff
 
     &:hover
-        background: rgba(20, 22, 26, 0.6)
+        background: rgba(20, 22, 26, 0.75)
 
     &:focus-visible
         outline: none

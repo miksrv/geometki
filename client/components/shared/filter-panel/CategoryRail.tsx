@@ -17,6 +17,8 @@ interface CategoryRailProps {
      */
     counts?: Record<string, number>
     total?: number
+    /** The chips change only the URL's query of this page (see `Chip`) */
+    shallow?: boolean
 }
 
 /**
@@ -24,7 +26,7 @@ interface CategoryRailProps {
  * themed groups split by thin rules. A chip toggles its category, several can be on; every
  * chip is a link to the list it leads to.
  */
-export const CategoryRail: React.FC<CategoryRailProps> = ({ selected, hrefFor, counts, total }) => {
+export const CategoryRail: React.FC<CategoryRailProps> = ({ selected, hrefFor, counts, total, shallow }) => {
     const { t } = useTranslation()
 
     const groups = CATEGORY_GROUPS.map((group) => ({
@@ -45,6 +47,7 @@ export const CategoryRail: React.FC<CategoryRailProps> = ({ selected, hrefFor, c
                 count={counts ? total : undefined}
                 selected={!selected.length}
                 href={hrefFor([])}
+                shallow={shallow}
             />
 
             {groups.map((group) => (
@@ -53,6 +56,7 @@ export const CategoryRail: React.FC<CategoryRailProps> = ({ selected, hrefFor, c
 
                     {group.categories.map((name) => {
                         const on = selected.includes(name)
+                        const next = on ? selected.filter((item) => item !== name) : [...selected, name]
 
                         return (
                             <Chip
@@ -60,13 +64,17 @@ export const CategoryRail: React.FC<CategoryRailProps> = ({ selected, hrefFor, c
                                 label={getCategoryShortTitle(t, name)}
                                 count={counts ? (counts[name] ?? 0) : undefined}
                                 selected={on}
-                                href={hrefFor(on ? selected.filter((item) => item !== name) : [...selected, name])}
+                                href={hrefFor(next)}
+                                shallow={shallow}
+                                // 2+ categories are a `noindex` query, not a page: no crawl into every combination
+                                rel={next.length >= 2 ? 'nofollow' : undefined}
                                 icon={
                                     <Image
                                         src={categoryImage(name).src}
                                         alt={''}
                                         width={20}
                                         height={20}
+                                        unoptimized={true}
                                     />
                                 }
                             />

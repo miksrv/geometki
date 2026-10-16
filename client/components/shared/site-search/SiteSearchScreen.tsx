@@ -23,7 +23,31 @@ export const SiteSearchScreen: React.FC<SiteSearchScreenProps> = ({ open, placeh
     // The portal target exists on the client only: the server renders nothing
     const [mounted, setMounted] = useState<boolean>(false)
 
+    // The part of the screen the on-screen keyboard leaves: the layer is as high as it, so the last
+    // rows are not under the keyboard
+    const [viewport, setViewport] = useState<{ top: number; height: number } | null>(null)
+
     useEffect(() => setMounted(true), [])
+
+    useEffect(() => {
+        const visualViewport = window.visualViewport
+
+        if (!open || !visualViewport) {
+            return
+        }
+
+        const update = () => setViewport({ height: visualViewport.height, top: visualViewport.offsetTop })
+
+        update()
+        visualViewport.addEventListener('resize', update)
+        visualViewport.addEventListener('scroll', update)
+
+        return () => {
+            visualViewport.removeEventListener('resize', update)
+            visualViewport.removeEventListener('scroll', update)
+            setViewport(null)
+        }
+    }, [open])
 
     useEffect(() => {
         if (open) {
@@ -57,6 +81,7 @@ export const SiteSearchScreen: React.FC<SiteSearchScreenProps> = ({ open, placeh
             role={'dialog'}
             aria-modal={true}
             aria-label={placeholder}
+            style={viewport ? { bottom: 'auto', height: viewport.height, top: viewport.top } : undefined}
         >
             <SiteSearch
                 variant={'screen'}

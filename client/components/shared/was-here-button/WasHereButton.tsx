@@ -112,13 +112,11 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
             return
         }
 
+        // The page has several of these buttons, each one listens for `online`: the first to run
+        // takes the queue synchronously, the others find it empty — a visit is a toggle, sent once
+        localStorage.setItem(PENDING_VISITS_KEY, '[]')
+
         const fresh = pending.filter((v) => now - v.timestamp < VISIT_TTL_MS)
-        const stale = pending.filter((v) => now - v.timestamp >= VISIT_TTL_MS)
-
-        if (stale.length) {
-            localStorage.setItem(PENDING_VISITS_KEY, JSON.stringify(fresh))
-        }
-
         const remaining: PendingVisit[] = []
 
         for (const visit of fresh) {
@@ -129,7 +127,10 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
             }
         }
 
-        localStorage.setItem(PENDING_VISITS_KEY, JSON.stringify(remaining))
+        // Visits saved offline while these were being sent stay in the queue too
+        const added: PendingVisit[] = JSON.parse(localStorage.getItem(PENDING_VISITS_KEY) ?? '[]')
+
+        localStorage.setItem(PENDING_VISITS_KEY, JSON.stringify([...added, ...remaining]))
     }, [putVisit])
 
     useEffect(() => {

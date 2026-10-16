@@ -17,6 +17,10 @@ export interface ChipProps {
     removable?: boolean
     /** Makes the chip a link: filters that are pages stay crawlable and open in a new tab */
     href?: string
+    /** The link's `rel`: `nofollow` for a link to a filter combination that is no page of its own */
+    rel?: string
+    /** The link changes only the URL's query of this page: no `getServerSideProps`, the scroll stays */
+    shallow?: boolean
     /** `medium` — 36px (the category rail), `small` — 28px (the applied filters) */
     size?: 'medium' | 'small'
     /** The accessible name when the label alone is not enough ("Убрать фильтр: Пещеры") */
@@ -37,6 +41,8 @@ export const Chip: React.FC<ChipProps> = ({
     selected,
     removable,
     href,
+    rel,
+    shallow,
     size = 'medium',
     'aria-label': ariaLabel,
     className,
@@ -76,6 +82,9 @@ export const Chip: React.FC<ChipProps> = ({
         return (
             <Link
                 href={href}
+                rel={rel}
+                shallow={shallow}
+                scroll={shallow ? false : undefined}
                 className={classNames}
                 aria-label={ariaLabel}
                 aria-current={selected ? 'true' : undefined}

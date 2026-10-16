@@ -30,8 +30,10 @@ export interface Response {
     }
     places?: {
         items: ApiModel.PlaceListItem[]
-        /** Places with the category filter */
+        /** All found places with the category filter */
         count: number
+        /** How many of them the pages reach: only the most relevant ones are sorted and paged */
+        available?: number
         /** Found places per category before the category filter: the facets */
         categories?: Partial<Record<ApiModel.Categories, number>>
     }

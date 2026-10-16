@@ -58,6 +58,10 @@
     -webkit-appearance: none
     appearance: none
 
+    // iOS zooms into a field under 16px on focus
+    @media (pointer: coarse)
+        font-size: max(16px, var(--font-size))
+
     &::placeholder
         color: var(--input-placeholder-color)
         opacity: 1
@@ -268,7 +272,7 @@
             box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-main) 30%, transparent), var(--shadow-lg)
 
     .input
-        font-size: var(--font-size-lead)
+        font-size: max(16px, var(--font-size-lead))
 
     .fieldIcon
         width: 22px
@@ -313,6 +317,8 @@
 .screenLayer
     position: fixed
     inset: 0
+    // Without `visualViewport` the layer is the dynamic viewport; with it the inline style takes over
+    height: 100dvh
     z-index: var(--z-dialog, 1000)
     padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px)
     background: var(--container-background)

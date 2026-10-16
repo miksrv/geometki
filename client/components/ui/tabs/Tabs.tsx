@@ -17,6 +17,8 @@ export interface TabsProps<T> {
     tabs?: Array<TabType<T>>
     activeTab?: T
     onChangeTab?: (key?: T) => void
+    /** Tab links change only the URL's query of this page: no `getServerSideProps`, the scroll stays */
+    shallow?: boolean
     'aria-label'?: string
 }
 
@@ -29,6 +31,7 @@ export const Tabs = <T extends string>({
     tabs,
     activeTab,
     onChangeTab,
+    shallow,
     'aria-label': ariaLabel
 }: TabsProps<T>) => {
     const listRef = useRef<HTMLDivElement>(null)
@@ -81,6 +84,7 @@ export const Tabs = <T extends string>({
                         key={key}
                         label={label}
                         href={href}
+                        shallow={shallow}
                         isActive={activeTab === key}
                         onClick={() => onChangeTab?.(key)}
                     />

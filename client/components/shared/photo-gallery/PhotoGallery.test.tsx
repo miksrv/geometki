@@ -43,7 +43,13 @@ jest.mock('simple-react-ui-kit', () => ({
     Spinner: () => <div data-testid={'spinner'} />
 }))
 
-jest.mock('next/dynamic', () => (_fn: () => Promise<{ default: React.ComponentType }>) => {
+jest.mock('next/dynamic', () => (loader: () => Promise<{ default: React.ComponentType }>) => {
+    // The viewer is loaded lazily in the page; the test renders the real one
+    if (String(loader).includes('photo-viewer')) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+        return require('../photo-viewer/PhotoViewer').PhotoViewer
+    }
+
     const MockDialog = ({ open, onAccept, onReject, message, acceptText }: any) =>
         open ? (
             <div data-testid={'confirmation-dialog'}>

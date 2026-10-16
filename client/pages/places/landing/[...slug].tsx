@@ -16,13 +16,10 @@ import type { LocationLinkListItem } from '@/components/shared/location-link-lis
 import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import useRequireAuth from '@/hooks/useRequireAuth'
-import {
-    buildFilterHref,
-    PlaceFilterPanel,
-    PlacesFilterPatch,
-    PlacesFilterState,
-    PlacesListing
-} from '@/sections/place'
+import type { PlacesFilterPatch, PlacesFilterState } from '@/sections/place/places-filter-panel'
+// eslint-disable-next-line no-duplicate-imports
+import { buildFilterHref, getRequestOrder, PlaceFilterPanel } from '@/sections/place/places-filter-panel'
+import { PlacesListing } from '@/sections/place/places-listing'
 import { getCategoryContent, getCategoryLandingTitle, getCategoryTitle, isCategoryName } from '@/utils/categories'
 import {
     buildPairHref,
@@ -97,6 +94,8 @@ interface PlacesLandingPageProps {
     notVisited: boolean
     lat: number | null
     lon: number | null
+    /** Where the distances are from: the URL's `lat`/`lon`, else the visitor's `location` cookie */
+    distanceOrigin: ApiType.Coordinates | null
     currentPage: number
     placesCount: number
     placesList: ApiModel.Place[]
@@ -125,6 +124,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
     notVisited,
     lat,
     lon,
+    distanceOrigin,
     currentPage,
     placesCount,
     placesList
@@ -350,6 +350,18 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
 
     const mapQuery = categoryName ? `?category=${categoryName}` : ''
 
+    // The request behind the list: the next pages are loaded with it, and it keys the listing
+    const listRequest: ApiType.Places.ListRequest = {
+        category: currentFilterCategory,
+        lat: distanceOrigin?.lat,
+        location: locationSlug ?? undefined,
+        lon: distanceOrigin?.lon,
+        notVisited: notVisited ? 1 : undefined,
+        order: getRequestOrder(sort, order),
+        sort,
+        tag
+    }
+
     return (
         <AppLayout>
             <Head>
@@ -442,21 +454,15 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
 
             {placesList?.length ? (
                 <PlacesListing
+                    key={`${currentPage}:${JSON.stringify(listRequest)}`}
                     places={placesList}
                     count={placesCount}
                     currentPage={currentPage}
                     perPage={POST_PER_PAGE}
-                    request={{
-                        category: currentFilterCategory,
-                        lat,
-                        location: locationSlug ?? undefined,
-                        lon,
-                        notVisited: notVisited ? 1 : undefined,
-                        order,
-                        sort,
-                        tag
-                    }}
+                    request={listRequest}
                     urlParam={{
+                        // A location page keeps its `?category=` filter (a category is in the path elsewhere)
+                        category: queryCategories.length ? queryCategories.join(',') : undefined,
                         lat,
                         lon,
                         notVisited: notVisited ? 1 : undefined,
@@ -694,7 +700,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                             lon: distanceOrigin?.lon,
                             notVisited: notVisited ? 1 : undefined,
                             offset: (currentPage - 1) * POST_PER_PAGE,
-                            order,
+                            order: getRequestOrder(sort, order),
                             sort,
                             tag
                         })
@@ -721,6 +727,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         // No resolver flag for a category: the same threshold as the sitemap applies
                         indexable: (placesList?.count ?? 0) >= LANDING_INDEX_THRESHOLD,
                         kind: 'category',
+                        distanceOrigin: distanceOrigin ?? null,
                         lat,
                         locationId: null,
                         locationParents: [],
@@ -783,7 +790,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                             lon: distanceOrigin?.lon,
                             notVisited: notVisited ? 1 : undefined,
                             offset: (currentPage - 1) * POST_PER_PAGE,
-                            order,
+                            order: getRequestOrder(sort, order),
                             sort,
                             tag
                         })
@@ -817,6 +824,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         currentPage,
                         indexable: locationData!.indexable,
                         kind: 'location',
+                        distanceOrigin: distanceOrigin ?? null,
                         lat,
                         locationId: locationData!.id,
                         locationParents: locationData!.parents,
@@ -869,7 +877,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         lon: distanceOrigin?.lon,
                         notVisited: notVisited ? 1 : undefined,
                         offset: (currentPage - 1) * POST_PER_PAGE,
-                        order,
+                        order: getRequestOrder(sort, order),
                         sort,
                         tag
                     })
@@ -906,6 +914,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     currentPage,
                     indexable: currentCategoryItem.indexable,
                     kind: 'pair',
+                    distanceOrigin: distanceOrigin ?? null,
                     lat,
                     locationId: locationData!.id,
                     locationParents: locationData!.parents,

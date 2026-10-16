@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { cn, Container } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
@@ -51,7 +51,11 @@ const SearchPage: NextPage<SearchPageProps> = ({ initialData }) => {
     const [isLoadingMore, setIsLoadingMore] = useState(false)
     const [extraPlaces, setExtraPlaces] = useState<ApiType.Search.Response['places']>()
 
+    // The URL of the shown results: a "Показать ещё" answer for an older URL is dropped
+    const currentPath = useRef(router.asPath)
+
     useEffect(() => {
+        currentPath.current = router.asPath
         setOffset(PLACES_LIMIT)
         setExtraPlaces(undefined)
     }, [router.asPath])
@@ -75,11 +79,12 @@ const SearchPage: NextPage<SearchPageProps> = ({ initialData }) => {
 
     const handleLoadMore = useCallback(async () => {
         setIsLoadingMore(true)
+        const requestPath = router.asPath
 
         try {
             const result = await triggerSearch({ ...toRequest(query, userLocation), offset })
 
-            if (result.data?.places) {
+            if (result.data?.places && requestPath === currentPath.current) {
                 setExtraPlaces((prev) => ({
                     count: result.data!.places!.count,
                     items: [...(prev?.items ?? []), ...(result.data!.places!.items ?? [])]
@@ -89,7 +94,7 @@ const SearchPage: NextPage<SearchPageProps> = ({ initialData }) => {
         } finally {
             setIsLoadingMore(false)
         }
-    }, [query, offset, userLocation, triggerSearch])
+    }, [query, offset, userLocation, triggerSearch, router.asPath])
 
     const pageTitle = t('search-page-title', { query: query.q, defaultValue: `Поиск: ${query.q}` })
     const pageDescription = t('search-page-description', {

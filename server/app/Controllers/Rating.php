@@ -30,6 +30,17 @@ class Rating extends ResourceController
     }
 
     /**
+     * The vote belongs to this visitor: same session, or the same signed-in user.
+     * A guest's null user id must not match other guests' votes.
+     */
+    private function isOwnVote(object $item): bool
+    {
+        $userId = $this->session->user?->id;
+
+        return $item->session_id === $this->session->id || ($userId !== null && $item->user_id === $userId);
+    }
+
+    /**
      * Return the aggregated rating and current session/user vote for a place.
      *
      * GET /rating/:id
@@ -52,7 +63,7 @@ class Rating extends ResourceController
         $response['count'] = count($ratingData);
 
         foreach ($ratingData as $item) {
-            if ($item->session_id === $this->session->id || $item->user_id === $this->session->user?->id) {
+            if ($this->isOwnVote($item)) {
                 $response['vote'] = $item->value;
             }
 
@@ -118,7 +129,7 @@ class Rating extends ResourceController
             // Let's calculate a new rating for the place
             if ($ratingData) {
                 foreach ($ratingData as $item) {
-                    if ($item->session_id === $this->session->id || $item->user_id === $this->session->user?->id) {
+                    if ($this->isOwnVote($item)) {
                         $alreadyVoted = $item->id;
                         continue;
                     }

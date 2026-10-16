@@ -13,7 +13,6 @@ import { ImageUploader } from '@/components/ui'
 import { getErrorMessage } from '@/utils/api'
 
 import { isAbsoluteUrl, resolveImageUrl } from '../photo-lightbox/utils'
-import { PhotoViewer } from '../photo-viewer'
 import type { PhotoViewerState } from '../photo-viewer/PhotoViewer'
 import { Section } from '../section'
 
@@ -23,6 +22,11 @@ const PhotoLightbox = dynamic(
     () => import('@/components/shared/photo-lightbox/PhotoLightbox').then((m) => ({ default: m.PhotoLightbox })),
     { ssr: false }
 )
+
+// The viewer is mounted while open only: a closed one costs nothing on the page
+const PhotoViewer = dynamic(() => import('../photo-viewer/PhotoViewer').then((m) => ({ default: m.PhotoViewer })), {
+    ssr: false
+})
 
 const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
     ssr: false
@@ -52,6 +56,8 @@ interface PhotoGalleryProps extends ContainerProps {
      * photo. Controlled when given: the place page opens it from the hero carousel too
      */
     viewer?: PhotoViewerState
+    /** Mosaic: the first photo is the largest paint of the page (a place without a cover), loaded eagerly */
+    priority?: boolean
     onViewerChange?: (state: PhotoViewerState) => void
     uploadingPhotos?: string[]
     onPhotoDelete?: (photos: ApiModel.Photo[]) => void
@@ -63,6 +69,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     hideActions,
     showAll,
     variant = 'grid',
+    priority,
     viewer: viewerProp,
     onViewerChange,
     uploadingPhotos,
@@ -215,6 +222,8 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                     unoptimized={isAbsoluteUrl(photo.preview)}
                     alt={`${photo.title}. ${t('photo', { defaultValue: 'Фотография' })} ${listIndex + 1}`}
                     quality={75}
+                    priority={priority && variant === 'mosaic' && listIndex === 0}
+                    fetchPriority={priority && variant === 'mosaic' && listIndex === 0 ? 'high' : undefined}
                     width={700}
                     height={500}
                     sizes={variant === 'mosaic' ? MOSAIC_SIZES : TILE_SIZES}
@@ -401,17 +410,19 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                         )}
                     </div>
                 )}
-                <PhotoViewer
-                    photos={localPhotos}
-                    title={placeTitle}
-                    state={viewer}
-                    canEdit={isAuth && !hideActions}
-                    loadingId={photoLoadingID}
-                    onStateChange={setViewer}
-                    onRotate={(photo) => void handleRotateClick(photo.id, photo.placeId === 'temporary')}
-                    onDelete={(photo) => handleRemoveClick(photo.id)}
-                    onAddClick={onPhotoUploadClick}
-                />
+                {!!viewer && (
+                    <PhotoViewer
+                        photos={localPhotos}
+                        title={placeTitle}
+                        state={viewer}
+                        canEdit={isAuth && !hideActions}
+                        loadingId={photoLoadingID}
+                        onStateChange={setViewer}
+                        onRotate={(photo) => void handleRotateClick(photo.id, photo.placeId === 'temporary')}
+                        onDelete={(photo) => handleRemoveClick(photo.id)}
+                        onAddClick={onPhotoUploadClick}
+                    />
+                )}
                 {dialogs}
             </Section>
         )

@@ -61,7 +61,7 @@ jest.mock('@/components/shared', () => ({
 }))
 
 jest.mock('@/utils/categories', () => ({
-    getCategoryLandingTitle: () => 'Мосты'
+    getCategoryShortTitle: () => 'Инженерные сооружения'
 }))
 
 jest.mock('@/utils/helpers', () => ({
@@ -107,7 +107,7 @@ describe('PlaceExplore', () => {
         )
 
         expect(screen.getByRole('heading')).toHaveTextContent('Что ещё посмотреть')
-        expect(screen.getByRole('button', { name: 'Мосты · Калужская область' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Инженерные сооружения' })).toBeInTheDocument()
         expect(screen.getByText('Рядом 0').closest('[hidden]')).toBeNull()
         // Hidden, but still links for crawlers
         expect(screen.getByText('Мост 0').closest('div[hidden]')).not.toBeNull()
@@ -127,10 +127,13 @@ describe('PlaceExplore', () => {
             />
         )
 
-        fireEvent.click(screen.getByRole('button', { name: 'Мосты · Калужская область' }))
+        fireEvent.click(screen.getByRole('button', { name: 'Инженерные сооружения' }))
 
         expect(screen.getByText('Мост 0').closest('div[hidden]')).toBeNull()
-        expect(screen.getByRole('link', { name: 'Все' })).toHaveAttribute('href', '/places/kaluzhskaya-oblast/bridge')
+        expect(screen.getByRole('link', { name: 'Все — Калужская область' })).toHaveAttribute(
+            'href',
+            '/places/kaluzhskaya-oblast/bridge'
+        )
     })
 
     it('drops the switch when the region has too few places', () => {

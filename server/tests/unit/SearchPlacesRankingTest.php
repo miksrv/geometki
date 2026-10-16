@@ -24,26 +24,6 @@ final class SearchPlacesRankingTest extends CIUnitTestCase
         return array_column($rows, 'id');
     }
 
-    public function testFacetsCountEveryCategoryMostFrequentFirst(): void
-    {
-        $this->assertSame(['cave' => 2, 'castle' => 1, 'waterfall' => 1], SearchPlacesRanking::facets($this->rows()));
-    }
-
-    public function testFacetsSkipPlacesWithoutCategory(): void
-    {
-        $this->assertSame([], SearchPlacesRanking::facets([['id' => 'x', 'category' => null]]));
-    }
-
-    public function testFilterKeepsRelevanceOrder(): void
-    {
-        $this->assertSame(['a', 'c', 'd'], $this->ids(SearchPlacesRanking::filter($this->rows(), ['waterfall', 'cave'])));
-    }
-
-    public function testFilterWithoutCategoriesKeepsAll(): void
-    {
-        $this->assertSame(['a', 'b', 'c', 'd'], $this->ids(SearchPlacesRanking::filter($this->rows(), [])));
-    }
-
     public function testRelevanceAndUnknownSortsKeepOrder(): void
     {
         $this->assertSame(['a', 'b', 'c', 'd'], $this->ids(SearchPlacesRanking::sort($this->rows(), 'relevance')));

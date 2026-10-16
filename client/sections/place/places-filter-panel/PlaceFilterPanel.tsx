@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Button, Icon } from 'simple-react-ui-kit'
 
 import { useRouter } from 'next/dist/client/router'
+import dynamic from 'next/dynamic'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiType } from '@/api'
@@ -20,13 +21,19 @@ import useUserLocation from '@/hooks/useUserLocation'
 
 import { AppliedFilters } from './AppliedFilters'
 import { describeFilter, isFilterActive, isNearFilter } from './describeFilter'
-import { ANYWHERE_KEY, LocationChoice, LocationOptions, NEAR_KEY } from './LocationOptions'
-import { PlaceFiltersSheet } from './PlaceFiltersSheet'
+import { ANYWHERE_KEY, LocationChoice, NEAR_KEY } from './LocationOptions'
+import { ResumeSearch } from './ResumeSearch'
 import { getSortLabel, getSortPresets } from './sortPresets'
 import { PlacesFilterPatch, PlacesFilterState } from './types'
 import { usePlacesFilterMemory } from './usePlacesFilterMemory'
 
 import styles from './styles.module.sass'
+
+// Opened by a tap only: closed on the server and on first paint, so their code loads apart
+const LocationOptions = dynamic(() => import('./LocationOptions').then((mod) => mod.LocationOptions), { ssr: false })
+const PlaceFiltersSheet = dynamic(() => import('./PlaceFiltersSheet').then((mod) => mod.PlaceFiltersSheet), {
+    ssr: false
+})
 
 interface PlaceFilterPanelProps {
     filter: PlacesFilterState
@@ -63,9 +70,13 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
     const { lastSearch, recentLocations, rememberLocation, rememberSearch } = usePlacesFilterMemory()
 
     const [sheet, setSheet] = useState<'location' | 'filters' | null>(null)
+    // The filters sheet is loaded on the first tap and kept mounted for its close animation
+    const [filtersOpened, setFiltersOpened] = useState(false)
 
     const near = isNearFilter(filter)
     const summary = describeFilter(t, filter)
+    // "Продолжить: …" is offered on a clean listing only
+    const showResume = !!lastSearch && !isFilterActive(filter) && !near && filter.sort === defaultSort
 
     // The last filtered search of this browser, for "Продолжить: …" on a clean listing
     useEffect(() => {
@@ -182,6 +193,8 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
 
                     <FilterToolbarSpacer />
 
+                    {showResume && <ResumeSearch lastSearch={lastSearch} />}
+
                     {viewTabs}
                 </FilterToolbar>
 
@@ -217,7 +230,10 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
 
                     <FiltersButton
                         count={badge}
-                        onClick={() => setSheet('filters')}
+                        onClick={() => {
+                            setFiltersOpened(true)
+                            setSheet('filters')
+                        }}
                     />
                 </FilterPhoneBar>
 
@@ -229,7 +245,6 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                 <AppliedFilters
                     filter={filter}
                     defaultSort={defaultSort}
-                    lastSearch={lastSearch}
                     buildHref={buildHref}
                 />
             </FilterPanel>
@@ -254,18 +269,20 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                 {sheet === 'location' && locationOptions()}
             </BottomSheet>
 
-            <PlaceFiltersSheet
-                open={sheet === 'filters'}
-                filter={filter}
-                defaultSort={defaultSort}
-                isAuth={isAuth}
-                count={count}
-                onClose={() => setSheet(null)}
-                onApply={(draft) => {
-                    setSheet(null)
-                    go(draft)
-                }}
-            />
+            {filtersOpened && (
+                <PlaceFiltersSheet
+                    open={sheet === 'filters'}
+                    filter={filter}
+                    defaultSort={defaultSort}
+                    isAuth={isAuth}
+                    count={count}
+                    onClose={() => setSheet(null)}
+                    onApply={(draft) => {
+                        setSheet(null)
+                        go(draft)
+                    }}
+                />
+            )}
         </>
     )
 }

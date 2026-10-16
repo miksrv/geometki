@@ -6,7 +6,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { ApiModel, ApiType } from '@/api'
 import { PlaceCard, Section } from '@/components/shared'
 import { ScrollRail, Tabs } from '@/components/ui'
-import { getCategoryLandingTitle } from '@/utils/categories'
+import { getCategoryShortTitle } from '@/utils/categories'
 import { buildPlacesHref, getLandingFlags } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
@@ -38,10 +38,12 @@ interface PlaceExploreProps {
 
 /**
  * "Что ещё посмотреть" — the answer to "where next": a carousel of place tiles with a switch
- * between the nearest places and the same category in the place's region (with the link to
- * that location × category landing page, features/20-location-seo-pages.md). Both lists stay
- * in the HTML, the inactive one hidden: they are the internal links of the page for crawlers.
- * A tab with too few places is dropped; with no places at all the section is not rendered.
+ * between the nearest places and the same category in the place's region. The tabs are short
+ * ("Рядом" / "Инженерные сооружения"); the region is in the action link that follows the tab
+ * ("Все места рядом" / "Все — Оренбургская область", the location × category landing page,
+ * features/20-location-seo-pages.md). Both lists stay in the HTML, the inactive one hidden:
+ * they are the internal links of the page for crawlers. A tab with too few places is dropped;
+ * with no places at all the section is not rendered.
  */
 export const PlaceExplore: React.FC<PlaceExploreProps> = ({
     nearPlaces,
@@ -62,7 +64,7 @@ export const PlaceExplore: React.FC<PlaceExploreProps> = ({
         return null
     }
 
-    const categoryTitle = category ? getCategoryLandingTitle(t, category) : ''
+    const categoryTitle = category ? getCategoryShortTitle(t, category) : ''
 
     const relatedHref = category
         ? buildPlacesHref(
@@ -78,21 +80,12 @@ export const PlaceExplore: React.FC<PlaceExploreProps> = ({
 
     const tabs = [
         ...(hasNearby ? [{ key: 'nearby' as const, label: t('nearby-places-title', { defaultValue: 'Рядом' }) }] : []),
-        ...(hasRelated
-            ? [
-                  {
-                      key: 'related' as const,
-                      label: location?.name
-                          ? t('related-places-tab', {
-                                category: categoryTitle,
-                                location: location.name,
-                                defaultValue: '{{category}} · {{location}}'
-                            })
-                          : categoryTitle
-                  }
-              ]
-            : [])
+        ...(hasRelated ? [{ key: 'related' as const, label: categoryTitle }] : [])
     ]
+
+    const relatedAllLabel = location?.name
+        ? t('related-places-all', { location: location.name, defaultValue: 'Все — {{location}}' })
+        : t('related-places-all-short', { defaultValue: 'Все' })
 
     const carousel = (places: ApiModel.PlaceListItem[], label?: string) => (
         <ScrollRail
@@ -117,20 +110,29 @@ export const PlaceExplore: React.FC<PlaceExploreProps> = ({
             className={styles.section}
             title={t('place-explore-title', { defaultValue: 'Что ещё посмотреть' })}
             action={
-                activeTab === 'nearby' ? (
-                    <Button
-                        mode={'link'}
-                        noIndex={true}
-                        link={`/places?lat=${lat}&lon=${lon}&sort=distance&order=ASC`}
-                        label={t('all-places-nearby')}
-                    />
-                ) : (
-                    <Button
-                        mode={'link'}
-                        link={relatedHref}
-                        label={t('related-places-all-short', { defaultValue: 'Все' })}
-                    />
-                )
+                // Both links stay in the HTML, the inactive one hidden: the link to the location ×
+                // category page is an internal link of every place page, whichever tab is open
+                <>
+                    {hasNearby && (
+                        <span hidden={activeTab !== 'nearby'}>
+                            <Button
+                                mode={'link'}
+                                noIndex={true}
+                                link={`/places?lat=${lat}&lon=${lon}&sort=distance&order=ASC`}
+                                label={t('all-places-nearby')}
+                            />
+                        </span>
+                    )}
+                    {hasRelated && (
+                        <span hidden={activeTab !== 'related'}>
+                            <Button
+                                mode={'link'}
+                                link={relatedHref}
+                                label={relatedAllLabel}
+                            />
+                        </span>
+                    )}
+                </>
             }
         >
             {tabs.length > 1 && (

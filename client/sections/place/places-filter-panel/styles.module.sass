@@ -60,8 +60,10 @@
 
 .resume
     display: inline-flex
+    flex-shrink: 1
     align-items: center
     gap: 6px
+    min-width: 0
     height: 28px
     padding: 0 10px
     border: 1px dashed var(--border-strong)
@@ -69,13 +71,17 @@
     color: var(--text-color-secondary)
     font-size: var(--font-size-secondary)
     text-decoration: none
+    white-space: nowrap
 
     svg
+        flex-shrink: 0
         width: 15px
         height: 15px
         fill: currentColor
 
     b
+        overflow: hidden
+        text-overflow: ellipsis
         color: var(--text-color-primary)
         font-weight: var(--font-weight-medium)
 

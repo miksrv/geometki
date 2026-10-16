@@ -380,6 +380,8 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                                     defaultValue: 'Фотографии места «{{title}}»'
                                 })}
                                 photos={localPhotos}
+                                // Without a cover the first photo is the LCP element of desktop
+                                priority={!place?.cover}
                                 uploadingPhotos={uploadingPhotos}
                                 viewer={photoViewer}
                                 onViewerChange={setPhotoViewer}

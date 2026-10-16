@@ -60,12 +60,8 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
 
     const userId = useAppSelector((store) => store.auth.user?.id)
 
-    // The portal target exists on the client only
-    const [mounted, setMounted] = useState<boolean>(false)
     // The lightbox reports the photo shown, so "Все фото" comes back to the grid at it
     const [current, setCurrent] = useState<number>(0)
-
-    useEffect(() => setMounted(true), [])
 
     useEffect(() => {
         if (state?.mode === 'single') {
@@ -73,7 +69,14 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
         }
     }, [state])
 
-    const gridOpen = mounted && state?.mode === 'grid' && !!photos.length
+    // The last photo deleted: the viewer closes for good, a new upload does not reopen it
+    useEffect(() => {
+        if (state && !photos.length) {
+            onStateChange(null)
+        }
+    }, [state, photos.length])
+
+    const gridOpen = state?.mode === 'grid' && !!photos.length
 
     useEffect(() => {
         if (!gridOpen) {

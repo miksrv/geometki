@@ -1,6 +1,7 @@
-import React, { useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
+import React, { useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { cn, Icon, Spinner } from 'simple-react-ui-kit'
 
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
@@ -9,9 +10,12 @@ import useSiteSearch, { SiteSearchItem } from '@/hooks/useSiteSearch'
 import { categoryImage } from '@/utils/categories'
 import { splitByMatch } from '@/utils/highlight'
 
-import { SiteSearchScreen } from './SiteSearchScreen'
-
 import styles from './styles.module.sass'
+
+// The full-screen search renders only when opened: its code is loaded then, not with every page
+const SiteSearchScreen = dynamic(() => import('./SiteSearchScreen').then((module) => module.SiteSearchScreen), {
+    ssr: false
+})
 
 export interface SiteSearchHandle {
     focus: () => void
@@ -88,6 +92,8 @@ export const SiteSearch = React.forwardRef<SiteSearchHandle, SiteSearchProps>(
             }
         }
 
+        const indexes = useMemo(() => new Map(items.map((item, index) => [item, index])), [items])
+
         const choose = (item: SiteSearchItem) => {
             close()
             void search.select(item)
@@ -146,10 +152,14 @@ export const SiteSearch = React.forwardRef<SiteSearchHandle, SiteSearchProps>(
                 case 'Escape': {
                     event.preventDefault()
 
-                    if (!isScreen && query && !open) {
-                        search.setQuery('')
-                    } else {
+                    // The first Escape hides the panel and keeps the focus in the field, the second one
+                    // clears the text; the full-screen search closes at once
+                    if (isScreen) {
                         close()
+                    } else if (open) {
+                        setDismissed(true)
+                    } else if (query) {
+                        search.setQuery('')
                     }
                     break
                 }
@@ -168,7 +178,7 @@ export const SiteSearch = React.forwardRef<SiteSearchHandle, SiteSearchProps>(
         }
 
         const renderRow = (item: SiteSearchItem) => {
-            const index = items.indexOf(item)
+            const index = indexes.get(item) ?? -1
             const props = {
                 'aria-selected': index === active,
                 className: cn(styles.option, index === active && styles.optionActive),
@@ -242,7 +252,7 @@ export const SiteSearch = React.forwardRef<SiteSearchHandle, SiteSearchProps>(
 
         return (
             <div
-                className={cn(styles.siteSearch, styles[variant], hasPanel && styles.expanded, className)}
+                className={cn(styles.siteSearch, styles[variant], className)}
                 role={'search'}
                 onBlur={(event) => {
                     // Focus left the field and its panel (Tab, a click elsewhere)
@@ -393,9 +403,9 @@ export const SiteSearch = React.forwardRef<SiteSearchHandle, SiteSearchProps>(
                     </div>
                 )}
 
-                {!!screenMaxWidth && (
+                {!!screenMaxWidth && screenOpen && (
                     <SiteSearchScreen
-                        open={screenOpen}
+                        open={true}
                         placeholder={placeholder}
                         onClose={() => setScreenOpen(false)}
                     />

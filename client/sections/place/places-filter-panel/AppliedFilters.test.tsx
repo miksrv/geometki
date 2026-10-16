@@ -44,17 +44,16 @@ const buildHref = (patch: PlacesFilterPatch) => `?${JSON.stringify(patch)}`
 const base: PlacesFilterState = { categories: [], notVisited: false, sort: 'trending' }
 
 describe('AppliedFilters', () => {
-    it('offers the last search when nothing is applied', () => {
-        render(
+    it('renders nothing when nothing is applied', () => {
+        const { container } = render(
             <AppliedFilters
                 filter={base}
                 defaultSort={'trending'}
-                lastSearch={{ href: '/places?category=cave', label: 'Пещеры' }}
                 buildHref={buildHref}
             />
         )
 
-        expect(screen.getByRole('link', { name: /Продолжить/ })).toHaveAttribute('href', '/places?category=cave')
+        expect(container).toBeEmptyDOMElement()
     })
 
     it('shows a removable chip per filter and a reset link', () => {

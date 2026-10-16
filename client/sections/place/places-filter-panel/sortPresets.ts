@@ -10,7 +10,7 @@ export interface SortPreset {
 
 /**
  * The sorts of the listing as ready answers ("Новые", "Лучший рейтинг"): each one has its
- * natural direction (descending), so there is no order control. Old URLs with `?order=` still
+ * natural direction (most first, the distance — nearest first), so there is no order control. Old URLs with `?order=` still
  * work, the panel just never sets one. "Для вас" is for signed-in visitors only.
  */
 export const getSortPresets = (t: TFunction, isAuth: boolean): SortPreset[] =>
@@ -55,3 +55,7 @@ export const getSortPresets = (t: TFunction, isAuth: boolean): SortPreset[] =>
 /** The label of any sort, a preset or one only an old URL can set (`views_week`, `updated_at`) */
 export const getSortLabel = (t: TFunction, sort: ApiType.SortFieldsType): string =>
     getSortPresets(t, true).find(({ key }) => key === sort)?.label ?? t(`sort_${sort}`)
+
+/** The `order` of a list request: the distance is always nearest first, the rest keep the URL's */
+export const getRequestOrder = (sort: ApiType.SortFieldsType, order: ApiType.SortOrdersType): ApiType.SortOrdersType =>
+    sort === ApiType.SortFields.Distance ? ApiType.SortOrders.ASC : order

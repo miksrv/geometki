@@ -59,79 +59,142 @@ class PlacesContent {
      * A place matches by its text in any locale and is then shown in the request
      * locale, like everywhere else (translate()).
      *
-     * @param string $term
+     * @param string        $term
+     * @param int|null      $limit      Only this many of the most relevant places
+     * @param string[]      $categories Only places of these categories (before the limit)
+     * @param bool          $withTexts  Load the texts of all found places; without them
+     *                                  `placeIds` is set and translate() loads the texts needed
      * @return void
      */
-    public function search(string $term): void {
-        $db = db_connect();
+    public function search(string $term, ?int $limit = null, array $categories = [], bool $withTexts = true): void {
+        [$where, $params] = $this->matchCondition($term);
 
-        if (mb_strlen($term) <= 3) {
+        if ($categories) {
+            $where   .= ' AND p.category IN (' . implode(', ', array_fill(0, count($categories), '?')) . ')';
+            $params   = [...$params, ...array_values($categories)];
+        }
+
+        if ($this->isShortTerm($term)) {
             // FULLTEXT requires at least 3-4 characters depending on ft_min_word_len;
-            // fall back to LIKE for short terms to avoid missing results.
-            $like = '%' . $db->escapeLikeString($term) . '%';
-            $rows = $db->query("
-                SELECT pc.place_id
+            // LIKE for short terms to avoid missing results.
+            $sql       = "SELECT pc.place_id FROM places_content pc
+                JOIN places p ON p.id = pc.place_id AND p.deleted_at IS NULL
+                WHERE {$where}
+                GROUP BY pc.place_id
+                ORDER BY MAX(pc.updated_at) DESC";
+            $sqlParams = $params;
+        } else {
+            $booleanQuery = $this->booleanQuery($term);
+
+            // One row per place: the best score among its locales
+            $sql = "
+                SELECT
+                    pc.place_id,
+                    MAX(
+                        CASE WHEN pc.locale = ? THEN 2 ELSE 1 END
+                        *
+                        (
+                            MATCH(pc.title)   AGAINST (? IN BOOLEAN MODE) * 10 +
+                            MATCH(pc.content) AGAINST (? IN BOOLEAN MODE) * 1
+                        )
+                        *
+                        (1 + LOG(1 + COALESCE(p.views, 0) / 1000))
+                    ) AS final_score
                 FROM places_content pc
                 JOIN places p ON p.id = pc.place_id AND p.deleted_at IS NULL
-                WHERE pc.title LIKE ? ESCAPE '!' OR pc.content LIKE ? ESCAPE '!'
+                WHERE {$where}
                 GROUP BY pc.place_id
-                ORDER BY MAX(pc.updated_at) DESC
-            ", [$like, $like])->getResult();
+                ORDER BY final_score DESC
+            ";
+            $sqlParams = [Services::request()->getLocale(), $booleanQuery, $booleanQuery, ...$params];
+        }
 
-            $this->translate(array_column($rows, 'place_id'));
+        if ($limit !== null) {
+            $sql .= ' LIMIT ' . max(0, $limit);
+        }
+
+        $ids = array_column(db_connect()->query($sql, $sqlParams)->getResult(), 'place_id');
+
+        if ($withTexts) {
+            $this->translate($ids);
             return;
         }
 
-        $locale = Services::request()->getLocale();
+        $this->placeIds = array_values(array_unique($ids));
+    }
 
-        // Split into words (≥3 chars), add wildcard to each; prepend exact-phrase
-        // bonus so documents containing the full phrase score higher than those
-        // with only scattered individual words.
+    /**
+     * How many places the term finds in each category: all of them, not only the loaded ones.
+     * Places without a category are under the `''` key.
+     *
+     * @return array<string, int> Category => count, the fullest first
+     */
+    public function countByCategory(string $term): array {
+        [$where, $params] = $this->matchCondition($term);
+
+        $rows = db_connect()->query("
+            SELECT p.category, COUNT(DISTINCT pc.place_id) AS found
+            FROM places_content pc
+            JOIN places p ON p.id = pc.place_id AND p.deleted_at IS NULL
+            WHERE {$where}
+            GROUP BY p.category
+            ORDER BY found DESC
+        ", $params)->getResult();
+
+        $counts = [];
+
+        foreach ($rows as $row) {
+            $key          = (string) $row->category;
+            $counts[$key] = ($counts[$key] ?? 0) + (int) $row->found;
+        }
+
+        return $counts;
+    }
+
+    private function isShortTerm(string $term): bool {
+        return mb_strlen($term) <= 3;
+    }
+
+    /**
+     * The WHERE of a search over `places_content pc` and its bound values.
+     *
+     * @return array{0: string, 1: array<int, string>}
+     */
+    private function matchCondition(string $term): array {
+        if ($this->isShortTerm($term)) {
+            $like = '%' . db_connect()->escapeLikeString($term) . '%';
+
+            return ["(pc.title LIKE ? ESCAPE '!' OR pc.content LIKE ? ESCAPE '!')", [$like, $like]];
+        }
+
+        $booleanQuery = $this->booleanQuery($term);
+
+        return [
+            '(MATCH(pc.title) AGAINST (? IN BOOLEAN MODE) OR MATCH(pc.content) AGAINST (? IN BOOLEAN MODE))',
+            [$booleanQuery, $booleanQuery],
+        ];
+    }
+
+    /**
+     * Split into words (≥3 chars), add wildcard to each; prepend exact-phrase
+     * bonus so documents containing the full phrase score higher than those
+     * with only scattered individual words.
+     */
+    private function booleanQuery(string $term): string {
         $words = array_values(array_filter(
             preg_split('/\s+/u', $term),
             static fn($w) => mb_strlen($w) >= 3
         ));
 
         if (empty($words)) {
-            $booleanQuery = $term . '*';
-        } elseif (count($words) === 1) {
-            $booleanQuery = $words[0] . '*';
-        } else {
-            $booleanQuery = '"' . $term . '" ' . implode('* ', $words) . '*';
+            return $term . '*';
         }
 
-        // One row per place: the best score among its locales
-        $sql = "
-            SELECT
-                pc.place_id,
-                MAX(
-                    CASE WHEN pc.locale = ? THEN 2 ELSE 1 END
-                    *
-                    (
-                        MATCH(pc.title)   AGAINST (? IN BOOLEAN MODE) * 10 +
-                        MATCH(pc.content) AGAINST (? IN BOOLEAN MODE) * 1
-                    )
-                    *
-                    (1 + LOG(1 + COALESCE(p.views, 0) / 1000))
-                ) AS final_score
-            FROM places_content pc
-            JOIN places p ON p.id = pc.place_id AND p.deleted_at IS NULL
-            WHERE
-                MATCH(pc.title)   AGAINST (? IN BOOLEAN MODE)
-                OR MATCH(pc.content) AGAINST (? IN BOOLEAN MODE)
-            GROUP BY pc.place_id
-            ORDER BY final_score DESC
-        ";
+        if (count($words) === 1) {
+            return $words[0] . '*';
+        }
 
-        $rows = $db->query($sql, [
-            $locale,
-            $booleanQuery,
-            $booleanQuery,
-            $booleanQuery,
-            $booleanQuery,
-        ])->getResult();
-
-        $this->translate(array_column($rows, 'place_id'));
+        return '"' . $term . '" ' . implode('* ', $words) . '*';
     }
 
     /**

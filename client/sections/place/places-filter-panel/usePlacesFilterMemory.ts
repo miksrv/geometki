@@ -20,6 +20,27 @@ const read = <T>(key: string): T | null => {
     }
 }
 
+// Storage may hold an older format or a hand edit: only well-formed entries are used
+const isLocation = (item: unknown): item is ApiModel.AddressItem =>
+    !!item &&
+    typeof (item as ApiModel.AddressItem).id === 'number' &&
+    typeof (item as ApiModel.AddressItem).name === 'string' &&
+    typeof (item as ApiModel.AddressItem).type === 'string'
+
+const readLocations = (): ApiModel.AddressItem[] => {
+    const value = read<unknown>(RECENT_KEY)
+
+    return Array.isArray(value) ? value.filter(isLocation) : []
+}
+
+const readLastSearch = (): LastPlacesSearch | null => {
+    const value = read<LastPlacesSearch>(LAST_KEY)
+
+    return typeof value?.href === 'string' && value.href.startsWith('/places') && typeof value.label === 'string'
+        ? value
+        : null
+}
+
 const write = (key: string, value: unknown) => {
     try {
         window.localStorage.setItem(key, JSON.stringify(value))
@@ -39,23 +60,25 @@ export const usePlacesFilterMemory = () => {
     const [lastSearch, setLastSearch] = useState<LastPlacesSearch | null>(null)
 
     useEffect(() => {
-        setRecentLocations(read<ApiModel.AddressItem[]>(RECENT_KEY) ?? [])
-        setLastSearch(read<LastPlacesSearch>(LAST_KEY))
+        setRecentLocations(readLocations())
+        setLastSearch(readLastSearch())
     }, [])
 
     const rememberLocation = useCallback((location: ApiModel.AddressItem) => {
         const next = [
             location,
-            ...(read<ApiModel.AddressItem[]>(RECENT_KEY) ?? []).filter(
-                (item) => !(item.id === location.id && item.type === location.type)
-            )
+            ...readLocations().filter((item) => !(item.id === location.id && item.type === location.type))
         ].slice(0, RECENT_LIMIT)
 
         write(RECENT_KEY, next)
         setRecentLocations(next)
     }, [])
 
-    const rememberSearch = useCallback((search: LastPlacesSearch) => write(LAST_KEY, search), [])
+    // Kept in the state too: "Сбросить всё" on the same page shows the chip of the search just left
+    const rememberSearch = useCallback((search: LastPlacesSearch) => {
+        write(LAST_KEY, search)
+        setLastSearch(search)
+    }, [])
 
     return { lastSearch, recentLocations, rememberLocation, rememberSearch }
 }

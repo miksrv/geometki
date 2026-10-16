@@ -3,9 +3,9 @@
 namespace App\Libraries;
 
 /**
- * The places of a search before pagination: category facets, the category filter and the sort,
- * over light rows of every found place (`id`, `category`, `views`, `rating`, `comments`,
- * `created_at`, `distance`) in the full-text relevance order.
+ * The sort of a search before pagination, over light rows of the loaded found places (`id`,
+ * `category`, `views`, `rating`, `comments`, `created_at`, `distance`) in the full-text
+ * relevance order. The facets and the category filter are SQL (PlacesContent).
  *
  * Pure: no database, so the controller loads the rows once and pages the result.
  */
@@ -19,48 +19,6 @@ class SearchPlacesRanking
         'comments'   => 'DESC',
         'created_at' => 'DESC',
     ];
-
-    /**
-     * Places per category among all found places, the most frequent first.
-     *
-     * @param array<int, array<string, mixed>> $rows
-     * @return array<string, int>
-     */
-    public static function facets(array $rows): array
-    {
-        $counts = [];
-
-        foreach ($rows as $row) {
-            $category = $row['category'] ?? null;
-
-            if ($category) {
-                $counts[$category] = ($counts[$category] ?? 0) + 1;
-            }
-        }
-
-        arsort($counts);
-
-        return $counts;
-    }
-
-    /**
-     * Rows of the given categories, in their order; no categories — all rows.
-     *
-     * @param array<int, array<string, mixed>> $rows
-     * @param string[] $categories
-     * @return array<int, array<string, mixed>>
-     */
-    public static function filter(array $rows, array $categories): array
-    {
-        if (!$categories) {
-            return array_values($rows);
-        }
-
-        return array_values(array_filter(
-            $rows,
-            static fn (array $row) => in_array($row['category'] ?? null, $categories, true)
-        ));
-    }
 
     /**
      * Rows sorted by a field in its natural direction (or the given one); `relevance` and

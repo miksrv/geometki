@@ -3,6 +3,7 @@ import { cn, Icon } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
+import { API } from '@/api'
 import { useAppSelector } from '@/app/store'
 import { useBookmark } from '@/components/shared/bookmark-button/useBookmark'
 
@@ -10,24 +11,26 @@ import styles from './styles.module.sass'
 
 interface PlaceCardBookmarkProps {
     placeId: string
-    /** `PlaceListItem.bookmarked`: sent by `GET /places` for a signed-in visitor only */
+    /** `PlaceListItem.bookmarked` of `GET /places`: shown until the visitor's bookmarks load */
     known?: boolean
 }
 
 /**
- * The one-tap bookmark over a tile's cover. A guest gets it too (a tap opens the sign-in
- * dialog); a signed-in visitor only where the list says whether the place is bookmarked —
- * a request per card is not worth an icon.
+ * The one-tap bookmark over a tile's cover, on a tile of any list. A guest's tap opens the
+ * sign-in dialog; a signed-in visitor's state is the list's own field (`known`); a list without it
+ * (feed, search, collections) asks `GET /bookmarks/places` — one request for all such cards,
+ * refreshed by every bookmark toggle. A toggle here is kept by `useBookmark` itself.
  */
 export const PlaceCardBookmark: React.FC<PlaceCardBookmarkProps> = ({ placeId, known }) => {
     const { t } = useTranslation()
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
-    const { bookmarked, loading, toggle } = useBookmark(placeId, isAuth ? known : false)
+    const { data: saved, isLoading: savedLoading } = API.useBookmarksGetPlacesQuery(undefined, {
+        skip: !isAuth || known !== undefined
+    })
 
-    if (isAuth && known === undefined) {
-        return null
-    }
+    const state = isAuth ? (saved ? saved.items.includes(placeId) : known) : false
+    const { bookmarked, loading, toggle } = useBookmark(placeId, state ?? false)
 
     const label = bookmarked
         ? t('bookmark_added', { defaultValue: 'В закладках' })
@@ -40,7 +43,7 @@ export const PlaceCardBookmark: React.FC<PlaceCardBookmarkProps> = ({ placeId, k
             aria-label={label}
             aria-pressed={bookmarked}
             title={label}
-            disabled={loading}
+            disabled={loading || (isAuth && savedLoading && state === undefined)}
             onClick={(event) => {
                 event.preventDefault()
                 event.stopPropagation()

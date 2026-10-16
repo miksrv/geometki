@@ -35,16 +35,25 @@ jest.mock('@/components/shared/site-search', () => {
                     placeholder={placeholder}
                 />
             )
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        SiteSearchScreen: ({ open, onClose }: any) =>
-            open ? (
-                <div data-testid={'site-search-screen'}>
-                    <button onClick={onClose}>{'close'}</button>
-                </div>
-            ) : null
+        })
     }
 })
+
+jest.mock('@/components/shared/site-search/SiteSearchScreen', () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    SiteSearchScreen: ({ open, onClose }: any) =>
+        open ? (
+            <div data-testid={'site-search-screen'}>
+                <button onClick={onClose}>{'close'}</button>
+            </div>
+        ) : null
+}))
+
+// The lazy screen resolves at once in tests
+jest.mock(
+    'next/dynamic',
+    () => () => jest.requireMock('@/components/shared/site-search/SiteSearchScreen').SiteSearchScreen
+)
 
 const setWideScreen = (wide: boolean) => {
     window.matchMedia = jest.fn().mockReturnValue({ matches: wide }) as unknown as typeof window.matchMedia
@@ -87,6 +96,21 @@ describe('Search', () => {
         fireEvent.keyDown(document.body, { code: 'Slash', key: '.' })
 
         expect(mockFocus).toHaveBeenCalled()
+    })
+
+    it('leaves Ctrl+K to a text field', () => {
+        render(<Search />)
+
+        const textarea = document.createElement('textarea')
+        document.body.appendChild(textarea)
+
+        const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, code: 'KeyK', ctrlKey: true })
+        textarea.dispatchEvent(event)
+
+        expect(event.defaultPrevented).toBe(false)
+        expect(mockFocus).not.toHaveBeenCalled()
+
+        textarea.remove()
     })
 
     it('opens the full-screen search on Ctrl+K on a narrow screen', () => {

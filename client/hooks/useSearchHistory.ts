@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { ApiModel } from '@/api'
 
@@ -23,7 +23,15 @@ const read = (): SearchHistoryEntry[] => {
     try {
         const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '[]') as unknown
 
-        return Array.isArray(value) ? (value as SearchHistoryEntry[]).filter((entry) => entry?.label) : []
+        // An entry of an older format or edited by hand is dropped, not shown as a broken link
+        return Array.isArray(value)
+            ? (value as SearchHistoryEntry[]).filter(
+                  (entry) =>
+                      typeof entry?.label === 'string' &&
+                      entry.label !== '' &&
+                      (entry.kind === 'query' || typeof entry.href === 'string')
+              )
+            : []
     } catch {
         return []
     }
@@ -42,10 +50,9 @@ const write = (entries: SearchHistoryEntry[]) => {
  * before anything is typed. A repeated entry moves to the top.
  */
 const useSearchHistory = () => {
-    // Read after mount: the server render has no storage, the first client render must match it
+    // Empty on the server and on the first client render; `refresh` reads the storage when a panel
+    // opens, so no field reads it (and re-renders) on every page just to stay hidden
     const [entries, setEntries] = useState<SearchHistoryEntry[]>([])
-
-    useEffect(() => setEntries(read()), [])
 
     const remember = useCallback((entry: SearchHistoryEntry) => {
         const next = [entry, ...read().filter((item) => keyOf(item) !== keyOf(entry))].slice(0, LIMIT)

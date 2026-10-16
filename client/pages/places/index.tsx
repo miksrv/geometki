@@ -14,14 +14,10 @@ import { wrapper } from '@/app/store'
 import { AppLayout, EmptyState, PageHeader } from '@/components/shared'
 import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
-import {
-    buildFilterHref,
-    PlaceFilterPanel,
-    PlacesFilterPatch,
-    PlacesFilterState,
-    PlacesFilterType,
-    PlacesListing
-} from '@/sections/place'
+import type { PlacesFilterPatch, PlacesFilterState, PlacesFilterType } from '@/sections/place/places-filter-panel'
+// eslint-disable-next-line no-duplicate-imports
+import { buildFilterHref, getRequestOrder, PlaceFilterPanel } from '@/sections/place/places-filter-panel'
+import { PlacesListing } from '@/sections/place/places-listing'
 import { getCategoryTitle, isCategoryName, RENAMED_CATEGORIES } from '@/utils/categories'
 import { buildPlacesHref, encodeQueryData, getLandingFlags } from '@/utils/helpers'
 import { PlaceSchema } from '@/utils/schema'
@@ -44,6 +40,8 @@ interface PlacesPageProps {
     tag: string | null
     lat: number | null
     lon: number | null
+    /** Where the distances are from: the URL's `lat`/`lon`, else the visitor's `location` cookie */
+    distanceOrigin: ApiType.Coordinates | null
     sort: ApiType.SortFieldsType
     /**
      * The sort the server applies when the URL has none: `recommended` for a signed-in
@@ -69,6 +67,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
     tag,
     lat,
     lon,
+    distanceOrigin,
     sort,
     defaultSort,
     order,
@@ -226,6 +225,21 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
     // about an SEO meta tag, not a URL, so it applies as soon as the API accepts the list.
     const isMultiCategory = !!category?.includes(',')
 
+    // The request behind the list: the next pages are loaded with it, and it keys the listing
+    const listRequest: ApiType.Places.ListRequest = {
+        category,
+        country,
+        district,
+        lat: distanceOrigin?.lat,
+        locality,
+        lon: distanceOrigin?.lon,
+        notVisited: notVisited ? 1 : undefined,
+        order: getRequestOrder(sort, order),
+        region,
+        sort,
+        tag
+    }
+
     return (
         <AppLayout>
             <Head>
@@ -301,23 +315,12 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
 
             {placesList?.length ? (
                 <PlacesListing
+                    key={`${currentPage}:${JSON.stringify(listRequest)}`}
                     places={placesList}
                     count={placesCount}
                     currentPage={currentPage}
                     perPage={POST_PER_PAGE}
-                    request={{
-                        category,
-                        country,
-                        district,
-                        lat,
-                        locality,
-                        lon,
-                        notVisited: notVisited ? 1 : undefined,
-                        order,
-                        region,
-                        sort,
-                        tag
-                    }}
+                    request={listRequest}
                     urlParam={initialFilter}
                     linkPart={'places'}
                 />
@@ -450,6 +453,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                                   }
                                 : null,
                         lon,
+                        notVisited,
                         order,
                         page: currentPage,
                         sort,
@@ -486,7 +490,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     lon: distanceOrigin?.lon,
                     notVisited: notVisited ? 1 : undefined,
                     offset: (currentPage - 1) * POST_PER_PAGE,
-                    order: order,
+                    order: getRequestOrder(sort, order),
                     region,
                     sort: sort,
                     tag
@@ -508,6 +512,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     currentPage,
                     defaultSort,
                     district,
+                    distanceOrigin: distanceOrigin ?? null,
                     lat,
                     locality,
                     locationData: locationData?.data || null,

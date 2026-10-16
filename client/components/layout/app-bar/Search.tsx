@@ -1,11 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Button } from 'simple-react-ui-kit'
 
+import dynamic from 'next/dynamic'
 import { useTranslation } from 'next-i18next/pages'
 
-import { SiteSearch, SiteSearchHandle, SiteSearchScreen } from '@/components/shared/site-search'
+import { SiteSearch, SiteSearchHandle } from '@/components/shared/site-search'
 
 import styles from './styles.module.sass'
+
+// The full-screen search renders only when opened: its code is not in the first load
+const SiteSearchScreen = dynamic(
+    () => import('@/components/shared/site-search/SiteSearchScreen').then((module) => module.SiteSearchScreen),
+    { ssr: false }
+)
 
 /** The width from which the field is in the bar (`$inlineSearchMinWidth` in the styles) */
 const INLINE_MIN_WIDTH = 1024
@@ -27,12 +34,16 @@ export const Search: React.FC = () => {
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
+            // Neither shortcut is taken inside text fields and editors (Ctrl/⌘ K is a link in Markdown)
+            if (isTypingInto(event.target)) {
+                return
+            }
+
             const isSlash =
                 (event.key === '/' || (event.code === 'Slash' && !event.shiftKey)) &&
                 !event.metaKey &&
                 !event.ctrlKey &&
-                !event.altKey &&
-                !isTypingInto(event.target)
+                !event.altKey
             const isCommandK = (event.metaKey || event.ctrlKey) && event.code === 'KeyK'
 
             if (!isSlash && !isCommandK) {
@@ -75,11 +86,13 @@ export const Search: React.FC = () => {
                 onClick={() => setScreenOpen(true)}
             />
 
-            <SiteSearchScreen
-                open={screenOpen}
-                placeholder={placeholder}
-                onClose={() => setScreenOpen(false)}
-            />
+            {screenOpen && (
+                <SiteSearchScreen
+                    open={true}
+                    placeholder={placeholder}
+                    onClose={() => setScreenOpen(false)}
+                />
+            )}
         </>
     )
 }

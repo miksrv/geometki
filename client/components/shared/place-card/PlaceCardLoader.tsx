@@ -38,9 +38,13 @@ export const PlaceCardLoader: React.FC<PlaceCardLoaderProps> = ({ variant = 'til
             <div className={styles.tileCover}>
                 <Skeleton style={{ inset: 0, position: 'absolute' }} />
             </div>
-            <Skeleton style={{ height: '16px', marginTop: '12px', width: '85%' }} />
-            <Skeleton style={{ height: '13px', marginTop: '8px', width: '60%' }} />
-            <div className={styles.tileStats}>
+            {/* Heights of the real lines: 16px × 1.3 title, 13px × 1.45 address and stats */}
+            <Skeleton style={{ height: '21px', margin: '10px 0 2px', width: '85%' }} />
+            <Skeleton style={{ height: '19px', width: '60%' }} />
+            <div
+                className={styles.tileStats}
+                style={{ alignItems: 'center', minHeight: '19px' }}
+            >
                 <Skeleton style={{ height: '12px', width: '36px' }} />
                 <Skeleton style={{ height: '12px', width: '48px' }} />
                 <Skeleton style={{ height: '12px', width: '28px' }} />

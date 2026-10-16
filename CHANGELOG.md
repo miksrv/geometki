@@ -19,7 +19,7 @@
 - Design: tabs are as tall as buttons and fields
 - Place page: redesigned — reads like an article: a clean cover, a larger title with one line of facts (category, rating, reviews, distance) and larger text with a lead paragraph
 - Place page: one main "Directions" button with the site map and navigators in its menu; "Save" joins bookmarks and collections; contributor actions moved to the "⋯" menu
-- Place page: on phones the cover is a swipeable carousel of all photos, and the actions are a bar at the bottom of the screen in place of the navigation
+- Place page: on phones the cover is a swipeable carousel of the photos with the count of all of them, and the actions are a bar at the bottom of the screen in place of the navigation
 - Place page: the "Where it is" card gathers the map, distance, address, coordinates, navigators, who has been here and the collections with the place
 - Place page: ratings and reviews are one block with the score distribution and your own rating
 - Place page: "Nearby" and "More in the region" are one "What else to see" section with a switch
@@ -29,6 +29,7 @@
 - Design: one typography for the whole site — every page title has the same larger style, text is rendered thinner on Apple devices
 - Design: breadcrumbs with "›" separators; the first block of every page sits at the same distance from the header
 - Design: popup menus restyled — roomier rows, quieter icons, rules between groups, destructive actions in red
+- Optimized the places listing, the place page and the search: faster loading, no content jumping on load, filters of the search switch without reloading the page
 
 ## 1.16.5
 

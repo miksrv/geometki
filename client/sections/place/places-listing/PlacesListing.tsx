@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
@@ -23,7 +23,9 @@ interface PlacesListingProps<T> {
 /**
  * The grid of a places listing and its pagination. Desktop: the page links (crawlable,
  * shareable). Phones: "Показать ещё" appends the next page under the same URL, with "Страница
- * 1 из N" under it — the links stay in the markup for crawlers, only hidden.
+ * 1 из N" under it — the links stay in the markup for crawlers, only hidden. The appended
+ * pages belong to one request and page: the parent keys the component by them, so a new list
+ * starts clean.
  */
 export const PlacesListing = <T,>({
     places,
@@ -38,9 +40,6 @@ export const PlacesListing = <T,>({
 
     const [more, setMore] = useState<ApiModel.Place[]>([])
     const [loadPage, { isFetching }] = API.useLazyPlacesGetListQuery()
-
-    // A new list (filters, page): forget what was appended to the old one
-    useEffect(() => setMore([]), [places])
 
     const shown = places.length + more.length
     const lastShownPage = currentPage + Math.ceil(more.length / perPage)

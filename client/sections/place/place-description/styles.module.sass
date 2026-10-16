@@ -60,6 +60,11 @@
     &:hover
         color: var(--link-color-hover)
 
+// The place of `.readMore` kept for a text that may turn out taller than the clamp (the row
+// height: the line of the font size plus the margin of the button)
+.readMoreSpace
+    height: calc(var(--font-size) * 1.5 + var(--space-2))
+
 .tagList
     display: flex
     flex-wrap: wrap

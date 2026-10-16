@@ -10,7 +10,7 @@ import { API, ApiModel } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
-import { AddToCollectionModal, MapLinks, useBookmark, WasHereButton } from '@/components/shared'
+import { MapLinks, useBookmark, WasHereButton } from '@/components/shared'
 import { BottomSheet, ScreenSpinner } from '@/components/ui'
 
 import styles from './styles.module.sass'
@@ -18,6 +18,15 @@ import styles from './styles.module.sass'
 const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
     ssr: false
 })
+
+// The picker mounts when opened: the page carries two instances of the actions
+const AddToCollectionModal = dynamic(
+    () =>
+        import('@/components/shared/add-to-collection/AddToCollectionModal').then((m) => ({
+            default: m.AddToCollectionModal
+        })),
+    { ssr: false }
+)
 
 // react-share is client-only and the popout content renders on open, so no placeholder is needed
 const ShareButtons = dynamic(() => import('./ShareButtons'), { ssr: false })
@@ -269,11 +278,13 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
         <>
             {removeLoading && <ScreenSpinner />}
 
-            <AddToCollectionModal
-                placeId={place?.id}
-                open={collectionsOpen}
-                onClose={() => setCollectionsOpen(false)}
-            />
+            {collectionsOpen && (
+                <AddToCollectionModal
+                    placeId={place?.id}
+                    open={true}
+                    onClose={() => setCollectionsOpen(false)}
+                />
+            )}
 
             {showRemoveDialog && (
                 <ConfirmationDialog

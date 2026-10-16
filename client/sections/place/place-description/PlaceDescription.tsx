@@ -20,6 +20,10 @@ const CLAMP_HEIGHT_PHONE = 420
 // renders the "Читать полностью" control for it right away, so it does not appear after
 // hydration and push the page down (CLS); the measurement below corrects the rare miss
 const LIKELY_LONG_LENGTH = 1200
+// A text between these two may or may not be taller than the clamp (headings, lists and short
+// lines make it taller): its control row is reserved from the first paint, so the measurement
+// after hydration only fills it or leaves it empty, and nothing below moves
+const MAYBE_LONG_LENGTH = 400
 
 // The page has its own h2 sections: headings inside the text are one level below them
 const markdownComponents = {
@@ -56,6 +60,8 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
     // short text is simply shorter than the limit. Expanded for good when it fits.
     const [clamped, setClamped] = useState<boolean>(true)
     const [overflows, setOverflows] = useState<boolean>((content?.length ?? 0) > LIKELY_LONG_LENGTH)
+
+    const reserveReadMore = !overflows && (content?.length ?? 0) > MAYBE_LONG_LENGTH
 
     // The edit page is for signed-in users only: a guest gets the sign-in dialog instead
     const handleEditClick = (event: React.MouseEvent) => {
@@ -123,6 +129,12 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
                                 : t('collapse-text', { defaultValue: 'Свернуть' })}
                             <Icon name={'KeyboardDown'} />
                         </Button>
+                    )}
+                    {reserveReadMore && (
+                        <div
+                            className={styles.readMoreSpace}
+                            aria-hidden={true}
+                        />
                     )}
                 </>
             ) : (
