@@ -48,6 +48,12 @@
     overflow: hidden
     text-overflow: ellipsis
 
+.count
+    flex-shrink: 0
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
+    font-variant-numeric: tabular-nums
+
 .selected
     background: var(--color-main)
     box-shadow: none
@@ -56,6 +62,9 @@
     &:hover
         background: var(--color-main-hover)
         color: #fff
+
+    .count
+        color: rgba(255, 255, 255, 0.8)
 
     // A category icon keeps its own colour, a thin halo separates it from the fill
     .icon img

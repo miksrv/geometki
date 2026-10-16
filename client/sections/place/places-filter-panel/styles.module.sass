@@ -2,75 +2,14 @@
 @use '../../../styles/mixins' as *
 @use '../../../styles/typography' as type
 
-// The fixed app bar grows by the top safe area (components/layout/app-bar)
-$appBarOffset: calc(50px + env(safe-area-inset-top, 0px))
+// The panel itself, the toolbar, the dropdowns and the sheets are the shared filter panel
+// (components/shared/filter-panel); these are the places listing's own pieces
 
-// The whole panel sticks under the app bar on a translucent page background; it bleeds into
-// the page's side padding so the blur reaches the edges
-.panel
-    position: sticky
-    top: $appBarOffset
-    z-index: 40
-    display: flex
-    flex-direction: column
-    gap: var(--space-3)
-    margin: 0 -16px
-    padding: var(--space-3) 16px
-    background: color-mix(in srgb, var(--body-background) 92%, transparent)
-    backdrop-filter: blur(12px)
-    -webkit-backdrop-filter: blur(12px)
-
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        margin: 0 -10px
-        padding: var(--space-2) 10px
-
-// --- Desktop row ---
-
-.toolbar
-    display: flex
-    align-items: center
-    gap: var(--space-2)
-
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        display: none
-
-// The kit Popout wraps the trigger in a `fit-content` box: the fields set their own widths
-// (two classes, so the kit's `.popout` loses whatever the CSS order)
-.toolbar
-    .locationField,
-    .sortField
-        min-width: 0
-
-        & > span
-            display: block
-            border-radius: var(--input-radius)
-
-    .locationField
-        width: 320px
-
-    .sortField
-        width: 240px
-
-    // The fields keep their widths whatever else is in the row
-    .locationField,
-    .sortField
-        flex-shrink: 0
-
-    // `Tabs` is `width: 100%` by itself; after a client-side navigation its module may load
-    // after this one, so the override needs the second class too
-    .viewTabs
-        width: auto
-        flex: none
-
-.spacer
-    flex: 1
-
-.dropdown
-    box-sizing: border-box
-    width: 360px
-    max-height: min(460px, calc(100vh - 140px))
-    overflow-y: auto
-    padding: var(--space-2)
+// `Tabs` is `width: 100%` by itself; after a client-side navigation its module may load
+// after this one, so the override needs the second class too
+.viewTabs.viewTabs
+    width: auto
+    flex: none
 
 .locationOptions
     display: flex
@@ -78,13 +17,6 @@ $appBarOffset: calc(50px + env(safe-area-inset-top, 0px))
     gap: var(--space-1)
 
 // --- Phone bar ---
-
-.mobileBar
-    display: none
-    gap: var(--space-2)
-
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        display: flex
 
 .searchBar
     +buttonReset
@@ -125,61 +57,6 @@ $appBarOffset: calc(50px + env(safe-area-inset-top, 0px))
 
     small
         +type.caption
-
-.filtersButton
-    +buttonReset
-    position: relative
-    display: grid
-    flex-shrink: 0
-    place-items: center
-    width: 48px
-    height: 48px
-    border-radius: var(--radius-full)
-    background: var(--surface-1)
-    box-shadow: var(--container-shadow), var(--shadow-sm)
-
-    svg
-        width: 20px
-        height: 20px
-        fill: var(--icon-color-primary)
-
-.filtersBadge
-    position: absolute
-    top: 2px
-    right: 2px
-    display: grid
-    place-items: center
-    min-width: 18px
-    height: 18px
-    padding: 0 5px
-    box-sizing: border-box
-    border-radius: 9px
-    background: var(--color-main)
-    color: #fff
-    font-size: var(--font-size-micro)
-    font-weight: var(--font-weight-semibold)
-
-// --- Applied filters (desktop) ---
-
-.applied
-    display: flex
-    flex-wrap: wrap
-    align-items: center
-    gap: 6px
-
-    // Phones: the bar's summary line and the badge say what is applied
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        display: none
-
-.reset
-    padding: 0 6px
-    color: var(--text-color-secondary)
-    font-size: var(--font-size-secondary)
-    text-decoration: underline
-    text-underline-offset: 3px
-
-    &:hover
-        color: var(--text-color-primary)
 
 .resume
     display: inline-flex
@@ -226,73 +103,9 @@ $appBarOffset: calc(50px + env(safe-area-inset-top, 0px))
 
 // --- Sheets (phones) ---
 
-// Overrides of the BottomSheet's and the Switch's own classes: an element in the selector
-// keeps them stronger whatever order the CSS modules load in (client-side navigation)
+// An element in the selector keeps the override stronger whatever order the CSS modules load in
 div.sheet
     max-height: 88vh
-
-.sheetHeading
-    margin: var(--space-4) var(--space-2) var(--space-2)
-    +type.titleBlock
-    font-size: var(--font-size)
-
-    &:first-child
-        margin-top: var(--space-1)
-
-.sheetPills
-    display: flex
-    flex-wrap: wrap
-    gap: 6px
-    padding: 0 var(--space-2)
-
-.sheetPill
-    +buttonReset
-    height: 36px
-    padding: 0 var(--space-3)
-    border: 1px solid var(--border-strong)
-    border-radius: var(--border-radius)
-    background: var(--surface-1)
-    color: var(--text-color-primary)
-    font-family: var(--font-family), sans-serif
-    font-size: var(--font-size)
-
-.sheetPillOn
-    border-color: var(--color-main)
-    background: var(--color-main-background)
-    color: var(--color-main)
-    font-weight: var(--font-weight-medium)
-
-.sheetGroup
-    padding: var(--space-3) var(--space-2) var(--space-1)
-    +type.overline
-
-.sheetCategories
-    display: grid
-    grid-template-columns: repeat(3, minmax(0, 1fr))
-    gap: 6px
-    padding: 0 var(--space-2)
-
-.sheetCategory
-    +buttonReset
-    display: flex
-    flex-direction: column
-    align-items: center
-    gap: 4px
-    padding: 10px 4px
-    border: 1px solid var(--border)
-    border-radius: var(--radius-lg)
-    background: var(--surface-1)
-    color: var(--text-color-primary)
-    font-family: var(--font-family), sans-serif
-    font-size: var(--font-size-small)
-    line-height: 1.2
-    text-align: center
-
-.sheetCategoryOn
-    border-color: var(--color-main)
-    background: var(--color-main-background)
-    color: var(--color-main)
-    font-weight: var(--font-weight-medium)
 
 button.sheetSwitch
     margin-top: var(--space-4)

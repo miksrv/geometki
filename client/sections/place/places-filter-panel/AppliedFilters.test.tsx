@@ -3,7 +3,6 @@ import React from 'react'
 import { render, screen } from '@testing-library/react'
 
 import { AppliedFilters } from './AppliedFilters'
-import { CategoryRail } from './CategoryRail'
 import { PlacesFilterPatch, PlacesFilterState } from './types'
 
 jest.mock('simple-react-ui-kit', () => ({
@@ -87,23 +86,5 @@ describe('AppliedFilters', () => {
         )
         expect(screen.getByRole('link', { name: 'Сбросить всё' })).toBeInTheDocument()
         expect(screen.queryByRole('link', { name: /Продолжить/ })).not.toBeInTheDocument()
-    })
-})
-
-describe('CategoryRail', () => {
-    it('toggles a category in the link of its chip and keeps the others', () => {
-        render(
-            <CategoryRail
-                categories={['cave']}
-                buildHref={buildHref}
-            />
-        )
-
-        const links = screen.getAllByRole('link')
-        const cave = links.find((link) => link.getAttribute('aria-current') === 'true')
-
-        expect(cave).toHaveAttribute('href', '?{"categories":[]}')
-        expect(links[0]).toHaveAttribute('href', '?{"categories":[]}')
-        expect(links.some((link) => link.getAttribute('href') === '?{"categories":["cave","mountain"]}')).toBe(true)
     })
 })

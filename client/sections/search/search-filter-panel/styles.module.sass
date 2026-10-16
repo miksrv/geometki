@@ -1,0 +1,19 @@
+@use '../../../styles/variables' as variables
+
+// `Tabs` is `width: 100%` by itself; after a client-side navigation its module may load
+// after this one, so the override needs the second class too
+.tabs.tabs
+    width: auto
+    flex: none
+    min-width: 0
+
+    // Phones: the tabs take the bar next to the filters button and scroll sideways
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex: 1
+        align-self: center
+
+// Desktop: the panel is not sticky, so no room under it for the blur — the layout's gap is
+// the whole space before the results (two classes: the shared panel's module may load later)
+.panel.panel
+    @media only screen and (min-width: variables.$mobileMaxWidth + 1px)
+        padding-bottom: 0

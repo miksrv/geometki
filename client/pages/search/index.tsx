@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { cn, Container } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
@@ -11,55 +11,52 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { useAppSelector, wrapper } from '@/app/store'
-import { SearchFilters, SearchPageQuery } from '@/components/pages/search/SearchFilters'
 import { SearchMap } from '@/components/pages/search/SearchMap'
 import { SearchResults, SearchResultsSkeleton } from '@/components/pages/search/SearchResults'
 import { AppLayout, EmptyState, PageHeader } from '@/components/shared'
+import { parseSearchQuery, SearchFilterPanel, SearchQuery } from '@/sections/search'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { getUserLocationFromCookies } from '@/utils/userLocation'
 
 import styles from './index.module.sass'
 
 const PLACES_LIMIT = 7
 
 interface SearchPageProps {
-    initialQuery: SearchPageQuery
     initialData: ApiType.Search.Response
 }
 
-const SearchPage: NextPage<SearchPageProps> = ({ initialQuery, initialData }) => {
+/** The API request of a search: always all kinds of results, so the tabs have their numbers */
+const toRequest = (query: SearchQuery, location?: ApiType.Coordinates | null): ApiType.Search.Request => ({
+    category: query.categories.length ? query.categories.join(',') : undefined,
+    lat: location?.lat ?? null,
+    limit: PLACES_LIMIT,
+    lon: location?.lon ?? null,
+    offset: 0,
+    q: query.q,
+    sort: query.sort,
+    type: 'all'
+})
+
+const SearchPage: NextPage<SearchPageProps> = ({ initialData }) => {
     const { t } = useTranslation()
     const router = useRouter()
 
     const userLocation = useAppSelector((state) => state.application.userLocation)
 
-    const [query, setQuery] = useState<SearchPageQuery>(initialQuery)
+    // The URL is the only state of the filters
+    const query = useMemo(() => parseSearchQuery(router.query), [router.query])
+
     const [offset, setOffset] = useState(PLACES_LIMIT)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
     const [extraPlaces, setExtraPlaces] = useState<ApiType.Search.Response['places']>()
 
     useEffect(() => {
-        setQuery(initialQuery)
         setOffset(PLACES_LIMIT)
         setExtraPlaces(undefined)
-    }, [router.query.q])
+    }, [router.asPath])
 
-    // type=coordinates relies on the coordinate parser which only runs with type=all on the backend
-    const apiType: ApiType.Search.Request['type'] = query.type === 'coordinates' ? 'all' : query.type
-
-    const { data: searchData, isFetching } = API.useSearchQuery(
-        {
-            q: query.q,
-            type: apiType,
-            category: query.category || undefined,
-            sort: query.sort,
-            order: query.order,
-            lat: userLocation?.lat ?? null,
-            lon: userLocation?.lon ?? null,
-            limit: PLACES_LIMIT,
-            offset: 0
-        },
-        { skip: !query.q }
-    )
+    const { data: searchData, isFetching } = API.useSearchQuery(toRequest(query, userLocation), { skip: !query.q })
 
     const [triggerSearch] = API.useLazySearchQuery()
 
@@ -69,33 +66,18 @@ const SearchPage: NextPage<SearchPageProps> = ({ initialQuery, initialData }) =>
         ...data,
         places: extraPlaces
             ? {
+                  ...data.places,
                   count: data.places?.count ?? 0,
                   items: [...(data.places?.items ?? []), ...(extraPlaces.items ?? [])]
               }
             : data.places
     }
 
-    const handleChangeFilter = useCallback((key: keyof SearchPageQuery, value: string) => {
-        setQuery((prev) => ({ ...prev, [key]: value }))
-        setOffset(PLACES_LIMIT)
-        setExtraPlaces(undefined)
-    }, [])
-
     const handleLoadMore = useCallback(async () => {
         setIsLoadingMore(true)
 
         try {
-            const result = await triggerSearch({
-                q: query.q,
-                type: apiType,
-                category: query.category || undefined,
-                sort: query.sort,
-                order: query.order,
-                lat: userLocation?.lat ?? null,
-                lon: userLocation?.lon ?? null,
-                limit: PLACES_LIMIT,
-                offset
-            })
+            const result = await triggerSearch({ ...toRequest(query, userLocation), offset })
 
             if (result.data?.places) {
                 setExtraPlaces((prev) => ({
@@ -143,12 +125,10 @@ const SearchPage: NextPage<SearchPageProps> = ({ initialQuery, initialData }) =>
 
             <PageHeader title={pageTitle} />
 
-            <Container>
-                <SearchFilters
-                    query={query}
-                    onChange={handleChangeFilter}
-                />
-            </Container>
+            <SearchFilterPanel
+                query={query}
+                data={mergedData}
+            />
 
             {/* Desktop: the container fills the rest of the viewport and the results scroll in
                 their own column next to the map; phones: a regular scrolling page with the map
@@ -193,13 +173,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
 
-            const q = (context.query.q as string) ?? ''
-            const type = (context.query.type as ApiType.Search.Request['type']) ?? 'all'
-            const category = (context.query.category as string) ?? ''
-            const sort = (context.query.sort as ApiType.Search.Request['sort']) ?? 'relevance'
-            const order = (context.query.order as ApiType.Search.Request['order']) ?? 'desc'
+            const query = parseSearchQuery(context.query)
 
-            if (!q.trim()) {
+            if (!query.q) {
                 return { redirect: { destination: '/', permanent: false } }
             }
 
@@ -209,15 +185,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const translations = await serverSideTranslations(locale)
 
             const { data: initialData } = await store.dispatch(
-                API.endpoints.search.initiate({
-                    q,
-                    type,
-                    category: category || undefined,
-                    sort,
-                    order,
-                    limit: PLACES_LIMIT,
-                    offset: 0
-                })
+                API.endpoints.search.initiate(toRequest(query, getUserLocationFromCookies(cookies)))
             )
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
@@ -225,8 +193,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             return {
                 props: {
                     ...translations,
-                    initialData: initialData ?? {},
-                    initialQuery: { q, type, category, sort, order }
+                    initialData: initialData ?? {}
                 }
             }
         }

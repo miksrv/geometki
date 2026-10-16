@@ -10,6 +10,8 @@
 - Places: "Hide visited" for signed-in users; places you have been to are marked "You've been here"
 - Places: the count of places next to the title; the filters stay on screen while scrolling
 - Places: on phones a search bar and a filters sheet with "Show N places", a floating "Map" button and "Show more" instead of page numbers
+- Search: the same filters as on the places page — results as tabs with their counts, the categories found as chips with numbers, several at once, the sorting as presets and the applied filters as chips; on phones a filters sheet; the filters stay in the link
+- Search: sorting now orders all found places, not just the loaded ones, and "Near me" puts the nearest first
 - Place cards: the photo on top with the title, address and stats under it, a bookmark button right on the card
 - Home and place pages: rows of places scroll with a swipe or a trackpad and stop on a card; the arrows are the same as for the categories
 - Design: tabs are as tall as buttons and fields

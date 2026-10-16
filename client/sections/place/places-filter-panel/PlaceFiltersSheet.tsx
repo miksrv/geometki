@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react'
-import { Button, cn } from 'simple-react-ui-kit'
 
-import Image from 'next/image'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
-import { BottomSheet, Switch } from '@/components/ui'
+import { FiltersSheet } from '@/components/shared/filter-panel'
+import { Switch } from '@/components/ui'
 import useUserLocation from '@/hooks/useUserLocation'
-import { CATEGORY_GROUPS, categoryImage, getCategoryGroupTitle, getCategoryShortTitle } from '@/utils/categories'
 
 import { filterToListRequest } from './describeFilter'
 import { getSortPresets } from './sortPresets'
@@ -29,7 +27,7 @@ interface PlaceFiltersSheetProps {
 }
 
 /**
- * The phone filters: the sort presets, every category in its group, "Скрыть посещённые".
+ * The phone filters (`FiltersSheet`): the sort presets, every category, "Скрыть посещённые".
  * Changes stay a draft until "Показать N мест" — the list does not reload on every tap; the
  * number is counted for the draft as it changes.
  */
@@ -89,91 +87,20 @@ export const PlaceFiltersSheet: React.FC<PlaceFiltersSheetProps> = ({
     }
 
     return (
-        <BottomSheet
+        <FiltersSheet
             open={open}
-            title={t('filters', 'Фильтры')}
-            closeOnSelect={false}
-            className={styles.sheet}
+            sorts={getSortPresets(t, isAuth)}
+            sort={draft.sort}
+            categories={draft.categories}
+            total={total}
+            counting={changed && isFetching}
+            nothingFound={changed && !isFetching && total === 0}
+            onSort={(sort) => void handleSort(sort)}
+            onToggleCategory={toggleCategory}
+            onReset={() => setDraft({ categories: [], notVisited: false, sort: defaultSort, tag: undefined })}
+            onApply={() => onApply(draft)}
             onClose={onClose}
-            footer={
-                <>
-                    <Button
-                        mode={'secondary'}
-                        size={'large'}
-                        label={t('filters-reset', 'Сбросить')}
-                        onClick={() =>
-                            setDraft({ categories: [], notVisited: false, sort: defaultSort, tag: undefined })
-                        }
-                    />
-                    <Button
-                        mode={'primary'}
-                        size={'large'}
-                        stretched={true}
-                        loading={changed && isFetching}
-                        disabled={changed && !isFetching && total === 0}
-                        label={
-                            total
-                                ? t('filters-show-count', 'Показать {{count}} мест', { count: total })
-                                : t('filters-show-none', 'Ничего не найдено')
-                        }
-                        onClick={() => onApply(draft)}
-                    />
-                </>
-            }
         >
-            <h3 className={styles.sheetHeading}>{t('filters-sort', 'Сортировка')}</h3>
-            <div className={styles.sheetPills}>
-                {getSortPresets(t, isAuth).map((preset) => (
-                    <button
-                        key={preset.key}
-                        type={'button'}
-                        className={cn(styles.sheetPill, draft.sort === preset.key && styles.sheetPillOn)}
-                        aria-pressed={draft.sort === preset.key}
-                        onClick={() => void handleSort(preset.key)}
-                    >
-                        {preset.label}
-                    </button>
-                ))}
-            </div>
-
-            <h3 className={styles.sheetHeading}>{t('categories')}</h3>
-            {CATEGORY_GROUPS.map((group) => (
-                <div
-                    key={group.name}
-                    role={'group'}
-                    aria-label={getCategoryGroupTitle(t, group.name)}
-                >
-                    <div
-                        className={styles.sheetGroup}
-                        aria-hidden={true}
-                    >
-                        {getCategoryGroupTitle(t, group.name)}
-                    </div>
-                    <div className={styles.sheetCategories}>
-                        {group.categories.map((name) => (
-                            <button
-                                key={name}
-                                type={'button'}
-                                className={cn(
-                                    styles.sheetCategory,
-                                    draft.categories.includes(name) && styles.sheetCategoryOn
-                                )}
-                                aria-pressed={draft.categories.includes(name)}
-                                onClick={() => toggleCategory(name)}
-                            >
-                                <Image
-                                    src={categoryImage(name).src}
-                                    alt={''}
-                                    width={28}
-                                    height={28}
-                                />
-                                {getCategoryShortTitle(t, name)}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            ))}
-
             {isAuth && (
                 <Switch
                     variant={'row'}
@@ -184,6 +111,6 @@ export const PlaceFiltersSheet: React.FC<PlaceFiltersSheetProps> = ({
                     onChange={(notVisited) => setDraft((prev) => ({ ...prev, notVisited }))}
                 />
             )}
-        </BottomSheet>
+        </FiltersSheet>
     )
 }

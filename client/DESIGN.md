@@ -492,7 +492,7 @@ actions, active days, the longest and the current run of days in a row (22px num
 - **Filter primitives** (`components/ui`, kit candidates, made in the app for the places
   filters): `Chip` — a 36px pill (28px `small`) with an optional icon, a toggle (`selected`,
   `--color-main` fill, `aria-pressed`) or a removal (`removable`, tinted with a ✕), a link with
-  `href`; `ScrollRail` — the one horizontal scroller of the site (native scroll, no carousel
+  `href`, an optional quiet `count` after the label (facets); `ScrollRail` — the one horizontal scroller of the site (native scroll, no carousel
   library): round white arrows with a shadow while there is more to a side, hidden on touch
   screens; `chips` (items of their own width, faded edges, `ScrollRailSeparator` between
   groups) and `cards` (three equal place tiles, one and a peek on phones, scroll snap, bigger
@@ -538,7 +538,8 @@ actions, active days, the longest and the current run of days in a row (22px num
   active one. Tabs that are pages are links (`href`, `aria-current="page"`), never
   `router.push`. On phones the bar scrolls sideways without a scrollbar, the active tab is
   scrolled into view and the cut-off edges fade out. A kit primitive candidate.
-- **Places filters** (`PlaceFilterPanel`, `/places` and the landing pages): three questions —
+- **Places filters** (`PlaceFilterPanel`, `/places` and the landing pages, built from the
+  filter panel pieces): three questions —
   where, what, in which order — and only one filter of the site's own data, "Скрыть
   посещённые" (signed in, `?notVisited=1`, noindex). The URL is the only state: every change is a
   `buildFilterHref` link or push on page 1 (`buildPlacesHref` underneath, so landing paths
@@ -563,6 +564,25 @@ actions, active days, the longest and the current run of days in a row (22px num
       the bottom navigation.
     - Remembered in `localStorage` (`usePlacesFilterMemory`), never applied by itself: the
       recent locations and the last search.
+- **Filter panel** (`components/shared/filter-panel`, the pieces of both panels below):
+  `FilterPanel` (the block on a translucent blurred page background, `sticky` `always` or
+  `phones`), `FilterToolbar` (the desktop row, `FilterToolbarSpacer` pushes the rest right),
+  `FilterPopout` (a `FieldTrigger` with a dropdown, a fixed width), `FilterPhoneBar` and
+  `FiltersButton` (the round phone button with the number of filters set), `CategoryRail`
+  (the `ScrollRail` of category `Chip` links; with `counts` — the facets of a search — only the
+  categories with places and those on, each with its number), `AppliedFilterList` (removable
+  chips and "Сбросить всё") and `FiltersSheet` (the phone form sheet: sort pills, the category
+  grid, the page's own rows; the page keeps the draft).
+- **Search filters** (`SearchFilterPanel`, `sections/search`, `/search`): the same pieces
+  over the results and the map. The URL is the only state (`?q=&type=&category=a,b&sort=`,
+  `buildSearchHref`); the API is always asked for every kind of result, so the `type` is the
+  `Tabs` "Все · Места N · Адреса N · Координаты" (a tab with nothing is hidden, "Координаты"
+  only when the query is a point). Where places are shown and found: the sort presets
+  (`FilterPopout`, the most relevant first, "Ближе ко мне" asks the browser), the
+  `CategoryRail` with the facets (`places.categories` of the response, counted before the
+  category filter) and the applied filters. Desktop: not sticky — the results scroll in
+  their own column; phones: sticky, the tabs with `FiltersButton` and the sheet ("Показать N
+  мест" is counted from the facets, no request).
 - **Listing toolbar** (`ListingToolbar` + `ListingToolbarGroup`, used by `UsersFilterPanel`
   and the admin `SendingMailFilterPanel`): the filter row directly above a list, on the page background,
   never in a `Container`. One row: the filters group (location, category; or the search

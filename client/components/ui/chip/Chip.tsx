@@ -9,6 +9,8 @@ export interface ChipProps {
     label: string
     /** A 20px picture before the label: a category icon, a kit `Icon` */
     icon?: React.ReactNode
+    /** A quiet number after the label: how many there are (the facets of a search) */
+    count?: number
     /** On: filled with `--color-main` (a toggle chip) */
     selected?: boolean
     /** A removal chip: tinted, with a ✕ after the label (the applied filters row) */
@@ -31,6 +33,7 @@ export interface ChipProps {
 export const Chip: React.FC<ChipProps> = ({
     label,
     icon,
+    count,
     selected,
     removable,
     href,
@@ -59,6 +62,7 @@ export const Chip: React.FC<ChipProps> = ({
                 </span>
             )}
             <span className={styles.label}>{label}</span>
+            {count !== undefined && <span className={styles.count}>{count}</span>}
             {removable && (
                 <Icon
                     name={'Close'}

@@ -1,16 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { Button, Icon, Popout, PopoutHandleProps } from 'simple-react-ui-kit'
+import React, { useEffect, useState } from 'react'
+import { Button, Icon } from 'simple-react-ui-kit'
 
 import { useRouter } from 'next/dist/client/router'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { BottomSheet, FieldTrigger, OptionList, Switch, Tabs } from '@/components/ui'
+import {
+    CategoryRail,
+    FilterPanel,
+    FilterPhoneBar,
+    FilterPopout,
+    FiltersButton,
+    FilterToolbar,
+    FilterToolbarSpacer
+} from '@/components/shared/filter-panel'
+import { BottomSheet, OptionList, Switch, Tabs } from '@/components/ui'
 import useUserLocation from '@/hooks/useUserLocation'
 
 import { AppliedFilters } from './AppliedFilters'
-import { CategoryRail } from './CategoryRail'
 import { describeFilter, isFilterActive, isNearFilter } from './describeFilter'
 import { ANYWHERE_KEY, LocationChoice, LocationOptions, NEAR_KEY } from './LocationOptions'
 import { PlaceFiltersSheet } from './PlaceFiltersSheet'
@@ -54,9 +62,6 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
     const { request: requestUserLocation } = useUserLocation()
     const { lastSearch, recentLocations, rememberLocation, rememberSearch } = usePlacesFilterMemory()
 
-    const locationPopout = useRef<PopoutHandleProps>(null)
-    const sortPopout = useRef<PopoutHandleProps>(null)
-
     const [sheet, setSheet] = useState<'location' | 'filters' | null>(null)
 
     const near = isNearFilter(filter)
@@ -72,7 +77,6 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
     const go = (patch: PlacesFilterPatch) => void router.push(buildHref(patch))
 
     const handlePickLocation = async (choice: LocationChoice) => {
-        locationPopout.current?.close()
         setSheet(null)
 
         if (choice === NEAR_KEY) {
@@ -93,8 +97,6 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
     }
 
     const handlePickSort = async (sort: ApiType.SortFieldsType) => {
-        sortPopout.current?.close()
-
         // Sorting by distance is what asks the browser for the location; without it the sort stays
         if (sort === ApiType.SortFields.Distance && !(await requestUserLocation())) {
             return
@@ -108,13 +110,16 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
     const sortLabel = getSortLabel(t, filter.sort)
     const badge = filter.categories.length + (filter.sort !== defaultSort ? 1 : 0) + (filter.notVisited ? 1 : 0)
 
-    const locationOptions = (
+    const locationOptions = (close?: () => void) => (
         <LocationOptions
             location={filter.location}
             near={near}
             recentLocations={recentLocations}
             autoFocus={true}
-            onPick={(choice) => void handlePickLocation(choice)}
+            onPick={(choice) => {
+                close?.()
+                void handlePickLocation(choice)
+            }}
         />
     )
 
@@ -132,42 +137,24 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
 
     return (
         <>
-            <div className={styles.panel}>
-                <div
-                    className={styles.toolbar}
-                    role={'toolbar'}
-                    aria-label={t('filters', 'Фильтры')}
-                >
-                    <Popout
-                        ref={locationPopout}
-                        className={styles.locationField}
-                        position={'left'}
-                        portal={true}
-                        trigger={
-                            <FieldTrigger
-                                icon={'Point'}
-                                label={t('filters-where', 'Где')}
-                                value={locationValue}
-                                active={!!filter.location || near}
-                            />
-                        }
+            <FilterPanel sticky={'always'}>
+                <FilterToolbar>
+                    <FilterPopout
+                        width={320}
+                        icon={'Point'}
+                        label={t('filters-where', 'Где')}
+                        value={locationValue}
+                        active={!!filter.location || near}
                     >
-                        <div className={styles.dropdown}>{locationOptions}</div>
-                    </Popout>
+                        {locationOptions}
+                    </FilterPopout>
 
-                    <Popout
-                        ref={sortPopout}
-                        className={styles.sortField}
-                        position={'left'}
-                        portal={true}
-                        trigger={
-                            <FieldTrigger
-                                icon={'BarChart'}
-                                value={sortLabel}
-                            />
-                        }
+                    <FilterPopout
+                        width={240}
+                        icon={'BarChart'}
+                        value={sortLabel}
                     >
-                        <div className={styles.dropdown}>
+                        {(close) => (
                             <OptionList
                                 groups={[
                                     {
@@ -177,10 +164,13 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                                         }))
                                     }
                                 ]}
-                                onSelect={(key) => void handlePickSort(key)}
+                                onSelect={(key) => {
+                                    close()
+                                    void handlePickSort(key)
+                                }}
                             />
-                        </div>
-                    </Popout>
+                        )}
+                    </FilterPopout>
 
                     {isAuth && (
                         <Switch
@@ -190,12 +180,12 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                         />
                     )}
 
-                    <span className={styles.spacer} />
+                    <FilterToolbarSpacer />
 
                     {viewTabs}
-                </div>
+                </FilterToolbar>
 
-                <div className={styles.mobileBar}>
+                <FilterPhoneBar>
                     <button
                         type={'button'}
                         className={styles.searchBar}
@@ -225,31 +215,15 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                         </span>
                     </button>
 
-                    <button
-                        type={'button'}
-                        className={styles.filtersButton}
-                        aria-label={
-                            badge
-                                ? t('filters-with-count', 'Фильтры, выбрано: {{count}}', { count: badge })
-                                : t('filters', 'Фильтры')
-                        }
+                    <FiltersButton
+                        count={badge}
                         onClick={() => setSheet('filters')}
-                    >
-                        <Icon name={'Tune'} />
-                        {!!badge && (
-                            <span
-                                className={styles.filtersBadge}
-                                aria-hidden={true}
-                            >
-                                {badge}
-                            </span>
-                        )}
-                    </button>
-                </div>
+                    />
+                </FilterPhoneBar>
 
                 <CategoryRail
-                    categories={filter.categories}
-                    buildHref={buildHref}
+                    selected={filter.categories}
+                    hrefFor={(categories) => buildHref({ categories })}
                 />
 
                 <AppliedFilters
@@ -258,7 +232,7 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                     lastSearch={lastSearch}
                     buildHref={buildHref}
                 />
-            </div>
+            </FilterPanel>
 
             <div className={styles.mapButton}>
                 <Button
@@ -277,7 +251,7 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                 className={styles.sheet}
                 onClose={() => setSheet(null)}
             >
-                {sheet === 'location' && locationOptions}
+                {sheet === 'location' && locationOptions()}
             </BottomSheet>
 
             <PlaceFiltersSheet

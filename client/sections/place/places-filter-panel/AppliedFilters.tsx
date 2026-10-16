@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
-import { Chip } from '@/components/ui'
+import { AppliedFilterList, AppliedFilterRow } from '@/components/shared/filter-panel'
+import type { AppliedFilter } from '@/components/shared/filter-panel/AppliedFilterList'
 import { categoryImage, getCategoryShortTitle } from '@/utils/categories'
 
 import { isFilterActive, isNearFilter } from './describeFilter'
@@ -24,7 +25,7 @@ interface AppliedFiltersProps {
 }
 
 /**
- * What is applied, one removable chip per filter, and "Сбросить всё". With nothing applied,
+ * What is applied, as removable chips with "Сбросить всё". With nothing applied,
  * the last search of this browser as a dashed "Продолжить: …" link — remembered, never
  * applied by itself.
  */
@@ -36,7 +37,7 @@ export const AppliedFilters: React.FC<AppliedFiltersProps> = ({ filter, defaultS
 
     if (!isFilterActive(filter) && !sortChanged && !near) {
         return lastSearch ? (
-            <div className={styles.applied}>
+            <AppliedFilterRow>
                 <Link
                     href={lastSearch.href}
                     className={styles.resume}
@@ -44,98 +45,77 @@ export const AppliedFilters: React.FC<AppliedFiltersProps> = ({ filter, defaultS
                     <Icon name={'Time'} />
                     {t('filters-resume', 'Продолжить:')} <b>{lastSearch.label}</b>
                 </Link>
-            </div>
+            </AppliedFilterRow>
         ) : null
     }
 
-    const removeLabel = (name: string) => t('filters-remove', 'Убрать фильтр: {{name}}', { name })
+    const filters: AppliedFilter[] = []
+
+    if (filter.location) {
+        filters.push({
+            href: buildHref({ location: null }),
+            icon: <Icon name={'Point'} />,
+            key: 'location',
+            label: filter.location.name
+        })
+    }
+
+    if (near) {
+        filters.push({
+            href: buildHref({ sort: defaultSort }),
+            icon: <Icon name={'Position'} />,
+            key: 'near',
+            label: t('location-near', 'Рядом со мной')
+        })
+    }
+
+    filter.categories.forEach((name) =>
+        filters.push({
+            href: buildHref({ categories: filter.categories.filter((item) => item !== name) }),
+            icon: (
+                <Image
+                    src={categoryImage(name as ApiModel.Categories).src}
+                    alt={''}
+                    width={16}
+                    height={16}
+                />
+            ),
+            key: `category-${name}`,
+            label: getCategoryShortTitle(t, name)
+        })
+    )
+
+    if (filter.tag) {
+        filters.push({ href: buildHref({ tag: null }), key: 'tag', label: `#${filter.tag}` })
+    }
+
+    if (filter.notVisited) {
+        filters.push({
+            href: buildHref({ notVisited: false }),
+            key: 'notVisited',
+            label: t('filter-not-visited-chip', 'Без посещённых')
+        })
+    }
+
+    if (sortChanged) {
+        filters.push({
+            href: buildHref({ sort: defaultSort }),
+            icon: <Icon name={'BarChart'} />,
+            key: 'sort',
+            label: getSortLabel(t, filter.sort)
+        })
+    }
 
     return (
-        <div className={styles.applied}>
-            {filter.location && (
-                <Chip
-                    size={'small'}
-                    removable={true}
-                    icon={<Icon name={'Point'} />}
-                    label={filter.location.name}
-                    aria-label={removeLabel(filter.location.name)}
-                    href={buildHref({ location: null })}
-                />
-            )}
-
-            {near && (
-                <Chip
-                    size={'small'}
-                    removable={true}
-                    icon={<Icon name={'Position'} />}
-                    label={t('location-near', 'Рядом со мной')}
-                    aria-label={removeLabel(t('location-near', 'Рядом со мной'))}
-                    href={buildHref({ sort: defaultSort })}
-                />
-            )}
-
-            {filter.categories.map((name) => (
-                <Chip
-                    key={name}
-                    size={'small'}
-                    removable={true}
-                    icon={
-                        <Image
-                            src={categoryImage(name as ApiModel.Categories).src}
-                            alt={''}
-                            width={16}
-                            height={16}
-                        />
-                    }
-                    label={getCategoryShortTitle(t, name)}
-                    aria-label={removeLabel(getCategoryShortTitle(t, name))}
-                    href={buildHref({ categories: filter.categories.filter((item) => item !== name) })}
-                />
-            ))}
-
-            {filter.tag && (
-                <Chip
-                    size={'small'}
-                    removable={true}
-                    label={`#${filter.tag}`}
-                    aria-label={removeLabel(`#${filter.tag}`)}
-                    href={buildHref({ tag: null })}
-                />
-            )}
-
-            {filter.notVisited && (
-                <Chip
-                    size={'small'}
-                    removable={true}
-                    label={t('filter-not-visited-chip', 'Без посещённых')}
-                    aria-label={removeLabel(t('filter-not-visited-chip', 'Без посещённых'))}
-                    href={buildHref({ notVisited: false })}
-                />
-            )}
-
-            {sortChanged && (
-                <Chip
-                    size={'small'}
-                    removable={true}
-                    icon={<Icon name={'BarChart'} />}
-                    label={getSortLabel(t, filter.sort)}
-                    aria-label={removeLabel(getSortLabel(t, filter.sort))}
-                    href={buildHref({ sort: defaultSort })}
-                />
-            )}
-
-            <Link
-                href={buildHref({
-                    categories: [],
-                    location: null,
-                    notVisited: false,
-                    sort: defaultSort,
-                    tag: null
-                })}
-                className={styles.reset}
-            >
-                {t('filters-reset-all', 'Сбросить всё')}
-            </Link>
-        </div>
+        <AppliedFilterList
+            filters={filters}
+            resetHref={buildHref({
+                categories: [],
+                location: null,
+                notVisited: false,
+                sort: defaultSort,
+                tag: null
+            })}
+        />
     )
 }

@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Libraries\Geocoder;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
+use App\Libraries\SearchPlacesRanking;
 use App\Models\PlacesModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -24,7 +25,11 @@ class Search extends ResourceController
     /**
      * Full search across places, geocoder locations, and coordinate detection.
      *
-     * GET /search?q=&type=all|location|coordinates|places&category=&sort=&order=&lat=&lon=&limit=20&offset=0
+     * GET /search?q=&type=all|location|coordinates|places&category=a,b&sort=&order=&lat=&lon=&limit=20&offset=0
+     *
+     * `places.categories` counts the found places per category before the category filter (the
+     * client's facets); the sort runs over all found places in its natural direction unless
+     * `order` is given, then the page is cut.
      *
      * @throws Exception
      *
@@ -36,7 +41,7 @@ class Search extends ResourceController
         $type     = $this->request->getGet('type', FILTER_SANITIZE_SPECIAL_CHARS) ?? 'all';
         $category = $this->request->getGet('category', FILTER_SANITIZE_SPECIAL_CHARS);
         $sort     = $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS);
-        $order    = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS) ?? 'DESC';
+        $order    = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS);
         $lat      = $this->request->getGet('lat', FILTER_VALIDATE_FLOAT);
         $lon      = $this->request->getGet('lon', FILTER_VALIDATE_FLOAT);
         $limit    = min(abs((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 20)), 40);
@@ -57,7 +62,8 @@ class Search extends ResourceController
         // --- Coordinate detection ---
         $coordinates = $this->parseCoordinates($q);
         if ($coordinates) {
-            $result['coordinates'] = $coordinates;
+            // The query itself is a point; without it `coordinates` is the top result's point
+            $result['coordinates'] = $coordinates + ['parsed' => true];
         }
 
         // --- Geocoder locations ---
@@ -78,82 +84,70 @@ class Search extends ResourceController
 
             $allPlaceIds = $placeContent->placeIds;
 
-            // Apply category filter before pagination
-            if ($category && !empty($allPlaceIds)) {
-                $placesModel  = new PlacesModel();
-                $filtered     = $placesModel
-                    ->select('id')
-                    ->whereIn('id', $allPlaceIds)
-                    ->where('category', $category)
-                    ->findAll();
-                $filteredIds  = array_column($filtered, 'id');
+            $distanceSQL = '';
+            if ($lat && $lon) {
+                $distanceSQL = (new PlacesModel())->makeDistanceSQL($lat, $lon);
+            }
+            $coordinatesAvailable = $distanceSQL !== '';
 
-                // Preserve the relevance ordering from the FULLTEXT query
-                $allPlaceIds = array_values(array_filter(
-                    $allPlaceIds,
-                    static fn($id) => in_array($id, $filteredIds, true)
-                ));
+            // One light query over every found place: the facets, the filter and the sort are
+            // over the whole result, the page is cut after them
+            $rows = [];
+            if (!empty($allPlaceIds)) {
+                $byId = [];
+                $light = (new PlacesModel())
+                    ->select('id, category, views, rating, comments, created_at' . $distanceSQL)
+                    ->whereIn('id', $allPlaceIds)
+                    ->asArray()
+                    ->findAll();
+
+                foreach ($light as $row) {
+                    $byId[$row['id']] = $row;
+                }
+
+                // The full-text relevance order; soft-deleted places drop out here
+                foreach ($allPlaceIds as $id) {
+                    if (isset($byId[$id])) {
+                        $rows[] = $byId[$id];
+                    }
+                }
             }
 
-            $totalCount   = count($allPlaceIds);
-            $pagedIds     = array_slice($allPlaceIds, $offset, $limit);
+            $facets = SearchPlacesRanking::facets($rows);
+
+            $categories = $category
+                ? array_values(array_intersect(array_map('trim', explode(',', $category)), config('Categories')->names))
+                : [];
+            $rows = SearchPlacesRanking::filter($rows, $categories);
+
+            if (!$sort) {
+                $sort = $coordinatesAvailable ? 'distance' : 'relevance';
+            }
+            if ($sort === 'distance' && !$coordinatesAvailable) {
+                $sort = 'relevance';
+            }
+            $rows = SearchPlacesRanking::sort($rows, $sort, $order);
+
+            $totalCount = count($rows);
+            $pagedIds   = array_column(array_slice($rows, $offset, $limit), 'id');
 
             $formattedPlaces = [];
 
             if (!empty($pagedIds)) {
                 $placesModel = new PlacesModel();
-
-                // Determine distance expression
-                $distanceSQL = '';
-                $coordinatesAvailable = false;
-
-                if ($lat && $lon) {
-                    $distanceSQL          = $placesModel->makeDistanceSQL($lat, $lon);
-                    $coordinatesAvailable = $distanceSQL !== '';
-                }
-
                 $placesModel->applyListSelect($distanceSQL);
-                $placesList = $placesModel->whereIn('places.id', $pagedIds)->findAll();
-
-                // Restore FULLTEXT relevance order after SQL fetch
-                $orderedList = [];
-                foreach ($pagedIds as $id) {
-                    foreach ($placesList as $place) {
-                        if ($place->id === $id) {
-                            $orderedList[] = $place;
-                            break;
-                        }
-                    }
-                }
-
-                // Apply explicit sort override when requested
-                $validSorts = ['views', 'rating', 'comments', 'bookmarks', 'distance', 'created_at', 'updated_at'];
-                if (!$sort) {
-                    $sort = $coordinatesAvailable ? 'distance' : 'relevance';
-                }
-
-                if (in_array($sort, $validSorts, true) && in_array(strtoupper($order), ['ASC', 'DESC'], true)) {
-                    usort($orderedList, static function ($a, $b) use ($sort, $order) {
-                        $aVal = $a->{$sort} ?? null;
-                        $bVal = $b->{$sort} ?? null;
-
-                        if ($aVal === null && $bVal === null) {
-                            return 0;
-                        }
-                        if ($aVal === null) {
-                            return 1;
-                        }
-                        if ($bVal === null) {
-                            return -1;
-                        }
-
-                        $cmp = $aVal <=> $bVal;
-                        return strtoupper($order) === 'ASC' ? $cmp : -$cmp;
-                    });
+                $placesById = [];
+                foreach ($placesModel->whereIn('places.id', $pagedIds)->findAll() as $place) {
+                    $placesById[$place->id] = $place;
                 }
 
                 $formatter = new PlaceFormatterLibrary();
-                foreach ($orderedList as $place) {
+                foreach ($pagedIds as $id) {
+                    $place = $placesById[$id] ?? null;
+                    if (!$place) {
+                        continue;
+                    }
+
                     if ($coordinatesAvailable && isset($place->distance) && $place->distance !== null) {
                         $place->distance = $formatter->formatDistance($place->distance);
                     }
@@ -170,8 +164,9 @@ class Search extends ResourceController
             }
 
             $result['places'] = [
-                'items' => $formattedPlaces,
-                'count' => $totalCount,
+                'items'      => $formattedPlaces,
+                'count'      => $totalCount,
+                'categories' => (object) $facets,
             ];
         }
 
