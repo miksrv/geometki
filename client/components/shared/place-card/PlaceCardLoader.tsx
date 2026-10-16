@@ -1,8 +1,6 @@
 import React from 'react'
 import { cn, Skeleton } from 'simple-react-ui-kit'
 
-import { mediaTileStyles } from '@/components/shared/media-tile'
-
 import { PlaceCardVariant } from './PlaceCard'
 
 import styles from './styles.module.sass'
@@ -34,21 +32,18 @@ export const PlaceCardLoader: React.FC<PlaceCardLoaderProps> = ({ variant = 'til
 
     return (
         <article
-            className={mediaTileStyles.tile}
+            className={styles.tile}
             aria-hidden={true}
         >
-            <Skeleton style={{ position: 'absolute', inset: 0 }} />
-
-            <div className={mediaTileStyles.bottomOverlay}>
-                <Skeleton style={{ height: '22px', width: '85px', borderRadius: '20px', marginBottom: '7px' }} />
-                <Skeleton style={{ height: '13px', width: '95%', marginBottom: '5px' }} />
-                <Skeleton style={{ height: '13px', width: '65%', marginBottom: '4px' }} />
-                <Skeleton style={{ height: '11px', width: '70%', marginBottom: '8px' }} />
-                <div className={mediaTileStyles.stats}>
-                    <Skeleton style={{ height: '11px', width: '30px' }} />
-                    <Skeleton style={{ height: '11px', width: '30px' }} />
-                    <Skeleton style={{ height: '11px', width: '30px' }} />
-                </div>
+            <div className={styles.tileCover}>
+                <Skeleton style={{ inset: 0, position: 'absolute' }} />
+            </div>
+            <Skeleton style={{ height: '16px', marginTop: '12px', width: '85%' }} />
+            <Skeleton style={{ height: '13px', marginTop: '8px', width: '60%' }} />
+            <div className={styles.tileStats}>
+                <Skeleton style={{ height: '12px', width: '36px' }} />
+                <Skeleton style={{ height: '12px', width: '48px' }} />
+                <Skeleton style={{ height: '12px', width: '28px' }} />
             </div>
         </article>
     )

@@ -4,19 +4,21 @@
 // a 16:10-ish cover that fills the card, a gradient band at the top (author) and at the
 // bottom (title, subline, stats). Content is white on the gradients.
 
-// 3-column flow for tiles; 1 column on phones
+// 3-column grid for tiles; 1 column on phones. Place tiles carry their text under the
+// cover, so rows get more air than columns
 .grid
-    display: flex
-    flex-wrap: wrap
-    margin: -5px -5px
+    display: grid
+    grid-template-columns: repeat(3, minmax(0, 1fr))
+    gap: var(--space-6) var(--space-5)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
 
 .tile
     position: relative
     display: block
     border-radius: var(--border-radius)
     overflow: hidden
-    flex-basis: calc(33.3333% - 10px)
-    margin: 5px
     height: 260px
     background: var(--container-background)
     background-image: url('/images/no-image.svg')
@@ -24,9 +26,6 @@
     background-repeat: no-repeat
     background-size: 100%
     box-shadow: var(--container-shadow)
-
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        flex-basis: 100%
 
 // Full-card link behind the overlays
 .coverLink

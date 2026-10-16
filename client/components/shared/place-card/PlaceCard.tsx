@@ -7,7 +7,6 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { CategoryIcon } from '@/components/shared/category-icon'
-import { MediaTile, mediaTileStyles } from '@/components/shared/media-tile'
 import { IMG_HOST } from '@/config/env'
 import { addressToString } from '@/utils/address'
 import {
@@ -20,13 +19,15 @@ import {
     removeMarkdown
 } from '@/utils/helpers'
 
+import { PlaceCardBookmark } from './PlaceCardBookmark'
+
 import styles from './styles.module.sass'
 
 export type PlaceCardVariant = 'tile' | 'row'
 
 export interface PlaceCardProps {
     place: ApiModel.PlaceListItem
-    /** `tile` — photo card for grids and carousels (default); `row` — thumbnail + text for dense lists */
+    /** `tile` — photo card for grids and card rails (default); `row` — thumbnail + text for dense lists */
     variant?: PlaceCardVariant
     /** Row density: `small` uses a 96×72 thumbnail (pickers, map popup), `medium` 120×80 (search) */
     size?: 'medium' | 'small'
@@ -38,11 +39,11 @@ export interface PlaceCardProps {
     headingLevel?: 2 | 3
     /** Preload the cover (above-the-fold tiles only) */
     priority?: boolean
-    /** Tile only: the cover's `sizes` when the tile is not in the three-column grid (carousels) */
+    /** Tile only: the cover's `sizes` when the tile is not in the three-column grid (card rails) */
     sizes?: string
     /** Row only: element before the thumbnail, e.g. a position number */
     leading?: React.ReactNode
-    /** Controls: on the right of a row, or in the top-right corner over a tile's cover (owner actions) */
+    /** Controls: on the right of a row, or in the top-right corner over a tile's cover instead of the bookmark (owner actions) */
     actions?: React.ReactNode
     /** Row only: block under the meta, e.g. an author's note */
     footer?: React.ReactNode
@@ -53,8 +54,11 @@ export interface PlaceCardProps {
  * The one card for a place. Both variants keep the same recognisable parts in the same
  * order: cover, category icon, title, address, then the stats row (rating, distance,
  * views, photos). The category is shown as its icon only (top-left over a tile's cover,
- * before the title in a row); its name is in the tooltip. Only the geometry changes between `tile` and `row`. A card is about the
- * place, so it never shows who added it or when.
+ * before the title in a row); its name is in the tooltip. Only the geometry changes between
+ * `tile` and `row`: a tile is a 2:1 cover with the text under it on the page background, the
+ * bookmark toggle over the top-right corner (or the owner `actions` in its place) and a
+ * "you were here" badge for the visitor's visited places. A card is about the place, so it
+ * never shows who added it or when.
  */
 export const PlaceCard: React.FC<PlaceCardProps> = ({
     place,
@@ -80,27 +84,38 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
     const distanceText =
         distance !== undefined ? (distanceLabel ?? `${numberFormatter(distance)} ${t('km')}`) : undefined
 
-    const stats = (statClassName: string) => (
+    // A tile puts the rating as a gold star with a bold number and the distance as plain
+    // accent text, the first things to compare in a grid; a row keeps quiet icons for all
+    const stats = (statClassName: string, tile?: boolean) => (
         <>
             {!!place.rating && (
                 <span className={statClassName}>
                     <Icon
-                        name={'StarEmpty'}
+                        name={tile ? 'StarFilled' : 'StarEmpty'}
+                        className={tile ? styles.tileStar : undefined}
                         tooltip={t('rating', { defaultValue: 'Рейтинг' })}
                     />
-                    {addDecimalPoint(place.rating)}
+                    {tile ? <b>{addDecimalPoint(place.rating)}</b> : addDecimalPoint(place.rating)}
                 </span>
             )}
 
-            {distanceText && (
-                <span className={statClassName}>
-                    <Icon
-                        name={'Ruler'}
-                        tooltip={t('sort_distance', { defaultValue: 'Расстояние' })}
-                    />
-                    {distanceText}
-                </span>
-            )}
+            {distanceText &&
+                (tile ? (
+                    <span
+                        className={cn(statClassName, styles.tileDistance)}
+                        title={t('sort_distance', { defaultValue: 'Расстояние' })}
+                    >
+                        {distanceText}
+                    </span>
+                ) : (
+                    <span className={statClassName}>
+                        <Icon
+                            name={'Ruler'}
+                            tooltip={t('sort_distance', { defaultValue: 'Расстояние' })}
+                        />
+                        {distanceText}
+                    </span>
+                ))}
 
             {!!place.views && (
                 <span className={statClassName}>
@@ -184,34 +199,57 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
     }
 
     return (
-        <MediaTile
-            href={href}
-            title={place.title ?? ''}
-            priority={priority}
-            sizes={sizes}
-            className={className}
-            top={
-                place.category || actions ? (
-                    <div className={styles.tileTop}>
-                        {place.category && (
-                            <CategoryIcon
-                                category={place.category}
-                                size={16}
-                                className={styles.tileCategory}
-                            />
-                        )}
-                        {actions && <div className={styles.tileActions}>{actions}</div>}
-                    </div>
-                ) : undefined
-            }
-            // `updated` only versions the cover URL: the preview path stays the same when the cover changes
-            coverSrc={
-                place.cover?.preview
-                    ? `${IMG_HOST}${place.cover.preview}?d=${dateToUnixTime(place.updated?.date)}`
-                    : undefined
-            }
-        >
-            <Heading className={mediaTileStyles.title}>
+        <article className={cn(styles.tile, className)}>
+            <div className={styles.tileCover}>
+                {/* The cover repeats the title link: one tab stop and one name per card */}
+                <Link
+                    href={href}
+                    className={styles.tileCoverLink}
+                    tabIndex={-1}
+                    aria-hidden={true}
+                >
+                    {place.cover?.preview && (
+                        <Image
+                            className={styles.tileImage}
+                            alt={''}
+                            quality={75}
+                            fill
+                            priority={priority}
+                            fetchPriority={priority ? 'high' : undefined}
+                            sizes={sizes ?? '(max-width: 768px) 100vw, 33vw'}
+                            // `updated` only versions the cover URL: the preview path stays the same when the cover changes
+                            src={`${IMG_HOST}${place.cover.preview}?d=${dateToUnixTime(place.updated?.date)}`}
+                        />
+                    )}
+                </Link>
+
+                {place.category && (
+                    <span className={styles.tileCategory}>
+                        <CategoryIcon
+                            category={place.category}
+                            size={24}
+                        />
+                    </span>
+                )}
+
+                <div className={styles.tileActions}>
+                    {actions ?? (
+                        <PlaceCardBookmark
+                            placeId={place.id}
+                            known={place.bookmarked}
+                        />
+                    )}
+                </div>
+
+                {place.visited && (
+                    <span className={styles.tileVisited}>
+                        <Icon name={'CheckCircle'} />
+                        {t('place-card-visited', { defaultValue: 'Вы были здесь' })}
+                    </span>
+                )}
+            </div>
+
+            <Heading className={styles.tileTitle}>
                 <Link
                     href={href}
                     title={place.title}
@@ -221,7 +259,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
             </Heading>
 
             {!!address?.length && (
-                <div className={mediaTileStyles.subline}>
+                <div className={styles.tileAddress}>
                     {address.map((item, i, array) => (
                         <span key={`address${item.type}${place.id}`}>
                             <Link
@@ -243,7 +281,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                 </div>
             )}
 
-            <div className={mediaTileStyles.stats}>{stats(mediaTileStyles.stat)}</div>
-        </MediaTile>
+            <div className={styles.tileStats}>{stats(styles.tileStat, true)}</div>
+        </article>
     )
 }

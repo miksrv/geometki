@@ -76,6 +76,15 @@ jest.mock('@/components/shared/category-icon', () => ({
     )
 }))
 
+jest.mock('./PlaceCardBookmark', () => ({
+    PlaceCardBookmark: ({ known }: { known?: boolean }) => (
+        <button
+            data-testid={'card-bookmark'}
+            aria-pressed={!!known}
+        />
+    )
+}))
+
 const place: ApiModel.PlaceListItem = {
     id: 'p1',
     slug: 'cool-cave',
@@ -104,19 +113,17 @@ describe('PlaceCard', () => {
             )
         })
 
-        it('renders the cover with a cache-busting key', () => {
-            render(<PlaceCard place={place} />)
+        it('renders the cover with a cache-busting key, decorative next to the title link', () => {
+            const { container } = render(<PlaceCard place={place} />)
 
-            expect(screen.getByRole('img')).toHaveAttribute(
-                'src',
-                'https://img.test/covers/p1-preview.jpg?d=1700000000'
-            )
+            const cover = container.querySelector('img')
+            expect(cover).toHaveAttribute('src', 'https://img.test/covers/p1-preview.jpg?d=1700000000')
+            expect(cover).toHaveAttribute('alt', '')
         })
 
         it('shows neither who added the place nor when', () => {
-            const { container } = render(<PlaceCard place={{ ...place, category: undefined }} />)
+            render(<PlaceCard place={{ ...place, category: undefined }} />)
 
-            expect(container.querySelectorAll('article > div')).toHaveLength(1)
             expect(screen.queryByText(/2026/)).not.toBeInTheDocument()
         })
 
@@ -124,36 +131,43 @@ describe('PlaceCard', () => {
             render(<PlaceCard place={place} />)
 
             expect(screen.getByTestId('category-icon')).toHaveAttribute('data-name', 'cave')
-            expect(screen.getByTestId('category-icon')).toHaveAttribute('data-size', '16')
+            expect(screen.getByTestId('category-icon')).toHaveAttribute('data-size', '24')
             expect(screen.queryByText('Caves')).not.toBeInTheDocument()
         })
 
         it('renders the address links and stats in the fixed order', () => {
-            render(<PlaceCard place={place} />)
+            const { container } = render(<PlaceCard place={place} />)
 
             expect(screen.getByRole('link', { name: /Russia/ })).toHaveAttribute('href', '/places?country=ru')
 
-            const icons = screen.getAllByTestId(/^icon-/).map((icon) => icon.getAttribute('data-testid'))
-            expect(icons).toStrictEqual(['icon-StarEmpty', 'icon-Ruler', 'icon-Eye', 'icon-Camera'])
-            expect(screen.getByText('4.5')).toBeInTheDocument()
-            expect(screen.getByText(/1\.2/)).toBeInTheDocument()
+            const stats = Array.from(container.querySelectorAll('.tileStat')).map((stat) => stat.textContent)
+            expect(stats.map((text) => text?.replace(/\s/g, ' '))).toStrictEqual(['4.5', '1.2 km', '300', '4'])
+            expect(screen.getByTestId('icon-StarFilled')).toBeInTheDocument()
         })
 
         it('hides zero stats', () => {
-            render(<PlaceCard place={{ ...place, rating: 0, distance: 0, views: 0, photos: 0 }} />)
+            const { container } = render(
+                <PlaceCard place={{ ...place, rating: 0, distance: 0, views: 0, photos: 0 }} />
+            )
 
-            expect(screen.queryAllByTestId(/^icon-/)).toHaveLength(0)
+            expect(container.querySelectorAll('.tileStat')).toHaveLength(0)
         })
 
         it('still renders an article without cover, category or address', () => {
-            render(<PlaceCard place={{ id: 'p2', title: 'Bare', lat: 1, lon: 1 }} />)
+            const { container } = render(<PlaceCard place={{ id: 'p2', title: 'Bare', lat: 1, lon: 1 }} />)
 
             expect(screen.getByRole('article')).toBeInTheDocument()
-            expect(screen.queryByRole('img')).not.toBeInTheDocument()
+            expect(container.querySelector('img')).not.toBeInTheDocument()
             expect(screen.queryByTestId('category-icon')).not.toBeInTheDocument()
         })
 
-        it('renders actions over the cover only when given', () => {
+        it('puts the bookmark over the cover, with the state the list sent', () => {
+            render(<PlaceCard place={{ ...place, bookmarked: true }} />)
+
+            expect(screen.getByTestId('card-bookmark')).toHaveAttribute('aria-pressed', 'true')
+        })
+
+        it('replaces the bookmark with the owner actions when given', () => {
             const { rerender } = render(<PlaceCard place={place} />)
 
             expect(screen.queryByText('remove')).not.toBeInTheDocument()
@@ -166,6 +180,17 @@ describe('PlaceCard', () => {
             )
 
             expect(screen.getByRole('button', { name: 'remove' })).toBeInTheDocument()
+            expect(screen.queryByTestId('card-bookmark')).not.toBeInTheDocument()
+        })
+
+        it('marks a place the visitor has been to', () => {
+            const { rerender } = render(<PlaceCard place={place} />)
+
+            expect(screen.queryByText('Вы были здесь')).not.toBeInTheDocument()
+
+            rerender(<PlaceCard place={{ ...place, visited: true }} />)
+
+            expect(screen.getByText('Вы были здесь')).toBeInTheDocument()
         })
     })
 
