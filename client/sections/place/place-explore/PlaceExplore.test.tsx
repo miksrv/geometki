@@ -22,7 +22,14 @@ jest.mock('next-i18next/pages', () => ({
 }))
 
 jest.mock('@/components/ui', () => ({
-    Carousel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    ScrollRail: ({ children, 'aria-label': label }: { children: React.ReactNode; 'aria-label'?: string }) => (
+        <div
+            role={'group'}
+            aria-label={label}
+        >
+            {children}
+        </div>
+    ),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Tabs: ({ tabs, onChangeTab }: any) => (
         <nav>

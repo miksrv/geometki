@@ -5,7 +5,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
 import { PlaceCard, Section } from '@/components/shared'
-import { Carousel, Tabs } from '@/components/ui'
+import { ScrollRail, Tabs } from '@/components/ui'
 import { getCategoryLandingTitle } from '@/utils/categories'
 import { buildPlacesHref, getLandingFlags } from '@/utils/helpers'
 
@@ -94,8 +94,13 @@ export const PlaceExplore: React.FC<PlaceExploreProps> = ({
             : [])
     ]
 
-    const carousel = (places: ApiModel.PlaceListItem[]) => (
-        <Carousel options={{ dragFree: true, loop: false }}>
+    const carousel = (places: ApiModel.PlaceListItem[], label?: string) => (
+        <ScrollRail
+            variant={'cards'}
+            aria-label={label}
+            prevLabel={t('scroll-back', 'Назад')}
+            nextLabel={t('scroll-forward', 'Вперёд')}
+        >
             {places.map((place) => (
                 <PlaceCard
                     key={place.id}
@@ -104,7 +109,7 @@ export const PlaceExplore: React.FC<PlaceExploreProps> = ({
                     sizes={'(max-width: 768px) 80vw, 300px'}
                 />
             ))}
-        </Carousel>
+        </ScrollRail>
     )
 
     return (
@@ -138,10 +143,19 @@ export const PlaceExplore: React.FC<PlaceExploreProps> = ({
                 />
             )}
 
-            {hasNearby && <div hidden={activeTab !== 'nearby'}>{carousel(nearPlaces!)}</div>}
+            {hasNearby && (
+                <div hidden={activeTab !== 'nearby'}>
+                    {carousel(nearPlaces!, tabs.find(({ key }) => key === 'nearby')?.label)}
+                </div>
+            )}
 
             {hasRelated && (
-                <div hidden={activeTab !== 'related'}>{carousel(relatedPlaces!.slice(0, RELATED_PLACES_COUNT))}</div>
+                <div hidden={activeTab !== 'related'}>
+                    {carousel(
+                        relatedPlaces!.slice(0, RELATED_PLACES_COUNT),
+                        tabs.find(({ key }) => key === 'related')?.label
+                    )}
+                </div>
             )}
         </Section>
     )

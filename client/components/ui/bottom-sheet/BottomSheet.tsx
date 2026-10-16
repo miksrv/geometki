@@ -10,6 +10,13 @@ export interface BottomSheetProps {
     title?: string
     className?: string
     children?: React.ReactNode
+    /** Pinned under the scrolling content: the buttons of a form sheet ("Сбросить", "Показать") */
+    footer?: React.ReactNode
+    /**
+     * A menu (default) closes on any chosen row; a form sheet (filters) keeps open while its
+     * controls are used and closes from its own footer
+     */
+    closeOnSelect?: boolean
     onClose: () => void
 }
 
@@ -19,10 +26,19 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabi
  * A menu that slides up from the bottom edge of a phone screen, over a dimmed page: the
  * actions of a bottom bar, where a dropdown would open off the screen. Closes on the
  * backdrop, Escape and any link or button inside; focus moves in and comes back to the
- * trigger. Rows of `ul > li > a | button` inside get 48px touch targets. A kit primitive
+ * trigger. Rows of `ul > li > a | button` inside get 48px touch targets. A form sheet
+ * (`closeOnSelect={false}` + `footer`) stays open until its own buttons close it. A kit primitive
  * candidate (`simple-react-ui-kit` has `Popout` only, which always opens downwards).
  */
-export const BottomSheet: React.FC<BottomSheetProps> = ({ open, title, className, children, onClose }) => {
+export const BottomSheet: React.FC<BottomSheetProps> = ({
+    open,
+    title,
+    className,
+    children,
+    footer,
+    closeOnSelect = true,
+    onClose
+}) => {
     const titleId = useId()
     const sheetRef = useRef<HTMLDivElement>(null)
     // The portal target exists on the client only: the server renders nothing
@@ -59,7 +75,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ open, title, className
 
     // A chosen row is the end of the menu: links navigate, buttons act, the sheet goes away
     const handleClick = (event: React.MouseEvent) => {
-        if ((event.target as HTMLElement).closest('a, button')) {
+        if (closeOnSelect && (event.target as HTMLElement).closest('a, button')) {
             onClose()
         }
     }
@@ -95,7 +111,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ open, title, className
                         {title}
                     </div>
                 )}
-                {children}
+                <div className={styles.content}>{children}</div>
+                {footer && <div className={styles.footer}>{footer}</div>}
             </div>
         </div>,
         document.body

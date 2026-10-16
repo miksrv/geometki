@@ -110,4 +110,25 @@ describe('BottomSheet', () => {
 
         expect(document.body.style.overflow).toBe('')
     })
+
+    it('keeps a form sheet open while its controls are used and shows its footer', () => {
+        const onClose = jest.fn()
+
+        render(
+            <BottomSheet
+                open={true}
+                closeOnSelect={false}
+                footer={<button type={'button'}>Показать</button>}
+                onClose={onClose}
+            >
+                <button type={'button'}>Пещеры</button>
+            </BottomSheet>
+        )
+
+        fireEvent.click(screen.getByText('Пещеры'))
+        fireEvent.click(screen.getByText('Показать'))
+
+        expect(onClose).not.toHaveBeenCalled()
+        expect(screen.getByText('Показать')).toBeInTheDocument()
+    })
 })
