@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Button } from 'simple-react-ui-kit'
+import { Button, cn } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
 import { useTranslation } from 'next-i18next/pages'
@@ -77,10 +77,10 @@ export const Search: React.FC = () => {
             </div>
 
             <Button
-                mode={'outline'}
+                mode={'link'}
                 icon={'Search'}
                 size={'medium'}
-                className={styles.searchButton}
+                className={cn(styles.searchButton, styles.iconButton)}
                 aria-label={placeholder}
                 tooltip={placeholder}
                 onClick={() => setScreenOpen(true)}

@@ -111,21 +111,31 @@ $inlineSearchMinWidth: 1024px
         @media only screen and (max-width: variables.$mobileMaxWidth)
             display: none
 
+    // The icon buttons of the bar (search on narrow screens, the bell): the same quiet family
+    // as the navigation items — no border, `--surface-2` on hover, the active look while the
+    // popup is open. The kit `link` mode gives the transparent background; the element in the
+    // selector outranks the kit's own colour whatever order the CSS modules load in
+    button.iconButton
+        color: var(--text-color-primary)
+
+        &:hover,
+        &:focus-visible
+            color: var(--text-color-primary)
+            background-color: var(--surface-2)
+
+    [aria-expanded='true'] button.iconButton
+        color: var(--color-main)
+        background-color: var(--color-main-background)
+
 .notifyTrigger
     position: relative
     display: inline-flex
 
-// A pill over the button's corner: round for one digit, wider up to "99+"
+// The `Counter` pill over the button's corner
 .notifyCounter
     position: absolute
     top: -5px
     right: -5px
-    min-width: 18px
-    height: 18px
-    padding: 0 5px !important
-    border-radius: 9px !important
-    font-size: 10px !important
-    line-height: 1
     // Clicks and hover go to the button underneath
     pointer-events: none
 

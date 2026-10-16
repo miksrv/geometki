@@ -9,6 +9,7 @@ jest.mock('next-i18next/pages', () => ({
 }))
 
 jest.mock('simple-react-ui-kit', () => ({
+    cn: (...classes: unknown[]) => classes.filter(Boolean).join(' '),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Button: ({ onClick, className, ...rest }: any) => (
         <button

@@ -630,6 +630,13 @@ actions, active days, the longest and the current run of days in a row (22px num
   `variant="toast"` in the snackbar (at most four on screen, the rest queue; the countdown
   pauses on hover, focus and a hidden tab; errors are `role="alert"`, the snackbar is a polite
   live region) and `variant="list"` for the rows under the bell.
+- **App bar icon buttons** (the search on narrow screens, the bell): the quiet family of the
+  navigation items, never outlined — kit `Button mode="link"` recoloured to `--text-color-primary`
+  (`.iconButton` in the app bar styles), `--surface-2` on hover, the active look (`--color-main` on
+  `--color-main-background`) while its popup is open. A count over an icon button (the bell, the
+  phone `FiltersButton`, the map category control and the candidates) is one `Counter`: an 18px
+  pill in the corner, `--font-size-micro`, red for news (unread), `color="main"` for a setting
+  (how many filters are on); the parent only places it.
 - **Edit mode.** "Редактировать" in the page header or hero; in edit mode it becomes
   "Отмена" + "Готово" — the one place where text edits are confirmed or dropped (inline
   editors have no buttons of their own; list edits save as they happen). In edit mode lists show

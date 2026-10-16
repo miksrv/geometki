@@ -99,9 +99,10 @@ export const NotificationList: React.FC = () => {
                     <Button
                         aria-label={t('notifications', { defaultValue: 'Уведомления' })}
                         tooltip={t('notifications', { defaultValue: 'Уведомления' })}
-                        mode={'outline'}
+                        mode={'link'}
                         icon={'Bell'}
                         size={'medium'}
+                        className={styles.iconButton}
                     />
                     {unreadCount > 0 && (
                         <Counter

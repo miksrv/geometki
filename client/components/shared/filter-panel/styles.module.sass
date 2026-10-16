@@ -85,21 +85,11 @@ $appBarOffset: calc(50px + env(safe-area-inset-top, 0px))
         height: 20px
         fill: var(--icon-color-primary)
 
+// The `Counter` pill in the button's corner
 .filtersBadge
     position: absolute
     top: 2px
     right: 2px
-    display: grid
-    place-items: center
-    min-width: 18px
-    height: 18px
-    padding: 0 5px
-    box-sizing: border-box
-    border-radius: 9px
-    background: var(--color-main)
-    color: #fff
-    font-size: var(--font-size-micro)
-    font-weight: var(--font-weight-semibold)
 
 // --- Applied filters (desktop) ---
 
@@ -131,8 +121,9 @@ div.sheet
     max-height: 88vh
 
 .sheetHeading
-    margin: var(--space-4) var(--space-2) var(--space-2)
     +type.titleBlock
+    // After the mixin: it resets the margin
+    margin: var(--space-4) var(--space-2) var(--space-2)
     font-size: var(--font-size)
 
     &:first-child

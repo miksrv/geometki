@@ -3,7 +3,7 @@ import { cn, Icon, IconTypes, Popout, PopoutHandleProps } from 'simple-react-ui-
 
 import { useTranslation } from 'next-i18next/pages'
 
-import { FieldTrigger } from '@/components/ui'
+import { Counter, FieldTrigger } from '@/components/ui'
 
 import styles from './styles.module.sass'
 
@@ -111,14 +111,12 @@ export const FiltersButton: React.FC<FiltersButtonProps> = ({ count, onClick }) 
             onClick={onClick}
         >
             <Icon name={'Tune'} />
-            {!!count && (
-                <span
-                    className={styles.filtersBadge}
-                    aria-hidden={true}
-                >
-                    {count}
-                </span>
-            )}
+            <Counter
+                className={styles.filtersBadge}
+                value={count}
+                color={'main'}
+                aria-hidden={true}
+            />
         </button>
     )
 }
