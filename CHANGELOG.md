@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.17.1
+
+### Patch Changes
+
+- Search: the search icon in the app bar on phones opens the search again
+- Home: a smaller greeting title in the signed-in user's card
+
 ## 1.17.0
 
 ### Minor Changes

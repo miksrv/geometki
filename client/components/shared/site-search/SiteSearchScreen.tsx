@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { useRouter } from 'next/router'
@@ -49,11 +49,20 @@ export const SiteSearchScreen: React.FC<SiteSearchScreenProps> = ({ open, placeh
         }
     }, [open])
 
+    // The path the screen was opened on: the screen closes on a navigation away from it, not on
+    // the first render (the effect also runs on mount, when the screen is already open)
+    const openedOnPath = useRef<string>(router.asPath)
+
     useEffect(() => {
-        if (open) {
+        if (!open) {
+            openedOnPath.current = router.asPath
+            return
+        }
+
+        if (router.asPath !== openedOnPath.current) {
             onClose()
         }
-    }, [router.asPath])
+    }, [open, router.asPath])
 
     useEffect(() => {
         if (!open) {
