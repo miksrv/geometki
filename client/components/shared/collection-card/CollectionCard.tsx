@@ -80,18 +80,18 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
                 </Link>
             </Heading>
 
-            {collection.region && (
-                <div className={mediaTileStyles.subline}>
+            {/* One line: the region gives way to the places count and views */}
+            <div className={mediaTileStyles.meta}>
+                {collection.region && (
                     <Link
                         href={`/collections?region=${collection.region.id}`}
                         title={`${t('collections_all-in-region', { defaultValue: 'Все коллекции в регионе' })} ${collection.region.name}`}
+                        className={mediaTileStyles.region}
                     >
                         {collection.region.name}
                     </Link>
-                </div>
-            )}
+                )}
 
-            <div className={mediaTileStyles.stats}>
                 <span className={mediaTileStyles.stat}>
                     <Icon name={'Point'} />
                     {t('collections_places-count', {

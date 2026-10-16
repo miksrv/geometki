@@ -115,7 +115,7 @@ describe('MediaTile', () => {
             />
         )
 
-        expect(container.querySelectorAll('article > div')).toHaveLength(1)
+        expect(container.querySelectorAll('article > div > div')).toHaveLength(0)
 
         rerender(
             <MediaTile
@@ -126,7 +126,7 @@ describe('MediaTile', () => {
         )
 
         expect(screen.getByText('author')).toBeInTheDocument()
-        expect(container.querySelectorAll('article > div')).toHaveLength(2)
+        expect(container.querySelectorAll('article > div > div')).toHaveLength(1)
     })
 
     it('MediaTileGrid wraps tiles in a section', () => {

@@ -51,7 +51,7 @@ export const HomeCollections: React.FC<HomeCollectionsProps> = ({ collections })
                 {collections.length < HOME_COLLECTIONS_COUNT && (
                     <Link
                         href={'/collections'}
-                        className={cn(mediaTileStyles.tile, styles.create)}
+                        className={cn(mediaTileStyles.media, styles.create)}
                     >
                         <span className={styles.icon}>
                             <Icon name={'PlusCircle'} />

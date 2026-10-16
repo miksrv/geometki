@@ -250,12 +250,16 @@ full chain from the home page.
 
 ### `MediaTile` — photo tile primitive (`components/shared/media-tile`)
 
-Cover filling the card, an optional gradient band at the top (collections put the author
-there) and one at the bottom (title, subline, stats). 260px high, `--border-radius`, `--container-shadow`, hover zoom.
-Every "entity on a cover" tile is built on it (`CollectionCard`); the place tile has its text under the cover instead. `coverSrc` draws one cover, `covers` a
-mosaic of up to four (see `CollectionCard`). Overlay content uses `mediaTileStyles`
-(`author`, `title`, `subline`, `stats`, `stat`) so the typography and colours are
-the same for every entity. `MediaTileGrid` is the 3-column grid for both kinds of tiles.
+A 260px cover (`--radius-xl`, no shadow, hover zoom) with an optional gradient band over its
+top (collections put the author there) and the text under it on the page background: the
+title (`titleBlock`, one line with an ellipsis) and one `secondary` line of facts, where the
+first item gives way (an ellipsis) to the short stats — the same type and colours as the
+`PlaceCard` tile, so both kinds of tiles read as one
+grid. The cover is taller than a place's 2:1 on purpose: a mosaic needs the room.
+`coverSrc` draws one cover, `covers` a mosaic of up to four (see `CollectionCard`). Content
+uses `mediaTileStyles` (`author` — white, for the top band; `title`, `meta`, `region`, `stat`
+— under the cover; `media` — the cover box, e.g. the home page's dashed "create" slot).
+`MediaTileGrid` is the 3-column grid for both kinds of tiles.
 
 ### `PlaceCard` (`components/shared/place-card`)
 
@@ -376,8 +380,8 @@ One cover fills the tile, two make two columns, three put a tall one on the left
 stacked on the right, four make a 2×2 grid. The mosaic is what tells a collection tile from
 a place tile at a glance; it is derived on the server and follows the membership and order
 automatically, so there is no cover setting — the author changes it by reordering the
-places. On top: author + update time; below: title, region link and a stats row (places,
-views). `showAuthor={false}` drops the author where it is already shown (a feed story);
+places. Over the top of the cover: author + update time; under it: the title and one line —
+the region link, places, views. `showAuthor={false}` drops the author where it is already shown (a feed story);
 `headingLevel={3}` inside another titled block, as for `PlaceCard`.
 
 ### Activity feed (`components/shared/feed`)

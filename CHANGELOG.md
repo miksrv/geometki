@@ -14,6 +14,7 @@
 - Search: the same filters as on the places page — results as tabs with their counts, the categories found as chips with numbers, several at once, the sorting as presets and the applied filters as chips; on phones a filters sheet; the filters stay in the link
 - Search: sorting now orders all found places, not just the loaded ones, and "Near me" puts the nearest first
 - Place cards: the photo on top with the title, address and stats under it, a bookmark button right on the card
+- Collection cards: the same look as place cards — rounded photo mosaic, the title under it and one line with the region, number of places and views
 - Home and place pages: rows of places scroll with a swipe or a trackpad and stop on a card; the arrows are the same as for the categories
 - Design: tabs are as tall as buttons and fields
 - Place page: redesigned — reads like an article: a clean cover, a larger title with one line of facts (category, rating, reviews, distance) and larger text with a lead paragraph

@@ -35,7 +35,7 @@ jest.mock('@/components/shared', () => ({
 
 jest.mock('@/components/shared/media-tile', () => ({
     MediaTileGrid: ({ children }: any) => <div>{children}</div>,
-    mediaTileStyles: { tile: 'tile' }
+    mediaTileStyles: { media: 'media' }
 }))
 
 const collection = (id: string): ApiModel.Collection => ({ id, placesCount: 4, title: `Подборка ${id}` }) as any
