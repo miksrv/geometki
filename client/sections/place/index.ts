@@ -11,4 +11,11 @@ export { PlaceLocation } from './place-location'
 export { PlaceRatePrompt } from './place-rate-prompt'
 export { PlaceReviews } from './place-reviews'
 export { PlaceVisited } from './place-visited'
-export { PlaceFilterPanel, type PlacesFilterType } from './places-filter-panel'
+export {
+    buildFilterHref,
+    PlaceFilterPanel,
+    type PlacesFilterPatch,
+    type PlacesFilterState,
+    type PlacesFilterType
+} from './places-filter-panel'
+export { PlacesListing } from './places-listing'

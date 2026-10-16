@@ -41,6 +41,27 @@
     overflow: hidden
     text-overflow: ellipsis
 
+// The title with a count on its baseline: the count wraps under a long title
+.titleText
+    flex: 1
+    min-width: 0
+    display: flex
+    flex-wrap: wrap
+    align-items: baseline
+    gap: 2px 14px
+
+    .title
+        flex: 0 1 auto
+
+.count
+    flex-shrink: 0
+    font-size: var(--font-size-large)
+    color: var(--text-color-secondary)
+    white-space: nowrap
+
+    @media (max-width: variables.$mobileMaxWidth)
+        font-size: var(--font-size)
+
 .description
     margin: 0
     font-size: variables.$fontSizeHeadline

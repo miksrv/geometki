@@ -30,6 +30,8 @@ export interface ListRequest {
     excludePlaces?: string[]
     /** Only places with no text in this locale yet */
     missingLocale?: ApiType.Locale
+    /** Signed-in visitors only: drop the places they marked "I was here" */
+    notVisited?: 1
 }
 
 export interface ListResponse {

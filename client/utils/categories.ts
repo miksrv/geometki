@@ -128,3 +128,44 @@ const CATEGORY_IMAGES: Record<ApiModel.Categories, StaticImageData> = {
 
 export const categoryImage = (category?: ApiModel.Categories): StaticImageData =>
     (category && CATEGORY_IMAGES[category]) || landscape
+
+export type CategoryGroupName = 'nature' | 'industrial' | 'history' | 'art' | 'strange' | 'leisure'
+
+/**
+ * The categories in their themed groups, in the enum's order: the category rail and the
+ * filters sheet of the places listing. Group names are `categoryGroups.<name>` in
+ * `common.json`.
+ */
+export const CATEGORY_GROUPS: ReadonlyArray<{ name: CategoryGroupName; categories: ApiModel.Categories[] }> = [
+    {
+        categories: [
+            Categories.mountain,
+            Categories.cave,
+            Categories.waterfall,
+            Categories.spring,
+            Categories.water,
+            Categories.landscape,
+            Categories.viewpoint
+        ],
+        name: 'nature'
+    },
+    { categories: [Categories.abandoned, Categories.industrial, Categories.military], name: 'industrial' },
+    {
+        categories: [
+            Categories.castle,
+            Categories.manor,
+            Categories.architecture,
+            Categories.religious,
+            Categories.archeology,
+            Categories.engineering,
+            Categories.transport
+        ],
+        name: 'history'
+    },
+    { categories: [Categories.memorial, Categories.artwork], name: 'art' },
+    { categories: [Categories.disaster, Categories.mystic], name: 'strange' },
+    { categories: [Categories.museum, Categories.camping], name: 'leisure' }
+]
+
+export const getCategoryGroupTitle = (t: CategoryTranslate, name: CategoryGroupName): string =>
+    translate(t, `categoryGroups.${name}`, name)

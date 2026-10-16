@@ -11,6 +11,8 @@ interface PageHeaderProps {
     title?: string
     /** The meta line under the title, secondary text: a count, a byline with links and an avatar */
     description?: React.ReactNode
+    /** A count on the title's baseline, secondary text: "48 мест" on a listing */
+    count?: string
     /** The lede: a few sentences introducing the page, clamped behind "Подробнее" (see DESIGN.md) */
     lede?: string
     /** Path to the parent page — only nested pages have one (see DESIGN.md) */
@@ -31,6 +33,7 @@ interface PageHeaderProps {
  */
 export const PageHeader: React.FC<PageHeaderProps> = ({
     title,
+    count,
     description,
     lede,
     breadcrumbs,
@@ -49,7 +52,15 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                 <Breadcrumbs links={breadcrumbs} />
                 {(title || actions) && (
                     <div className={styles.titleRow}>
-                        {title && <h1 className={styles.title}>{title}</h1>}
+                        {title &&
+                            (count ? (
+                                <div className={styles.titleText}>
+                                    <h1 className={styles.title}>{title}</h1>
+                                    <span className={styles.count}>{count}</span>
+                                </div>
+                            ) : (
+                                <h1 className={styles.title}>{title}</h1>
+                            ))}
                         {actions && <div className={styles.actions}>{actions}</div>}
                     </div>
                 )}
