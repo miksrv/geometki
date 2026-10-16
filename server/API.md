@@ -1322,11 +1322,12 @@ Get the aggregate rating for a place. If the current session has already voted, 
 {
   "rating": 4.2,
   "count": 15,
+  "distribution": { "1": 1, "2": 0, "3": 2, "4": 4, "5": 8 },
   "vote": 5
 }
 ```
 
-Note: `vote` is only present if the current session or user has previously voted on this place.
+Note: `vote` is only present if the current session or user has previously voted on this place. `distribution` is the number of votes for each score, 1 to 5 (all zeros without votes).
 
 ---
 

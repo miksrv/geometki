@@ -42,7 +42,8 @@ class Rating extends ResourceController
     {
         $ratingModel = new RatingModel();
         $ratingData  = $ratingModel->select('value, session_id, user_id')->where(['place_id' => $id])->findAll();
-        $response    = ['rating' => 0, 'count'  => 0];
+        // How many votes each score got, 1 to 5: the bars of the place page summary
+        $response    = ['rating' => 0, 'count'  => 0, 'distribution' => [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0]];
 
         if (!$ratingData) {
             return $this->respond($response);
@@ -53,6 +54,12 @@ class Rating extends ResourceController
         foreach ($ratingData as $item) {
             if ($item->session_id === $this->session->id || $item->user_id === $this->session->user?->id) {
                 $response['vote'] = $item->value;
+            }
+
+            $value = (int) $item->value;
+
+            if (isset($response['distribution'][$value])) {
+                $response['distribution'][$value]++;
             }
 
             $response['rating'] += $item->value;
