@@ -270,7 +270,8 @@ The one card for a place.
 The heading level is the `headingLevel` prop (2 by default, 3 inside another titled block).
 
 Invariant order of parts in both variants: cover → category icon → title → address →
-stats row. A row then shows at most two lines of the description (`content`, 13px, markdown
+stats row. The title is one line cut with an ellipsis in both (the full title is the link's
+`title`); so is a row's address + stats line, the address giving way to the stats. A row then shows at most two lines of the description (`content`, 13px, markdown
 stripped) when the list sends it — search and the feed do, tile lists do not. The category is never a text label on a card: a tile shows its icon (24px, alone with a soft
 shadow) in the top-left corner over the cover, a row puts it (16px) before the title; the name is the
 icon's tooltip and accessible name (see `CategoryIcon`). Stats order is fixed: rating, distance, views, photos.
