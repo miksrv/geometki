@@ -80,8 +80,9 @@ re-implement them.
 
 - **Width.** Content is capped by `--width-max` (1260px); the app bar is the only global
   chrome, there is no permanent sidebar.
-- **Lists** are a flow of tiles on the page background, three columns on desktop and one
-  on phones (`MediaTileGrid`). Lists never sit inside a `Container`.
+- **Lists** are a grid of tiles on the page background, three columns on desktop and one
+  on phones (`MediaTileGrid`, `--space-6` between rows and `--space-5` between columns: place
+  tiles carry their text under the cover). Lists never sit inside a `Container`.
 - **Place page** (`pages/places/[id]`): reads like an article, acts like a tool. Every block
   answers one question and no fact is repeated between them.
     - `PlaceHero` — "what is it and where": the `Breadcrumbs` (desktop) on the page background,
@@ -131,7 +132,7 @@ re-implement them.
       author — then the reviews and the field with a hint on what to write; a guest gets the
       same field, a tap opens the sign-in dialog.
     - "Что ещё посмотреть" — `PlaceExplore`: button `Tabs` "Рядом" / "{category} · {region}"
-      over a `Carousel` of `PlaceCard` tiles; the link action follows the tab ("Все места
+      over a `ScrollRail variant="cards"` of `PlaceCard` tiles; the link action follows the tab ("Все места
       рядом" / "Все" to the location × category landing). Both lists stay in the HTML, the
       inactive one `hidden` — they are internal links for crawlers. A region tab with fewer
       than three places is dropped.
@@ -151,10 +152,11 @@ re-implement them.
 - **Places listing / landing pages** (`pages/places/index.tsx` for `/places`, `pages/places/landing/[...slug].tsx`
   for the `NEXT_PUBLIC_LANDING_*` pages): one skeleton, all of it page
   chrome on the page background, no `Container` anywhere above the perelinking blocks:
-  `PageHeader` with the places count as the meta line and (page 1 only) the lede — the
+  `PageHeader` with the places count on the h1's baseline (`count`) and (page 1 only) the lede — the
   category's text, or the location summary — and, on location/pair pages, `LandingMapPreview`
-  in the `aside` slot → the listing toolbar (`PlaceFilterPanel`, section 6) → `MediaTileGrid`
-  of `PlaceCard` tiles → `PaginationBar` → (page 1 only) the `LocationLinkList` perelinking
+  in the `aside` slot → the sticky filter panel (`PlaceFilterPanel`, section 6) → `PlacesListing`:
+  the `MediaTileGrid` of `PlaceCard` tiles with the `PaginationBar` (desktop) or "Показать ещё"
+  (phones) → (page 1 only) the `LocationLinkList` perelinking
   blocks, which are `Container`s because they are titled content. `/places` and category
   pages have no map: places there are nationwide. Filter changes build the canonical path
   (`utils/placesLanding.ts` `buildPlacesHref`) instead of `/places?…` once the relevant flag
@@ -168,7 +170,7 @@ re-implement them.
   as the app bar), the three fullest categories as chips plus "Рядом со мной", the live numbers
   of `/stats`) → `HomeCategories` (tiles of every category with places and their counts, twelve
   shown, six on phones, the rest hidden but still in the markup for the links) → `HomePlaces`
-  ("Куда поехать": button `Tabs` popular this week / new / nearby over a `Carousel` of
+  ("Куда поехать": button `Tabs` popular this week / new / nearby over a `ScrollRail variant="cards"` of
   `PlaceCard` tiles; nearby asks for the location on its button only) → `HomeHowItWorks` (three
   step cards, each with a picture made of real pieces of the site — the fullest category icons,
   the "Я здесь был(а)" button, growing `LevelBadge`s — and the experience the step brings as the
@@ -207,12 +209,12 @@ re-implement them.
 collection pages. It is a stack of four text levels, each optional except the h1, read top
 to bottom in decreasing weight:
 
-| Level       | Prop          | Looks                                                                                                                                                      | Holds                                                                                                                                                                                                                      |
-| ----------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| breadcrumbs | `breadcrumbs` | 12px secondary                                                                                                                                             | the path to the parent (table below)                                                                                                                                                                                       |
-| title       | `title`       | h1, `titlePage` (30px, 24 on phones), weight 600, tight tracking, balanced wrapping                                                                        | what the page is                                                                                                                                                                                                           |
-| meta line   | `description` | 13px secondary, one line                                                                                                                                   | facts about the entity: the collection byline (author avatar, places count, update time). Listings do not use it: their count is in the `PaginationBar` range, a line under the title would push the list down for nothing |
-| lede        | `lede`        | 14px primary text, 1.55 line height, the full width of the text column; at most 3 lines (2 on phones), the last ending in "… Подробнее" (`ExpandableText`) | a few sentences introducing the page: the category text, the location summary                                                                                                                                              |
+| Level       | Prop          | Looks                                                                                                                                                      | Holds                                                                                                                                                                                           |
+| ----------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| breadcrumbs | `breadcrumbs` | 12px secondary                                                                                                                                             | the path to the parent (table below)                                                                                                                                                            |
+| title       | `title`       | h1, `titlePage` (30px, 24 on phones), weight 600, tight tracking, balanced wrapping                                                                        | what the page is                                                                                                                                                                                |
+| meta line   | `description` | 13px secondary, one line                                                                                                                                   | facts about the entity: the collection byline (author avatar, places count, update time). Listings do not use it: their count sits on the title's baseline (`count`, 16px secondary: "48 мест") |
+| lede        | `lede`        | 14px primary text, 1.55 line height, the full width of the text column; at most 3 lines (2 on phones), the last ending in "… Подробнее" (`ExpandableText`) | a few sentences introducing the page: the category text, the location summary                                                                                                                   |
 
 Then `leading` for an avatar before the text, `actions` — `small` buttons on the h1's own
 line, right-aligned, folded into the line box so the title line is no taller than without
@@ -249,33 +251,45 @@ full chain from the home page.
 ### `MediaTile` — photo tile primitive (`components/shared/media-tile`)
 
 Cover filling the card, an optional gradient band at the top (collections put the author
-there, place tiles the category icon) and one at the bottom (title, subline, stats). 260px high, `--border-radius`, `--container-shadow`, hover zoom.
-Every "entity on a cover" tile is built on it. `coverSrc` draws one cover, `covers` a
+there) and one at the bottom (title, subline, stats). 260px high, `--border-radius`, `--container-shadow`, hover zoom.
+Every "entity on a cover" tile is built on it (`CollectionCard`); the place tile has its text under the cover instead. `coverSrc` draws one cover, `covers` a
 mosaic of up to four (see `CollectionCard`). Overlay content uses `mediaTileStyles`
 (`author`, `title`, `subline`, `stats`, `stat`) so the typography and colours are
-the same for every entity. `MediaTileGrid` is the 3-column flow.
+the same for every entity. `MediaTileGrid` is the 3-column grid for both kinds of tiles.
 
 ### `PlaceCard` (`components/shared/place-card`)
 
 The one card for a place.
 
-| Variant                 | Use                                                                                        | Thumb                | Heading                        |
-| ----------------------- | ------------------------------------------------------------------------------------------ | -------------------- | ------------------------------ |
-| `tile` (default)        | `/places`, collection page, user places / bookmarks / visited, home and "nearby" carousels | cover fills the tile | `h2`                           |
-| `row` + `size="medium"` | search results                                                                             | 120×80               | `h3` (inside a titled section) |
-| `row` + `size="small"`  | dense pickers and popups (map popup, planned)                                              | 96×72                | `h3`                           |
+| Variant                 | Use                                                                                         | Thumb                    | Heading                        |
+| ----------------------- | ------------------------------------------------------------------------------------------- | ------------------------ | ------------------------------ |
+| `tile` (default)        | `/places`, collection page, user places / bookmarks / visited, home and "nearby" card rails | 2:1 cover, text under it | `h2`                           |
+| `row` + `size="medium"` | search results                                                                              | 120×80                   | `h3` (inside a titled section) |
+| `row` + `size="small"`  | dense pickers and popups (map popup, planned)                                               | 96×72                    | `h3`                           |
 
 The heading level is the `headingLevel` prop (2 by default, 3 inside another titled block).
 
 Invariant order of parts in both variants: cover → category icon → title → address →
 stats row. A row then shows at most two lines of the description (`content`, 13px, markdown
-stripped) when the list sends it — search and the feed do, tile lists do not. The category is never a text label on a card: a tile shows its icon (16px) in
-the top-left corner over the cover, a row puts it (16px) before the title; the name is the
-icon's tooltip and accessible name (see `CategoryIcon`). Stats order is fixed: rating, distance, views, photos. A card is about the place:
+stripped) when the list sends it — search and the feed do, tile lists do not. The category is never a text label on a card: a tile shows its icon (24px, alone with a soft
+shadow) in the top-left corner over the cover, a row puts it (16px) before the title; the name is the
+icon's tooltip and accessible name (see `CategoryIcon`). Stats order is fixed: rating, distance, views, photos.
+
+The tile is not a `MediaTile`: a 2:1 cover (`--radius-xl`, hover zoom; the previews are
+680×300, cut from 3:1 covers, so a taller frame would crop and upscale them) and, under it on
+the page background, the title (`titleBlock`, one line with an ellipsis, so the rows of a grid
+line up), the address (`secondary`, one line of links) and the stats (the rating
+as a gold `StarFilled` with a bold number, the distance as `--color-main` text without an icon).
+Over the cover: the one-tap bookmark in the top-right corner (`PlaceCardBookmark`, a 32px dark
+translucent circle, `--color-main` when on; a guest gets the sign-in dialog) and, for the
+visitor's visited places, a green "Вы были здесь" pill bottom-left. The bookmark and the pill
+read `bookmarked` / `visited` of `PlaceListItem`, which `GET /places` sends for a signed-in
+visitor only; where a list does not send them a signed-in visitor sees no bookmark, never a
+request per card. A card is about the place:
 it never shows who added it or when, and list responses (`ApiModel.PlaceListItem`) do not
 even carry `author`. Props: `distanceKm` / `distanceLabel` override the API distance;
-`actions` puts controls on the right of a row or over the top-right corner of a tile (edit
-mode on the collection page); the row variant also has `leading` and `footer` slots for a
+`actions` puts controls on the right of a row or over the top-right corner of a tile instead
+of the bookmark (edit mode on the collection page); the row variant also has `leading` and `footer` slots for a
 marker and extra text. `PlaceCardLoader` is the matching skeleton.
 
 Known deviations / follow-ups:
@@ -321,9 +335,15 @@ photos, the admin mailing table); there is no other pagination row.
 ### `ListingToolbar` (`components/shared/listing-toolbar`)
 
 The filter row of a list page (section 6, "Listing toolbar"): `ListingToolbar` is the row,
-`ListingToolbarGroup` keeps related controls together — `PlaceFilterPanel` (location +
-category, then sort + order) and `UsersFilterPanel` (search, then sort + order) are built
-from it and own no layout of their own.
+`ListingToolbarGroup` keeps related controls together — `UsersFilterPanel` (search, then
+sort + order) and the admin `SendingMailFilterPanel` are built from it and own no layout of
+their own. The places listing has its own panel (`PlaceFilterPanel`, section 6).
+
+### `PlacesListing` (`sections/place/places-listing`)
+
+The grid of `/places` and the landing pages with its pagination: the `PaginationBar` on
+desktop; on phones "Показать ещё N" appends the next page under the same URL with "Страница
+1 из N" under it, while the page links stay in the markup (hidden) for crawlers.
 
 ### `LocationLinkList` (`components/shared/location-link-list`)
 
@@ -466,7 +486,21 @@ actions, active days, the longest and the current run of days in a row (22px num
   `Popout` always opens downwards): the menus of a bar at the bottom of a phone screen slide
   up over a dimmed page — a grab handle, an optional 12px uppercase title, the same
   `contextListMenu` rows as the desktop popouts with 48px touch targets. Closes on the
-  backdrop, Escape and any chosen row; focus goes in and back to the trigger.
+  backdrop, Escape and any chosen row; focus goes in and back to the trigger. A form sheet
+  (the places filters) passes `closeOnSelect={false}` and a `footer` pinned under the
+  scrolling content.
+- **Filter primitives** (`components/ui`, kit candidates, made in the app for the places
+  filters): `Chip` — a 36px pill (28px `small`) with an optional icon, a toggle (`selected`,
+  `--color-main` fill, `aria-pressed`) or a removal (`removable`, tinted with a ✕), a link with
+  `href`; `ScrollRail` — the one horizontal scroller of the site (native scroll, no carousel
+  library): round white arrows with a shadow while there is more to a side, hidden on touch
+  screens; `chips` (items of their own width, faded edges, `ScrollRailSeparator` between
+  groups) and `cards` (three equal place tiles, one and a peek on phones, scroll snap, bigger
+  arrows at the middle of the covers, an arrow turns a whole row); `FieldTrigger` — the face of a field-like
+  `Popout` trigger (icon, quiet name, value, chevron; outlined in `--color-main` when set);
+  `OptionList` — rows to pick one value (32px icon tile, label and caption, a check on the chosen
+  one, overline group labels); `Switch` — an on/off button (`role="switch"`), `field` (40px
+  outlined, next to fields) or `row` (label and caption with the track on the right).
 - **Pickers** ("В коллекцию", "Добавить места"): a search input only when the list is
   long, rows of 40px thumbnail + title + caption + control, a single collapsed "create"
   affordance at the bottom. "В коллекцию" is a domain component
@@ -499,13 +533,38 @@ actions, active days, the longest and the current run of days in a row (22px num
   Under the dialogs, so a delete confirmation shows over it.
 - **Tabs** (`components/ui/tabs`, the user profile: activity, achievements, places,
   bookmarks, visited, collections, photos; the filters of `/activity`): a bar on a card (`--container-shadow`,
-  4px padding) of items styled like the app bar navigation — 36px high (32px on phones),
+  4px padding) of items styled like the app bar navigation — 28px items, so the bar is 36px like a medium control,
   secondary text, `--surface-2` on hover, `--color-main` on `--color-main-background` for the
   active one. Tabs that are pages are links (`href`, `aria-current="page"`), never
   `router.push`. On phones the bar scrolls sideways without a scrollbar, the active tab is
   scrolled into view and the cut-off edges fade out. A kit primitive candidate.
-- **Listing toolbar** (`ListingToolbar` + `ListingToolbarGroup`, used by `PlaceFilterPanel`,
-  `UsersFilterPanel` and the admin `SendingMailFilterPanel`): the filter row directly above a list, on the page background,
+- **Places filters** (`PlaceFilterPanel`, `/places` and the landing pages): three questions —
+  where, what, in which order — and only one filter of the site's own data, "Скрыть
+  посещённые" (signed in, `?notVisited=1`, noindex). The URL is the only state: every change is a
+  `buildFilterHref` link or push on page 1 (`buildPlacesHref` underneath, so landing paths
+  win when the flags are on). The whole block is sticky under the app bar on a translucent,
+  blurred page background.
+    - Desktop: one row — "Где" (`FieldTrigger` in a kit `Popout`: the search field, "Рядом со
+      мной" (the distance sort over everything, asks the browser), "Везде", the three recent
+      locations, the five fullest regions; typing shows found regions, districts and cities), the
+      sort (`OptionList` of presets with their natural direction: popular now, for you (signed
+      in), nearest, top rated, most viewed, newest, most discussed; there is no order control,
+      `?order=` of old links is kept until the sort changes), the "Скрыть посещённые" `Switch`,
+      then `Tabs` "Список / Карта" on the right (the map gets the same single category). Under it
+      the category rail (`ScrollRail` of `Chip` links: "Все", then the categories in their themed
+      groups, `CATEGORY_GROUPS`, split by rules; several can be on), then the applied filters
+      (removable `Chip`s and "Сбросить всё"; with nothing applied, a dashed "Продолжить: …" link
+      to the last filtered search of this browser). Filters apply at once.
+    - Phones: a round search bar "Где искать?" with the summary under it and a round filters
+      button with a counter, over the same rail; the applied row is hidden. "Где" opens a
+      `BottomSheet` with the same options (applies on pick); the filters open a form sheet —
+      sort pills, the categories as a 3-column grid by group, the switch row — with "Сбросить" and
+      "Показать N мест" (counted for the draft, debounced). A floating "Карта" button sits over
+      the bottom navigation.
+    - Remembered in `localStorage` (`usePlacesFilterMemory`), never applied by itself: the
+      recent locations and the last search.
+- **Listing toolbar** (`ListingToolbar` + `ListingToolbarGroup`, used by `UsersFilterPanel`
+  and the admin `SendingMailFilterPanel`): the filter row directly above a list, on the page background,
   never in a `Container`. One row: the filters group (location, category; or the search
   field), then the sorting group (sort field, order); on wide screens every kit control
   gets the same width, however many there are, 8px apart. On phones the row scrolls
