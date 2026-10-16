@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.17.0
+
+### Minor Changes
+
+- Place page: redesigned — reads like an article: a clean cover, a larger title with one line of facts (category, rating, reviews, distance) and larger text with a lead paragraph
+- Place page: one main "Directions" button with the site map and navigators in its menu; "Save" joins bookmarks and collections; contributor actions moved to the "⋯" menu
+- Place page: on phones the cover is a swipeable carousel of all photos, and the actions are a bar at the bottom of the screen in place of the navigation
+- Place page: the "Where it is" card gathers the map, distance, address, coordinates, navigators, who has been here and the collections with the place
+- Place page: ratings and reviews are one block with the score distribution and your own rating
+- Place page: "Nearby" and "More in the region" are one "What else to see" section with a switch
+- Place page: the author, dates, views and change history moved to the "About the place" block at the end
+- Place page: the photo mosaic invites to add photos with a free tile or a button over the photo
+- Place page: a full-screen photo viewer — all photos as a grid with "Rotate" and "Delete" on each, any photo opens with zoom and a way back to the grid
+- Design: one typography for the whole site — every page title has the same larger style, text is rendered thinner on Apple devices
+- Design: breadcrumbs with "›" separators; the first block of every page sits at the same distance from the header
+- Design: popup menus restyled — roomier rows, quieter icons, rules between groups, destructive actions in red
+
 ## 1.16.5
 
 ### Patch Changes
