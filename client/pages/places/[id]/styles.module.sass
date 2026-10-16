@@ -1,29 +1,35 @@
 @use '../../../styles/variables' as variables
 
-// The place page (DESIGN.md → Place page): hero → actions
-// row → two columns of boxless sections; on phones one explicit order and room at the
-// bottom for the sticky actions bar (PlaceActions)
+// The place page (DESIGN.md → Place page): the hero → two columns, the reading column of
+// boxless sections and the sticky "Где это" card; on phones one column in an explicit order,
+// the card right after the text
 .pageLayout
     display: grid
-    grid-template-columns: minmax(0, 1fr) 320px
+    grid-template-columns: minmax(0, 1fr) 360px
     gap: 0 var(--space-6)
     align-items: flex-start
-    margin-top: var(--space-6)
+    margin-top: var(--space-8)
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
         display: flex
         flex-direction: column
         // `flex-start` above is for the grid rows; in the column it would size every block
-        // by its content (the photo strip is five 200px tiles wide) and stretch the page
+        // by its content (a carousel is many tiles wide) and stretch the page
         align-items: stretch
-        gap: var(--space-5)
+        gap: var(--space-8)
+        // The hero and the content: 16px above the title, 20px under the facts (the head
+        // belongs to the picture, the content starts after a pause)
         margin-top: var(--space-5)
 
 .mainColumn
     min-width: 0
     display: flex
     flex-direction: column
-    gap: var(--space-6)
+    gap: var(--space-10)
+
+    // A block that rendered nothing (no places around, no photos for a guest) leaves no gap
+    & > :empty
+        display: none
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
         display: contents
@@ -36,28 +42,26 @@
 .sidebar
     min-width: 0
     position: sticky
-    top: 60px
+    // Under the app bar (50px) with a little air
+    top: 64px
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
         position: static
-        order: 4
+        order: 3
 
-// A wrapper whose block rendered nothing must not leave a gap in the column
-.hidden
-    display: none
+// Phones show the photos in the hero carousel; the viewer (a portal) still opens from here
+.photos
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: none
 
 @media only screen and (max-width: variables.$mobileMaxWidth)
     .orderPhotos
         order: 1
-    .orderDescription
+    .orderText
         order: 2
-    .orderRate
-        order: 3
-    .orderNearby
+    .orderReviews
+        order: 4
+    .orderExplore
         order: 5
-    .orderRelated
+    .orderAbout
         order: 6
-    .orderComments
-        order: 7
-    .orderHistory
-        order: 8

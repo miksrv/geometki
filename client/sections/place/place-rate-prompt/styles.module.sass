@@ -1,12 +1,16 @@
 @use '../../../styles/variables' as variables
 
+// "Ваша оценка" in the ratings and reviews block: a grey plate with the stars as an input
 .prompt
     display: flex
     flex-wrap: wrap
     align-items: center
     gap: var(--space-2) var(--space-4)
-    // Room for the app bar when the hero meta line scrolls here
-    scroll-margin-top: 80px
+    padding: var(--space-3) var(--space-4)
+    border-radius: var(--border-radius)
+    background: var(--surface-2)
+    // Room for the app bar when the hero facts scroll here
+    scroll-margin-top: 120px
 
     .text
         font-size: variables.$fontSizeParagraph

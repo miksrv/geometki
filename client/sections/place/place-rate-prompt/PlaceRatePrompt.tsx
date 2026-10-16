@@ -20,9 +20,9 @@ interface PlaceRatePromptProps {
 }
 
 /**
- * "Были здесь? Оцените место" after the description — where the reader has formed an
- * opinion. The stars here are an input: empty until hovered, with a word for each score;
- * the average lives in the hero facts line, never on these stars. After a vote the row
+ * "Были здесь? Оцените место" in the ratings and reviews block (`PlaceReviews`), under the
+ * summary. The stars here are an input: empty until hovered, with a word for each score;
+ * the average lives in the summary and the hero facts line, never on these stars. After a vote the row
  * shows the reader's own score with "Изменить" (the server updates the same vote).
  */
 export const PlaceRatePrompt: React.FC<PlaceRatePromptProps> = ({ placeId, authorId }) => {

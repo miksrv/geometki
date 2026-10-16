@@ -3,26 +3,47 @@
 
 .history
     min-width: 0
+    border-top: 1px solid var(--border)
 
-    // The button inside the Section h2 inherits its font: the title reads exactly like the
-    // other section titles of the page
-    .toggle
-        +buttonReset
-        display: inline-flex
-        align-items: center
-        gap: var(--space-2)
-        font: inherit
-        letter-spacing: inherit
-        color: inherit
+.heading
+    margin: 0
+    font-size: var(--font-size)
+    font-weight: var(--font-weight-medium)
 
-        .chevron
-            width: 18px
-            height: 18px
-            fill: var(--icon-color-secondary)
-            transition: transform var(--duration-slow) var(--ease)
+// The whole row is the button: icon, title, count, the chevron on the right
+.toggle
+    +buttonReset
+    display: flex
+    align-items: center
+    gap: var(--space-2)
+    width: 100%
+    min-height: 48px
+    font: inherit
+    color: var(--text-color-primary)
+    text-align: left
 
-        &.open .chevron
-            transform: rotate(180deg)
+    small
+        color: var(--text-color-secondary)
+        font-size: var(--font-size-secondary)
+        font-weight: var(--font-weight-normal)
 
-        &:hover
-            color: var(--link-color)
+    .icon
+        width: 18px
+        height: 18px
+        fill: var(--icon-color-secondary)
+
+    .chevron
+        width: 18px
+        height: 18px
+        margin-left: auto
+        fill: var(--icon-color-secondary)
+        transition: transform var(--duration-slow) var(--ease)
+
+    &.open .chevron
+        transform: rotate(180deg)
+
+    &:hover
+        color: var(--link-color)
+
+.stories
+    padding-bottom: var(--space-3)

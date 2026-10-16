@@ -1,1 +1,0 @@
-export { NearbyPlaces } from './NearbyPlaces'

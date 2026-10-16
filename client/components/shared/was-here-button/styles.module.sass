@@ -1,11 +1,16 @@
 .wasHereButton
     svg
-        fill: var(--color-green) !important
+        fill: currentColor !important
+
+    // A marked visit: the success tint, the label and the icon in green
+    &.visited
+        background-color: var(--color-green-background) !important
+        color: var(--color-green) !important
 
 .dialogDescription
     margin: 0 0 16px
     color: var(--text-color-secondary)
-    font-size: 14px
+    font-size: var(--font-size)
     line-height: 1.5
 
 .dialogActions

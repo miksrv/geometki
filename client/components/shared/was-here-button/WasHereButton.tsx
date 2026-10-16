@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Button, Dialog } from 'simple-react-ui-kit'
+import { Button, cn, Dialog } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
@@ -23,10 +23,25 @@ interface PendingVisit {
 interface WasHereButtonProps {
     placeId?: string
     verificationExempt?: boolean
-    size?: 'small' | 'medium'
+    size?: 'small' | 'medium' | 'large'
+    /** Icon only, the label goes to the tooltip (the phone actions bar) */
+    hideLabel?: boolean
+    stretched?: boolean
+    className?: string
 }
 
-export const WasHereButton: React.FC<WasHereButtonProps> = ({ placeId, verificationExempt, size = 'small' }) => {
+/**
+ * "Я здесь был(а)": marks the visit, with the location when the visitor shares it. A
+ * marked visit turns the button green (success tint), the same in every place it is shown.
+ */
+export const WasHereButton: React.FC<WasHereButtonProps> = ({
+    placeId,
+    verificationExempt,
+    size = 'small',
+    hideLabel,
+    stretched,
+    className
+}) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
 
@@ -191,12 +206,16 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({ placeId, verificat
     return (
         <>
             <Button
-                mode={visitedData?.result ? 'primary' : 'secondary'}
+                mode={'secondary'}
                 size={size}
-                className={styles.wasHereButton}
+                icon={'CheckCircle'}
+                stretched={stretched}
+                className={cn(styles.wasHereButton, visitedData?.result && styles.visited, className)}
                 disabled={!placeId || isLoading}
                 loading={isLoading}
-                label={t('visited-was-here')}
+                label={hideLabel ? undefined : t('visited-was-here')}
+                tooltip={hideLabel ? t('visited-was-here') : undefined}
+                aria-pressed={!!visitedData?.result}
                 onClick={() => void handleVisitClick()}
             />
 

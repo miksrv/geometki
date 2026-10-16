@@ -142,6 +142,12 @@ describe('AppLayout', () => {
             expect(screen.getByTestId('bottom-nav')).toBeInTheDocument()
         })
 
+        it('renders the bottom bar of a page in place of the bottom navigation', () => {
+            renderWithStore(<AppLayout bottomBar={<div data-testid={'page-bar'} />} />)
+            expect(screen.getByTestId('page-bar')).toBeInTheDocument()
+            expect(screen.queryByTestId('bottom-nav')).not.toBeInTheDocument()
+        })
+
         it('does not render a site menu sidebar', () => {
             const { container } = renderWithStore(<AppLayout />)
             expect(container.querySelector('aside')).not.toBeInTheDocument()

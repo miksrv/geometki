@@ -331,4 +331,80 @@ describe('PhotoGallery', () => {
             expect(dots).toHaveLength(0)
         })
     })
+
+    describe('mosaic', () => {
+        const photos = (count: number): ApiModel.Photo[] =>
+            Array.from({ length: count }, (_, i) => ({ ...mockPhotos[0], id: `m${i}`, title: `Photo ${i}` }))
+
+        it('turns the whole block into the upload target without photos', () => {
+            const onUpload = jest.fn()
+
+            renderWithStore(
+                <PhotoGallery
+                    variant={'mosaic'}
+                    onPhotoUploadClick={onUpload}
+                />
+            )
+
+            fireEvent.click(screen.getByText('Фото этого места пока нет'))
+            expect(onUpload).toHaveBeenCalledTimes(1)
+        })
+
+        it('gives the free tile of a mosaic that is not full to adding a photo', () => {
+            const { container } = renderWithStore(
+                <PhotoGallery
+                    variant={'mosaic'}
+                    hideActions={true}
+                    photos={photos(3)}
+                    onPhotoUploadClick={jest.fn()}
+                />
+            )
+
+            expect(container.querySelector('ul')).toHaveAttribute('data-count', '4')
+            expect(screen.getByText('или перетащите сюда')).toBeInTheDocument()
+        })
+
+        it('puts "+N" on the last tile of a full mosaic and opens the viewer grid with it', () => {
+            const onViewerChange = jest.fn()
+
+            const { container } = renderWithStore(
+                <PhotoGallery
+                    variant={'mosaic'}
+                    hideActions={true}
+                    photos={photos(8)}
+                    onViewerChange={onViewerChange}
+                    onPhotoUploadClick={jest.fn()}
+                />
+            )
+
+            expect(screen.getByText('+3')).toBeInTheDocument()
+            // A full mosaic has the pill instead of the free tile
+            expect(screen.queryByText('или перетащите сюда')).not.toBeInTheDocument()
+            expect(screen.getByText('Добавить фото')).toBeInTheDocument()
+
+            fireEvent.click(container.querySelectorAll('ul a')[4])
+
+            expect(onViewerChange).toHaveBeenCalledWith({ index: 4, mode: 'grid' })
+            // The viewer is a portal: all eight photos as its grid
+            const viewer = screen.getByRole('dialog')
+            expect(viewer.querySelectorAll('img')).toHaveLength(8)
+        })
+
+        it('opens one photo in the viewer from a tile of the mosaic', () => {
+            const onViewerChange = jest.fn()
+
+            const { container } = renderWithStore(
+                <PhotoGallery
+                    variant={'mosaic'}
+                    photos={photos(3)}
+                    viewer={null}
+                    onViewerChange={onViewerChange}
+                />
+            )
+
+            fireEvent.click(container.querySelectorAll('ul a')[1])
+
+            expect(onViewerChange).toHaveBeenCalledWith({ index: 1, mode: 'single' })
+        })
+    })
 })
