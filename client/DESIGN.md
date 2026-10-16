@@ -54,8 +54,10 @@ the rare text that is no role (a glyph, an input that must stay 16px on iOS).
 **One `h1` style everywhere.** The place, a collection, a profile, a list or landing, a form,
 settings, the sign-in and 404 pages — the `h1` is `titlePage`, so the reader always knows
 the top level of a page, and a title moving between page kinds never changes its look. The
-guest home hero (and its closing band) is the one showcase on `titleDisplay`; a heading on a
-coloured band may be 700 for contrast, never a different size.
+guest home hero (and its closing band) is the one showcase on `titleDisplay`, and the greeting
+of the signed-in home (`HomeWelcome`) is the one `h1` on `titleSection`: a line of a card next
+to the avatar, not the name of a page. A heading on a coloured band may be 700 for contrast,
+never a different size.
 
 Weights are the kit tokens (`--font-weight-normal` 400, `-medium` 500, `-semibold` 600);
 700 is the bold of the showcase bands and the counters on them, 300 the map popup titles.
@@ -179,7 +181,7 @@ re-implement them.
   `MediaTileGrid`; a short row ends with a dashed "make your own" tile) → the regions
   `LocationLinkList` → the feed (three stories) and people `Container`s → `HomeJoin` (the brand
   gradient band with the sign-up button). Signed-in user: `HomeWelcome` (a card: the 96px square
-  avatar as on the profile → three lines: the greeting h1, a 13px line "since {year} · the
+  avatar as on the profile → three lines: the greeting h1 (`titleSection`), a 13px line "since {year} · the
   experience left to the next level", the `LevelBadge` + kit `Progress` + "experience / next"
   → the places / photos / visits counters on the right, each a link to that list of the
   profile, under the rest on phones; no action buttons — adding a place is in the app bar) → a

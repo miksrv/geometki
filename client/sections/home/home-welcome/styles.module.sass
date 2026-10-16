@@ -40,8 +40,11 @@
     gap: var(--space-1)
     min-width: 0
 
+// The greeting is a line of the card next to the avatar, not the name of a page: the section
+// size, not `titlePage` (the one h1 off the page-title role, DESIGN.md → Type scale)
 .title
-    +type.titlePage
+    +type.titleSection
+    text-wrap: balance
 
 .facts
     margin: 0
