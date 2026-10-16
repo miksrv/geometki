@@ -68,20 +68,28 @@ interface PhotoLightboxProps {
     photos?: ApiModel.Photo[] | ApiModel.PhotoMark[]
     photoIndex?: number
     showLightbox?: boolean
+    /** Own buttons in the toolbar, before the close button (`PhotoViewer`: "Все фото", "Добавить") */
+    toolbarButtons?: React.ReactNode[]
+    /** "3 / 12" after the title, on its line (a counter of its own would sit under the title) */
+    showCounter?: boolean
     onCloseLightBox?: () => void
+    onIndexChange?: (index: number) => void
 }
 
 export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     photos,
     photoIndex = 0,
     showLightbox,
-    onCloseLightBox
+    toolbarButtons,
+    showCounter,
+    onCloseLightBox,
+    onIndexChange
 }) => {
     const { t } = useTranslation()
 
     const slides = useMemo(
         () =>
-            (photos ?? []).map((photo): Slide => {
+            (photos ?? []).map((photo, index, all): Slide => {
                 const src = resolveImageUrl(photo.full) ?? ''
                 const { width, height } = photo
                 // Only our own photos go through the image optimizer, external hosts are not allowed there
@@ -111,21 +119,28 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                     preview: resolveImageUrl(photo.preview),
                     src,
                     srcSet: srcSet?.length ? srcSet : undefined,
-                    title: photo.placeId ? (
-                        <Link
-                            href={buildPlaceUrl(photo.placeId)}
-                            title={photo.title}
-                            className={styles.title}
-                        >
-                            {photo.title}
-                        </Link>
-                    ) : (
-                        photo.title
+                    title: (
+                        <span className={styles.titleLine}>
+                            {photo.placeId ? (
+                                <Link
+                                    href={buildPlaceUrl(photo.placeId)}
+                                    title={photo.title}
+                                    className={styles.title}
+                                >
+                                    {photo.title}
+                                </Link>
+                            ) : (
+                                <span className={styles.title}>{photo.title}</span>
+                            )}
+                            {showCounter && all.length > 1 && (
+                                <span className={styles.counter}>{`${index + 1} / ${all.length}`}</span>
+                            )}
+                        </span>
                     ),
                     width
                 }
             }),
-        [photos, t]
+        [photos, showCounter, t]
     )
 
     const single = slides.length <= 1
@@ -137,6 +152,8 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
             plugins={[Captions, Zoom]}
             close={onCloseLightBox}
             slides={slides}
+            toolbar={toolbarButtons?.length ? { buttons: [...toolbarButtons, 'zoom', 'close'] } : undefined}
+            on={onIndexChange ? { view: ({ index }) => onIndexChange(index) } : undefined}
             // A single photo has nothing to scroll to: no looping and no arrows
             carousel={{ finite: single }}
             render={{

@@ -1322,11 +1322,12 @@ Get the aggregate rating for a place. If the current session has already voted, 
 {
   "rating": 4.2,
   "count": 15,
+  "distribution": { "1": 1, "2": 0, "3": 2, "4": 4, "5": 8 },
   "vote": 5
 }
 ```
 
-Note: `vote` is only present if the current session or user has previously voted on this place.
+Note: `vote` is only present if the current session or user has previously voted on this place. `distribution` is the number of votes for each score, 1 to 5 (all zeros without votes).
 
 ---
 
@@ -1598,6 +1599,20 @@ Check whether the authenticated user has bookmarked a specific place.
 **Error responses:**
 
 - `400` — No `placeId` provided
+
+---
+
+#### `GET /bookmarks/places`
+
+The IDs of all places in the authenticated user's bookmarks: the place cards of any list show their bookmark from it.
+
+**Auth required:** No (returns `{ "items": [] }` if not authenticated)
+
+**Response:**
+
+```json
+{ "items": ["65a1b2c3d4e5f6a", "65a1b2c3d4e5f6b"] }
+```
 
 ---
 
@@ -2161,9 +2176,9 @@ Full search: places by title/content, geocoder locations, and a coordinates entr
 |------|------|----------|-------------|
 | q | string | Yes | Search text, or a coordinate pair (decimal, DMS or DM, with or without N/S/E/W) |
 | type | string | No | `all` (default), `places`, `location`, `coordinates` |
-| category | string | No | Restrict places to a category key |
-| sort | string | No | `views`, `rating`, `comments`, `bookmarks`, `distance`, `created_at`, `updated_at`; default is distance when coordinates are known, otherwise relevance |
-| order | string | No | `ASC` or `DESC` (default `DESC`) |
+| category | string | No | Restrict places to category keys, comma-separated; unknown keys are ignored |
+| sort | string | No | `relevance`, `distance`, `views`, `rating`, `comments`, `created_at`; default is distance when coordinates are known, otherwise relevance |
+| order | string | No | `ASC` or `DESC`; default is the sort's natural direction (distance nearest first, the rest most first) |
 | lat / lon | float | No | Viewer coordinates for `distance` |
 | limit | integer | No | Max places (default 20, max 40) |
 | offset | integer | No | Places offset (default 0) |
@@ -2173,12 +2188,12 @@ Full search: places by title/content, geocoder locations, and a coordinates entr
 ```json
 {
   "locations": { "items": [{ "lat": 51.7686, "lon": 55.1014, "locality": "Gadelsha", "region": "Bashkortostan", "country": "Russia" }], "count": 1 },
-  "places": { "items": [], "count": 0 },
+  "places": { "items": [], "count": 227, "available": 50, "categories": { "cave": 120, "lake": 64 } },
   "coordinates": { "lat": 51.7686, "lon": 55.1014, "secondary": "Gadelsha, Bashkortostan, Russia" }
 }
 ```
 
-`locations.items` are geocoder results (up to 5, the `GET /location/geosearch` shape); `places.items` use the `GET /places` list shape. `coordinates` is the parsed query when it is a coordinate pair, otherwise the position of the first place or location found; it is absent when there is none.
+`locations.items` are geocoder results (up to 5, the `GET /location/geosearch` shape); `places.items` use the `GET /places` list shape. `places.count` is every found place with the category filter, `places.categories` every found place per category before it (the facets). Only the 50 most relevant places (with the filter) are sorted and paged: `places.available` is how many `offset` reaches. `coordinates` is the parsed query when it is a coordinate pair, otherwise the position of the first place or location found; it is absent when there is none.
 
 ---
 

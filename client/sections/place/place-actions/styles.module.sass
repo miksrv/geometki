@@ -1,34 +1,48 @@
 @use '../../../styles/variables' as variables
 
-// The toolbar strip under the cover: the container surface with the bottom corners of the
-// cover, small buttons left to right, the "⋯" menu on the right; one scrollable line on phones
-.actions
+// Desktop: on the title's line of the hero, right-aligned (PlaceHero `actions`)
+.toolbar
     display: flex
     align-items: center
-    flex-wrap: wrap
     gap: var(--space-2)
-    padding: var(--space-2)
-    background: var(--container-background)
-    border-radius: 0 0 var(--border-radius) var(--border-radius)
-    box-shadow: var(--container-shadow)
 
-    .menu
-        margin-left: auto
+// Phones: the bar at the bottom of the screen in place of the bottom navigation, the same
+// height and the same translucent surface (components/layout/bottom-nav), always under the thumb
+.bar
+    display: none
 
-    // Phones: the buttons wrap into two or three short rows; no scrolling strip, an overflow
-    // container would clip the route / share / menu popouts
     @media only screen and (max-width: variables.$mobileMaxWidth)
-        padding: var(--space-2)
-
-.routeList
-    li a
         display: flex
         align-items: center
         gap: var(--space-2)
+        position: fixed
+        left: 0
+        right: 0
+        bottom: 0
+        z-index: 450
+        height: calc(#{variables.$bottomNavHeight} + env(safe-area-inset-bottom, 0px))
+        padding: 0 calc(var(--space-2) + env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) calc(var(--space-2) + env(safe-area-inset-left, 0px))
+        background-color: var(--container-background)
+        border-top: var(--container-border-separator)
+
+        @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) and (background-color: color-mix(in srgb, red 50%, transparent))
+            background-color: color-mix(in srgb, var(--container-background) 85%, transparent)
+            -webkit-backdrop-filter: saturate(180%) blur(16px)
+            backdrop-filter: saturate(180%) blur(16px)
+
+    // 44px touch targets, icon buttons square
+    & > button, & > span > button
+        flex-shrink: 0
+        min-width: var(--size-large)
+        touch-action: manipulation
+
+    .grow
+        flex: 1
+        min-width: 0
 
 .sharePopout
     display: flex
     flex-direction: column
     align-items: flex-start
     gap: var(--space-2)
-    padding: var(--space-1)
+    padding: var(--space-2)

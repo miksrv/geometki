@@ -1,2 +1,4 @@
+export { applyFilterPatch, buildFilterHref, describeFilter } from './describeFilter'
 export { PlaceFilterPanel } from './PlaceFilterPanel'
-export { type PlacesFilterType } from './types'
+export { getRequestOrder } from './sortPresets'
+export { type PlacesFilterPatch, type PlacesFilterState, type PlacesFilterType } from './types'

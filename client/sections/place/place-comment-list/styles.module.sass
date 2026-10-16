@@ -1,70 +1,93 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/mixins' as *
 
 .commentList
-    .empty
-        margin-bottom: 12px
-        font-size: variables.$fontSizeHeadline
-        color: var(--text-color-secondary)
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
 
-    .loginAction
-        margin-top: 5px
-        text-align: center
+    .items
+        display: flex
+        flex-direction: column
+        gap: var(--space-4)
+
+    .empty
+        margin: 0
+        color: var(--text-color-secondary)
+        font-size: var(--font-size-secondary)
 
     .commentItem
         display: flex
-        margin-bottom: 5px
 
+        // A reply sits under the review it answers, indented by the avatar
         &.answer
-            margin-left: 40px
+            margin-left: 48px
 
         .block
-            margin-top: 5px
             display: flex
             align-items: flex-start
+            gap: var(--space-3)
             width: 100%
 
-            &:hover
-                .content
-                    .info
-                        .answerButton
-                            opacity: 1
+            &:hover, &:focus-within
+                .answerButton
+                    opacity: 1
 
-            .content
-                margin-left: 10px
-                width: 100%
+        .content
+            flex: 1
+            min-width: 0
+            font-size: var(--font-size)
+            line-height: 1.55
 
-                p
+            p
+                margin: 0 0 var(--space-1)
+
+                &:last-of-type
                     margin-bottom: 0
 
-                .info
-                    font-size: variables.$fontSizeHeadline
+        .user
+            margin-bottom: 2px
+            font-weight: var(--font-weight-semibold)
+
+            a
+                color: var(--text-color-primary)
+
+                &:hover
+                    color: var(--link-color)
+
+        .info
+            display: flex
+            align-items: center
+            gap: var(--space-3)
+            margin-top: var(--space-1)
+            color: var(--text-color-secondary)
+            font-size: var(--font-size-small)
+
+            .answerButton
+                opacity: 0
+                padding: 0
+                height: auto
+                min-height: 0
+                line-height: normal
+                font-size: inherit
+                background: none
+                transition: opacity var(--duration-base) var(--ease)
+
+                // Touch screens have no hover
+                @media (hover: none)
+                    opacity: 1
+
+                &.answerButtonActive
+                    opacity: 1
                     color: var(--text-color-secondary)
-                    display: flex
-                    align-items: center
-
-                    .answerButton
-                        opacity: 0
-                        margin-left: 10px
-                        padding: 0
-                        height: auto
-                        line-height: normal
-                        min-height: 0
-                        background: none
-                        transition: opacity .3s
-
-                        &.answerButtonActive
-                            opacity: 1
-                            color: var(--text-color-secondary)
 
     .commentForm
-        margin-top: 5px
-
         .replyingTo
             display: flex
             align-items: center
             justify-content: space-between
             padding: 4px 6px 4px 10px
-            margin-bottom: 6px
+            margin-bottom: var(--space-2)
             border-radius: var(--border-radius)
             background: var(--surface-2)
             font-size: variables.$fontSizeHeadline
@@ -88,27 +111,48 @@
         .commentFormRow
             display: flex
             align-items: flex-start
-
-        .userAvatar
-            margin-right: 10px
-            margin-top: -2px
+            gap: var(--space-3)
 
         .submitButton
-            margin-left: 5px
+            flex-shrink: 0
 
         .textarea
             flex: 1
-            font-family: var(--font-family), serif
+            font-family: var(--font-family), sans-serif
             font-size: var(--font-size)
 
-    .formSection
-        margin-top: 15px
+    // The guest's field: the same avatar + field row, a tap opens the sign-in dialog
+    .guestField
+        +buttonReset
+        display: flex
+        align-items: center
+        gap: var(--space-3)
+        width: 100%
+        text-align: left
+        font: inherit
 
-    .loginContainer
-        margin-top: 5px
-        padding: 10px 10px 0 10px
-        text-align: center
+        &:hover .guestInput, &:focus-visible .guestInput
+            border-color: var(--input-border-focus-color)
+
+    .guestAvatar
+        flex-shrink: 0
+        width: 36px
+        height: 36px
+        border-radius: 50%
+        background: var(--surface-3)
+
+    .guestInput
+        flex: 1
+        min-width: 0
+        display: flex
+        align-items: center
+        min-height: var(--size-medium)
+        padding: 0 var(--space-3)
+        border: var(--input-border)
+        border-radius: var(--border-radius)
+        background: var(--input-background-color)
         color: var(--text-color-secondary)
-
-        &.topBorder
-            border-top: var(--container-border-separator)
+        font-size: var(--font-size)
+        cursor: text
+        +truncate
+        transition: border-color var(--duration-fast) var(--ease)

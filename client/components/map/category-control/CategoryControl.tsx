@@ -90,6 +90,7 @@ export const CategoryControl: React.FC<CategoryControlProps> = ({ categories, on
                 <Counter
                     className={styles.controlCounter}
                     value={categories.length}
+                    color={'main'}
                     showZero={true}
                 />
             )}

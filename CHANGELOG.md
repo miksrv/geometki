@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.17.0
+
+### Minor Changes
+
+- Places: new filters — "Where" with "Near me", recent and popular regions and search; the sorting as ready presets ("Trending now", "Newest", "Top rated"…) without a separate order
+- Places: categories are a row of chips with icons under the filters, several can be chosen at once
+- Places: the applied filters are shown as chips with a cross and "Reset all"; "Continue: …" brings back your last search
+- Places: "Hide visited" for signed-in users; places you have been to are marked "You've been here"
+- Places: the count of places next to the title; the filters stay on screen while scrolling
+- Places: on phones a search bar and a filters sheet with "Show N places", a floating "Map" button and "Show more" instead of page numbers
+- Search: a new site search in the header and on the home page — "Places near me", recent searches and popular regions before typing; places with their address, regions and cities with their number of places, coordinates and addresses while typing; arrow keys, Enter and "/" or Ctrl/⌘ K; full screen on phones
+- Search: the same filters as on the places page — results as tabs with their counts, the categories found as chips with numbers, several at once, the sorting as presets and the applied filters as chips; on phones a filters sheet; the filters stay in the link
+- Search: sorting now orders all found places, not just the loaded ones, and "Near me" puts the nearest first
+- Place cards: the photo on top with the title, address and stats under it, a bookmark button right on the card
+- Collection cards: the same look as place cards — rounded photo mosaic, the title under it and one line with the region, number of places and views
+- Home and place pages: rows of places scroll with a swipe or a trackpad and stop on a card; the arrows are the same as for the categories
+- Design: tabs are as tall as buttons and fields
+- Place page: redesigned — reads like an article: a clean cover, a larger title with one line of facts (category, rating, reviews, distance) and larger text with a lead paragraph
+- Place page: one main "Directions" button with the site map and navigators in its menu; "Save" joins bookmarks and collections; contributor actions moved to the "⋯" menu
+- Place page: on phones the cover is a swipeable carousel of the photos with the count of all of them, and the actions are a bar at the bottom of the screen in place of the navigation
+- Place page: the "Where it is" card gathers the map, distance, address, coordinates, navigators, who has been here and the collections with the place
+- Place page: ratings and reviews are one block with the score distribution and your own rating
+- Place page: "Nearby" and "More in the region" are one "What else to see" section with a switch
+- Place page: the author, dates, views and change history moved to the "About the place" block at the end
+- Place page: the photo mosaic invites to add photos with a free tile or a button over the photo
+- Place page: a full-screen photo viewer — all photos as a grid with "Rotate" and "Delete" on each, any photo opens with zoom and a way back to the grid
+- Design: one typography for the whole site — every page title has the same larger style, text is rendered thinner on Apple devices
+- Design: breadcrumbs with "›" separators; the first block of every page sits at the same distance from the header
+- Design: popup menus restyled — roomier rows, quieter icons, rules between groups, destructive actions in red
+- Optimized the places listing, the place page and the search: faster loading, no content jumping on load, filters of the search switch without reloading the page
+
 ## 1.16.5
 
 ### Patch Changes

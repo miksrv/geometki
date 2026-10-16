@@ -4,7 +4,7 @@ import { Button, cn, Icon } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
-import { FeedList, Section } from '@/components/shared'
+import { FeedList } from '@/components/shared'
 import { flattenFeedPages } from '@/utils/feed'
 
 import styles from './styles.module.sass'
@@ -16,7 +16,7 @@ interface PlaceActivityProps {
 }
 
 /**
- * "История изменений (N)": a collapsed row at the end of the place page. The page prefetches
+ * "История изменений  N": a collapsed row at the end of the "О месте" card. The page prefetches
  * the count on the server (a count-only request, no stories); the history itself — the feed
  * stories of the place, without the place attached — loads on the first click.
  */
@@ -35,46 +35,51 @@ export const PlaceActivity: React.FC<PlaceActivityProps> = ({ placeId }) => {
     const count = data?.pages[0]?.count ?? countData?.count
 
     return (
-        <Section
-            className={styles.history}
-            // The heading itself is the disclosure control: same h2 as every other section
-            title={
+        <div className={styles.history}>
+            {/* The heading is the disclosure control: in the outline of the page, one tap to open */}
+            <h3 className={styles.heading}>
                 <button
                     type={'button'}
                     className={cn(styles.toggle, open && styles.open)}
                     aria-expanded={open}
                     onClick={() => setOpen((prev) => !prev)}
                 >
+                    <Icon
+                        name={'Time'}
+                        className={styles.icon}
+                    />
                     {t('place-history', { defaultValue: 'История изменений' })}
-                    {!!count && ` (${count})`}
+                    {!!count && <small>{count}</small>}
                     <Icon
                         name={'KeyboardDown'}
                         className={styles.chevron}
                     />
                 </button>
-            }
-        >
+            </h3>
+
             {open && (
-                <FeedList
-                    stories={flattenFeedPages(data?.pages)}
-                    loading={isLoading || isFetchingNextPage}
-                    density={'compact'}
-                    hidePlace={true}
-                    footer={
-                        hasNextPage ? (
-                            <Button
-                                mode={'secondary'}
-                                stretched={true}
-                                disabled={isFetchingNextPage}
-                                loading={isFetchingNextPage}
-                                onClick={() => fetchNextPage()}
-                            >
-                                {t('show-more')}
-                            </Button>
-                        ) : undefined
-                    }
-                />
+                <div className={styles.stories}>
+                    <FeedList
+                        stories={flattenFeedPages(data?.pages)}
+                        loading={isLoading || isFetchingNextPage}
+                        density={'compact'}
+                        hidePlace={true}
+                        footer={
+                            hasNextPage ? (
+                                <Button
+                                    mode={'secondary'}
+                                    stretched={true}
+                                    disabled={isFetchingNextPage}
+                                    loading={isFetchingNextPage}
+                                    onClick={() => fetchNextPage()}
+                                >
+                                    {t('show-more')}
+                                </Button>
+                            ) : undefined
+                        }
+                    />
+                </div>
             )}
-        </Section>
+        </div>
     )
 }

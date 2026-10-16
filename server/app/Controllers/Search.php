@@ -5,9 +5,12 @@ namespace App\Controllers;
 use App\Libraries\Geocoder;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
+use App\Libraries\SearchPlacesRanking;
+use App\Libraries\SearchSuggestions;
 use App\Models\PlacesModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
+use Config\Database;
 use Geocoder\Exception\Exception;
 
 /**
@@ -15,16 +18,30 @@ use Geocoder\Exception\Exception;
  *
  * Provides two endpoints:
  *  - GET /search        Full structured search across places, geocoder locations and coordinates.
- *  - GET /search/suggest  Lightweight autocomplete suggestions for the site header.
+ *  - GET /search/suggest  Autocomplete suggestions for the site search: places, locations, addresses.
  *
  * @package App\Controllers
  */
 class Search extends ResourceController
 {
+    // The most relevant found places the filter and the sort work over: nobody pages further,
+    // the counts are still over all of them
+    private const SEARCH_PLACES     = 50;
+    private const SUGGEST_PLACES    = 5;
+    private const SUGGEST_AREAS     = 3;
+    // Rows per location level before rankAreas() puts names starting with the query first
+    private const SUGGEST_AREA_ROWS = 10;
+    private const SUGGEST_ADDRESSES = 2;
+
     /**
      * Full search across places, geocoder locations, and coordinate detection.
      *
-     * GET /search?q=&type=all|location|coordinates|places&category=&sort=&order=&lat=&lon=&limit=20&offset=0
+     * GET /search?q=&type=all|location|coordinates|places&category=a,b&sort=&order=&lat=&lon=&limit=20&offset=0
+     *
+     * `places.categories` counts the found places per category before the category filter (the
+     * client's facets) and `places.count` all found places with the filter — both over every
+     * match. The sort runs over the SEARCH_PLACES most relevant of them (`places.available`, what
+     * the pages reach) in its natural direction unless `order` is given, then the page is cut.
      *
      * @throws Exception
      *
@@ -36,7 +53,7 @@ class Search extends ResourceController
         $type     = $this->request->getGet('type', FILTER_SANITIZE_SPECIAL_CHARS) ?? 'all';
         $category = $this->request->getGet('category', FILTER_SANITIZE_SPECIAL_CHARS);
         $sort     = $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS);
-        $order    = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS) ?? 'DESC';
+        $order    = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS);
         $lat      = $this->request->getGet('lat', FILTER_VALIDATE_FLOAT);
         $lon      = $this->request->getGet('lon', FILTER_VALIDATE_FLOAT);
         $limit    = min(abs((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 20)), 40);
@@ -57,7 +74,8 @@ class Search extends ResourceController
         // --- Coordinate detection ---
         $coordinates = $this->parseCoordinates($q);
         if ($coordinates) {
-            $result['coordinates'] = $coordinates;
+            // The query itself is a point; without it `coordinates` is the top result's point
+            $result['coordinates'] = $coordinates + ['parsed' => true];
         }
 
         // --- Geocoder locations ---
@@ -74,86 +92,81 @@ class Search extends ResourceController
         // --- Places full-text search ---
         if ($type === 'all' || $type === 'places') {
             $placeContent = new PlacesContent(350);
-            $placeContent->search($q);
+
+            // Exact counts over every match; the rows themselves only for the most relevant ones
+            $found      = $placeContent->countByCategory($q);
+            $facets     = array_filter($found, static fn ($key) => $key !== '', ARRAY_FILTER_USE_KEY);
+            $categories = $category
+                ? array_values(array_intersect(array_map('trim', explode(',', $category)), config('Categories')->names))
+                : [];
+
+            $placeContent->search($q, self::SEARCH_PLACES, $categories, false);
 
             $allPlaceIds = $placeContent->placeIds;
 
-            // Apply category filter before pagination
-            if ($category && !empty($allPlaceIds)) {
-                $placesModel  = new PlacesModel();
-                $filtered     = $placesModel
-                    ->select('id')
-                    ->whereIn('id', $allPlaceIds)
-                    ->where('category', $category)
-                    ->findAll();
-                $filteredIds  = array_column($filtered, 'id');
+            $distanceSQL = '';
+            if ($lat && $lon) {
+                $distanceSQL = (new PlacesModel())->makeDistanceSQL($lat, $lon);
+            }
+            $coordinatesAvailable = $distanceSQL !== '';
 
-                // Preserve the relevance ordering from the FULLTEXT query
-                $allPlaceIds = array_values(array_filter(
-                    $allPlaceIds,
-                    static fn($id) => in_array($id, $filteredIds, true)
-                ));
+            // One light query over the loaded places: the sort is over all of them, the page
+            // is cut after it
+            $rows = [];
+            if (!empty($allPlaceIds)) {
+                $byId = [];
+                $light = (new PlacesModel())
+                    ->select('id, category, views, rating, comments, created_at' . $distanceSQL)
+                    ->whereIn('id', $allPlaceIds)
+                    ->asArray()
+                    ->findAll();
+
+                foreach ($light as $row) {
+                    $byId[$row['id']] = $row;
+                }
+
+                // The full-text relevance order; soft-deleted places drop out here
+                foreach ($allPlaceIds as $id) {
+                    if (isset($byId[$id])) {
+                        $rows[] = $byId[$id];
+                    }
+                }
             }
 
-            $totalCount   = count($allPlaceIds);
-            $pagedIds     = array_slice($allPlaceIds, $offset, $limit);
+
+            if (!$sort) {
+                $sort = $coordinatesAvailable ? 'distance' : 'relevance';
+            }
+            if ($sort === 'distance' && !$coordinatesAvailable) {
+                $sort = 'relevance';
+            }
+            $rows = SearchPlacesRanking::sort($rows, $sort, $order);
+
+            $totalCount = $categories
+                ? array_sum(array_intersect_key($facets, array_flip($categories)))
+                : array_sum($found);
+            $pagedIds   = array_column(array_slice($rows, $offset, $limit), 'id');
+
+            // The texts of the page only
+            $placeContent->translate($pagedIds);
 
             $formattedPlaces = [];
 
             if (!empty($pagedIds)) {
                 $placesModel = new PlacesModel();
-
-                // Determine distance expression
-                $distanceSQL = '';
-                $coordinatesAvailable = false;
-
-                if ($lat && $lon) {
-                    $distanceSQL          = $placesModel->makeDistanceSQL($lat, $lon);
-                    $coordinatesAvailable = $distanceSQL !== '';
-                }
-
                 $placesModel->applyListSelect($distanceSQL);
-                $placesList = $placesModel->whereIn('places.id', $pagedIds)->findAll();
-
-                // Restore FULLTEXT relevance order after SQL fetch
-                $orderedList = [];
-                foreach ($pagedIds as $id) {
-                    foreach ($placesList as $place) {
-                        if ($place->id === $id) {
-                            $orderedList[] = $place;
-                            break;
-                        }
-                    }
-                }
-
-                // Apply explicit sort override when requested
-                $validSorts = ['views', 'rating', 'comments', 'bookmarks', 'distance', 'created_at', 'updated_at'];
-                if (!$sort) {
-                    $sort = $coordinatesAvailable ? 'distance' : 'relevance';
-                }
-
-                if (in_array($sort, $validSorts, true) && in_array(strtoupper($order), ['ASC', 'DESC'], true)) {
-                    usort($orderedList, static function ($a, $b) use ($sort, $order) {
-                        $aVal = $a->{$sort} ?? null;
-                        $bVal = $b->{$sort} ?? null;
-
-                        if ($aVal === null && $bVal === null) {
-                            return 0;
-                        }
-                        if ($aVal === null) {
-                            return 1;
-                        }
-                        if ($bVal === null) {
-                            return -1;
-                        }
-
-                        $cmp = $aVal <=> $bVal;
-                        return strtoupper($order) === 'ASC' ? $cmp : -$cmp;
-                    });
+                $placesById = [];
+                foreach ($placesModel->whereIn('places.id', $pagedIds)->findAll() as $place) {
+                    $placesById[$place->id] = $place;
                 }
 
                 $formatter = new PlaceFormatterLibrary();
-                foreach ($orderedList as $place) {
+                foreach ($pagedIds as $id) {
+                    $place = $placesById[$id] ?? null;
+                    if (!$place) {
+                        continue;
+                    }
+
                     if ($coordinatesAvailable && isset($place->distance) && $place->distance !== null) {
                         $place->distance = $formatter->formatDistance($place->distance);
                     }
@@ -170,8 +183,10 @@ class Search extends ResourceController
             }
 
             $result['places'] = [
-                'items' => $formattedPlaces,
-                'count' => $totalCount,
+                'items'      => $formattedPlaces,
+                'count'      => $totalCount,
+                'available'  => count($rows),
+                'categories' => (object) $facets,
             ];
         }
 
@@ -230,11 +245,13 @@ class Search extends ResourceController
     }
 
     /**
-     * Lightweight autocomplete suggestions for the site header.
+     * Autocomplete suggestions for the site search (the app bar, the home page).
      *
-     * Returns up to 5 suggestions total: up to 2 places (id+title only),
-     * up to 2 geocoder locations, and 1 coordinates entry when the query
-     * parses as a coordinate pair.
+     * In this order: the point when the query parses as coordinates, up to 5 places (with
+     * the category and the locality and region names), up to 3 of the site's own locations
+     * with places (`area`: their places listing, the count, the parent region), and only
+     * without them up to 2 geocoder addresses (`location`: a point on the map, with the
+     * region and country).
      *
      * GET /search/suggest?q=
      *
@@ -251,6 +268,7 @@ class Search extends ResourceController
         }
 
         $q           = trim($q);
+        $locale      = $this->request->getLocale() === 'en' ? 'en' : 'ru';
         $suggestions = [];
 
         // Coordinates
@@ -263,50 +281,138 @@ class Search extends ResourceController
             ];
         }
 
-        // Places — only id and title, no full formatting
+        // Places: the title in the request locale, the category and where the place is
         $placeContent = new PlacesContent(0);
-        $placeContent->search($q);
+        $placeContent->search($q, self::SUGGEST_PLACES);
 
-        $topPlaceIds = array_slice($placeContent->placeIds, 0, 2);
+        $topPlaceIds = array_slice($placeContent->placeIds, 0, self::SUGGEST_PLACES);
 
         $placesById = [];
         if (!empty($topPlaceIds)) {
-            $placesModel = new PlacesModel();
-            $placesById  = array_column(
-                $placesModel->select('id, slug, category')->whereIn('id', $topPlaceIds)->findAll(),
-                null,
-                'id'
-            );
+            $rows = (new PlacesModel())
+                ->select("places.id, places.slug, places.category,
+                    location_localities.title_{$locale} as locality, location_regions.title_{$locale} as region")
+                ->join('location_regions', 'location_regions.id = places.region_id', 'left')
+                ->join('location_localities', 'location_localities.id = places.locality_id', 'left')
+                ->whereIn('places.id', $topPlaceIds)
+                ->asArray()
+                ->findAll();
+
+            $placesById = array_column($rows, null, 'id');
         }
 
         foreach ($topPlaceIds as $placeId) {
+            // Soft-deleted places drop out here
+            if (!isset($placesById[$placeId])) {
+                continue;
+            }
+
+            $place = $placesById[$placeId];
+            $title = $placeContent->title($placeId);
+
             $suggestions[] = [
                 'type'     => 'place',
                 'id'       => $placeId,
-                'slug'     => $placesById[$placeId]->slug ?? null,
-                'category' => $placesById[$placeId]->category ?? null,
-                'title'    => $placeContent->title($placeId),
+                'slug'     => $place['slug'] ?? null,
+                'category' => $place['category'] ?? null,
+                'title'    => $title,
+                'address'  => SearchSuggestions::caption($title, [$place['locality'] ?? null, $place['region'] ?? null]),
             ];
         }
 
-        // Geocoder locations — up to 2
-        $geocoder  = new Geocoder();
-        $geoItems  = $geocoder->search($q);
-        $geoSlice  = array_slice($geoItems, 0, 2);
+        // The site's own locations with places: their places listing
+        $areas = SearchSuggestions::rankAreas($this->suggestAreas($q, $locale), $q, self::SUGGEST_AREAS);
 
-        foreach ($geoSlice as $location) {
+        foreach ($areas as $area) {
             $suggestions[] = [
-                'type'  => 'location',
-                'title' => $location['locality'] ?? '',
-                'lat'   => $location['lat'],
-                'lon'   => $location['lon'],
+                'type'         => 'area',
+                'locationType' => $area['type'],
+                'id'           => $area['id'],
+                'slug'         => $area['slug'],
+                'title'        => $area['title'],
+                'region'       => SearchSuggestions::caption($area['title'], [$area['region'] ?? null]),
+                'placesCount'  => $area['placesCount'],
             ];
         }
 
-        // Cap total at 5
-        $suggestions = array_slice($suggestions, 0, 5);
+        // Geocoder addresses: a point on the map, only when the site knows no such location (its
+        // places answer better, and the geocoder's loose matches of a known name are noise)
+        $geoItems = $areas ? [] : (new Geocoder())->search($q);
+
+        foreach (array_slice($geoItems, 0, self::SUGGEST_ADDRESSES) as $location) {
+            $title = $location['locality'] ?? '';
+
+            $suggestions[] = [
+                'type'      => 'location',
+                'title'     => $title,
+                'secondary' => SearchSuggestions::caption($title, [
+                    $location['district'] ?? null,
+                    $location['region'] ?? null,
+                    $location['country'] ?? null,
+                ]),
+                'lat'       => $location['lat'],
+                'lon'       => $location['lon'],
+            ];
+        }
 
         return $this->respond(['suggestions' => $suggestions]);
+    }
+
+    /**
+     * Countries, regions, districts and localities named like the query that have places, a
+     * few of each level, with the slug, the count and the region of a district or locality.
+     *
+     * @return array<int, array{type: string, id: int, slug: ?string, title: string, region: ?string, placesCount: int}>
+     */
+    private function suggestAreas(string $q, string $locale): array
+    {
+        $db     = Database::connect();
+        $levels = [
+            'country'  => ['location_countries', 'country_id', false],
+            'region'   => ['location_regions', 'region_id', false],
+            'district' => ['location_districts', 'district_id', true],
+            'locality' => ['location_localities', 'locality_id', true],
+        ];
+        $result = [];
+
+        foreach ($levels as $type => [$table, $placesColumn, $hasRegion]) {
+            $query = $db->table("{$table} t")
+                ->select(
+                    "t.id, COALESCE(NULLIF(t.title_{$locale}, ''), t.title_ru, t.title_en) as title, ls.slug,
+                    (SELECT COUNT(*) FROM places p WHERE p.{$placesColumn} = t.id AND p.deleted_at IS NULL) as placesCount"
+                    . ($hasRegion ? ", COALESCE(NULLIF(r.title_{$locale}, ''), r.title_ru) as region" : ''),
+                    false
+                )
+                ->join('location_slugs ls', "ls.type = '{$type}' AND ls.entity_id = t.id", 'left')
+                ->groupStart()
+                    ->like('t.title_ru', $q)
+                    ->orLike('t.title_en', $q)
+                ->groupEnd();
+
+            if ($hasRegion) {
+                $query->join('location_regions r', 'r.id = t.region_id', 'left');
+            }
+
+            $rows = $query
+                ->having('placesCount >', 0)
+                ->orderBy('placesCount', 'DESC')
+                ->limit(self::SUGGEST_AREA_ROWS)
+                ->get()
+                ->getResult();
+
+            foreach ($rows as $row) {
+                $result[] = [
+                    'type'        => $type,
+                    'id'          => (int) $row->id,
+                    'slug'        => $row->slug,
+                    'title'       => (string) $row->title,
+                    'region'      => $row->region ?? null,
+                    'placesCount' => (int) $row->placesCount,
+                ];
+            }
+        }
+
+        return $result;
     }
 
     /**

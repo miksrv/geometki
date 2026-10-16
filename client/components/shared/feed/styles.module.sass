@@ -1,4 +1,5 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 
 // The feed: a column of story cards on the page background, split into days
 
@@ -145,13 +146,6 @@
         -webkit-line-clamp: 4
         line-clamp: 4
 
-// Place and collection tiles (MediaTile) are sized for the three-column grid: flex-basis
-// a third and a margin. In the story's column the basis would be their height — zero
-// (inside .body: one class more than MediaTile's own .tile, whatever the CSS order)
-.body .placeTile,
-.body .collection > *
-    flex: none
-    margin: 0
 
 .places
     display: flex
@@ -344,9 +338,7 @@
 
 .pulseValue
     margin: 0
-    font-size: var(--font-size-title-page)
-    font-weight: var(--font-weight-semibold)
-    line-height: 1.1
+    +type.stat
     color: var(--text-color-primary)
 
 .pulseLabel

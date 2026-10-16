@@ -164,8 +164,16 @@ export const API = createApi({
             providesTags: (res, err, arg) => [{ id: arg.placeId, type: 'Bookmarks' }],
             query: (params) => `bookmarks${encodeQueryData(params)}`
         }),
+        /** All the visitor's bookmarked place IDs: the cards of any list show their bookmark from it */
+        bookmarksGetPlaces: builder.query<ApiType.Bookmarks.PlacesResponse, void>({
+            providesTags: [{ id: 'LIST', type: 'Bookmarks' }],
+            query: () => 'bookmarks/places'
+        }),
         bookmarksPutPlace: builder.mutation<void, ApiType.Bookmarks.Request>({
-            invalidatesTags: (res, err, arg) => [{ id: arg.placeId, type: 'Bookmarks' }],
+            invalidatesTags: (res, err, arg) => [
+                { id: arg.placeId, type: 'Bookmarks' },
+                { id: 'LIST', type: 'Bookmarks' }
+            ],
             query: (data) => ({
                 body: data,
                 method: 'PUT',

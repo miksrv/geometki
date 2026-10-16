@@ -18,20 +18,42 @@
     --letter-spacing: 0.00938em;
     --width-max: 1260px;
 
-    /* Type scale. The kit gives 12 / 14 / 16px (--font-size-small / --font-size /
-       --font-size-large); the project adds the levels in between and above. The Sass
-       variables in styles/variables.sass alias these, so every size is one of:
-         12 caption · 13 secondary · 14 UI text · 15 prose · 16 block title · 18 section title · 22 page title */
+    /* Spacing above the kit's 4…24px: the air between the sections of a reading page */
+    --space-8: 32px;
+    --space-10: 40px;
+
+    /* Type scale (DESIGN.md → Type scale). The kit gives 12 / 14 / 16px (--font-size-small /
+       --font-size / --font-size-large); the project adds the rest. Components take a role
+       from styles/typography.sass rather than a bare size:
+         11 micro · 12 caption · 13 secondary · 14 body · 16 block title · 17 prose · 18 section
+         title · 20 lead · 22 stat · 30 page title · 40 display (phones below) */
+    --font-size-micro: 11px;
     --font-size-secondary: 13px;
-    --font-size-prose: 15px;
+    --font-size-prose: 17px;
     --font-size-title-section: 18px;
-    --font-size-title-page: 22px;
+    --font-size-lead: 20px;
+    --font-size-stat: 22px;
+    --font-size-title-page: 30px;
+    --font-size-display: 40px;
+
+    /* A filled rating star, the same in both themes */
+    --color-star: #faaf00;
 
     /* Achievement tiers */
     --color-tier-bronze: #cd7f32;
     --color-tier-silver: #c0c0c0;
     --color-tier-gold: #ffd700;
     --color-tier-none: var(--icon-color-secondary);
+}
+
+/* Phones ($mobileMaxWidth, 768px): long lines are short there, the reading and title sizes step down */
+@media only screen and (max-width: 768px) {
+    :root {
+        --font-size-prose: 16px;
+        --font-size-lead: 17px;
+        --font-size-title-page: 24px;
+        --font-size-display: 28px;
+    }
 }
 
 /* Component aliases: re-declared on [data-theme] like the kit does, so

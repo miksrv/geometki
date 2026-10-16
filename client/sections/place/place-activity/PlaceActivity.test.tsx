@@ -91,10 +91,12 @@ describe('PlaceActivity', () => {
     it('renders collapsed with the count and loads the history only on click', () => {
         render(<PlaceActivity placeId={'p1'} />)
 
+        expect(screen.getByRole('heading', { name: /История изменений/ })).toBeInTheDocument()
+
         const toggle = screen.getByRole('button', { name: /История изменений/ })
 
         expect(toggle).toHaveAttribute('aria-expanded', 'false')
-        expect(toggle).toHaveTextContent('(14)')
+        expect(toggle).toHaveTextContent('14')
         expect(screen.queryByTestId('feed-list')).toBeNull()
         expect(useList.mock.calls.every(([, opts]) => opts?.skip)).toBe(true)
         expect(useCount).toHaveBeenCalledWith({ countOnly: true, place: 'p1' }, { skip: false })

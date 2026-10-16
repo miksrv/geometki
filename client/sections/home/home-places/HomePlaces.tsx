@@ -5,7 +5,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { PlaceCard, PlaceCardLoader, Section } from '@/components/shared'
-import { Carousel, Tabs } from '@/components/ui'
+import { ScrollRail, Tabs } from '@/components/ui'
 import useUserLocation from '@/hooks/useUserLocation'
 
 import styles from './styles.module.sass'
@@ -21,13 +21,19 @@ interface HomePlacesProps {
 }
 
 /**
- * "Куда поехать": places as a carousel of tiles, with tabs that say how they were picked —
+ * "Куда поехать": places as a row of tiles that scrolls sideways, with tabs that say how they were picked —
  * the most viewed this week, the newest, the closest. The closest ask for the location only
  * when the visitor presses the button.
  */
 export const HomePlaces: React.FC<HomePlacesProps> = ({ popular, latest }) => {
     const { t } = useTranslation()
     const [tab, setTab] = useState<PlacesTab>('popular')
+
+    const tabs: Array<{ key: PlacesTab; label: string }> = [
+        { key: 'popular', label: t('home-places-tab-popular') },
+        { key: 'new', label: t('home-places-tab-new') },
+        { key: 'nearby', label: t('home-places-tab-nearby') }
+    ]
     const { location, loading: locating, request: requestLocation } = useUserLocation()
 
     const { data: nearbyData, isFetching: nearbyLoading } = API.usePlacesGetListQuery(
@@ -66,11 +72,7 @@ export const HomePlaces: React.FC<HomePlacesProps> = ({ popular, latest }) => {
                 className={styles.tabs}
                 aria-label={t('home-places-title')}
                 activeTab={tab}
-                tabs={[
-                    { key: 'popular', label: t('home-places-tab-popular') },
-                    { key: 'new', label: t('home-places-tab-new') },
-                    { key: 'nearby', label: t('home-places-tab-nearby') }
-                ]}
+                tabs={tabs}
                 onChangeTab={(key) => key && setTab(key)}
             />
 
@@ -93,10 +95,13 @@ export const HomePlaces: React.FC<HomePlacesProps> = ({ popular, latest }) => {
                     ))}
                 </div>
             ) : places?.length ? (
-                // Remounted per tab: Embla keeps the scroll position of the old slides
-                <Carousel
+                // Remounted per tab: a new list starts from its first tile
+                <ScrollRail
                     key={tab}
-                    options={{ dragFree: true, loop: places.length > 3 }}
+                    variant={'cards'}
+                    aria-label={tabs.find(({ key }) => key === tab)?.label}
+                    prevLabel={t('scroll-back', 'Назад')}
+                    nextLabel={t('scroll-forward', 'Вперёд')}
                 >
                     {places.map((place) => (
                         <PlaceCard
@@ -106,7 +111,7 @@ export const HomePlaces: React.FC<HomePlacesProps> = ({ popular, latest }) => {
                             sizes={'(max-width: 768px) 100vw, 420px'}
                         />
                     ))}
-                </Carousel>
+                </ScrollRail>
             ) : (
                 <p className={styles.empty}>{t('nothing-here-yet')}</p>
             )}

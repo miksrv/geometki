@@ -1,8 +1,7 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { Container } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult, NextPage } from 'next'
-import { useRouter } from 'next/dist/client/router'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
 import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
@@ -12,10 +11,13 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, EmptyState, PageHeader, PaginationBar, PlacesList } from '@/components/shared'
+import { AppLayout, EmptyState, PageHeader } from '@/components/shared'
 import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
-import { PlaceFilterPanel, PlacesFilterType } from '@/sections/place'
+import type { PlacesFilterPatch, PlacesFilterState, PlacesFilterType } from '@/sections/place/places-filter-panel'
+// eslint-disable-next-line no-duplicate-imports
+import { buildFilterHref, getRequestOrder, PlaceFilterPanel } from '@/sections/place/places-filter-panel'
+import { PlacesListing } from '@/sections/place/places-listing'
 import { getCategoryTitle, isCategoryName, RENAMED_CATEGORIES } from '@/utils/categories'
 import { buildPlacesHref, encodeQueryData, getLandingFlags } from '@/utils/helpers'
 import { PlaceSchema } from '@/utils/schema'
@@ -38,6 +40,8 @@ interface PlacesPageProps {
     tag: string | null
     lat: number | null
     lon: number | null
+    /** Where the distances are from: the URL's `lat`/`lon`, else the visitor's `location` cookie */
+    distanceOrigin: ApiType.Coordinates | null
     sort: ApiType.SortFieldsType
     /**
      * The sort the server applies when the URL has none: `recommended` for a signed-in
@@ -45,6 +49,8 @@ interface PlacesPageProps {
      */
     defaultSort: ApiType.SortFieldsType
     order: ApiType.SortOrdersType
+    /** "Скрыть посещённые" (`?notVisited=1`): the signed-in visitor's own view */
+    notVisited: boolean
     currentPage: number
     placesCount: number
     placesList: ApiModel.Place[]
@@ -61,16 +67,17 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
     tag,
     lat,
     lon,
+    distanceOrigin,
     sort,
     defaultSort,
     order,
+    notVisited,
     currentPage,
     placesCount,
     placesList
 }) => {
     const { t, i18n } = useTranslation()
 
-    const router = useRouter()
     const flags = getLandingFlags()
 
     const initialFilter: PlacesFilterType = {
@@ -80,6 +87,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         lat: lat ?? undefined,
         locality: locality ?? undefined,
         lon: lon ?? undefined,
+        notVisited: notVisited ? 1 : undefined,
         order: order !== DEFAULT_ORDER ? order : undefined,
         page: currentPage !== 1 ? currentPage : undefined,
         region: region ?? undefined,
@@ -94,87 +102,35 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         category: category?.includes(',') ? undefined : initialFilter.category,
         lat: undefined,
         lon: undefined,
+        notVisited: undefined,
         order: undefined,
         sort: undefined
     })
     const canonicalPage = `${canonicalUrl}places${canonicalQuery}`
 
-    const handleChangeFilter = useCallback(
-        async (key: keyof PlacesFilterType, value: string | number | undefined) => {
-            const filter = { ...initialFilter, [key]: value }
-
-            const resetPage =
-                (filter.category !== category ||
-                    filter.country !== country ||
-                    filter.district !== district ||
-                    filter.region !== region ||
-                    filter.locality !== locality) &&
-                currentPage !== 1
-
-            const filterLocationType = filter.country
-                ? 'country'
-                : filter.region
-                  ? 'region'
-                  : filter.district
-                    ? 'district'
-                    : filter.locality
-                      ? 'locality'
-                      : undefined
-
-            // This page never fetched a slug for the current/newly picked location (it has no
-            // SSR resolve call), so `buildPlacesHref` falls back to the legacy `?region=…`
-            // query param here — exactly as it does for any location without a slug yet. The
-            // dedicated landing page (`pages/places/landing/[...slug].tsx`) always has one.
-            const target = buildPlacesHref(
-                {
-                    category: filter.category,
-                    defaultOrder: DEFAULT_ORDER,
-                    defaultSort,
-                    lat: filter.lat,
-                    location: filterLocationType
-                        ? { id: (filter[filterLocationType] as number) ?? 0, slug: null, type: filterLocationType }
-                        : null,
-                    lon: filter.lon,
-                    order: filter.order,
-                    page: resetPage ? undefined : filter.page,
-                    sort: filter.sort,
-                    tag: filter.tag
-                },
-                flags
-            )
-
-            return await router.push(target.href)
-        },
-        [category, country, currentPage, defaultSort, district, flags, initialFilter, locality, region, router]
-    )
-
-    const handleClearLocationFilter = async () => {
-        const target = buildPlacesHref(
-            {
-                category: initialFilter.category,
-                defaultOrder: DEFAULT_ORDER,
-                defaultSort,
-                lat: initialFilter.lat,
-                location: null,
-                lon: initialFilter.lon,
-                order: initialFilter.order,
-                page: initialFilter.page,
-                sort: initialFilter.sort,
-                tag: initialFilter.tag
-            },
-            flags
-        )
-
-        return await router.push(target.href)
+    const filterState: PlacesFilterState = {
+        categories: category ? category.split(',') : [],
+        location:
+            locationData && locationType
+                ? { id: locationData.id, name: locationData.name, slug: null, type: locationType }
+                : undefined,
+        notVisited,
+        sort,
+        tag: tag ?? undefined
     }
 
-    const handleChangeLocation = async (location?: ApiModel.AddressItem) => {
-        if (!location) {
-            await handleClearLocationFilter()
-        } else {
-            await handleChangeFilter(location.type ?? 'locality', location.id)
-        }
-    }
+    // This page never fetched a slug for the current location (it has no SSR resolve call), so
+    // `buildPlacesHref` keeps the legacy `?region=…` param for it — exactly as for any location
+    // without a slug yet; a location picked in the filters carries its slug.
+    const buildHref = (patch: PlacesFilterPatch) =>
+        buildFilterHref(filterState, patch, {
+            defaultOrder: DEFAULT_ORDER,
+            defaultSort,
+            flags,
+            lat,
+            lon,
+            order
+        })
 
     // The label of a single selected category; several (comma list) or an unknown key get none
     const currentCategory = isCategoryName(category) ? getCategoryTitle(t, category) : undefined
@@ -263,11 +219,26 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         ]
     }
 
-    const isGeoFiltered = !!(lat || lon || sort !== defaultSort || order !== DEFAULT_ORDER)
+    const isGeoFiltered = !!(lat || lon || sort !== defaultSort || order !== DEFAULT_ORDER || notVisited)
     // 2+ categories (features/20-location-seo-pages.md: "2+ категории — только
     // query-параметром... noindex, follow"), independent of the landing flags: this rule is
     // about an SEO meta tag, not a URL, so it applies as soon as the API accepts the list.
     const isMultiCategory = !!category?.includes(',')
+
+    // The request behind the list: the next pages are loaded with it, and it keys the listing
+    const listRequest: ApiType.Places.ListRequest = {
+        category,
+        country,
+        district,
+        lat: distanceOrigin?.lat,
+        locality,
+        lon: distanceOrigin?.lon,
+        notVisited: notVisited ? 1 : undefined,
+        order: getRequestOrder(sort, order),
+        region,
+        sort,
+        tag
+    }
 
     return (
         <AppLayout>
@@ -325,6 +296,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
 
             <PageHeader
                 title={title}
+                count={t('places-count', '{{count}} мест', { count: placesCount })}
                 breadcrumbs={breadcrumbsLinks}
                 lede={
                     currentPage === 1 && !currentCategory && !locationType && !tag
@@ -334,29 +306,24 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
             />
 
             <PlaceFilterPanel
-                sort={sort}
-                order={order}
-                category={category}
-                location={
-                    locationData && locationType
-                        ? { id: locationData.id, name: locationData.name, type: locationType }
-                        : undefined
-                }
-                onChange={handleChangeFilter}
-                onChangeLocation={handleChangeLocation}
+                filter={filterState}
+                defaultSort={defaultSort}
+                count={placesCount}
+                buildHref={buildHref}
+                mapHref={`/map${category && !category.includes(',') ? `?category=${category}` : ''}`}
             />
 
             {placesList?.length ? (
-                <>
-                    <PlacesList places={placesList} />
-                    <PaginationBar
-                        currentPage={currentPage}
-                        totalItemsCount={placesCount}
-                        perPage={POST_PER_PAGE}
-                        urlParam={initialFilter}
-                        linkPart={'places'}
-                    />
-                </>
+                <PlacesListing
+                    key={`${currentPage}:${JSON.stringify(listRequest)}`}
+                    places={placesList}
+                    count={placesCount}
+                    currentPage={currentPage}
+                    perPage={POST_PER_PAGE}
+                    request={listRequest}
+                    urlParam={initialFilter}
+                    linkPart={'places'}
+                />
             ) : (
                 <Container>
                     <EmptyState />
@@ -399,6 +366,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const defaultSort = cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT
             const sort = (context.query.sort as ApiType.SortFieldsType) || defaultSort
             const order = (context.query.order as ApiType.SortOrdersType) || DEFAULT_ORDER
+            const notVisited = !!context.query.notVisited && !!cookies[AUTH_COOKIES.TOKEN]
 
             hydrateAuthFromCookies(store, cookies)
 
@@ -485,6 +453,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                                   }
                                 : null,
                         lon,
+                        notVisited,
                         order,
                         page: currentPage,
                         sort,
@@ -519,8 +488,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     limit: POST_PER_PAGE,
                     locality,
                     lon: distanceOrigin?.lon,
+                    notVisited: notVisited ? 1 : undefined,
                     offset: (currentPage - 1) * POST_PER_PAGE,
-                    order: order,
+                    order: getRequestOrder(sort, order),
                     region,
                     sort: sort,
                     tag
@@ -542,11 +512,13 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     currentPage,
                     defaultSort,
                     district,
+                    distanceOrigin: distanceOrigin ?? null,
                     lat,
                     locality,
                     locationData: locationData?.data || null,
                     locationType,
                     lon,
+                    notVisited,
                     order,
                     placesCount: placesList?.count ?? 0,
                     placesList: placesList?.items ?? [],

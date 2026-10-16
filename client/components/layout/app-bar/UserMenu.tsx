@@ -62,6 +62,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ t, user, onLogout }) => {
                         </li>
                         {user?.role === 'admin' && (
                             <>
+                                <li role={'separator'} />
                                 <li>
                                     <Link href={'/admin/achievements'}>
                                         <Icon name={'Award'} />
@@ -76,6 +77,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ t, user, onLogout }) => {
                                 </li>
                             </>
                         )}
+                        <li role={'separator'} />
                         <li>
                             <Link
                                 href={'/'}

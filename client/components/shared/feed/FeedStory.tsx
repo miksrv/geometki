@@ -162,7 +162,6 @@ export const FeedStory: React.FC<FeedStoryProps> = ({ story, density = 'full', h
                                     place={story.place}
                                     headingLevel={3}
                                     sizes={'(max-width: 1024px) 100vw, 920px'}
-                                    className={styles.placeTile}
                                 />
                             ))}
 

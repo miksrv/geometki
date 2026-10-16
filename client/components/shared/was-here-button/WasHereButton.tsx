@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Button, Dialog } from 'simple-react-ui-kit'
+import { Button, cn, Dialog } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
@@ -23,10 +23,25 @@ interface PendingVisit {
 interface WasHereButtonProps {
     placeId?: string
     verificationExempt?: boolean
-    size?: 'small' | 'medium'
+    size?: 'small' | 'medium' | 'large'
+    /** Icon only, the label goes to the tooltip (the phone actions bar) */
+    hideLabel?: boolean
+    stretched?: boolean
+    className?: string
 }
 
-export const WasHereButton: React.FC<WasHereButtonProps> = ({ placeId, verificationExempt, size = 'small' }) => {
+/**
+ * "Я здесь был(а)": marks the visit, with the location when the visitor shares it. A
+ * marked visit turns the button green (success tint), the same in every place it is shown.
+ */
+export const WasHereButton: React.FC<WasHereButtonProps> = ({
+    placeId,
+    verificationExempt,
+    size = 'small',
+    hideLabel,
+    stretched,
+    className
+}) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
 
@@ -97,13 +112,11 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({ placeId, verificat
             return
         }
 
+        // The page has several of these buttons, each one listens for `online`: the first to run
+        // takes the queue synchronously, the others find it empty — a visit is a toggle, sent once
+        localStorage.setItem(PENDING_VISITS_KEY, '[]')
+
         const fresh = pending.filter((v) => now - v.timestamp < VISIT_TTL_MS)
-        const stale = pending.filter((v) => now - v.timestamp >= VISIT_TTL_MS)
-
-        if (stale.length) {
-            localStorage.setItem(PENDING_VISITS_KEY, JSON.stringify(fresh))
-        }
-
         const remaining: PendingVisit[] = []
 
         for (const visit of fresh) {
@@ -114,7 +127,10 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({ placeId, verificat
             }
         }
 
-        localStorage.setItem(PENDING_VISITS_KEY, JSON.stringify(remaining))
+        // Visits saved offline while these were being sent stay in the queue too
+        const added: PendingVisit[] = JSON.parse(localStorage.getItem(PENDING_VISITS_KEY) ?? '[]')
+
+        localStorage.setItem(PENDING_VISITS_KEY, JSON.stringify([...added, ...remaining]))
     }, [putVisit])
 
     useEffect(() => {
@@ -191,12 +207,16 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({ placeId, verificat
     return (
         <>
             <Button
-                mode={visitedData?.result ? 'primary' : 'secondary'}
+                mode={'secondary'}
                 size={size}
-                className={styles.wasHereButton}
+                icon={'CheckCircle'}
+                stretched={stretched}
+                className={cn(styles.wasHereButton, visitedData?.result && styles.visited, className)}
                 disabled={!placeId || isLoading}
                 loading={isLoading}
-                label={t('visited-was-here')}
+                label={hideLabel ? undefined : t('visited-was-here')}
+                tooltip={hideLabel ? t('visited-was-here') : undefined}
+                aria-pressed={!!visitedData?.result}
                 onClick={() => void handleVisitClick()}
             />
 

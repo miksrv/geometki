@@ -137,7 +137,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                         ))}
                     </div>
 
-                    {(data.places?.count ?? 0) > places.length && (
+                    {(data.places?.available ?? data.places?.count ?? 0) > places.length && (
                         <Button
                             mode={'secondary'}
                             size={'medium'}

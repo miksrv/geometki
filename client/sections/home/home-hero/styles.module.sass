@@ -1,4 +1,5 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 
 // Text over a photo: white on a dark gradient, whatever the theme
 .hero
@@ -6,13 +7,19 @@
     display: flex
     flex-direction: column
     min-height: 440px
-    overflow: hidden
     border-radius: var(--radius-lg)
     background: #1f2b38
     color: #ffffff
 
     @media (max-width: variables.$mobileMaxWidth)
         min-height: 0
+
+// The photo is cut to the rounded corners here, not the hero: the search panel hangs out of it
+.backdrop
+    position: absolute
+    inset: 0
+    overflow: hidden
+    border-radius: inherit
 
 .image
     object-fit: cover
@@ -44,7 +51,7 @@
     gap: var(--space-2)
     margin: 0 0 var(--space-3)
     font-size: variables.$fontSizeHeadline
-    font-weight: 600
+    font-weight: var(--font-weight-semibold)
     color: rgba(255, 255, 255, 0.85)
 
 .liveDot
@@ -56,16 +63,8 @@
 
 // The home page is the one place with a display-size h1: it is a landing, not a list
 .title
-    margin: 0
+    +type.titleDisplay
     color: inherit
-    font-size: 40px
-    font-weight: 700
-    line-height: 1.1
-    letter-spacing: -0.02em
-    text-wrap: balance
-
-    @media (max-width: variables.$mobileMaxWidth)
-        font-size: 28px
 
 .lead
     max-width: 560px
@@ -78,14 +77,10 @@
         margin-bottom: var(--space-5)
         font-size: variables.$fontSizeParagraph
 
-// The kit field keeps its own colours (the theme's), only taller here
+// The field and its panel keep the theme's colours over the photo
 .search
+    z-index: 2
     max-width: 600px
-    color: var(--text-color-primary)
-
-    :global(input)
-        height: 48px
-        font-size: variables.$fontSizeTitleH2
 
 .chips
     display: flex
@@ -106,7 +101,7 @@
     color: #ffffff
     font: inherit
     font-size: variables.$fontSizeHeadline
-    font-weight: 500
+    font-weight: var(--font-weight-medium)
     cursor: pointer
     backdrop-filter: blur(6px)
 
@@ -135,6 +130,7 @@
     margin: 0
     padding: var(--space-4) 48px
     border-top: 1px solid rgba(255, 255, 255, 0.12)
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg)
     background: rgba(0, 0, 0, 0.32)
     backdrop-filter: blur(8px)
 
@@ -151,9 +147,8 @@
 
     dd
         margin: 0
-        font-size: var(--font-size-title-page)
+        +type.stat
         font-weight: 700
-        line-height: 1.2
 
         @media (max-width: variables.$mobileMaxWidth)
             font-size: variables.$fontSizeTitleH1

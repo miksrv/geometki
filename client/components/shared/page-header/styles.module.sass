@@ -1,11 +1,13 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 
 .pageHeader
     display: flex
     align-items: center
     flex-wrap: wrap
     gap: 8px 12px
-    margin-top: 15px
+    // The first block of a page: the same distance from the app bar everywhere
+    margin-top: var(--space-4)
 
     // With a block beside the text the two columns align at the top, not the middle
     &.withAside
@@ -35,15 +37,30 @@
 .title
     flex: 1
     min-width: 0
-    margin: 0
-    font-size: var(--font-size-title-page)
-    font-weight: 600
-    line-height: 1.2
-    letter-spacing: -0.01em
-    text-wrap: balance
-    color: var(--text-color-primary)
+    +type.titlePage
     overflow: hidden
     text-overflow: ellipsis
+
+// The title with a count on its baseline: the count wraps under a long title
+.titleText
+    flex: 1
+    min-width: 0
+    display: flex
+    flex-wrap: wrap
+    align-items: baseline
+    gap: 2px 14px
+
+    .title
+        flex: 0 1 auto
+
+.count
+    flex-shrink: 0
+    font-size: var(--font-size-large)
+    color: var(--text-color-secondary)
+    white-space: nowrap
+
+    @media (max-width: variables.$mobileMaxWidth)
+        font-size: var(--font-size)
 
 .description
     margin: 0
@@ -65,8 +82,8 @@
     flex-shrink: 0
     margin-left: auto
     // Fold the control height into the title's line box so the title line stays exactly
-    // as tall as on pages without actions (a kit `small` control is 28px, the h1 line ~26px)
-    margin-block: calc((var(--font-size-title-page) * 1.2 - var(--size-control-small, var(--size-small))) / 2)
+    // as tall as on pages without actions (a kit `small` control is 28px, the h1 line ~35px)
+    margin-block: calc((var(--font-size-title-page) * 1.15 - var(--size-control-small, var(--size-small))) / 2)
 
     @media (max-width: variables.$mobileMaxWidth)
         // Under the title instead of squeezing it

@@ -13,6 +13,18 @@
     overflow: hidden
     text-overflow: ellipsis
 
+// Out of sight, still read by screen readers and crawlers (a heading that the layout makes obvious)
+@mixin visuallyHidden
+    position: absolute
+    width: 1px
+    height: 1px
+    margin: -1px
+    padding: 0
+    overflow: hidden
+    clip: rect(0 0 0 0)
+    white-space: nowrap
+    border: 0
+
 @mixin buttonReset
     border: none
     background: transparent
@@ -20,14 +32,14 @@
     padding: 0
 
 // Long-form markdown text (place description, collection article). One rhythm for both:
-// 15px body on a 1.55 line height, headings with more air above than below, lists,
+// 17px body (16 on phones) on a 1.7 line height, headings with more air above than below, lists,
 // quotes, images and code on the kit tokens. Apply to the element that wraps the
 // rendered markdown; the first and last children lose their outer margins so the block
 // sits flush in its parent.
 @mixin prose
     color: var(--text-color-primary)
     font-size: var(--font-size-prose)
-    line-height: 1.55
+    line-height: 1.7
     overflow-wrap: break-word
 
     & > :first-child
@@ -37,11 +49,11 @@
         margin-bottom: 0
 
     p
-        margin: 0 0 0.8em
+        margin: 0 0 1em
         font-size: inherit
 
     h1, h2, h3, h4, h5, h6
-        margin: 1.4em 0 0.4em
+        margin: 1.6em 0 0.5em
         color: var(--text-color-primary)
         font-weight: var(--font-weight-semibold)
         line-height: 1.3

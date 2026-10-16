@@ -25,20 +25,20 @@ export interface MediaTileProps {
     priority?: boolean
     /** The cover's `sizes`: the default is the three-column grid; carousels pass their slide width */
     sizes?: string
-    /** Content of the top gradient band (collections show the author there, places the category icon) */
+    /** Content of the gradient band over the top of the cover (collections show the author there) */
     top?: React.ReactNode
-    /** Content of the bottom gradient band: title, subline, stats */
+    /** Text under the cover on the page background: the title and a line of facts */
     children?: React.ReactNode
     className?: string
 }
 
 /**
- * Photo tile primitive: a cover that fills the card with gradient bands at the top and
- * bottom for overlay content. Every "entity on a cover" card (PlaceCard tile, CollectionCard)
- * is built on it, so the chrome — size, radius, gradients, hover zoom — is defined once.
+ * Photo tile primitive: a 260px cover (one picture or a mosaic) with an optional gradient
+ * band over its top, and the text under it on the page background, like the PlaceCard tile.
+ * The chrome — size, radius, hover zoom — is defined once.
  *
- * Overlay content uses the exported `mediaTileStyles` helpers (`title`, `subline`, `stats`,
- * `stat`, `author`) to stay white-on-gradient and consistent between entities.
+ * Text under the cover uses the exported `mediaTileStyles` helpers (`title`, `meta`,
+ * `region`, `stat`); the author in the top band uses `author` to stay white on the gradient.
  */
 export const MediaTile: React.FC<MediaTileProps> = ({
     href,
@@ -55,59 +55,61 @@ export const MediaTile: React.FC<MediaTileProps> = ({
 
     return (
         <article className={cn(styles.tile, className)}>
-            {/* Full-card link — sits behind all overlays */}
-            <Link
-                href={href}
-                title={title}
-                className={styles.coverLink}
-            >
-                {mosaic?.length ? (
-                    <div
-                        className={styles.mosaic}
-                        data-count={mosaic.length}
-                    >
-                        {mosaic.map((src, index) => (
-                            <div
-                                key={`${src}${index}`}
-                                className={styles.mosaicCell}
-                            >
-                                <Image
-                                    className={styles.cover}
-                                    // One accessible name for the tile is enough — the link has the title
-                                    alt={''}
-                                    quality={75}
-                                    fill
-                                    priority={priority}
-                                    fetchPriority={priority ? 'high' : undefined}
-                                    sizes={
-                                        mosaic.length === 1
-                                            ? '(max-width: 768px) 100vw, 33vw'
-                                            : '(max-width: 768px) 50vw, 17vw'
-                                    }
-                                    src={src}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    coverSrc && (
-                        <Image
-                            className={styles.cover}
-                            alt={title}
-                            quality={75}
-                            fill
-                            priority={priority}
-                            fetchPriority={priority ? 'high' : undefined}
-                            sizes={sizes}
-                            src={coverSrc}
-                        />
-                    )
-                )}
-            </Link>
+            <div className={styles.media}>
+                {/* Cover link — sits behind the top band */}
+                <Link
+                    href={href}
+                    title={title}
+                    className={styles.coverLink}
+                >
+                    {mosaic?.length ? (
+                        <div
+                            className={styles.mosaic}
+                            data-count={mosaic.length}
+                        >
+                            {mosaic.map((src, index) => (
+                                <div
+                                    key={`${src}${index}`}
+                                    className={styles.mosaicCell}
+                                >
+                                    <Image
+                                        className={styles.cover}
+                                        // One accessible name for the tile is enough — the link has the title
+                                        alt={''}
+                                        quality={75}
+                                        fill
+                                        priority={priority}
+                                        fetchPriority={priority ? 'high' : undefined}
+                                        sizes={
+                                            mosaic.length === 1
+                                                ? '(max-width: 768px) 100vw, 33vw'
+                                                : '(max-width: 768px) 50vw, 17vw'
+                                        }
+                                        src={src}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        coverSrc && (
+                            <Image
+                                className={styles.cover}
+                                alt={title}
+                                quality={75}
+                                fill
+                                priority={priority}
+                                fetchPriority={priority ? 'high' : undefined}
+                                sizes={sizes}
+                                src={coverSrc}
+                            />
+                        )
+                    )}
+                </Link>
 
-            {top && <div className={styles.topOverlay}>{top}</div>}
+                {top && <div className={styles.topOverlay}>{top}</div>}
+            </div>
 
-            <div className={styles.bottomOverlay}>{children}</div>
+            {children}
         </article>
     )
 }
@@ -122,14 +124,12 @@ export const MediaTileGrid: React.FC<MediaTileGridProps> = ({ className, childre
     <section className={cn(styles.grid, className)}>{children}</section>
 )
 
-/** Overlay content classes for tiles — see MediaTile */
+/** Content classes for tiles — see MediaTile */
 export const mediaTileStyles = {
     author: styles.author,
+    media: styles.media,
+    meta: styles.meta,
+    region: styles.region,
     stat: styles.stat,
-    stats: styles.stats,
-    subline: styles.subline,
-    tile: styles.tile,
-    title: styles.title,
-    topOverlay: styles.topOverlay,
-    bottomOverlay: styles.bottomOverlay
+    title: styles.title
 }

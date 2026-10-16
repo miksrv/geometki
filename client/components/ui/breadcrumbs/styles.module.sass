@@ -1,5 +1,7 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 
+// "Места › Природные чудеса": caption text, a quiet chevron between the levels
 .breadcrumbs
     display: flex
     flex-wrap: wrap
@@ -7,11 +9,11 @@
     margin: 0
     padding: 0
     list-style: none
-    line-height: normal
 
     li
-        font-size: variables.$fontSizeCaption
-        color: var(--text-color-secondary)
+        +type.caption
+        display: inline-flex
+        align-items: center
         min-width: 0
         overflow: hidden
         text-overflow: ellipsis
@@ -19,9 +21,17 @@
 
         a
             color: inherit
+            text-decoration: none
+            transition: color var(--duration-fast) var(--ease)
+
+            &:hover
+                color: var(--link-color)
 
         &:not(:last-of-type)
             &:after
-                content: '/'
-                user-select: none
+                content: '›'
                 margin: 0 6px
+                font-size: var(--font-size-large)
+                line-height: 1
+                opacity: .6
+                user-select: none

@@ -1,0 +1,82 @@
+// Text roles (DESIGN.md → Type scale): a role is a size, a weight, a line height and the
+// tracking together, so a title of one level looks the same on every page. Components take
+// a role (`+titlePage`) instead of putting a bare size together; the sizes live in
+// styles/theme.css and step down on phones by themselves.
+
+// The h1 of every page: the place, a collection, a profile, a list, a form, settings
+@mixin titlePage
+    margin: 0
+    font-size: var(--font-size-title-page)
+    font-weight: var(--font-weight-semibold)
+    line-height: 1.15
+    letter-spacing: -0.01em
+    text-wrap: balance
+    color: var(--text-color-primary)
+
+// The one larger heading: the guest home page hero and its closing band — a showcase
+@mixin titleDisplay
+    margin: 0
+    font-size: var(--font-size-display)
+    font-weight: 700
+    line-height: 1.1
+    letter-spacing: -0.02em
+    text-wrap: balance
+
+// The h2 of a section of a page (`Section`, `Container` titles of the main column)
+@mixin titleSection
+    margin: 0
+    font-size: var(--font-size-title-section)
+    font-weight: var(--font-weight-semibold)
+    line-height: 1.3
+    letter-spacing: -0.01em
+
+// A block or card title: sidebar blocks, dialogs, cards
+@mixin titleBlock
+    margin: 0
+    font-size: var(--font-size-large)
+    font-weight: var(--font-weight-semibold)
+    line-height: 1.3
+
+// The first paragraph of an article: the gist, read by everyone
+@mixin lead
+    font-size: var(--font-size-lead)
+    line-height: 1.55
+
+// UI text: controls, card text, facts lines
+@mixin body
+    font-size: var(--font-size)
+    line-height: 1.5
+
+// A secondary line: an address, a byline, values of a card
+@mixin secondary
+    font-size: var(--font-size-secondary)
+    line-height: 1.45
+    color: var(--text-color-secondary)
+
+// Captions, breadcrumbs, counters next to a title
+@mixin caption
+    font-size: var(--font-size-small)
+    line-height: 1.4
+    color: var(--text-color-secondary)
+
+// A label over a group of rows: day headings of the feed, menu and sheet titles
+@mixin overline
+    font-size: var(--font-size-small)
+    font-weight: var(--font-weight-semibold)
+    line-height: 1.4
+    text-transform: uppercase
+    letter-spacing: .04em
+    color: var(--text-color-secondary)
+
+// The smallest text: photo credits and badges over pictures, map labels
+@mixin micro
+    font-size: var(--font-size-micro)
+    line-height: 1.35
+
+// A number that is the point of its block: counters of the feed pulse, the year in numbers
+@mixin stat
+    font-size: var(--font-size-stat)
+    font-weight: var(--font-weight-semibold)
+    line-height: 1.1
+    letter-spacing: -0.01em
+    font-variant-numeric: tabular-nums

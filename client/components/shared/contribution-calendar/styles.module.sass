@@ -1,3 +1,4 @@
+@use '../../../styles/typography' as type
 // Contribution calendar: one grid — weekday names, then a column per week — stretched to
 // the full width; a square never gets smaller than 10px, below that the year scrolls
 
@@ -103,9 +104,7 @@
 
 .summaryValue
     margin: 0
-    font-size: var(--font-size-title-page)
-    font-weight: var(--font-weight-semibold)
-    line-height: 1.1
+    +type.stat
     color: var(--text-color-primary)
 
 .summaryLabel

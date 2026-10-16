@@ -53,6 +53,8 @@ export interface PlacesHrefInput {
     page?: number | null
     lat?: number | null
     lon?: number | null
+    /** "Hide the places I've been to": a personal view, always a query param */
+    notVisited?: boolean
     defaultSort: ApiType.SortFieldsType
     defaultOrder: ApiType.SortOrdersType
 }
@@ -107,6 +109,7 @@ export const buildPlacesHref = (input: PlacesHrefInput, flags: LandingFlags): Pl
         lat: input.lat ?? undefined,
         locality: !useLocationPath && input.location?.type === 'locality' ? input.location.id : undefined,
         lon: input.lon ?? undefined,
+        notVisited: input.notVisited ? 1 : undefined,
         order: input.order !== undefined && input.order !== input.defaultOrder ? input.order : undefined,
         page: input.page && input.page !== 1 ? input.page : undefined,
         region: !useLocationPath && input.location?.type === 'region' ? input.location.id : undefined,

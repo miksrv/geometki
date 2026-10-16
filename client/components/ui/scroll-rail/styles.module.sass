@@ -1,0 +1,119 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/mixins' as *
+
+$fadeWidth: 48px
+$cardsGap: var(--space-4)
+
+.rail
+    position: relative
+    min-width: 0
+
+.list
+    display: flex
+    overflow-x: auto
+    overscroll-behavior-x: contain
+    scrollbar-width: none
+
+    &::-webkit-scrollbar
+        display: none
+
+// --- Chips: items of their own width, faded edges ---
+
+.chips
+    .list
+        align-items: center
+        gap: 6px
+        // Room for the items' focus rings, which `overflow` would cut
+        padding: 2px
+
+    &.fadeStart .list
+        mask-image: linear-gradient(to right, transparent, #000 $fadeWidth)
+
+    &.fadeEnd .list
+        mask-image: linear-gradient(to left, transparent, #000 $fadeWidth)
+
+    &.fadeStart.fadeEnd .list
+        mask-image: linear-gradient(to right, transparent, #000 $fadeWidth, #000 calc(100% - #{$fadeWidth}), transparent)
+
+// --- Cards: three equal items, snapping; one and a peek of the next on phones ---
+
+.cards
+    // The arrows sit at the middle of a place tile's 2:1 cover, measured from the rail's width
+    container-type: inline-size
+
+    .list
+        align-items: flex-start
+        gap: $cardsGap
+        scroll-snap-type: x mandatory
+        scroll-behavior: smooth
+
+        @media (prefers-reduced-motion: reduce)
+            scroll-behavior: auto
+
+        & > *
+            flex: 0 0 calc((100% - 2 * #{$cardsGap}) / 3)
+            min-width: 0
+            scroll-snap-align: start
+
+            @media only screen and (max-width: variables.$mobileMaxWidth)
+                flex-basis: 85%
+
+    .arrow
+        top: calc((100cqw - 2 * #{$cardsGap}) / 3 * 0.25)
+        width: 40px
+        height: 40px
+        margin-top: -20px
+
+        svg
+            width: 22px
+            height: 22px
+
+    .prev
+        left: -8px
+
+    .next
+        right: -8px
+
+// --- The arrows: one round button for both kinds ---
+
+.arrow
+    +buttonReset
+    position: absolute
+    top: 50%
+    z-index: 1
+    display: grid
+    place-items: center
+    width: 32px
+    height: 32px
+    margin-top: -16px
+    border-radius: var(--radius-full)
+    background: var(--surface-1)
+    box-shadow: var(--container-shadow), var(--shadow-sm)
+    color: var(--icon-color-secondary)
+    transition: color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease)
+
+    &:hover
+        color: var(--text-color-primary)
+        box-shadow: var(--container-shadow), var(--shadow-md)
+
+    svg
+        width: 18px
+        height: 18px
+        fill: currentColor
+
+    // Fingers swipe; the arrows are for a mouse
+    @media (hover: none)
+        display: none
+
+.prev
+    left: 0
+
+.next
+    right: 0
+
+.separator
+    flex-shrink: 0
+    align-self: stretch
+    width: 1px
+    margin: 6px 4px
+    background: var(--border-strong)

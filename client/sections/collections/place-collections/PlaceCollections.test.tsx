@@ -68,31 +68,22 @@ describe('PlaceCollections', () => {
         expect(container).toBeEmptyDOMElement()
     })
 
-    it('lists the collections as compact rows with the total in the title', () => {
+    it('names the collections in one line with the total and the rest', () => {
         useList.mockReturnValue({
             data: {
-                count: 7,
+                count: 5,
                 items: [
-                    {
-                        id: 'c1',
-                        slug: 'lakes',
-                        title: 'Озёра',
-                        placesCount: 12,
-                        author: { id: 'u1', name: 'Лена' },
-                        cover: { preview: 'uploads/p1/cover_preview.jpg' }
-                    },
-                    { id: 'c2', slug: null, title: 'Без обложки', placesCount: 3, author: { id: 'u2', name: 'Миша' } }
+                    { id: 'c1', slug: 'lakes', title: 'Озёра', placesCount: 12 },
+                    { id: 'c2', slug: null, title: 'Урал', placesCount: 3 }
                 ]
             }
         } as any)
 
         const { container } = render(<PlaceCollections placeId={'p1'} />)
 
-        expect(screen.getByRole('heading')).toHaveTextContent('В коллекциях (7)')
-        expect(screen.getByRole('link', { name: /Озёра/ })).toHaveAttribute('href', '/collections/c1-lakes')
-        expect(screen.getByText('12 мест · Лена')).toBeInTheDocument()
-        // Covers are decorative (alt=""), the row link carries the title
-        expect(container.querySelector('img')).toHaveAttribute('src', 'https://img.test/uploads/p1/cover_preview.jpg')
+        expect(container).toHaveTextContent('В 5 коллекциях: Озёра, Урал и ещё 3')
+        expect(screen.getByRole('link', { name: 'Озёра' })).toHaveAttribute('href', '/collections/c1-lakes')
+        expect(screen.getByRole('link', { name: 'Урал' })).toHaveAttribute('href', '/collections/c2')
         expect(screen.getByTestId('icon-Layers')).toBeInTheDocument()
     })
 })

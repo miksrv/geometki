@@ -1,0 +1,81 @@
+@use '../../../styles/variables' as variables
+
+// The byline card: the history row closes it, flush with the card's bottom padding
+.card
+    display: flex
+    flex-direction: column
+    padding-bottom: 0 !important
+
+.byline
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    padding-bottom: var(--space-4)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-wrap: wrap
+
+.who
+    flex: 1
+    min-width: 0
+    display: flex
+    flex-direction: column
+    gap: 2px
+
+.name
+    color: var(--text-color-primary)
+    font-weight: var(--font-weight-semibold)
+
+    &:hover
+        color: var(--link-color)
+
+.stats
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-1) var(--space-4)
+    margin: 0
+    padding: 0
+    list-style: none
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
+
+    // Phones: a line of its own under the name, aligned with it
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        width: 100%
+        padding-left: 48px
+
+    li
+        display: inline-flex
+        align-items: center
+        gap: 5px
+
+    svg
+        width: 16px
+        height: 16px
+        fill: var(--icon-color-secondary)
+
+// The second line of the byline: the role and the dates
+.meta
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
+
+// The third line, always its own: the editors' faces and their count
+.editors
+    display: flex
+    align-items: center
+    gap: var(--space-2)
+    margin-top: 2px
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
+
+// Overlapping faces with a ring of the card colour between them, as in "Здесь были"
+.faces
+    display: inline-flex
+
+    & > *
+        margin-left: -6px
+        border-radius: 50%
+        box-shadow: 0 0 0 2px var(--container-background)
+
+        &:first-child
+            margin-left: 0

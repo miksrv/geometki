@@ -1,4 +1,5 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 @use '../../../styles/mixins' as *
 
 .placeDescription
@@ -11,40 +12,79 @@
     color: var(--text-color-secondary)
     font-size: variables.$fontSizeHeadline
 
+    a
+        color: var(--link-color)
+
 .untranslated
     margin-bottom: var(--space-3)
     color: var(--text-color-secondary)
 
-.formElement
-    margin-top: var(--space-4)
-
-// Rendered markdown: the same typography as the collection article
+// Rendered markdown: the same reading typography as the collection article, and a lead — the
+// first paragraph carries the gist of the place, everyone reads it, so it is larger
 .content
     +prose
 
-    // Collapsed: a fixed height with the last lines fading out, the full text stays in the DOM
-    &.clamped
-        max-height: 300px
-        overflow: hidden
-        mask-image: linear-gradient(to bottom, #000 calc(100% - 72px), transparent)
+    & > p:first-child
+        +type.lead
 
-// Plain text in the link colour, flush with the prose: no button chrome, no padding
+    // Collapsed: a fixed height (CLAMP_HEIGHT in the component) with the last lines fading
+    // out, the full text stays in the DOM
+    &.clamped
+        max-height: 540px
+        overflow: hidden
+        mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent)
+
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            max-height: 420px
+
+// Text with a chevron in the link colour, flush with the prose: no button chrome
 .readMore
-    display: block
+    display: inline-flex
+    align-items: center
+    gap: var(--space-1)
     margin-top: var(--space-2)
     font-size: var(--font-size)
     font-weight: var(--font-weight-semibold)
     color: var(--link-color)
     cursor: pointer
 
+    svg
+        width: 18px
+        height: 18px
+        fill: currentColor
+        transition: transform var(--duration-slow) var(--ease)
+
+    &.expanded svg
+        transform: rotate(180deg)
+
     &:hover
         color: var(--link-color-hover)
-        text-decoration: underline
+
+// The place of `.readMore` kept for a text that may turn out taller than the clamp (the row
+// height: the line of the font size plus the margin of the button)
+.readMoreSpace
+    height: calc(var(--font-size) * 1.5 + var(--space-2))
 
 .tagList
-    margin-top: var(--space-3)
     display: flex
     flex-wrap: wrap
-    gap: var(--space-1) var(--space-2)
-    list-style: none
+    gap: var(--space-2)
+    margin: var(--space-5) 0 0
     padding: 0
+    list-style: none
+
+    // Quiet chips: the pill corners of the site, never round ends
+    a
+        display: inline-flex
+        align-items: center
+        height: 26px
+        padding: 0 var(--space-3)
+        border-radius: var(--border-radius)
+        background: var(--surface-1)
+        box-shadow: var(--container-shadow)
+        color: var(--text-color-secondary)
+        font-size: var(--font-size-secondary)
+        text-decoration: none
+
+        &:hover
+            color: var(--link-color)

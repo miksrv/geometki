@@ -30,6 +30,17 @@ class Rating extends ResourceController
     }
 
     /**
+     * The vote belongs to this visitor: same session, or the same signed-in user.
+     * A guest's null user id must not match other guests' votes.
+     */
+    private function isOwnVote(object $item): bool
+    {
+        $userId = $this->session->user?->id;
+
+        return $item->session_id === $this->session->id || ($userId !== null && $item->user_id === $userId);
+    }
+
+    /**
      * Return the aggregated rating and current session/user vote for a place.
      *
      * GET /rating/:id
@@ -42,7 +53,8 @@ class Rating extends ResourceController
     {
         $ratingModel = new RatingModel();
         $ratingData  = $ratingModel->select('value, session_id, user_id')->where(['place_id' => $id])->findAll();
-        $response    = ['rating' => 0, 'count'  => 0];
+        // How many votes each score got, 1 to 5: the bars of the place page summary
+        $response    = ['rating' => 0, 'count'  => 0, 'distribution' => [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0]];
 
         if (!$ratingData) {
             return $this->respond($response);
@@ -51,8 +63,14 @@ class Rating extends ResourceController
         $response['count'] = count($ratingData);
 
         foreach ($ratingData as $item) {
-            if ($item->session_id === $this->session->id || $item->user_id === $this->session->user?->id) {
+            if ($this->isOwnVote($item)) {
                 $response['vote'] = $item->value;
+            }
+
+            $value = (int) $item->value;
+
+            if (isset($response['distribution'][$value])) {
+                $response['distribution'][$value]++;
             }
 
             $response['rating'] += $item->value;
@@ -111,7 +129,7 @@ class Rating extends ResourceController
             // Let's calculate a new rating for the place
             if ($ratingData) {
                 foreach ($ratingData as $item) {
-                    if ($item->session_id === $this->session->id || $item->user_id === $this->session->user?->id) {
+                    if ($this->isOwnVote($item)) {
                         $alreadyVoted = $item->id;
                         continue;
                     }

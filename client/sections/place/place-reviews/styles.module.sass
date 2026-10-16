@@ -1,0 +1,93 @@
+@use '../../../styles/variables' as variables
+
+.section
+    // Room for the app bar when the hero facts scroll here
+    scroll-margin-top: 72px
+
+.card
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+
+// The average on the left, the bars of the scores on the right
+.summary
+    display: grid
+    grid-template-columns: auto minmax(0, 1fr)
+    align-items: center
+    gap: var(--space-6)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        gap: var(--space-4)
+
+.score
+    display: flex
+    flex-direction: column
+    align-items: center
+    gap: var(--space-1)
+    min-width: 96px
+
+    strong
+        font-size: var(--font-size-display)
+        font-weight: var(--font-weight-semibold)
+        line-height: 1
+        letter-spacing: -0.02em
+        font-variant-numeric: tabular-nums
+
+    small
+        color: var(--text-color-secondary)
+        font-size: var(--font-size-secondary)
+
+.stars
+    display: inline-flex
+    gap: 2px
+
+    svg
+        width: 16px
+        height: 16px
+        fill: var(--surface-3)
+
+        &.on
+            fill: var(--color-star)
+
+.bars
+    display: flex
+    flex-direction: column
+    gap: 5px
+    margin: 0
+    padding: 0
+    list-style: none
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-small)
+    font-variant-numeric: tabular-nums
+
+    li
+        display: grid
+        grid-template-columns: 10px minmax(0, 1fr) 24px
+        align-items: center
+        gap: var(--space-2)
+
+        span:last-child
+            text-align: right
+
+    i
+        position: relative
+        height: 6px
+        border-radius: 3px
+        background: var(--surface-2)
+        overflow: hidden
+
+        &:before
+            content: ''
+            position: absolute
+            inset: 0 auto 0 0
+            width: var(--share)
+            border-radius: 3px
+            background: var(--color-star)
+
+.noVotes
+    margin: 0
+    color: var(--text-color-secondary)
+
+.reviews
+    padding-top: var(--space-4)
+    border-top: 1px solid var(--border)

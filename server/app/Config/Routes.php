@@ -246,6 +246,7 @@ $routes->group('tags', static function ($routes) {
 /** Bookmarks Controller **/
 $routes->group('bookmarks', static function ($routes) {
     $routes->get('/', 'Bookmarks::check');
+    $routes->get('places', 'Bookmarks::places');
     $routes->put('/', 'Bookmarks::set');
 
     $routes->options('/', 'Bookmarks');

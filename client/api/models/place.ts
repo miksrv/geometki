@@ -39,6 +39,10 @@ export type Place = {
     }
     visitRadiusM?: number
     verificationExempt?: boolean
+    /** `GET /places` for a signed-in visitor only: the place is in their bookmarks */
+    bookmarked?: boolean
+    /** `GET /places` for a signed-in visitor only: they marked "I was here" */
+    visited?: boolean
 }
 
 /**

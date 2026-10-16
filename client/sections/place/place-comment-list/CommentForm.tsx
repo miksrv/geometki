@@ -21,6 +21,7 @@ interface CommentFormProps {
     replyTo?: { id: string; name: string }
     isAuth?: boolean
     user?: ApiModel.User
+    placeholder?: string
     onCommentAdded?: () => void
     onCancelReply?: () => void
 }
@@ -30,6 +31,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
     replyTo,
     isAuth,
     user,
+    placeholder,
     onCommentAdded,
     onCancelReply
 }) => {
@@ -98,7 +100,6 @@ export const CommentForm: React.FC<CommentFormProps> = ({
             <div className={styles.commentFormRow}>
                 {user && (
                     <UserAvatar
-                        className={styles.userAvatar}
                         user={user}
                         size={'medium'}
                     />
@@ -119,7 +120,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
                             onChange={field.onChange}
                             onBlur={field.onBlur}
                             onKeyDown={handleKeyPress}
-                            placeholder={t('write-comment')}
+                            placeholder={placeholder ?? t('write-comment')}
                         />
                     )}
                 />

@@ -13,6 +13,7 @@ import { ImageUploader } from '@/components/ui'
 import { getErrorMessage } from '@/utils/api'
 
 import { isAbsoluteUrl, resolveImageUrl } from '../photo-lightbox/utils'
+import type { PhotoViewerState } from '../photo-viewer/PhotoViewer'
 import { Section } from '../section'
 
 import styles from './styles.module.sass'
@@ -21,6 +22,11 @@ const PhotoLightbox = dynamic(
     () => import('@/components/shared/photo-lightbox/PhotoLightbox').then((m) => ({ default: m.PhotoLightbox })),
     { ssr: false }
 )
+
+// The viewer is mounted while open only: a closed one costs nothing on the page
+const PhotoViewer = dynamic(() => import('../photo-viewer/PhotoViewer').then((m) => ({ default: m.PhotoViewer })), {
+    ssr: false
+})
 
 const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
     ssr: false
@@ -45,6 +51,14 @@ interface PhotoGalleryProps extends ContainerProps {
      * "+N" into the lightbox (the place page, DESIGN.md → Place page)
      */
     variant?: 'grid' | 'mosaic'
+    /**
+     * Mosaic: the full-screen viewer (`PhotoViewer`) — closed, the grid of all the photos or one
+     * photo. Controlled when given: the place page opens it from the hero carousel too
+     */
+    viewer?: PhotoViewerState
+    /** Mosaic: the first photo is the largest paint of the page (a place without a cover), loaded eagerly */
+    priority?: boolean
+    onViewerChange?: (state: PhotoViewerState) => void
     uploadingPhotos?: string[]
     onPhotoDelete?: (photos: ApiModel.Photo[]) => void
     onPhotoUploadClick?: () => void
@@ -55,6 +69,9 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     hideActions,
     showAll,
     variant = 'grid',
+    priority,
+    viewer: viewerProp,
+    onViewerChange,
     uploadingPhotos,
     onPhotoDelete,
     onPhotoUploadClick,
@@ -79,8 +96,14 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     const [lightboxPhotoIndex, setLightboxPhotoIndex] = useState<number>()
 
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
-    // Mosaic only: "Все фото" swaps the mosaic for the full grid, where every tile has its menu
-    const [gridOpen, setGridOpen] = useState<boolean>(false)
+    // Mosaic only: the viewer, with the rotate / delete tools on the tiles of its grid
+    const [viewerState, setViewerState] = useState<PhotoViewerState>(null)
+    const viewer = viewerProp !== undefined ? viewerProp : viewerState
+
+    const setViewer = (state: PhotoViewerState) => {
+        setViewerState(state)
+        onViewerChange?.(state)
+    }
 
     const visibleCount = showAll ? localPhotos.length : VISIBLE_COUNT
     const visiblePhotos = localPhotos.slice(0, visibleCount)
@@ -151,6 +174,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         setLocalPhotos(photos ?? [])
     }, [photos])
 
+    // `more`: the last mosaic tile, it opens the whole grid instead of the lightbox
     const renderPhotoItem = (photo: ApiModel.Photo, listIndex: number, more?: number) => (
         <li
             key={photo.id}
@@ -171,10 +195,25 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             <Link
                 className={styles.link}
                 href={resolveImageUrl(photo.full) ?? ''}
-                title={`${photo.title}. ${t('photo', { defaultValue: 'Фотография' })} ${listIndex + 1}`}
+                title={
+                    more
+                        ? t('all-photos-count', {
+                              count: localPhotos.length,
+                              defaultValue: 'Все фото ({{count}})'
+                          })
+                        : `${photo.title}. ${t('photo', { defaultValue: 'Фотография' })} ${listIndex + 1}`
+                }
+                aria-expanded={more ? false : undefined}
                 onClick={(event) => {
                     event.preventDefault()
-                    setLightboxPhotoIndex(listIndex)
+
+                    if (more) {
+                        setViewer({ index: listIndex, mode: 'grid' })
+                    } else if (variant === 'mosaic') {
+                        setViewer({ index: listIndex, mode: 'single' })
+                    } else {
+                        setLightboxPhotoIndex(listIndex)
+                    }
                 }}
             >
                 <Image
@@ -183,6 +222,8 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                     unoptimized={isAbsoluteUrl(photo.preview)}
                     alt={`${photo.title}. ${t('photo', { defaultValue: 'Фотография' })} ${listIndex + 1}`}
                     quality={75}
+                    priority={priority && variant === 'mosaic' && listIndex === 0}
+                    fetchPriority={priority && variant === 'mosaic' && listIndex === 0 ? 'high' : undefined}
                     width={700}
                     height={500}
                     sizes={variant === 'mosaic' ? MOSAIC_SIZES : TILE_SIZES}
@@ -190,7 +231,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 />
             </Link>
 
-            {!hideActions && isAuth && (
+            {!hideActions && isAuth && variant !== 'mosaic' && (
                 <Popout
                     className={styles.actions}
                     closeOnChildrenClick={true}
@@ -217,7 +258,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                                 </button>
                             </li>
                         )}
-                        <li>
+                        <li data-negative={true}>
                             <button
                                 type={'button'}
                                 disabled={!!photoLoadingID}
@@ -271,75 +312,116 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     )
 
     if (variant === 'mosaic') {
-        // Uploads in flight take tiles first; photos fill the rest of the five
+        // Uploads in flight take tiles first; photos fill the rest of the five. While the
+        // photos do not fill them, the free tile invites to add one; a full mosaic carries
+        // a small "Добавить фото" pill over the big photo instead.
         const uploadingTiles = uploadingPhotos?.slice(0, MOSAIC_COUNT) ?? []
         const mosaicPhotos = localPhotos.slice(0, Math.max(0, MOSAIC_COUNT - uploadingTiles.length))
         const hiddenCount = localPhotos.length - mosaicPhotos.length
-        const tileCount = uploadingTiles.length + mosaicPhotos.length
-        // Deleting down to five photos while the grid is open: back to the mosaic, no stale "Скрыть"
-        const showGrid = gridOpen && hiddenCount > 0
+        const filledCount = uploadingTiles.length + mosaicPhotos.length
+        const addTile = !!onPhotoUploadClick && filledCount < MOSAIC_COUNT
+        const tileCount = filledCount + (addTile ? 1 : 0)
+
+        const addLabel = t('add-photo', { defaultValue: 'Добавить фото' })
+        // The photos are named after their place: the viewer heading
+        const placeTitle = localPhotos[0]?.title
 
         return (
             <Section
+                id={props.id}
                 title={props.title}
-                action={
-                    <>
-                        {hiddenCount > 0 && (
-                            <Button
-                                mode={'link'}
-                                aria-expanded={showGrid}
-                                onClick={() => setGridOpen((prev) => !prev)}
-                            >
-                                {showGrid
-                                    ? t('collapse-photos', { defaultValue: 'Скрыть' })
-                                    : t('all-photos', { defaultValue: 'Все' })}
-                            </Button>
-                        )}
-                        {props.action}
-                    </>
-                }
+                titleHidden={true}
                 footer={props.footer}
                 className={props.className}
             >
                 {isEmptyPhotoList ? (
-                    <div className={styles.emptyLine}>
-                        {t('no-photos-here-yet', { defaultValue: 'Тут пока нет фотографий' })}
-                    </div>
-                ) : showGrid ? (
-                    <div className={styles.photoGrid}>
-                        <ul className={styles.photoGallery}>
-                            {localPhotos.map((photo, index) => renderPhotoItem(photo, index))}
-                        </ul>
-                    </div>
+                    onPhotoUploadClick ? (
+                        <button
+                            type={'button'}
+                            className={cn(styles.addTile, styles.addZone)}
+                            onClick={onPhotoUploadClick}
+                        >
+                            <Icon name={'Camera'} />
+                            <strong>{t('photos-empty-title', { defaultValue: 'Фото этого места пока нет' })}</strong>
+                            <span>
+                                {t('photos-empty-hint', {
+                                    defaultValue: 'Добавьте первое — нажмите или перетащите файлы сюда'
+                                })}
+                            </span>
+                        </button>
+                    ) : (
+                        <div className={styles.emptyLine}>
+                            {t('no-photos-here-yet', { defaultValue: 'Тут пока нет фотографий' })}
+                        </div>
+                    )
                 ) : (
-                    <ul
-                        className={styles.mosaic}
-                        data-count={tileCount}
-                    >
-                        {uploadingTiles.map((photo) => (
-                            <li
-                                key={photo}
-                                className={styles.photoItem}
+                    <div className={styles.mosaicWrap}>
+                        <ul
+                            className={styles.mosaic}
+                            data-count={tileCount}
+                        >
+                            {uploadingTiles.map((photo) => (
+                                <li
+                                    key={photo}
+                                    className={styles.photoItem}
+                                >
+                                    <div className={styles.loader}>
+                                        <Spinner />
+                                    </div>
+                                    <Image
+                                        src={photo}
+                                        alt={''}
+                                        width={206}
+                                        height={150}
+                                    />
+                                </li>
+                            ))}
+                            {mosaicPhotos.map((photo, index) =>
+                                renderPhotoItem(
+                                    photo,
+                                    index,
+                                    index === mosaicPhotos.length - 1 && hiddenCount > 0 ? hiddenCount : undefined
+                                )
+                            )}
+                            {addTile && (
+                                <li className={styles.photoItem}>
+                                    <button
+                                        type={'button'}
+                                        className={styles.addTile}
+                                        onClick={onPhotoUploadClick}
+                                    >
+                                        <Icon name={'Camera'} />
+                                        <strong>{addLabel}</strong>
+                                        <span>{t('photos-drop-short', { defaultValue: 'или перетащите сюда' })}</span>
+                                    </button>
+                                </li>
+                            )}
+                        </ul>
+
+                        {!!onPhotoUploadClick && !addTile && (
+                            <button
+                                type={'button'}
+                                className={styles.addPill}
+                                onClick={onPhotoUploadClick}
                             >
-                                <div className={styles.loader}>
-                                    <Spinner />
-                                </div>
-                                <Image
-                                    src={photo}
-                                    alt={''}
-                                    width={206}
-                                    height={150}
-                                />
-                            </li>
-                        ))}
-                        {mosaicPhotos.map((photo, index) =>
-                            renderPhotoItem(
-                                photo,
-                                index,
-                                index === mosaicPhotos.length - 1 && hiddenCount > 0 ? hiddenCount : undefined
-                            )
+                                <Icon name={'Camera'} />
+                                {addLabel}
+                            </button>
                         )}
-                    </ul>
+                    </div>
+                )}
+                {!!viewer && (
+                    <PhotoViewer
+                        photos={localPhotos}
+                        title={placeTitle}
+                        state={viewer}
+                        canEdit={isAuth && !hideActions}
+                        loadingId={photoLoadingID}
+                        onStateChange={setViewer}
+                        onRotate={(photo) => void handleRotateClick(photo.id, photo.placeId === 'temporary')}
+                        onDelete={(photo) => handleRemoveClick(photo.id)}
+                        onAddClick={onPhotoUploadClick}
+                    />
                 )}
                 {dialogs}
             </Section>

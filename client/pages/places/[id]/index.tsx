@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, cn } from 'simple-react-ui-kit'
+import { cn } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import dynamic from 'next/dynamic'
@@ -12,25 +12,24 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, PhotoGallery, Section } from '@/components/shared'
+import { AppLayout, PhotoGallery } from '@/components/shared'
 import type { PhotoUploaderHandle } from '@/components/shared/photo-uploader'
+import type { PhotoViewerState } from '@/components/shared/photo-viewer'
 import { FileDropZone } from '@/components/ui'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import { IN_COLLECTIONS_LIMIT, PlaceCollections } from '@/sections/collections'
 import {
-    NearbyPlaces,
+    PlaceAbout,
     PlaceActions,
-    PlaceActivity,
-    PlaceCommentList,
     PlaceDescription,
+    PlaceExplore,
     PlaceHero,
-    PlaceRatePrompt,
-    PlaceSidebar,
+    PlaceLocation,
+    PlaceReviews,
     PlaceVisited,
-    RELATED_PLACES_COUNT,
-    RelatedPlaces
+    RELATED_PLACES_COUNT
 } from '@/sections/place'
-import type { RelatedPlacesLocation } from '@/sections/place/related-places'
+import type { RelatedPlacesLocation } from '@/sections/place/place-explore'
 import { getCategoryTitle } from '@/utils/categories'
 import {
     buildPlacesHref,
@@ -104,6 +103,8 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
     const [localPhotos, setLocalPhotos] = useState<ApiModel.Photo[]>(photoList ?? [])
     const [uploadingPhotos, setUploadingPhotos] = useState<string[]>()
     const [nearbyPhotosOpen, setNearbyPhotosOpen] = useState<boolean>(false)
+    // The photo viewer: "+N" and the tiles of the mosaic, the phone carousel and its counter
+    const [photoViewer, setPhotoViewer] = useState<PhotoViewerState>(null)
 
     const landingFlags = getLandingFlags()
     // The most specific level of the place's address — same pairing as the visible
@@ -115,10 +116,6 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
     const ownPhotos = useMemo(() => photoList?.filter(({ external }) => !external), [photoList])
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
-
-    // Prefetched on the server with the page: the count for the "Комментарии (N)" heading
-    const { data: commentsData } = API.useCommentsGetListQuery({ place: place?.id }, { skip: !place?.id })
-    const commentsCount = commentsData?.items?.length ?? 0
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     const placePath = buildPlaceUrl(place?.id ?? '', place?.slug)
@@ -278,8 +275,23 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
 
     const placeDescription = truncateText(removeMarkdown(place?.content)?.replace(/\n/g, ' '), 155) || place?.title
 
+    const actionsProps = {
+        place,
+        placeUrl: pagePlaceUrl,
+        onChangePlaceCoverClick: handleEditPlaceCoverClick,
+        onNearbyPhotosClick: () => setNearbyPhotosOpen(true),
+        onPhotoUploadClick: handleUploadPhotoClick
+    }
+
     return (
-        <AppLayout>
+        <AppLayout
+            bottomBar={
+                <PlaceActions
+                    {...actionsProps}
+                    variant={'bar'}
+                />
+            }
+        >
             <Head>
                 {generateNextSeo({
                     title: place?.title,
@@ -335,23 +347,26 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
             <div>
                 <PlaceHero
                     place={place}
+                    photos={localPhotos}
                     coverHash={coverHash}
-                    attached={true}
-                />
-
-                <PlaceActions
-                    place={place}
-                    placeUrl={pagePlaceUrl}
+                    actions={
+                        <PlaceActions
+                            {...actionsProps}
+                            variant={'toolbar'}
+                        />
+                    }
                     onPhotoUploadClick={handleUploadPhotoClick}
-                    onChangePlaceCoverClick={handleEditPlaceCoverClick}
+                    onAllPhotosClick={() => setPhotoViewer({ index: 0, mode: 'grid' })}
+                    onPhotoClick={(index) => setPhotoViewer({ index, mode: 'single' })}
                 />
 
-                {/* Two columns on desktop; on phones the main column dissolves (display: contents) and
-                    the blocks take the explicit order of the .order* classes, the sidebar card among them */}
+                {/* Two columns on desktop: the reading column and the sticky "Где это" card. On
+                    phones the main column dissolves (display: contents) and the card comes right
+                    after the text: read → see where → go (DESIGN.md → Place page) */}
                 <div className={styles.pageLayout}>
                     <div className={styles.mainColumn}>
                         <FileDropZone
-                            className={styles.orderPhotos}
+                            className={cn(styles.orderPhotos, styles.photos)}
                             label={t('photo-drop-label', {
                                 defaultValue: 'Перетащите фотографии сюда, чтобы загрузить'
                             })}
@@ -360,30 +375,22 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                         >
                             <PhotoGallery
                                 variant={'mosaic'}
-                                title={localPhotos.length ? `${t('photos')} (${localPhotos.length})` : t('photos')}
+                                title={t('place-photos-title', {
+                                    title: place?.title,
+                                    defaultValue: 'Фотографии места «{{title}}»'
+                                })}
                                 photos={localPhotos}
+                                // Without a cover the first photo is the LCP element of desktop
+                                priority={!place?.cover}
                                 uploadingPhotos={uploadingPhotos}
+                                viewer={photoViewer}
+                                onViewerChange={setPhotoViewer}
                                 onPhotoDelete={setLocalPhotos}
-                                action={
-                                    <>
-                                        <Button
-                                            mode={'link'}
-                                            onClick={() => setNearbyPhotosOpen(true)}
-                                        >
-                                            {t('photos-nearby-short', { defaultValue: 'Рядом' })}
-                                        </Button>
-                                        <Button
-                                            mode={'link'}
-                                            onClick={handleUploadPhotoClick}
-                                        >
-                                            {t('add', { defaultValue: 'Добавить' })}
-                                        </Button>
-                                    </>
-                                }
+                                onPhotoUploadClick={() => handleUploadPhotoClick(undefined)}
                             />
                         </FileDropZone>
 
-                        <div className={styles.orderDescription}>
+                        <div className={styles.orderText}>
                             <PlaceDescription
                                 placeId={place?.id}
                                 content={place?.content}
@@ -392,49 +399,40 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                             />
                         </div>
 
-                        <div className={styles.orderRate}>
-                            <PlaceRatePrompt
+                        <div className={styles.orderReviews}>
+                            <PlaceReviews
                                 placeId={place?.id}
                                 authorId={place?.author?.id}
                             />
                         </div>
 
-                        <div className={cn(styles.orderNearby, !nearPlaces?.length && styles.hidden)}>
-                            <NearbyPlaces
-                                places={nearPlaces}
+                        <div className={styles.orderExplore}>
+                            <PlaceExplore
+                                nearPlaces={nearPlaces}
+                                relatedPlaces={relatedPlaces}
+                                category={place?.category}
+                                location={relatedLocation}
                                 lat={place?.lat}
                                 lon={place?.lon}
                             />
                         </div>
 
-                        <div className={cn(styles.orderRelated, (relatedPlaces?.length ?? 0) < 3 && styles.hidden)}>
-                            <RelatedPlaces
-                                places={relatedPlaces}
-                                category={place?.category}
-                                location={relatedLocation}
+                        <div className={styles.orderAbout}>
+                            <PlaceAbout
+                                place={place}
+                                photosCount={localPhotos.length}
                             />
-                        </div>
-
-                        <Section
-                            className={styles.orderComments}
-                            title={commentsCount ? `${t('comments-title')} (${commentsCount})` : t('comments-title')}
-                        >
-                            <PlaceCommentList placeId={place?.id} />
-                        </Section>
-
-                        <div className={styles.orderHistory}>
-                            <PlaceActivity placeId={place?.id} />
                         </div>
                     </div>
 
                     <aside className={styles.sidebar}>
-                        <PlaceSidebar
+                        <PlaceLocation
                             place={place}
                             nearPlaces={nearPlaces}
                         >
                             <PlaceVisited place={place} />
                             <PlaceCollections placeId={place?.id} />
-                        </PlaceSidebar>
+                        </PlaceLocation>
                     </aside>
                 </div>
             </div>

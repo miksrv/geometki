@@ -1,0 +1,78 @@
+@use '../../../styles/mixins' as *
+@use '../../../styles/typography' as type
+
+.optionList
+    display: flex
+    flex-direction: column
+
+.groupLabel
+    padding: var(--space-3) 10px var(--space-1)
+    +type.overline
+
+.option
+    +buttonReset
+    display: flex
+    align-items: center
+    gap: 10px
+    width: 100%
+    min-height: 40px
+    padding: var(--space-2) 10px
+    border-radius: var(--radius-md)
+    color: var(--text-color-primary)
+    font-family: var(--font-family), sans-serif
+    font-size: var(--font-size)
+    text-align: left
+
+    &:hover,
+    &:focus-visible
+        outline: none
+        background: var(--surface-2)
+
+.icon
+    display: grid
+    flex-shrink: 0
+    place-items: center
+    width: 32px
+    height: 32px
+    border-radius: var(--radius-lg)
+    background: var(--surface-2)
+
+    svg
+        width: 18px
+        height: 18px
+        fill: var(--icon-color-secondary)
+
+    img
+        width: 20px
+        height: 20px
+
+.accent
+    background: var(--color-main-background)
+
+    svg
+        fill: var(--color-main)
+
+.text
+    flex: 1
+    min-width: 0
+
+.caption
+    display: block
+    +type.caption
+
+.check
+    flex-shrink: 0
+    width: 18px
+    height: 18px
+    fill: var(--color-main)
+    visibility: hidden
+
+.selected
+    color: var(--color-main)
+
+    .check
+        visibility: visible
+
+.empty
+    padding: var(--space-4) 10px
+    color: var(--text-color-secondary)

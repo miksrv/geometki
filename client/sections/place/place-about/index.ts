@@ -1,0 +1,1 @@
+export { PlaceAbout } from './PlaceAbout'

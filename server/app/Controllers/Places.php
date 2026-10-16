@@ -25,6 +25,7 @@ use App\Models\PlacesTagsModel;
 use App\Models\PlacesContentModel;
 use App\Models\TagsModel;
 use App\Models\UsersBookmarksModel;
+use App\Models\UsersVisitedPlacesModel;
 use CodeIgniter\Files\File;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -63,7 +64,10 @@ class Places extends ResourceController
      * separated list accepted), limit, offset, author, country, region,
      * district, locality, location (a location slug — see GET /locations/resolve
      * — in addition to the id-based params), search, tag, bookmarkUser,
-     * lat, lon, excludePlaces, missingLocale (places with no text in that locale).
+     * lat, lon, excludePlaces, missingLocale (places with no text in that locale),
+     * notVisited (signed-in visitors only: drops the places they marked "I was here").
+     * For a signed-in visitor every item also carries `bookmarked` and `visited`, so a list
+     * of cards needs no request per card.
      *
      * @throws \Exception
      *
@@ -191,6 +195,8 @@ class Places extends ResourceController
 
             $formatter->formatListRow($place, $locale, $placeContent->title($place->id));
         }
+
+        $this->markVisitorState($placesList, $placesIds);
 
         return $this->respond([
             'items'  => $placesList,
@@ -987,6 +993,16 @@ class Places extends ResourceController
             );
         }
 
+        // The visitor's own "not been there yet" view: only a signed-in visitor has visits
+        if ($this->request->getGet('notVisited') && $this->session->isAuth && $this->session->user) {
+            $placesModel->where(
+                'NOT EXISTS (SELECT 1 FROM users_visited_places uvp WHERE uvp.place_id = places.id AND uvp.user_id = '
+                . db_connect()->escape((string) $this->session->user->id) . ')',
+                null,
+                false
+            );
+        }
+
         if ($exclude) {
             $exclude = explode(',', $exclude);
             $placesModel->whereNotIn('places.id', $exclude);
@@ -1028,6 +1044,35 @@ class Places extends ResourceController
      *
      * @return array Editor user objects with id, name, and avatar.
      */
+    /**
+     * Set `bookmarked` and `visited` on each list row for a signed-in visitor: two queries
+     * for the whole page instead of one bookmark check per card. Guests get neither field.
+     *
+     * @param array $placesList Formatted list rows.
+     * @param array $placesIds  Their IDs.
+     */
+    protected function markVisitorState(array $placesList, array $placesIds): void
+    {
+        if (!$placesIds || !$this->session->isAuth || !$this->session->user) {
+            return;
+        }
+
+        $userId     = $this->session->user->id;
+        $bookmarked = array_flip(array_column(
+            (new UsersBookmarksModel())->asArray()->select('place_id')->where('user_id', $userId)->whereIn('place_id', $placesIds)->findAll(),
+            'place_id'
+        ));
+        $visited    = array_flip(array_column(
+            (new UsersVisitedPlacesModel())->asArray()->select('place_id')->where('user_id', $userId)->whereIn('place_id', $placesIds)->findAll(),
+            'place_id'
+        ));
+
+        foreach ($placesList as $place) {
+            $place->bookmarked = isset($bookmarked[$place->id]);
+            $place->visited    = isset($visited[$place->id]);
+        }
+    }
+
     /**
      * A place description as the API returns it: entities decoded, tags stripped.
      * One rule for GET /places/:id and GET /places/:id/texts, so the edit form compares

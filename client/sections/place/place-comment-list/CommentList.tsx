@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, cn } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
@@ -74,16 +73,13 @@ export const CommentList: React.FC<CommentListProps> = ({ placeId }) => {
         [commentsByParent, t, appAuth.isAuth, replyTo]
     )
 
+    const placeholder = t('review-placeholder', { defaultValue: 'Как добраться, когда лучше ехать, что посмотреть…' })
+
     return (
         <section className={styles.commentList}>
-            {!comments?.length && (
-                <div className={styles.empty}>
-                    {t('comments-empty', { defaultValue: 'Пока никто не оставил комментарий. Ваш будет первым.' })}
-                </div>
-            )}
-            {!!comments?.length && renderComments()}
+            {!!comments?.length && <div className={styles.items}>{renderComments()}</div>}
 
-            {appAuth.isAuth && (
+            {appAuth.isAuth ? (
                 <div
                     ref={formRef}
                     className={styles.formSection}
@@ -93,23 +89,32 @@ export const CommentList: React.FC<CommentListProps> = ({ placeId }) => {
                         replyTo={replyTo}
                         isAuth={appAuth.isAuth}
                         user={appAuth.user}
+                        placeholder={placeholder}
                         onCommentAdded={() => setReplyTo(undefined)}
                         onCancelReply={() => setReplyTo(undefined)}
                     />
                 </div>
+            ) : (
+                // A guest sees the same field: a tap on it opens the sign-in dialog
+                <button
+                    type={'button'}
+                    className={styles.guestField}
+                    onClick={handleLoginClick}
+                >
+                    <span
+                        className={styles.guestAvatar}
+                        aria-hidden={true}
+                    />
+                    <span className={styles.guestInput}>{placeholder}</span>
+                </button>
             )}
 
-            {!appAuth.isAuth && (
-                <div className={cn(styles.loginContainer, !!comments?.length && styles.topBorder)}>
-                    <div>{t('login-to-write-comment')}</div>
-                    <div className={styles.loginAction}>
-                        <Button
-                            mode={'outline'}
-                            label={t('sign-in')}
-                            onClick={handleLoginClick}
-                        />
-                    </div>
-                </div>
+            {!comments?.length && (
+                <p className={styles.empty}>
+                    {t('reviews-empty', {
+                        defaultValue: 'Отзывов пока нет. Первый отзыв поможет следующим путешественникам.'
+                    })}
+                </p>
             )}
         </section>
     )

@@ -61,6 +61,11 @@ jest.mock('@/components/shared', () => ({
     )
 }))
 
+// The bookmark over a tile reads the store; a reader's tile shows it, nothing here is about it
+jest.mock('@/components/shared/place-card/PlaceCardBookmark', () => ({
+    PlaceCardBookmark: () => null
+}))
+
 jest.mock('next/dynamic', () => () => {
     const MockConfirmationDialog = ({ open, message, onConfirm, onCancel }: any) =>
         open ? (

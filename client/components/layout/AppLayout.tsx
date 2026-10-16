@@ -34,10 +34,16 @@ interface AppLayoutProps {
      * phones keep the regular scrolling page with the footer.
      */
     fitViewport?: boolean
+    /**
+     * Phones only: a page's own bar at the bottom of the screen in place of the bottom
+     * navigation (the place page actions). It must keep `$bottomNavHeight`, the room the
+     * footer and the snackbar leave for the navigation; the app bar still leads everywhere.
+     */
+    bottomBar?: React.ReactNode
     children?: React.ReactNode
 }
 
-export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, fitViewport, children }) => {
+export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, fitViewport, bottomBar, children }) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
 
@@ -103,7 +109,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, fitVi
 
             {!fullSize && <Footer className={fitViewport ? styles.desktopHidden : undefined} />}
 
-            <BottomNav />
+            {bottomBar ?? <BottomNav />}
 
             <Snackbar />
 

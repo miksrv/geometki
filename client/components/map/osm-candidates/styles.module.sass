@@ -18,7 +18,7 @@
     flex-direction: column
     gap: 4px
     padding: 8px 10px
-    font-size: 12px
+    font-size: var(--font-size-small)
     background: var(--container-background)
     color: var(--text-color-primary)
     border: var(--input-border)
@@ -49,7 +49,7 @@
     border: none !important
     box-shadow: none !important
     background: none !important
-    font-size: 12px
+    font-size: var(--font-size-small)
     line-height: 1
     color: var(--text-color-secondary)
     cursor: pointer
@@ -76,17 +76,11 @@
     &:hover
         background-color: var(--dropdown-background-color-hover) !important
 
-// Same pill as the AppBar bell counter
+// The `Counter` pill over the button's corner
 .collapsedCounter
     position: absolute
     top: -5px
     right: -5px
-    min-width: 18px
-    height: 18px
-    padding: 0 5px !important
-    border-radius: 9px !important
-    font-size: 10px !important
-    line-height: 1
 
 .statusLine
     display: flex

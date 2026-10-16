@@ -159,7 +159,8 @@ export const CollectionHeader: React.FC<CollectionHeaderProps> = ({
                                         {t('collections_settings', { defaultValue: 'Настройки коллекции' })}
                                     </button>
                                 </li>
-                                <li>
+                                <li role={'separator'} />
+                                <li data-negative={true}>
                                     <button
                                         type={'button'}
                                         onClick={onDelete}
