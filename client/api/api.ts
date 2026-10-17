@@ -57,6 +57,12 @@ export const API = createApi({
                 headers.set('Locale', locale)
             }
 
+            // A request from getServerSideProps comes from the Next server's IP, not the
+            // visitor's: the API does not mark the visitor's session with it
+            if (typeof window === 'undefined') {
+                headers.set('X-SSR', '1')
+            }
+
             return headers
         }
     }),

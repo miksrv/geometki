@@ -4,7 +4,6 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 
 ## Bugs
 
-- Server: `GET /auth/me` called from the home page SSR (`client/pages/index.tsx`) runs `SessionLibrary::update()` with the Next server's IP, overwriting `sessions.user_ip` until the browser's next poll; forward `X-Forwarded-For` from SSR requests (or read the user id without `auth/me`). `user_ip` is not read anywhere yet.
 - Server: `Places::create` / `Places::update` ignore the result of `PlacesContentModel::saveContent()`, so a failed text save (e.g. two concurrent first saves of a new locale hitting the `place_locale` unique key) still answers 200; check it and fail the request.
 - Push: `Push::renew()` answers 404 when the old endpoint is no longer in `push_subscriptions`, but `PushQueue` deletes a device on the first 404/410 from the push service; when `pushsubscriptionchange` fires after that (common in Firefox) the new subscription is lost and the device silently stops getting pushes. Keep a tombstone (`endpoint_hash` → `user_id`) for expired devices for ~30 days so `renew` can find the owner.
 - Push: overlapping `notifications:send` runs (a push run may last 180 s, cron is every minute) can each claim rows of the same user and send them separately, breaking the 15-minute grouping; skip users with rows `process` under another `locked_by` when claiming, or take a per-user `GET_LOCK`.
