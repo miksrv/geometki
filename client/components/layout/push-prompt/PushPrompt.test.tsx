@@ -37,7 +37,10 @@ jest.mock('@/app/notificationSlice', () => ({ NotifyReplace: (payload: unknown) 
 jest.mock('@/hooks/usePushSubscription', () => ({ __esModule: true, default: jest.fn() }))
 jest.mock('@/utils/localstorage', () => ({ getItem: jest.fn(() => ''), setItem: jest.fn() }))
 
-const mockStatus = { data: undefined as { active: boolean; devices: number } | undefined }
+const mockStatus = {
+    data: undefined as { active: boolean; devices: number } | undefined,
+    startedTimeStamp: 1 as number | undefined
+}
 const mockDelete = jest.fn()
 jest.mock('@/api', () => ({
     API: {
@@ -46,10 +49,11 @@ jest.mock('@/api', () => ({
     }
 }))
 
-const mockSubscription = { endpoint: null as string | null }
+const mockSubscription = { enabling: false, endpoint: null as string | null }
 const mockUnsubscribe = jest.fn()
 jest.mock('@/utils/push', () => ({
     getSubscription: () => Promise.resolve(mockSubscription.endpoint ? { endpoint: mockSubscription.endpoint } : null),
+    isStatusStale: () => mockSubscription.enabling,
     unsubscribe: () => mockUnsubscribe()
 }))
 
@@ -78,6 +82,7 @@ describe('PushPrompt', () => {
         mockPush('off')
         mockStatus.data = undefined
         mockSubscription.endpoint = null
+        mockSubscription.enabling = false
         mockDelete.mockReset()
         mockUnsubscribe.mockReset().mockResolvedValue('https://push.example/a')
     })
@@ -172,6 +177,20 @@ describe('PushPrompt', () => {
 
         expect(mockUnsubscribe).toHaveBeenCalledTimes(1)
         expect(mockDelete).toHaveBeenCalledWith('https://push.example/a')
+    })
+
+    it('keeps the subscription while the user is turning push on with it', async () => {
+        mockState.application.pushPromptRequested = false
+        mockSubscription.endpoint = 'https://push.example/a'
+        mockSubscription.enabling = true
+        mockStatus.data = { active: false, devices: 0 }
+
+        await act(async () => {
+            render(<PushPrompt />)
+        })
+
+        expect(mockUnsubscribe).not.toHaveBeenCalled()
+        expect(mockDelete).not.toHaveBeenCalled()
     })
 
     it('keeps the subscription of this device for the signed-in account', async () => {

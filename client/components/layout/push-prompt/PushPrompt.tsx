@@ -56,7 +56,7 @@ export const PushPrompt: React.FC = () => {
 const PushOwnerCheck: React.FC = () => {
     const [endpoint, setEndpoint] = useState<string | null>(null)
 
-    const { data: status } = API.usePushGetStatusQuery(endpoint ?? '', { skip: !endpoint })
+    const { data: status, startedTimeStamp } = API.usePushGetStatusQuery(endpoint ?? '', { skip: !endpoint })
     const [deleteSubscription] = API.usePushDeleteSubscriptionMutation()
 
     useEffect(() => {
@@ -66,13 +66,15 @@ const PushOwnerCheck: React.FC = () => {
     }, [])
 
     useEffect(() => {
-        if (endpoint && status && !status.active) {
+        // The user is turning push on (e.g. on /users/settings right after the page loaded):
+        // the same subscription is being bound to them, the status refetches after that
+        if (endpoint && status && !status.active && !Push.isStatusStale(startedTimeStamp)) {
             void Push.unsubscribe()
                 .then(() => deleteSubscription(endpoint))
                 .catch(() => undefined)
                 .finally(() => setEndpoint(null))
         }
-    }, [endpoint, status])
+    }, [endpoint, status, startedTimeStamp])
 
     return null
 }

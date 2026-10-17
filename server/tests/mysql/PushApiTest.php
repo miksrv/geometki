@@ -98,4 +98,32 @@ final class PushApiTest extends MySqlTestCase
         $this->renew()->assertStatus(404);
         $this->assertSame([], $this->devices());
     }
+
+    public function testStatusTakesTheEndpointInThePostBody(): void
+    {
+        $this->createSubscription('sub1', 'user1', self::OLD);
+        $this->signIn('user1');
+
+        $response = $this->withBodyFormat('json')->post('push/subscriptions/status', ['endpoint' => self::OLD]);
+        $response->assertOK();
+        $response->assertJSONExact(['active' => true, 'devices' => 1]);
+
+        $this->withBodyFormat('json')->post('push/subscriptions/status', ['endpoint' => self::NEW])
+            ->assertJSONExact(['active' => false, 'devices' => 1]);
+    }
+
+    public function testStatusOfAnotherAccountsDeviceIsOff(): void
+    {
+        $this->createUser('user2');
+        $this->createSubscription('sub1', 'user2', self::OLD);
+        $this->signIn('user1');
+
+        $this->withBodyFormat('json')->post('push/subscriptions/status', ['endpoint' => self::OLD])
+            ->assertJSONExact(['active' => false, 'devices' => 0]);
+    }
+
+    public function testStatusNeedsSigningIn(): void
+    {
+        $this->withBodyFormat('json')->post('push/subscriptions/status', ['endpoint' => self::OLD])->assertStatus(401);
+    }
 }

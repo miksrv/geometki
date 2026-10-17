@@ -18,6 +18,9 @@ abstract class MySqlTestCase extends CIUnitTestCase
 {
     private static bool $migrated = false;
 
+    /** @var array<string, string|false> Environment values a test replaced: restored after it */
+    private array $savedEnv = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -34,6 +37,46 @@ abstract class MySqlTestCase extends CIUnitTestCase
         }
 
         $this->truncateAll();
+    }
+
+    protected function tearDown(): void
+    {
+        foreach ($this->savedEnv as $name => $value) {
+            putenv($value === false ? $name : $name . '=' . $value);
+        }
+
+        $this->savedEnv = [];
+
+        parent::tearDown();
+
+        service('superglobals')->setServerArray(array_diff_key(service('superglobals')->getServerArray(), ['HTTP_AUTHORIZATION' => true]));
+    }
+
+    /**
+     * Make the next requests come from $userId (a JWT in `Authorization`, as the client sends it).
+     */
+    protected function signIn(string $userId): void
+    {
+        helper('auth');
+
+        $this->setEnv('auth.token.secret', 'tests-secret-tests-secret-tests-secret');
+        $this->setEnv('auth.token.live', '3600');
+
+        $email = $this->db->table('users')->select('email')->where('id', $userId)->get()->getRow()->email;
+
+        service('superglobals')->setServer('HTTP_AUTHORIZATION', generateAuthToken($email));
+    }
+
+    /**
+     * Set an environment value for this test only.
+     */
+    protected function setEnv(string $name, string $value): void
+    {
+        if (!array_key_exists($name, $this->savedEnv)) {
+            $this->savedEnv[$name] = getenv($name);
+        }
+
+        putenv($name . '=' . $value);
     }
 
     private function migrate(): void

@@ -342,7 +342,8 @@ export const API = createApi({
         }),
         pushGetStatus: builder.query<ApiType.Push.StatusResponse, string>({
             providesTags: ['PushStatus'],
-            query: (endpoint) => `push/subscriptions/status${encodeQueryData({ endpoint })}`
+            // A POST: the endpoint is a capability URL, it must not end up in access logs
+            query: (endpoint) => ({ body: { endpoint }, method: 'POST', url: 'push/subscriptions/status' })
         }),
         pushPostSubscription: builder.mutation<void, ApiType.Push.SubscribeRequest>({
             invalidatesTags: ['PushStatus'],

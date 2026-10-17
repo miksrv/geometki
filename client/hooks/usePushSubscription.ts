@@ -120,16 +120,23 @@ const usePushSubscription = () => {
 
     /** Must be called from a click: the browser shows its permission prompt only then */
     const enable = useCallback(async (): Promise<PushEnableResult> => {
-        if (!key?.publicKey) {
+        const publicKey = key?.publicKey
+
+        if (!publicKey) {
             return 'error'
         }
 
         setBusy(true)
 
         try {
-            const subscription = await Push.subscribe(key.publicKey)
+            const subscription = await Push.whileEnabling(async () => {
+                const created = await Push.subscribe(publicKey)
 
-            await postSubscription(Push.toSubscribeRequest(subscription)).unwrap()
+                await postSubscription(Push.toSubscribeRequest(created)).unwrap()
+
+                return created
+            })
+
             setEnabledEndpoint(subscription.endpoint)
             setEndpoint(subscription.endpoint)
 

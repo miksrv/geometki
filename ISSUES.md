@@ -4,11 +4,9 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 
 ## Bugs
 
-- Push (client): `PushOwnerCheck` (`PushPrompt.tsx`) can unsubscribe and delete a device the user re-enabled on `/users/settings` right after page load (it acts on the first `active: false` status while `enable()` re-posts the same endpoint); skip it while an enable is running.
 
 ## Improvements
 
-- Push: `GET /push/subscriptions/status?endpoint=…` puts the endpoint (a capability URL) into web server and proxy access logs; send it in a POST body or as `sha256(endpoint)`.
 - Push: quiet hours use only the time zone of the user's most recently updated device; a user with devices in different time zones may get a push at night on another one.
 - Deploy: migration `ReworkNotifications` adds an index on `sending_mail.email` VARCHAR(255) utf8mb4 (1020 bytes); check that production's row format is DYNAMIC (767-byte limit otherwise, and the migration is not transactional).
 - Achievements: without the hourly `achievements:evaluate`, a reputation achievement (reputation grows from other people's ratings) arrives only with the user's next own action; and every place / photo / rating / comment now also evaluates the experience, level, reputation, active days and streak metrics (`AchievementsLibrary::ALWAYS_METRICS`), `login_streak` reading all the user's activity days. Watch the cost; if it grows, cache the streak or run `achievements:evaluate` for the users active in the last hour.

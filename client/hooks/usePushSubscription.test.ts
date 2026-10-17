@@ -26,7 +26,8 @@ jest.mock('@/utils/push', () => ({
     getRegistration: jest.fn(),
     subscribe: jest.fn(),
     toSubscribeRequest: jest.fn((subscription: { endpoint: string }) => ({ endpoint: subscription.endpoint })),
-    unsubscribe: jest.fn()
+    unsubscribe: jest.fn(),
+    whileEnabling: (run: () => Promise<unknown>) => run()
 }))
 
 const mocked = <T extends (...args: never[]) => unknown>(fn: T) => jest.mocked(fn)

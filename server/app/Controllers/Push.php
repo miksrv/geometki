@@ -60,7 +60,8 @@ class Push extends ResourceController
     /**
      * Whether this device's subscription is on for the signed-in user.
      *
-     * GET /push/subscriptions/status?endpoint=… — auth required.
+     * POST /push/subscriptions/status — body {endpoint}; auth required. A POST so that
+     * the endpoint (a capability URL) stays out of the web server and proxy logs.
      *
      * @return ResponseInterface {active: bool, devices: int}
      */
@@ -70,7 +71,7 @@ class Push extends ResourceController
             return $this->failUnauthorized();
         }
 
-        $endpoint = (string) $this->request->getGet('endpoint');
+        $endpoint = (string) ($this->jsonInput()['endpoint'] ?? '');
         $row      = $endpoint !== '' ? $this->subscriptions->findByEndpoint($endpoint) : null;
 
         return $this->respond([
