@@ -70,10 +70,12 @@
            mirror -R --parallel=10 writable /writable
            # Permissions are best effort, as before: never fail the deploy.
            set cmd:fail-exit no
+           # New code may answer differently: the guest cache starts empty (Config\GuestCache).
+           # Files only: the live site keeps writing there, so removing the folder itself fails
+           # ("Directory not empty"); before the chmods, so a failure here is not lftp's exit code
+           mrm /writable/cache/guest/*.json
            chmod 755 /spark
            chmod -R 755 /writable
-           # New code may answer differently: the guest cache starts empty (Config\GuestCache)
-           rm -r /writable/cache/guest
            bye
            EOF
          working-directory: server
