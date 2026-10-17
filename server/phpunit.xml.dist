@@ -20,6 +20,10 @@
     <testsuites>
         <testsuite name="App">
             <directory>./tests</directory>
+            <exclude>./tests/mysql</exclude>
+        </testsuite>
+        <testsuite name="MySQL">
+            <directory>./tests/mysql</directory>
         </testsuite>
     </testsuites>
     <logging>

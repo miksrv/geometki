@@ -17,6 +17,20 @@ jobs:
     name: PHPUnit Tests
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
     steps:
       - uses: actions/checkout@v4
 
@@ -44,3 +58,15 @@ jobs:
       - name: PHPUnit Tests
         run: vendor/bin/phpunit --no-coverage
         working-directory: server
+
+      - name: PHPUnit Tests on MySQL
+        run: vendor/bin/phpunit --no-coverage --testsuite MySQL
+        working-directory: server
+        env:
+          database_tests_hostname: 127.0.0.1
+          database_tests_port: 3306
+          database_tests_database: tests
+          database_tests_username: root
+          database_tests_password: ''
+          database_tests_DBDriver: MySQLi
+          database_tests_DBPrefix: ''

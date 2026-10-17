@@ -56,7 +56,8 @@ class AddPlacesContent extends Migration {
         $this->forge->addForeignKey('place_id', 'places', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addKey('title', false, false, 'place_title');
-        $this->forge->addKey('content', false, false, 'place_content');
+        // No plain key on `content`: MySQL refuses a TEXT key without a length on an empty
+        // database. SplitPlacesContentRevisions adds it as `content`(768)
         $this->forge->createTable('places_content');
     }
 
