@@ -1,5 +1,6 @@
 import React from 'react'
 import { Provider } from 'react-redux'
+import { getCookie } from 'cookies-next'
 
 import { configureStore } from '@reduxjs/toolkit'
 import { render } from '@testing-library/react'
@@ -49,8 +50,9 @@ jest.mock('@/config/constants', () => ({
     }
 }))
 
-const makeStore = () =>
+const makeStore = (auth?: { token?: string; session?: string }) =>
     configureStore({
+        preloadedState: auth ? { auth } : undefined,
         reducer: {
             application: applicationReducer,
             auth: authReducer,
@@ -58,10 +60,12 @@ const makeStore = () =>
         }
     })
 
-const renderWithStore = (ui: React.ReactElement) => {
-    const store = makeStore()
+const renderWithStore = (ui: React.ReactElement, auth?: { token?: string; session?: string }) => {
+    const store = makeStore(auth)
     return render(<Provider store={store}>{ui}</Provider>)
 }
+
+const queryOptions = () => jest.mocked(API.useAuthGetMeQuery).mock.calls.at(-1)?.[1]
 
 describe('AppAuthChecker', () => {
     beforeEach(() => {
@@ -72,6 +76,24 @@ describe('AppAuthChecker', () => {
         it('renders nothing visible (returns empty fragment)', () => {
             const { container } = renderWithStore(<AppAuthChecker />)
             expect(container.innerHTML).toBe('')
+        })
+    })
+
+    describe('polling', () => {
+        it('polls a signed-in visitor every minute', () => {
+            renderWithStore(<AppAuthChecker />, { session: 's1', token: 't1' })
+            expect(queryOptions()).toMatchObject({ pollingInterval: 60 * 1000, skip: false })
+        })
+
+        it('asks a guest without a session once, for one, and does not poll', () => {
+            renderWithStore(<AppAuthChecker />, { session: '', token: '' })
+            expect(queryOptions()).toMatchObject({ pollingInterval: 0, skip: false })
+        })
+
+        it('does not ask a guest who already has a session at all', () => {
+            jest.mocked(getCookie).mockReturnValueOnce('s1')
+            renderWithStore(<AppAuthChecker />, { session: 's1', token: '' })
+            expect(queryOptions()).toMatchObject({ skip: true })
         })
     })
 
