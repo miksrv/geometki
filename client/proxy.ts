@@ -6,7 +6,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 import { AUTH_COOKIES, LOCALE_HEADER } from '@/config/constants'
-import { isCategoryCombination, isCrawler } from '@/utils/crawler'
+import { isCategoryCombination, isCrawler, isGeoList } from '@/utils/crawler'
 import { getLandingFlags, isLandingSegment, LANDING_PROXY_HEADER } from '@/utils/placesLanding'
 
 // A per-server-instance secret, generated once when this module is first loaded and never
@@ -38,10 +38,12 @@ export const proxy = (request: NextRequest) => {
 
     // Crawlers walking every combination of the category chips (`/places?category=a,b,c&sort=…`)
     // made the API host run out of CPU: each such page costs several API requests and is
-    // `noindex` anyway, so they get a 410 without rendering it. People keep the combinations.
+    // `noindex` anyway, so they get a 410 without rendering it. The same for the lists sorted by
+    // distance from a point (`/places?lat=…&lon=…`), one per place × category × page.
+    // People keep both.
     if (
         request.nextUrl.pathname.startsWith('/places') &&
-        isCategoryCombination(request.nextUrl.searchParams) &&
+        (isCategoryCombination(request.nextUrl.searchParams) || isGeoList(request.nextUrl.searchParams)) &&
         isCrawler(request.headers.get('user-agent'))
     ) {
         return new NextResponse(null, { headers: { 'X-Robots-Tag': 'noindex' }, status: 410 })
