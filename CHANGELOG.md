@@ -4,6 +4,8 @@
 
 ### Patch Changes
 
+- Site: pages load faster again; search robots no longer crawl every combination of the category filters
+- Optimized place pages, lists and the home page: public data is served from a cache, fewer background requests
 - Place cards: in search, the activity feed and collections they show your bookmark and "You've been here" right away, like on the places page
 - Map: the photo layer no longer fails to load on some database setups
 - Places: searching by one to three letters answers quickly

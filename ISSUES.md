@@ -4,6 +4,7 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 
 ## Bugs
 
+- VPS: the Next.js process grows to 1 GB and PM2 restarts it every 15–30 minutes (`max_memory_restart: '1G'`, 141 restarts by 2026-10-17) on a 1-CPU, 1.5 GB VPS without swap; find the leak (heap snapshot under load) or lower the limit and add swap.
 
 ## Improvements
 
