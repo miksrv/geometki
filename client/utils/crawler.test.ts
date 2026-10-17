@@ -1,4 +1,4 @@
-import { isCategoryCombination, isCrawler } from './crawler'
+import { isCategoryCombination, isCrawler, isGeoList } from './crawler'
 
 describe('isCrawler', () => {
     it.each([
@@ -40,5 +40,17 @@ describe('isCategoryCombination', () => {
     it('is false for one category or none', () => {
         expect(isCategoryCombination(new URLSearchParams('category=cave'))).toBe(false)
         expect(isCategoryCombination(new URLSearchParams('page=2'))).toBe(false)
+    })
+})
+
+describe('isGeoList', () => {
+    it('is true for a list sorted from a point in the URL', () => {
+        expect(isGeoList(new URLSearchParams('lat=51.7&lon=55.1&sort=distance&order=ASC'))).toBe(true)
+        expect(isGeoList(new URLSearchParams('category=cave&lat=51.7&lon=55.1&page=2'))).toBe(true)
+    })
+
+    it('is false without coordinates', () => {
+        expect(isGeoList(new URLSearchParams('category=cave&sort=distance'))).toBe(false)
+        expect(isGeoList(new URLSearchParams(''))).toBe(false)
     })
 })

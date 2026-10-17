@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.17.3
+
+### Patch Changes
+
+- Site: search robots no longer crawl the lists of places nearby, which cut the server load
+
 ## 1.17.2
 
 ### Patch Changes

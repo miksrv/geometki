@@ -8,7 +8,23 @@ import { PlaceExplore } from './PlaceExplore'
 
 jest.mock('simple-react-ui-kit', () => ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Button: ({ label, link }: any) => <a href={link}>{label}</a>
+    Button: ({ label, link, onClick }: any) =>
+        link ? (
+            <a href={link}>{label}</a>
+        ) : (
+            <button
+                type={'button'}
+                onClick={onClick}
+            >
+                {label}
+            </button>
+        )
+}))
+
+const mockPush = jest.fn()
+
+jest.mock('next/router', () => ({
+    useRouter: () => ({ push: mockPush })
 }))
 
 jest.mock('next-i18next/pages', () => ({
@@ -111,10 +127,10 @@ describe('PlaceExplore', () => {
         expect(screen.getByText('Рядом 0').closest('[hidden]')).toBeNull()
         // Hidden, but still links for crawlers
         expect(screen.getByText('Мост 0').closest('div[hidden]')).not.toBeNull()
-        expect(screen.getByRole('link', { name: 'all-places-nearby' })).toHaveAttribute(
-            'href',
-            '/places?lat=1&lon=2&sort=distance&order=ASC'
-        )
+        // A button, not a link: crawlers must not find the geo lists
+        expect(screen.queryByRole('link', { name: 'all-places-nearby' })).toBeNull()
+        fireEvent.click(screen.getByRole('button', { name: 'all-places-nearby' }))
+        expect(mockPush).toHaveBeenCalledWith('/places?lat=1&lon=2&sort=distance&order=ASC')
     })
 
     it('switches to the region tab with the link to its landing page', () => {

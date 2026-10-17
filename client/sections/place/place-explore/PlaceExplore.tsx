@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Button } from 'simple-react-ui-kit'
 
+import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
@@ -54,6 +55,7 @@ export const PlaceExplore: React.FC<PlaceExploreProps> = ({
     lon
 }) => {
     const { t } = useTranslation()
+    const router = useRouter()
 
     const hasNearby = !!nearPlaces?.length
     const hasRelated = !!category && (relatedPlaces?.length ?? 0) >= RELATED_PLACES_MIN
@@ -110,16 +112,19 @@ export const PlaceExplore: React.FC<PlaceExploreProps> = ({
             className={styles.section}
             title={t('place-explore-title', { defaultValue: 'Что ещё посмотреть' })}
             action={
-                // Both links stay in the HTML, the inactive one hidden: the link to the location ×
-                // category page is an internal link of every place page, whichever tab is open
+                // Both actions stay in the HTML, the inactive one hidden: the link to the location ×
+                // category page is an internal link of every place page, whichever tab is open.
+                // "All places nearby" is a button, not a link: a geo list per place × category ×
+                // page is an endless set of URLs that crawlers and scrapers walked by the thousand
                 <>
                     {hasNearby && (
                         <span hidden={activeTab !== 'nearby'}>
                             <Button
                                 mode={'link'}
-                                noIndex={true}
-                                link={`/places?lat=${lat}&lon=${lon}&sort=distance&order=ASC`}
                                 label={t('all-places-nearby')}
+                                onClick={() =>
+                                    void router.push(`/places?lat=${lat}&lon=${lon}&sort=distance&order=ASC`)
+                                }
                             />
                         </span>
                     )}

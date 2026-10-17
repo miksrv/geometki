@@ -31,3 +31,9 @@ export const isCrawler = (userAgent?: string | null): boolean => !userAgent || C
  */
 export const isCategoryCombination = (searchParams: URLSearchParams): boolean =>
     searchParams.getAll('category').some((value) => value.includes(','))
+
+/**
+ * A places list sorted by distance from a point in the URL (`?lat=&lon=`): `noindex`, and one
+ * list per place × category × page — an endless set of URLs for a crawler
+ */
+export const isGeoList = (searchParams: URLSearchParams): boolean => searchParams.has('lat') || searchParams.has('lon')
