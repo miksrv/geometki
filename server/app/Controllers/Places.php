@@ -416,6 +416,8 @@ class Places extends ResourceController
 
             if ($insertResult === false) {
                 log_message('error', 'Failed to insert place: ' . json_encode($this->model->errors()));
+                $db->transRollback();
+
                 return $this->failValidationErrors($this->model->errors());
             }
 
@@ -434,7 +436,13 @@ class Places extends ResourceController
             $content->title    = $placeTitle;
             $content->content  = $placeContent;
 
-            $placesContentModel->saveContent($content);
+            // Before the activity and the photo files: nothing of a place without its text stays
+            if (!$placesContentModel->saveContent($content)) {
+                $db->transRollback();
+                log_message('error', 'Places::create: the text of a new place was not saved');
+
+                return $this->failServerError(lang('Places.createTransactionError'));
+            }
 
             $activity = new ActivityLibrary();
             $activity->place($newPlaceId);
@@ -550,9 +558,6 @@ class Places extends ResourceController
                 }
             }
 
-            // Save place tags
-            $updatedTags = isset($input->tags) ? $placeTags->saveTags($input->tags, $id) : null;
-
             $shouldRecordActivity = false;
 
             // Save place content
@@ -568,10 +573,18 @@ class Places extends ResourceController
                     $placeEntity->delta = strlen($updatedContent) - strlen((string) $currentText?->content);
                 }
 
-                $contentModel->saveContent($placeEntity);
+                // E.g. two first saves of a new locale at once: the second hits the unique key
+                if (!$contentModel->saveContent($placeEntity)) {
+                    log_message('error', 'Places::update: the {locale} text of place {id} was not saved', ['locale' => $locale, 'id' => $id]);
+
+                    return $this->failServerError(lang('Places.createTransactionError'));
+                }
 
                 $shouldRecordActivity = true;
             }
+
+            // After the text: a text that failed to save leaves the tags as they were
+            $updatedTags = isset($input->tags) ? $placeTags->saveTags($input->tags, $id) : null;
 
             $place = new PlaceEntity();
             $hasChanges = false;
