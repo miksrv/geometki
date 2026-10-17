@@ -29,6 +29,9 @@ abstract class MySqlTestCase extends CIUnitTestCase
             $this->markTestSkipped('Needs MySQL: set database.tests.* (tests/README.md)');
         }
 
+        // The JWT and unsubscribe tokens need a secret; CI has no .env
+        $this->setEnv('auth.token.secret', 'tests-secret-tests-secret-tests-secret');
+
         $this->db = Database::connect('tests');
 
         if (!self::$migrated) {
@@ -59,7 +62,6 @@ abstract class MySqlTestCase extends CIUnitTestCase
     {
         helper('auth');
 
-        $this->setEnv('auth.token.secret', 'tests-secret-tests-secret-tests-secret');
         $this->setEnv('auth.token.live', '3600');
 
         $email = $this->db->table('users')->select('email')->where('id', $userId)->get()->getRow()->email;
