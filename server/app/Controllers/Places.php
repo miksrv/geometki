@@ -25,7 +25,6 @@ use App\Models\PlacesTagsModel;
 use App\Models\PlacesContentModel;
 use App\Models\TagsModel;
 use App\Models\UsersBookmarksModel;
-use App\Models\UsersVisitedPlacesModel;
 use CodeIgniter\Files\File;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -196,7 +195,7 @@ class Places extends ResourceController
             $formatter->formatListRow($place, $locale, $placeContent->title($place->id));
         }
 
-        $this->markVisitorState($placesList, $placesIds);
+        $formatter->markVisitorState($placesList, $this->session->user?->id);
 
         return $this->respond([
             'items'  => $placesList,
@@ -1050,43 +1049,6 @@ class Places extends ResourceController
     }
 
     /**
-     * Return the list of users who have edited a place, excluding its original author.
-     *
-     * @param string $placeId       The place ID to look up.
-     * @param string $excludeUserId The original author's user ID to exclude.
-     *
-     * @return array Editor user objects with id, name, and avatar.
-     */
-    /**
-     * Set `bookmarked` and `visited` on each list row for a signed-in visitor: two queries
-     * for the whole page instead of one bookmark check per card. Guests get neither field.
-     *
-     * @param array $placesList Formatted list rows.
-     * @param array $placesIds  Their IDs.
-     */
-    protected function markVisitorState(array $placesList, array $placesIds): void
-    {
-        if (!$placesIds || !$this->session->isAuth || !$this->session->user) {
-            return;
-        }
-
-        $userId     = $this->session->user->id;
-        $bookmarked = array_flip(array_column(
-            (new UsersBookmarksModel())->asArray()->select('place_id')->where('user_id', $userId)->whereIn('place_id', $placesIds)->findAll(),
-            'place_id'
-        ));
-        $visited    = array_flip(array_column(
-            (new UsersVisitedPlacesModel())->asArray()->select('place_id')->where('user_id', $userId)->whereIn('place_id', $placesIds)->findAll(),
-            'place_id'
-        ));
-
-        foreach ($placesList as $place) {
-            $place->bookmarked = isset($bookmarked[$place->id]);
-            $place->visited    = isset($visited[$place->id]);
-        }
-    }
-
-    /**
      * A place description as the API returns it: entities decoded, tags stripped.
      * One rule for GET /places/:id and GET /places/:id/texts, so the edit form compares
      * against exactly what it was given.
@@ -1096,6 +1058,14 @@ class Places extends ResourceController
         return strip_tags(html_entity_decode((string) $content, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     }
 
+    /**
+     * Return the list of users who have edited a place, excluding its original author.
+     *
+     * @param string $placeId       The place ID to look up.
+     * @param string $excludeUserId The original author's user ID to exclude.
+     *
+     * @return array Editor user objects with id, name, and avatar.
+     */
     protected function editors(string $placeId, string $excludeUserId): array
     {
         $model = new ActivityModel();

@@ -45,7 +45,11 @@ class FeedPresenter
 
     private string $locale;
 
-    public function __construct(string $locale)
+    /**
+     * @param string|null $viewerId The signed-in visitor: the places of the stories carry
+     *                              their `bookmarked` and `visited` (the place cards show them)
+     */
+    public function __construct(string $locale, private ?string $viewerId = null)
     {
         $this->locale = $locale;
     }
@@ -370,6 +374,8 @@ class FeedPresenter
 
             $places[$row->id] = (object) ['item' => $row];
         }
+
+        $formatter->markVisitorState($rows, $this->viewerId);
 
         return $places;
     }

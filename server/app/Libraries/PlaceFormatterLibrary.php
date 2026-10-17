@@ -2,6 +2,9 @@
 
 namespace App\Libraries;
 
+use App\Models\UsersBookmarksModel;
+use App\Models\UsersVisitedPlacesModel;
+
 class PlaceFormatterLibrary
 {
     protected AvatarLibrary $avatarLibrary;
@@ -9,6 +12,35 @@ class PlaceFormatterLibrary
     public function __construct()
     {
         $this->avatarLibrary = new AvatarLibrary();
+    }
+
+    /**
+     * Set `bookmarked` and `visited` on list rows for a signed-in visitor: two queries for
+     * the whole list instead of one check per card. Guests ($userId null) get neither field.
+     *
+     * @param array<int, object> $places Formatted list rows
+     */
+    public function markVisitorState(array $places, ?string $userId): void
+    {
+        $ids = array_values(array_unique(array_map(static fn ($place) => $place->id, $places)));
+
+        if (!$ids || !$userId) {
+            return;
+        }
+
+        $bookmarked = array_flip(array_column(
+            (new UsersBookmarksModel())->asArray()->select('place_id')->where('user_id', $userId)->whereIn('place_id', $ids)->findAll(),
+            'place_id'
+        ));
+        $visited    = array_flip(array_column(
+            (new UsersVisitedPlacesModel())->asArray()->select('place_id')->where('user_id', $userId)->whereIn('place_id', $ids)->findAll(),
+            'place_id'
+        ));
+
+        foreach ($places as $place) {
+            $place->bookmarked = isset($bookmarked[$place->id]);
+            $place->visited    = isset($visited[$place->id]);
+        }
     }
 
     /**

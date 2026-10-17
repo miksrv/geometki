@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Libraries\FeedPulseLibrary;
 use App\Libraries\FeedPresenter;
+use App\Libraries\SessionLibrary;
 use App\Models\FeedModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -87,7 +88,7 @@ class Feed extends ResourceController
 
         $last     = end($rows);
         $response = [
-            'items' => (new FeedPresenter($this->request->getLocale()))->present($rows, $place),
+            'items' => (new FeedPresenter($this->request->getLocale(), (new SessionLibrary())->user?->id))->present($rows, $place),
             'next'  => $hasMore && $last ? self::makeCursor($last->updated_at, $last->id) : null,
         ];
 
