@@ -7,13 +7,13 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 
 ## Improvements
 
+- Places: `GET /places?search=` with 1–3 characters takes the 100 most recently updated matches (`PlacesContent::SHORT_TERM_LIMIT`) before the other filters (category, bounds, distance sort), so a filtered short search may miss places; move the short search into the list query.
 - Push: quiet hours use only the time zone of the user's most recently updated device; a user with devices in different time zones may get a push at night on another one.
 - Deploy: migration `ReworkNotifications` adds an index on `sending_mail.email` VARCHAR(255) utf8mb4 (1020 bytes); check that production's row format is DYNAMIC (767-byte limit otherwise, and the migration is not transactional).
 - Achievements: without the hourly `achievements:evaluate`, a reputation achievement (reputation grows from other people's ratings) arrives only with the user's next own action; and every place / photo / rating / comment now also evaluates the experience, level, reputation, active days and streak metrics (`AchievementsLibrary::ALWAYS_METRICS`), `login_streak` reading all the user's activity days. Watch the cost; if it grows, cache the streak or run `achievements:evaluate` for the users active in the last hour.
 - Push: delivery was checked against a mock push service and the real FCM endpoint format, not yet on a real device; check Chrome / Firefox / Android / an iOS Home Screen app after the first deploy (`/users/settings` → Send a test).
 - Admin: the push queue (`push_messages`) has no admin page like `/admin/sending-mail`.
 - Home page (EN): many place and collection titles stay in Russian because they have no English text; prefer items with an English title in "Where to go" and the collections on `/en`, or transliterate.
-- Search: the short-term (≤3 characters) `LIKE` branch of `PlacesContent::search()` has no `LIMIT`, so a 1-character query scans and returns nearly every place; cap it.
 - Server tests: `GET /stats` has no test for the new `categories` field (counts per whitelisted category, soft-deleted places excluded).
 - Server CI: no static analysis; add PHPStan (level 0–1, `codeigniter/phpstan-codeigniter`, a baseline) to `api-checks`.
 - Server tests: almost no controller is called for real (only `PlacesTextsEndpointTest` uses `FeatureTestTrait`); most "unit" tests copy the logic into helpers. Add `FeatureTestTrait` smoke tests on SQLite that every public GET endpoint answers without 500.
