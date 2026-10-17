@@ -31,6 +31,7 @@ import {
 } from '@/sections/place'
 import type { RelatedPlacesLocation } from '@/sections/place/place-explore'
 import { getCategoryTitle } from '@/utils/categories'
+import { isCrawler } from '@/utils/crawler'
 import {
     buildPlacesHref,
     buildPlaceUrl,
@@ -543,7 +544,10 @@ export const getServerSideProps = wrapper.getServerSideProps(
             // One round trip for everything the page shows: the related list is requested with
             // room for the nearby places and filtered here instead of waiting for their ids;
             // the sidebar blocks (visited, collections) and the history count are prefetched so
-            // they are in the server HTML instead of popping in after hydration
+            // they are in the server HTML instead of popping in after hydration. Not for crawlers:
+            // they render most place pages, and these three requests were a third of the API's load
+            const crawler = isCrawler(context.req.headers['user-agent'])
+
             const [
                 { data: ratingData },
                 { data: photosData },
@@ -582,9 +586,15 @@ export const getServerSideProps = wrapper.getServerSideProps(
                           })
                       )
                     : Promise.resolve({ data: undefined }),
-                store.dispatch(API.endpoints.visitedGetUsersList.initiate(id)),
-                store.dispatch(API.endpoints.collectionsGetList.initiate({ limit: IN_COLLECTIONS_LIMIT, placeId: id })),
-                store.dispatch(API.endpoints.feedGetStories.initiate({ countOnly: true, place: id })),
+                ...(crawler
+                    ? [undefined, undefined, undefined]
+                    : [
+                          store.dispatch(API.endpoints.visitedGetUsersList.initiate(id)),
+                          store.dispatch(
+                              API.endpoints.collectionsGetList.initiate({ limit: IN_COLLECTIONS_LIMIT, placeId: id })
+                          ),
+                          store.dispatch(API.endpoints.feedGetStories.initiate({ countOnly: true, place: id }))
+                      ]),
                 translationsPromise
             ])
 

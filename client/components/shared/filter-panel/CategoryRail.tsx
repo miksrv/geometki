@@ -1,6 +1,7 @@
 import React from 'react'
 
 import Image from 'next/image'
+import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
 import { Chip, ScrollRail, ScrollRailSeparator } from '@/components/ui'
@@ -23,11 +24,13 @@ interface CategoryRailProps {
 
 /**
  * The main filter, always in sight: "Все" and a chip per category with its icon, the
- * themed groups split by thin rules. A chip toggles its category, several can be on; every
- * chip is a link to the list it leads to.
+ * themed groups split by thin rules. A chip toggles its category, several can be on. A chip
+ * leading to one category or none is a link to that list; one leading to 2+ is a button:
+ * crawlers walked every combination as links (`nofollow` or not) and ran the API out of CPU.
  */
 export const CategoryRail: React.FC<CategoryRailProps> = ({ selected, hrefFor, counts, total, shallow }) => {
     const { t } = useTranslation()
+    const router = useRouter()
 
     const groups = CATEGORY_GROUPS.map((group) => ({
         ...group,
@@ -57,6 +60,7 @@ export const CategoryRail: React.FC<CategoryRailProps> = ({ selected, hrefFor, c
                     {group.categories.map((name) => {
                         const on = selected.includes(name)
                         const next = on ? selected.filter((item) => item !== name) : [...selected, name]
+                        const isCombination = next.length >= 2
 
                         return (
                             <Chip
@@ -64,10 +68,17 @@ export const CategoryRail: React.FC<CategoryRailProps> = ({ selected, hrefFor, c
                                 label={getCategoryShortTitle(t, name)}
                                 count={counts ? (counts[name] ?? 0) : undefined}
                                 selected={on}
-                                href={hrefFor(next)}
+                                href={isCombination ? undefined : hrefFor(next)}
                                 shallow={shallow}
-                                // 2+ categories are a `noindex` query, not a page: no crawl into every combination
-                                rel={next.length >= 2 ? 'nofollow' : undefined}
+                                onClick={
+                                    isCombination
+                                        ? () =>
+                                              void router.push(hrefFor(next), undefined, {
+                                                  scroll: shallow ? false : undefined,
+                                                  shallow
+                                              })
+                                        : undefined
+                                }
                                 icon={
                                     <Image
                                         src={categoryImage(name).src}

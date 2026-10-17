@@ -1,4 +1,4 @@
-import { getPushSupport, toSubscribeRequest, urlBase64ToUint8Array } from './push'
+import { getPushSupport, isStatusStale, toSubscribeRequest, urlBase64ToUint8Array, whileEnabling } from './push'
 
 describe('push utils', () => {
     const original = { matchMedia: window.matchMedia, userAgent: navigator.userAgent }
@@ -50,5 +50,25 @@ describe('push utils', () => {
         expect(request.endpoint).toBe('https://push.example/abc')
         expect(request.keys).toStrictEqual({ auth: 'A', p256dh: 'P' })
         expect(typeof request.timezone).toBe('string')
+    })
+
+    it('distrusts a push status asked for before turning push on ended', async () => {
+        const before = Date.now() - 1000
+
+        let during = false
+        await whileEnabling(async () => {
+            during = isStatusStale(Date.now() + 1000)
+        })
+
+        expect(during).toBe(true)
+        expect(isStatusStale(before)).toBe(true)
+        expect(isStatusStale(Date.now() + 1000)).toBe(false)
+
+        await expect(
+            whileEnabling(async () => {
+                throw new Error('denied')
+            })
+        ).rejects.toThrow('denied')
+        expect(isStatusStale(Date.now() + 1000)).toBe(false)
     })
 })

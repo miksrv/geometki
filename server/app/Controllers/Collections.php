@@ -188,6 +188,8 @@ class Collections extends ResourceController
             }
         }
 
+        (new PlaceFormatterLibrary())->markVisitorState($places, $this->session->user?->id);
+
         $this->decorate($collection, $locale);
         $collection->places    = $places;
         $collection->indexable = (bool) $collection->indexable;

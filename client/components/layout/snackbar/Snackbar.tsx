@@ -55,7 +55,7 @@ export const Snackbar: React.FC = () => {
     const flushTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
     const { data, fulfilledTimeStamp } = API.useNotificationsGetUpdatesQuery(undefined, {
-        pollingInterval: 15 * 1000,
+        pollingInterval: 60 * 1000,
         refetchOnMountOrArgChange: true,
         skip: !isAuth,
         skipPollingIfUnfocused: true

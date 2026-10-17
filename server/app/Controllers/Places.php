@@ -25,7 +25,6 @@ use App\Models\PlacesTagsModel;
 use App\Models\PlacesContentModel;
 use App\Models\TagsModel;
 use App\Models\UsersBookmarksModel;
-use App\Models\UsersVisitedPlacesModel;
 use CodeIgniter\Files\File;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -196,7 +195,7 @@ class Places extends ResourceController
             $formatter->formatListRow($place, $locale, $placeContent->title($place->id));
         }
 
-        $this->markVisitorState($placesList, $placesIds);
+        $formatter->markVisitorState($placesList, $this->session->user?->id);
 
         return $this->respond([
             'items'  => $placesList,
@@ -416,6 +415,8 @@ class Places extends ResourceController
 
             if ($insertResult === false) {
                 log_message('error', 'Failed to insert place: ' . json_encode($this->model->errors()));
+                $db->transRollback();
+
                 return $this->failValidationErrors($this->model->errors());
             }
 
@@ -434,7 +435,13 @@ class Places extends ResourceController
             $content->title    = $placeTitle;
             $content->content  = $placeContent;
 
-            $placesContentModel->saveContent($content);
+            // Before the activity and the photo files: nothing of a place without its text stays
+            if (!$placesContentModel->saveContent($content)) {
+                $db->transRollback();
+                log_message('error', 'Places::create: the text of a new place was not saved');
+
+                return $this->failServerError(lang('Places.createTransactionError'));
+            }
 
             $activity = new ActivityLibrary();
             $activity->place($newPlaceId);
@@ -550,9 +557,6 @@ class Places extends ResourceController
                 }
             }
 
-            // Save place tags
-            $updatedTags = isset($input->tags) ? $placeTags->saveTags($input->tags, $id) : null;
-
             $shouldRecordActivity = false;
 
             // Save place content
@@ -568,10 +572,18 @@ class Places extends ResourceController
                     $placeEntity->delta = strlen($updatedContent) - strlen((string) $currentText?->content);
                 }
 
-                $contentModel->saveContent($placeEntity);
+                // E.g. two first saves of a new locale at once: the second hits the unique key
+                if (!$contentModel->saveContent($placeEntity)) {
+                    log_message('error', 'Places::update: the {locale} text of place {id} was not saved', ['locale' => $locale, 'id' => $id]);
+
+                    return $this->failServerError(lang('Places.createTransactionError'));
+                }
 
                 $shouldRecordActivity = true;
             }
+
+            // After the text: a text that failed to save leaves the tags as they were
+            $updatedTags = isset($input->tags) ? $placeTags->saveTags($input->tags, $id) : null;
 
             $place = new PlaceEntity();
             $hasChanges = false;
@@ -1037,43 +1049,6 @@ class Places extends ResourceController
     }
 
     /**
-     * Return the list of users who have edited a place, excluding its original author.
-     *
-     * @param string $placeId       The place ID to look up.
-     * @param string $excludeUserId The original author's user ID to exclude.
-     *
-     * @return array Editor user objects with id, name, and avatar.
-     */
-    /**
-     * Set `bookmarked` and `visited` on each list row for a signed-in visitor: two queries
-     * for the whole page instead of one bookmark check per card. Guests get neither field.
-     *
-     * @param array $placesList Formatted list rows.
-     * @param array $placesIds  Their IDs.
-     */
-    protected function markVisitorState(array $placesList, array $placesIds): void
-    {
-        if (!$placesIds || !$this->session->isAuth || !$this->session->user) {
-            return;
-        }
-
-        $userId     = $this->session->user->id;
-        $bookmarked = array_flip(array_column(
-            (new UsersBookmarksModel())->asArray()->select('place_id')->where('user_id', $userId)->whereIn('place_id', $placesIds)->findAll(),
-            'place_id'
-        ));
-        $visited    = array_flip(array_column(
-            (new UsersVisitedPlacesModel())->asArray()->select('place_id')->where('user_id', $userId)->whereIn('place_id', $placesIds)->findAll(),
-            'place_id'
-        ));
-
-        foreach ($placesList as $place) {
-            $place->bookmarked = isset($bookmarked[$place->id]);
-            $place->visited    = isset($visited[$place->id]);
-        }
-    }
-
-    /**
      * A place description as the API returns it: entities decoded, tags stripped.
      * One rule for GET /places/:id and GET /places/:id/texts, so the edit form compares
      * against exactly what it was given.
@@ -1083,6 +1058,14 @@ class Places extends ResourceController
         return strip_tags(html_entity_decode((string) $content, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     }
 
+    /**
+     * Return the list of users who have edited a place, excluding its original author.
+     *
+     * @param string $placeId       The place ID to look up.
+     * @param string $excludeUserId The original author's user ID to exclude.
+     *
+     * @return array Editor user objects with id, name, and avatar.
+     */
     protected function editors(string $placeId, string $excludeUserId): array
     {
         $model = new ActivityModel();

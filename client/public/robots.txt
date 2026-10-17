@@ -20,10 +20,28 @@ Disallow: /en/search
 # Geo-sorted place lists (/places?lat=…&lon=…): one URL per place × every page, all noindex
 Disallow: /places?*lat=
 Disallow: /en/places?*lat=
+# Lists of 2+ categories (?category=a,b): every combination × location × sort × page, all noindex
+Disallow: /places*category=*%2C
+Disallow: /places*category=*,
+Disallow: /en/places*category=*%2C
+Disallow: /en/places*category=*,
 
 # Yandex: treat geo-filter params as non-significant for deduplication. Kept in this group:
 # a separate "User-agent: Yandex" group would make Yandex ignore every rule above.
 Clean-param: lat&lon&sort&order /places
 Clean-param: lat&lon&sort&order /en/places
+
+# SEO and dataset crawlers: no use to the site, a large share of its load
+User-agent: SemrushBot
+User-agent: AhrefsBot
+User-agent: DotBot
+User-agent: MJ12bot
+User-agent: CCBot
+User-agent: Bytespider
+User-agent: BLEXBot
+User-agent: DataForSeoBot
+User-agent: serpstatbot
+User-agent: Barkrowler
+Disallow: /
 
 Sitemap: https://geometki.com/sitemap.xml

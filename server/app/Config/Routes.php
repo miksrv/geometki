@@ -109,7 +109,7 @@ $routes->group('mail', static function ($routes) {
 /** Push Controller **/
 $routes->group('push', static function ($routes) {
     $routes->get('key', 'Push::key');
-    $routes->get('subscriptions/status', 'Push::status');
+    $routes->post('subscriptions/status', 'Push::status');
     $routes->post('subscriptions', 'Push::subscribe');
     $routes->delete('subscriptions', 'Push::unsubscribe');
     $routes->post('subscriptions/renew', 'Push::renew');

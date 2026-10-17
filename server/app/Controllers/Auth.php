@@ -393,6 +393,8 @@ class Auth extends ResourceController
      * Return the current session status and user data.
      *
      * GET /auth/me — refreshes the JWT token when it is within 5 minutes of expiry.
+     * Marks the visitor active, unless the request comes from the client's SSR (`X-SSR`
+     * header): it carries the Next server's IP, not the visitor's.
      *
      * @throws Exception
      *
@@ -400,7 +402,10 @@ class Auth extends ResourceController
      */
     public function me(): ResponseInterface
     {
-        $this->session->update();
+        // A visitor without a session still gets one: the client keeps the id it answers with
+        if ($this->request->getHeaderLine('X-SSR') === '' || !$this->session->id) {
+            $this->session->update();
+        }
 
         $response = (object) [
             'session' => $this->session->id,

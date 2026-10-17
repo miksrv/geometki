@@ -7,6 +7,7 @@ use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SearchPlacesRanking;
 use App\Libraries\SearchSuggestions;
+use App\Libraries\SessionLibrary;
 use App\Models\PlacesModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -180,6 +181,10 @@ class Search extends ResourceController
 
                     $formattedPlaces[] = $place;
                 }
+            }
+
+            if ($formattedPlaces) {
+                (new PlaceFormatterLibrary())->markVisitorState($formattedPlaces, (new SessionLibrary())->user?->id);
             }
 
             $result['places'] = [

@@ -13,13 +13,19 @@ export const AppAuthChecker: React.FC = () => {
     const [session, setSession] = useState<string>(() => (getCookie(AUTH_COOKIES.SESSION) as string) ?? '')
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const hasToken = !!useAppSelector((state) => state.auth.token)
+
+    // Only a signed-in visitor is polled (a sign-out or an expired token elsewhere); a guest asks
+    // once, for an anonymous session (anonymous ratings), and never again once it has one
+    const skip = !hasToken && !!session
 
     const {
         data: meData,
         refetch,
         isSuccess
     } = API.useAuthGetMeQuery(undefined, {
-        pollingInterval: 60 * 1000,
+        pollingInterval: hasToken ? 60 * 1000 : 0,
+        skip,
         skipPollingIfUnfocused: true
     })
 
@@ -39,7 +45,8 @@ export const AppAuthChecker: React.FC = () => {
     }, [meData?.auth])
 
     useEffect(() => {
-        if (isAuth !== meData?.auth) {
+        // A skipped query has nothing to refetch: signing in sets the token and starts it
+        if (!skip && isAuth !== meData?.auth) {
             void refetch()
         }
     }, [isAuth])

@@ -9,6 +9,7 @@ use App\Libraries\SessionLibrary;
 use App\Models\PhotosModel;
 use App\Models\PlacesModel;
 use App\Models\UsersBookmarksModel;
+use CodeIgniter\Database\BaseBuilder;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
@@ -98,19 +99,27 @@ class Poi extends ResourceController
         $cluster = $this->request->getGet('cluster', FILTER_VALIDATE_BOOL);
         $bounds  = $this->getBounds();
 
-        $photosModel = new PhotosModel();
-        $photosData  = $photosModel->select('place_id as placeId, lat, lon, filename, extension, width, height, title_en, title_ru');
+        // One photo per point: the first of the photos taken at the same coordinates. Picked
+        // by id, not by GROUP BY over the whole row, which ONLY_FULL_GROUP_BY refuses
+        $firstAtPoint = static function (BaseBuilder $builder) use ($bounds): BaseBuilder {
+            $builder->select('MIN(id)')->from('photos')->where('deleted_at', null);
 
-        if ($bounds) {
-            $photosData->where([
-                'lon >=' => $bounds[0],
-                'lat >=' => $bounds[1],
-                'lon <=' => $bounds[2],
-                'lat <=' => $bounds[3],
-            ]);
-        }
+            if ($bounds) {
+                $builder->where([
+                    'lon >=' => $bounds[0],
+                    'lat >=' => $bounds[1],
+                    'lon <=' => $bounds[2],
+                    'lat <=' => $bounds[3],
+                ]);
+            }
 
-        $photosData = $photosData->groupBy('photos.lon, photos.lat')->findAll();
+            return $builder->groupBy('lon, lat');
+        };
+
+        $photosData = (new PhotosModel())
+            ->select('place_id as placeId, lat, lon, filename, extension, width, height, title_en, title_ru')
+            ->whereIn('photos.id', $firstAtPoint)
+            ->findAll();
 
         $photosCount = count($photosData);
 

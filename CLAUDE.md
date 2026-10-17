@@ -68,6 +68,7 @@ CodeIgniter 4 REST API, MVC:
 
 - **API calls:** only through RTK Query in `api/api.ts`, never `fetch`/`axios` directly.
 - **Error format:** `{ messages: { error?: string, [field]: string } }`.
+- **Guest cache:** public GET answers to requests with neither `Authorization` nor `Session` are cached whole for a day (`GuestCacheFilter`, `Config/GuestCache.php`: the groups, the writes that do not clear it); any other successful write clears all of it, a deploy too. A new public GET whose answer depends on something besides the locale, the path and the query must stay out of `$groups`.
 - **Image uploads:** temp upload → attach to entity; files in `server/public/uploads/`.
 - **Map:** `react-leaflet`; map components are imported with `next/dynamic` and `ssr: false`.
 - **Categories:** no `category` table and no categories endpoint/page. The server whitelists keys (`server/app/Config/Categories.php`, `in_list`) and returns the key (`category: "waterfall"`). The catalogue is on the client: keys in `client/api/models/category.ts` (`ApiModel.Categories`), icons `client/public/images/poi/<key>.png`, colours in `client/utils/categories.ts`, texts in `common.json` under `categoryCatalogue.<name>` (`title`, `short`, `landing`, `content`). A new category touches the enum, an icon, a colour, both locales and the server config.

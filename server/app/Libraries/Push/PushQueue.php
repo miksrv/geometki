@@ -27,7 +27,9 @@ use Throwable;
  * - Pushes about places: after one, the next ones within `pushGroupMinutes` go
  *   out as one; in the quiet hours of the user's device they wait for the morning.
  *   Achievements and levels go at once.
- * - A device the push service no longer knows (404/410) is deleted.
+ * - One run sends at a time (lockRun()).
+ * - A device the push service no longer knows (404/410) is deleted; whose it was is
+ *   kept for a while, for the browser to renew it (Push::renew()).
  */
 class PushQueue
 {
@@ -144,26 +146,60 @@ class PushQueue
             return $this->stats;
         }
 
-        $this->token = bin2hex(random_bytes(8));
-        // Push services can be slow: this stage keeps within its own, shorter budget
-        $this->deadline = time() + min(self::RUN_SECONDS, intdiv($this->config->staleLockMinutes * 60, 2));
+        // A run may last RUN_SECONDS while cron starts one every minute: two runs claiming
+        // rows of the same user would send them separately and break the grouping
+        if (!$this->lockRun()) {
+            $log('Another run is sending pushes.', 'yellow');
 
-        $rows = $this->model->claim($this->token, $this->config->pushBatchSize);
-
-        if (!$rows) {
             return $this->stats;
         }
 
-        // Whatever happens below, the rows the run did not finish go back to the queue
         try {
-            $this->processRows($rows);
-        } finally {
-            if ($released = $this->model->releaseRun($this->token)) {
-                $log("{$released} pushes left for the next run.", 'yellow');
-            }
-        }
+            $this->token = bin2hex(random_bytes(8));
+            // Push services can be slow: this stage keeps within its own, shorter budget
+            $this->deadline = time() + min(self::RUN_SECONDS, intdiv($this->config->staleLockMinutes * 60, 2));
 
-        return $this->stats;
+            $rows = $this->model->claim($this->token, $this->config->pushBatchSize);
+
+            if (!$rows) {
+                return $this->stats;
+            }
+
+            // Whatever happens below, the rows the run did not finish go back to the queue
+            try {
+                $this->processRows($rows);
+            } finally {
+                if ($released = $this->model->releaseRun($this->token)) {
+                    $log("{$released} pushes left for the next run.", 'yellow');
+                }
+            }
+
+            return $this->stats;
+        } finally {
+            $this->unlockRun();
+        }
+    }
+
+    /**
+     * The database-wide lock of the sending stage; MySQL frees it when the run's
+     * connection closes, so a run that died does not hold it.
+     */
+    private function lockRun(): bool
+    {
+        $row = Database::connect()->query('SELECT GET_LOCK(?, 0) AS got', [$this->lockName()])->getRow();
+
+        return (int) ($row->got ?? 0) === 1;
+    }
+
+    private function unlockRun(): void
+    {
+        Database::connect()->query('SELECT RELEASE_LOCK(?)', [$this->lockName()]);
+    }
+
+    private function lockName(): string
+    {
+        // MySQL takes lock names of up to 64 characters
+        return 'push_queue_' . md5(Database::connect()->getDatabase());
     }
 
     /**
@@ -224,15 +260,17 @@ class PushQueue
     }
 
     /**
-     * Once a day: delete old queue rows and devices that keep failing.
+     * Once a day: delete old queue rows, devices that keep failing and the expired
+     * devices no longer renewable.
      *
-     * @return array{messages: int, subscriptions: int}
+     * @return array{messages: int, subscriptions: int, expired: int}
      */
     public function cleanup(): array
     {
         return [
             'messages'      => $this->model->purgeOlderThan($this->config->retentionDays),
             'subscriptions' => $this->subscriptions->deleteFailing($this->config->subscriptionMaxFailures),
+            'expired'       => $this->subscriptions->purgeExpired($this->config->expiredSubscriptionDays),
         ];
     }
 
@@ -381,7 +419,7 @@ class PushQueue
                 $this->subscriptions->markSuccess($device->id);
                 $sent++;
             } elseif ($result['expired']) {
-                $this->subscriptions->delete($device->id);
+                $this->subscriptions->expire($device);
                 $left--;
             } else {
                 $this->subscriptions->markFailure($device->id);

@@ -57,6 +57,12 @@ export const API = createApi({
                 headers.set('Locale', locale)
             }
 
+            // A request from getServerSideProps comes from the Next server's IP, not the
+            // visitor's: the API does not mark the visitor's session with it
+            if (typeof window === 'undefined') {
+                headers.set('X-SSR', '1')
+            }
+
             return headers
         }
     }),
@@ -336,7 +342,8 @@ export const API = createApi({
         }),
         pushGetStatus: builder.query<ApiType.Push.StatusResponse, string>({
             providesTags: ['PushStatus'],
-            query: (endpoint) => `push/subscriptions/status${encodeQueryData({ endpoint })}`
+            // A POST: the endpoint is a capability URL, it must not end up in access logs
+            query: (endpoint) => ({ body: { endpoint }, method: 'POST', url: 'push/subscriptions/status' })
         }),
         pushPostSubscription: builder.mutation<void, ApiType.Push.SubscribeRequest>({
             invalidatesTags: ['PushStatus'],

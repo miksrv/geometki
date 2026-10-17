@@ -60,7 +60,8 @@ class Push extends ResourceController
     /**
      * Whether this device's subscription is on for the signed-in user.
      *
-     * GET /push/subscriptions/status?endpoint=… — auth required.
+     * POST /push/subscriptions/status — body {endpoint}; auth required. A POST so that
+     * the endpoint (a capability URL) stays out of the web server and proxy logs.
      *
      * @return ResponseInterface {active: bool, devices: int}
      */
@@ -70,7 +71,7 @@ class Push extends ResourceController
             return $this->failUnauthorized();
         }
 
-        $endpoint = (string) $this->request->getGet('endpoint');
+        $endpoint = (string) ($this->jsonInput()['endpoint'] ?? '');
         $row      = $endpoint !== '' ? $this->subscriptions->findByEndpoint($endpoint) : null;
 
         return $this->respond([
@@ -131,6 +132,8 @@ class Push extends ResourceController
 
         if ($endpoint !== '') {
             $this->subscriptions->where('endpoint_hash', PushSubscriptionsModel::hash($endpoint))->delete();
+            // Turned off on purpose: the browser must not bring it back by renewing it
+            $this->subscriptions->forgetExpired($endpoint);
         }
 
         return $this->respond(['active' => false]);
@@ -138,7 +141,9 @@ class Push extends ResourceController
 
     /**
      * The browser replaced the subscription (`pushsubscriptionchange` in the
-     * service worker): move the record to the new one.
+     * service worker): move the record to the new one. The old one may already be
+     * gone, deleted on a 404/410 from the push service: its owner is then taken from
+     * `push_subscriptions_expired`.
      *
      * POST /push/subscriptions/renew — body {oldEndpoint, subscription: {endpoint, keys}}; no auth.
      *
@@ -146,9 +151,11 @@ class Push extends ResourceController
      */
     public function renew(): ResponseInterface
     {
-        $body  = $this->jsonInput();
-        $old   = $this->subscriptions->findByEndpoint((string) ($body['oldEndpoint'] ?? ''));
-        $input = $this->subscriptionInput(is_array($body['subscription'] ?? null) ? $body['subscription'] : []);
+        $body        = $this->jsonInput();
+        $oldEndpoint = (string) ($body['oldEndpoint'] ?? '');
+        $input       = $this->subscriptionInput(is_array($body['subscription'] ?? null) ? $body['subscription'] : []);
+        $old         = $oldEndpoint !== '' ? $this->subscriptions->findByEndpoint($oldEndpoint) : null;
+        $old       ??= $oldEndpoint !== '' ? $this->subscriptions->findExpired($oldEndpoint, config('Notifications')->expiredSubscriptionDays) : null;
 
         if (!$old || $input === null) {
             return $this->failNotFound();
@@ -162,9 +169,12 @@ class Push extends ResourceController
             'user_agent' => $old->user_agent,
         ]);
 
-        if ($old->endpoint_hash !== $input['endpoint_hash']) {
+        if ($old->endpoint_hash !== $input['endpoint_hash'] && isset($old->id)) {
             $this->subscriptions->delete($old->id);
         }
+
+        $this->subscriptions->forgetExpired($oldEndpoint);
+        $this->dropOldestDevices($old->user_id);
 
         return $this->respond(['active' => true]);
     }

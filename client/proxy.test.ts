@@ -218,4 +218,32 @@ describe('proxy', () => {
     it('still sends guests away from creating a place', () => {
         expect(location(proxy(request('/places/create')))).toBe('http://localhost:3000/places')
     })
+
+    describe('category combinations for crawlers', () => {
+        const googlebot = { 'user-agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' }
+        const chrome = {
+            'user-agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36'
+        }
+
+        it('answers a crawler 410 on a list of 2+ categories, with the locale prefix and on a landing', () => {
+            expect(proxy(request('/places?category=cave%2Cspring&sort=trending', undefined, googlebot))?.status).toBe(
+                410
+            )
+            expect(proxy(request('/en/places?category=cave,spring', undefined, googlebot))?.status).toBe(410)
+            expect(proxy(request('/places/bashkortostan?category=cave,spring', undefined, googlebot))?.status).toBe(410)
+        })
+
+        it('takes a request without a user agent as a crawler', () => {
+            expect(proxy(request('/places?category=cave,spring'))?.status).toBe(410)
+        })
+
+        it('lets a crawler through to one category', () => {
+            expect(isPassThrough(proxy(request('/places?category=cave', undefined, googlebot)))).toBe(true)
+        })
+
+        it('lets people through to the combinations', () => {
+            expect(isPassThrough(proxy(request('/places?category=cave,spring', undefined, chrome)))).toBe(true)
+        })
+    })
 })

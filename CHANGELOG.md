@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.17.2
+
+### Patch Changes
+
+- Site: pages load faster again; search robots no longer crawl every combination of the category filters
+- Optimized place pages, lists and the home page: public data is served from a cache, fewer background requests
+- Place cards: in search, the activity feed and collections they show your bookmark and "You've been here" right away, like on the places page
+- Map: the photo layer no longer fails to load on some database setups
+- Places: searching by one to three letters answers quickly
+- Places: a place's text that could not be saved now shows an error instead of looking saved
+- Push notifications: a device keeps getting them after the browser renews its subscription
+- Push notifications: several events in a row come as one notification again, not separately
+- Push notifications: turning them on in the settings right after opening the page no longer switches them off again
+
 ## 1.17.1
 
 ### Patch Changes

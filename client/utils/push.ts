@@ -131,6 +131,31 @@ export const subscribe = async (publicKey: string): Promise<PushSubscription> =>
     return registration.pushManager.subscribe({ applicationServerKey, userVisibleOnly: true })
 }
 
+let enabling = 0
+let enabledAt = 0
+
+/**
+ * Run turning push on (`usePushSubscription().enable`): while it runs, and for the status
+ * answers requested before it ended, the owner check of `PushPrompt` must not drop the
+ * subscription being re-bound to this user.
+ */
+export const whileEnabling = async <T>(run: () => Promise<T>): Promise<T> => {
+    enabling++
+
+    try {
+        return await run()
+    } finally {
+        enabling--
+        enabledAt = Date.now()
+    }
+}
+
+/**
+ * Whether a push status requested at $requestedAt can no longer be trusted: push is being
+ * turned on, or was turned on after the request went out (its answer is from before)
+ */
+export const isStatusStale = (requestedAt?: number): boolean => enabling > 0 || !requestedAt || requestedAt <= enabledAt
+
 /** Drop this device's subscription; returns its endpoint (to remove it on the server too) */
 export const unsubscribe = async (): Promise<string | null> => {
     const subscription = await getSubscription()

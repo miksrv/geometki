@@ -6,8 +6,8 @@
  *   - sends a batch of the email queue (activity notifications, weekly digests;
  *     an email skips the events a push already told about and waits for a queued one);
  *   - sends a batch of the push queue;
- *   - once a day deletes queue rows older than Config\Notifications::$retentionDays
- *     and push devices that keep failing.
+ *   - once a day deletes queue rows older than Config\Notifications::$retentionDays,
+ *     push devices that keep failing and stale guest cache answers (Config\GuestCache).
  *
  * Run from CLI:
  *   php spark notifications:send
@@ -19,6 +19,7 @@
 
 namespace App\Commands;
 
+use App\Libraries\GuestCache;
 use App\Libraries\Mail\MailQueue;
 use App\Libraries\Push\PushQueue;
 use App\Models\SendingMail;
@@ -113,10 +114,11 @@ class NotificationsSend extends BaseCommand
         $days    = config('Notifications')->retentionDays;
         $deleted = (new SendingMail())->purgeOlderThan($days);
         $push    = (new PushQueue())->cleanup();
+        $guest   = (new GuestCache())->prune();
 
         // Marked done only now: a failed cleanup is tried again next minute
         cache()->save(self::CLEANUP_CACHE_KEY, time(), self::CLEANUP_INTERVAL);
 
-        CLI::write("Cleanup: deleted {$deleted} emails and {$push['messages']} pushes older than {$days} days, {$push['subscriptions']} failing push devices.", 'green');
+        CLI::write("Cleanup: deleted {$deleted} emails and {$push['messages']} pushes older than {$days} days, {$push['subscriptions']} failing push devices, {$push['expired']} expired ones, {$guest} stale guest cache answers.", 'green');
     }
 }

@@ -22,6 +22,9 @@ use Config\Services;
  */
 class PlacesContent {
 
+    /** The most places a 1–3 character term finds: its LIKE matches nearly every place */
+    public const SHORT_TERM_LIMIT = 100;
+
     protected array $places = [];
     /** @var array<string, string[]> Locales each place has a text in */
     protected array $locales = [];
@@ -60,7 +63,8 @@ class PlacesContent {
      * locale, like everywhere else (translate()).
      *
      * @param string        $term
-     * @param int|null      $limit      Only this many of the most relevant places
+     * @param int|null      $limit      Only this many of the most relevant places; a short
+     *                                  term finds SHORT_TERM_LIMIT at most
      * @param string[]      $categories Only places of these categories (before the limit)
      * @param bool          $withTexts  Load the texts of all found places; without them
      *                                  `placeIds` is set and translate() loads the texts needed
@@ -83,6 +87,7 @@ class PlacesContent {
                 GROUP BY pc.place_id
                 ORDER BY MAX(pc.updated_at) DESC";
             $sqlParams = $params;
+            $limit     = min($limit ?? self::SHORT_TERM_LIMIT, self::SHORT_TERM_LIMIT);
         } else {
             $booleanQuery = $this->booleanQuery($term);
 

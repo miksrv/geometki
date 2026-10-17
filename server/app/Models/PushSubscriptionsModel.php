@@ -92,6 +92,53 @@ class PushSubscriptionsModel extends ApplicationBaseModel
     }
 
     /**
+     * Delete a device the push service no longer knows (404/410), keeping whose it was:
+     * the browser may still renew it (Push::renew()).
+     */
+    public function expire(object $subscription): void
+    {
+        $this->db->table('push_subscriptions_expired')->replace([
+            'endpoint_hash' => $subscription->endpoint_hash,
+            'user_id'       => $subscription->user_id,
+            'timezone'      => $subscription->timezone,
+            'locale'        => $subscription->locale,
+            'user_agent'    => $subscription->user_agent,
+            'created_at'    => date('Y-m-d H:i:s'),
+        ]);
+
+        $this->delete($subscription->id);
+    }
+
+    /**
+     * The owner and settings of a device deleted by expire(), while it can be renewed.
+     */
+    public function findExpired(string $endpoint, int $days): ?object
+    {
+        return $this->db->table('push_subscriptions_expired')
+            ->where('endpoint_hash', self::hash($endpoint))
+            ->where('created_at >=', date('Y-m-d H:i:s', strtotime("-{$days} days")))
+            ->get()
+            ->getRow();
+    }
+
+    public function forgetExpired(string $endpoint): void
+    {
+        $this->db->table('push_subscriptions_expired')->where('endpoint_hash', self::hash($endpoint))->delete();
+    }
+
+    /**
+     * Expired devices older than $days: their browsers had their chance to renew.
+     */
+    public function purgeExpired(int $days): int
+    {
+        $this->db->table('push_subscriptions_expired')
+            ->where('created_at <', date('Y-m-d H:i:s', strtotime("-{$days} days")))
+            ->delete();
+
+        return $this->db->affectedRows();
+    }
+
+    /**
      * Subscriptions that keep failing (the browser was reset, the device is gone
      * but the push service still answers): deleted by the daily cleanup.
      */

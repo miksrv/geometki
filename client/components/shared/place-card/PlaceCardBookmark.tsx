@@ -11,14 +11,14 @@ import styles from './styles.module.sass'
 
 interface PlaceCardBookmarkProps {
     placeId: string
-    /** `PlaceListItem.bookmarked` of `GET /places`: shown until the visitor's bookmarks load */
+    /** `PlaceListItem.bookmarked` of the list (places, search, the feed, a collection) */
     known?: boolean
 }
 
 /**
  * The one-tap bookmark over a tile's cover, on a tile of any list. A guest's tap opens the
  * sign-in dialog; a signed-in visitor's state is the list's own field (`known`); a list without it
- * (feed, search, collections) asks `GET /bookmarks/places` — one request for all such cards,
+ * asks `GET /bookmarks/places` — one request for all such cards,
  * refreshed by every bookmark toggle. A toggle here is kept by `useBookmark` itself.
  */
 export const PlaceCardBookmark: React.FC<PlaceCardBookmarkProps> = ({ placeId, known }) => {
