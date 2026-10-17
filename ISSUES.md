@@ -4,7 +4,6 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 
 ## Bugs
 
-- Push: `Push::renew()` answers 404 when the old endpoint is no longer in `push_subscriptions`, but `PushQueue` deletes a device on the first 404/410 from the push service; when `pushsubscriptionchange` fires after that (common in Firefox) the new subscription is lost and the device silently stops getting pushes. Keep a tombstone (`endpoint_hash` → `user_id`) for expired devices for ~30 days so `renew` can find the owner.
 - Push: overlapping `notifications:send` runs (a push run may last 180 s, cron is every minute) can each claim rows of the same user and send them separately, breaking the 15-minute grouping; skip users with rows `process` under another `locked_by` when claiming, or take a per-user `GET_LOCK`.
 - Push (client): `PushOwnerCheck` (`PushPrompt.tsx`) can unsubscribe and delete a device the user re-enabled on `/users/settings` right after page load (it acts on the first `active: false` status while `enable()` re-posts the same endpoint); skip it while an enable is running.
 

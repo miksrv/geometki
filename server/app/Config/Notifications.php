@@ -146,4 +146,7 @@ class Notifications extends BaseConfig
 
     /** A subscription failing this many times in a row is deleted by the daily cleanup. */
     public int $subscriptionMaxFailures = 10;
+
+    /** Days a device the push service dropped can still be renewed by its browser (Push::renew()). */
+    public int $expiredSubscriptionDays = 30;
 }

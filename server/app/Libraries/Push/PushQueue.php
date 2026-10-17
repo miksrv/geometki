@@ -27,7 +27,8 @@ use Throwable;
  * - Pushes about places: after one, the next ones within `pushGroupMinutes` go
  *   out as one; in the quiet hours of the user's device they wait for the morning.
  *   Achievements and levels go at once.
- * - A device the push service no longer knows (404/410) is deleted.
+ * - A device the push service no longer knows (404/410) is deleted; whose it was is
+ *   kept for a while, for the browser to renew it (Push::renew()).
  */
 class PushQueue
 {
@@ -224,15 +225,17 @@ class PushQueue
     }
 
     /**
-     * Once a day: delete old queue rows and devices that keep failing.
+     * Once a day: delete old queue rows, devices that keep failing and the expired
+     * devices no longer renewable.
      *
-     * @return array{messages: int, subscriptions: int}
+     * @return array{messages: int, subscriptions: int, expired: int}
      */
     public function cleanup(): array
     {
         return [
             'messages'      => $this->model->purgeOlderThan($this->config->retentionDays),
             'subscriptions' => $this->subscriptions->deleteFailing($this->config->subscriptionMaxFailures),
+            'expired'       => $this->subscriptions->purgeExpired($this->config->expiredSubscriptionDays),
         ];
     }
 
@@ -381,7 +384,7 @@ class PushQueue
                 $this->subscriptions->markSuccess($device->id);
                 $sent++;
             } elseif ($result['expired']) {
-                $this->subscriptions->delete($device->id);
+                $this->subscriptions->expire($device);
                 $left--;
             } else {
                 $this->subscriptions->markFailure($device->id);

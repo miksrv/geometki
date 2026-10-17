@@ -117,6 +117,6 @@ class NotificationsSend extends BaseCommand
         // Marked done only now: a failed cleanup is tried again next minute
         cache()->save(self::CLEANUP_CACHE_KEY, time(), self::CLEANUP_INTERVAL);
 
-        CLI::write("Cleanup: deleted {$deleted} emails and {$push['messages']} pushes older than {$days} days, {$push['subscriptions']} failing push devices.", 'green');
+        CLI::write("Cleanup: deleted {$deleted} emails and {$push['messages']} pushes older than {$days} days, {$push['subscriptions']} failing push devices, {$push['expired']} expired ones.", 'green');
     }
 }
