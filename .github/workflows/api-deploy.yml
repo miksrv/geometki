@@ -72,6 +72,8 @@
            set cmd:fail-exit no
            chmod 755 /spark
            chmod -R 755 /writable
+           # New code may answer differently: the guest cache starts empty (Config\GuestCache)
+           rm -r /writable/cache/guest
            bye
            EOF
          working-directory: server

@@ -4,6 +4,7 @@ namespace Config;
 
 use App\Filters\CacheHeadersFilter;
 use App\Filters\CorsFilter;
+use App\Filters\GuestCacheFilter;
 use App\Filters\LocaleFilter;
 use App\Filters\ThrottleFilter;
 use CodeIgniter\Config\Filters as BaseFilters;
@@ -41,6 +42,7 @@ class Filters extends BaseFilters
         'locale'        => LocaleFilter::class,
         'throttle'      => ThrottleFilter::class,
         'cache'         => CacheHeadersFilter::class,
+        'guestcache'    => GuestCacheFilter::class,
     ];
 
     /**
@@ -81,9 +83,11 @@ class Filters extends BaseFilters
             'invalidchars',
             'cors',
             'locale',
+            'guestcache', // After cors and locale: see GuestCacheFilter
         ],
         'after' => [
             // 'honeypot',
+            'guestcache',
             'secureheaders',
         ],
     ];
