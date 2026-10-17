@@ -6,6 +6,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 import { AUTH_COOKIES, LOCALE_HEADER } from '@/config/constants'
+import { isCategoryCombination, isCrawler } from '@/utils/crawler'
 import { getLandingFlags, isLandingSegment, LANDING_PROXY_HEADER } from '@/utils/placesLanding'
 
 // A per-server-instance secret, generated once when this module is first loaded and never
@@ -34,6 +35,17 @@ export const proxy = (request: NextRequest) => {
     sanitizedHeaders.delete(LANDING_PROXY_HEADER)
     // The 404 page is an App Router page (app/not-found.tsx) and knows nothing of the /en prefix
     sanitizedHeaders.set(LOCALE_HEADER, request.nextUrl.locale)
+
+    // Crawlers walking every combination of the category chips (`/places?category=a,b,c&sort=…`)
+    // made the API host run out of CPU: each such page costs several API requests and is
+    // `noindex` anyway, so they get a 410 without rendering it. People keep the combinations.
+    if (
+        request.nextUrl.pathname.startsWith('/places') &&
+        isCategoryCombination(request.nextUrl.searchParams) &&
+        isCrawler(request.headers.get('user-agent'))
+    ) {
+        return new NextResponse(null, { headers: { 'X-Robots-Tag': 'noindex' }, status: 410 })
+    }
 
     // Direct access to the internal landing route (features/20-location-seo-pages.md):
     // handled first, before any other rule below reads the path, so nothing can ever serve
