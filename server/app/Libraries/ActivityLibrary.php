@@ -165,6 +165,9 @@ class ActivityLibrary {
         string|null $asUserId = null,
         string|null $externalPhotoId = null,
     ): void {
+        // Whatever happened on a place shows on its page
+        SitePages::place($placeId);
+
         if (!in_array($type, $this->types)) {
             return ;
         }

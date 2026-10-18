@@ -6,8 +6,9 @@
  *   - sends a batch of the email queue (activity notifications, weekly digests;
  *     an email skips the events a push already told about and waits for a queued one);
  *   - sends a batch of the push queue;
+ *   - deletes the guest cache folders cleared since the last run (Config\GuestCache);
  *   - once a day deletes queue rows older than Config\Notifications::$retentionDays,
- *     push devices that keep failing and stale guest cache answers (Config\GuestCache).
+ *     push devices that keep failing and stale guest cache answers.
  *
  * Run from CLI:
  *   php spark notifications:send
@@ -52,6 +53,8 @@ class NotificationsSend extends BaseCommand
             'email'   => fn () => $this->sendEmails(),
             'push'    => fn () => $this->sendPushes(),
             'cleanup' => fn () => $this->cleanup(CLI::getOption('cleanup') !== null),
+            // Every run: a busy day clears the guest cache many times, each leaving a folder
+            'guest cache' => fn () => (new GuestCache())->sweep(),
         ] as $stage => $run) {
             try {
                 $run();

@@ -8,6 +8,7 @@ use App\Libraries\CollectionIndexability;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
+use App\Libraries\SitePages;
 use App\Models\ActivityModel;
 use App\Models\CollectionsModel;
 use App\Models\CollectionsPlacesModel;
@@ -506,6 +507,7 @@ class Collections extends ResourceController
         }
 
         $collectionsPlacesModel->removePlace($id, $placeId);
+        SitePages::place($placeId);
 
         $newCount = $this->model->recalcPlacesCount($id);
 

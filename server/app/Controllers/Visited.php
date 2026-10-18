@@ -7,6 +7,7 @@ use App\Libraries\AvatarLibrary;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
+use App\Libraries\SitePages;
 use App\Models\ActivityModel;
 use App\Models\PlacesModel;
 use App\Models\UsersVisitedPlacesModel;
@@ -207,6 +208,9 @@ class Visited extends ResourceController
         if (empty($input) || !$input->place) {
             return $this->failValidationErrors(lang('Visited.missingPlaceId'));
         }
+
+        // The page lists who has been there
+        SitePages::place($input->place);
 
         try {
             $whereData    = ['user_id' => $this->session->user?->id, 'place_id' => $input->place];

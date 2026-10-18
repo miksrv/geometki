@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from 'simple-react-ui-kit'
 
-import { GetServerSidePropsResult, NextPage } from 'next'
+import { GetStaticPaths, GetStaticPropsResult, NextPage } from 'next'
 import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
@@ -17,6 +17,7 @@ import type { PhotoUploaderHandle } from '@/components/shared/photo-uploader'
 import type { PhotoViewerState } from '@/components/shared/photo-viewer'
 import { FileDropZone } from '@/components/ui'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
+import useClientOnly from '@/hooks/useClientOnly'
 import { IN_COLLECTIONS_LIMIT, PlaceCollections } from '@/sections/collections'
 import {
     PlaceAbout,
@@ -31,11 +32,10 @@ import {
 } from '@/sections/place'
 import type { RelatedPlacesLocation } from '@/sections/place/place-explore'
 import { getCategoryTitle } from '@/utils/categories'
-import { isCrawler } from '@/utils/crawler'
+import { haversineDistanceKm } from '@/utils/geo'
 import {
     buildPlacesHref,
     buildPlaceUrl,
-    encodeQueryData,
     formatDateISO,
     formatDateUTC,
     getLandingFlags,
@@ -44,8 +44,6 @@ import {
     truncateText
 } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
-import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
-import { getUserLocationFromCookies } from '@/utils/userLocation'
 
 import styles from './styles.module.sass'
 
@@ -86,7 +84,7 @@ interface PlacePageProps {
  */
 const PlacePageContent: React.FC<PlacePageProps> = ({
     ratingCount,
-    place,
+    place: cachedPlace,
     photoList,
     nearPlaces,
     relatedPlaces,
@@ -95,6 +93,51 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
     const { t, i18n } = useTranslation()
 
     const dispatch = useAppDispatch()
+
+    const userLocation = useAppSelector((state) => state.application.userLocation)
+    const isClient = useClientOnly()
+
+    const [views, setViews] = useState<number>()
+    const [postView] = API.usePlacesPostViewMutation()
+
+    // The page is rendered once for every visitor (getStaticProps) and served from the cache:
+    // the distance from the visitor, the fresh view count and their own score come in the
+    // browser. The distance only after hydration, the server HTML has none
+    const place = useMemo(
+        () =>
+            cachedPlace && {
+                ...cachedPlace,
+                distance:
+                    isClient && userLocation && cachedPlace.lat && cachedPlace.lon
+                        ? Math.round(
+                              haversineDistanceKm(userLocation, { lat: cachedPlace.lat, lon: cachedPlace.lon }) * 10
+                          ) / 10
+                        : undefined,
+                views: views ?? cachedPlace.views
+            },
+        [cachedPlace, isClient, userLocation, views]
+    )
+
+    // The one request of the page: counts the view, answers the count and the visitor's score
+    useEffect(() => {
+        if (!cachedPlace?.id) {
+            return
+        }
+
+        const placeId = cachedPlace.id
+
+        postView(placeId)
+            .unwrap()
+            .then(({ views: count, vote }) => {
+                setViews(count)
+                dispatch(
+                    API.util.updateQueryData('ratingGetList', placeId, (draft) => {
+                        draft.vote = vote
+                    })
+                )
+            })
+            .catch(() => undefined)
+    }, [cachedPlace?.id, dispatch, postView])
 
     const inputFileRef = useRef<HTMLInputElement>(null)
     const uploaderRef = useRef<PhotoUploaderHandle>(null)
@@ -474,11 +517,26 @@ const PlacePage: NextPage<PlacePageProps> = (props) => (
     />
 )
 
-export const getServerSideProps = wrapper.getServerSideProps(
+/** Seconds a rendered page is served before it is rendered anew in the background: a safety
+ *  net for what no write announces (a new place nearby, the author's new name). A write on the
+ *  place itself renders it at once: the API calls /api/revalidate (server: SitePages) */
+const PAGE_REVALIDATE = 24 * 60 * 60
+
+/** A missing place is asked again sooner: it may be an API blip, not a deleted place */
+const NOT_FOUND_REVALIDATE = 5 * 60
+
+/** No page is built ahead: each one is rendered on its first visit, then served from the cache */
+export const getStaticPaths: GetStaticPaths = async () => ({ fallback: 'blocking', paths: [] })
+
+/**
+ * The page is the same for every visitor: rendered once without cookies and kept by Next
+ * until a write changes the place (on-demand ISR). Everything about the visitor — the auth,
+ * the distance, the own score, the bookmark, "I've been here" — comes in the browser.
+ */
+export const getStaticProps = wrapper.getStaticProps(
     (store) =>
-        async (context): Promise<GetServerSidePropsResult<PlacePageProps>> => {
+        async (context): Promise<GetStaticPropsResult<PlacePageProps>> => {
             const rawParam = typeof context.params?.id === 'string' ? context.params.id : undefined
-            const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
             // Started now, awaited with the data: a local file read, but a serial one otherwise.
             // The no-op catch keeps an early 404/301 return from leaving an unhandled rejection.
@@ -497,15 +555,18 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return { notFound: true }
             }
 
-            hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
-            const { data: placeData, isError } = await store.dispatch(
-                API.endpoints.placesGetItem.initiate({ id, ...getUserLocationFromCookies(cookies) })
-            )
+            const { data: placeData, error } = await store.dispatch(API.endpoints.placesGetItem.initiate({ id }))
 
-            if (isError) {
-                return { notFound: true }
+            if (error) {
+                // A failed render keeps the page served before; a page never served gets a 500
+                // instead of a cached 404 for a place that exists
+                if ('status' in error && error.status === 404) {
+                    return { notFound: true, revalidate: NOT_FOUND_REVALIDATE }
+                }
+
+                throw new Error(`Place ${id} not loaded: ${JSON.stringify(error)}`)
             }
 
             // Redirect to the canonical `{id}` / `{id}-{slug}` URL when the requested param
@@ -515,18 +576,16 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             if (rawParam !== canonicalParam) {
                 const localePrefix = locale === 'en' ? '/en' : ''
-                const query = { ...context.query }
-                delete query.id
-                const queryString = encodeQueryData(query)
 
                 return {
                     redirect: {
-                        destination: `${localePrefix}${buildPlaceUrl(id, placeData?.slug)}${queryString}`,
+                        destination: `${localePrefix}${buildPlaceUrl(id, placeData?.slug)}`,
                         // Permanent (301) redirect: the canonical `{id}-{slug}` URL never changes for a
                         // given place, so search engines (Yandex in particular) should consolidate
                         // ranking signals onto it instead of re-crawling the old URL as a separate page.
                         statusCode: 301
-                    }
+                    },
+                    revalidate: PAGE_REVALIDATE
                 }
             }
 
@@ -544,10 +603,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             // One round trip for everything the page shows: the related list is requested with
             // room for the nearby places and filtered here instead of waiting for their ids;
             // the sidebar blocks (visited, collections) and the history count are prefetched so
-            // they are in the server HTML instead of popping in after hydration. Not for crawlers:
-            // they render most place pages, and these three requests were a third of the API's load
-            const crawler = isCrawler(context.req.headers['user-agent'])
-
+            // they are in the HTML instead of popping in after hydration
             const [
                 { data: ratingData },
                 { data: photosData },
@@ -586,15 +642,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
                           })
                       )
                     : Promise.resolve({ data: undefined }),
-                ...(crawler
-                    ? [undefined, undefined, undefined]
-                    : [
-                          store.dispatch(API.endpoints.visitedGetUsersList.initiate(id)),
-                          store.dispatch(
-                              API.endpoints.collectionsGetList.initiate({ limit: IN_COLLECTIONS_LIMIT, placeId: id })
-                          ),
-                          store.dispatch(API.endpoints.feedGetStories.initiate({ countOnly: true, place: id }))
-                      ]),
+                store.dispatch(API.endpoints.visitedGetUsersList.initiate(id)),
+                store.dispatch(API.endpoints.collectionsGetList.initiate({ limit: IN_COLLECTIONS_LIMIT, placeId: id })),
+                store.dispatch(API.endpoints.feedGetStories.initiate({ countOnly: true, place: id })),
                 translationsPromise
             ])
 
@@ -614,7 +664,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     ratingCount: ratingData?.count ?? 0,
                     relatedLocation,
                     relatedPlaces: relatedPlaces ?? null
-                }
+                },
+                revalidate: PAGE_REVALIDATE
             }
         }
 )

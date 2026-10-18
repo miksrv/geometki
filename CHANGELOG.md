@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.17.4
+
+### Patch Changes
+
+- Place pages: open instantly, served ready-made and updated as soon as a rating, review, photo or edit changes the place
+- Places: views are counted for every visitor again
+- Home page: "Active travelers" and the online marks update again
+- Optimized the place page: one background request instead of nine
+
 ## 1.17.3
 
 ### Patch Changes

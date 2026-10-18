@@ -571,6 +571,13 @@ export const API = createApi({
                     id: undefined
                 })}`
         }),
+        /** Counts a view of the place page: the page comes from the cache, GET /places/:id counts none */
+        placesPostView: builder.mutation<ApiType.Places.PostViewResponse, string>({
+            query: (id) => ({
+                method: 'POST',
+                url: `places/${id}/views`
+            })
+        }),
         placesGetTexts: builder.query<ApiType.Places.TextsResponse, string>({
             providesTags: (result, error, id) => [{ id, type: 'Places' }],
             query: (id) => `places/${id}/texts`

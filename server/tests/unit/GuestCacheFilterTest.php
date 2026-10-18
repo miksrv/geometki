@@ -36,13 +36,17 @@ final class GuestCacheFilterTest extends CIUnitTestCase
             ['get', 'notifications', static fn () => service('response')->setJSON(['calls' => ++self::$calls])],
             ['put', 'rating', static fn () => service('response')->setJSON(['ok' => true])],
             ['put', 'location', static fn () => service('response')->setJSON(['ok' => true])],
+            ['post', 'places/(:alphanum)/views', static fn () => service('response')->setJSON(['ok' => true])],
+            ['post', 'photos/upload/temporary', static fn () => service('response')->setJSON(['ok' => true])],
+            ['get', 'users', static fn () => service('response')->setJSON(['calls' => ++self::$calls])],
         ]);
     }
 
     protected function tearDown(): void
     {
-        (new GuestCache($this->config))->flush();
-        @rmdir($this->config->path);
+        $cache = new GuestCache($this->config);
+        $cache->flush();
+        $cache->sweep();
         Factories::reset('config');
 
         parent::tearDown();
@@ -105,6 +109,40 @@ final class GuestCacheFilterTest extends CIUnitTestCase
         $this->put('location');
 
         $this->assertSame(1, $this->calls($this->get('places')));
+    }
+
+    public function testAViewAndATemporaryPhotoKeepTheCache(): void
+    {
+        $this->get('places');
+        $this->post('places/abc123/views');
+        $this->post('photos/upload/temporary');
+
+        $this->assertSame(1, $this->calls($this->get('places')));
+    }
+
+    public function testAnAnswerWithItsOwnTtlGoesStaleSooner(): void
+    {
+        $this->config->ttls = ['users' => 60];
+
+        $this->get('users');
+        $this->assertSame(1, $this->calls($this->get('users')));
+
+        // An hour later: still within the common day, past the minute of `users`
+        foreach (glob($this->config->path . '*.json') as $file) {
+            touch($file, time() - HOUR);
+        }
+
+        $this->assertSame(2, $this->calls($this->get('users')));
+    }
+
+    public function testAClearedFolderIsSweptLater(): void
+    {
+        $this->get('places');
+        $this->put('rating');
+
+        $this->assertDirectoryDoesNotExist($this->config->path);
+        $this->assertSame(1, (new GuestCache($this->config))->sweep());
+        $this->assertSame([], glob(rtrim($this->config->path, '/') . '.cleared-*'));
     }
 
     public function testNothingIsCachedWhenTurnedOff(): void

@@ -9,6 +9,7 @@ use App\Libraries\PhotoLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
+use App\Libraries\SitePages;
 use App\Models\PhotosModel;
 use App\Models\PlacesExternalPhotosModel;
 use App\Models\PlacesModel;
@@ -313,6 +314,7 @@ class Photos extends ResourceController
         // Update photos count on the current place
         $countPhotos = $photosModel->select('id')->where('place_id', $photoData->place_id)->countAllResults();
         $placesModel->update($photoData->place_id, ['photos' => $countPhotos]);
+        SitePages::place($photoData->place_id);
 
         return $this->respondDeleted(['id' => $id]);
     }
@@ -365,6 +367,8 @@ class Photos extends ResourceController
         ]);
 
         $photoPath = PATH_PHOTOS . $photoData->place_id . '/' . $name;
+
+        SitePages::place($photoData->place_id);
 
         return $this->respondUpdated([
             'id'      => $id,

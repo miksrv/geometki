@@ -10,6 +10,7 @@ use App\Libraries\PlaceCoverLibrary;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
+use App\Libraries\SitePages;
 use App\Models\PlacesExternalPhotosModel;
 use App\Models\PlacesModel;
 use App\Models\UsersModel;
@@ -254,6 +255,8 @@ class ExternalPhotos extends ResourceController
                 log_message('error', '{exception}', ['exception' => $e]);
             }
         }
+
+        SitePages::place($row['place_id']);
 
         return $this->respondDeleted(['id' => $id]);
     }

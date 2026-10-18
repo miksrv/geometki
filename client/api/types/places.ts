@@ -8,6 +8,12 @@ export interface ItemRequest {
 
 export type ItemResponse = ApiModel.Place
 
+/** POST /places/:id/views: what the cached page cannot know — the count with this view, the visitor's own score */
+export interface PostViewResponse {
+    views: number
+    vote: number | null
+}
+
 export interface ListRequest {
     sort?: ApiType.SortFieldsType
     order?: ApiType.SortOrdersType

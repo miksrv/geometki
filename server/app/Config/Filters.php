@@ -5,6 +5,7 @@ namespace Config;
 use App\Filters\CacheHeadersFilter;
 use App\Filters\CorsFilter;
 use App\Filters\GuestCacheFilter;
+use App\Filters\SitePagesFilter;
 use App\Filters\LocaleFilter;
 use App\Filters\ThrottleFilter;
 use CodeIgniter\Config\Filters as BaseFilters;
@@ -43,6 +44,7 @@ class Filters extends BaseFilters
         'throttle'      => ThrottleFilter::class,
         'cache'         => CacheHeadersFilter::class,
         'guestcache'    => GuestCacheFilter::class,
+        'sitepages'     => SitePagesFilter::class,
     ];
 
     /**
@@ -88,6 +90,7 @@ class Filters extends BaseFilters
         'after' => [
             // 'honeypot',
             'guestcache',
+            'sitepages', // Renders anew the site pages a write changed: see SitePages
             'secureheaders',
         ],
     ];

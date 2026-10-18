@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
+use App\Libraries\SitePages;
 use App\Models\PlacesModel;
 use App\Models\RatingModel;
 use App\Models\UsersModel;
@@ -154,6 +155,7 @@ class Rating extends ResourceController
 
             $usersModel->update($placesData->user_id, ['reputation' => $userRating, 'updated_at' => $usersData->updated_at]);
             $placesModel->update($placesData->id, ['rating' => $ratingValue, 'updated_at' => $placesData->updated_at]);
+            SitePages::place($placesData->id);
 
             // Editing user rating
             if ($alreadyVoted) {
