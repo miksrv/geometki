@@ -50,7 +50,13 @@ describe('POST /api/revalidate', () => {
         expect((await call('POST', { paths: ['/places/abc'] }, '')).status).toHaveBeenCalledWith(401)
     })
 
-    it('renders only place pages, at most 50 paths', async () => {
+    it('renders collections too', async () => {
+        const res = await call('POST', { paths: ['/collections/c1-waterfalls'] }, 's3cret')
+
+        expect(res.revalidate.mock.calls).toEqual([['/collections/c1-waterfalls'], ['/en/collections/c1-waterfalls']])
+    })
+
+    it('renders only place and collection pages, at most 50 paths', async () => {
         const res = await call('POST', { paths: ['/', '/users/1', '/places/a/../../x'] }, 's3cret')
         expect(res.status).toHaveBeenCalledWith(400)
         expect(res.revalidate).not.toHaveBeenCalled()

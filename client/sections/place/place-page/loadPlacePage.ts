@@ -1,5 +1,3 @@
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
-
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import type { AppStore } from '@/app/store'
@@ -7,6 +5,8 @@ import { IN_COLLECTIONS_LIMIT } from '@/sections/collections'
 import type { RelatedPlacesLocation } from '@/sections/place'
 import { RELATED_PLACES_COUNT } from '@/sections/place/place-explore'
 import { buildPlaceUrl, parsePlaceId } from '@/utils/helpers'
+import { dropFromHydration } from '@/utils/hydration'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 import type { PlacePageProps } from './PlacePage'
 
@@ -41,7 +41,7 @@ export const loadPlacePage = async (
     const locale = (contextLocale ?? 'en') as ApiType.Locale
     // Started now, awaited with the data: a local file read, but a serial one otherwise.
     // The no-op catch keeps an early 404/301 return from leaving an unhandled rejection.
-    const translationsPromise = serverSideTranslations(locale)
+    const translationsPromise = loadPageTranslations()
     translationsPromise.catch(() => undefined)
 
     // The route param may be the bare id or the SEO-friendly `{id}-{slug}` form; the
@@ -54,9 +54,8 @@ export const loadPlacePage = async (
 
     store.dispatch(setLocale(locale))
 
-    const { data: placeData, error } = await store.dispatch(
-        API.endpoints.placesGetItem.initiate({ id, ...visitorLocation })
-    )
+    const placeRequest = store.dispatch(API.endpoints.placesGetItem.initiate({ id, ...visitorLocation }))
+    const { data: placeData, error } = await placeRequest
 
     if (error) {
         if ('status' in error && error.status === 404) {
@@ -99,52 +98,51 @@ export const loadPlacePage = async (
     // One round trip for everything the page shows: the related list is requested with
     // room for the nearby places and filtered here instead of waiting for their ids;
     // the sidebar blocks (visited, collections) and the history count are prefetched so
-    // they are in the HTML instead of popping in after hydration
-    const [
-        { data: ratingData },
-        { data: photosData },
-        { data: _commentsData },
-        { data: nearPlaces },
-        { data: relatedData },
-        ,
-        ,
-        ,
-        translations
-    ] = await Promise.all([
-        store.dispatch(API.endpoints.ratingGetList.initiate(id)),
-        store.dispatch(API.endpoints.photosGetList.initiate({ place: id })),
-        store.dispatch(API.endpoints.commentsGetList.initiate({ place: id })),
-        store.dispatch(
-            API.endpoints.placesGetList.initiate({
-                excludePlaces: [id],
-                lat: placeData?.lat,
-                limit: NEAR_PLACES_COUNT,
-                lon: placeData?.lon,
-                order: ApiType.SortOrders.ASC,
-                sort: ApiType.SortFields.Distance
-            })
-        ),
-        relatedLocation
-            ? store.dispatch(
-                  API.endpoints.placesGetList.initiate({
-                      category: placeData?.category,
-                      excludePlaces: [id],
-                      lat: placeData?.lat,
-                      limit: RELATED_PLACES_COUNT + NEAR_PLACES_COUNT,
-                      lon: placeData?.lon,
-                      order: ApiType.SortOrders.ASC,
-                      region: relatedLocation.id,
-                      sort: ApiType.SortFields.Distance
-                  })
-              )
-            : Promise.resolve({ data: undefined }),
-        store.dispatch(API.endpoints.visitedGetUsersList.initiate(id)),
-        store.dispatch(API.endpoints.collectionsGetList.initiate({ limit: IN_COLLECTIONS_LIMIT, placeId: id })),
-        store.dispatch(API.endpoints.feedGetStories.initiate({ countOnly: true, place: id })),
-        translationsPromise
-    ])
+    // they are in the HTML instead of popping in after hydration. The place, its photos and
+    // the lists go to the page as props, no hook asks for them: dropped from the hydrated store
+    const photosRequest = store.dispatch(API.endpoints.photosGetList.initiate({ place: id }))
+    const nearRequest = store.dispatch(
+        API.endpoints.placesGetList.initiate({
+            excludePlaces: [id],
+            lat: placeData?.lat,
+            limit: NEAR_PLACES_COUNT,
+            lon: placeData?.lon,
+            order: ApiType.SortOrders.ASC,
+            sort: ApiType.SortFields.Distance
+        })
+    )
+    const relatedRequest = relatedLocation
+        ? store.dispatch(
+              API.endpoints.placesGetList.initiate({
+                  category: placeData?.category,
+                  excludePlaces: [id],
+                  lat: placeData?.lat,
+                  limit: RELATED_PLACES_COUNT + NEAR_PLACES_COUNT,
+                  lon: placeData?.lon,
+                  order: ApiType.SortOrders.ASC,
+                  region: relatedLocation.id,
+                  sort: ApiType.SortFields.Distance
+              })
+          )
+        : undefined
+
+    const [{ data: ratingData }, { data: photosData }, { data: nearPlaces }, related, , , , , translations] =
+        await Promise.all([
+            store.dispatch(API.endpoints.ratingGetList.initiate(id)),
+            photosRequest,
+            nearRequest,
+            relatedRequest,
+            store.dispatch(API.endpoints.commentsGetList.initiate({ place: id })),
+            store.dispatch(API.endpoints.visitedGetUsersList.initiate(id)),
+            store.dispatch(API.endpoints.collectionsGetList.initiate({ limit: IN_COLLECTIONS_LIMIT, placeId: id })),
+            store.dispatch(API.endpoints.feedGetStories.initiate({ countOnly: true, place: id })),
+            translationsPromise
+        ])
+    const relatedData = related?.data
 
     await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
+
+    dropFromHydration(store, placeRequest, photosRequest, nearRequest, relatedRequest)
 
     const nearIds = new Set(nearPlaces?.items?.map((item) => item.id) ?? [])
     const relatedPlaces = relatedData?.items?.filter((item) => !nearIds.has(item.id)).slice(0, RELATED_PLACES_COUNT)

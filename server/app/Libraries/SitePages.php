@@ -3,6 +3,7 @@
 namespace App\Libraries;
 
 use App\Libraries\Mail\MailUrls;
+use App\Models\CollectionsModel;
 use App\Models\PlacesModel;
 use Throwable;
 
@@ -16,6 +17,9 @@ class SitePages
     /** @var array<string, true> place ids */
     private static array $places = [];
 
+    /** @var array<string, true> collection ids */
+    private static array $collections = [];
+
     /** @var array<string, true> site paths without the locale prefix */
     private static array $paths = [];
 
@@ -27,6 +31,14 @@ class SitePages
         }
     }
 
+    /** The collection's page, by its current slug */
+    public static function collection(?string $id): void
+    {
+        if ($id) {
+            self::$collections[$id] = true;
+        }
+    }
+
     /** Any page of the site, e.g. a place page under its old slug */
     public static function path(string $path): void
     {
@@ -35,8 +47,9 @@ class SitePages
 
     public static function reset(): void
     {
-        self::$places = [];
-        self::$paths  = [];
+        self::$places      = [];
+        self::$collections = [];
+        self::$paths       = [];
     }
 
     /** The marked paths, emptied: a request sends them once */
@@ -52,6 +65,14 @@ class SitePages
             }
         }
 
+        if (self::$collections) {
+            $rows = (new CollectionsModel())->withDeleted()->select('id, slug')->whereIn('id', array_keys(self::$collections))->findAll();
+
+            foreach ($rows as $row) {
+                $paths[self::collectionPath($row->id, $row->slug)] = true;
+            }
+        }
+
         self::reset();
 
         return array_keys($paths);
@@ -61,6 +82,12 @@ class SitePages
     public static function placePath(string $id, ?string $slug): string
     {
         return '/places/' . $id . ($slug ? '-' . $slug : '');
+    }
+
+    /** The same URL as the client's buildCollectionUrl() */
+    public static function collectionPath(string $id, ?string $slug): string
+    {
+        return '/collections/' . $id . ($slug ? '-' . $slug : '');
     }
 
     /** Asks the site to render the marked pages anew; a failure only leaves them stale until their revalidate time */

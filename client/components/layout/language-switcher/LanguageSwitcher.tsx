@@ -10,6 +10,7 @@ import { setLocale } from '@/app/applicationSlice'
 import { useAppDispatch } from '@/app/store'
 import { LOCAL_STORAGE } from '@/config/constants'
 import useLocalStorage from '@/hooks/useLocalStorage'
+import { ensureLocaleResources } from '@/utils/translations'
 
 import styles from './styles.module.sass'
 
@@ -33,6 +34,9 @@ export const LanguageSwitcher: React.FC = () => {
 
         dispatch(setLocale(locale))
 
+        // A page brings only its own locale's texts
+        await ensureLocaleResources(locale)
+        i18n.addResourceBundle(locale, 'common', globalThis.__GEOMETKI_I18N__?.[locale]?.common ?? {}, true, true)
         await i18n.changeLanguage(locale)
         await router.push({ pathname, query }, asPath, { locale })
     }

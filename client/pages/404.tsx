@@ -4,10 +4,10 @@ import { GetStaticPropsResult, NextPage } from 'next'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { getNotFoundTexts, NotFoundPage } from '@/components/shared/not-found-page'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 const Error404Page: NextPage = () => {
     const router = useRouter()
@@ -31,8 +31,8 @@ const Error404Page: NextPage = () => {
     )
 }
 
-export const getStaticProps = async ({ locale }: { locale?: string }): Promise<GetStaticPropsResult<object>> => {
-    const translations = await serverSideTranslations(locale ?? 'ru')
+export const getStaticProps = async (): Promise<GetStaticPropsResult<object>> => {
+    const translations = await loadPageTranslations()
 
     return {
         props: {

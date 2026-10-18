@@ -21,6 +21,7 @@ import packageInfo from '@/package.json'
 import * as LocalStorage from '@/utils/localstorage'
 import { registerServiceWorker } from '@/utils/serviceWorker'
 import { rememberTimeZone } from '@/utils/timeZone'
+import { ensureLocaleResources } from '@/utils/translations'
 
 import i18Config from '../next-i18next.config'
 
@@ -52,7 +53,10 @@ const App = ({ Component, pageProps }: AppProps) => {
             i18Config.i18n.locales.includes(savedLocale) &&
             router.pathname !== '/404'
         ) {
-            void router.replace(router.asPath, router.asPath, { locale: savedLocale })
+            // The page brought only its own locale's texts
+            void ensureLocaleResources(savedLocale).then(() =>
+                router.replace(router.asPath, router.asPath, { locale: savedLocale })
+            )
         }
     }, [])
 
@@ -182,4 +186,18 @@ const App = ({ Component, pageProps }: AppProps) => {
     )
 }
 
-export default appWithTranslation(App)
+/**
+ * The texts come from the config, not from the page props: on the server from the files
+ * (utils/translations.server.ts, loaded by every page's data function), in the browser from the
+ * locale script that runs before the app (pages/_document.tsx). A page's data then carries no
+ * translations: ~20 KB less in every HTML and every client-side navigation. A getter: the
+ * browser may add a locale later (a language switch)
+ */
+const i18nConfig = {
+    ...i18Config,
+    get resources() {
+        return globalThis.__GEOMETKI_I18N__
+    }
+}
+
+export default appWithTranslation(App, i18nConfig)

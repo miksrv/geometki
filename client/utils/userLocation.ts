@@ -1,4 +1,4 @@
-import { ApiType } from '@/api'
+import type { ApiType } from '@/api'
 
 /**
  * The visitor's location, once they have asked for it (the map's "My location" button, sorting

@@ -1,201 +1,29 @@
-import React from 'react'
-import { Button } from 'simple-react-ui-kit'
+import type { GetStaticPaths, GetStaticPropsResult } from 'next'
 
-import { GetServerSidePropsResult } from 'next'
-import Head from 'next/head'
-import Link from 'next/link'
-import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
-import { JsonLdScript } from 'next-seo'
-import { generateNextSeo } from 'next-seo/pages'
-
-import { API, ApiModel, ApiType } from '@/api'
-import { setLocale, setTimeZone } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, PhotoGallery } from '@/components/shared'
-import { IMG_HOST, SITE_LINK } from '@/config/env'
-import { UserActivity, UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
-import { formatDateISO } from '@/utils/helpers'
-import { buildHreflangTags } from '@/utils/seo'
-import { getTimeZoneFromCookies } from '@/utils/timeZone'
+import { UserPage } from '@/sections/user/user-page'
+import { loadUserPage } from '@/sections/user/user-page/loadUserPage'
+import type { UserPageProps } from '@/sections/user/user-page/UserPage'
 
-interface UserPageProps {
-    id: string
-    user?: ApiModel.User
-    photosList?: ApiModel.Photo[]
-    photosCount: number
-}
+/** Seconds a cached profile is served before it is rendered anew in the background: the
+ *  feed, the counters and the calendar move with the user's actions */
+const PAGE_REVALIDATE = 10 * 60
 
-const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photosCount }) => {
-    const { t, i18n } = useTranslation()
+/** No page is built ahead: each one is rendered on its first visit, then served from the cache */
+export const getStaticPaths: GetStaticPaths = async () => ({ fallback: 'blocking', paths: [] })
 
-    const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
-
-    const breadCrumbSchema = {
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-            {
-                '@type': 'ListItem',
-                item: canonicalUrl,
-                name: t('geotags'),
-                position: 1
-            },
-            {
-                '@type': 'ListItem',
-                item: `${canonicalUrl}users`,
-                name: t('users'),
-                position: 2
-            },
-            {
-                '@type': 'ListItem',
-                item: `${canonicalUrl}users/${user?.id}`,
-                name: user?.name,
-                position: 3
-            }
-        ]
-    }
-
-    const userSchema = {
-        '@context': 'https://schema.org',
-        '@type': 'ProfilePage',
-        dateCreated: formatDateISO(user?.created?.date),
-        dateModified: formatDateISO(user?.updated?.date),
-        mainEntity: {
-            '@type': 'Person',
-            identifier: user?.id,
-            image: user?.avatar ? `${IMG_HOST}${user.avatar}` : undefined,
-            name: user?.name
-        }
-    }
-
-    return (
-        <AppLayout>
-            <Head>
-                {generateNextSeo({
-                    title: `${user?.name} - ${t('profile')}`,
-                    canonical: `${canonicalUrl}users/${user?.id}`,
-                    description: `${user?.name} - ${t('user-profile')}`,
-                    noindex: true,
-                    nofollow: false,
-                    openGraph: {
-                        images: photosList?.map((photo, index) => ({
-                            alt: `${photo.title} (${index + 1})`,
-                            height: photo.height,
-                            url: `${IMG_HOST}${photo.full}`,
-                            width: photo.width
-                        })),
-                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                        profile: {
-                            username: user?.name
-                        },
-                        siteName: t('geotags'),
-                        title: user?.name,
-                        type: 'http://ogp.me/ns/profile#',
-                        url: `${canonicalUrl}users/${user?.id}`
-                    },
-                    twitter: { cardType: 'summary_large_image' },
-                    additionalLinkTags: buildHreflangTags(`users/${user?.id}`)
-                })}
-            </Head>
-
-            <JsonLdScript
-                scriptKey={'user-breadcrumb'}
-                data={breadCrumbSchema}
-            />
-            <JsonLdScript
-                scriptKey={'user-profile'}
-                data={userSchema}
-            />
-
-            <UserHeader user={user} />
-
-            <UserTabs
-                user={user}
-                currentPage={UserPagesEnum.FEED}
-            />
-
-            <PhotoGallery
-                title={t('photos')}
-                photos={photosList}
-                hideActions={true}
-                action={
-                    !!photosList?.length && (
-                        <Link
-                            href={`/users/${id}/photos`}
-                            title={t(`${t('show-all-photos')} (${photosCount})`)}
-                        >
-                            {t('all')}
-                        </Link>
-                    )
-                }
-                footer={
-                    photosCount > 8 && (
-                        <Button
-                            size={'medium'}
-                            mode={'secondary'}
-                            link={`/users/${id}/photos`}
-                            style={{ marginTop: '5px', width: '100%' }}
-                        >
-                            {`${t('show-all-photos')} (${photosCount})`}
-                        </Button>
-                    )
-                }
-            />
-
-            <UserActivity userId={id} />
-        </AppLayout>
-    )
-}
-
-export const getServerSideProps = wrapper.getServerSideProps(
+/**
+ * A user profile of guests and crawlers, in the site's days. A signed-in user or a visitor in
+ * another time zone gets `pages/live/users/[id].tsx` instead (proxy.ts).
+ */
+export const getStaticProps = wrapper.getStaticProps(
     (store) =>
-        async (context): Promise<GetServerSidePropsResult<UserPageProps>> => {
-            const id = typeof context.params?.id === 'string' ? context.params.id : undefined
-            const locale = (context.locale ?? 'en') as ApiType.Locale
-            const translations = await serverSideTranslations(locale)
+        async (context): Promise<GetStaticPropsResult<UserPageProps>> => {
+            const result = await loadUserPage(store, { locale: context.locale, param: context.params?.id })
 
-            if (typeof id !== 'string') {
-                return { notFound: true }
-            }
-
-            const timeZone = getTimeZoneFromCookies(context.req.cookies)
-
-            store.dispatch(setLocale(locale))
-            store.dispatch(setTimeZone(timeZone))
-
-            const { data: userData, isError } = await store.dispatch(API.endpoints.usersGetItem.initiate(id))
-
-            // A missing user costs one request, not five
-            if (isError || !userData) {
-                return { notFound: true }
-            }
-
-            // The rest at once; the achievements of the header too, else the browser asks for them
-            const [{ data: photosData }] = await Promise.all([
-                store.dispatch(
-                    API.endpoints.photosGetList.initiate({
-                        author: id,
-                        limit: 8,
-                        offset: 0
-                    })
-                ),
-                store.dispatch(API.endpoints.feedGetList.initiate({ author: id })),
-                store.dispatch(API.endpoints.feedGetCalendar.initiate({ author: id, tz: timeZone })),
-                store.dispatch(API.endpoints.getUserAchievements.initiate(userData.id))
-            ])
-
-            await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
-
-            return {
-                props: {
-                    ...translations,
-                    id,
-                    photosCount: photosData?.count ?? 0,
-                    photosList: photosData?.items ?? [],
-                    user: userData
-                }
-            }
+            return 'notFound' in result
+                ? { notFound: true, revalidate: PAGE_REVALIDATE }
+                : { ...result, revalidate: PAGE_REVALIDATE }
         }
 )
 

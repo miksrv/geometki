@@ -2,7 +2,7 @@ import React from 'react'
 import { Provider } from 'react-redux'
 
 import { configureStore } from '@reduxjs/toolkit'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import applicationReducer from '@/app/applicationSlice'
 import authReducer from '@/app/authSlice'
@@ -28,6 +28,9 @@ jest.mock('../../../next-i18next.config', () => ({
 const mockPush = jest.fn().mockResolvedValue(true)
 const mockChangeLanguage = jest.fn().mockResolvedValue(undefined)
 
+// The other locale's texts: loaded before the switch (a page brings only its own)
+jest.mock('@/utils/translations', () => ({ ensureLocaleResources: () => Promise.resolve() }))
+
 jest.mock('next/router', () => ({
     useRouter: () => ({
         pathname: '/',
@@ -42,6 +45,7 @@ jest.mock('next-i18next', () => ({
         t: (key: string, opts?: Record<string, unknown>) => opts?.defaultValue ?? key,
         i18n: {
             language: 'ru',
+            addResourceBundle: jest.fn(),
             changeLanguage: mockChangeLanguage
         }
     })
@@ -52,6 +56,7 @@ jest.mock('next-i18next/pages', () => ({
         t: (key: string, opts?: Record<string, unknown>) => opts?.defaultValue ?? key,
         i18n: {
             language: 'ru',
+            addResourceBundle: jest.fn(),
             changeLanguage: mockChangeLanguage
         }
     })
@@ -97,9 +102,8 @@ describe('LanguageSwitcher', () => {
         it('calls i18n.changeLanguage when clicking a different language', async () => {
             renderWithStore(<LanguageSwitcher />)
             fireEvent.click(screen.getByText('Eng'))
-            // changeLanguage is called asynchronously
-            await Promise.resolve()
-            expect(mockChangeLanguage).toHaveBeenCalledWith('en')
+            // changeLanguage is called asynchronously, after the locale's texts are loaded
+            await waitFor(() => expect(mockChangeLanguage).toHaveBeenCalledWith('en'))
         })
 
         it('does not call changeLanguage when clicking the current language', async () => {

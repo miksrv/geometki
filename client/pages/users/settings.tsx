@@ -6,7 +6,6 @@ import { useRouter } from 'next/dist/client/router'
 import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
@@ -18,6 +17,7 @@ import { ScreenSpinner } from '@/components/ui'
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import { UserForm } from '@/sections/user'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
     ssr: false
@@ -143,7 +143,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<object>> => {
             const locale = (context.locale ?? 'en') as ApiType.Locale
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
 
             store.dispatch(setLocale(locale))
 

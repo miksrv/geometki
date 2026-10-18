@@ -4,7 +4,6 @@ import { Container } from 'simple-react-ui-kit'
 import { GetServerSidePropsResult } from 'next'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
@@ -23,6 +22,7 @@ import { SITE_LINK } from '@/config/env'
 import { CreateCollectionButton } from '@/sections/collections'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
 import { buildHreflangTags } from '@/utils/seo'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 export const USER_COLLECTIONS_PER_PAGE = 40
 
@@ -125,7 +125,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
         async (context): Promise<GetServerSidePropsResult<UserCollectionsPageProps>> => {
             const id = typeof context.params?.id === 'string' ? context.params.id : undefined
             const locale = (context.locale ?? 'en') as ApiType.Locale
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
             const currentPage = parseInt(context.query.page as string, 10) || 1
 
             if (!id) {

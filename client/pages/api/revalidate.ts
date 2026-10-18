@@ -7,8 +7,8 @@ import i18Config from '@/next-i18next.config'
 /** Paths of one request at most: a write changes a place or two */
 const MAX_PATHS = 50
 
-/** Only the cached pages: the place pages (getStaticProps) */
-const ALLOWED_PATH = /^\/places\/[A-Za-z0-9-]+$/
+/** Only the cached pages a write renders anew: places and collections (getStaticProps) */
+const ALLOWED_PATH = /^\/(places|collections)\/[A-Za-z0-9-]+$/
 
 /** The secret compared in constant time: the endpoint is public */
 const isSecret = (given: unknown, secret?: string): boolean =>
@@ -44,7 +44,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         : []
 
     if (!paths.length || paths.length > MAX_PATHS) {
-        return res.status(400).json({ error: 'Expected 1–50 place paths' })
+        return res.status(400).json({ error: 'Expected 1–50 place or collection paths' })
     }
 
     const urls = paths.flatMap((path) =>

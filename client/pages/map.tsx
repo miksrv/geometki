@@ -7,7 +7,6 @@ import { useRouter } from 'next/dist/client/router'
 import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { JsonLdScript } from 'next-seo'
 import { generateNextSeo } from 'next-seo/pages'
 
@@ -20,6 +19,7 @@ import { SITE_LINK } from '@/config/env'
 import { getLandingFlags, round } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), {
     ssr: false
@@ -297,7 +297,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
         async (context): Promise<GetServerSidePropsResult<object>> => {
             const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
 
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))

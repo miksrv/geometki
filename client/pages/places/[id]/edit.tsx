@@ -6,7 +6,6 @@ import { useRouter } from 'next/dist/client/router'
 import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
@@ -19,6 +18,7 @@ import { PlaceForm } from '@/sections/place'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
 import { equalsArrays, parsePlaceId } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 import styles from './edit.module.sass'
 
@@ -163,7 +163,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const rawParam = context.params?.id
             const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
 
             if (typeof rawParam !== 'string') {
                 return { notFound: true }

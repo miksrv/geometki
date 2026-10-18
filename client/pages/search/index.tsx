@@ -5,7 +5,6 @@ import type { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
@@ -16,6 +15,7 @@ import { SearchResults, SearchResultsSkeleton } from '@/components/pages/search/
 import { AppLayout, EmptyState, PageHeader } from '@/components/shared'
 import { parseSearchQuery, SearchFilterPanel, SearchQuery } from '@/sections/search'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { loadPageTranslations } from '@/utils/translations.server'
 import { getUserLocationFromCookies } from '@/utils/userLocation'
 
 import styles from './index.module.sass'
@@ -187,7 +187,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))
 
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
 
             const { data: initialData } = await store.dispatch(
                 API.endpoints.search.initiate(toRequest(query, getUserLocationFromCookies(cookies)))

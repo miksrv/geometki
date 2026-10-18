@@ -25,6 +25,12 @@ final class SitePagesTest extends CIUnitTestCase
         $this->assertSame('/places/abc', SitePages::placePath('abc', ''));
     }
 
+    public function testACollectionPathIsTheClientUrl(): void
+    {
+        $this->assertSame('/collections/c1-waterfalls', SitePages::collectionPath('c1', 'waterfalls'));
+        $this->assertSame('/collections/c1', SitePages::collectionPath('c1', null));
+    }
+
     public function testPathsAreTakenOnceWithoutDuplicates(): void
     {
         SitePages::path('/places/abc-old');

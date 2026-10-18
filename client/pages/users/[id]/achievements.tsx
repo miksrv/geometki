@@ -4,7 +4,6 @@ import { Container } from 'simple-react-ui-kit'
 import type { GetServerSidePropsResult } from 'next'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
@@ -15,6 +14,7 @@ import { AppLayout } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
 import { buildHreflangTags } from '@/utils/seo'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 interface UserAchievementsPageProps {
     id: string
@@ -91,7 +91,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             await store.dispatch(API.endpoints.getUserAchievements.initiate(id))
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
 
             return {
                 props: {

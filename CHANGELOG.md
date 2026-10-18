@@ -8,6 +8,8 @@
 - Places: views are counted for every visitor again
 - Home page: "Active travelers" and the online marks update again
 - Place pages: signed-in users always see them fresh, with their own marks right away
+- Home page, activity feed, collections and user profiles: served ready-made to guests, like the place pages
+- Optimized all pages: about half as heavy, the texts of the site load once and stay in the browser
 - Optimized the place page, the map, the user profile and the landing pages: fewer requests, more of them served from the cache
 - Map: switching categories shows the places at once, without reloading them
 

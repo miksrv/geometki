@@ -11,7 +11,7 @@ import { getUserLocationFromCookies } from '@/utils/userLocation'
  * The place page of a signed-in user, rendered on every request with their token: their
  * score, bookmarks and "I've been here" marks are in the HTML, and they never see a cached
  * copy. Not a URL of its own: proxy.ts rewrites `/places/{id}` here when the auth cookie is
- * set, and answers 404 to `/places/{id}/live` itself.
+ * set (see CACHED_PAGES there), and 301s `/live/...` itself to the page.
  */
 export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>

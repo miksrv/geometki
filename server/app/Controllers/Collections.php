@@ -290,6 +290,13 @@ class Collections extends ResourceController
 
         $collection = $this->model->find($id);
 
+        // Its page, and under the old slug too: a new title may move it to a new one
+        SitePages::collection($id);
+
+        if ($collection) {
+            SitePages::path(SitePages::collectionPath($id, $collection->slug));
+        }
+
         if (!$collection) {
             return $this->failNotFound();
         }
@@ -359,6 +366,7 @@ class Collections extends ResourceController
         }
 
         $collection = $this->model->find($id);
+        SitePages::collection($id);
 
         if (!$collection) {
             return $this->failNotFound();
@@ -389,6 +397,8 @@ class Collections extends ResourceController
      */
     public function addPlaces($id = null): ResponseInterface
     {
+        SitePages::collection($id);
+
         if (!$this->session->isAuth) {
             return $this->failUnauthorized();
         }
@@ -488,6 +498,8 @@ class Collections extends ResourceController
      */
     public function removePlace($id = null, $placeId = null): ResponseInterface
     {
+        SitePages::collection($id);
+
         if (!$this->session->isAuth) {
             return $this->failUnauthorized();
         }
@@ -533,6 +545,8 @@ class Collections extends ResourceController
      */
     public function updatePlaces($id = null): ResponseInterface
     {
+        SitePages::collection($id);
+
         if (!$this->session->isAuth) {
             return $this->failUnauthorized();
         }
@@ -729,6 +743,7 @@ class Collections extends ResourceController
         }
 
         $collection = $this->model->find($id);
+        SitePages::collection($id);
 
         if (!$collection) {
             return $this->failNotFound();

@@ -8,6 +8,8 @@ import { NextResponse } from 'next/server'
 import { AUTH_COOKIES, LOCALE_HEADER } from '@/config/constants'
 import { isCategoryCombination, isCrawler, isGeoList } from '@/utils/crawler'
 import { getLandingFlags, isLandingSegment, LANDING_PROXY_HEADER } from '@/utils/placesLanding'
+import { SITE_TIME_ZONE, TIME_ZONE_COOKIE } from '@/utils/timeZone'
+import { USER_LOCATION_COOKIE } from '@/utils/userLocation'
 
 // A per-server-instance secret, generated once when this module is first loaded and never
 // sent to any client. `x-landing-proxied` only carries real meaning when its value is this
@@ -26,11 +28,58 @@ const PROXY_SECRET = crypto.randomUUID()
 // (`/places/landing/landing/cave`, see that guard's comment).
 const PLACES_LANDING_PATH = /^\/places\/(?!landing(?:\/|$))([^/]+)(?:\/([^/]+))?$/
 
-// A place page: the 13-character hex id, alone or with its slug (utils/place.ts)
-const PLACE_PAGE_PATH = /^\/places\/([0-9a-f]{13}(?:-[^/]*)?)$/
+/**
+ * Pages served from the Next cache (getStaticProps): one render for every guest and crawler —
+ * 99% of the visits. A visitor the cached render does not fit gets the same page rendered on
+ * the request (`pages/live/...`, getServerSideProps): a signed-in user always (fresh, with their
+ * own marks), a guest when a cookie or the query changes what the page shows. The URL in the
+ * browser is untouched.
+ */
+interface CachedPage {
+    path: RegExp
+    /** The per-request copy: `$1` is the path's first group */
+    live: string
+    /** The guest's point (the `location` cookie) shows as distances on the page */
+    location?: boolean
+    /** The page has days (feed headings, the calendar): a visitor outside the site's zone */
+    timeZone?: boolean
+    /** Query parameters the page reads (getStaticProps never sees the query) */
+    query?: string[]
+}
 
-// The per-request copy of a place page for signed-in users (pages/places/[id]/live.tsx)
-const PLACE_LIVE_PATH = /^\/places\/([^/]+)\/live$/
+const CACHED_PAGES: CachedPage[] = [
+    { live: '/live', location: true, path: /^\/$/ },
+    // A place: the 13-character hex id, alone or with its slug (utils/place.ts)
+    { live: '/live/places/$1', path: /^\/places\/([0-9a-f]{13}(?:-[^/]*)?)$/ },
+    { live: '/live/collections/$1', path: /^\/collections\/([^/]+)$/ },
+    // Not /users/settings: a page of its own
+    { live: '/live/users/$1', path: /^\/users\/(?!settings$)([^/]+)$/, timeZone: true },
+    { live: '/live/activity', path: /^\/activity$/, query: ['type'], timeZone: true }
+]
+
+/** The per-request copy of a cached page, when this request needs it */
+const livePath = (request: NextRequest, signedIn: boolean): string | undefined => {
+    const { pathname, searchParams } = request.nextUrl
+
+    for (const page of CACHED_PAGES) {
+        const match = pathname.match(page.path)
+
+        if (!match) {
+            continue
+        }
+
+        const timeZone = request.cookies.get(TIME_ZONE_COOKIE)?.value
+        const personal =
+            signedIn ||
+            (page.location && !!request.cookies.get(USER_LOCATION_COOKIE)?.value) ||
+            (page.timeZone && !!timeZone && timeZone !== SITE_TIME_ZONE) ||
+            page.query?.some((name) => searchParams.has(name))
+
+        return personal ? page.live.replace('$1', match[1] ?? '') : undefined
+    }
+
+    return undefined
+}
 
 export const proxy = (request: NextRequest) => {
     // Never trust a client-supplied copy of this header, on any path — only this file's own
@@ -70,25 +119,19 @@ export const proxy = (request: NextRequest) => {
         return Response.redirect(url.toString(), 301)
     }
 
-    // The signed-in users' copy of a place page is reached only by the rewrite below
-    const liveMatch = request.nextUrl.pathname.match(PLACE_LIVE_PATH)
-
-    if (liveMatch) {
+    // The per-request copies of the cached pages are reached only by the rewrite below
+    if (request.nextUrl.pathname === '/live' || request.nextUrl.pathname.startsWith('/live/')) {
         const url = request.nextUrl.clone()
-        url.pathname = `/places/${liveMatch[1]}`
+        url.pathname = url.pathname.replace(/^\/live(?=\/|$)/, '') || '/'
         return Response.redirect(url.toString(), 301)
     }
 
     const currentUser = request.cookies.get(AUTH_COOKIES.TOKEN)?.value
+    const live = livePath(request, !!currentUser)
 
-    // Place pages come from the Next cache (getStaticProps), the same for every guest and
-    // crawler — 99% of the visits. A signed-in user gets them rendered on each request
-    // instead: fresh, with their own marks. The URL in the browser is untouched
-    const placeMatch = currentUser ? request.nextUrl.pathname.match(PLACE_PAGE_PATH) : null
-
-    if (placeMatch) {
+    if (live) {
         const url = request.nextUrl.clone()
-        url.pathname = `/places/${placeMatch[1]}/live`
+        url.pathname = live
         return NextResponse.rewrite(url, { request: { headers: sanitizedHeaders } })
     }
 
@@ -151,7 +194,8 @@ export const proxy = (request: NextRequest) => {
 }
 
 // Static files from /public the proxy has nothing to do with: images, the PWA manifests, the
-// service worker and its offline page
+// service worker and its offline page. The root is listed apart: with the locales the pattern
+// below needs a segment after `/ru`, so the home page alone never reached the proxy
 export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|.*\\.png$|.*\\.webmanifest$|sw\\.js$|offline\\.html$).*)']
+    matcher: ['/', '/((?!api|_next/static|_next/image|.*\\.png$|.*\\.webmanifest$|sw\\.js$|offline\\.html$).*)']
 }

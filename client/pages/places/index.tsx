@@ -4,7 +4,6 @@ import { Container } from 'simple-react-ui-kit'
 import type { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { JsonLdScript } from 'next-seo'
 import { generateNextSeo } from 'next-seo/pages'
 
@@ -23,6 +22,7 @@ import { buildPlacesHref, encodeQueryData, getLandingFlags } from '@/utils/helpe
 import { PlaceSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { loadPageTranslations } from '@/utils/translations.server'
 import { getDistanceOrigin } from '@/utils/userLocation'
 
 const DEFAULT_SORT = ApiType.SortFields.Trending
@@ -370,7 +370,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             hydrateAuthFromCookies(store, cookies)
 
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
 
             const locationType: ApiType.LocationTypes | null =
                 !country && !region && !district && !locality
