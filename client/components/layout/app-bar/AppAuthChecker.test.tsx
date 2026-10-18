@@ -85,9 +85,9 @@ describe('AppAuthChecker', () => {
             expect(queryOptions()).toMatchObject({ pollingInterval: 60 * 1000, skip: false })
         })
 
-        it('asks a guest without a session once, for one, and does not poll', () => {
+        it('does not ask a guest without a session either: their first score starts it', () => {
             renderWithStore(<AppAuthChecker />, { session: '', token: '' })
-            expect(queryOptions()).toMatchObject({ pollingInterval: 0, skip: false })
+            expect(queryOptions()).toMatchObject({ pollingInterval: 0, skip: true })
         })
 
         it('does not ask a guest who already has a session at all', () => {

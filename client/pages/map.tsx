@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { LatLngBounds, LatLngExpression } from 'leaflet'
 import debounce from 'lodash-es/debounce'
 
@@ -59,15 +59,28 @@ const MapPage: NextPage<object> = () => {
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
 
+    // Without clusters every point is loaded once, all categories, and the chosen ones are
+    // filtered here: a category toggle costs no request, and every visitor asks the same URL,
+    // which the API answers from its guest cache. Clusters are counted on the server, by category
     const { data: poiListData, isFetching: placesLoading } = API.usePoiGetListQuery(
         {
             bounds: ENABLE_POI_CLUSTERIZATION ? mapBounds : undefined,
             cluster: ENABLE_POI_CLUSTERIZATION,
-            categories: mapCategories ?? [],
+            categories: ENABLE_POI_CLUSTERIZATION ? (mapCategories ?? []) : undefined,
             zoom: ENABLE_POI_CLUSTERIZATION ? mapZoom : undefined
         },
         { skip: (ENABLE_POI_CLUSTERIZATION && !mapBounds) || mapType !== 'Places' }
     )
+
+    const shownPlaces = useMemo(() => {
+        if (ENABLE_POI_CLUSTERIZATION || !poiListData?.items) {
+            return poiListData?.items
+        }
+
+        const shown = new Set(categories ?? [])
+
+        return poiListData.items.filter(({ category }) => shown.has(category))
+    }, [categories, poiListData])
 
     const { data: photoListData, isFetching: photosLoading } = API.usePoiGetPhotoListQuery(
         { bounds: mapBounds, zoom: mapZoom, cluster: true },
@@ -265,7 +278,7 @@ const MapPage: NextPage<object> = () => {
                     enableContextMenu={true}
                     enableCategoryControl={mapType === 'Places'}
                     loading={placesLoading || photosLoading}
-                    places={mapType === 'Places' ? poiListData?.items : []}
+                    places={mapType === 'Places' ? shownPlaces : []}
                     photos={mapType === 'Photos' ? photoListData?.items : []}
                     onPhotoClick={handlePhotoClick}
                     onChangeCategories={handleChangeCategories}

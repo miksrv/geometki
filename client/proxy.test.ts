@@ -246,4 +246,31 @@ describe('proxy', () => {
             expect(isPassThrough(proxy(request('/places?category=cave,spring', undefined, chrome)))).toBe(true)
         })
     })
+
+    describe('place page: cached for guests, per request for signed-in users', () => {
+        it('serves guests and crawlers the cached page', () => {
+            expect(isPassThrough(proxy(request('/places/abc0123456789-eiffel-tower')))).toBe(true)
+        })
+
+        it('rewrites a signed-in user to the live copy, slug and locale kept', () => {
+            expect(rewrite(proxy(request('/places/abc0123456789-eiffel-tower', 'jwt')))).toBe(
+                'http://localhost:3000/places/abc0123456789-eiffel-tower/live'
+            )
+            expect(rewrite(proxy(request('/en/places/abc0123456789', 'jwt')))).toBe(
+                'http://localhost:3000/en/places/abc0123456789/live'
+            )
+        })
+
+        it('leaves the other place routes of a signed-in user alone', () => {
+            expect(rewrite(proxy(request('/places/create', 'jwt')))).toBeNull()
+            expect(rewrite(proxy(request('/places/abc0123456789/edit', 'jwt')))).toBeNull()
+            expect(rewrite(proxy(request('/places', 'jwt')))).toBeNull()
+        })
+
+        it('301s a direct hit on the live copy to the page itself', () => {
+            expect(location(proxy(request('/en/places/abc0123456789-eiffel-tower/live', 'jwt')))).toBe(
+                'http://localhost:3000/en/places/abc0123456789-eiffel-tower'
+            )
+        })
+    })
 })

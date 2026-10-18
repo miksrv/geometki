@@ -7,7 +7,9 @@
 - Place pages: open instantly, served ready-made and updated as soon as a rating, review, photo or edit changes the place
 - Places: views are counted for every visitor again
 - Home page: "Active travelers" and the online marks update again
-- Optimized the place page: one background request instead of nine
+- Place pages: signed-in users always see them fresh, with their own marks right away
+- Optimized the place page, the map, the user profile and the landing pages: fewer requests, more of them served from the cache
+- Map: switching categories shows the places at once, without reloading them
 
 ## 1.17.3
 

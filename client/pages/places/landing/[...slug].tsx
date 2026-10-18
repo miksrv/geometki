@@ -599,6 +599,12 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 location?: ApiType.Locations.ResolvedLocation
                 category?: ApiType.Locations.ResolvedCategory
             } | null> => {
+                // A category key is known here (categories are reserved words, never a location
+                // slug: Config\LocationSlugs::$reservedWords): no request for it
+                if (isCategoryName(slug)) {
+                    return { category: { name: slug, type: 'category' }, segment: { kind: 'category', name: slug } }
+                }
+
                 const res = await resolveSegment(slug)
                 if (res.isError || !res.data) {
                     return null

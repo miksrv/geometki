@@ -26,6 +26,12 @@ const PROXY_SECRET = crypto.randomUUID()
 // (`/places/landing/landing/cave`, see that guard's comment).
 const PLACES_LANDING_PATH = /^\/places\/(?!landing(?:\/|$))([^/]+)(?:\/([^/]+))?$/
 
+// A place page: the 13-character hex id, alone or with its slug (utils/place.ts)
+const PLACE_PAGE_PATH = /^\/places\/([0-9a-f]{13}(?:-[^/]*)?)$/
+
+// The per-request copy of a place page for signed-in users (pages/places/[id]/live.tsx)
+const PLACE_LIVE_PATH = /^\/places\/([^/]+)\/live$/
+
 export const proxy = (request: NextRequest) => {
     // Never trust a client-supplied copy of this header, on any path — only this file's own
     // rewrite below (further down) is allowed to set it, and only to `PROXY_SECRET`. Every
@@ -64,7 +70,27 @@ export const proxy = (request: NextRequest) => {
         return Response.redirect(url.toString(), 301)
     }
 
+    // The signed-in users' copy of a place page is reached only by the rewrite below
+    const liveMatch = request.nextUrl.pathname.match(PLACE_LIVE_PATH)
+
+    if (liveMatch) {
+        const url = request.nextUrl.clone()
+        url.pathname = `/places/${liveMatch[1]}`
+        return Response.redirect(url.toString(), 301)
+    }
+
     const currentUser = request.cookies.get(AUTH_COOKIES.TOKEN)?.value
+
+    // Place pages come from the Next cache (getStaticProps), the same for every guest and
+    // crawler — 99% of the visits. A signed-in user gets them rendered on each request
+    // instead: fresh, with their own marks. The URL in the browser is untouched
+    const placeMatch = currentUser ? request.nextUrl.pathname.match(PLACE_PAGE_PATH) : null
+
+    if (placeMatch) {
+        const url = request.nextUrl.clone()
+        url.pathname = `/places/${placeMatch[1]}/live`
+        return NextResponse.rewrite(url, { request: { headers: sanitizedHeaders } })
+    }
 
     if (!currentUser && request.nextUrl.pathname.startsWith('/places/create')) {
         return Response.redirect(new URL('/places', request.url))

@@ -166,22 +166,24 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             const { data: userData, isError } = await store.dispatch(API.endpoints.usersGetItem.initiate(id))
 
-            const { data: photosData } = await store.dispatch(
-                API.endpoints.photosGetList.initiate({
-                    author: id,
-                    limit: 8,
-                    offset: 0
-                })
-            )
-
-            await Promise.all([
-                store.dispatch(API.endpoints.feedGetList.initiate({ author: id })),
-                store.dispatch(API.endpoints.feedGetCalendar.initiate({ author: id, tz: timeZone }))
-            ])
-
-            if (isError) {
+            // A missing user costs one request, not five
+            if (isError || !userData) {
                 return { notFound: true }
             }
+
+            // The rest at once; the achievements of the header too, else the browser asks for them
+            const [{ data: photosData }] = await Promise.all([
+                store.dispatch(
+                    API.endpoints.photosGetList.initiate({
+                        author: id,
+                        limit: 8,
+                        offset: 0
+                    })
+                ),
+                store.dispatch(API.endpoints.feedGetList.initiate({ author: id })),
+                store.dispatch(API.endpoints.feedGetCalendar.initiate({ author: id, tz: timeZone })),
+                store.dispatch(API.endpoints.getUserAchievements.initiate(userData.id))
+            ])
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
