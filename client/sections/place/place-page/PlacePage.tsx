@@ -89,6 +89,7 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
     const { t, i18n } = useTranslation()
 
     const dispatch = useAppDispatch()
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const userLocation = useAppSelector((state) => state.application.userLocation)
     const isClient = useClientOnly()
@@ -136,6 +137,18 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
             .catch(() => undefined)
     }, [cachedPlace?.id, dispatch, postView])
 
+    // Signed in on this page (it came from the guests' cache): the rating was the guest's one,
+    // without their score. The live page of a signed-in user starts signed in and skips this
+    const wasAuth = useRef(isAuth)
+
+    useEffect(() => {
+        if (isAuth === true && wasAuth.current !== true) {
+            dispatch(API.util.invalidateTags([{ type: 'Rating' }]))
+        }
+
+        wasAuth.current = isAuth
+    }, [dispatch, isAuth])
+
     const inputFileRef = useRef<HTMLInputElement>(null)
     const uploaderRef = useRef<PhotoUploaderHandle>(null)
 
@@ -155,8 +168,6 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
 
     // Only our own photos go to the structured data and the link previews, not the linked ones
     const ownPhotos = useMemo(() => photoList?.filter(({ external }) => !external), [photoList])
-
-    const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
     const placePath = buildPlaceUrl(place?.id ?? '', place?.slug)

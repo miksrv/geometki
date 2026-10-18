@@ -83,19 +83,33 @@ class SitePages
 
             $url = $config->url !== '' ? $config->url : MailUrls::siteRoot() . '/api/revalidate';
 
-            $response = service('curlrequest')->post($url, [
-                'headers'         => ['X-Revalidate-Secret' => $config->secret],
-                'json'            => ['paths' => $paths],
-                'timeout'         => $config->timeout,
-                'connect_timeout' => $config->timeout,
-                'http_errors'     => false,
-            ]);
-
-            if ($response->getStatusCode() >= 300) {
-                log_message('warning', '[SitePages] the site answered {status} to {count} paths', [
-                    'status' => $response->getStatusCode(),
-                    'count'  => count($paths),
+            // A big collection renamed: each page is a render and ~10 API requests, the rest
+            // refresh at their daily time
+            if (count($paths) > $config->maxPaths) {
+                log_message('info', '[SitePages] {count} pages changed, {max} rendered now', [
+                    'count' => count($paths),
+                    'max'   => $config->maxPaths,
                 ]);
+
+                $paths = array_slice($paths, 0, $config->maxPaths);
+            }
+
+            // The site takes up to 50 paths a request (client/pages/api/revalidate.ts)
+            foreach (array_chunk($paths, 50) as $chunk) {
+                $response = service('curlrequest')->post($url, [
+                    'headers'         => ['X-Revalidate-Secret' => $config->secret],
+                    'json'            => ['paths' => $chunk],
+                    'timeout'         => $config->timeout,
+                    'connect_timeout' => $config->timeout,
+                    'http_errors'     => false,
+                ]);
+
+                if ($response->getStatusCode() >= 300) {
+                    log_message('warning', '[SitePages] the site answered {status} to {count} paths', [
+                        'status' => $response->getStatusCode(),
+                        'count'  => count($chunk),
+                    ]);
+                }
             }
         } catch (Throwable $e) {
             log_message('warning', '[SitePages] pages not revalidated: {message}', ['message' => $e->getMessage()]);

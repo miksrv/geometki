@@ -39,6 +39,12 @@ final class GuestCacheFilterTest extends CIUnitTestCase
             ['post', 'places/(:alphanum)/views', static fn () => service('response')->setJSON(['ok' => true])],
             ['post', 'photos/upload/temporary', static fn () => service('response')->setJSON(['ok' => true])],
             ['get', 'users', static fn () => service('response')->setJSON(['calls' => ++self::$calls])],
+            // A write lands while this answer is being made
+            ['get', 'places/racy', static function () {
+                (new GuestCache(config('GuestCache')))->flush();
+
+                return service('response')->setJSON(['calls' => ++self::$calls]);
+            }],
         ]);
     }
 
@@ -143,6 +149,14 @@ final class GuestCacheFilterTest extends CIUnitTestCase
         $this->assertDirectoryDoesNotExist($this->config->path);
         $this->assertSame(1, (new GuestCache($this->config))->sweep());
         $this->assertSame([], glob(rtrim($this->config->path, '/') . '.cleared-*'));
+    }
+
+    public function testAnAnswerReadBeforeAFlushIsNotSavedAfterIt(): void
+    {
+        $this->get('places/racy');
+
+        $this->assertSame(2, $this->calls($this->get('places/racy')));
+        $this->assertSame([], glob($this->config->path . '*.json'));
     }
 
     public function testNothingIsCachedWhenTurnedOff(): void

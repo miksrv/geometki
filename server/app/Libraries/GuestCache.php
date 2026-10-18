@@ -34,8 +34,35 @@ class GuestCache
         return $body === false ? null : $body;
     }
 
-    public function save(string $key, string $body): void
+    /**
+     * Which folder the answers are in now (made if missing): a flush renames it away. Taken
+     * before a request reads the database, compared before its answer is saved (save()).
+     * Null when the folder cannot be made: nothing is cached then anyway
+     */
+    public function generation(): ?int
     {
+        $path = rtrim($this->config->path, '/');
+
+        if (!is_dir($path)) {
+            @mkdir($path, 0755, true);
+        }
+
+        clearstatcache(true, $path);
+        $inode = @fileinode($path);
+
+        return $inode === false ? null : $inode;
+    }
+
+    /**
+     * Saves the answer, unless the cache was cleared since $generation was taken: an answer
+     * read before a write would go into the fresh folder and outlive the write by a day
+     */
+    public function save(string $key, string $body, ?int $generation = null): void
+    {
+        if ($generation !== null && $generation !== $this->generation()) {
+            return;
+        }
+
         if (!is_dir($this->config->path) && !@mkdir($this->config->path, 0755, true) && !is_dir($this->config->path)) {
             return;
         }

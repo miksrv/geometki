@@ -1,12 +1,21 @@
+import { timingSafeEqual } from 'crypto'
+
 import type { NextApiRequest, NextApiResponse } from 'next'
 
-import i18Config from '../../next-i18next.config'
+import i18Config from '@/next-i18next.config'
 
 /** Paths of one request at most: a write changes a place or two */
 const MAX_PATHS = 50
 
 /** Only the cached pages: the place pages (getStaticProps) */
 const ALLOWED_PATH = /^\/places\/[A-Za-z0-9-]+$/
+
+/** The secret compared in constant time: the endpoint is public */
+const isSecret = (given: unknown, secret?: string): boolean =>
+    !!secret &&
+    typeof given === 'string' &&
+    given.length === secret.length &&
+    timingSafeEqual(Buffer.from(given), Buffer.from(secret))
 
 /**
  * POST /api/revalidate — the API asks to render pages anew after a write changed them
@@ -25,7 +34,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         return res.status(405).json({ error: 'Method not allowed' })
     }
 
-    if (!secret || req.headers['x-revalidate-secret'] !== secret) {
+    if (!isSecret(req.headers['x-revalidate-secret'], secret)) {
         return res.status(401).json({ error: 'Unauthorized' })
     }
 

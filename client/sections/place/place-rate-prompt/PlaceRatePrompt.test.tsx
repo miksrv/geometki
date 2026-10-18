@@ -59,7 +59,8 @@ const mockChangeRating = jest.fn()
 jest.mock('@/api', () => ({
     API: {
         useRatingGetListQuery: jest.fn(),
-        useRatingPutScoreMutation: jest.fn()
+        useRatingPutScoreMutation: jest.fn(),
+        util: { invalidateTags: (tags: unknown) => ({ payload: tags, type: 'invalidateTags' }) }
     }
 }))
 
@@ -102,6 +103,8 @@ describe('PlaceRatePrompt', () => {
         fireEvent.click(screen.getByTestId('rating'))
 
         await waitFor(() => expect(mockDispatch).toHaveBeenCalledWith({ payload: 's1', type: 'saveSession' }))
+        // The rating refetched without the session is asked again, with it
+        expect(mockDispatch).toHaveBeenCalledWith({ payload: [{ type: 'Rating' }], type: 'invalidateTags' })
     })
 
     it('shows the own vote with "Изменить" and reopens the input on click', () => {

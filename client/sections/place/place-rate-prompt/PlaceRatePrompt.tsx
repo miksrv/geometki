@@ -52,9 +52,11 @@ export const PlaceRatePrompt: React.FC<PlaceRatePromptProps> = ({ placeId, autho
         if (value && placeId) {
             const result = await changeRating({ place: placeId, score: value })
 
-            // A guest's first score starts their session on the server: kept for their next scores
+            // A guest's first score starts their session on the server: kept for their next scores.
+            // The rating refetched after the score went without it: asked again, with their score
             if (result.data?.session) {
                 dispatch(saveSession(result.data.session))
+                dispatch(API.util.invalidateTags([{ type: 'Rating' }]))
             }
         }
     }

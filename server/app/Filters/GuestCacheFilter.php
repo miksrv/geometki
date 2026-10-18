@@ -20,6 +20,9 @@ use Config\GuestCache as GuestCacheConfig;
  */
 class GuestCacheFilter implements FilterInterface
 {
+    /** The cache folder when this request missed it (GuestCache::generation()) */
+    private static ?int $generation = null;
+
     public function before(RequestInterface $request, $arguments = null)
     {
         $config = config('GuestCache');
@@ -28,9 +31,13 @@ class GuestCacheFilter implements FilterInterface
             return null;
         }
 
-        $body = (new GuestCache($config))->get($this->key($request), $this->ttl($request, $config));
+        $cache = new GuestCache($config);
+        $body  = $cache->get($this->key($request), $this->ttl($request, $config));
 
         if ($body === null) {
+            // A miss is answered by the controller and saved in after(): only into this folder
+            self::$generation = $cache->generation();
+
             return null;
         }
 
@@ -51,7 +58,7 @@ class GuestCacheFilter implements FilterInterface
 
         if ($this->isCacheable($request, $config)) {
             if ($response->getStatusCode() === 200) {
-                (new GuestCache($config))->save($this->key($request), (string) $response->getBody());
+                (new GuestCache($config))->save($this->key($request), (string) $response->getBody(), self::$generation);
             }
 
             return null;

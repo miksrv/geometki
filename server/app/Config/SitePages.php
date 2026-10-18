@@ -20,4 +20,7 @@ class SitePages extends BaseConfig
 
     /** Seconds the write waits for the site: it only queues the pages and answers at once */
     public float $timeout = 2.0;
+
+    /** Pages one write renders at most (a renamed collection of hundreds of places): the rest wait for their daily time */
+    public int $maxPaths = 100;
 }

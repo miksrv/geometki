@@ -165,8 +165,11 @@ class ActivityLibrary {
         string|null $asUserId = null,
         string|null $externalPhotoId = null,
     ): void {
-        // Whatever happened on a place shows on its page
-        SitePages::place($placeId);
+        // Whatever happened on a place shows on its page, but a bookmark: the page shows no
+        // count of them, and the write leaves the guest cache, so a render would read it stale
+        if ($type !== 'bookmark') {
+            SitePages::place($placeId);
+        }
 
         if (!in_array($type, $this->types)) {
             return ;

@@ -357,7 +357,8 @@ class Places extends ResourceController
             $query->{$sessionId ? 'orWhere' : 'where'}('user_id', $userId);
         }
 
-        $row = $query->groupEnd()->first();
+        // The latest one, if a guest scored and then, signed in, scored again (Rating::set keeps both)
+        $row = $query->groupEnd()->orderBy('created_at', 'DESC')->first();
 
         return $row ? (int) $row->value : null;
     }

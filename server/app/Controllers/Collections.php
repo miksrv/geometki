@@ -337,6 +337,7 @@ class Collections extends ResourceController
 
             $effectiveDescription = $descriptionChanged ? $update->description : $collection->description;
             $this->recalcIndexable($id, $effectiveDescription, $collection->places_count, $collection->hidden);
+            $this->markPlacePages($id);
 
             return $this->respondUpdated();
         } catch (Throwable $e) {
@@ -367,6 +368,7 @@ class Collections extends ResourceController
             return $this->failForbidden();
         }
 
+        $this->markPlacePages($id);
         $this->model->delete($id);
 
         return $this->respondDeleted();
@@ -751,6 +753,7 @@ class Collections extends ResourceController
 
         $fresh = $this->model->find($id);
         $this->recalcIndexable($id, $fresh->description, $fresh->places_count, $fresh->hidden);
+        $this->markPlacePages($id);
 
         return $this->respondUpdated();
     }
@@ -886,4 +889,13 @@ class Collections extends ResourceController
             $row->owner_id
         );
     }
+
+    /** The place pages list the collection in "In collections": renamed, hidden or deleted, they render anew */
+    private function markPlacePages(string $collectionId): void
+    {
+        foreach ((new CollectionsPlacesModel())->getOrderedPlaceIds($collectionId) as $placeId) {
+            SitePages::place($placeId);
+        }
+    }
+
 }
