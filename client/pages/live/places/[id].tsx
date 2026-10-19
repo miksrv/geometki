@@ -21,6 +21,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             return loadPlacePage(store, {
                 locale: context.locale,
                 param: context.params?.id,
+                query: context.query,
                 visitorLocation: getUserLocationFromCookies(context.req.cookies)
             })
         }

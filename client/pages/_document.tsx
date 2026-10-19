@@ -2,11 +2,16 @@ import Document, { Head, Html, Main, NextScript } from 'next/document'
 
 import i18Config from '../next-i18next.config'
 import { i18nScriptUrl } from '../utils/translations'
+import { loadTranslations } from '../utils/translations.server'
+
+// Server only, loaded with every page before it renders: the texts are here even for a render
+// whose data function did not run (a 500 right after a restart)
+loadTranslations()
 
 class MyDocument extends Document {
     public render() {
         const locale = this.props.locale ?? i18Config.i18n.defaultLocale
-        // Set by the page's data function on this server (utils/translations.server.ts)
+        // Set on this server by utils/translations.server.ts
         const versions = globalThis.__GEOMETKI_I18N_VERSIONS__ ?? {}
         const urls = Object.fromEntries(
             i18Config.i18n.locales.map((code) => [code, i18nScriptUrl(code, versions[code])])

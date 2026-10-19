@@ -5,6 +5,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { Reputation } from '@/components/ui'
+import useClientOnly from '@/hooks/useClientOnly'
 import { formatThousands, timeAgo } from '@/utils/helpers'
 
 import { LevelBadge } from '../level-badge/LevelBadge'
@@ -21,6 +22,8 @@ interface UsersListProps extends Pick<ContainerProps, 'title' | 'footer' | 'acti
 
 export const UsersList: React.FC<UsersListProps> = ({ users, scrollable, compact, ...props }) => {
     const { t, i18n } = useTranslation()
+    // The home page HTML is cached: "5 minutes ago" is counted in the browser
+    const isClient = useClientOnly()
 
     if (!users?.length) {
         return (
@@ -44,7 +47,7 @@ export const UsersList: React.FC<UsersListProps> = ({ users, scrollable, compact
                         showName={true}
                         user={user}
                         size={'medium'}
-                        caption={timeAgo(user.activity?.date, undefined, i18n.language)}
+                        caption={isClient ? timeAgo(user.activity?.date, undefined, i18n.language) : '\u00A0'}
                     />
                 </div>
 
