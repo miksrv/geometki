@@ -84,6 +84,25 @@ describe('CategoryRail', () => {
         expect(mockPush).toHaveBeenCalledWith('?["cave","mountain"]', undefined, { scroll: false, shallow: true })
     })
 
+    it('makes every category chip a button with noLinks, "Все" stays a link', () => {
+        render(
+            <CategoryRail
+                selected={[]}
+                hrefFor={hrefFor}
+                noLinks={true}
+            />
+        )
+
+        const links = screen.getAllByRole('link')
+
+        expect(links).toHaveLength(1)
+        expect(links[0]).toHaveAttribute('href', '?[]')
+
+        fireEvent.click(screen.getByRole('button', { name: 'cave' }))
+
+        expect(mockPush).toHaveBeenCalledWith('?["cave"]', undefined, { scroll: undefined, shallow: undefined })
+    })
+
     it('shows only the categories of the facets, and those on, with their numbers', () => {
         render(
             <CategoryRail

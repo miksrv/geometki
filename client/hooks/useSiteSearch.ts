@@ -130,9 +130,12 @@ const useSiteSearch = (open: boolean) => {
                                       const location = await requestLocation()
 
                                       if (location) {
-                                          await router.push(
-                                              `/places?lat=${location.lat}&lon=${location.lon}&sort=distance&order=ASC`
-                                          )
+                                          // TEMPORARILY OFF (1.17.5): no point in the URL (proxy.ts redirects it),
+                                          // the list sorts by distance from the location cookie just saved
+                                          // await router.push(
+                                          //     `/places?lat=${location.lat}&lon=${location.lon}&sort=distance&order=ASC`
+                                          // )
+                                          await router.push('/places?sort=distance&order=ASC')
                                       }
                                   },
                                   caption: t('location-near-caption', 'Сначала ближайшие'),

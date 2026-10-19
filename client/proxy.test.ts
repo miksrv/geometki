@@ -255,6 +255,38 @@ describe('proxy', () => {
         })
     })
 
+    describe('lists by distance from a point in the URL', () => {
+        it('301s everybody to the list without the query, locale and landing kept', () => {
+            const geo = '?category=cave,spring&lat=55.7&lon=37.6&offset=42&sort=distance&order=ASC'
+            const chrome = {
+                'user-agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36'
+            }
+
+            expect(proxy(request(`/places${geo}`, undefined, chrome))?.status).toBe(301)
+            expect(location(proxy(request(`/places${geo}`, undefined, chrome)))).toBe('http://localhost:3000/places')
+            expect(location(proxy(request('/en/places?lat=55.7', 'token', chrome)))).toBe(
+                'http://localhost:3000/en/places'
+            )
+            expect(location(proxy(request('/places/bashkortostan?lon=37.6', undefined, chrome)))).toBe(
+                'http://localhost:3000/places/bashkortostan'
+            )
+        })
+
+        it('answers a crawler 410, not the redirect: nothing to render for it', () => {
+            const googlebot = {
+                'user-agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            }
+
+            expect(proxy(request('/places?lat=55.7&lon=37.6', undefined, googlebot))?.status).toBe(410)
+            expect(proxy(request('/en/places/bashkortostan?lat=55.7'))?.status).toBe(410)
+        })
+
+        it('keeps the distance sort from the visitor (no point in the URL)', () => {
+            expect(proxy(request('/places?sort=distance&order=ASC'))?.status).not.toBe(301)
+        })
+    })
+
     describe('cached pages: the cached render for guests, a per-request one when it does not fit', () => {
         const live = (path: string, token?: string, cookies?: Record<string, string>) =>
             rewrite(proxy(request(path, token, undefined, cookies)))

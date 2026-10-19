@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { Button } from 'simple-react-ui-kit'
 
-import { useRouter } from 'next/router'
+// TEMPORARILY OFF (1.17.5), see "All places nearby" below
+// import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
@@ -50,12 +51,13 @@ export const PlaceExplore: React.FC<PlaceExploreProps> = ({
     nearPlaces,
     relatedPlaces,
     category,
-    location,
-    lat,
-    lon
+    location
+    // TEMPORARILY OFF (1.17.5), see "All places nearby" below
+    // lat,
+    // lon
 }) => {
     const { t } = useTranslation()
-    const router = useRouter()
+    // const router = useRouter()
 
     const hasNearby = !!nearPlaces?.length
     const hasRelated = !!category && (relatedPlaces?.length ?? 0) >= RELATED_PLACES_MIN
@@ -117,7 +119,9 @@ export const PlaceExplore: React.FC<PlaceExploreProps> = ({
                 // "All places nearby" is a button, not a link: a geo list per place × category ×
                 // page is an endless set of URLs that crawlers and scrapers walked by the thousand
                 <>
-                    {hasNearby && (
+                    {/* TEMPORARILY OFF (1.17.5): the lists by distance from a point (`/places?lat=&lon=`)
+                        were a third of the API load, the site redirects them now (proxy.ts) */}
+                    {/* {hasNearby && (
                         <span hidden={activeTab !== 'nearby'}>
                             <Button
                                 mode={'link'}
@@ -127,7 +131,7 @@ export const PlaceExplore: React.FC<PlaceExploreProps> = ({
                                 }
                             />
                         </span>
-                    )}
+                    )} */}
                     {hasRelated && (
                         <span hidden={activeTab !== 'related'}>
                             <Button

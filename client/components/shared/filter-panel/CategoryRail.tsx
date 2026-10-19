@@ -20,6 +20,11 @@ interface CategoryRailProps {
     total?: number
     /** The chips change only the URL's query of this page (see `Chip`) */
     shallow?: boolean
+    /**
+     * Every category chip is a button, not a link: on a narrow list (a tag, a small location)
+     * most categories are empty, and crawlers rendered all of them
+     */
+    noLinks?: boolean
 }
 
 /**
@@ -28,7 +33,7 @@ interface CategoryRailProps {
  * leading to one category or none is a link to that list; one leading to 2+ is a button:
  * crawlers walked every combination as links (`nofollow` or not) and ran the API out of CPU.
  */
-export const CategoryRail: React.FC<CategoryRailProps> = ({ selected, hrefFor, counts, total, shallow }) => {
+export const CategoryRail: React.FC<CategoryRailProps> = ({ selected, hrefFor, counts, total, shallow, noLinks }) => {
     const { t } = useTranslation()
     const router = useRouter()
 
@@ -61,6 +66,7 @@ export const CategoryRail: React.FC<CategoryRailProps> = ({ selected, hrefFor, c
                         const on = selected.includes(name)
                         const next = on ? selected.filter((item) => item !== name) : [...selected, name]
                         const isCombination = next.length >= 2
+                        const isButton = isCombination || !!noLinks
 
                         return (
                             <Chip
@@ -68,10 +74,10 @@ export const CategoryRail: React.FC<CategoryRailProps> = ({ selected, hrefFor, c
                                 label={getCategoryShortTitle(t, name)}
                                 count={counts ? (counts[name] ?? 0) : undefined}
                                 selected={on}
-                                href={isCombination ? undefined : hrefFor(next)}
+                                href={isButton ? undefined : hrefFor(next)}
                                 shallow={shallow}
                                 onClick={
-                                    isCombination
+                                    isButton
                                         ? () =>
                                               void router.push(hrefFor(next), undefined, {
                                                   scroll: shallow ? false : undefined,

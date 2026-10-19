@@ -252,7 +252,7 @@ describe('SiteSearch', () => {
             fireEvent.click(screen.getByRole('option', { name: /Места рядом со мной/ }))
         })
 
-        expect(mockPush).toHaveBeenCalledWith('/places?lat=51.77&lon=55.1&sort=distance&order=ASC')
+        expect(mockPush).toHaveBeenCalledWith('/places?sort=distance&order=ASC')
     })
 
     it('clears the field with its button', () => {
