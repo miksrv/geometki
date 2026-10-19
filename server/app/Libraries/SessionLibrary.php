@@ -28,6 +28,8 @@ class SessionLibrary {
     private SessionsModel $model;
     private string $ip;
     private ?object $row = null;
+    /** When the signed-in user was last active, kept off the user object the API answers with */
+    private mixed $userActivityAt = null;
 
     public function __construct() {
         helper('auth');
@@ -45,7 +47,9 @@ class SessionLibrary {
             $this->isAuth   = true;
             $this->settings = $this->user->settings;
 
-            unset($this->user->password, $this->user->settings);
+            $this->userActivityAt = $this->user->activity_at;
+
+            unset($this->user->password, $this->user->settings, $this->user->activity_at);
 
             // This device's session when the client sent it, else the user's latest one: a user
             // on two devices keeps two rows, and their polls do not overwrite each other's IP
@@ -77,7 +81,7 @@ class SessionLibrary {
      * @throws ReflectionException
      */
     public function authorization(UserEntity $user): static {
-        unset($user->auth_type);
+        unset($user->auth_type, $user->activity_at);
 
         $this->user   = $user;
         $this->isAuth = true;
@@ -134,6 +138,20 @@ class SessionLibrary {
         $this->markUserActive();
 
         return $this;
+    }
+
+    /**
+     * Mark only the signed-in user active, not the session row: for a request the client's SSR
+     * makes on the user's behalf, which carries the Next server's IP. Written at most once per
+     * UPDATE_INTERVAL, like update()
+     */
+    public function markUserActiveFromServer(): void {
+        $activityAt = $this->userActivityAt;
+        $timestamp  = $activityAt instanceof Time ? $activityAt->getTimestamp() : strtotime((string) $activityAt);
+
+        if ($this->user && (!$timestamp || time() - $timestamp >= self::UPDATE_INTERVAL)) {
+            $this->markUserActive();
+        }
     }
 
     /**
