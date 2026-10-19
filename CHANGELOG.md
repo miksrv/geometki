@@ -5,7 +5,7 @@
 ### Patch Changes
 
 - Map: new interesting places are temporarily not collected for areas that were never viewed; the ones found earlier are still shown
-- Place pages: the "All places nearby" button is temporarily hidden; "Near me" on the home page and in the list filters still sorts places by distance
+- Place pages: the "All places nearby" button is temporarily hidden; "Near me" on the home page, in the search and in the list filters still sorts places by distance
 - Places: on the lists of a tag, a town or a district the categories switch the list without reloading the page
 - Home page and Users: signed-in users are shown online again
 

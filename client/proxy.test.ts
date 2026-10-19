@@ -265,10 +265,21 @@ describe('proxy', () => {
 
             expect(proxy(request(`/places${geo}`, undefined, chrome))?.status).toBe(301)
             expect(location(proxy(request(`/places${geo}`, undefined, chrome)))).toBe('http://localhost:3000/places')
-            expect(location(proxy(request('/en/places?lat=55.7', 'token')))).toBe('http://localhost:3000/en/places')
-            expect(location(proxy(request('/places/bashkortostan?lon=37.6')))).toBe(
+            expect(location(proxy(request('/en/places?lat=55.7', 'token', chrome)))).toBe(
+                'http://localhost:3000/en/places'
+            )
+            expect(location(proxy(request('/places/bashkortostan?lon=37.6', undefined, chrome)))).toBe(
                 'http://localhost:3000/places/bashkortostan'
             )
+        })
+
+        it('answers a crawler 410, not the redirect: nothing to render for it', () => {
+            const googlebot = {
+                'user-agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            }
+
+            expect(proxy(request('/places?lat=55.7&lon=37.6', undefined, googlebot))?.status).toBe(410)
+            expect(proxy(request('/en/places/bashkortostan?lat=55.7'))?.status).toBe(410)
         })
 
         it('keeps the distance sort from the visitor (no point in the URL)', () => {
