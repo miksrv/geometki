@@ -76,7 +76,10 @@
            # (no cache yet) is not lftp's exit code
            mv /writable/cache/guest /writable/cache/guest.cleared-deploy-${{ github.run_id }}-${{ github.run_attempt }}
            chmod 755 /spark
-           chmod -R 755 /writable
+           # Not -R over cache/: one FTP call per file, tens of thousands of guest cache
+           # answers (written by PHP, they need none) vanishing under the walk (550 errors)
+           chmod 755 /writable /writable/cache
+           chmod -R 755 /writable/logs /writable/session /writable/uploads
            bye
            EOF
          working-directory: server
