@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.17.5
+
+### Patch Changes
+
+- Map: new interesting places are temporarily not collected for areas that were never viewed; the ones found earlier are still shown
+
 ## 1.17.4
 
 ### Patch Changes

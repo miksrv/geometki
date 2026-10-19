@@ -29,6 +29,12 @@ class OsmCollect extends BaseCommand
 
     public function run(array $params)
     {
+        // TEMPORARILY OFF (1.17.5): checking whether the collector loads the server. Still in cron,
+        // so the command stays and does nothing
+        CLI::write('osm:collect is temporarily off.');
+
+        return;
+
         $config    = config('OsmCandidates');
         $tiles     = new OsmTilesModel();
         $collector = new OsmCollector($config);
