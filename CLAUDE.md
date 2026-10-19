@@ -93,7 +93,9 @@ Each flag switches canonical URLs, 301s, site links and sitemap entries for its 
 
 ## Pull Request Checklist
 
-Before opening a PR from a feature branch:
+Branches are named after the release they ship in: `release/X.Y.Z` (e.g. `release/1.17.4`). Work for an upcoming release goes into its branch; another PR meant for that release is merged into it, not into `main`.
+
+Before opening a PR:
 
 1. Bump `"version"` in `client/package.json`: almost always **patch**; **minor** only for noticeable new features or UX changes; **major** practically never.
 2. Add a section for that version to the top of `CHANGELOG.md` in the existing format: `## X.Y.Z`, then `### Patch Changes` or `### Minor Changes`, then short one-line bullets, e.g. `- Layout: removed the site sidebar, widened the content area`. English only, UI labels translated ("Add to collection", not "В коллекцию").
