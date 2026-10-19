@@ -240,6 +240,12 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                 <CategoryRail
                     selected={filter.categories}
                     hrefFor={(categories) => buildHref({ categories })}
+                    // TEMPORARILY (1.17.5), until the rail gets the numbers of places per category:
+                    // 90% of the tag / locality / district × category lists were empty, and crawlers
+                    // rendered every one of them through these links
+                    noLinks={
+                        !!filter.tag || filter.location?.type === 'locality' || filter.location?.type === 'district'
+                    }
                 />
 
                 <AppliedFilters
