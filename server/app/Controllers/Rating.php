@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
+use App\Libraries\SitePages;
 use App\Models\PlacesModel;
 use App\Models\RatingModel;
 use App\Models\UsersModel;
@@ -37,7 +38,8 @@ class Rating extends ResourceController
     {
         $userId = $this->session->user?->id;
 
-        return $item->session_id === $this->session->id || ($userId !== null && $item->user_id === $userId);
+        return ($this->session->id !== null && $item->session_id === $this->session->id)
+            || ($userId !== null && $item->user_id === $userId);
     }
 
     /**
@@ -124,6 +126,16 @@ class Rating extends ResourceController
                 return $this->failForbidden(lang('Rating.ownPlace'));
             }
 
+            // A guest's first score starts their session (no visit starts one): it ties their
+            // later scores to this one. Set on the request too, for the libraries below that
+            // read the visitor's session again (ActivityLibrary), so they do not start another
+            $newSession = null;
+
+            if (!$this->session->isAuth && !$this->session->id) {
+                $newSession = $this->session->update()->id;
+                $this->request->setHeader('Session', $newSession);
+            }
+
             helper('rating');
 
             // Let's calculate a new rating for the place
@@ -154,11 +166,12 @@ class Rating extends ResourceController
 
             $usersModel->update($placesData->user_id, ['reputation' => $userRating, 'updated_at' => $usersData->updated_at]);
             $placesModel->update($placesData->id, ['rating' => $ratingValue, 'updated_at' => $placesData->updated_at]);
+            SitePages::place($placesData->id);
 
             // Editing user rating
             if ($alreadyVoted) {
                 $ratingModel->update($alreadyVoted, ['value' => $inputRating]);
-                return $this->respondUpdated();
+                return $this->respondUpdated($newSession ? ['session' => $newSession] : null);
             }
 
             // Adding a new rating (the user has never voted yet)
@@ -168,7 +181,7 @@ class Rating extends ResourceController
             $activity = new ActivityLibrary();
             $activity->owner($placesData->user_id)->rating($placesData->id, $ratingModel->getInsertID());
 
-            return $this->respondCreated();
+            return $this->respondCreated($newSession ? ['session' => $newSession] : null);
         } catch (Throwable $e) {
             log_message('error', '{exception}', ['exception' => $e]);
 

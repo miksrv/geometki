@@ -7,7 +7,6 @@ import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
@@ -21,6 +20,7 @@ import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
 import { isCategoryName } from '@/utils/categories'
 import { buildPlaceUrl } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
     ssr: false
@@ -157,7 +157,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
         async (context): Promise<GetServerSidePropsResult<object>> => {
             const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
 
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))

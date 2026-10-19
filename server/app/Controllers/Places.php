@@ -13,6 +13,7 @@ use App\Libraries\PlaceTags;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
+use App\Libraries\SitePages;
 use App\Models\ActivityModel;
 use App\Models\CollectionsModel;
 use App\Models\CollectionsPlacesModel;
@@ -22,6 +23,7 @@ use App\Models\PhotosModel;
 use App\Models\PlacesExternalPhotosModel;
 use App\Models\PlacesModel;
 use App\Models\PlacesTagsModel;
+use App\Models\RatingModel;
 use App\Models\PlacesContentModel;
 use App\Models\TagsModel;
 use App\Models\UsersBookmarksModel;
@@ -207,7 +209,7 @@ class Places extends ResourceController
      * Return the full detail view for a single place.
      *
      * GET /places/:id — optional query params: lat, lon.
-     * Increments the view counter and records a per-user view log.
+     * Counts no view: the answer is cached for guests, the page counts it with POST /places/:id/views.
      *
      * @param string|null $id Place primary key.
      *
@@ -307,11 +309,58 @@ class Places extends ResourceController
             $placeData->visit_radius_m, $placeData->verification_exempt, $placeData->cover_external_id,
         );
 
-        // Incrementing view counter + daily log (atomic) + optional per-user tracking
-        $userId = ($this->session->isAuth && $this->session->user) ? $this->session->user->id : null;
-        $this->model->recordView($id, $userId, $placeData->updated);
-
         return $this->respond($placeData);
+    }
+
+    /**
+     * Count a view of the place page: the counter, the daily log and the signed-in user's view.
+     *
+     * POST /places/:id/views — sent by the page in the browser, which is served from caches
+     * (the Next page cache, the guest cache) that never reach GET /places/:id. Answers what the
+     * cached page cannot know: the new count and the visitor's own vote (GET /rating/:id would be
+     * a second request). A private write: it leaves the guest cache.
+     *
+     * @param string|null $id Place primary key.
+     *
+     * @return ResponseInterface
+     */
+    public function views($id = null): ResponseInterface
+    {
+        $place = $id ? $this->model->select('views, updated_at')->asArray()->find($id) : null;
+
+        if (!$place) {
+            return $this->failNotFound();
+        }
+
+        $userId = ($this->session->isAuth && $this->session->user) ? $this->session->user->id : null;
+        $this->model->recordView($id, $userId, (string) $place['updated_at']);
+
+        return $this->respond(['views' => (int) $place['views'] + 1, 'vote' => $this->ownVote($id, $userId)]);
+    }
+
+    /** The visitor's score of the place: by their session, or as the signed-in user (as in Rating::isOwnVote) */
+    private function ownVote(string $placeId, ?string $userId): ?int
+    {
+        $sessionId = $this->session->id ?? null;
+
+        if (!$sessionId && !$userId) {
+            return null;
+        }
+
+        $query = (new RatingModel())->select('value')->where('place_id', $placeId)->groupStart();
+
+        if ($sessionId) {
+            $query->where('session_id', $sessionId);
+        }
+
+        if ($userId) {
+            $query->{$sessionId ? 'orWhere' : 'where'}('user_id', $userId);
+        }
+
+        // The latest one, if a guest scored and then, signed in, scored again (Rating::set keeps both)
+        $row = $query->groupEnd()->orderBy('created_at', 'DESC')->first();
+
+        return $row ? (int) $row->value : null;
     }
 
     /**
@@ -634,6 +683,10 @@ class Places extends ResourceController
                 $hasChanges = true;
             }
 
+            // The page under the new slug, and under the old one, which turns into a redirect
+            SitePages::place($id);
+            SitePages::path(SitePages::placePath($id, $placeData->slug));
+
             // update() auto-sets updated_at via useTimestamps; touch() handles the case
             // where nothing substantive changed but we still need to record the edit time
             if ($hasChanges) {
@@ -711,6 +764,8 @@ class Places extends ResourceController
                 $collectionsModel->recalcIndexable($collectionId);
             }
         }
+
+        SitePages::place($id);
 
         return $this->respondDeleted();
     }

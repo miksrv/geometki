@@ -6,7 +6,6 @@ import { useRouter } from 'next/dist/client/router'
 import Head from 'next/head'
 import { useSearchParams } from 'next/navigation'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
@@ -18,6 +17,7 @@ import useLocalStorage from '@/hooks/useLocalStorage'
 import { getErrorMessage } from '@/utils/api'
 import * as LocalStorage from '@/utils/localstorage'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 const AuthPage: NextPage<object> = () => {
     const { t } = useTranslation()
@@ -172,7 +172,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
         async (context): Promise<GetServerSidePropsResult<object>> => {
             const cookies = context.req.cookies
             const locale = (context.locale ?? 'en') as ApiType.Locale
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
 
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))

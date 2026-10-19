@@ -41,7 +41,7 @@ php spark routes            # All API routes
 - `styles/theme.css` — project token overrides on top of `simple-react-ui-kit/theme.css` (imported first in `pages/_app.tsx`)
 - `DESIGN.md` — the client design system. Read it before adding or changing any user-facing component; one component per entity, variants for layout.
 
-**i18n:** `next-i18next` (import from `next-i18next/pages`), Russian (default, `/`) and English (`/en`), one namespace: `public/locales/<lang>/common.json`. No extraction script: keep both locale files in sync by hand — every new key goes to `ru` and `en` (real English), unused keys are deleted, minding keys built from template strings, e.g. `categoryCatalogue.<name>.*` (`utils/categories.ts`).
+**i18n:** `next-i18next` (import from `next-i18next/pages`), Russian (default, `/`) and English (`/en`), one namespace: `public/locales/<lang>/common.json`. The texts are not in the page props: every data function calls `loadPageTranslations()` (`utils/translations.server.ts`, server only), `_app` passes them to `appWithTranslation` as `resources`, and the browser loads its locale once as a script cached for a year (`/api/i18n/<locale>?v=<hash>`, added by `_document`). No extraction script: keep both locale files in sync by hand — every new key goes to `ru` and `en` (real English), unused keys are deleted, minding keys built from template strings, e.g. `categoryCatalogue.<name>.*` (`utils/categories.ts`).
 
 ### Server
 
@@ -52,7 +52,7 @@ CodeIgniter 4 REST API, MVC:
 - `app/Commands/` — spark CLI jobs (`php spark list`)
 - `app/Database/Migrations/` — always create new migrations, never edit existing ones
 
-**Auth:** JWT in the `Authorization` header (`app/Libraries/SessionLibrary.php`); the `Session` header identifies anonymous sessions. Sessions hold no coordinates.
+**Auth:** JWT in the `Authorization` header (`app/Libraries/SessionLibrary.php`); the `Session` header identifies anonymous sessions. Sessions hold no coordinates. A guest gets no session on a visit (no `auth/me` for guests): their first score (`PUT rating`) starts it and answers it. A guest's `Session` goes only with writes and `GET rating/:id` (`prepareHeaders` in `api/api.ts`), so their other GETs hit the guest cache.
 
 **Visitor location:** asked from the browser only on the visitor's action (`client/hooks/useUserLocation.ts`: "My location" on the map, sorting by distance), never on page load. Kept in the client's `location` cookie and sent to the API as explicit `lat`/`lon` (SSR reads the cookie, `client/utils/userLocation.ts`). Only a signed-in user's last point is stored (`users.last_lat/last_lon`, `PUT /location`), shown nowhere.
 
@@ -68,7 +68,8 @@ CodeIgniter 4 REST API, MVC:
 
 - **API calls:** only through RTK Query in `api/api.ts`, never `fetch`/`axios` directly.
 - **Error format:** `{ messages: { error?: string, [field]: string } }`.
-- **Guest cache:** public GET answers to requests with neither `Authorization` nor `Session` are cached whole for a day (`GuestCacheFilter`, `Config/GuestCache.php`: the groups, the writes that do not clear it); any other successful write clears all of it, a deploy too. A new public GET whose answer depends on something besides the locale, the path and the query must stay out of `$groups`.
+- **Guest cache:** public GET answers to requests with neither `Authorization` nor `Session` are cached whole for a day (`GuestCacheFilter`, `Config/GuestCache.php`: the groups, `$ttls` for answers that go stale without a write — users' activity, the pulse, the stats —, the writes that do not clear it); any other successful write clears all of it (a folder rename, swept by `notifications:send`), a deploy too. A new public GET whose answer depends on something besides the locale, the path and the query must stay out of `$groups`; one that changes without a write needs a `$ttls` entry.
+- **Page cache:** the place, home, activity, collection and user pages are `getStaticProps` (ISR): rendered once without cookies, served by Next with no API calls. `proxy.ts` (`CACHED_PAGES`) sends a visitor the cached render does not fit to the per-request copy in `pages/live/...` (getServerSideProps, same component and loader from `sections/<area>/<x>-page/`, `load<X>Page.ts`): a signed-in user always; a guest with the `location` cookie (home: distances), a `tz` other than Moscow (activity, user: days), a query the page reads (activity `?type`). `/live/...` itself 301s to the page. Place and collection pages are re-rendered at once after a write on them: the API calls `POST /api/revalidate` (server `SitePages::place()` / `::collection()`, sent by `SitePagesFilter`; `ActivityLibrary` marks every place activity but bookmarks; secret `sitepages.secret` = client `REVALIDATE_SECRET`, on the VPS in `.env.local` next to `server.js`); the others by time (home 5 min, activity 2, user 10, place and collection a day). Nothing visitor-specific in a cached render: the distance, the own score, the online marks come in the browser; the place page's only API request is `POST /places/:id/views`. A write that changes a place page without a place activity must call `SitePages::place()`. Answers a page passes as props are dropped from the hydrated store (`dropFromHydration`), unless a hook asks for them.
 - **Image uploads:** temp upload → attach to entity; files in `server/public/uploads/`.
 - **Map:** `react-leaflet`; map components are imported with `next/dynamic` and `ssr: false`.
 - **Categories:** no `category` table and no categories endpoint/page. The server whitelists keys (`server/app/Config/Categories.php`, `in_list`) and returns the key (`category: "waterfall"`). The catalogue is on the client: keys in `client/api/models/category.ts` (`ApiModel.Categories`), icons `client/public/images/poi/<key>.png`, colours in `client/utils/categories.ts`, texts in `common.json` under `categoryCatalogue.<name>` (`title`, `short`, `landing`, `content`). A new category touches the enum, an icon, a colour, both locales and the server config.
@@ -92,7 +93,9 @@ Each flag switches canonical URLs, 301s, site links and sitemap entries for its 
 
 ## Pull Request Checklist
 
-Before opening a PR from a feature branch:
+Branches are named after the release they ship in: `release/X.Y.Z` (e.g. `release/1.17.4`). Work for an upcoming release goes into its branch; another PR meant for that release is merged into it, not into `main`.
+
+Before opening a PR:
 
 1. Bump `"version"` in `client/package.json`: almost always **patch**; **minor** only for noticeable new features or UX changes; **major** practically never.
 2. Add a section for that version to the top of `CHANGELOG.md` in the existing format: `## X.Y.Z`, then `### Patch Changes` or `### Minor Changes`, then short one-line bullets, e.g. `- Layout: removed the site sidebar, widened the content area`. English only, UI labels translated ("Add to collection", not "В коллекцию").

@@ -3,7 +3,6 @@ import React from 'react'
 import { GetServerSidePropsResult } from 'next'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
@@ -13,6 +12,7 @@ import { AppLayout, PageHeader, PaginationBar, PlacesList, PlacesMap, UserAvatar
 import { SITE_LINK } from '@/config/env'
 import { UserPagesEnum, UserTabs } from '@/sections/user'
 import { buildHreflangTags } from '@/utils/seo'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 export const VISITED_PLACES_PER_PAGE = 21
 
@@ -105,7 +105,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const id = typeof context.params?.id === 'string' ? context.params.id : undefined
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const currentPage = parseInt(context.query.page as string, 10) || 1
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
 
             if (typeof id !== 'string') {
                 return { notFound: true }

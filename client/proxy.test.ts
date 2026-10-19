@@ -19,14 +19,22 @@ jest.mock('@/utils/placesLanding', () => ({
 }))
 
 // Only the parts of NextRequest the proxy reads
-const request = (path: string, token?: string, headers?: Record<string, string>) => {
+const request = (
+    path: string,
+    token?: string,
+    headers?: Record<string, string>,
+    cookies: Record<string, string> = {}
+) => {
     // Like in Next: with i18n the locale prefix is parsed out of nextUrl.pathname
     const nextUrl = new NextURL(new URL(path, 'http://localhost:3000'), {
         nextConfig: { i18n: { defaultLocale: 'ru', locales: ['ru', 'en'] } }
     })
 
     return {
-        cookies: { get: (name: string) => (name === 'token' && token ? { value: token } : undefined) },
+        cookies: {
+            get: (name: string) =>
+                name === 'token' && token ? { value: token } : cookies[name] ? { value: cookies[name] } : undefined
+        },
         headers: new Headers(headers),
         nextUrl,
         url: nextUrl.toString()
@@ -244,6 +252,73 @@ describe('proxy', () => {
 
         it('lets people through to the combinations', () => {
             expect(isPassThrough(proxy(request('/places?category=cave,spring', undefined, chrome)))).toBe(true)
+        })
+    })
+
+    describe('cached pages: the cached render for guests, a per-request one when it does not fit', () => {
+        const live = (path: string, token?: string, cookies?: Record<string, string>) =>
+            rewrite(proxy(request(path, token, undefined, cookies)))
+
+        it('serves guests and crawlers the cached pages', () => {
+            for (const path of [
+                '/',
+                '/places/abc0123456789-eiffel-tower',
+                '/collections/c1-waterfalls',
+                '/users/u1',
+                '/activity'
+            ]) {
+                expect(isPassThrough(proxy(request(path)))).toBe(true)
+            }
+        })
+
+        it('renders them per request for a signed-in user, slug and locale kept', () => {
+            expect(live('/places/abc0123456789-eiffel-tower', 'jwt')).toBe(
+                'http://localhost:3000/live/places/abc0123456789-eiffel-tower'
+            )
+            expect(live('/en/places/abc0123456789', 'jwt')).toBe('http://localhost:3000/en/live/places/abc0123456789')
+            expect(live('/', 'jwt')).toBe('http://localhost:3000/live')
+            expect(live('/collections/c1-waterfalls', 'jwt')).toBe(
+                'http://localhost:3000/live/collections/c1-waterfalls'
+            )
+            expect(live('/users/u1', 'jwt')).toBe('http://localhost:3000/live/users/u1')
+            expect(live('/activity', 'jwt')).toBe('http://localhost:3000/live/activity')
+        })
+
+        it('renders the home page per request for a guest with their point (distances)', () => {
+            expect(live('/', undefined, { location: '53.2;50.1' })).toBe('http://localhost:3000/live')
+            // A place page counts the distance in the browser
+            expect(live('/places/abc0123456789', undefined, { location: '53.2;50.1' })).toBeNull()
+        })
+
+        it('renders the pages with days per request outside the site time zone', () => {
+            expect(live('/activity', undefined, { tz: 'Asia/Yekaterinburg' })).toBe(
+                'http://localhost:3000/live/activity'
+            )
+            expect(live('/users/u1', undefined, { tz: 'Asia/Yekaterinburg' })).toBe(
+                'http://localhost:3000/live/users/u1'
+            )
+            expect(live('/activity', undefined, { tz: 'Europe/Moscow' })).toBeNull()
+            expect(live('/', undefined, { tz: 'Asia/Yekaterinburg' })).toBeNull()
+        })
+
+        it('renders a filtered feed per request; other query parameters keep the cache', () => {
+            expect(live('/activity?type=photos')).toBe('http://localhost:3000/live/activity?type=photos')
+            expect(live('/places/abc0123456789?utm_source=yandex')).toBeNull()
+        })
+
+        it('leaves the other routes of a signed-in user alone', () => {
+            expect(live('/places/create', 'jwt')).toBeNull()
+            expect(live('/places/abc0123456789/edit', 'jwt')).toBeNull()
+            expect(live('/places', 'jwt')).toBeNull()
+            expect(live('/users/settings', 'jwt')).toBeNull()
+            expect(live('/users/u1/places', 'jwt')).toBeNull()
+        })
+
+        it('301s a direct hit on a per-request copy to the page itself', () => {
+            expect(location(proxy(request('/en/live/places/abc0123456789-eiffel-tower', 'jwt')))).toBe(
+                'http://localhost:3000/en/places/abc0123456789-eiffel-tower'
+            )
+            expect(location(proxy(request('/live')))).toBe('http://localhost:3000/')
         })
     })
 })

@@ -15,9 +15,10 @@ export const AppAuthChecker: React.FC = () => {
     const isAuth = useAppSelector((state) => state.auth.isAuth)
     const hasToken = !!useAppSelector((state) => state.auth.token)
 
-    // Only a signed-in visitor is polled (a sign-out or an expired token elsewhere); a guest asks
-    // once, for an anonymous session (anonymous ratings), and never again once it has one
-    const skip = !hasToken && !!session
+    // Only a signed-in visitor is polled (a sign-out or an expired token elsewhere). A guest is
+    // never asked: their session starts with their first score (PUT rating), not on every
+    // first visit — crawlers rendering pages kept no cookie and made a session a page
+    const skip = !hasToken
 
     const {
         data: meData,

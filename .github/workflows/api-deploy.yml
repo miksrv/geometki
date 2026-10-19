@@ -70,10 +70,13 @@
            mirror -R --parallel=10 writable /writable
            # Permissions are best effort, as before: never fail the deploy.
            set cmd:fail-exit no
+           # New code may answer differently: the guest cache starts empty. Renamed like
+           # GuestCache::flush() does: one call, while removing it fails on files the live site
+           # keeps writing; the cron's sweep() deletes it. Before the chmods, so a failure here
+           # (no cache yet) is not lftp's exit code
+           mv /writable/cache/guest /writable/cache/guest.cleared-deploy-${{ github.run_id }}
            chmod 755 /spark
            chmod -R 755 /writable
-           # New code may answer differently: the guest cache starts empty (Config\GuestCache)
-           rm -r /writable/cache/guest
            bye
            EOF
          working-directory: server

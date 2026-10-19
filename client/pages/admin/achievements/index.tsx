@@ -6,7 +6,6 @@ import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
@@ -17,6 +16,7 @@ import { AchievementTierBadge } from '@/components/shared/achievement-card/Achie
 import { AchievementIcon } from '@/components/shared/achievement-icon'
 import { formatDate } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 import styles from './styles.module.sass'
 
@@ -182,7 +182,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<AdminAchievementsPageProps>> => {
             const locale = (context.locale ?? 'ru') as ApiType.Locale
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
 
             store.dispatch(setLocale(locale))
             hydrateAuthFromCookies(store, context.req.cookies)

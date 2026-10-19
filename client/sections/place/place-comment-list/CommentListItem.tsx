@@ -8,7 +8,8 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { UserAvatar } from '@/components/shared'
-import { timeAgo } from '@/utils/helpers'
+import useClientOnly from '@/hooks/useClientOnly'
+import { formatDate, timeAgo } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -30,6 +31,8 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
     onAnswerClick
 }) => {
     const { i18n } = useTranslation()
+    // The page HTML is cached for days: it carries the date, the browser turns it into "3 days ago"
+    const isClient = useClientOnly()
 
     const handleReplyClick = () => {
         onAnswerClick?.(isReplying ? undefined : { id: comment.id, name: comment.author.name })
@@ -52,8 +55,13 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
                         </Link>
                     </div>
                     <Markdown>{comment.content}</Markdown>
-                    <div className={styles.info}>
-                        {timeAgo(comment.created?.date, undefined, i18n.language)}
+                    <div
+                        className={styles.info}
+                        suppressHydrationWarning={true}
+                    >
+                        {isClient
+                            ? timeAgo(comment.created?.date, undefined, i18n.language)
+                            : formatDate(comment.created?.date, 'D MMMM YYYY')}
 
                         {isAuth && (
                             <Button

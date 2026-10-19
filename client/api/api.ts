@@ -39,7 +39,7 @@ const isHydrateAction = (action: Action): action is PayloadAction<RootState> => 
 export const API = createApi({
     baseQuery: fetchBaseQuery({
         baseUrl: API_HOST,
-        prepareHeaders: (headers, { getState }) => {
+        prepareHeaders: (headers, { endpoint, getState, type }) => {
             // By default, if we have a token in the store, let's use that for authenticated requests
             const token = (getState() as RootState).auth.token
             const session = (getState() as RootState).auth.session
@@ -49,7 +49,11 @@ export const API = createApi({
                 headers.set('Authorization', token)
             }
 
-            if (session) {
+            // A guest's session only where the server needs it: the writes (their score, the view
+            // that answers their score) and the rating refetched after they scored. Any other
+            // guest GET carries nothing of theirs, so the API answers it from its guest cache
+            // (GuestCacheFilter). A signed-in user's device is told apart by it in every request
+            if (session && (token || type === 'mutation' || endpoint === 'ratingGetList')) {
                 headers.set('Session', session)
             }
 
@@ -570,6 +574,13 @@ export const API = createApi({
                     ...params,
                     id: undefined
                 })}`
+        }),
+        /** Counts a view of the place page: the page comes from the cache, GET /places/:id counts none */
+        placesPostView: builder.mutation<ApiType.Places.PostViewResponse, string>({
+            query: (id) => ({
+                method: 'POST',
+                url: `places/${id}/views`
+            })
         }),
         placesGetTexts: builder.query<ApiType.Places.TextsResponse, string>({
             providesTags: (result, error, id) => [{ id, type: 'Places' }],

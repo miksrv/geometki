@@ -24,6 +24,12 @@ app.geocoder.yandexKey = ''
 app.baseURL = ''
 app.siteUrl = 'http://localhost:3000'
 
+# The site's page cache (Config/SitePages.php): after a write the API asks the Next server to
+# render the changed place pages anew. The same value as REVALIDATE_SECRET of the Next server;
+# empty = off (pages then refresh once a day). The URL defaults to app.siteUrl + /api/revalidate
+# sitepages.secret = ''
+# sitepages.url = ''
+
 #--------------------------------------------------------------------
 # UPLOADS
 #--------------------------------------------------------------------

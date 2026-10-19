@@ -4,6 +4,7 @@ import { Button } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
+import { saveSession } from '@/app/authSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import { Rating } from '@/components/shared'
@@ -49,7 +50,14 @@ export const PlaceRatePrompt: React.FC<PlaceRatePromptProps> = ({ placeId, autho
 
     const handleRatingChange = async (value?: number) => {
         if (value && placeId) {
-            await changeRating({ place: placeId, score: value })
+            const result = await changeRating({ place: placeId, score: value })
+
+            // A guest's first score starts their session on the server: kept for their next scores.
+            // The rating refetched after the score went without it: asked again, with their score
+            if (result.data?.session) {
+                dispatch(saveSession(result.data.session))
+                dispatch(API.util.invalidateTags([{ type: 'Rating' }]))
+            }
         }
     }
 

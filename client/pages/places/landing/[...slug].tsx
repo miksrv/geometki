@@ -4,7 +4,6 @@ import { Button, Container } from 'simple-react-ui-kit'
 import type { GetServerSidePropsResult, NextPage } from 'next'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { JsonLdScript } from 'next-seo'
 import { generateNextSeo } from 'next-seo/pages'
 
@@ -47,6 +46,7 @@ import {
 import { PlaceSchema } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { loadPageTranslations } from '@/utils/translations.server'
 import { getDistanceOrigin } from '@/utils/userLocation'
 
 const DEFAULT_SORT = ApiType.SortFields.Trending
@@ -555,7 +555,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             hydrateAuthFromCookies(store, cookies)
             // Started now, awaited with the data: the translations do not gate the API calls
-            const translationsPromise = serverSideTranslations(locale)
+            const translationsPromise = loadPageTranslations()
             // An early 404/301 return never awaits it: the no-op catch keeps a rejection from
             // being unhandled; the branches that await it still get the error
             translationsPromise.catch(() => undefined)
@@ -599,6 +599,12 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 location?: ApiType.Locations.ResolvedLocation
                 category?: ApiType.Locations.ResolvedCategory
             } | null> => {
+                // A category key is known here (categories are reserved words, never a location
+                // slug: Config\LocationSlugs::$reservedWords): no request for it
+                if (isCategoryName(slug)) {
+                    return { category: { name: slug, type: 'category' }, segment: { kind: 'category', name: slug } }
+                }
+
                 const res = await resolveSegment(slug)
                 if (res.isError || !res.data) {
                     return null

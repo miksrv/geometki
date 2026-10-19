@@ -4,7 +4,6 @@ import type { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
@@ -16,6 +15,7 @@ import { UsersFilterPanel, UsersFilterType } from '@/sections/user'
 import { encodeQueryData } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 const USERS_PER_PAGE = 30
 const DEFAULT_SORT = 'activity_at'
@@ -120,7 +120,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const search = (context.query.search as string) || null
             const sort = (context.query.sort as string) || DEFAULT_SORT
             const order = (context.query.order as string) || DEFAULT_ORDER
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
 
             hydrateAuthFromCookies(store, cookies)
             store.dispatch(setLocale(locale))

@@ -4,7 +4,6 @@ import { Badge, cn, Container, Table, TableColumnProps } from 'simple-react-ui-k
 import { GetServerSidePropsResult } from 'next'
 import Head from 'next/head'
 import { useTranslation } from 'next-i18next/pages'
-import { serverSideTranslations } from 'next-i18next/pages/serverSideTranslations'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
@@ -15,6 +14,7 @@ import { AppLayout, PageHeader, PaginationBar, UserAvatar } from '@/components/s
 import { SendingMailFilterPanel, SendingMailFilterType } from '@/sections/sending-mail'
 import { formatDate } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { loadPageTranslations } from '@/utils/translations.server'
 
 import styles from './styles.module.sass'
 
@@ -206,7 +206,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
     (store) =>
         async (context): Promise<GetServerSidePropsResult<AdminSendingMailPageProps>> => {
             const locale = (context.locale ?? 'ru') as ApiType.Locale
-            const translations = await serverSideTranslations(locale)
+            const translations = await loadPageTranslations()
 
             store.dispatch(setLocale(locale))
             hydrateAuthFromCookies(store, context.req.cookies)

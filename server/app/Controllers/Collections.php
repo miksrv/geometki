@@ -8,6 +8,7 @@ use App\Libraries\CollectionIndexability;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
+use App\Libraries\SitePages;
 use App\Models\ActivityModel;
 use App\Models\CollectionsModel;
 use App\Models\CollectionsPlacesModel;
@@ -289,6 +290,13 @@ class Collections extends ResourceController
 
         $collection = $this->model->find($id);
 
+        // Its page, and under the old slug too: a new title may move it to a new one
+        SitePages::collection($id);
+
+        if ($collection) {
+            SitePages::path(SitePages::collectionPath($id, $collection->slug));
+        }
+
         if (!$collection) {
             return $this->failNotFound();
         }
@@ -336,6 +344,7 @@ class Collections extends ResourceController
 
             $effectiveDescription = $descriptionChanged ? $update->description : $collection->description;
             $this->recalcIndexable($id, $effectiveDescription, $collection->places_count, $collection->hidden);
+            $this->markPlacePages($id);
 
             return $this->respondUpdated();
         } catch (Throwable $e) {
@@ -357,6 +366,7 @@ class Collections extends ResourceController
         }
 
         $collection = $this->model->find($id);
+        SitePages::collection($id);
 
         if (!$collection) {
             return $this->failNotFound();
@@ -366,6 +376,7 @@ class Collections extends ResourceController
             return $this->failForbidden();
         }
 
+        $this->markPlacePages($id);
         $this->model->delete($id);
 
         return $this->respondDeleted();
@@ -386,6 +397,8 @@ class Collections extends ResourceController
      */
     public function addPlaces($id = null): ResponseInterface
     {
+        SitePages::collection($id);
+
         if (!$this->session->isAuth) {
             return $this->failUnauthorized();
         }
@@ -485,6 +498,8 @@ class Collections extends ResourceController
      */
     public function removePlace($id = null, $placeId = null): ResponseInterface
     {
+        SitePages::collection($id);
+
         if (!$this->session->isAuth) {
             return $this->failUnauthorized();
         }
@@ -506,6 +521,7 @@ class Collections extends ResourceController
         }
 
         $collectionsPlacesModel->removePlace($id, $placeId);
+        SitePages::place($placeId);
 
         $newCount = $this->model->recalcPlacesCount($id);
 
@@ -529,6 +545,8 @@ class Collections extends ResourceController
      */
     public function updatePlaces($id = null): ResponseInterface
     {
+        SitePages::collection($id);
+
         if (!$this->session->isAuth) {
             return $this->failUnauthorized();
         }
@@ -725,6 +743,7 @@ class Collections extends ResourceController
         }
 
         $collection = $this->model->find($id);
+        SitePages::collection($id);
 
         if (!$collection) {
             return $this->failNotFound();
@@ -749,6 +768,7 @@ class Collections extends ResourceController
 
         $fresh = $this->model->find($id);
         $this->recalcIndexable($id, $fresh->description, $fresh->places_count, $fresh->hidden);
+        $this->markPlacePages($id);
 
         return $this->respondUpdated();
     }
@@ -884,4 +904,13 @@ class Collections extends ResourceController
             $row->owner_id
         );
     }
+
+    /** The place pages list the collection in "In collections": renamed, hidden or deleted, they render anew */
+    private function markPlacePages(string $collectionId): void
+    {
+        foreach ((new CollectionsPlacesModel())->getOrderedPlaceIds($collectionId) as $placeId) {
+            SitePages::place($placeId);
+        }
+    }
+
 }

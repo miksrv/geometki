@@ -15,11 +15,14 @@ use Config\GuestCache as GuestCacheConfig;
  * the locale is part of the key.
  *
  * Only requests with neither `Authorization` nor `Session` are cached: a guest's session
- * changes some answers (their own vote in GET /rating/:id). So a cached place page counts
- * no view, which is right for the crawlers behind most of them.
+ * changes some answers (their own vote in GET /rating/:id). Place views are counted by a
+ * separate write from the browser (POST /places/:id/views), so crawlers count none.
  */
 class GuestCacheFilter implements FilterInterface
 {
+    /** The cache folder when this request missed it (GuestCache::generation()) */
+    private static ?int $generation = null;
+
     public function before(RequestInterface $request, $arguments = null)
     {
         $config = config('GuestCache');
@@ -28,9 +31,13 @@ class GuestCacheFilter implements FilterInterface
             return null;
         }
 
-        $body = (new GuestCache($config))->get($this->key($request));
+        $cache = new GuestCache($config);
+        $body  = $cache->get($this->key($request), $this->ttl($request, $config));
 
         if ($body === null) {
+            // A miss is answered by the controller and saved in after(): only into this folder
+            self::$generation = $cache->generation();
+
             return null;
         }
 
@@ -51,7 +58,7 @@ class GuestCacheFilter implements FilterInterface
 
         if ($this->isCacheable($request, $config)) {
             if ($response->getStatusCode() === 200) {
-                (new GuestCache($config))->save($this->key($request), (string) $response->getBody());
+                (new GuestCache($config))->save($this->key($request), (string) $response->getBody(), self::$generation);
             }
 
             return null;
@@ -62,7 +69,7 @@ class GuestCacheFilter implements FilterInterface
         if (
             !in_array($method, ['GET', 'HEAD', 'OPTIONS'], true)
             && $response->getStatusCode() < 400
-            && !in_array($this->group($request), $config->privateWrites, true)
+            && $this->longestMatch($this->path($request), $config->privateWrites) === null
         ) {
             (new GuestCache($config))->flush();
         }
@@ -97,6 +104,44 @@ class GuestCacheFilter implements FilterInterface
         $query  = (string) $request->getUri()->getQuery();
 
         return $locale . ' ' . $this->path($request) . '?' . $query;
+    }
+
+    /** Seconds the answer is served: its own in $ttls, or the common one */
+    private function ttl(RequestInterface $request, GuestCacheConfig $config): int
+    {
+        $match = $this->longestMatch($this->path($request), array_keys($config->ttls));
+
+        return $match === null ? $config->ttl : $config->ttls[$match];
+    }
+
+    /**
+     * The longest of the patterns the path starts with, segment by segment, `*` matching
+     * any one segment; null when none does
+     *
+     * @param string[] $patterns
+     */
+    private function longestMatch(string $path, array $patterns): ?string
+    {
+        $segments = explode('/', $path);
+        $longest  = null;
+
+        foreach ($patterns as $pattern) {
+            $parts = explode('/', $pattern);
+
+            if (count($parts) > count($segments) || ($longest !== null && count($parts) <= substr_count($longest, '/') + 1)) {
+                continue;
+            }
+
+            foreach ($parts as $i => $part) {
+                if ($part !== '*' && $part !== $segments[$i]) {
+                    continue 2;
+                }
+            }
+
+            $longest = $pattern;
+        }
+
+        return $longest;
     }
 
     private function group(RequestInterface $request): string

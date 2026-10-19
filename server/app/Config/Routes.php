@@ -44,6 +44,7 @@ $routes->group('places', static function ($routes) {
     $routes->get('(:alphanum)/texts', 'Places::texts/$1');
     $routes->get('(:alphanum)', 'Places::show/$1');
     $routes->post('/', 'Places::create');
+    $routes->post('(:alphanum)/views', 'Places::views/$1');
     $routes->patch('cover/(:alphanum)', 'Places::cover/$1');
     $routes->patch('(:alphanum)', 'Places::update/$1');
     $routes->delete('(:alphanum)', 'Places::delete/$1');

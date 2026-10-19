@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { API } from '@/api'
 
@@ -50,6 +50,7 @@ jest.mock('@/app/store', () => ({
     useAppSelector: (selector: (state: typeof mockState) => unknown) => selector(mockState)
 }))
 
+jest.mock('@/app/authSlice', () => ({ saveSession: (payload: string) => ({ type: 'saveSession', payload }) }))
 jest.mock('@/app/notificationSlice', () => ({ Notify: (payload: unknown) => ({ type: 'notify', payload }) }))
 jest.mock('@/utils/api', () => ({ getErrorMessage: () => 'error' }))
 
@@ -58,7 +59,8 @@ const mockChangeRating = jest.fn()
 jest.mock('@/api', () => ({
     API: {
         useRatingGetListQuery: jest.fn(),
-        useRatingPutScoreMutation: jest.fn()
+        useRatingPutScoreMutation: jest.fn(),
+        util: { invalidateTags: (tags: unknown) => ({ payload: tags, type: 'invalidateTags' }) }
     }
 }))
 
@@ -69,6 +71,7 @@ describe('PlaceRatePrompt', () => {
     beforeEach(() => {
         mockState.auth.user = undefined
         mockChangeRating.mockReset()
+        mockChangeRating.mockResolvedValue({ data: {} })
         mockDispatch.mockReset()
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         useMutation.mockReturnValue([mockChangeRating, { isLoading: false, isSuccess: false }] as any)
@@ -89,6 +92,19 @@ describe('PlaceRatePrompt', () => {
 
         fireEvent.click(stars)
         expect(mockChangeRating).toHaveBeenCalledWith({ place: 'p1', score: 4 })
+    })
+
+    it('keeps the session started by the first score of a guest', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        useRating.mockReturnValue({ data: { rating: 4.4, count: 8 } } as any)
+        mockChangeRating.mockResolvedValue({ data: { session: 's1' } })
+
+        render(<PlaceRatePrompt placeId={'p1'} />)
+        fireEvent.click(screen.getByTestId('rating'))
+
+        await waitFor(() => expect(mockDispatch).toHaveBeenCalledWith({ payload: 's1', type: 'saveSession' }))
+        // The rating refetched without the session is asked again, with it
+        expect(mockDispatch).toHaveBeenCalledWith({ payload: [{ type: 'Rating' }], type: 'invalidateTags' })
     })
 
     it('shows the own vote with "Изменить" and reopens the input on click', () => {

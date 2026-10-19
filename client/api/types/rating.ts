@@ -12,5 +12,7 @@ export interface PutRequest {
 }
 
 export interface PutResponse {
-    rating: number
+    rating?: number
+    /** A guest's session, started by their first score */
+    session?: string
 }
