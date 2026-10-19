@@ -74,7 +74,7 @@
            # GuestCache::flush() does: one call, while removing it fails on files the live site
            # keeps writing; the cron's sweep() deletes it. Before the chmods, so a failure here
            # (no cache yet) is not lftp's exit code
-           mv /writable/cache/guest /writable/cache/guest.cleared-deploy-${{ github.run_id }}
+           mv /writable/cache/guest /writable/cache/guest.cleared-deploy-${{ github.run_id }}-${{ github.run_attempt }}
            chmod 755 /spark
            chmod -R 755 /writable
            bye

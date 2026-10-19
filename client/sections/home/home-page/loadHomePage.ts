@@ -87,17 +87,7 @@ export const loadHomePage = async (
         users: store.dispatch(API.endpoints.usersGetList.initiate({ limit: 15 }))
     }
 
-    const [
-        currentUser,
-        { data: popular, isError: failed },
-        { data: latest },
-        { data: usersList },
-        { data: stats },
-        { data: feed },
-        { data: feedPulse },
-        { data: collections },
-        regions
-    ] = await Promise.all([
+    const answers = await Promise.all([
         signedIn ? loadCurrentUser() : Promise.resolve(undefined),
         requests.popular,
         requests.latest,
@@ -108,14 +98,26 @@ export const loadHomePage = async (
         requests.collections,
         requests.regions
     ])
+    const [
+        currentUser,
+        { data: popular },
+        { data: latest },
+        { data: usersList },
+        { data: stats },
+        { data: feed },
+        { data: feedPulse },
+        { data: collections },
+        regions
+    ] = answers
+    // Any block without its answer: a cached page with a hole should not take a full one's place
+    const failed = answers.slice(1).some((answer) => !!answer && 'isError' in answer && answer.isError)
 
     await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
     dropFromHydration(store, ...Object.values(requests))
 
     return {
-        // The API did not answer: the cached page should not take this one's place
-        failed: !!failed,
+        failed,
         props: {
             ...translations,
             collections: (collections?.items ?? [])

@@ -8,6 +8,7 @@ import { ApiModel } from '@/api'
 import { MediaTile, mediaTileStyles } from '@/components/shared/media-tile'
 import { UserAvatar } from '@/components/shared/user-avatar'
 import { IMG_HOST } from '@/config/env'
+import useClientOnly from '@/hooks/useClientOnly'
 import { buildCollectionUrl, numberFormatter, timeAgo } from '@/utils/helpers'
 
 /** What the card shows: a whole collection, or the part of it a feed story carries */
@@ -38,6 +39,8 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
     headingLevel = 2
 }) => {
     const { t, i18n } = useTranslation()
+    // The cards are on cached pages: "updated 2 days ago" is counted in the browser
+    const isClient = useClientOnly()
 
     const href = buildCollectionUrl(collection.id, collection.slug)
     const Heading = headingLevel === 3 ? 'h3' : 'h2'
@@ -65,7 +68,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({
                         size={'tiny'}
                         showName={true}
                         hideOnlineIcon={true}
-                        caption={timeAgo(collection.updated?.date, undefined, i18n.language)}
+                        caption={isClient ? timeAgo(collection.updated?.date, undefined, i18n.language) : '\u00A0'}
                         className={mediaTileStyles.author}
                     />
                 )

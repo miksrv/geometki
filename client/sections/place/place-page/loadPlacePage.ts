@@ -1,10 +1,12 @@
+import type { ParsedUrlQuery } from 'querystring'
+
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import type { AppStore } from '@/app/store'
 import { IN_COLLECTIONS_LIMIT } from '@/sections/collections'
 import type { RelatedPlacesLocation } from '@/sections/place'
 import { RELATED_PLACES_COUNT } from '@/sections/place/place-explore'
-import { buildPlaceUrl, parsePlaceId } from '@/utils/helpers'
+import { buildPlaceUrl, encodeQueryData, parsePlaceId } from '@/utils/helpers'
 import { dropFromHydration } from '@/utils/hydration'
 import { loadPageTranslations } from '@/utils/translations.server'
 
@@ -23,6 +25,8 @@ interface LoadPlacePageOptions {
     locale?: string
     /** The visitor's point (a signed-in user's render), for the distance to the place */
     visitorLocation?: ApiType.Coordinates
+    /** Kept on the redirect to the canonical URL (a live render: the cached one has no query) */
+    query?: ParsedUrlQuery
 }
 
 /**
@@ -35,7 +39,7 @@ interface LoadPlacePageOptions {
  */
 export const loadPlacePage = async (
     store: AppStore,
-    { param, locale: contextLocale, visitorLocation }: LoadPlacePageOptions
+    { param, locale: contextLocale, visitorLocation, query = {} }: LoadPlacePageOptions
 ): Promise<PlacePageResult> => {
     const rawParam = typeof param === 'string' ? param : undefined
     const locale = (contextLocale ?? 'en') as ApiType.Locale
@@ -72,10 +76,12 @@ export const loadPlacePage = async (
 
     if (rawParam !== canonicalParam) {
         const localePrefix = locale === 'en' ? '/en' : ''
+        const rest = { ...query }
+        delete rest.id
 
         return {
             redirect: {
-                destination: `${localePrefix}${buildPlaceUrl(id, placeData?.slug)}`,
+                destination: `${localePrefix}${buildPlaceUrl(id, placeData?.slug)}${encodeQueryData(rest)}`,
                 // Permanent (301) redirect: the canonical `{id}-{slug}` URL never changes for a
                 // given place, so search engines (Yandex in particular) should consolidate
                 // ranking signals onto it instead of re-crawling the old URL as a separate page.

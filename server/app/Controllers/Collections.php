@@ -456,6 +456,9 @@ class Collections extends ResourceController
             $position++;
             $added[] = $placeId;
 
+            // Its page lists the collections it is in; the activity below marks it only for another's place
+            SitePages::place($placeId);
+
             if ($place->user_id && $place->user_id !== $actingUserId) {
                 $activity = new ActivityLibrary();
                 $activity->owner($place->user_id)->collectionPlace($id, $placeId);

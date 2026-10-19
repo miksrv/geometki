@@ -11,6 +11,7 @@ import { useAppSelector } from '@/app/store'
 import { AchievementBadge, LevelBadge } from '@/components/shared'
 import { Breadcrumbs, Reputation } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
+import useClientOnly from '@/hooks/useClientOnly'
 import defaultAvatar from '@/public/images/no-avatar.png'
 import { formatDate, makeActiveLink, minutesAgo, removeProtocolFromUrl, timeAgo } from '@/utils/helpers'
 import { nextLevelPercentage } from '@/utils/levels'
@@ -27,6 +28,9 @@ interface UserHeaderProps {
 
 export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
     const { t, i18n } = useTranslation()
+    // "Was here" only in the browser: the cached page is up to 10 minutes old, its "online" or
+    // "5 minutes ago" would be wrong and trip hydration
+    const isClient = useClientOnly()
 
     const appAuth = useAppSelector((state) => state.auth)
 
@@ -113,7 +117,7 @@ export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
                                 <Icon name={'Time'} />
                                 <div className={styles.key}>{t('was-here')}:</div>
                                 <div className={styles.value}>
-                                    {minutesAgo(user?.activity?.date) <= 15 ? (
+                                    {!isClient ? null : minutesAgo(user?.activity?.date) <= 15 ? (
                                         <span className={styles.online}>
                                             <div className={styles.signOnline}></div>
                                             {t('online')}

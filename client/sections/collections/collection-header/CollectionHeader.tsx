@@ -6,6 +6,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { PageHeader, UserAvatar } from '@/components/shared'
+import useClientOnly from '@/hooks/useClientOnly'
 import { timeAgo } from '@/utils/helpers'
 
 import styles from '../styles.module.sass'
@@ -43,6 +44,8 @@ export const CollectionHeader: React.FC<CollectionHeaderProps> = ({
     onDelete
 }) => {
     const { t, i18n } = useTranslation()
+    // The collection page HTML is cached for a day: "updated 2 days ago" is counted in the browser
+    const isClient = useClientOnly()
 
     const byline = collection && (
         <div className={styles.byline}>
@@ -83,7 +86,7 @@ export const CollectionHeader: React.FC<CollectionHeaderProps> = ({
                     </Link>
                 </>
             )}
-            {collection.updated?.date && (
+            {isClient && collection.updated?.date && (
                 <>
                     <span
                         className={styles.bylineDot}

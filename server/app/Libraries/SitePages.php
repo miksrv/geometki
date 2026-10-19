@@ -57,19 +57,21 @@ class SitePages
     {
         $paths = self::$paths;
 
-        if (self::$places) {
-            $rows = (new PlacesModel())->withDeleted()->select('id, slug')->whereIn('id', array_keys(self::$places))->findAll();
-
-            foreach ($rows as $row) {
-                $paths[self::placePath($row->id, $row->slug)] = true;
-            }
-        }
-
+        // Collections before places: send() cuts the list at maxPaths, and a renamed big
+        // collection marks all its places, so its own page must not be the one cut
         if (self::$collections) {
             $rows = (new CollectionsModel())->withDeleted()->select('id, slug')->whereIn('id', array_keys(self::$collections))->findAll();
 
             foreach ($rows as $row) {
                 $paths[self::collectionPath($row->id, $row->slug)] = true;
+            }
+        }
+
+        if (self::$places) {
+            $rows = (new PlacesModel())->withDeleted()->select('id, slug')->whereIn('id', array_keys(self::$places))->findAll();
+
+            foreach ($rows as $row) {
+                $paths[self::placePath($row->id, $row->slug)] = true;
             }
         }
 
