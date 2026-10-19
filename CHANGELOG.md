@@ -5,6 +5,7 @@
 ### Patch Changes
 
 - Map: new interesting places are temporarily not collected for areas that were never viewed; the ones found earlier are still shown
+- Place pages: the "All places nearby" button is temporarily hidden; "Near me" on the home page and in the list filters still sorts places by distance
 
 ## 1.17.4
 

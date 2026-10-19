@@ -91,6 +91,16 @@ export const proxy = (request: NextRequest) => {
     // The 404 page is an App Router page (app/not-found.tsx) and knows nothing of the /en prefix
     sanitizedHeaders.set(LOCALE_HEADER, request.nextUrl.locale)
 
+    // TEMPORARILY (1.17.5): lists sorted by distance from a point in the URL (`/places?lat=…&lon=…`),
+    // one per place × category × page, were a third of the API load: scrapers posing as browsers
+    // kept walking them. The site no longer links to them, so everybody is sent to the list without
+    // the query; the distance from the visitor comes from the `location` cookie instead
+    if (request.nextUrl.pathname.startsWith('/places') && isGeoList(request.nextUrl.searchParams)) {
+        const url = request.nextUrl.clone()
+        url.search = ''
+        return Response.redirect(url.toString(), 301)
+    }
+
     // Crawlers walking every combination of the category chips (`/places?category=a,b,c&sort=…`)
     // made the API host run out of CPU: each such page costs several API requests and is
     // `noindex` anyway, so they get a 410 without rendering it. The same for the lists sorted by

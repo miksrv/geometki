@@ -51,7 +51,9 @@ export const HomePlaces: React.FC<HomePlacesProps> = ({ popular, latest }) => {
 
     const allLink =
         tab === 'nearby' && location
-            ? `/places?lat=${location.lat}&lon=${location.lon}&sort=distance&order=ASC`
+            ? // TEMPORARILY OFF (1.17.5): no point in the URL, the distance is from the location cookie
+              // `/places?lat=${location.lat}&lon=${location.lon}&sort=distance&order=ASC`
+              '/places?sort=distance&order=ASC'
             : tab === 'new'
               ? '/places?sort=created_at'
               : '/places?sort=views_week'
