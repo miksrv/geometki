@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
-import { OSM_CANDIDATES_POLLING_MS } from '@/components/map/osm-candidates/constants'
+// TEMPORARILY OFF (1.17.5), see the polling below
+// import { OSM_CANDIDATES_POLLING_MS } from '@/components/map/osm-candidates/constants'
 import { collectionPickerStyles } from '@/components/shared'
 import useUserLocation from '@/hooks/useUserLocation'
 import { formatThousands } from '@/utils/helpers'
@@ -41,7 +42,9 @@ export const HomeUnexplored: React.FC<HomeUnexploredProps> = ({ total }) => {
     const location = mounted ? storedLocation : undefined
 
     // A new area is collected in the background: poll until its tiles are done, as the map does
-    const [pollingInterval, setPollingInterval] = useState<number>(0)
+    // TEMPORARILY OFF (1.17.5): the API does not collect new tiles now, so there is nothing to wait for
+    // const [pollingInterval, setPollingInterval] = useState<number>(0)
+    const pollingInterval = 0
 
     const { data, isFetching } = API.useOsmCandidatesGetListQuery(
         {
@@ -59,9 +62,10 @@ export const HomeUnexplored: React.FC<HomeUnexploredProps> = ({ total }) => {
 
     const pending = !!data?.pendingTiles
 
-    useEffect(() => {
-        setPollingInterval(pending ? OSM_CANDIDATES_POLLING_MS : 0)
-    }, [pending])
+    // TEMPORARILY OFF (1.17.5)
+    // useEffect(() => {
+    //     setPollingInterval(pending ? OSM_CANDIDATES_POLLING_MS : 0)
+    // }, [pending])
 
     const candidates = location
         ? [...(data?.items ?? [])]
