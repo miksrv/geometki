@@ -22,7 +22,7 @@ import {
     GROUPS,
     OSM_CANDIDATES_DEBOUNCE_MS,
     OSM_CANDIDATES_MIN_ZOOM,
-    // OSM_CANDIDATES_POLLING_MS, — TEMPORARILY OFF (1.17.5), see the polling below
+    OSM_CANDIDATES_POLLING_MS,
     useGroupHints,
     useGroupTitles
 } from './constants'
@@ -58,9 +58,7 @@ export const OsmCandidates: React.FC = React.memo(function OsmCandidates() {
     const [visible, setVisible] = useState<CandidateGroup[]>(DEFAULT_GROUPS)
     // Poll only while the area is being collected in the background. Through the state: the
     // interval is an argument of the query hook, so it cannot be computed from the hook's result
-    // TEMPORARILY OFF (1.17.5): the API does not collect new tiles now, so there is nothing to wait for
-    // const [pollingInterval, setPollingInterval] = useState(0)
-    const pollingInterval = 0
+    const [pollingInterval, setPollingInterval] = useState(0)
 
     const map = useMapEvents({
         moveend: () => {
@@ -84,10 +82,9 @@ export const OsmCandidates: React.FC = React.memo(function OsmCandidates() {
 
     const pending = !!data?.pendingTiles
 
-    // TEMPORARILY OFF (1.17.5)
-    // useEffect(() => {
-    //     setPollingInterval(pending ? OSM_CANDIDATES_POLLING_MS : 0)
-    // }, [pending])
+    useEffect(() => {
+        setPollingInterval(pending ? OSM_CANDIDATES_POLLING_MS : 0)
+    }, [pending])
 
     useEffect(() => {
         updateBounds()

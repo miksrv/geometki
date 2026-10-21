@@ -84,12 +84,9 @@ class OsmCandidates extends ResourceController
 
         // Ask for the tiles in the background and report how many are being collected.
         // Limited per IP, so that a script walking the map cannot flood the queue
-        // TEMPORARILY OFF (1.17.5): checking whether the queue writes load the server. The map
-        // shows only what is collected already; with no pending tiles the clients do not poll
-        // $tiles = $this->mayQueueTiles()
-        //     ? (new OsmTilesModel())->request($osmTiles->tilesInBounds($bounds))
-        //     : [];
-        $tiles = [];
+        $tiles = $this->mayQueueTiles()
+            ? (new OsmTilesModel())->request($osmTiles->tilesInBounds($bounds))
+            : [];
         // Only the tiles that are really being collected: a failed one waits for its retry for hours
         $pendingTiles = count(array_filter($tiles, static fn ($tile) => $tile['fetched_at'] === null
             && in_array($tile['status'], [OsmTilesModel::STATUS_QUEUED, OsmTilesModel::STATUS_PROCESSING], true)));
