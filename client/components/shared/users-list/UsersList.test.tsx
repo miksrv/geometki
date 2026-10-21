@@ -69,8 +69,7 @@ jest.mock('@/components/ui', () => ({
 
 jest.mock('@/utils/levels', () => ({
     levelColor: jest.fn().mockReturnValue('#aabbcc'),
-    levelColors: jest.fn().mockReturnValue({ border: '#334455', fill: '#aabbcc' }),
-    nextLevelPercentage: jest.fn().mockReturnValue(50)
+    levelColors: jest.fn().mockReturnValue({ border: '#334455', fill: '#aabbcc' })
 }))
 
 jest.mock('../level-badge/LevelBadge', () => ({

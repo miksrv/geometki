@@ -127,9 +127,10 @@ class Users extends ResourceController
                 'name'   => $item->name,
                 'avatar' => $avatarLibrary->buildPath($item->id, $item->avatar, 'small'),
                 'levelData'  => [
-                    'level'      => $level->level,
-                    'experience' => $item->experience,
-                    'nextLevel'  => $level->nextLevel,
+                    'level'           => $level->level,
+                    'experience'      => $item->experience,
+                    'levelExperience' => $level->levelExperience,
+                    'nextLevel'       => $level->nextLevel,
                 ],
                 'reputation' => $item->reputation,
                 'created'    => $item->created_at,

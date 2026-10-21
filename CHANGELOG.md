@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.17.6
+
+### Patch Changes
+
+- Levels: the experience bar starts from zero on a new level and shows the experience earned within the level
+- Levels: on the maximum level the bar is full and there is no "experience to the next level"
+
 ## 1.17.5
 
 ### Patch Changes

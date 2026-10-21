@@ -749,6 +749,7 @@
     "home-welcome-title": "Welcome back, {{name}}!",
     "home-welcome-since": "On Geometki since {{year}}",
     "home-welcome-experience": "{{experience}} / {{next}} XP",
+    "home-welcome-experience-max": "{{experience}} XP, maximum level",
     "home-welcome-places_one": "place",
     "home-welcome-places_other": "places",
     "home-welcome-photos_one": "photo",

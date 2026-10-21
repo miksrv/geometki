@@ -2,7 +2,7 @@ import React from 'react'
 
 import { ApiModel } from '@/api'
 import { formatThousands } from '@/utils/helpers'
-import { levelColor, nextLevelPercentage } from '@/utils/levels'
+import { levelColor, levelProgress } from '@/utils/levels'
 
 import { LevelBadge } from '../level-badge/LevelBadge'
 
@@ -15,9 +15,7 @@ interface LevelProgressProps {
 
 export const LevelProgress: React.FC<LevelProgressProps> = ({ levelData, badgeSize = 22 }) => {
     const level = levelData?.level
-    const experience = levelData?.experience ?? 0
-    const nextLevel = levelData?.nextLevel ?? experience
-    const pct = nextLevelPercentage(experience, nextLevel)
+    const progress = levelProgress(levelData)
     const color = levelColor(level)
 
     return (
@@ -31,11 +29,13 @@ export const LevelProgress: React.FC<LevelProgressProps> = ({ levelData, badgeSi
                 <div className={styles.progressBar}>
                     <div
                         className={styles.progressFill}
-                        style={{ width: `${pct}%`, backgroundColor: color }}
+                        style={{ width: `${progress.percent}%`, backgroundColor: color }}
                     />
                 </div>
                 <span className={styles.xpRange}>
-                    {formatThousands(experience)} / {formatThousands(nextLevel)}
+                    {progress.isMaxLevel
+                        ? formatThousands(levelData?.experience ?? 0)
+                        : `${formatThousands(progress.gained)} / ${formatThousands(progress.required ?? 0)}`}
                 </span>
             </div>
         </div>

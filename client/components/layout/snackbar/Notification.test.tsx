@@ -231,10 +231,21 @@ describe('Notification', () => {
                 id: 'exp-2',
                 type: 'experience' as const,
                 activity: 'place' as const,
-                meta: { value: 5, level: 2, experience: 80, nextLevel: 150 }
+                meta: { value: 5, level: 2, experience: 80, levelExperience: 75, nextLevel: 150 }
             }
             render(<Notification {...notification} />)
             expect(screen.getByTestId('level-progress')).toBeInTheDocument()
+        })
+
+        it('renders no LevelProgress without the start of the level', () => {
+            const notification = {
+                id: 'exp-3',
+                type: 'experience' as const,
+                activity: 'place' as const,
+                meta: { value: 5, level: 2, experience: 80, nextLevel: 150 }
+            }
+            render(<Notification {...notification} />)
+            expect(screen.queryByTestId('level-progress')).not.toBeInTheDocument()
         })
     })
 

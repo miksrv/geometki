@@ -161,16 +161,14 @@ class LevelsLibrary {
                 }
             }
         } else {
-            $levelIndex  = array_search($calcLevel->level, array_column($this->userLevels, 'level'));
-            $nextLevelXp = ($levelIndex !== false && isset($this->userLevels[$levelIndex + 1]))
-                ? $this->userLevels[$levelIndex + 1]->experience
-                : 0;
+            $levelData = $this->buildLevelData($calcLevel->level, $userData->experience);
 
             $notify->push('experience', $userId, $activity, [
-                'value'      => $experience,
-                'experience' => $userData->experience,
-                'level'      => $calcLevel->level,
-                'nextLevel'  => $nextLevelXp
+                'value'           => $experience,
+                'experience'      => $userData->experience,
+                'level'           => $calcLevel->level,
+                'levelExperience' => $levelData->levelExperience,
+                'nextLevel'       => $levelData->nextLevel
             ]);
             $userModel->update($userData->id, ['experience' => $userData->experience]);
         }
@@ -183,19 +181,30 @@ class LevelsLibrary {
      * @return object|null
      */
     public function getLevelData(UserEntity $user): ?object {
-        $levelIndex = array_search((int) $user->level, array_column($this->userLevels, 'level'));
+        return $this->buildLevelData((int) $user->level, (int) $user->experience);
+    }
+
+    /**
+     * The level with the user's experience: where the level starts (levelExperience) and where
+     * the next one starts (nextLevel, null on the last level). Builds a new object, the levels
+     * table is left as it is.
+     * @param int $level
+     * @param int $experience
+     * @return object|null
+     */
+    protected function buildLevelData(int $level, int $experience): ?object {
+        $levelIndex = array_search($level, array_column($this->userLevels, 'level'));
 
         if ($levelIndex === false) {
             return null;
         }
 
-        if (isset($this->userLevels[$levelIndex + 1])) {
-            $this->userLevels[$levelIndex]->nextLevel = $this->userLevels[$levelIndex + 1]->experience;
-        }
-
-        $this->userLevels[$levelIndex]->experience = $user->experience;
-
-        return clone $this->userLevels[$levelIndex];
+        return (object) [
+            'level'           => $level,
+            'experience'      => $experience,
+            'levelExperience' => $this->userLevels[$levelIndex]->experience,
+            'nextLevel'       => $this->userLevels[$levelIndex + 1]->experience ?? null
+        ];
     }
 
     protected function getUserLevel(int $experience): object {
