@@ -72,8 +72,19 @@ const external = (coverAllowed: boolean, id: string, preview: string) => ({
 const photos = [
     { full: 'uploads/own.jpg', height: 1200, id: 'own', preview: 'uploads/own_preview.jpg', width: 1800 },
     external(true, '1', 'https://img.pastvu.com/h/big.jpg'),
-    external(false, '2', 'https://img.pastvu.com/h/small.jpg')
+    external(false, '2', 'https://img.pastvu.com/h/small.jpg'),
+    // Too small for the smallest cover the API accepts
+    { full: 'uploads/tiny.jpg', height: 300, id: 'tiny', preview: 'uploads/tiny_preview.jpg', width: 380 }
 ]
+
+const loadImage = (image: HTMLImageElement, naturalWidth: number, naturalHeight: number, width: number) => {
+    Object.defineProperties(image, {
+        naturalHeight: { value: naturalHeight },
+        naturalWidth: { value: naturalWidth },
+        width: { value: width }
+    })
+    fireEvent.load(image)
+}
 
 const mockUpdateCover = jest.fn()
 
@@ -113,23 +124,66 @@ describe('PlaceCoverEditor', () => {
 
         // The PastVu file is taller than in the API (1600×1000): its signature strip
         const image = container.querySelector('img[src="https://img.pastvu.com/a/big.jpg"]') as HTMLImageElement
-        Object.defineProperties(image, {
-            height: { value: 410 },
-            naturalHeight: { value: 1025 },
-            naturalWidth: { value: 1600 },
-            width: { value: 640 }
-        })
-        fireEvent.load(image)
+        loadImage(image, 1600, 1025, 640)
 
         fireEvent.click(screen.getByText('save'))
 
+        // The full width, 3:1, in the middle of the photo
         expect(mockUpdateCover).toHaveBeenCalledWith({
             externalPhotoId: 'linked-1',
             height: 533,
             placeId: 'place',
             width: 1600,
             x: 0,
+            y: 246
+        })
+    })
+
+    it('starts a panorama wider than 3:1 from its full height in the middle', () => {
+        const { container } = render(
+            <PlaceCoverEditor
+                placeId={'place'}
+                open={true}
+            />
+        )
+
+        fireEvent.click(container.querySelectorAll('li img')[0])
+        loadImage(
+            container.querySelector('img[src="https://img.test/uploads/own.jpg"]') as HTMLImageElement,
+            4000,
+            1000,
+            660
+        )
+
+        fireEvent.click(screen.getByText('save'))
+
+        expect(mockUpdateCover).toHaveBeenCalledWith({
+            height: 1000,
+            photoId: 'own',
+            placeId: 'place',
+            width: 3000,
+            x: 500,
             y: 0
         })
+    })
+
+    it('does not save a crop smaller than the API accepts', () => {
+        const { container } = render(
+            <PlaceCoverEditor
+                placeId={'place'}
+                open={true}
+            />
+        )
+
+        fireEvent.click(container.querySelectorAll('li img')[0])
+        // The file turned out smaller than the photo record says
+        loadImage(
+            container.querySelector('img[src="https://img.test/uploads/own.jpg"]') as HTMLImageElement,
+            390,
+            300,
+            390
+        )
+
+        expect(screen.getByText('save')).toBeDisabled()
     })
 })
