@@ -115,6 +115,19 @@ export const proxy = (request: NextRequest) => {
         return Response.redirect(url.toString(), 301)
     }
 
+    // TEMPORARILY (1.17.6): the tags are being reworked, so the lists of a tag (`/places?tag=…`,
+    // one per tag × category × page) are not served and the site no longer links to them: everybody,
+    // crawlers too, is sent to the same list without the tag, so search engines drop those pages.
+    // Not stored by browsers: a 301 is kept for good otherwise, and the lists come back with the tags
+    if (request.nextUrl.pathname.startsWith('/places') && request.nextUrl.searchParams.has('tag')) {
+        const url = request.nextUrl.clone()
+        url.searchParams.delete('tag')
+        return new Response(null, {
+            headers: { 'Cache-Control': 'no-store', Location: url.toString() },
+            status: 301
+        })
+    }
+
     // Direct access to the internal landing route (features/20-location-seo-pages.md):
     // handled first, before any other rule below reads the path, so nothing can ever serve
     // content at `/places/landing/...` (or `/en/places/landing/...` — nextUrl.pathname has

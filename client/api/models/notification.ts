@@ -15,7 +15,8 @@ export type Notification = {
         level?: number
         image?: string
         experience?: number
-        nextLevel?: number
+        levelExperience?: number
+        nextLevel?: number | null
     }
     activity?: ActivityType
     place?: Pick<Place, 'id' | 'slug' | 'title' | 'cover'>

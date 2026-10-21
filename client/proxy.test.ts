@@ -287,6 +287,19 @@ describe('proxy', () => {
         })
     })
 
+    describe('lists of a tag', () => {
+        it('301s everybody to the same list without the tag, the rest of the query kept', () => {
+            expect(proxy(request('/places?tag=lake'))?.status).toBe(301)
+            expect(proxy(request('/places?tag=lake'))?.headers.get('cache-control')).toBe('no-store')
+            expect(location(proxy(request('/places?tag=lake&category=cave&page=2')))).toBe(
+                'http://localhost:3000/places?category=cave&page=2'
+            )
+            expect(location(proxy(request('/en/places/bashkortostan?tag=lake', 'token')))).toBe(
+                'http://localhost:3000/en/places/bashkortostan'
+            )
+        })
+    })
+
     describe('cached pages: the cached render for guests, a per-request one when it does not fit', () => {
         const live = (path: string, token?: string, cookies?: Record<string, string>) =>
             rewrite(proxy(request(path, token, undefined, cookies)))

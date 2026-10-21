@@ -10,7 +10,7 @@ import { LevelBadge } from '@/components/shared'
 import { IMG_HOST } from '@/config/env'
 import defaultAvatar from '@/public/images/no-avatar.png'
 import { formatThousands } from '@/utils/helpers'
-import { nextLevelPercentage } from '@/utils/levels'
+import { levelProgress } from '@/utils/levels'
 
 import styles from './styles.module.sass'
 
@@ -28,16 +28,16 @@ export const HomeWelcome: React.FC<HomeWelcomeProps> = ({ user }) => {
 
     const firstName = user.name.split(' ')[0]
     const level = user.levelData?.level
-    const experience = user.levelData?.experience ?? 0
-    const nextLevel = user.levelData?.nextLevel ?? experience
+    const progress = levelProgress(user.levelData)
     // The year as the API writes it ("2014-11-12 11:36:18"), not shifted by the reader's time zone
     const since = user.created?.date ? Number(user.created.date.slice(0, 4)) || undefined : undefined
 
     const facts = [
         since && t('home-welcome-since', { year: since }),
         level !== undefined &&
+            !progress.isMaxLevel &&
             t('home-welcome-experience-left', {
-                experience: formatThousands(Math.max(nextLevel - experience, 0)),
+                experience: formatThousands(progress.left),
                 level: level + 1
             })
     ].filter(Boolean)
@@ -79,13 +79,17 @@ export const HomeWelcome: React.FC<HomeWelcomeProps> = ({ user }) => {
                         <div className={styles.bar}>
                             <Progress
                                 height={6}
-                                value={nextLevelPercentage(experience, nextLevel)}
+                                value={progress.percent}
                             />
                             <span className={styles.experience}>
-                                {t('home-welcome-experience', {
-                                    experience: formatThousands(experience),
-                                    next: formatThousands(nextLevel)
-                                })}
+                                {progress.isMaxLevel
+                                    ? t('home-welcome-experience-max', {
+                                          experience: formatThousands(user.levelData?.experience ?? 0)
+                                      })
+                                    : t('home-welcome-experience', {
+                                          experience: formatThousands(progress.gained),
+                                          next: formatThousands(progress.required ?? 0)
+                                      })}
                             </span>
                         </div>
                     </div>

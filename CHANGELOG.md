@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.17.6
+
+### Patch Changes
+
+- Levels: the experience bar starts from zero on a new level and shows the experience earned within the level
+- Levels: on the maximum level the bar is full and there is no "experience to the next level"
+- Place cover editor: the selected area is exactly what goes into the cover, the frame starts in the middle of the photo, photos too small for a cover are not offered
+- Optimized the places list sorted by views, trending places and the weekly digest
+- Map: new interesting places are collected again for areas that were never viewed
+- Place pages: the tags are temporarily hidden; the lists of a tag are temporarily off and open the list without the tag
+
 ## 1.17.5
 
 ### Patch Changes

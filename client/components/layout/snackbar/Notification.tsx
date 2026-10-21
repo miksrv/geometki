@@ -73,7 +73,8 @@ export const Notification: React.FC<NotificationProps> = ({
         variant === 'toast' &&
         props.type === 'experience' &&
         props.meta?.experience != null &&
-        props.meta?.nextLevel != null
+        // nextLevel is null on the last level: the bar is full then
+        props.meta?.levelExperience != null
 
     const link = ABOUT_USER_TYPES.has(props.type ?? '') ? null : props.collection ? (
         <Link
@@ -118,6 +119,7 @@ export const Notification: React.FC<NotificationProps> = ({
                         levelData={{
                             experience: props.meta?.experience,
                             level: props.meta?.level,
+                            levelExperience: props.meta?.levelExperience,
                             nextLevel: props.meta?.nextLevel
                         }}
                         badgeSize={18}

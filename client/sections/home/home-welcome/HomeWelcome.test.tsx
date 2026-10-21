@@ -57,7 +57,7 @@ jest.mock('@/public/images/no-avatar.png', () => ({ src: '/no-avatar.png' }))
 const user: ApiModel.User = {
     avatar: 'a.jpg',
     id: 'u1',
-    levelData: { experience: 6796, level: 15, nextLevel: 8000 },
+    levelData: { experience: 6796, level: 15, levelExperience: 6600, nextLevel: 8000 },
     created: { date: '2014-11-12 11:36:18.000000' },
     name: 'Миша Топчило',
     statistic: { comment: 0, edit: 0, photo: 398, place: 101, rating: 0, visited: 7 }
@@ -72,8 +72,16 @@ describe('HomeWelcome', () => {
             screen.getByText('home-welcome-since(2014) · home-welcome-experience-left(1 204,16)')
         ).toBeInTheDocument()
         expect(screen.getByTestId('level-badge')).toHaveTextContent('15')
-        expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '84.95')
-        expect(screen.getByText('home-welcome-experience(6 796,8 000)')).toBeInTheDocument()
+        expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '14')
+        expect(screen.getByText('home-welcome-experience(196,1 400)')).toBeInTheDocument()
+    })
+
+    it('shows a full bar and the whole experience on the last level', () => {
+        render(<HomeWelcome user={{ ...user, levelData: { experience: 48210, level: 30, levelExperience: 47500 } }} />)
+
+        expect(screen.getByText('home-welcome-since(2014)')).toBeInTheDocument()
+        expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100')
+        expect(screen.getByText('home-welcome-experience-max(48 210)')).toBeInTheDocument()
     })
 
     it('links the avatar to the profile and every counter to its list', () => {

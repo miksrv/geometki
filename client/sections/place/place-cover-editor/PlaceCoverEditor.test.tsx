@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 
 import { API } from '@/api'
 
@@ -24,7 +24,7 @@ jest.mock('simple-react-ui-kit', () => ({
 jest.mock('react-image-crop', () => ({
     __esModule: true,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    default: ({ children }: any) => <div>{children}</div>
+    default: ({ children, minWidth }: any) => <div data-min-width={minWidth}>{children}</div>
 }))
 
 jest.mock('react-image-crop/src/ReactCrop.scss', () => ({}))
@@ -72,8 +72,19 @@ const external = (coverAllowed: boolean, id: string, preview: string) => ({
 const photos = [
     { full: 'uploads/own.jpg', height: 1200, id: 'own', preview: 'uploads/own_preview.jpg', width: 1800 },
     external(true, '1', 'https://img.pastvu.com/h/big.jpg'),
-    external(false, '2', 'https://img.pastvu.com/h/small.jpg')
+    external(false, '2', 'https://img.pastvu.com/h/small.jpg'),
+    // Too small for the smallest cover the API accepts
+    { full: 'uploads/tiny.jpg', height: 300, id: 'tiny', preview: 'uploads/tiny_preview.jpg', width: 380 }
 ]
+
+const loadImage = (image: HTMLImageElement, naturalWidth: number, naturalHeight: number, width: number) => {
+    Object.defineProperties(image, {
+        naturalHeight: { value: naturalHeight },
+        naturalWidth: { value: naturalWidth },
+        width: { configurable: true, value: width }
+    })
+    fireEvent.load(image)
+}
 
 const mockUpdateCover = jest.fn()
 
@@ -101,6 +112,22 @@ describe('PlaceCoverEditor', () => {
         expect(screen.getByText('PastVu')).toBeInTheDocument()
     })
 
+    it('says no photo fits a cover when there are photos, but none of them fits', () => {
+        jest.mocked(API.usePhotosGetListQuery).mockReturnValue({
+            data: { items: photos.slice(2) },
+            isLoading: false
+        } as never)
+
+        const { container } = render(
+            <PlaceCoverEditor
+                placeId={'place'}
+                open={true}
+            />
+        )
+
+        expect(container.querySelector('.noPhotos')).toHaveTextContent(/^no-cover-photos-here/)
+    })
+
     it('cuts the cover from a linked photo by the size of the loaded file', () => {
         const { container } = render(
             <PlaceCoverEditor
@@ -113,23 +140,101 @@ describe('PlaceCoverEditor', () => {
 
         // The PastVu file is taller than in the API (1600×1000): its signature strip
         const image = container.querySelector('img[src="https://img.pastvu.com/a/big.jpg"]') as HTMLImageElement
-        Object.defineProperties(image, {
-            height: { value: 410 },
-            naturalHeight: { value: 1025 },
-            naturalWidth: { value: 1600 },
-            width: { value: 640 }
-        })
-        fireEvent.load(image)
+        loadImage(image, 1600, 1025, 640)
 
         fireEvent.click(screen.getByText('save'))
 
+        // The full width, 3:1, in the middle of the photo
         expect(mockUpdateCover).toHaveBeenCalledWith({
             externalPhotoId: 'linked-1',
             height: 533,
             placeId: 'place',
             width: 1600,
             x: 0,
+            y: 246
+        })
+    })
+
+    it('starts a panorama wider than 3:1 from its full height in the middle', () => {
+        const { container } = render(
+            <PlaceCoverEditor
+                placeId={'place'}
+                open={true}
+            />
+        )
+
+        fireEvent.click(container.querySelectorAll('li img')[0])
+        loadImage(
+            container.querySelector('img[src="https://img.test/uploads/own.jpg"]') as HTMLImageElement,
+            4000,
+            1000,
+            660
+        )
+
+        fireEvent.click(screen.getByText('save'))
+
+        expect(mockUpdateCover).toHaveBeenCalledWith({
+            height: 1000,
+            photoId: 'own',
+            placeId: 'place',
+            width: 3000,
+            x: 500,
             y: 0
         })
+    })
+
+    it('keeps the smallest box at the smallest cover when the photo is shown smaller', () => {
+        let resize = () => {}
+        const disconnect = jest.fn()
+        global.ResizeObserver = jest.fn((callback: () => void) => {
+            resize = callback
+            return { disconnect, observe: jest.fn(), unobserve: jest.fn() }
+        }) as never
+
+        const { container, unmount } = render(
+            <PlaceCoverEditor
+                placeId={'place'}
+                open={true}
+            />
+        )
+
+        fireEvent.click(container.querySelectorAll('li img')[0])
+        const image = container.querySelector('img[src="https://img.test/uploads/own.jpg"]') as HTMLImageElement
+        loadImage(image, 1800, 1200, 600)
+
+        const crop = image.parentElement as HTMLElement
+        // 400 px of the file at 3 file px per screen px
+        expect(Number(crop.dataset.minWidth)).toBeCloseTo(133.33, 1)
+
+        // The window got narrower: the photo is shown 300 px wide
+        Object.defineProperty(image, 'width', { value: 300 })
+        act(() => resize())
+
+        expect(Number(crop.dataset.minWidth)).toBeCloseTo(66.67, 1)
+
+        unmount()
+        expect(disconnect).toHaveBeenCalled()
+        // @ts-expect-error jsdom has no ResizeObserver
+        delete global.ResizeObserver
+    })
+
+    it('does not save a crop smaller than the API accepts', () => {
+        const { container } = render(
+            <PlaceCoverEditor
+                placeId={'place'}
+                open={true}
+            />
+        )
+
+        fireEvent.click(container.querySelectorAll('li img')[0])
+        // The file turned out smaller than the photo record says
+        loadImage(
+            container.querySelector('img[src="https://img.test/uploads/own.jpg"]') as HTMLImageElement,
+            390,
+            300,
+            390
+        )
+
+        expect(screen.getByText('save')).toBeDisabled()
     })
 })

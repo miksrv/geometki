@@ -521,8 +521,9 @@ class PlacesModel extends ApplicationBaseModel
             LEFT JOIN (
                 SELECT place_id,
                        SUM(CASE WHEN view_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN count ELSE 0 END)  AS v7,
-                       SUM(CASE WHEN view_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN count ELSE 0 END) AS v30
+                       SUM(count) AS v30
                 FROM places_views_log
+                WHERE view_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
                 GROUP BY place_id
             ) pvw ON pvw.place_id = p.id
             SET p.trending_score = ROUND(

@@ -13,8 +13,15 @@ import { Breadcrumbs, Reputation } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
 import useClientOnly from '@/hooks/useClientOnly'
 import defaultAvatar from '@/public/images/no-avatar.png'
-import { formatDate, makeActiveLink, minutesAgo, removeProtocolFromUrl, timeAgo } from '@/utils/helpers'
-import { nextLevelPercentage } from '@/utils/levels'
+import {
+    formatDate,
+    formatThousands,
+    makeActiveLink,
+    minutesAgo,
+    removeProtocolFromUrl,
+    timeAgo
+} from '@/utils/helpers'
+import { levelProgress } from '@/utils/levels'
 
 import styles from './styles.module.sass'
 
@@ -55,6 +62,8 @@ export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
         return Array.from(best.values())
     }, [achievementsData])
 
+    const progress = levelProgress(user?.levelData)
+
     const isOwner = appAuth.isAuth && appAuth.user?.id === user?.id
 
     return (
@@ -75,10 +84,7 @@ export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
                     />
                     <Progress
                         height={4}
-                        value={nextLevelPercentage(
-                            user?.levelData?.experience || 0,
-                            user?.levelData?.nextLevel || user?.levelData?.experience || 0
-                        )}
+                        value={progress.percent}
                     />
                 </div>
                 <div className={styles.infoColumn}>
@@ -101,13 +107,13 @@ export const UserHeader: React.FC<UserHeaderProps> = ({ user }) => {
                                     />
                                 </div>
                             </li>
-                            <li>
-                                <Icon name={'DoubleUp'} />
-                                <div className={styles.key}>{t('experience-to-new-level')}:</div>
-                                <div className={styles.value}>
-                                    {(user?.levelData?.nextLevel || 0) - (user?.levelData?.experience || 0)}
-                                </div>
-                            </li>
+                            {!progress.isMaxLevel && (
+                                <li>
+                                    <Icon name={'DoubleUp'} />
+                                    <div className={styles.key}>{t('experience-to-new-level')}:</div>
+                                    <div className={styles.value}>{formatThousands(progress.left)}</div>
+                                </li>
+                            )}
                             <li>
                                 <Icon name={'Time'} />
                                 <div className={styles.key}>{t('registration')}:</div>

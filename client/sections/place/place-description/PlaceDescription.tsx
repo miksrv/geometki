@@ -45,7 +45,7 @@ interface PlaceDescriptionProps {
  * its end. The text is edited in the place form only ("⋯ → Редактировать"); a place without
  * a text links there.
  */
-export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, content, locale, tags }) => {
+export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, content, locale }) => {
     const dispatch = useAppDispatch()
     const { t, i18n } = useTranslation()
 
@@ -150,8 +150,10 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
                 </div>
             )}
 
-            {/* The quiet end of the text: its tags as chips */}
-            {!!tags?.length && (
+            {/* TEMPORARILY OFF (1.17.6): the tags are being reworked, and the list of a tag is not
+                served now (proxy.ts), so the page does not link to it. The quiet end of the text: its
+                tags as chips */}
+            {/* {!!tags?.length && (
                 <ul className={styles.tagList}>
                     {tags.map((tag, i) => (
                         <li key={`tag${i}`}>
@@ -164,7 +166,7 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
                         </li>
                     ))}
                 </ul>
-            )}
+            )} */}
         </Section>
     )
 }
