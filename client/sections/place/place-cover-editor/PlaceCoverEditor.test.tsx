@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 
 import { API } from '@/api'
 
@@ -24,7 +24,7 @@ jest.mock('simple-react-ui-kit', () => ({
 jest.mock('react-image-crop', () => ({
     __esModule: true,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    default: ({ children }: any) => <div>{children}</div>
+    default: ({ children, minWidth }: any) => <div data-min-width={minWidth}>{children}</div>
 }))
 
 jest.mock('react-image-crop/src/ReactCrop.scss', () => ({}))
@@ -81,7 +81,7 @@ const loadImage = (image: HTMLImageElement, naturalWidth: number, naturalHeight:
     Object.defineProperties(image, {
         naturalHeight: { value: naturalHeight },
         naturalWidth: { value: naturalWidth },
-        width: { value: width }
+        width: { configurable: true, value: width }
     })
     fireEvent.load(image)
 }
@@ -181,6 +181,41 @@ describe('PlaceCoverEditor', () => {
             x: 500,
             y: 0
         })
+    })
+
+    it('keeps the smallest box at the smallest cover when the photo is shown smaller', () => {
+        let resize = () => {}
+        const disconnect = jest.fn()
+        global.ResizeObserver = jest.fn((callback: () => void) => {
+            resize = callback
+            return { disconnect, observe: jest.fn(), unobserve: jest.fn() }
+        }) as never
+
+        const { container, unmount } = render(
+            <PlaceCoverEditor
+                placeId={'place'}
+                open={true}
+            />
+        )
+
+        fireEvent.click(container.querySelectorAll('li img')[0])
+        const image = container.querySelector('img[src="https://img.test/uploads/own.jpg"]') as HTMLImageElement
+        loadImage(image, 1800, 1200, 600)
+
+        const crop = image.parentElement as HTMLElement
+        // 400 px of the file at 3 file px per screen px
+        expect(Number(crop.dataset.minWidth)).toBeCloseTo(133.33, 1)
+
+        // The window got narrower: the photo is shown 300 px wide
+        Object.defineProperty(image, 'width', { value: 300 })
+        act(() => resize())
+
+        expect(Number(crop.dataset.minWidth)).toBeCloseTo(66.67, 1)
+
+        unmount()
+        expect(disconnect).toHaveBeenCalled()
+        // @ts-expect-error jsdom has no ResizeObserver
+        delete global.ResizeObserver
     })
 
     it('does not save a crop smaller than the API accepts', () => {

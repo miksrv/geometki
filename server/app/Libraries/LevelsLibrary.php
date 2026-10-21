@@ -89,6 +89,10 @@ class LevelsLibrary {
                  $notify = new NotifyLibrary();
                  $notify->push('level', $user->id, null, $calcLevel);
              }
+
+            // The caller goes on with this user (the profile builds its level data from it)
+            $user->level      = $calcLevel->level;
+            $user->experience = $experience;
         }
 
         return $this;

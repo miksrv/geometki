@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ReactCrop, { PercentCrop } from 'react-image-crop'
 import { Button, Dialog } from 'simple-react-ui-kit'
 
@@ -67,6 +67,32 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
     // The size of the loaded file: the API cuts this very file (a PastVu file is a little taller
     // than its size in the PastVu API: the signature strip). `scale` — file pixels per screen pixel
     const [naturalSize, setNaturalSize] = useState<{ width: number; height: number; scale: number }>()
+    const imageRef = useRef<HTMLImageElement>(null)
+    const imageLoaded = !!naturalSize
+
+    // The dialog changes its width with the window (a phone turned): the smallest box on the
+    // screen follows the photo's new size, the box itself is in percent and stays
+    useEffect(() => {
+        const image = imageRef.current
+
+        if (!imageLoaded || !image || typeof ResizeObserver === 'undefined') {
+            return
+        }
+
+        const observer = new ResizeObserver(() => {
+            if (!image.width) {
+                return
+            }
+
+            setNaturalSize((size) =>
+                size && size.width / image.width !== size.scale ? { ...size, scale: size.width / image.width } : size
+            )
+        })
+
+        observer.observe(image)
+
+        return () => observer.disconnect()
+    }, [imageLoaded, selectedPhotoId])
 
     const selectedPhoto = useMemo(
         () => coverPhotos?.find(({ id }) => id === selectedPhotoId),
@@ -200,6 +226,7 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
                         >
                             {/* eslint-disable-next-line next/no-img-element */}
                             <img
+                                ref={imageRef}
                                 src={resolveImageUrl(selectedPhoto?.full)}
                                 onLoad={handleImageLoad}
                                 alt={''}
