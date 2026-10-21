@@ -151,7 +151,8 @@ const PlaceCoverEditor: React.FC<PlaceCoverEditorProps> = ({ placeId, open, onCl
             <>
                 {!photoLoading && !coverPhotos?.length && (
                     <div className={styles.noPhotos}>
-                        {t('no-photos-here-yet')}
+                        {/* Photos there are, but none big enough or with a licence that allows a cover */}
+                        {photosData?.items?.length ? t('no-cover-photos-here') : t('no-photos-here-yet')}
                         <br />
                         {t('first-upload-photos-after-edit-cover')}
                     </div>

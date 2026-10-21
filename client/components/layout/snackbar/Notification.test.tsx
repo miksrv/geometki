@@ -247,6 +247,17 @@ describe('Notification', () => {
             render(<Notification {...notification} />)
             expect(screen.queryByTestId('level-progress')).not.toBeInTheDocument()
         })
+
+        it('renders LevelProgress on the last level', () => {
+            const notification = {
+                id: 'exp-4',
+                type: 'experience' as const,
+                activity: 'place' as const,
+                meta: { value: 5, level: 30, experience: 48210, levelExperience: 47500, nextLevel: null }
+            }
+            render(<Notification {...notification} />)
+            expect(screen.getByTestId('level-progress')).toBeInTheDocument()
+        })
     })
 
     describe('list variant', () => {

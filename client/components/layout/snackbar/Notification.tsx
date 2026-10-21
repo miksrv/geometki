@@ -73,8 +73,8 @@ export const Notification: React.FC<NotificationProps> = ({
         variant === 'toast' &&
         props.type === 'experience' &&
         props.meta?.experience != null &&
-        props.meta?.levelExperience != null &&
-        props.meta?.nextLevel != null
+        // nextLevel is null on the last level: the bar is full then
+        props.meta?.levelExperience != null
 
     const link = ABOUT_USER_TYPES.has(props.type ?? '') ? null : props.collection ? (
         <Link

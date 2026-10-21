@@ -112,6 +112,22 @@ describe('PlaceCoverEditor', () => {
         expect(screen.getByText('PastVu')).toBeInTheDocument()
     })
 
+    it('says no photo fits a cover when there are photos, but none of them fits', () => {
+        jest.mocked(API.usePhotosGetListQuery).mockReturnValue({
+            data: { items: photos.slice(2) },
+            isLoading: false
+        } as never)
+
+        const { container } = render(
+            <PlaceCoverEditor
+                placeId={'place'}
+                open={true}
+            />
+        )
+
+        expect(container.querySelector('.noPhotos')).toHaveTextContent(/^no-cover-photos-here/)
+    })
+
     it('cuts the cover from a linked photo by the size of the loaded file', () => {
         const { container } = render(
             <PlaceCoverEditor

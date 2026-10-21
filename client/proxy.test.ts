@@ -290,6 +290,7 @@ describe('proxy', () => {
     describe('lists of a tag', () => {
         it('301s everybody to the same list without the tag, the rest of the query kept', () => {
             expect(proxy(request('/places?tag=lake'))?.status).toBe(301)
+            expect(proxy(request('/places?tag=lake'))?.headers.get('cache-control')).toBe('no-store')
             expect(location(proxy(request('/places?tag=lake&category=cave&page=2')))).toBe(
                 'http://localhost:3000/places?category=cave&page=2'
             )
