@@ -17,6 +17,8 @@ export interface ListRequest {
     search?: string
     sort?: UserSortFields
     order?: 'ASC' | 'DESC'
+    /** Adds `places` (the newest places with a cover) to every user */
+    places?: 1
 }
 
 export interface ListResponse {

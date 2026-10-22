@@ -25,7 +25,7 @@ class WeeklyDigestCommand extends BaseCommand
 {
     protected $group       = 'digest';
     protected $name        = 'digest:weekly';
-    protected $description = 'Generate and queue weekly digest emails for all users';
+    protected $description = 'Generate and queue weekly digest emails for every user who wants one';
     protected $usage       = 'digest:weekly [--user <user_id>] [--dry-run] [--force]';
     protected $options     = [
         '--user'    => 'Process only this user ID (for testing)',
@@ -73,38 +73,11 @@ class WeeklyDigestCommand extends BaseCommand
                 return;
             }
         } else {
-            // Find user_ids that actually have data this week —
-            // activity by others on their places OR views in places_views_log.
-            // Then intersect with users who have digest enabled.
-            $db = \Config\Database::connect();
-
-            $ownerRows = $db->query("
-                SELECT DISTINCT p.user_id
-                FROM activity a
-                JOIN places p ON p.id = a.place_id AND p.deleted_at IS NULL
-                WHERE a.created_at BETWEEN ? AND ?
-                  AND a.type IN ('rating', 'comment', 'photo', 'edit')
-                  AND a.deleted_at IS NULL
-                  AND a.user_id != p.user_id
-
-                UNION
-
-                SELECT DISTINCT p.user_id
-                FROM places_views_log pvl
-                JOIN places p ON p.id = pvl.place_id AND p.deleted_at IS NULL
-                WHERE pvl.view_date BETWEEN DATE(?) AND DATE(?)
-            ", [$weekStart, $weekEnd, $weekStart, $weekEnd])->getResultArray();
-
-            $ownerIds = array_column($ownerRows, 'user_id');
-
-            if (empty($ownerIds)) {
-                CLI::write('No place activity found for this period. Nothing to send.', 'yellow');
-                return;
-            }
-
+            // Everyone with an address: authors get the news of their places,
+            // the others the popular places of the week and the week on the site
             $users = $usersModel
-                ->whereIn('id', $ownerIds)
                 ->where('email IS NOT NULL', null, false)
+                ->where('email !=', '')
                 ->where('deleted_at IS NULL', null, false)
                 ->findAll();
 
@@ -178,11 +151,9 @@ class WeeklyDigestCommand extends BaseCommand
             $locale   = MailText::locale($user->locale ?? null);
             $sections = $digestService->generateForUser($user->id, $weekStart, $weekEnd, $locale);
 
-            // Skip if there is no personal data at all — sending only community
-            // highlights to someone who was completely inactive makes no sense.
-            $hasPersonalData = isset($sections['week_summary']) || isset($sections['place_activity']);
-            if (!$hasPersonalData) {
-                CLI::write("Skipping {$user->name}: no personal activity data", 'yellow');
+            // A week with nothing on the site at all is not worth an email
+            if (!DigestMail::hasNews($sections)) {
+                CLI::write("Skipping {$user->name}: nothing happened this week", 'yellow');
                 $skipped++;
                 continue;
             }

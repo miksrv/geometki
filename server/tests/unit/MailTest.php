@@ -225,7 +225,28 @@ final class MailTest extends CIUnitTestCase
         $this->assertSame('Ваши места посмотрели 5 раз за неделю', DigestMail::subject('ru', $views));
         $this->assertSame('Your places were viewed 5 times this week', DigestMail::subject('en', $views));
         $this->assertSame('На ваших местах 3 новых события за неделю', DigestMail::subject('ru', $events));
-        $this->assertSame('Ваша неделя на Геометках', DigestMail::subject('ru', []));
+        $this->assertSame('Ваша неделя на Геометках', DigestMail::subject('ru', ['week_summary' => ['ratings_given' => 1]]));
+        $this->assertSame('Что нового на Геометках за неделю', DigestMail::subject('ru', ['top_places' => [['views' => 9]]]), 'no news of their own');
+    }
+
+    public function testDigestGoesOutWhenAnythingHappened(): void
+    {
+        $quiet = ['site' => ['pulse' => ['total' => 0], 'highlights' => []]];
+
+        $this->assertFalse(DigestMail::hasNews($quiet), 'nothing on the site, nothing of the user');
+        $this->assertTrue(DigestMail::hasNews($quiet + ['top_places' => [['views' => 1]]]));
+        $this->assertTrue(DigestMail::hasNews(['site' => ['pulse' => ['total' => 3], 'highlights' => []]]), 'a newcomer gets the week on the site');
+        $this->assertTrue(DigestMail::hasNews($quiet + ['week_summary' => ['ratings_given' => 1]]));
+    }
+
+    public function testDigestWithoutOwnPlacesShowsThePopularOnes(): void
+    {
+        $message = MailSamples::build('digest-site', 'to@example.com', 'ru');
+
+        $this->assertSame('Что нового на Геометках за неделю', $message->subject);
+        $this->assertStringContainsString('Популярные места недели', $message->html);
+        $this->assertStringContainsString('412 просмотров', $message->html);
+        $this->assertStringNotContainsString('Ваши места за неделю', $message->html);
     }
 
     public function testHighlightOfAStory(): void
@@ -317,7 +338,7 @@ final class MailTest extends CIUnitTestCase
 
     public function testNotificationsHaveUnsubscribeAndSettings(): void
     {
-        foreach (['activity', 'activity-group', 'digest'] as $kind) {
+        foreach (['activity', 'activity-group', 'digest', 'digest-site'] as $kind) {
             $message = MailSamples::build($kind, 'to@example.com', 'en');
 
             $this->assertNotNull($message->unsubscribeUrl, $kind);

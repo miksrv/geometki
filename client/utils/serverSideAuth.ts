@@ -1,3 +1,4 @@
+import { API } from '@/api'
 import { login } from '@/app/authSlice'
 import { AppStore } from '@/app/store'
 import { AUTH_COOKIES } from '@/config/constants'
@@ -21,4 +22,18 @@ export const hydrateAuthFromCookies = (store: AppStore, cookies: Partial<Record<
             })
         )
     }
+}
+
+/**
+ * Whether an SSR request is an admin's (call after hydrateAuthFromCookies). `auth/me` is asked
+ * only with a token: a guest, or a crawler on an admin page, has nothing to ask about
+ */
+export const isAdminRequest = async (store: AppStore): Promise<boolean> => {
+    if (!store.getState().auth.token) {
+        return false
+    }
+
+    const { data } = await store.dispatch(API.endpoints.authGetMe.initiate())
+
+    return data?.user?.role === 'admin'
 }

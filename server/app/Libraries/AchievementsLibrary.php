@@ -29,6 +29,29 @@ class AchievementsLibrary
     private const ALWAYS_METRICS = ['experience_total', 'level_reached', 'reputation_score', 'days_active', 'login_streak'];
 
     /**
+     * How long a user's progress is kept (getProgress()): a page of achievements is about
+     * 60 counting queries. A change by the user's own action, a removal, a vote on their
+     * places or an edit of the achievements drops it at once (forgetProgress(),
+     * forgetAllProgress()); the time-bound metrics (the streak, active days, seasons) may lag
+     * by this much.
+     */
+    private const PROGRESS_TTL = 600;
+
+    private const PROGRESS_CACHE_PREFIX = 'achievements_progress_';
+
+    /** Drop the user's cached progress: their metrics have changed */
+    public static function forgetProgress(string $userId): void
+    {
+        cache()->delete(self::PROGRESS_CACHE_PREFIX . $userId);
+    }
+
+    /** Drop everyone's cached progress: the achievements themselves have changed */
+    public static function forgetAllProgress(): void
+    {
+        cache()->deleteMatching(self::PROGRESS_CACHE_PREFIX . '*');
+    }
+
+    /**
      * Check achievements triggered by a specific activity type.
      * Includes tier-upgrade candidates (user may qualify for a higher tier in same group).
      *
@@ -36,6 +59,9 @@ class AchievementsLibrary
      */
     public function check(string $userId, string $activityType): void
     {
+        // The action has moved the user's metrics; dropped again below, after the awards
+        self::forgetProgress($userId);
+
         $relevantMetrics = isset($this->metricMap[$activityType])
             ? [...$this->metricMap[$activityType], ...self::ALWAYS_METRICS]
             : null;
@@ -111,6 +137,8 @@ class AchievementsLibrary
                 ];
             }
         }
+
+        self::forgetProgress($userId);
     }
 
     /**
@@ -183,11 +211,30 @@ class AchievementsLibrary
     }
 
     /**
-     * Return progress info for all active achievements for a user.
+     * Return progress info for all active achievements for a user (cached, PROGRESS_TTL).
      *
      * @return array [achievementId => ['current' => int, 'required' => int, 'pct' => float]]
      */
     public function getProgress(string $userId): array
+    {
+        $key    = self::PROGRESS_CACHE_PREFIX . $userId;
+        $cached = cache($key);
+
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $progress = $this->countProgress($userId);
+
+        cache()->save($key, $progress, self::PROGRESS_TTL);
+
+        return $progress;
+    }
+
+    /**
+     * @return array [achievementId => ['current' => int, 'required' => int, 'pct' => float]]
+     */
+    private function countProgress(string $userId): array
     {
         $achievementsModel     = new AchievementsModel();
         $userAchievementsModel = new UsersAchievementsModel();

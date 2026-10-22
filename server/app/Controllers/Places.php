@@ -11,6 +11,7 @@ use App\Libraries\PlaceCoverLibrary;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlaceTags;
 use App\Libraries\PlacesContent;
+use App\Libraries\ActivityRemoval;
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
 use App\Libraries\SitePages;
@@ -745,6 +746,10 @@ class Places extends ResourceController
         $collectionsPlacesModel = new CollectionsPlacesModel();
         $affectedCollectionIds  = $collectionsPlacesModel->collectionIdsForPlace($id);
 
+        // Everyone whose activity goes with the place: collected while it is still there, before the
+        // photos below are deleted (their activity rows cascade away with them)
+        $removal = ActivityRemoval::forPlace($id);
+
         (new PlaceTags())->deletePlace($id);
 
         // Remove all photos
@@ -756,6 +761,9 @@ class Places extends ResourceController
 
         // Remove place and all DB entitles such as activity, rating, bookmarks etc.
         $this->model->delete($id, true);
+
+        // Their experience, the reputation of the author and the contributors, the feed
+        $removal->apply();
 
         if (!empty($affectedCollectionIds)) {
             $collectionsModel = new CollectionsModel();

@@ -18,20 +18,15 @@ class LevelsLibrary {
     }
 
     /**
-     * The method starts recalculating the user's experience and returns experience and level.
-     * If there is a discrepancy between the current experience or level - updates the user in the database.
-     *
-     * The method is used when changing the gradation of levels (when you need to recalculate the levels of all users)
-     * Or when the user adds/edits material
-     * @param bool $notify false: a silent recount (migrations), no "new level" notification
-     * @return $this
-     * @throws ReflectionException
+     * The user's contributions by activity type: a read, for the profile. The experience and
+     * the level are kept up to date by the actions (push(), calculate() after a removal),
+     * a profile view does not recount them.
      */
-    public function calculate(UserEntity $user, bool $notify = true): static {
+    public function statistic(string $userId): object {
         $activityModel = new ActivityModel();
         $activityData  = $activityModel
             ->select('type, COUNT(*) as cnt')
-            ->where('user_id', $user->id)
+            ->where('user_id', $userId)
             ->groupBy('type')
             ->findAll();
 
@@ -53,6 +48,18 @@ class LevelsLibrary {
             }
         }
 
+        $this->statistic = $statistic;
+
+        return $statistic;
+    }
+
+    /**
+     * The experience the user's activity and achievements are worth: what `users.experience`
+     * should be. Only counts, saves nothing.
+     */
+    public function experience(string $userId): int {
+        $statistic = $this->statistic($userId);
+
         // CALCULATE USER EXPERIENCE
         $experience = 0;
         $experience += $statistic->place * MODIFIER_PLACE;
@@ -70,11 +77,25 @@ class LevelsLibrary {
              FROM users_achievements ua
              JOIN achievements a ON a.id = ua.achievement_id
              WHERE ua.user_id = ?',
-            [$user->id]
+            [$userId]
         )->getRow();
         $experience += (int) ($row->achievement_xp ?? 0);
 
-        $this->statistic = $statistic;
+        return $experience;
+    }
+
+    /**
+     * The method starts recalculating the user's experience and returns experience and level.
+     * If there is a discrepancy between the current experience or level - updates the user in the database.
+     *
+     * The method is used when changing the gradation of levels (when you need to recalculate the levels of all users)
+     * Or when the user's activity is removed (ActivityRemoval)
+     * @param bool $notify false: a silent recount (migrations), no "new level" notification
+     * @return $this
+     * @throws ReflectionException
+     */
+    public function calculate(UserEntity $user, bool $notify = true): static {
+        $experience = $this->experience($user->id);
 
         // Let's see what level the user should actually have
         $calcLevel = $this->getUserLevel($experience);
@@ -84,6 +105,7 @@ class LevelsLibrary {
         if ($experience !== (int) $user->experience || $calcLevel->level !== (int) $user->level) {
             $userModel = new UsersModel();
             $userModel->update($user->id, ['level' => $calcLevel->level, 'experience' => $experience]);
+            AchievementsLibrary::forgetProgress($user->id);
 
              if ($notify && $calcLevel->level > (int) $user->level) {
                  $notify = new NotifyLibrary();

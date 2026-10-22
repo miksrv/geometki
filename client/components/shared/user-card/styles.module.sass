@@ -1,0 +1,301 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+
+// The card of a person: a surface card on the page background (a person is not a picture,
+// so there is no cover — the avatar leads). The name link is stretched over the whole card;
+// the covers and the counts sit above it and lead to the profile tabs.
+.card
+    position: relative
+    min-width: 0
+    background: var(--surface-1)
+
+.nameLink
+    color: inherit
+
+    &::after
+        content: ''
+        position: absolute
+        inset: 0
+        border-radius: inherit
+
+    &:focus-visible
+        outline: none
+
+        &::after
+            outline: 2px solid var(--color-main)
+            outline-offset: 2px
+
+.name
+    +type.titleBlock
+    overflow: hidden
+    white-space: nowrap
+    text-overflow: ellipsis
+
+.who
+    flex: 1
+    min-width: 0
+
+.sub
+    +type.secondary
+    margin: 0
+    // One line even before hydration, when the time ago is not there yet
+    min-height: calc(var(--font-size-secondary) * 1.45)
+    overflow: hidden
+    white-space: nowrap
+    text-overflow: ellipsis
+
+.online
+    color: var(--color-green)
+
+// ——— tile: the people list grid ———
+.tile
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+    padding: var(--space-4)
+    border-radius: var(--radius-xl)
+    box-shadow: var(--container-shadow)
+    transition: box-shadow .15s ease
+
+    &:hover
+        box-shadow: var(--container-shadow), var(--shadow-md)
+
+        .name
+            color: var(--color-main)
+
+.rank
+    +type.caption
+    position: absolute
+    // Over the stretched name link, so its tooltip shows
+    z-index: 1
+    top: var(--space-3)
+    right: var(--space-3)
+    padding: 1px var(--space-2)
+    border-radius: var(--border-radius)
+    font-weight: var(--font-weight-semibold)
+    font-variant-numeric: tabular-nums
+
+    &.top
+        color: var(--color-orange)
+        background: var(--color-orange-background)
+
+.head
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    min-width: 0
+    // Clear of the rank in the corner
+    padding-right: var(--space-8)
+
+.level
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+
+.levelText
+    flex: 1
+    min-width: 0
+
+.levelRow
+    display: flex
+    justify-content: space-between
+    gap: var(--space-2)
+    font-size: var(--font-size-secondary)
+    line-height: 1.45
+
+.tier
+    font-weight: var(--font-weight-semibold)
+    overflow: hidden
+    white-space: nowrap
+    text-overflow: ellipsis
+
+.experience
+    color: var(--text-color-secondary)
+    font-variant-numeric: tabular-nums
+    white-space: nowrap
+
+.progressBar
+    height: 4px
+    margin-top: var(--space-1)
+    border-radius: 2px
+    background: var(--surface-3)
+    overflow: hidden
+
+.progressFill
+    height: 100%
+    border-radius: inherit
+
+// The strip of covers: four 4:3 frames, only the outer corners of the strip rounded
+.places
+    display: grid
+    grid-template-columns: repeat(4, minmax(0, 1fr))
+    gap: var(--space-1)
+    margin: 0
+    padding: 0
+    list-style: none
+
+    li
+        position: relative
+        aspect-ratio: 4 / 3
+        border-radius: var(--radius-sm)
+        overflow: hidden
+        background: var(--surface-2)
+
+        &:first-child
+            border-radius: var(--radius-lg) var(--radius-sm) var(--radius-sm) var(--radius-lg)
+
+        &:last-child
+            border-radius: var(--radius-sm) var(--radius-lg) var(--radius-lg) var(--radius-sm)
+
+.placeLink
+    position: relative
+    z-index: 1
+    display: block
+    height: 100%
+
+    &:focus-visible
+        outline: 2px solid var(--color-main)
+        outline-offset: -2px
+
+.placeImage
+    object-fit: cover
+    transition: transform .2s ease
+
+    .placeLink:hover &
+        transform: scale(1.05)
+
+.placeCategory
+    position: absolute
+    top: var(--space-1)
+    left: var(--space-1)
+    display: flex
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .3))
+
+// Over a photo in both themes: a fixed dark veil with white text, like the counters over covers
+.more::after
+    content: ''
+    position: absolute
+    inset: 0
+    background: rgba(0, 0, 0, .5)
+
+.moreCount
+    position: absolute
+    inset: 0
+    z-index: 1
+    display: grid
+    place-items: center
+    color: #fff
+    font-weight: var(--font-weight-semibold)
+    font-size: var(--font-size-secondary)
+
+.placeEmpty
+    background: var(--surface-2)
+
+// No covers: a quiet line of the strip's height, so the tiles of a row stay level
+.placesNone
+    position: relative
+    z-index: 1
+    display: flex
+    align-items: center
+    justify-content: center
+    margin: 0
+    aspect-ratio: 4 / 0.75
+    border: 1px dashed var(--border-strong)
+    border-radius: var(--radius-lg)
+    +type.secondary
+
+a.placesNone:hover
+    color: var(--color-main)
+    border-color: var(--color-main)
+
+// Places, photos, visits, then the reputation on the right; fixed order
+.stats
+    display: flex
+    align-items: center
+    gap: var(--space-4)
+    margin-top: auto
+    padding-top: var(--space-3)
+    border-top: 1px solid var(--border)
+    +type.secondary
+
+.stat
+    position: relative
+    z-index: 1
+    display: inline-flex
+    align-items: center
+    gap: var(--space-1)
+    color: inherit
+    white-space: nowrap
+
+    // Kit icons carry no size of their own: the size of the PlaceCard stats
+    svg
+        flex-shrink: 0
+        width: 16px
+        height: 16px
+        fill: var(--icon-color-secondary)
+
+    &:hover svg
+        fill: var(--color-main)
+
+    b
+        color: var(--text-color-primary)
+        font-weight: var(--font-weight-semibold)
+        font-variant-numeric: tabular-nums
+
+    &:hover,
+    &:hover b
+        color: var(--color-main)
+
+.reputation
+    margin-left: auto
+
+// Phones: the tile becomes a line of the list — avatar, name, when, the badge; the counts
+// under it; no covers and no progress
+@media only screen and (max-width: variables.$mobileMaxWidth)
+    .tile
+        flex-direction: row
+        flex-wrap: wrap
+        align-items: center
+        gap: var(--space-1) var(--space-3)
+        padding: var(--space-3) var(--space-4)
+
+        &:hover
+            box-shadow: var(--container-shadow)
+
+    // The rank stays in the corner: the counts keep their place under the name
+    .head
+        flex: 1
+
+    .levelText,
+    .places,
+    .placesNone
+        display: none
+
+    .stats
+        width: 100%
+        margin-top: 0
+        // Under the name: the `large` avatar (56px) and the gap
+        padding: 0 0 0 calc(56px + var(--space-3))
+        border-top: 0
+        gap: var(--space-3)
+
+// ——— row: a dense line inside another block (the home page widget) ———
+.row
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    padding: var(--space-2) 0
+    background: none
+
+    & + &
+        border-top: var(--container-border-separator)
+
+    .name
+        +type.body
+        font-weight: var(--font-weight-medium)
+
+    .sub
+        +type.caption
+
+    &:hover .name
+        color: var(--color-main)

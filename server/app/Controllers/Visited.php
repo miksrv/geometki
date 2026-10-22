@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Libraries\ActivityRemoval;
 use App\Libraries\ActivityLibrary;
 use App\Libraries\AvatarLibrary;
 use App\Libraries\PlaceFormatterLibrary;
@@ -220,10 +221,14 @@ class Visited extends ResourceController
             if ($visitedData) {
                 $visitedModel->delete($visitedData->id);
 
+                $removal = ActivityRemoval::forUserPlace($this->session->user->id, $input->place, 'visit');
+
                 $activityModel = new ActivityModel();
                 $activityModel
                     ->where(['user_id' => $this->session->user?->id, 'place_id' => $input->place, 'type' => 'visit'])
                     ->delete();
+
+                $removal->apply();
 
                 return $this->respond(['visited' => false, 'verified' => false]);
             }

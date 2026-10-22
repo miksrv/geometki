@@ -2,7 +2,7 @@ import React from 'react'
 
 import { ApiModel } from '@/api'
 
-export type SizeType = 'small' | 'tiny' | 'medium'
+export type SizeType = 'small' | 'tiny' | 'medium' | 'large'
 
 export interface UserAvatarProps {
     className?: string

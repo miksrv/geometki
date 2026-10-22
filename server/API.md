@@ -14,7 +14,7 @@ Most read endpoints are public. Write operations require authentication.
 Authorization: Bearer <token>
 ```
 
-Guests are tracked by a `Session` header carrying the anonymous session id (the `session` value returned by `GET /auth/me`). It does not authenticate; it ties rating votes and activity to a visitor.
+Guests are tracked by a `Session` header carrying the anonymous session id (the `session` value returned by a guest's first `PUT /rating`; `GET /auth/me` starts no session for a guest). It does not authenticate; it ties rating votes and activity to a visitor.
 
 **Locale** — send a `Locale: ru` or `Locale: en` header (default `ru`); translated fields are returned in that language.
 
@@ -177,7 +177,7 @@ Exchange a magic-link token for a login; creates the account on first use.
 
 #### `GET /auth/me`
 
-Retrieve the current session and, when authenticated, the user and a JWT token. Also updates the session. The token is regenerated only when the one sent is within 5 minutes of expiry; otherwise the same token is returned.
+Retrieve the current session and, when authenticated, the user and a JWT token. For a signed-in user also updates the session; for a guest it writes nothing and returns `{"session": <the sent session or null>, "auth": false}`. The token is regenerated only when the one sent is within 5 minutes of expiry; otherwise the same token is returned.
 
 **Auth required:** No (returns partial response if unauthenticated)
 
@@ -822,8 +822,9 @@ List photos with optional filtering and pagination, newest first.
 |------|------|----------|-------------|
 | place | string | No | Filter by place ID |
 | author | string | No | Filter by user ID |
-| limit | integer | No | Max results (default 40, max 40) |
+| limit | integer | No | Max results (default 40, 1 to 40) |
 | offset | integer | No | Pagination offset (default 0) |
+| places | `1` | No | Add `places` to every user: their newest places with a cover, at most 4, newest first (the people page cards) |
 
 **Response:**
 
@@ -1147,7 +1148,16 @@ List users, by default ordered by recent activity.
       "reputation": 42,
       "created": "2024-01-15T10:00:00+00:00",
       "activity": "2025-11-10T08:00:00+00:00",
-      "statistic": { "photo": 45, "place": 12, "visited": 20 }
+      "statistic": { "photo": 45, "place": 12, "visited": 20 },
+      "places": [
+        {
+          "id": "abc123",
+          "slug": "vodopad-atysh",
+          "category": "waterfall",
+          "title": "Водопад Атыш",
+          "cover": { "preview": "uploads/places/abc123/cover_preview.jpg?d=1791259905" }
+        }
+      ]
     }
   ],
   "count": 350

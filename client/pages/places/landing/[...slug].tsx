@@ -526,6 +526,9 @@ const writeRedirect = (
     context.res.end()
 }
 
+/** A category key or a location slug, in any case (the lowercase redirect follows) */
+const LANDING_SEGMENT = /^[a-z0-9-]+$/i
+
 /** Only items with a slug can be linked (features/20-location-seo-pages.md: "slug" is `null` until assigned) — same rule `pages/sitemap.tsx` applies to the sitemap entries */
 const hasSlug = <T extends { slug?: string | null }>(item: T): item is T & { slug: string } => !!item.slug
 
@@ -540,6 +543,13 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const segments = Array.isArray(rawSlug) ? rawSlug : rawSlug ? [rawSlug] : []
 
             if (segments.length < 1 || segments.length > 2) {
+                return { notFound: true }
+            }
+
+            // Category keys and location slugs are Latin: anything else (a mistyped URL) is no page.
+            // Checked before the redirect below, which would otherwise put raw non-ASCII
+            // characters into the Location header and crash the render with a 500
+            if (segments.some((segment) => !LANDING_SEGMENT.test(segment))) {
                 return { notFound: true }
             }
 

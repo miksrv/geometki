@@ -51,7 +51,7 @@ const App = ({ Component, pageProps }: AppProps) => {
             savedLocale &&
             i18n.language !== savedLocale &&
             i18Config.i18n.locales.includes(savedLocale) &&
-            router.pathname !== '/404'
+            !['/404', '/500'].includes(router.pathname)
         ) {
             // The page brought only its own locale's texts
             void ensureLocaleResources(savedLocale).then(() =>

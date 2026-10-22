@@ -1,5 +1,11 @@
 @use '../../../styles/variables' as variables
 
+// The category icon <img> itself: a thin white frame drawn by a shadow, no extra DOM nodes.
+// The radius follows the rounded corners of the PNG
+.markerIcon
+    border-radius: 3px
+    box-shadow: 0 0 0 1px #FFF
+
 .markerPointPopup
     padding: 10px
 

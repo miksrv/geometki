@@ -2,9 +2,9 @@
 
 namespace App\Controllers;
 
+use App\Libraries\ActivityRemoval;
 use App\Libraries\ActivityLibrary;
 use App\Libraries\ExternalPhotosClient;
-use App\Libraries\LevelsLibrary;
 use App\Libraries\OsmTiles;
 use App\Libraries\PlaceCoverLibrary;
 use App\Libraries\PlaceFormatterLibrary;
@@ -13,7 +13,6 @@ use App\Libraries\SessionLibrary;
 use App\Libraries\SitePages;
 use App\Models\PlacesExternalPhotosModel;
 use App\Models\PlacesModel;
-use App\Models\UsersModel;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -232,20 +231,13 @@ class ExternalPhotos extends ResourceController
             return $this->failForbidden(lang('ExternalPhotos.noAccessToUnlink'));
         }
 
+        $removal = ActivityRemoval::forExternalPhoto($id);
+
         $this->model->delete($id);
 
-        // The photo_link activity went with the row: the experience it brought goes too
-        if ($row['user_id']) {
-            try {
-                $linker = (new UsersModel())->getUserById($row['user_id']);
-
-                if ($linker) {
-                    (new LevelsLibrary())->calculate($linker);
-                }
-            } catch (Throwable $e) {
-                log_message('error', '{exception}', ['exception' => $e]);
-            }
-        }
+        // The photo_link activity went with the row: the experience it brought goes too, and the
+        // linker's share in the place's reputation; the feed story loses it
+        $removal->apply();
 
         // The cover was cut from this photo: it goes with the photo's credit
         if ($place && $place->cover_external_id === $id) {

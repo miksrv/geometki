@@ -17,6 +17,8 @@ class DigestService
      * @param string $weekEnd    MySQL-formatted datetime, e.g. '2026-04-07 23:59:59'
      * @param string|null $locale Locale of place titles (the recipient's); null means the request locale
      * @return array  Associative array of sections; only non-empty sections are included.
+     *                Without news of the user's own places, `top_places` lists the
+     *                most viewed places of the week instead.
      */
     public function generateForUser(string $userId, string $weekStart, string $weekEnd, ?string $locale = null): array
     {
@@ -30,6 +32,8 @@ class DigestService
         $placeActivity = $this->buildPlaceActivitySection($userId, $weekStart, $weekEnd, $locale);
         if ($placeActivity !== null) {
             $sections['place_activity'] = $placeActivity;
+        } elseif ($topPlaces = $this->buildTopPlaces($weekStart, $weekEnd, $locale ?? 'ru')) {
+            $sections['top_places'] = $topPlaces;
         }
 
         $sections['site'] = $this->buildSiteWeek($weekStart, $weekEnd, $locale ?? 'ru');
@@ -157,42 +161,14 @@ class DigestService
             array_keys($viewsMap)
         ));
 
-        // Step 4: Fetch place titles and check for cover images
-        $placeContent = (new PlacesContent())->forLocale($locale);
-        $placeContent->translate($allPlaceIds);
-
-        $placesModel = new PlacesModel();
-        $placesData  = $placesModel
-            ->select('id, slug, photos, cover_external_id')
-            ->whereIn('id', $allPlaceIds)
-            ->findAll();
-
-        $coverMap = [];
-        $slugMap   = [];
-        $covers    = new PlaceFormatterLibrary();
-        foreach ($placesData as $place) {
-            $coverMap[$place->id] = $covers->coverExists(
-                $place->id,
-                (int) ($place->photos ?? 0) > 0 || !empty($place->cover_external_id)
-            );
-            $slugMap[$place->id]   = $place->slug;
-        }
+        // Step 4: Place titles, slugs and covers
+        $cards = $this->placeCards($allPlaceIds, $locale);
 
         $result = [];
         foreach ($allPlaceIds as $placeId) {
             $a = $activityMap[$placeId] ?? null;
 
-            // Build cover URL if place has a cover: from its photos or a linked one
-            $coverUrl = null;
-            if ($coverMap[$placeId] ?? false) {
-                $coverUrl = MailUrls::placeCover($placeId);
-            }
-
-            $result[] = [
-                'place_id' => $placeId,
-                'slug'     => $slugMap[$placeId] ?? null,
-                'title'    => $placeContent->title($placeId) ?: "Place #{$placeId}",
-                'cover'    => $coverUrl,
+            $result[] = ($cards[$placeId] ?? ['place_id' => $placeId, 'slug' => null, 'title' => "Place #{$placeId}", 'cover' => null]) + [
                 'ratings'  => (int) ($a['ratings']  ?? 0),
                 'comments' => (int) ($a['comments'] ?? 0),
                 'photos'   => (int) ($a['photos']   ?? 0),
@@ -209,6 +185,87 @@ class DigestService
         });
 
         return array_slice($result, 0, 10);
+    }
+
+    /** Places in "Popular this week" for those with no news of their own places */
+    public const TOP_PLACES = 5;
+
+    /** The same for every recipient: built once per locale */
+    private array $topPlaces = [];
+
+    /**
+     * The most viewed places of the week, for a digest without the user's own
+     * places (a newcomer, an author whose places nobody opened).
+     *
+     * @return array<int, array{place_id: string, slug: ?string, title: string, cover: ?string, views: int}>
+     */
+    public function buildTopPlaces(string $weekStart, string $weekEnd, string $locale): array
+    {
+        if (isset($this->topPlaces[$locale])) {
+            return $this->topPlaces[$locale];
+        }
+
+        $rows = Database::connect()->query("
+            SELECT pvl.place_id, SUM(pvl.count) AS views
+            FROM places_views_log pvl
+            JOIN places p ON p.id = pvl.place_id AND p.deleted_at IS NULL
+            WHERE pvl.view_date BETWEEN DATE(?) AND DATE(?)
+            GROUP BY pvl.place_id
+            ORDER BY views DESC
+            LIMIT " . self::TOP_PLACES . "
+        ", [$weekStart, $weekEnd])->getResultArray();
+
+        $cards = $this->placeCards(array_column($rows, 'place_id'), $locale);
+
+        $result = [];
+        foreach ($rows as $row) {
+            if (isset($cards[$row['place_id']])) {
+                $result[] = $cards[$row['place_id']] + ['views' => (int) $row['views']];
+            }
+        }
+
+        return $this->topPlaces[$locale] = $result;
+    }
+
+    /**
+     * What a place line of the digest shows: the title in the locale, the slug
+     * for the link and the cover (from its photos or a linked one), if any.
+     *
+     * @param string[] $placeIds
+     *
+     * @return array<string, array{place_id: string, slug: ?string, title: string, cover: ?string}>
+     */
+    private function placeCards(array $placeIds, ?string $locale): array
+    {
+        if (empty($placeIds)) {
+            return [];
+        }
+
+        $placeContent = (new PlacesContent())->forLocale($locale);
+        $placeContent->translate($placeIds);
+
+        $places = (new PlacesModel())
+            ->select('id, slug, photos, cover_external_id')
+            ->whereIn('id', $placeIds)
+            ->findAll();
+
+        $covers = new PlaceFormatterLibrary();
+        $cards  = [];
+        foreach ($places as $place) {
+            $hasCover = $covers->coverExists(
+                $place->id,
+                (int) ($place->photos ?? 0) > 0 || !empty($place->cover_external_id)
+            );
+
+            $cards[$place->id] = [
+                'place_id' => $place->id,
+                'slug'     => $place->slug,
+                'title'    => $placeContent->title($place->id) ?: "Place #{$place->id}",
+                'cover'    => $hasCover ? MailUrls::placeCover($place->id) : null,
+            ];
+        }
+
+        return $cards;
     }
 
     /** Highlights in the digest, and at most this many of one person */

@@ -10,7 +10,7 @@ import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { AppLayout, FeedList, FeedPulse, LocationLinkList, UsersList } from '@/components/shared'
+import { AppLayout, FeedList, FeedPulse, LocationLinkList, UserCard } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import {
     HomeCategories,
@@ -129,11 +129,8 @@ export const HomePage: NextPage<HomePageProps> = ({
     )
 
     const usersWidget = (
-        <UsersList
-            compact={true}
-            scrollable={true}
+        <Container
             title={t('active-users')}
-            users={usersList}
             action={
                 <Link
                     href={'/users'}
@@ -142,7 +139,22 @@ export const HomePage: NextPage<HomePageProps> = ({
                     {t('all')}
                 </Link>
             }
-        />
+        >
+            {usersList.length ? (
+                <div className={styles.usersWidget}>
+                    {usersList.map((user) => (
+                        <UserCard
+                            key={user.id}
+                            user={user}
+                            variant={'row'}
+                            headingLevel={3}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <p className={styles.usersEmpty}>{t('nothing-here-yet', 'Тут пока ничего нет')}</p>
+            )}
+        </Container>
     )
 
     return (

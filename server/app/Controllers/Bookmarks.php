@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Libraries\ActivityRemoval;
 use App\Libraries\ActivityLibrary;
 use App\Libraries\SessionLibrary;
 use App\Models\ActivityModel;
@@ -126,10 +127,14 @@ class Bookmarks extends ResourceController
                 $bookmarksModel->delete($bookmarksData->id);
                 $placesModel->decrementBookmarks($input->placeId);
 
+                $removal = ActivityRemoval::forUserPlace($this->session->user->id, $input->placeId, 'bookmark');
+
                 $activityModel = new ActivityModel();
                 $activityModel
                     ->where(['user_id' => $this->session->user?->id, 'place_id' => $input->placeId, 'type' => 'bookmark'])
                     ->delete();
+
+                $removal->apply();
 
                 return $this->respondDeleted();
             }

@@ -8,7 +8,7 @@ namespace App\Libraries\Mail;
  */
 class MailSamples
 {
-    public const KINDS = ['magic-link', 'activity', 'activity-group', 'digest'];
+    public const KINDS = ['magic-link', 'activity', 'activity-group', 'digest', 'digest-site'];
 
     public static function build(string $kind, string $to, string $locale): EmailMessage
     {
@@ -37,12 +37,22 @@ class MailSamples
                 return new EmailMessage($to, $result['subject'], $result['html'], $result['text'], $oneClick, 'activity');
 
             case 'digest':
-                $sections = [
+            case 'digest-site':
+                // An author with news of their places, or someone without any: the popular places instead
+                $personal = $kind === 'digest' ? [
                     'week_summary'   => ['places_created' => 2, 'photos_uploaded' => 11, 'ratings_given' => 3, 'edits_made' => 0],
                     'place_activity' => [
                         ['place_id' => 'sample1', 'slug' => 'vodopad-gadelsha', 'title' => 'Водопад Гадельша', 'cover' => null, 'views' => 154, 'ratings' => 2, 'comments' => 1, 'photos' => 0, 'edits' => 1],
                         ['place_id' => 'sample2', 'slug' => null, 'title' => 'Пещера Сумган-Кутук', 'cover' => null, 'views' => 21, 'ratings' => 0, 'comments' => 0, 'photos' => 4, 'edits' => 0],
                     ],
+                ] : [
+                    'top_places' => [
+                        ['place_id' => 'sample3', 'slug' => 'gora-polkovnik', 'title' => 'Гора Полковник', 'cover' => null, 'views' => 412],
+                        ['place_id' => 'sample1', 'slug' => 'vodopad-gadelsha', 'title' => 'Водопад Гадельша', 'cover' => null, 'views' => 154],
+                        ['place_id' => 'sample2', 'slug' => null, 'title' => 'Пещера Сумган-Кутук', 'cover' => null, 'views' => 96],
+                    ],
+                ];
+                $sections = $personal + [
                     'site' => [
                         'pulse' => [
                             'places' => 5, 'photos' => 48, 'comments' => 7, 'ratings' => 23, 'edits' => 141, 'visits' => 3,

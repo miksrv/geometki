@@ -274,6 +274,58 @@ class FeedLibrary
     }
 
     /**
+     * Bring the given stories in line with the events left in them, after a removal: a story
+     * without events is deleted, the others get the type, weight and dates of what is left.
+     * A story deleted together with its place (feed.place_id cascades) has no events left.
+     *
+     * @param string[] $feedIds
+     */
+    public function refresh(array $feedIds): void
+    {
+        $feedIds = array_values(array_unique(array_filter($feedIds)));
+
+        if (!$feedIds) {
+            return;
+        }
+
+        $rows = $this->db->table('activity')
+            ->select('feed_id, type, user_id, place_id, collection_id, created_at')
+            ->whereIn('feed_id', $feedIds)
+            ->where('deleted_at', null)
+            ->orderBy('created_at', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->getResult();
+
+        $events = [];
+
+        foreach ($rows as $row) {
+            if (FeedAggregator::isFeedable($row->type)) {
+                $row->created_at          = strtotime($row->created_at);
+                $events[$row->feed_id][] = $row;
+            }
+        }
+
+        foreach ($feedIds as $feedId) {
+            $story = FeedAggregator::fold($events[$feedId] ?? []);
+
+            if (!$story) {
+                $this->db->table('feed')
+                    ->where('id', $feedId)
+                    ->whereNotIn('type', FeedModel::OWN_ROW_TYPES)
+                    ->delete();
+                continue;
+            }
+
+            $row = $this->storyRow($story);
+
+            unset($row['user_id'], $row['achievement_id'], $row['level']);
+
+            $this->db->table('feed')->where('id', $feedId)->update($row);
+        }
+    }
+
+    /**
      * Attach an event to the author's open story it joins, or to a new one.
      */
     private function attachEvent(string $activityId, object $event): string

@@ -51,12 +51,14 @@ return [
 
     // Weekly digest
     'digestSubject'        => 'Your week on Geometki',
+    'digestSubjectSite'    => "What's new on Geometki this week",
     'digestSubjectViews'   => 'Your places were viewed {views} this week',
     'digestSubjectEvents'  => '{events} on your places this week',
     'digestTimes'          => 'time|times',
     'digestGreeting'       => 'Hi, {name}! Here is what happened on Geometki this week.',
     'digestYourPlaces'     => 'Your places this week',
     'digestMorePlaces'     => 'and {places} more',
+    'digestTopPlaces'      => 'Popular places this week',
     'digestYou'            => 'You this week: {stats}',
     'digestViews'          => 'view|views',
     'digestRatings'        => 'rating|ratings',

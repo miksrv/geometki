@@ -390,4 +390,34 @@ final class FeedAggregatorTest extends CIUnitTestCase
         $this->assertSame(SITE_TIMEZONE, Feed::timeZone('+03:00')->getName());
         $this->assertSame(SITE_TIMEZONE, Feed::timeZone(['Europe/Moscow'])->getName());
     }
+
+    // =========================================================================
+    // fold() — what is left of a story after a removal
+    // =========================================================================
+
+    public function testFoldWithoutEventsIsNull(): void
+    {
+        $this->assertNull(FeedAggregator::fold([]));
+    }
+
+    public function testFoldOpensTheStoryWithItsFirstEvent(): void
+    {
+        $story = FeedAggregator::fold([$this->event('photo', at: self::T), $this->event('photo', at: self::T + 60)]);
+
+        $this->assertSame('photo', $story->type);
+        $this->assertSame(FeedAggregator::WEIGHT['photo'], $story->weight);
+        $this->assertSame(self::T, $story->created_at);
+        $this->assertSame(self::T + 60, $story->updated_at);
+    }
+
+    public function testFoldWithoutTheEventThatRaisedTheStoryLowersIt(): void
+    {
+        // Edits and a photo of one sitting make a photo story; without the photo it is an edit one
+        $withPhoto = FeedAggregator::fold([$this->event('edit', at: self::T), $this->event('photo', at: self::T + 60)]);
+        $without   = FeedAggregator::fold([$this->event('edit', at: self::T)]);
+
+        $this->assertSame('photo', $withPhoto->type);
+        $this->assertSame('edit', $without->type);
+        $this->assertSame(FeedAggregator::WEIGHT['edit'], $without->weight);
+    }
 }

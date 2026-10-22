@@ -40,4 +40,11 @@ describe('parseSluggedId', () => {
     it('returns an empty string for an empty array', () => {
         expect(parseSluggedId([])).toBe('')
     })
+
+    it('returns an empty string when the param is not an id', () => {
+        expect(parseSluggedId('abc')).toBe('')
+        expect(parseSluggedId('abc012345678Б')).toBe('')
+        expect(parseSluggedId('ABC0123456789')).toBe('')
+        expect(parseSluggedId('abc0123456789 Категория: landscape')).toBe('')
+    })
 })

@@ -1,4 +1,5 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 
 // The blocks are sections, `--space-6` apart (`--space-5` on phones) like on every page;
 // the first one keeps the same distance from the app bar as a page header
@@ -48,3 +49,17 @@
     flex-direction: column
     gap: var(--space-3)
     margin-top: var(--space-2)
+
+// The people: a scrolling column next to the feed on desktop, the whole list on phones
+.usersWidget
+    margin-top: var(--space-2)
+
+    @media only screen and (min-width: #{variables.$mobileMaxWidth + 1})
+        max-height: 460px
+        overflow-x: hidden
+        overflow-y: auto
+        padding-right: var(--space-1)
+
+.usersEmpty
+    +type.secondary
+    margin: var(--space-2) 0 0

@@ -23,7 +23,8 @@ class DigestMail
 
     /**
      * The subject tells the most personal news: how often the user's places were
-     * viewed, else how much happened on them, else the plain "Your week".
+     * viewed, else how much happened on them, else the plain "Your week" for
+     * those who did something themselves and "What's new" for the others.
      */
     public static function subject(string $locale, array $sections = []): string
     {
@@ -42,7 +43,22 @@ class DigestMail
             return MailText::get($locale, 'digestSubjectEvents', ['events' => MailText::plural($locale, 'eventsCount', $events)]);
         }
 
-        return MailText::get($locale, 'digestSubject');
+        return MailText::get($locale, isset($sections['week_summary']) ? 'digestSubject' : 'digestSubjectSite');
+    }
+
+    /**
+     * Whether the digest has anything to tell: news of the user's own, the
+     * popular places, the numbers or the stories of the week on the site.
+     */
+    public static function hasNews(array $sections): bool
+    {
+        $pulse = $sections['site']['pulse'] ?? [];
+
+        return !empty($sections['place_activity'])
+            || !empty($sections['week_summary'])
+            || !empty($sections['top_places'])
+            || !empty($sections['site']['highlights'])
+            || (int) ($pulse['total'] ?? 0) > 0;
     }
 
     public static function body(string $userName, array $sections, string $locale): string

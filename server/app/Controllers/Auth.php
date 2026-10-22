@@ -393,7 +393,7 @@ class Auth extends ResourceController
      * Return the current session status and user data.
      *
      * GET /auth/me — refreshes the JWT token when it is within 5 minutes of expiry.
-     * Marks the visitor active. A request from the client's SSR (`X-SSR` header) carries the
+     * Marks a signed-in visitor active; a guest's call writes nothing. A request from the client's SSR (`X-SSR` header) carries the
      * Next server's IP, not the visitor's: it marks only the signed-in user, not the session.
      *
      * @throws Exception
@@ -402,7 +402,13 @@ class Auth extends ResourceController
      */
     public function me(): ResponseInterface
     {
-        // A visitor without a session still gets one: the client keeps the id it answers with
+        // A guest only reads: no session is started here (their first score starts one) and none
+        // is refreshed. A bot or a page rendered for a guest (the admin pages ask auth/me) used
+        // to make a new session row on every call
+        if (!$this->session->isAuth) {
+            return $this->respond((object) ['session' => $this->session->id, 'auth' => false]);
+        }
+
         if ($this->request->getHeaderLine('X-SSR') === '' || !$this->session->id) {
             $this->session->update();
         } else {
@@ -417,18 +423,7 @@ class Auth extends ResourceController
         ];
 
         if ($this->session->isAuth && $this->session->user) {
-            $levelsLibrary = new LevelsLibrary();
-
-            $userLevel = $levelsLibrary->getLevelData($this->session->user);
-
-            $this->session->user->levelData = [
-                'level'           => $userLevel->level,
-                'experience'      => $this->session->user->experience,
-                'levelExperience' => $userLevel->levelExperience,
-                'nextLevel'       => $userLevel->nextLevel,
-            ];
-
-            $response->user = $this->session->user;
+            $response->user = $this->responseUser();
 
             // Only regenerate token if within 5 minutes of expiry (SEC-02)
             $existingToken = $this->request->getHeaderLine('Authorization');
@@ -446,11 +441,6 @@ class Auth extends ResourceController
             }
 
             $response->token = $shouldRefresh ? generateAuthToken($this->session->user->email) : $existingToken;
-
-            unset(
-                $response->user->password, $response->user->auth_type,
-                $response->user->level, $response->user->experience
-            );
         }
 
         return $this->respond($response);
@@ -576,6 +566,8 @@ class Auth extends ResourceController
                     $newFilename   = $avatarLibrary->processUpload($newUserId, $tempPath);
 
                     $userModel->update($newUserId, ['avatar' => $newFilename]);
+
+                    $createUser->avatar = $newFilename;
                 } catch (\Throwable $e) {
                     // Avatar download failure is non-fatal — user is still logged in without avatar
                     log_message('warning', 'Failed to download OAuth avatar: {message}', ['message' => $e->getMessage()]);
@@ -617,8 +609,8 @@ class Auth extends ResourceController
         $response = [
             'session' => $this->session->id,
             'auth'    => $this->session->isAuth,
-            'user'    => $this->session->user,
             'token'   => generateAuthToken($this->session->user->email),
+            'user'    => $this->responseUser(),
         ];
 
         if ($isNewUser) {
@@ -626,5 +618,29 @@ class Auth extends ResourceController
         }
 
         return $this->respond($response);
+    }
+
+    /**
+     * The signed-in user as every auth answer gives it: with the level data, without the
+     * password, the auth type and the raw level and experience. `auth/me` and the sign-in
+     * answers share it, so the app bar shows the same right after a sign-in as after a reload.
+     *
+     * @return UserEntity
+     */
+    private function responseUser(): UserEntity
+    {
+        $user      = $this->session->user;
+        $userLevel = (new LevelsLibrary())->getLevelData($user);
+
+        $user->levelData = [
+            'level'           => $userLevel?->level,
+            'experience'      => $user->experience,
+            'levelExperience' => $userLevel?->levelExperience,
+            'nextLevel'       => $userLevel?->nextLevel,
+        ];
+
+        unset($user->password, $user->auth_type, $user->level, $user->experience);
+
+        return $user;
     }
 }

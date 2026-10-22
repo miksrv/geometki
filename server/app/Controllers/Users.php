@@ -5,6 +5,8 @@ namespace App\Controllers;
 use App\Libraries\AvatarLibrary;
 use App\Libraries\LevelsLibrary;
 use App\Libraries\NotificationSettings;
+use App\Libraries\PlaceFormatterLibrary;
+use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Models\UsersModel;
 use App\Models\UsersVisitedPlacesModel;
@@ -26,6 +28,9 @@ use Throwable;
  */
 class Users extends ResourceController
 {
+    /** How many place covers a user's card in the people list shows */
+    private const PLACES_ON_CARD = 4;
+
     protected SessionLibrary $session;
 
     public function __construct()
@@ -36,7 +41,8 @@ class Users extends ResourceController
     /**
      * Return a paginated list of users ordered by recent activity.
      *
-     * GET /users — optional query params: limit, offset.
+     * GET /users — optional query params: limit, offset, search, sort, order, places (1: the
+     * newest places with a cover of each user, see latestPlaces()).
      *
      * @throws Exception
      *
@@ -44,7 +50,8 @@ class Users extends ResourceController
      */
     public function list(): ResponseInterface
     {
-        $limit  = abs($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 40);
+        // At least one: `limit=0` would drop the LIMIT and put every user into the IN lists below
+        $limit  = max(1, min(abs((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 40)), 40));
         $offset = abs($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0);
         $search = trim((string) ($this->request->getGet('search') ?? ''));
 
@@ -74,7 +81,10 @@ class Users extends ResourceController
         $usersData  = $usersModel
             ->select('id, name, avatar, created_at, activity_at, updated_at, level, experience, reputation')
             ->orderBy($sort, $order)
-            ->findAll(min($limit, 40), $offset);
+            // A tie-breaker: equal experience or reputation would otherwise come in any order,
+            // so pages could repeat or skip people and the ranking numbers would drift
+            ->orderBy('id', 'ASC')
+            ->findAll($limit, $offset);
 
         $result = [];
 
@@ -119,10 +129,13 @@ class Users extends ResourceController
             }
         }
 
+        // Only the people page shows the covers: the home page widget asks without them
+        $latestPlaces = $this->request->getGet('places') === '1' ? $this->latestPlaces($userIds) : null;
+
         $avatarLibrary = new AvatarLibrary();
         foreach ($usersData as $item) {
-            $level    = $userLevels->getLevelData($item);
-            $result[] = (object) [
+            $level = $userLevels->getLevelData($item);
+            $card  = (object) [
                 'id'     => $item->id,
                 'name'   => $item->name,
                 'avatar' => $avatarLibrary->buildPath($item->id, $item->avatar, 'small'),
@@ -141,12 +154,79 @@ class Users extends ResourceController
                     'visited' => $visitedStats[$item->id] ?? 0,
                 ],
             ];
+
+            if ($latestPlaces !== null) {
+                $card->places = $latestPlaces[$item->id] ?? [];
+            }
+
+            $result[] = $card;
         }
 
         return $this->respond([
             'items' => $result,
             'count' => $totalCount
         ]);
+    }
+
+    /**
+     * The newest places with a cover of each user, for the strip of covers on their card in the
+     * people list: one windowed query and one texts query for the whole page, however many
+     * places the users have.
+     *
+     * @param array<int, string> $userIds
+     * @return array<string, array<int, array>> userId => [{id, slug, category, title, cover}, ...]
+     */
+    protected function latestPlaces(array $userIds): array
+    {
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+        // Twice as many candidates as covers: a place whose cover file is missing gives way to
+        // the next one instead of leaving its frame empty
+        $rows = \Config\Database::connect()->query(
+            "SELECT id, slug, category, user_id, photos, cover_external_id, updated_at
+               FROM (SELECT id, slug, category, user_id, photos, cover_external_id, updated_at,
+                            ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC, id DESC) AS n
+                       FROM places
+                      WHERE user_id IN ($placeholders) AND deleted_at IS NULL
+                        AND (photos > 0 OR (cover_external_id IS NOT NULL AND cover_external_id <> ''))) p
+              WHERE p.n <= " . (self::PLACES_ON_CARD * 2) . '
+              ORDER BY user_id, n',
+            $userIds
+        )->getResultObject();
+
+        if (empty($rows)) {
+            return [];
+        }
+
+        // Titles only: a one-character cut keeps the descriptions out of the query
+        $texts = new PlacesContent(1);
+        $texts->translate(array_column($rows, 'id'));
+
+        $formatter = new PlaceFormatterLibrary();
+        $result    = [];
+
+        foreach ($rows as $row) {
+            // A full strip first: the spare candidates never reach the file check
+            if (count($result[$row->user_id] ?? []) >= self::PLACES_ON_CARD) {
+                continue;
+            }
+
+            $cover = $formatter->formatCover($row->id, (int) $row->photos, $row->cover_external_id);
+
+            if (!$cover) {
+                continue;
+            }
+
+            $result[$row->user_id][] = [
+                'id'       => $row->id,
+                'slug'     => $row->slug,
+                'category' => $row->category,
+                'title'    => $texts->title($row->id),
+                // The preview path stays the same when the cover changes: the update time versions it
+                'cover'    => ['preview' => $cover['preview'] . '?d=' . strtotime((string) $row->updated_at)],
+            ];
+        }
+
+        return $result;
     }
 
     /**
@@ -158,7 +238,6 @@ class Users extends ResourceController
      *
      * @param string|null $id User primary key.
      *
-     * @throws ReflectionException
      * @throws Exception
      *
      * @return ResponseInterface
@@ -173,12 +252,12 @@ class Users extends ResourceController
             return $this->failNotFound();
         }
 
-        $userLevels->calculate($usersData);
-
+        // Only a read: the experience and the level are kept up to date by the actions
+        // (a view is far more frequent than a change)
         $avatarLibrary = new AvatarLibrary();
 
         $usersData->levelData = $userLevels->getLevelData($usersData);
-        $usersData->statistic = $userLevels->statistic;
+        $usersData->statistic = $userLevels->statistic($usersData->id);
         $usersData->avatar    = $avatarLibrary->buildPath($usersData->id, $usersData->avatar, 'medium');
 
         $visitedModel = new UsersVisitedPlacesModel();

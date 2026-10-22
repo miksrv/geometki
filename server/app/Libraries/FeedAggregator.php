@@ -221,6 +221,33 @@ final class FeedAggregator
     }
 
     /**
+     * The story its events make, folded in time order as they were attached: what is left
+     * of a story after some of its events were removed.
+     *
+     * @param object[] $events {type, user_id, place_id, collection_id, created_at: int}, oldest first
+     * @return object|null {type, user_id, place_id, collection_id, weight, created_at, updated_at}; null without events
+     */
+    public static function fold(array $events): ?object
+    {
+        $story = null;
+
+        foreach ($events as $event) {
+            if (!$story) {
+                $story = self::open($event);
+                continue;
+            }
+
+            $joined = self::joinedType($event, $story);
+
+            $story->type       = $joined['type'];
+            $story->weight     = $joined['weight'];
+            $story->updated_at = max($story->updated_at, $event->created_at);
+        }
+
+        return $story;
+    }
+
+    /**
      * Same author (guests share one), within the story's window and about the same
      * place or collection when the story is about one. The window is a day for the joins
      * of JOINS and SESSION_WINDOW for the other joins of one sitting.

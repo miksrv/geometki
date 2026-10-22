@@ -1,6 +1,6 @@
 import { makeStore } from '@/app/store'
 
-import { hydrateAuthFromCookies } from './serverSideAuth'
+import { hydrateAuthFromCookies, isAdminRequest } from './serverSideAuth'
 
 jest.mock('cookies-next', () => ({
     getCookie: jest.fn(() => ''),
@@ -51,5 +51,24 @@ describe('hydrateAuthFromCookies', () => {
     it('handles an empty cookies object gracefully', () => {
         const store = makeStore()
         expect(() => hydrateAuthFromCookies(store, {})).not.toThrow()
+    })
+})
+
+describe('isAdminRequest', () => {
+    it('does not ask auth/me without a token', async () => {
+        const store = makeStore()
+        const dispatch = jest.spyOn(store, 'dispatch')
+
+        await expect(isAdminRequest(store)).resolves.toBe(false)
+        expect(dispatch).not.toHaveBeenCalled()
+    })
+
+    it('does not ask auth/me with only a guest session', async () => {
+        const store = makeStore()
+        hydrateAuthFromCookies(store, { session: 'guest-session' })
+        const dispatch = jest.spyOn(store, 'dispatch')
+
+        await expect(isAdminRequest(store)).resolves.toBe(false)
+        expect(dispatch).not.toHaveBeenCalled()
     })
 })

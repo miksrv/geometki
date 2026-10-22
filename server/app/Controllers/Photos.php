@@ -2,9 +2,9 @@
 
 namespace App\Controllers;
 
+use App\Libraries\ActivityRemoval;
 use App\Entities\PhotoEntity;
 use App\Libraries\AvatarLibrary;
-use App\Libraries\LevelsLibrary;
 use App\Libraries\PhotoLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
@@ -13,7 +13,6 @@ use App\Libraries\SitePages;
 use App\Models\PhotosModel;
 use App\Models\PlacesExternalPhotosModel;
 use App\Models\PlacesModel;
-use App\Models\UsersModel;
 use CodeIgniter\Files\File;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -286,6 +285,9 @@ class Photos extends ResourceController
         $placesModel = new PlacesModel();
         $placesData  = $placesModel->select('id, photos, cover_external_id')->find($photoData->place_id);
 
+        // The photo's activity goes with it: collected while it is still there
+        $removal = ActivityRemoval::forPhoto($id);
+
         if (!$photosModel->delete($id, true)) {
             log_message('error', 'Photos::delete: photo {id} not deleted: {errors}', [
                 'id'     => $id,
@@ -307,9 +309,8 @@ class Photos extends ResourceController
             PhotoLibrary::removeFile($photoDir . 'cover_preview.jpg');
         }
 
-        $userModel  = new UsersModel();
-        $userLevels = new LevelsLibrary();
-        $userLevels->calculate($userModel->getUserById($photoData->user_id));
+        // The author's experience, the reputation of the place's author and contributors, the feed
+        $removal->apply();
 
         // Update photos count on the current place
         $countPhotos = $photosModel->select('id')->where('place_id', $photoData->place_id)->countAllResults();

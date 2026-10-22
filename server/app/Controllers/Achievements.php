@@ -329,6 +329,9 @@ class Achievements extends ResourceController
 
         $created = $achievementsModel->find($achievementsModel->getLastGeneratedId());
 
+        // The rules or the set of achievements changed: everyone's progress with them
+        AchievementsLibrary::forgetAllProgress();
+
         return $this->respondCreated($created);
     }
 
@@ -396,6 +399,9 @@ class Achievements extends ResourceController
             $updated->rules = json_decode($updated->rules, true);
         }
 
+        // The rules or the set of achievements changed: everyone's progress with them
+        AchievementsLibrary::forgetAllProgress();
+
         return $this->respond($updated);
     }
 
@@ -441,6 +447,9 @@ class Achievements extends ResourceController
             log_message('error', '{exception}', ['exception' => $e]);
             return $this->failServerError(lang('Achievements.deleteError'));
         }
+
+        // The rules or the set of achievements changed: everyone's progress with them
+        AchievementsLibrary::forgetAllProgress();
 
         return $this->respondDeleted(['id' => $id]);
     }
