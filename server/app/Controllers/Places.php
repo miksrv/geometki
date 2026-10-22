@@ -746,6 +746,10 @@ class Places extends ResourceController
         $collectionsPlacesModel = new CollectionsPlacesModel();
         $affectedCollectionIds  = $collectionsPlacesModel->collectionIdsForPlace($id);
 
+        // Everyone whose activity goes with the place: collected while it is still there, before the
+        // photos below are deleted (their activity rows cascade away with them)
+        $removal = ActivityRemoval::forPlace($id);
+
         (new PlaceTags())->deletePlace($id);
 
         // Remove all photos
@@ -754,9 +758,6 @@ class Places extends ResourceController
 
         // Remove all files and place directory
         delete_files(UPLOAD_PHOTOS . $id, true);
-
-        // Everyone whose activity goes with the place: collected while it is still there
-        $removal = ActivityRemoval::forPlace($id);
 
         // Remove place and all DB entitles such as activity, rating, bookmarks etc.
         $this->model->delete($id, true);

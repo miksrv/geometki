@@ -132,11 +132,16 @@ class ReputationLibrary
         }
 
         $db     = Database::connect();
+        // Only the places with votes: a vote on a place moves this on every score, and a busy editor has
+        // touched many places nobody scored
         $places = $db->query(
-            'SELECT id FROM places WHERE user_id IN ? AND deleted_at IS NULL
-             UNION
-             SELECT place_id FROM activity
-             WHERE user_id IN ? AND deleted_at IS NULL AND type IN ?',
+            'SELECT t.id FROM (
+                 SELECT id FROM places WHERE user_id IN ? AND deleted_at IS NULL
+                 UNION
+                 SELECT place_id FROM activity
+                 WHERE user_id IN ? AND deleted_at IS NULL AND type IN ?
+             ) t
+             WHERE EXISTS (SELECT 1 FROM rating r WHERE r.place_id = t.id AND r.deleted_at IS NULL)',
             [$userIds, $userIds, array_keys(self::CONTRIBUTIONS)]
         )->getResult();
 
@@ -226,6 +231,7 @@ class ReputationLibrary
         );
 
         $db->transComplete();
+        $db->transException(false);
 
         return $placeIds;
     }

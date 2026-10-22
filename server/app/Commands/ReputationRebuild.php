@@ -114,7 +114,9 @@ class ReputationRebuild extends BaseCommand
         }
 
         CLI::write(sprintf(
-            $dryRun ? 'Experience: %d users of %d would change.' : 'Experience synced: %d users of %d changed.',
+            $dryRun
+                ? 'Experience: %d users of %d would change (at least: counted before the own votes go, their voters lose more).'
+                : 'Experience synced: %d users of %d changed.',
             $changed,
             count($users)
         ), 'green');

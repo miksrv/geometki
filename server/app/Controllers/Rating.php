@@ -48,8 +48,13 @@ class Rating extends ResourceController
      */
     private function updateReputation(string $placeId): void
     {
-        $reputation = new ReputationLibrary();
-        $reputation->recalculateUsers($reputation->usersOfPlace($placeId));
+        // The vote is saved by now: a failed recount must not answer 500 and skip the vote's activity
+        try {
+            $reputation = new ReputationLibrary();
+            $reputation->recalculateUsers($reputation->usersOfPlace($placeId));
+        } catch (Throwable $e) {
+            log_message('error', 'Reputation recount for place {id}: {message}', ['id' => $placeId, 'message' => $e->getMessage()]);
+        }
     }
 
     /**
