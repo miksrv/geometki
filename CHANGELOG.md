@@ -6,6 +6,9 @@
 
 - Weekly digest: now comes to everyone who has it on, not only to authors of places
 - Weekly digest: without news of your own places it shows the most viewed places of the week
+- People: cards instead of the table, with the level, the covers of the newest places and the counts of places, photos and visits
+- People: sorting as tabs "Active", "By experience", "By reputation", "Newcomers"; ranking numbers in the ratings
+- Home page: the "Active travelers" block in the new style of person cards
 
 ## 1.17.6
 

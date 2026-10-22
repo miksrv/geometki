@@ -69,10 +69,10 @@ sizes anywhere else. Above the kit's 4…24px spacing the project adds `--space-
 
 ## 2. Two layers
 
-| Layer             | Lives in                                               | Knows about                    | Examples                                                                                            |
-| ----------------- | ------------------------------------------------------ | ------------------------------ | --------------------------------------------------------------------------------------------------- |
-| Primitives        | `simple-react-ui-kit` (separate repo, Storybook there) | Nothing domain-specific        | `Button`, `Input`, `Select`, `Dialog`, `Container`, `Popout`, `Icon`, `Skeleton`, tokens            |
-| Domain components | `client/components/shared`                             | `ApiModel` types, routes, i18n | `PlaceCard`, `CollectionCard`, `FeedStory`, `MediaTile`, `UserAvatar`, `CategoryIcon`, `EmptyState` |
+| Layer             | Lives in                                               | Knows about                    | Examples                                                                                                        |
+| ----------------- | ------------------------------------------------------ | ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Primitives        | `simple-react-ui-kit` (separate repo, Storybook there) | Nothing domain-specific        | `Button`, `Input`, `Select`, `Dialog`, `Container`, `Popout`, `Icon`, `Skeleton`, tokens                        |
+| Domain components | `client/components/shared`                             | `ApiModel` types, routes, i18n | `PlaceCard`, `CollectionCard`, `UserCard`, `FeedStory`, `MediaTile`, `UserAvatar`, `CategoryIcon`, `EmptyState` |
 
 Page-specific composition lives in `client/sections/<area>` (e.g. `sections/collections`),
 pages themselves in `client/pages`. Sections may compose domain components; they must not
@@ -189,6 +189,15 @@ re-implement them.
   the visitor's location, picker-style rows, each a link to the map there) and the people → the
   categories as a `LocationLinkList` with counts → `HomePlaces` → `HomeCollections`. Chips and
   pills here have the `--border-radius` corners of every pill on the site, never round ends.
+- **People page** (`pages/users/index.tsx`, `sections/user/users-listing`): a community, not a
+  register — no table. `PageHeader` with the people count on the h1's baseline and (page 1, no
+  search) the lede → `UsersFilterPanel` (a sticky `FilterPanel`: the name search, 300px, and
+  `Tabs` links of the sort presets "Активные" / "По опыту" / "По репутации" / "Новички", each
+  with its natural direction; there is no order control, `?order=` of old links is kept until
+  the sort changes) → `UsersListing`: a 3-column grid of `UserCard` tiles (one column of
+  lines on phones) with the `PaginationBar` on desktop and "Показать ещё" on phones, like
+  `PlacesListing`. The cards are numbered only when the list is a ranking — sorted by
+  experience or reputation, without a search. Nothing found — `EmptyState`.
 - **Sections, not containers.** The parts of one entity (its description, photos,
   comments, history, the facts about it) are `Section`s (`components/shared/section`, the
   same `title` / `action` / `footer` slots as the kit `Container`, a kit candidate): an h2
@@ -344,9 +353,8 @@ photos, the admin mailing table); there is no other pagination row.
 ### `ListingToolbar` (`components/shared/listing-toolbar`)
 
 The filter row of a list page (section 6, "Listing toolbar"): `ListingToolbar` is the row,
-`ListingToolbarGroup` keeps related controls together — `UsersFilterPanel` (search, then
-sort + order) and the admin `SendingMailFilterPanel` are built from it and own no layout of
-their own. The places listing has its own panel (`PlaceFilterPanel`, section 6).
+`ListingToolbarGroup` keeps related controls together — the admin `SendingMailFilterPanel`
+is built from it and owns no layout of its own. The places listing has its own panel (`PlaceFilterPanel`, section 6).
 
 ### `PlacesListing` (`sections/place/places-listing`)
 
@@ -387,6 +395,41 @@ automatically, so there is no cover setting — the author changes it by reorder
 places. Over the top of the cover: author + update time; under it: the title and one line —
 the region link, places, views. `showAuthor={false}` drops the author where it is already shown (a feed story);
 `headingLevel={3}` inside another titled block, as for `PlaceCard`.
+
+### `UserCard` (`components/shared/user-card`)
+
+The one card of a person. A person is not a picture, so unlike a place or a collection the
+card has no cover: the avatar leads, on a `--surface-1` card (`--container-shadow`,
+`--radius-xl`, `--shadow-md` on hover). The name link is stretched over the whole card (one
+tab stop, the card opens the profile); the covers and the counts sit above it and lead to
+the profile tabs.
+
+| Variant          | Use                                         | Parts                                                                                          |
+| ---------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `tile` (default) | the people page grid                        | 56px avatar, name, "был(а) … · с 2022 года", level, covers, counts; a line of a list on phones |
+| `row`            | a dense list inside a block (home "people") | 36px avatar, name, when, `LevelBadge` 22, `Reputation`                                         |
+
+Invariant order of a tile: the head (avatar with the online mark, name `titleBlock`, a
+`secondary` line: "на сайте" in green or the time ago, then the year of sign-up) → the level
+(`LevelBadge` 28, the tier name — every three levels share a colour and a name, `levelTier`
+in `utils/levels.ts`, `levelTier.<n>` in `common.json` — the experience within the level and a
+4px bar in the tier colour) → the strip of covers → the counts: places, photos, visited (each
+a link to that tab of the profile: a 16px icon, the semibold number and the word in its form — "186 мест", never a bare number), `Reputation` on the right.
+The strip is the person's four newest places with a cover (`places` of `GET /users?places=1`,
+one windowed query for a page): 4:3 frames 4px apart with only the outer corners rounded, the
+category icon (16px) over each, the last one "+N" over a dark veil when there are more,
+leading to the user's places; a person without places gets a dashed "Пока без мест" line of
+the strip's height, so the tiles of a row stay level. Only a list that asks for `places` gets
+a strip. `rank` puts "#N" in the top-right corner (the first three on `--color-orange-background`).
+On phones a tile turns into a line: avatar, name and when, the badge, the counts under
+them; no covers and no progress. The time ago and the online mark come in the browser
+(`useClientOnly`): the lists are cached.
+
+**Avatars are round** (`UserAvatar`, `UserAvatarGroup`) everywhere a person is named next to
+something else — cards, bylines, the feed, menus; the size is `tiny` 28, `small` 20, `medium`
+36 or `large` 56 (the `UserCard` tile). The one square avatar (with the `--border-radius`
+corners) is the big one of the profile card and `HomeWelcome`: there it is the picture of the
+page, not a mark in a line.
 
 ### Activity feed (`components/shared/feed`)
 
@@ -609,8 +652,8 @@ actions, active days, the longest and the current run of days in a row (22px num
   category filter) and the applied filters. Desktop: not sticky — the results scroll in
   their own column; phones: sticky, the tabs with `FiltersButton` and the sheet ("Показать N
   мест" is counted from the facets, no request).
-- **Listing toolbar** (`ListingToolbar` + `ListingToolbarGroup`, used by `UsersFilterPanel`
-  and the admin `SendingMailFilterPanel`): the filter row directly above a list, on the page background,
+- **Listing toolbar** (`ListingToolbar` + `ListingToolbarGroup`, used by the admin
+  `SendingMailFilterPanel`): the filter row directly above a list, on the page background,
   never in a `Container`. One row: the filters group (location, category; or the search
   field), then the sorting group (sort field, order); on wide screens every kit control
   gets the same width, however many there are, 8px apart. On phones the row scrolls
