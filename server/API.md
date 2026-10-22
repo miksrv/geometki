@@ -822,8 +822,9 @@ List photos with optional filtering and pagination, newest first.
 |------|------|----------|-------------|
 | place | string | No | Filter by place ID |
 | author | string | No | Filter by user ID |
-| limit | integer | No | Max results (default 40, max 40) |
+| limit | integer | No | Max results (default 40, 1 to 40) |
 | offset | integer | No | Pagination offset (default 0) |
+| places | `1` | No | Add `places` to every user: their newest places with a cover, at most 4, newest first (the people page cards) |
 
 **Response:**
 
@@ -1147,7 +1148,16 @@ List users, by default ordered by recent activity.
       "reputation": 42,
       "created": "2024-01-15T10:00:00+00:00",
       "activity": "2025-11-10T08:00:00+00:00",
-      "statistic": { "photo": 45, "place": 12, "visited": 20 }
+      "statistic": { "photo": 45, "place": 12, "visited": 20 },
+      "places": [
+        {
+          "id": "abc123",
+          "slug": "vodopad-atysh",
+          "category": "waterfall",
+          "title": "Водопад Атыш",
+          "cover": { "preview": "uploads/places/abc123/cover_preview.jpg?d=1791259905" }
+        }
+      ]
     }
   ],
   "count": 350
