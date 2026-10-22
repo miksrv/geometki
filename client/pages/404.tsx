@@ -6,7 +6,7 @@ import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 import { generateNextSeo } from 'next-seo/pages'
 
-import { getNotFoundTexts, NotFoundPage } from '@/components/shared/not-found-page'
+import { ErrorPage, getNotFoundTexts } from '@/components/shared/error-page'
 import { loadPageTranslations } from '@/utils/translations.server'
 
 const Error404Page: NextPage = () => {
@@ -23,9 +23,11 @@ const Error404Page: NextPage = () => {
                 })}
             </Head>
 
-            <NotFoundPage
+            <ErrorPage
+                code={404}
+                image={'/images/404.png'}
                 texts={getNotFoundTexts(t)}
-                onBack={() => router.back()}
+                onAction={() => router.back()}
             />
         </>
     )

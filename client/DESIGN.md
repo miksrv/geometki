@@ -52,7 +52,7 @@ the rare text that is no role (a glyph, an input that must stay 16px on iOS).
 | `micro`        | 11          | `--font-size-micro`         | 400 · 1.35                      | credits and badges over photos, map labels                                 |
 
 **One `h1` style everywhere.** The place, a collection, a profile, a list or landing, a form,
-settings, the sign-in and 404 pages — the `h1` is `titlePage`, so the reader always knows
+settings, the sign-in and error (404, 500) pages — the `h1` is `titlePage`, so the reader always knows
 the top level of a page, and a title moving between page kinds never changes its look. The
 guest home hero (and its closing band) is the one showcase on `titleDisplay`, and the greeting
 of the signed-in home (`HomeWelcome`) is the one `h1` on `titleSection`: a line of a card next

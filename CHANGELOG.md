@@ -10,6 +10,8 @@
 - People: sorting as tabs "Active", "By experience", "By reputation", "Newcomers"; ranking numbers in the ratings
 - Home page: the "Active travelers" block in the new style of person cards
 - Sign-in: the avatar and the level in the user menu show right after signing in, not only after a reload
+- Errors: a mistyped place or collection address shows the "Page not found" page instead of a server error
+- Errors: an own server error page with "Try again" instead of the default one
 
 ## 1.17.6
 

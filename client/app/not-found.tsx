@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 
-import { getNotFoundTexts, NotFoundPage } from '@/components/shared/not-found-page'
+import { ErrorPage, getNotFoundTexts } from '@/components/shared/error-page'
 import { LOCALE_HEADER } from '@/config/constants'
 
 import en from '../public/locales/en/common.json'
@@ -37,7 +37,9 @@ export default async function NotFound() {
     const locale = await getLocale()
 
     return (
-        <NotFoundPage
+        <ErrorPage
+            code={404}
+            image={'/images/404.png'}
             texts={await getTexts()}
             homeHref={locale === 'en' ? '/en' : '/'}
         />
