@@ -9,6 +9,7 @@
 - People: cards instead of the table, with the level, the covers of the newest places and the counts of places, photos and visits
 - People: sorting as tabs "Active", "By experience", "By reputation", "Newcomers"; ranking numbers in the ratings
 - Home page: the "Active travelers" block in the new style of person cards
+- Sign-in: the avatar and the level in the user menu show right after signing in, not only after a reload
 
 ## 1.17.6
 

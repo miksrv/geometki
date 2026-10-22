@@ -81,7 +81,13 @@ class SessionLibrary {
      * @throws ReflectionException
      */
     public function authorization(UserEntity $user): static {
-        unset($user->auth_type, $user->activity_at);
+        $this->settings = $user->settings;
+
+        unset($user->auth_type, $user->activity_at, $user->password, $user->settings);
+
+        // The user as a token request gets it (validateAuthToken): the avatar as a path, not the
+        // stored file name
+        $user->avatar = (new AvatarLibrary())->buildPath($user->id, $user->avatar);
 
         $this->user   = $user;
         $this->isAuth = true;

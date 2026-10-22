@@ -417,18 +417,7 @@ class Auth extends ResourceController
         ];
 
         if ($this->session->isAuth && $this->session->user) {
-            $levelsLibrary = new LevelsLibrary();
-
-            $userLevel = $levelsLibrary->getLevelData($this->session->user);
-
-            $this->session->user->levelData = [
-                'level'           => $userLevel->level,
-                'experience'      => $this->session->user->experience,
-                'levelExperience' => $userLevel->levelExperience,
-                'nextLevel'       => $userLevel->nextLevel,
-            ];
-
-            $response->user = $this->session->user;
+            $response->user = $this->responseUser();
 
             // Only regenerate token if within 5 minutes of expiry (SEC-02)
             $existingToken = $this->request->getHeaderLine('Authorization');
@@ -446,11 +435,6 @@ class Auth extends ResourceController
             }
 
             $response->token = $shouldRefresh ? generateAuthToken($this->session->user->email) : $existingToken;
-
-            unset(
-                $response->user->password, $response->user->auth_type,
-                $response->user->level, $response->user->experience
-            );
         }
 
         return $this->respond($response);
@@ -576,6 +560,8 @@ class Auth extends ResourceController
                     $newFilename   = $avatarLibrary->processUpload($newUserId, $tempPath);
 
                     $userModel->update($newUserId, ['avatar' => $newFilename]);
+
+                    $createUser->avatar = $newFilename;
                 } catch (\Throwable $e) {
                     // Avatar download failure is non-fatal — user is still logged in without avatar
                     log_message('warning', 'Failed to download OAuth avatar: {message}', ['message' => $e->getMessage()]);
@@ -617,8 +603,8 @@ class Auth extends ResourceController
         $response = [
             'session' => $this->session->id,
             'auth'    => $this->session->isAuth,
-            'user'    => $this->session->user,
             'token'   => generateAuthToken($this->session->user->email),
+            'user'    => $this->responseUser(),
         ];
 
         if ($isNewUser) {
@@ -626,5 +612,29 @@ class Auth extends ResourceController
         }
 
         return $this->respond($response);
+    }
+
+    /**
+     * The signed-in user as every auth answer gives it: with the level data, without the
+     * password, the auth type and the raw level and experience. `auth/me` and the sign-in
+     * answers share it, so the app bar shows the same right after a sign-in as after a reload.
+     *
+     * @return UserEntity
+     */
+    private function responseUser(): UserEntity
+    {
+        $user      = $this->session->user;
+        $userLevel = (new LevelsLibrary())->getLevelData($user);
+
+        $user->levelData = [
+            'level'           => $userLevel?->level,
+            'experience'      => $user->experience,
+            'levelExperience' => $userLevel?->levelExperience,
+            'nextLevel'       => $userLevel?->nextLevel,
+        ];
+
+        unset($user->password, $user->auth_type, $user->level, $user->experience);
+
+        return $user;
     }
 }
