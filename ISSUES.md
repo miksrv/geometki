@@ -4,6 +4,7 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 
 ## Bugs
 
+- Auth: `responseUser()` (`Auth.php`) unsets `password`, `auth_type`, `level`, `experience` on the shared `$this->session->user` object, so code after it in the same request reads null; nothing reads them today, build a copy instead.
 - VPS: the Next.js process grows to 1 GB and PM2 restarts it every 15–30 minutes (`max_memory_restart: '1G'`, 141 restarts by 2026-10-17) on a 1-CPU, 1.5 GB VPS without swap; find the leak (heap snapshot under load) or lower the limit and add swap.
 
 ## Improvements
@@ -23,3 +24,8 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 - Places: "Near me" is the distance sort over all places, without a radius; a filter by distance (e.g. 300 km) needs a server parameter.
 - Places: "Map" carries only a single category to `/map` (and only behind the landing flags); the location and "Hide visited" are not passed.
 - Places: cover previews are 680×300 (`PLACE_COVER_PREVIEW_*`), while a grid tile is about 400px wide, i.e. 800px on a Retina screen, so tiles are slightly soft there; generate a larger preview (e.g. 960×480) and re-cut the existing ones with a spark command.
+- Server: remove the one-time experience sync `syncExperience()` from `reputation:rebuild` (run once on 2026-10-22); the removals keep the experience in line now (`ActivityRemoval`).
+- Reputation: `Reputation` (`client/components/ui/reputation`) has `tabIndex=0` and an `aria-label` without a role, so every card adds a tab stop (30 on a page of people) and screen readers mostly ignore the label; add `role="img"` or make only the tile's reputation focusable.
+- People: the "+N" tile of `UserCardPlaces` shows only when 4 covers came, while the API sends only places with a cover; a user with 5 places and 3 covers gets no "+N".
+- People: the sort tabs of `UsersFilterPanel` navigate with the default scroll, the search with `scroll: false`; a tab click jumps the page to the top.
+- Server: `LevelsLibrary::calculate()` writes through `UsersModel::update()`, which bumps `users.updated_at` (the profile's sitemap lastmod) on every experience change; write `experience` and `level` through the query builder like `ReputationLibrary::save()`.
