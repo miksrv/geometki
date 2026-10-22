@@ -1,83 +1,95 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import debounce from 'lodash-es/debounce'
-import { Input, Select, SelectOptionType } from 'simple-react-ui-kit'
+import { Input } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
 import { UserSortFields } from '@/api/types/users'
-import { ListingToolbar, ListingToolbarGroup } from '@/components/shared'
+import { FilterPanel } from '@/components/shared'
+import { Tabs } from '@/components/ui'
+import { encodeQueryData } from '@/utils/helpers'
 
-import { UsersFilterType } from './types'
+import { USERS_DEFAULT_SORT, UsersFilterType } from './types'
+
+import styles from './styles.module.sass'
+
+/** The presets, each with its natural direction (the most first, the newest first) */
+const SORT_TABS: Array<{ key: UserSortFields; label: string }> = [
+    { key: UserSortFields.Activity, label: 'users-sort-activity' },
+    { key: UserSortFields.Experience, label: 'users-sort-experience' },
+    { key: UserSortFields.Reputation, label: 'users-sort-reputation' },
+    { key: UserSortFields.Created, label: 'users-sort-created' }
+]
 
 interface UsersFilterPanelProps {
     search?: string
     sort?: string
-    order?: string
-    onChange?: (key: keyof UsersFilterType, value: string | undefined) => void
+    onChangeSearch?: (value: string | undefined) => void
 }
 
-export const UsersFilterPanel: React.FC<UsersFilterPanelProps> = ({ search, sort, order, onChange }) => {
+/**
+ * The filters of the people list (DESIGN.md → Patterns → People filters): the name search
+ * and the sort presets as tab links. A sort link drops `?order=` and the page, so an old link
+ * keeps its order only until the sort changes.
+ */
+export const UsersFilterPanel: React.FC<UsersFilterPanelProps> = ({ search, sort, onChangeSearch }) => {
     const { t } = useTranslation()
 
-    const sortOptions: Array<SelectOptionType<string>> = useMemo(
+    const tabs = useMemo(
         () =>
-            Object.values(UserSortFields).map((s) => ({
-                key: s,
-                value: t(`sort_${s}`)
+            SORT_TABS.map(({ key, label }) => ({
+                href:
+                    '/users' +
+                    encodeQueryData({
+                        search: search || undefined,
+                        sort: key !== USERS_DEFAULT_SORT ? key : undefined
+                    } satisfies UsersFilterType),
+                key,
+                label: t(label)
             })),
-        [t]
+        [search, t]
     )
 
-    const orderOptions: Array<SelectOptionType<string>> = useMemo(
-        () => [
-            { key: 'ASC', value: t('order_ASC') },
-            { key: 'DESC', value: t('order_DESC') }
-        ],
-        [t]
+    // The latest callback in a ref: the debounce is made once, so a re-render of the page
+    // while the visitor types never drops the pending search
+    const onChangeSearchRef = useRef(onChangeSearch)
+    onChangeSearchRef.current = onChangeSearch
+
+    const handleChangeSearch = useMemo(
+        () => debounce((value: string) => onChangeSearchRef.current?.(value.trim() || undefined), 600),
+        []
     )
 
-    const handleChangeSort = (selected: Array<SelectOptionType<string>> | undefined) => {
-        onChange?.('sort', selected?.[0]?.key)
-    }
-
-    const handleChangeOrder = (selected: Array<SelectOptionType<string>> | undefined) => {
-        onChange?.('order', selected?.[0]?.key)
-    }
-
-    const handleChangeSearch = useCallback(
-        debounce((value: string) => {
-            onChange?.('search', value || undefined)
-        }, 600),
-        [onChange]
-    )
+    useEffect(() => () => handleChangeSearch.cancel(), [handleChangeSearch])
 
     return (
-        <ListingToolbar>
-            <ListingToolbarGroup>
+        <FilterPanel
+            sticky={'always'}
+            className={styles.panel}
+        >
+            <div
+                className={styles.row}
+                role={'search'}
+            >
                 <Input
+                    // A new search from the URL (Back / Forward) puts its text into the field
+                    key={search ?? ''}
+                    className={styles.search}
                     clearable={true}
                     placeholder={t('search-by-name')}
+                    aria-label={t('search-by-name')}
                     defaultValue={search ?? ''}
                     onChange={(e) => handleChangeSearch(e.target.value)}
                     size={'medium'}
                 />
-            </ListingToolbarGroup>
 
-            <ListingToolbarGroup>
-                <Select
-                    placeholder={t('sorting')}
-                    options={sortOptions}
-                    value={sort}
-                    onSelect={handleChangeSort}
+                <Tabs<UserSortFields>
+                    className={styles.tabs}
+                    tabs={tabs}
+                    activeTab={(sort as UserSortFields) ?? USERS_DEFAULT_SORT}
+                    aria-label={t('users-sort', 'Порядок')}
                 />
-
-                <Select
-                    placeholder={t('order')}
-                    options={orderOptions}
-                    value={order}
-                    onSelect={handleChangeOrder}
-                />
-            </ListingToolbarGroup>
-        </ListingToolbar>
+            </div>
+        </FilterPanel>
     )
 }

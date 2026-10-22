@@ -7,19 +7,22 @@ import { useTranslation } from 'next-i18next/pages'
 import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
+import { UserSortFields } from '@/api/types/users'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, PageHeader, PaginationBar, UsersList } from '@/components/shared'
+import { AppLayout, PageHeader } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
-import { UsersFilterPanel, UsersFilterType } from '@/sections/user'
+import { USERS_DEFAULT_SORT, UsersFilterPanel, UsersFilterType, UsersListing } from '@/sections/user'
 import { encodeQueryData } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 import { loadPageTranslations } from '@/utils/translations.server'
 
 const USERS_PER_PAGE = 30
-const DEFAULT_SORT = 'activity_at'
 const DEFAULT_ORDER = 'DESC'
+
+/** Sorts that make the list a ranking: the cards are numbered */
+const RANKED_SORTS: string[] = [UserSortFields.Experience, UserSortFields.Reputation]
 
 interface UsersPageProps {
     usersList: ApiModel.User[]
@@ -39,7 +42,7 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
         order: order !== DEFAULT_ORDER ? order : undefined,
         page: currentPage !== 1 ? currentPage : undefined,
         search: search ?? undefined,
-        sort: sort !== DEFAULT_SORT ? sort : undefined
+        sort: sort !== USERS_DEFAULT_SORT ? sort : undefined
     }
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
@@ -50,14 +53,18 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
         [currentPage, i18n.language]
     )
 
-    const handleChangeFilter = useCallback(
-        async (key: keyof UsersFilterType, value: string | undefined) => {
-            const filter = { ...initialFilter, [key]: value }
-            if (key !== 'page') {
-                filter.page = undefined
-            }
-            return await router.push('/users' + encodeQueryData(filter))
-        },
+    const request: ApiType.Users.ListRequest = {
+        order: order as 'ASC' | 'DESC',
+        places: 1,
+        search: search ?? undefined,
+        sort: sort as ApiType.Users.UserSortFields
+    }
+
+    const handleChangeSearch = useCallback(
+        (value: string | undefined) =>
+            router.push('/users' + encodeQueryData({ ...initialFilter, page: undefined, search: value }), undefined, {
+                scroll: false
+            }),
         [initialFilter, router]
     )
 
@@ -89,22 +96,33 @@ const UsersPage: NextPage<UsersPageProps> = ({ usersList, usersCount, currentPag
                 })}
             </Head>
 
-            <PageHeader title={title} />
+            <PageHeader
+                title={title}
+                count={t('users-count', '{{count}} человек', { count: usersCount })}
+                lede={
+                    currentPage === 1 && !search
+                        ? t(
+                              'users-lede',
+                              'Те, кто находит интересные места, фотографирует их и пишет о них. Каждое место, фото и отзыв приносят опыт — так растёт уровень. Загляните в профиль, чтобы увидеть всё, что человек открыл.'
+                          )
+                        : undefined
+                }
+            />
 
             <UsersFilterPanel
                 search={search ?? undefined}
                 sort={sort}
-                order={order}
-                onChange={handleChangeFilter}
+                onChangeSearch={handleChangeSearch}
             />
 
-            <UsersList users={usersList} />
-
-            <PaginationBar
+            <UsersListing
+                key={`${sort}-${order}-${search}-${currentPage}`}
+                users={usersList}
+                count={usersCount}
                 currentPage={currentPage}
-                totalItemsCount={usersCount}
                 perPage={USERS_PER_PAGE}
-                linkPart={'users'}
+                request={request}
+                ranked={!search && order === DEFAULT_ORDER && RANKED_SORTS.includes(sort)}
                 urlParam={initialFilter}
             />
         </AppLayout>
@@ -118,8 +136,11 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const locale = (context.locale ?? 'en') as ApiType.Locale
             const currentPage = parseInt(context.query.page as string, 10) || 1
             const search = (context.query.search as string) || null
-            const sort = (context.query.sort as string) || DEFAULT_SORT
-            const order = (context.query.order as string) || DEFAULT_ORDER
+            const sortQuery = context.query.sort as string
+            const sort = (Object.values(UserSortFields) as string[]).includes(sortQuery)
+                ? sortQuery
+                : USERS_DEFAULT_SORT
+            const order = context.query.order === 'ASC' ? 'ASC' : DEFAULT_ORDER
             const translations = await loadPageTranslations()
 
             hydrateAuthFromCookies(store, cookies)
@@ -130,6 +151,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     limit: USERS_PER_PAGE,
                     offset: (currentPage - 1) * USERS_PER_PAGE,
                     order: order as 'ASC' | 'DESC',
+                    places: 1,
                     search: search ?? undefined,
                     sort: sort as ApiType.Users.UserSortFields
                 })

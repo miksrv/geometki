@@ -1,6 +1,8 @@
 import { SizeType } from './types'
 
-export const getDimension = (size?: SizeType) => (size === 'medium' ? 36 : size === 'tiny' ? 28 : 20)
+const DIMENSIONS: Record<SizeType, number> = { large: 56, medium: 36, small: 20, tiny: 28 }
+
+export const getDimension = (size?: SizeType) => DIMENSIONS[size ?? 'small']
 
 /**
  * Получает инициалы из имени пользователя (первые буквы первых двух слов)

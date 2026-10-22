@@ -1,14 +1,15 @@
 import { UserLevel } from '@/api/models/userLevel'
 import { LEVEL_COLORS } from '@/config/constants'
 
-const levelColorIndex = (level?: number): number => {
+/** The tier of a level: every three levels share a colour and a name (`levelTier.<index>` in common.json) */
+export const levelTier = (level?: number): number => {
     if (!level || level < 1) {
         return 0
     }
     return Math.min(Math.floor((level - 1) / 3), LEVEL_COLORS.length - 1)
 }
 
-export const levelColors = (level?: number): { fill: string; border: string } => LEVEL_COLORS[levelColorIndex(level)]
+export const levelColors = (level?: number): { fill: string; border: string } => LEVEL_COLORS[levelTier(level)]
 
 export const levelColor = (level?: number): string => levelColors(level).fill
 

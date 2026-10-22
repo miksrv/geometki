@@ -1,4 +1,5 @@
 import React from 'react'
+import { cn } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 
@@ -47,7 +48,7 @@ export const AvatarImage: React.FC<UserAvatarProps> = ({ user, size, hideOnlineI
             />
 
             {isClient && !hideOnlineIcon && user?.activity?.date && minutesAgo(user.activity.date) <= 15 && (
-                <div className={styles.online} />
+                <div className={cn(styles.online, size === 'large' && styles.onlineLarge)} />
             )}
         </>
     )
