@@ -14,7 +14,7 @@ Most read endpoints are public. Write operations require authentication.
 Authorization: Bearer <token>
 ```
 
-Guests are tracked by a `Session` header carrying the anonymous session id (the `session` value returned by `GET /auth/me`). It does not authenticate; it ties rating votes and activity to a visitor.
+Guests are tracked by a `Session` header carrying the anonymous session id (the `session` value returned by a guest's first `PUT /rating`; `GET /auth/me` starts no session for a guest). It does not authenticate; it ties rating votes and activity to a visitor.
 
 **Locale** — send a `Locale: ru` or `Locale: en` header (default `ru`); translated fields are returned in that language.
 
@@ -177,7 +177,7 @@ Exchange a magic-link token for a login; creates the account on first use.
 
 #### `GET /auth/me`
 
-Retrieve the current session and, when authenticated, the user and a JWT token. Also updates the session. The token is regenerated only when the one sent is within 5 minutes of expiry; otherwise the same token is returned.
+Retrieve the current session and, when authenticated, the user and a JWT token. For a signed-in user also updates the session; for a guest it writes nothing and returns `{"session": <the sent session or null>, "auth": false}`. The token is regenerated only when the one sent is within 5 minutes of expiry; otherwise the same token is returned.
 
 **Auth required:** No (returns partial response if unauthenticated)
 

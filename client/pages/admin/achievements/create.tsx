@@ -14,7 +14,7 @@ import { useAppSelector, wrapper } from '@/app/store'
 import { AchievementForm } from '@/components/pages/achievement-form'
 import { AppLayout, PageHeader } from '@/components/shared'
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
-import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { hydrateAuthFromCookies, isAdminRequest } from '@/utils/serverSideAuth'
 import { loadPageTranslations } from '@/utils/translations.server'
 
 type AchievementInput = ApiType.Achievements.AchievementInput
@@ -113,9 +113,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             store.dispatch(setLocale(locale))
             hydrateAuthFromCookies(store, context.req.cookies)
 
-            const { data: authData } = await store.dispatch(API.endpoints.authGetMe.initiate())
-
-            if (authData?.user?.role !== 'admin') {
+            if (!(await isAdminRequest(store))) {
                 return { notFound: true }
             }
 

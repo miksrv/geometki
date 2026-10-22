@@ -13,7 +13,7 @@ import { SendingMailDetail } from '@/components/pages/sending-mail-detail/Sendin
 import { AppLayout, PageHeader, PaginationBar, UserAvatar } from '@/components/shared'
 import { SendingMailFilterPanel, SendingMailFilterType } from '@/sections/sending-mail'
 import { formatDate } from '@/utils/helpers'
-import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { hydrateAuthFromCookies, isAdminRequest } from '@/utils/serverSideAuth'
 import { loadPageTranslations } from '@/utils/translations.server'
 
 import styles from './styles.module.sass'
@@ -211,9 +211,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
             store.dispatch(setLocale(locale))
             hydrateAuthFromCookies(store, context.req.cookies)
 
-            const { data: authData } = await store.dispatch(API.endpoints.authGetMe.initiate())
-
-            if (authData?.user?.role !== 'admin') {
+            if (!(await isAdminRequest(store))) {
                 return { notFound: true }
             }
 
