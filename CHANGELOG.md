@@ -10,6 +10,7 @@
 - People: sorting as tabs "Active", "By experience", "By reputation", "Newcomers"; ranking numbers in the ratings
 - Home page: the "Active travelers" block in the new style of person cards
 - Sign-in: the avatar and the level in the user menu show right after signing in, not only after a reload
+- Map: place icons have a thin white frame, so they stand out on any map layer
 - Errors: a mistyped place or collection address shows the "Page not found" page instead of a server error
 - Errors: an own server error page with "Try again" instead of the default one
 - Reputation: changing a score no longer adds it to the author's reputation again; a deleted place's scores no longer count
