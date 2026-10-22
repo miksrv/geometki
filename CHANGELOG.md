@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.17.7
+
+### Patch Changes
+
+- Weekly digest: now comes to everyone who has it on, not only to authors of places
+- Weekly digest: without news of your own places it shows the most viewed places of the week
+
 ## 1.17.6
 
 ### Patch Changes

@@ -51,12 +51,14 @@ return [
 
     // Weekly digest
     'digestSubject'        => 'Ваша неделя на Геометках',
+    'digestSubjectSite'    => 'Что нового на Геометках за неделю',
     'digestSubjectViews'   => 'Ваши места посмотрели {views} за неделю',
     'digestSubjectEvents'  => 'На ваших местах {events} за неделю',
     'digestTimes'          => 'раз|раза|раз',
     'digestGreeting'       => 'Привет, {name}! Вот что произошло за неделю на Геометках.',
     'digestYourPlaces'     => 'Ваши места за неделю',
     'digestMorePlaces'     => 'и ещё {places}',
+    'digestTopPlaces'      => 'Популярные места недели',
     'digestYou'            => 'Вы за неделю: {stats}',
     'digestViews'          => 'просмотр|просмотра|просмотров',
     'digestRatings'        => 'оценка|оценки|оценок',

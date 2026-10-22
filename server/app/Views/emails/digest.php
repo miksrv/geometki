@@ -2,12 +2,13 @@
 /**
  * Body of the weekly digest (App\Libraries\Mail\DigestMail), wrapped in
  * emails/layout when the queue sends it. Personal news first (the user's
- * places, the user's own week), then the week of the whole site — the same
- * numbers, people and key stories as the feed summary of the home page.
+ * places, the user's own week; without news of own places the most viewed
+ * places of the week), then the week of the whole site — the same numbers,
+ * people and key stories as the feed summary of the home page.
  *
  * @var string $locale
  * @var string $userName
- * @var array  $sections   DigestService::generateForUser(): place_activity, week_summary, site
+ * @var array  $sections   DigestService::generateForUser(): place_activity or top_places, week_summary, site
  * @var array  $highlights DigestMail::highlight() items
  */
 
@@ -69,6 +70,30 @@ foreach (['places_created' => 'pulsePlaces', 'photos_uploaded' => 'pulsePhotos',
 ?>
 <?php if ($mine): ?>
     <p style="margin:<?= empty($sections['place_activity']) ? '20px' : '4px' ?> 0 0;"><?= esc(MailText::get($locale, 'digestYou', ['stats' => implode(' · ', $mine)])) ?></p>
+<?php endif; ?>
+
+<?php if (!empty($sections['top_places'])): ?>
+    <?= $hr ?>
+    <h2 style="<?= $h2 ?>"><?= esc(MailText::get($locale, 'digestTopPlaces')) ?></h2>
+
+    <?php foreach ($sections['top_places'] as $place): ?>
+        <?php $url = MailUrls::place($locale, $place['place_id'], $place['slug'] ?? null); ?>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px;">
+            <tr>
+                <?php if (!empty($place['cover'])): ?>
+                    <td width="96" valign="top" style="width:96px;padding-right:14px;">
+                        <a href="<?= esc($url) ?>" style="text-decoration:none;">
+                            <img src="<?= esc($place['cover']) ?>" width="96" alt="" style="display:block;width:96px;height:auto;border:0;border-radius:6px;">
+                        </a>
+                    </td>
+                <?php endif; ?>
+                <td valign="middle">
+                    <div><a href="<?= esc($url) ?>" class="gm-link" style="font-size:16px;font-weight:bold;color:#2a73c7;text-decoration:none;"><?= esc($place['title']) ?></a></div>
+                    <p class="gm-muted" style="margin:4px 0 0;font-size:14px;<?= $muted ?>"><?= esc(MailText::plural($locale, 'digestViews', (int) $place['views'])) ?></p>
+                </td>
+            </tr>
+        </table>
+    <?php endforeach; ?>
 <?php endif; ?>
 
 <?php
