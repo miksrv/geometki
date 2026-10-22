@@ -12,6 +12,11 @@
 - Sign-in: the avatar and the level in the user menu show right after signing in, not only after a reload
 - Errors: a mistyped place or collection address shows the "Page not found" page instead of a server error
 - Errors: an own server error page with "Try again" instead of the default one
+- Reputation: changing a score no longer adds it to the author's reputation again; a deleted place's scores no longer count
+- Ratings: removed the old scores authors gave their own places, with their history entries
+- Reputation: shared between the place's author and those who improved its card with photos and edits
+- Reputation: a tooltip explains how it is made
+- Optimized the profile and achievements pages
 
 ## 1.17.6
 

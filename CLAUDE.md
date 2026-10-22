@@ -64,6 +64,8 @@ CodeIgniter 4 REST API, MVC:
 
 **Activity and the feed:** `ActivityLibrary` writes every user action to `activity` (the log behind XP, achievements, notifications, the digest and place history) and attaches it to a story in `feed` (`FeedLibrary`, grouping rules in `FeedAggregator`), so `GET /feed` is one indexed query. After changing the grouping rules run `php spark feed:rebuild`.
 
+**Experience, reputation, removals:** kept up to date by the actions, never recounted on a read (a profile view only reads). Experience grows by `LevelsLibrary::push()`; reputation is rebuilt from the votes after each vote (`ReputationLibrary`: half of a vote to the place's author, half to those who made the card by then, by the weight of their photos and edits). Any removal of activity goes through `ActivityRemoval` (collect before the delete, `apply()` after): it refreshes the stories, the experience and the reputation of those concerned. Full recount: `php spark reputation:rebuild`.
+
 ### Key Patterns
 
 - **API calls:** only through RTK Query in `api/api.ts`, never `fetch`/`axios` directly.

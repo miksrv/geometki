@@ -4,10 +4,10 @@ namespace App\Controllers;
 
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
+use App\Libraries\ReputationLibrary;
 use App\Libraries\SitePages;
 use App\Models\PlacesModel;
 use App\Models\RatingModel;
-use App\Models\UsersModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use Throwable;
@@ -40,6 +40,16 @@ class Rating extends ResourceController
 
         return ($this->session->id !== null && $item->session_id === $this->session->id)
             || ($userId !== null && $item->user_id === $userId);
+    }
+
+    /**
+     * Rebuild the reputation of the place's author and contributors from the votes, after the
+     * vote is saved: a changed vote replaces its old points instead of adding to them
+     */
+    private function updateReputation(string $placeId): void
+    {
+        $reputation = new ReputationLibrary();
+        $reputation->recalculateUsers($reputation->usersOfPlace($placeId));
     }
 
     /**
@@ -86,9 +96,9 @@ class Rating extends ResourceController
     /**
      * Submit or update a star rating for a place.
      *
-     * POST /rating/set
+     * PUT /rating
      * Expects JSON body with place (ID) and score (1–5).
-     * Re-calculates the place aggregate rating and updates the author's reputation.
+     * Re-calculates the place aggregate rating and the author's reputation (ReputationLibrary).
      *
      * @return ResponseInterface
      */
@@ -97,25 +107,19 @@ class Rating extends ResourceController
         try {
             $input = $this->request->getJSON();
 
-            if (empty($input) || !$input->place || !(int) $input->score) {
+            if (empty($input) || !($input->place ?? null) || !(int) ($input->score ?? 0)) {
                 return $this->failValidationErrors(lang('Rating.missingSetData'));
             }
 
-            $ratingModel = new RatingModel();
-            $placesModel = new PlacesModel();
-            $usersModel  = new UsersModel();
-            $placesData  = $placesModel->select('id, user_id, rating, updated_at')->find($input->place);
-            $usersData   = $usersModel->select('id, reputation, updated_at')->find($placesData->user_id);
-            $ratingData  = $ratingModel->where('place_id', $placesData->id)->findAll();
-
-            $inputRating  = (int) $input->score;
+            $inputRating = (int) $input->score;
 
             if ($inputRating < 1 || $inputRating > 5) {
                 return $this->failValidationErrors(lang('Rating.scoreOutOfRange'));
             }
 
-            $alreadyVoted = null; // User changes their rating? We will store the rating record ID here
-            $ratingValue  = abs($inputRating);
+            $ratingModel = new RatingModel();
+            $placesModel = new PlacesModel();
+            $placesData  = $placesModel->select('id, user_id, rating, updated_at')->find($input->place);
 
             if (!$placesData) {
                 return $this->failNotFound(lang('Rating.placeNotFound'));
@@ -126,6 +130,10 @@ class Rating extends ResourceController
                 return $this->failForbidden(lang('Rating.ownPlace'));
             }
 
+            $ratingData   = $ratingModel->where('place_id', $placesData->id)->findAll();
+            $alreadyVoted = null; // User changes their rating? We will store the rating record ID here
+            $ratingValue  = $inputRating;
+
             // A guest's first score starts their session (no visit starts one): it ties their
             // later scores to this one. Set on the request too, for the libraries below that
             // read the visitor's session again (ActivityLibrary), so they do not start another
@@ -135,8 +143,6 @@ class Rating extends ResourceController
                 $newSession = $this->session->update()->id;
                 $this->request->setHeader('Session', $newSession);
             }
-
-            helper('rating');
 
             // Let's calculate a new rating for the place
             if ($ratingData) {
@@ -154,9 +160,6 @@ class Rating extends ResourceController
                     : null;
             }
 
-            // Now let's change the author's reputation
-            $userRating = $usersData->reputation + transformRating($inputRating);
-
             // We are creating a new rating model for saving
             $rating = new \App\Entities\RatingEntity();
             $rating->place_id   = $input->place;
@@ -164,18 +167,20 @@ class Rating extends ResourceController
             $rating->session_id = $this->session->id;
             $rating->value      = $inputRating;
 
-            $usersModel->update($placesData->user_id, ['reputation' => $userRating, 'updated_at' => $usersData->updated_at]);
             $placesModel->update($placesData->id, ['rating' => $ratingValue, 'updated_at' => $placesData->updated_at]);
             SitePages::place($placesData->id);
 
             // Editing user rating
             if ($alreadyVoted) {
                 $ratingModel->update($alreadyVoted, ['value' => $inputRating]);
+                $this->updateReputation($placesData->id);
+
                 return $this->respondUpdated($newSession ? ['session' => $newSession] : null);
             }
 
             // Adding a new rating (the user has never voted yet)
             $ratingModel->insert($rating);
+            $this->updateReputation($placesData->id);
 
             /* ACTIVITY */
             $activity = new ActivityLibrary();

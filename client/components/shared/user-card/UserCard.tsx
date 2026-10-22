@@ -183,10 +183,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, variant = 'tile', rank
                     value={user.statistic?.visited ?? 0}
                     unit={t('user-card-visited', { count: user.statistic?.visited ?? 0 })}
                 />
-                <span
-                    className={styles.reputation}
-                    title={t('reputation', 'Репутация')}
-                >
+                <span className={styles.reputation}>
                     <Reputation value={user.reputation ?? 0} />
                 </span>
             </div>

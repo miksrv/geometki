@@ -161,6 +161,7 @@
     "photos": "Photos",
     "all-places-nearby": "All places are near",
     "reputation": "Reputation",
+    "reputation-hint": "From place scores: 5★ +2, 4★ +1, 2★ −1, 1★ −2. Half goes to the place's author, half to those who added photos and edits to its card",
     "level": "Level",
     "level_num": "Level {{level}}",
     "experience-to-new-level": "Experience to a new level",

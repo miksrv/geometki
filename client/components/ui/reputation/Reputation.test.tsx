@@ -4,6 +4,12 @@ import { render, screen } from '@testing-library/react'
 
 import { Reputation } from './Reputation'
 
+jest.mock('next-i18next/pages', () => ({
+    useTranslation: () => ({
+        t: (key: string, opts?: { defaultValue?: string }) => opts?.defaultValue ?? key
+    })
+}))
+
 describe('Reputation', () => {
     describe('rendering', () => {
         it('renders the reputation value', () => {
@@ -19,6 +25,18 @@ describe('Reputation', () => {
         it('renders negative value', () => {
             render(<Reputation value={-5} />)
             expect(screen.getByText('-5')).toBeInTheDocument()
+        })
+    })
+
+    describe('explanation', () => {
+        it('names the value for screen readers', () => {
+            render(<Reputation value={7} />)
+            expect(screen.getByLabelText('Репутация: 7')).toBeInTheDocument()
+        })
+
+        it('is reachable from the keyboard, where its tooltip opens', () => {
+            render(<Reputation value={7} />)
+            expect(screen.getByText('7')).toHaveAttribute('tabindex', '0')
         })
     })
 

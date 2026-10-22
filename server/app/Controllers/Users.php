@@ -238,7 +238,6 @@ class Users extends ResourceController
      *
      * @param string|null $id User primary key.
      *
-     * @throws ReflectionException
      * @throws Exception
      *
      * @return ResponseInterface
@@ -253,12 +252,12 @@ class Users extends ResourceController
             return $this->failNotFound();
         }
 
-        $userLevels->calculate($usersData);
-
+        // Only a read: the experience and the level are kept up to date by the actions
+        // (a view is far more frequent than a change)
         $avatarLibrary = new AvatarLibrary();
 
         $usersData->levelData = $userLevels->getLevelData($usersData);
-        $usersData->statistic = $userLevels->statistic;
+        $usersData->statistic = $userLevels->statistic($usersData->id);
         $usersData->avatar    = $avatarLibrary->buildPath($usersData->id, $usersData->avatar, 'medium');
 
         $visitedModel = new UsersVisitedPlacesModel();
