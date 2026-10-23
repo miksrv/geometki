@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.17.8
+
+### Patch Changes
+
+- People: on phones the page no longer scrolls sideways, the counts of a person card move to the next line when they do not fit
+
 ## 1.17.7
 
 ### Patch Changes
