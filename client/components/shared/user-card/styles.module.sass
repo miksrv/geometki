@@ -271,13 +271,15 @@ a.placesNone:hover
     .placesNone
         display: none
 
+    // The whole width of the line: under the name only ~230px are left on a 360px screen,
+    // less than the four counts take; big numbers wrap instead of widening the page
     .stats
+        flex-wrap: wrap
         width: 100%
         margin-top: 0
-        // Under the name: the `large` avatar (56px) and the gap
-        padding: 0 0 0 calc(56px + var(--space-3))
+        padding: 0
         border-top: 0
-        gap: var(--space-3)
+        gap: var(--space-1) var(--space-3)
 
 // ——— row: a dense line inside another block (the home page widget) ———
 .row
