@@ -70,6 +70,19 @@
     .icon img
         filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.8))
 
+.negative
+    background: var(--surface-2)
+    box-shadow: inset 0 0 0 1px var(--border)
+    color: var(--text-color-secondary)
+
+    .label
+        text-decoration: line-through
+
+    &:hover
+        background: var(--surface-2)
+        color: var(--text-color-secondary)
+        filter: brightness(0.97)
+
 .small
     gap: 6px
     height: var(--size-control-small, 28px)

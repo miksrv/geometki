@@ -13,6 +13,8 @@ export interface ChipProps {
     count?: number
     /** On: filled with `--color-main` (a toggle chip) */
     selected?: boolean
+    /** The third state of a three-state toggle (yes / no / not answered): a "no" — the label struck through on a muted tint. Not told apart from "not answered" by `aria-pressed` (`false` for both): pass an `aria-label` that names the state */
+    negative?: boolean
     /** A removal chip: tinted, with a ✕ after the label (the applied filters row) */
     removable?: boolean
     /** Makes the chip a link: filters that are pages stay crawlable and open in a new tab */
@@ -31,7 +33,7 @@ export interface ChipProps {
 
 /**
  * A pill with an optional icon: a toggle of a filter (`selected`) or a removable applied
- * filter (`removable`). A link with `href`, a button otherwise; a toggle button reports its
+ * filter (`removable`); `negative` is the "no" of a three-state toggle. A link with `href`, a button otherwise; a toggle button reports its
  * state with `aria-pressed`. A kit primitive candidate.
  */
 export const Chip: React.FC<ChipProps> = ({
@@ -39,6 +41,7 @@ export const Chip: React.FC<ChipProps> = ({
     icon,
     count,
     selected,
+    negative,
     removable,
     href,
     rel,
@@ -52,6 +55,7 @@ export const Chip: React.FC<ChipProps> = ({
         styles.chip,
         size === 'small' && styles.small,
         selected && styles.selected,
+        negative && !selected && styles.negative,
         removable && styles.removable,
         !icon && styles.noIcon,
         className

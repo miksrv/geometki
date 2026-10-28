@@ -16,7 +16,7 @@ interface PlaceActivityProps {
 }
 
 /**
- * "История изменений  N": a collapsed row at the end of the "О месте" card. The page prefetches
+ * "Журнал активности  N": a collapsed row at the end of the "О месте" card. The page prefetches
  * the count on the server (a count-only request, no stories); the history itself — the feed
  * stories of the place, without the place attached — loads on the first click.
  */
@@ -48,7 +48,7 @@ export const PlaceActivity: React.FC<PlaceActivityProps> = ({ placeId }) => {
                         name={'Time'}
                         className={styles.icon}
                     />
-                    {t('place-history', { defaultValue: 'История изменений' })}
+                    {t('place-history', { defaultValue: 'Журнал активности' })}
                     {!!count && <small>{count}</small>}
                     <Icon
                         name={'KeyboardDown'}

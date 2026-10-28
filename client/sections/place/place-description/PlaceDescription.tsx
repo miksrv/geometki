@@ -36,14 +36,12 @@ interface PlaceDescriptionProps {
     content?: string
     /** The locale of `content`: another one than the interface locale when the place is not translated */
     locale?: ApiType.Locale
-    tags?: string[]
 }
 
 /**
  * The text of the place — the main thing of the page, read only: no visible heading, the
- * reading typography with a lead, a long text clamped with a fade, the tags as quiet chips at
- * its end. The text is edited in the place form only ("⋯ → Редактировать"); a place without
- * a text links there.
+ * reading typography with a lead, a long text clamped with a fade. The text is edited in the place form only
+ * ("⋯ → Редактировать"); a place without a text links there.
  */
 export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, content, locale }) => {
     const dispatch = useAppDispatch()
@@ -149,24 +147,6 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
                     </Link>
                 </div>
             )}
-
-            {/* TEMPORARILY OFF (1.17.6): the tags are being reworked, and the list of a tag is not
-                served now (proxy.ts), so the page does not link to it. The quiet end of the text: its
-                tags as chips */}
-            {/* {!!tags?.length && (
-                <ul className={styles.tagList}>
-                    {tags.map((tag, i) => (
-                        <li key={`tag${i}`}>
-                            <Link
-                                href={`/places?tag=${tag}`}
-                                title={`#${tag}`}
-                            >
-                                {`#${tag}`}
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            )} */}
         </Section>
     )
 }

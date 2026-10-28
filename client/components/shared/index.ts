@@ -49,4 +49,5 @@ export { SiteSearch, type SiteSearchHandle, SiteSearchScreen } from './site-sear
 export { UserAvatar, type UserAvatarProps } from './user-avatar'
 export { UserAvatarGroup } from './user-avatar-group'
 export { USER_CARD_PLACES, UserCard, type UserCardProps, type UserCardVariant } from './user-card'
-export { WasHereButton } from './was-here-button'
+export { VisitRow } from './visit-row'
+export { checkInMessage, WasHereButton } from './was-here-button'

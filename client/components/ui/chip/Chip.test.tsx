@@ -76,4 +76,18 @@ describe('Chip', () => {
 
         expect(screen.getByRole('button').querySelector('img')).toBeInTheDocument()
     })
+
+    it('reports a negative chip as not pressed, its name tells the state', () => {
+        render(
+            <Chip
+                label={'костёр'}
+                negative={true}
+                aria-label={'костёр: нельзя'}
+            />
+        )
+
+        const chip = screen.getByRole('button', { name: 'костёр: нельзя' })
+
+        expect(chip).toHaveAttribute('aria-pressed', 'false')
+    })
 })

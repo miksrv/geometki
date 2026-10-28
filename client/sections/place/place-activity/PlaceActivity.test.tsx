@@ -91,9 +91,9 @@ describe('PlaceActivity', () => {
     it('renders collapsed with the count and loads the history only on click', () => {
         render(<PlaceActivity placeId={'p1'} />)
 
-        expect(screen.getByRole('heading', { name: /История изменений/ })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /Журнал активности/ })).toBeInTheDocument()
 
-        const toggle = screen.getByRole('button', { name: /История изменений/ })
+        const toggle = screen.getByRole('button', { name: /Журнал активности/ })
 
         expect(toggle).toHaveAttribute('aria-expanded', 'false')
         expect(toggle).toHaveTextContent('14')
@@ -114,7 +114,7 @@ describe('PlaceActivity', () => {
         useList.mockImplementation((() => listResult(true)) as any) // eslint-disable-line @typescript-eslint/no-explicit-any
 
         render(<PlaceActivity placeId={'p1'} />)
-        fireEvent.click(screen.getByRole('button', { name: /История изменений/ }))
+        fireEvent.click(screen.getByRole('button', { name: /Журнал активности/ }))
         fireEvent.click(screen.getByRole('button', { name: 'show-more' }))
 
         expect(fetchNextPage).toHaveBeenCalledTimes(1)
@@ -122,7 +122,7 @@ describe('PlaceActivity', () => {
 
     it('has no "show more" on the last page', () => {
         render(<PlaceActivity placeId={'p1'} />)
-        fireEvent.click(screen.getByRole('button', { name: /История изменений/ }))
+        fireEvent.click(screen.getByRole('button', { name: /Журнал активности/ }))
 
         expect(screen.queryByRole('button', { name: 'show-more' })).toBeNull()
     })
