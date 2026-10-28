@@ -1,8 +1,8 @@
 {
     "page-not-found": "Страница не найдена",
     "api-error-generic": "На сервере произошла ошибка, попробуйте ещё раз позже",
-    "map-of-interesting-pages": "Туристическая карта России — интересные места и достопримечательности",
-    "places-seo-description": "Каталог интересных мест и достопримечательностей с GPS-координатами, фотографиями и описаниями от путешественников. Фильтруйте по категориям, регионам и тегам.",
+    "map-of-interesting-pages": "Карта интересных мест и достопримечательностей России",
+    "places-seo-description": "Каталог интересных мест и достопримечательностей с GPS-координатами, фотографиями и описаниями от путешественников. Фильтруйте по категориям и регионам.",
     "nothing-here-yet": "Тут пока ничего нет",
     "nothing-found": "Ничего не найдено",
     "nothing-found-description": "Попробуйте изменить запрос или фильтры",
@@ -35,7 +35,7 @@
     "home-seo-title": "Интересные места и достопримечательности России",
     "nav-map": "Карта",
     "geotags-description": "Карта интересных мест России: водопады, пещеры, заброшки, горы и памятники с координатами, фото и отзывами путешественников. Найдите, куда поехать.",
-    "geotags-map-description": "Интерактивная карта России с тысячами интересных мест: природные достопримечательности, горные вершины, водопады и пещеры, заброшенные объекты, исторические памятники, храмы и бункеры. Геометки с GPS-координатами для туристов и путешественников.",
+    "geotags-map-description": "Интерактивная карта России: тысячи интересных мест с GPS-координатами — горы, водопады, пещеры, заброшенные объекты, памятники истории и храмы.",
     "settings": "Настройки",
     "logout": "Выход",
     "create-geotag": "Добавить геометку",
@@ -133,8 +133,6 @@
     "input_geotag-placeholder": "Введите заголовок геометки",
     "input_category-label": "Категория",
     "input_category-placeholder": "Выберите категорию",
-    "input_tags-label": "Выберите или добавьте особенности геометки",
-    "input_tags-placeholder": "Начните вводить текст",
     "registration": "Регистрация",
     "map-link-on-Yandex": "на Яндекс картах",
     "map-link-on-Google": "на Google картах",
@@ -464,14 +462,26 @@
     "sending-mail-status-rejected": "Отклонено",
     "sending-mail-status-expired": "Просрочено",
     "sending-mail-status-grouped": "Объединено",
-    "visited-dialog-share-location": "Поделиться местоположением",
-    "visited-dialog-without-confirmation": "Отметить без подтверждения",
-    "visited-confirmed": "Место отмечено как посещённое ✓",
-    "visited-unconfirmed": "Место отмечено без подтверждения геолокации",
-    "visited-removed": "Отметка о посещении снята",
-    "visited-dialog-description": "Поделитесь геолокацией, чтобы подтвердить визит и получить бонус XP. Или отметьте без подтверждения.",
     "visited-was-here": "Я здесь был(а)",
-    "visited-places": "Посещённые места",
+    "visit-error": "Не удалось сохранить визит",
+    "visit-saved-offline": "Визит сохранён и будет отправлен, когда появится связь",
+    "visit-result-title": "Визит №{{count}} в это место",
+    "visit-result-first-this-year": "Вы первый, кто побывал здесь в этом году",
+    "visit-already-today": "Вы уже отмечались здесь сегодня",
+    "visit-last": "Последний визит: {{date}}",
+    "visit-button-times_one": "Вы были здесь · {{count}} раз",
+    "visit-button-times_few": "Вы были здесь · {{count}} раза",
+    "visit-button-times_many": "Вы были здесь · {{count}} раз",
+    "visit-delete": "Удалить визит",
+    "visit-delete-confirmation": "Удалить этот визит? Фотографии останутся на странице места.",
+    "visits-count_one": "{{count}} визит",
+    "visits-count_few": "{{count}} визита",
+    "visits-count_many": "{{count}} визитов",
+    "user-visits-title": "Визиты",
+    "visits-view-visits": "Визиты",
+    "visits-view-places": "Места",
+    "visits-user-empty": "Пока ни одного визита",
+    "photos-year-unknown": "Без даты",
     "search-page-title": "Поиск: {{query}}",
     "search-results-locations": "Адреса",
     "search-results-coordinates": "Координаты",
@@ -627,21 +637,17 @@
     "sort": "Сортировка",
     "add-place_title": "Добавить новое место на карту",
     "authorization-on-site_title": "Авторизация на сайте",
-    "osm-candidates_title": "Места для исследования",
-    "osm-candidates_collapse": "Свернуть",
-    "osm-candidates_zoom-in": "Приблизьте карту",
-    "osm-candidates_error": "Не удалось загрузить места",
-    "osm-candidates_loading": "Ищем места…",
-    "osm-candidates_found": "Найдено мест: {{value}}",
-    "osm-candidates_collecting": "Собираем данные…",
-    "osm-candidates_group-known": "Хорошо описанные",
-    "osm-candidates_group-explore": "Неисследованные",
-    "osm-candidates_group-other": "Прочие объекты",
-    "osm-candidates_group-onsite": "Уже на Геометках",
-    "osm-candidates_hint-known": "О месте много известно: есть статья, фото или охранный статус",
-    "osm-candidates_hint-explore": "Интересный объект, о котором почти ничего не известно. Станьте первым, кто его опишет",
-    "osm-candidates_hint-other": "Памятники, арт-объекты и другие места без подробностей",
-    "osm-candidates_hint-onsite": "Эти места уже есть на Геометках",
+    "white-spots_badge": "Не открыто",
+    "white-spots_hint": "Это место ещё никто не открыл на Геометках: оно есть в OpenStreetMap, но без описания",
+    "white-spots_cta": "Откройте это место первым: +35 опыта",
+    "white-spots_create": "Добавить это место",
+    "white-spots_opened": "Вы открыли новое место! +35 опыта",
+    "hex_places": "На карте: {{count}}",
+    "hex_spots": "Не добавлено: {{count}}",
+    "hex_visited": "Вы были: {{count}}",
+    "hex_legend_visited": "Вы были",
+    "hex_legend_places": "На карте",
+    "hex_legend_spots": "Не добавлено",
     "osm-candidates_distance-km": "{{value}} км",
     "osm-candidates_distance-m": "{{value}} м",
     "osm-candidates_settlement-inside": "в {{place}}",
@@ -649,30 +655,15 @@
     "osm-candidates_unnamed-inside": "{{type}} в {{place}}",
     "osm-candidates_unnamed-near": "{{type}} у {{place}}",
     "osm-candidates_no-name": "Название неизвестно",
-    "osm-candidates_score-type": "Тип: {{value}}",
     "osm-candidates_score-wiki": "Есть статья в Википедии",
     "osm-candidates_score-nearby-wiki": "Найдена статья в Википедии",
     "osm-candidates_score-sitelinks": "Статьи на {{value}} языках",
     "osm-candidates_score-protected": "Охраняемый объект",
-    "osm-candidates_score-photo": "Есть фото",
-    "osm-candidates_score-description": "Есть описание",
-    "osm-candidates_score-website": "Есть сайт",
-    "osm-candidates_score-names": "Названия на {{value}} языках",
-    "osm-candidates_score-contour": "Нарисован контуром на карте",
     "osm-candidates_score-salt": "Солёное озеро",
     "osm-candidates_score-lake-size": "Размер {{value}}",
-    "osm-candidates_score-dimensions": "Известны размеры",
-    "osm-candidates_score-no-name": "Нет названия",
-    "osm-candidates_score-private": "Закрытая территория",
     "osm-candidates_linked-to": "Связано с геометкой:",
     "osm-candidates_looks-like": "Похоже на геометку:",
-    "osm-candidates_create": "Создать геометку",
-    "osm-candidates_cta": "Этого места ещё нет на Геометках",
-    "osm-candidates_cta-explore": "О месте почти ничего не известно. Опишите его первым",
     "osm-candidates_wikipedia": "Википедия",
-    "osm-candidates_confirm-link": "Подтвердить связь",
-    "osm-candidates_unlink": "Отвязать",
-    "osm-candidates_reject": "Скрыть навсегда",
     "osm-candidates_create-hint": "Название, категория и координаты взяты из OpenStreetMap, проверьте их. Описание напишите своими словами: копировать тексты из Википедии нельзя.",
     "osm-candidates_create-taken": "Это место уже есть на Геометках:",
     "osm-candidates_create-duplicate": "Похоже, это место уже есть на Геометках:",
@@ -680,13 +671,6 @@
     "osm-candidates_elevation": "{{value}} м",
     "osm-candidates_heritage-short": "Наследие",
     "osm-candidates_heritage-code": "Объект культурного наследия, № {{code}}",
-    "osm-candidates_similarity": "Совпадение названия: {{value}}%",
-    "osm-candidates_rating-label": "Рейтинг интереса",
-    "osm-candidates_linked": "Объект связан с геометкой",
-    "osm-candidates_unlinked": "Связь с геометкой удалена",
-    "osm-candidates_rejected": "Объект скрыт с карты",
-    "osm-candidates_reject-confirm": "Скрыть «{{title}}» с карты навсегда? Повторный сбор данных его не вернёт.",
-    "osm-candidates_reject-action": "Скрыть",
     "linked-to": "Добавлено к: {{places}}",
     "nearby-photos_all": "Все",
     "nearby-photos_empty": "Рядом с этим местом фотографий не нашлось",
@@ -745,7 +729,7 @@
     "place-views-count_one": "{{formatted}} просмотр",
     "place-views-count_few": "{{formatted}} просмотра",
     "place-views-count_many": "{{formatted}} просмотров",
-    "place-history": "История изменений",
+    "place-history": "Журнал активности",
     "read-full-text": "Читать полностью",
     "collapse-text": "Свернуть",
     "home-hero-title": "Интересные места, которые нашли путешественники",
@@ -1017,10 +1001,10 @@
     "people-count_one": "{{count}} человек",
     "people-count_few": "{{count}} человека",
     "people-count_many": "{{count}} человек",
+    "visited-nobody-yet": "Пока никто не отметился",
     "visited-were-here_one": "был здесь",
     "visited-were-here_few": "были здесь",
     "visited-were-here_many": "были здесь",
-    "visited-nobody-yet": "Пока никто не отметил, что был здесь",
     "collections_place-in-n-collections_one": "В {{count}} коллекции",
     "collections_place-in-n-collections_few": "В {{count}} коллекциях",
     "collections_place-in-n-collections_many": "В {{count}} коллекциях",
@@ -1098,5 +1082,157 @@
     "sort-preset-comments": "Обсуждаемые",
     "sort-preset-comments-caption": "Больше всего отзывов",
     "scroll-back": "Назад",
-    "scroll-forward": "Вперёд"
+    "scroll-forward": "Вперёд",
+    "visit-questions-intro": "Вы были здесь. Пара слов для тех, кто поедет после вас:",
+    "visit-questions-skip": "Пропустить",
+    "visit-questions-title": "Вы были здесь",
+    "visit-questions-thanks": "Спасибо! Это увидят те, кто поедет после вас",
+    "place-now-title": "Как сейчас",
+    "place-now-agree": "{{agree}} из {{total}}",
+    "place-now-history": "в {{year}}: {{value}}",
+    "place-now-cannot": "Нельзя",
+    "visit-feature-can": "{{feature}}: можно",
+    "visit-feature-cannot": "{{feature}}: нельзя",
+    "visit-questions-done": "Готово",
+    "visit-answers-can": "можно: {{list}}",
+    "visit-answers-cannot": "нельзя: {{list}}",
+    "visitQuestions": {
+        "road": {
+            "question": "Как добраться?",
+            "title": "Дорога",
+            "values": {
+                "asphalt": "асфальт",
+                "dirt": "грунтовка, проедет легковая",
+                "offroad": "только внедорожник",
+                "foot": "только пешком",
+                "water": "по воде"
+            }
+        },
+        "walk": {
+            "question": "Сколько идти пешком?",
+            "title": "Пешком",
+            "values": {
+                "short": "до 1 км",
+                "medium": "1–5 км",
+                "long": "больше 5 км"
+            }
+        },
+        "trail": {
+            "question": "Есть ли тропа?",
+            "title": "Тропа",
+            "values": {
+                "marked": "есть, не заблудиться",
+                "faint": "местами, нужен трек",
+                "none": "тропы нет"
+            }
+        },
+        "entry": {
+            "question": "Как со входом?",
+            "title": "Вход",
+            "values": {
+                "free": "свободный",
+                "paid": "платный",
+                "guarded": "охрана",
+                "outside": "только снаружи",
+                "closed": "закрыто"
+            }
+        },
+        "state": {
+            "question": "В каком состоянии?",
+            "title": "Состояние",
+            "values": {
+                "intact": "как на фото",
+                "decaying": "разрушается",
+                "demolished": "снесено"
+            }
+        },
+        "water": {
+            "question": "Есть вода?",
+            "title": "Вода",
+            "values": {
+                "present": "есть",
+                "dry": "пересохло"
+            }
+        },
+        "crowd": {
+            "question": "Много ли людей?",
+            "title": "Люди",
+            "values": {
+                "empty": "никого",
+                "some": "немного",
+                "crowded": "многолюдно"
+            }
+        },
+        "time": {
+            "question": "Сколько времени нужно?",
+            "title": "Время",
+            "values": {
+                "hour": "до часа",
+                "half": "полдня",
+                "day": "день и больше"
+            }
+        },
+        "parking": {
+            "question": "Где оставить машину?",
+            "title": "Парковка",
+            "values": {
+                "near": "у места",
+                "far": "далеко, дальше пешком",
+                "none": "негде"
+            }
+        },
+        "cell": {
+            "question": "Есть ли связь?",
+            "title": "Связь",
+            "values": {
+                "good": "есть",
+                "weak": "слабая",
+                "none": "нет"
+            }
+        },
+        "facilities": {
+            "question": "Что есть на месте?",
+            "title": "На месте",
+            "values": {
+                "none": "ничего",
+                "basic": "туалет, беседки",
+                "full": "кафе или магазин"
+            }
+        },
+        "safety": {
+            "question": "Насколько безопасно?",
+            "title": "Безопасность",
+            "values": {
+                "safe": "безопасно",
+                "care": "осторожно",
+                "danger": "опасно"
+            }
+        },
+        "access": {
+            "question": "Можно с коляской?",
+            "title": "С коляской",
+            "values": {
+                "full": "да",
+                "partial": "частично",
+                "none": "нет"
+            }
+        },
+        "can": {
+            "question": "Что здесь можно?",
+            "title": "Можно"
+        }
+    },
+    "visitFeatures": {
+        "swim": "купаться",
+        "fish": "рыбачить",
+        "raft": "сплав",
+        "beach": "пляж",
+        "camp": "с палаткой",
+        "winter": "зимой",
+        "ski": "на лыжах",
+        "kids": "с детьми",
+        "dog": "с собакой",
+        "drink": "питьевая вода",
+        "fire": "костёр"
+    }
 }

@@ -91,8 +91,3 @@ export interface ListResponse {
     pendingTiles: number
     tooLarge?: boolean
 }
-
-export interface LinkRequest {
-    id: string
-    placeId: string
-}

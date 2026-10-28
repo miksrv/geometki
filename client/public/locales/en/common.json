@@ -1,8 +1,8 @@
 {
     "page-not-found": "Page not found",
     "api-error-generic": "Something went wrong on the server, please try again later",
-    "map-of-interesting-pages": "Tourist Map of Russia — Interesting Places and Attractions",
-    "places-seo-description": "A catalog of interesting places and landmarks with GPS coordinates, photos, and descriptions from travelers. Filter by category, region, and tags.",
+    "map-of-interesting-pages": "Map of Interesting Places and Attractions in Russia",
+    "places-seo-description": "A catalog of interesting places and landmarks with GPS coordinates, photos, and descriptions from travelers. Filter by category and region.",
     "nothing-here-yet": "There's nothing here yet",
     "nothing-found": "Nothing found",
     "nothing-found-description": "Try changing the query or filters",
@@ -35,7 +35,7 @@
     "home-seo-title": "Interesting Places and Attractions in Russia",
     "nav-map": "Map",
     "geotags-description": "A map of interesting places in Russia: waterfalls, caves, abandoned places, mountains and monuments with coordinates, photos and travellers' reviews.",
-    "geotags-map-description": "Interactive map of Russia with thousands of interesting places: natural attractions, mountain peaks, waterfalls and caves, abandoned sites, historical monuments, temples and bunkers. Geotags with GPS coordinates for tourists and travelers.",
+    "geotags-map-description": "Interactive map of Russia: thousands of interesting places with GPS coordinates — mountains, waterfalls, caves, abandoned sites, monuments and temples.",
     "settings": "Settings",
     "logout": "Logout",
     "create-geotag": "Create a geotag",
@@ -129,8 +129,6 @@
     "input_geotag-placeholder": "Enter a title for the geotag",
     "input_category-label": "Category",
     "input_category-placeholder": "Select a category",
-    "input_tags-label": "Select or add geotag features",
-    "input_tags-placeholder": "Start typing",
     "registration": "Registration",
     "map-link-on-Yandex": "on Yandex maps",
     "map-link-on-Google": "on Google maps",
@@ -441,14 +439,24 @@
     "sending-mail-status-rejected": "Rejected",
     "sending-mail-status-expired": "Expired",
     "sending-mail-status-grouped": "Grouped",
-    "visited-dialog-share-location": "Share location",
-    "visited-dialog-without-confirmation": "Mark without confirmation",
-    "visited-confirmed": "Place marked as visited ✓",
-    "visited-unconfirmed": "Marked as visited without location confirmation",
-    "visited-removed": "Visit mark has been removed",
-    "visited-dialog-description": "Share your location to verify your visit and earn a bonus. Or mark without confirmation.",
     "visited-was-here": "I was here",
-    "visited-places": "Visited Places",
+    "visit-error": "Could not save the visit",
+    "visit-saved-offline": "The visit is saved and will be sent when you are back online",
+    "visit-result-title": "Visit #{{count}} to this place",
+    "visit-result-first-this-year": "You are the first here this year",
+    "visit-already-today": "You already checked in here today",
+    "visit-last": "Last visit: {{date}}",
+    "visit-button-times_one": "You were here · {{count}} time",
+    "visit-button-times_other": "You were here · {{count}} times",
+    "visit-delete": "Delete visit",
+    "visit-delete-confirmation": "Delete this visit? Its photos stay on the place page.",
+    "visits-count_one": "{{count}} visit",
+    "visits-count_other": "{{count}} visits",
+    "user-visits-title": "Visits",
+    "visits-view-visits": "Visits",
+    "visits-view-places": "Places",
+    "visits-user-empty": "No visits yet",
+    "photos-year-unknown": "No date",
     "search-page-title": "Search: {{query}}",
     "search-results-locations": "Addresses",
     "search-results-coordinates": "Coordinates",
@@ -602,21 +610,17 @@
     "sort": "Sort",
     "add-place_title": "Add a new place on the map",
     "authorization-on-site_title": "Sign in to the site",
-    "osm-candidates_title": "Places to explore",
-    "osm-candidates_collapse": "Collapse",
-    "osm-candidates_zoom-in": "Zoom in",
-    "osm-candidates_error": "Could not load the places",
-    "osm-candidates_loading": "Looking for places…",
-    "osm-candidates_found": "Places found: {{value}}",
-    "osm-candidates_collecting": "Collecting data…",
-    "osm-candidates_group-known": "Well-documented",
-    "osm-candidates_group-explore": "Unexplored",
-    "osm-candidates_group-other": "Other objects",
-    "osm-candidates_group-onsite": "Already on Geometki",
-    "osm-candidates_hint-known": "Much is known about the place: an article, photos or a protected status",
-    "osm-candidates_hint-explore": "An interesting object almost nothing is known about. Be the first to describe it",
-    "osm-candidates_hint-other": "Monuments, artworks and other places without details",
-    "osm-candidates_hint-onsite": "These places are already on Geometki",
+    "white-spots_badge": "Undiscovered",
+    "white-spots_hint": "Nobody has discovered this place on Geometki yet: it is in OpenStreetMap, but without a description",
+    "white-spots_cta": "Discover this place first: +35 experience",
+    "white-spots_create": "Add this place",
+    "white-spots_opened": "You discovered a new place! +35 experience",
+    "hex_places": "On the map: {{count}}",
+    "hex_spots": "Not added yet: {{count}}",
+    "hex_visited": "You've been: {{count}}",
+    "hex_legend_visited": "Visited",
+    "hex_legend_places": "On map",
+    "hex_legend_spots": "Not added",
     "osm-candidates_distance-km": "{{value}} km",
     "osm-candidates_distance-m": "{{value}} m",
     "osm-candidates_settlement-inside": "in {{place}}",
@@ -624,30 +628,15 @@
     "osm-candidates_unnamed-inside": "{{type}} in {{place}}",
     "osm-candidates_unnamed-near": "{{type}} near {{place}}",
     "osm-candidates_no-name": "The name is unknown",
-    "osm-candidates_score-type": "Type: {{value}}",
     "osm-candidates_score-wiki": "Has a Wikipedia article",
     "osm-candidates_score-nearby-wiki": "Wikipedia article found",
     "osm-candidates_score-sitelinks": "Articles in {{value}} languages",
     "osm-candidates_score-protected": "Protected object",
-    "osm-candidates_score-photo": "Has a photo",
-    "osm-candidates_score-description": "Has a description",
-    "osm-candidates_score-website": "Has a website",
-    "osm-candidates_score-names": "Names in {{value}} languages",
-    "osm-candidates_score-contour": "Drawn as an outline on the map",
     "osm-candidates_score-salt": "Salt lake",
     "osm-candidates_score-lake-size": "Size {{value}}",
-    "osm-candidates_score-dimensions": "Dimensions are known",
-    "osm-candidates_score-no-name": "No name",
-    "osm-candidates_score-private": "Private area",
     "osm-candidates_linked-to": "Linked to the geotag:",
     "osm-candidates_looks-like": "Looks like the geotag:",
-    "osm-candidates_create": "Create a geotag",
-    "osm-candidates_cta": "This place is not on Geometki yet",
-    "osm-candidates_cta-explore": "Almost nothing is known about this place. Be the first to describe it",
     "osm-candidates_wikipedia": "Wikipedia",
-    "osm-candidates_confirm-link": "Confirm the link",
-    "osm-candidates_unlink": "Unlink",
-    "osm-candidates_reject": "Hide for good",
     "osm-candidates_create-hint": "The name, category and coordinates come from OpenStreetMap, please check them. Write the description in your own words: copying texts from Wikipedia is not allowed.",
     "osm-candidates_create-taken": "This place is already on Geometki:",
     "osm-candidates_create-duplicate": "This place seems to be on Geometki already:",
@@ -655,13 +644,6 @@
     "osm-candidates_elevation": "{{value}} m",
     "osm-candidates_heritage-short": "Heritage",
     "osm-candidates_heritage-code": "Cultural heritage site, no. {{code}}",
-    "osm-candidates_similarity": "Title match: {{value}}%",
-    "osm-candidates_rating-label": "Interest rating",
-    "osm-candidates_linked": "The object is linked to the geotag",
-    "osm-candidates_unlinked": "The link to the geotag is removed",
-    "osm-candidates_rejected": "The object is hidden from the map",
-    "osm-candidates_reject-confirm": "Hide “{{title}}” from the map for good? Collecting the data again will not bring it back.",
-    "osm-candidates_reject-action": "Hide",
     "linked-to": "Added to: {{places}}",
     "nearby-photos_all": "All",
     "nearby-photos_empty": "No photos found near this place",
@@ -718,7 +700,7 @@
     "place-location-card": "Where it is",
     "place-views-count_one": "{{formatted}} view",
     "place-views-count_other": "{{formatted}} views",
-    "place-history": "Change history",
+    "place-history": "Activity log",
     "read-full-text": "Read more",
     "collapse-text": "Collapse",
     "home-hero-title": "Interesting places found by travellers",
@@ -980,9 +962,9 @@
     "map-service-yandex": "Yandex Maps",
     "people-count_one": "{{count}} person",
     "people-count_other": "{{count}} people",
-    "visited-were-here_one": "has been here",
-    "visited-were-here_other": "have been here",
-    "visited-nobody-yet": "Nobody has marked a visit yet",
+    "visited-nobody-yet": "Nobody has checked in yet",
+    "visited-were-here_one": "was here",
+    "visited-were-here_other": "were here",
     "collections_place-in-n-collections_one": "In {{count}} collection",
     "collections_place-in-n-collections_other": "In {{count}} collections",
     "and-n-more": "and {{count}} more",
@@ -1055,5 +1037,157 @@
     "sort-preset-comments": "Most discussed",
     "sort-preset-comments-caption": "Most reviews",
     "scroll-back": "Back",
-    "scroll-forward": "Forward"
+    "scroll-forward": "Forward",
+    "visit-questions-intro": "You were here. A word for those who come after you:",
+    "visit-questions-skip": "Skip",
+    "visit-questions-title": "You were here",
+    "visit-questions-thanks": "Thank you! Those who come after you will see it",
+    "place-now-title": "How it is now",
+    "place-now-agree": "{{agree}} of {{total}}",
+    "place-now-history": "in {{year}}: {{value}}",
+    "place-now-cannot": "Cannot",
+    "visit-feature-can": "{{feature}}: can",
+    "visit-feature-cannot": "{{feature}}: cannot",
+    "visit-questions-done": "Done",
+    "visit-answers-can": "can: {{list}}",
+    "visit-answers-cannot": "cannot: {{list}}",
+    "visitQuestions": {
+        "road": {
+            "question": "How did you get there?",
+            "title": "Road",
+            "values": {
+                "asphalt": "asphalt",
+                "dirt": "dirt road, a car will pass",
+                "offroad": "4×4 only",
+                "foot": "on foot only",
+                "water": "by water"
+            }
+        },
+        "walk": {
+            "question": "How far on foot?",
+            "title": "On foot",
+            "values": {
+                "short": "under 1 km",
+                "medium": "1–5 km",
+                "long": "over 5 km"
+            }
+        },
+        "trail": {
+            "question": "Is there a trail?",
+            "title": "Trail",
+            "values": {
+                "marked": "yes, easy to follow",
+                "faint": "in places, bring a track",
+                "none": "no trail"
+            }
+        },
+        "entry": {
+            "question": "What about the entry?",
+            "title": "Entry",
+            "values": {
+                "free": "free",
+                "paid": "paid",
+                "guarded": "guarded",
+                "outside": "outside only",
+                "closed": "closed"
+            }
+        },
+        "state": {
+            "question": "What state is it in?",
+            "title": "State",
+            "values": {
+                "intact": "as in the photos",
+                "decaying": "decaying",
+                "demolished": "demolished"
+            }
+        },
+        "water": {
+            "question": "Is there water?",
+            "title": "Water",
+            "values": {
+                "present": "there is water",
+                "dry": "dried up"
+            }
+        },
+        "crowd": {
+            "question": "How many people?",
+            "title": "People",
+            "values": {
+                "empty": "nobody",
+                "some": "a few",
+                "crowded": "crowded"
+            }
+        },
+        "time": {
+            "question": "How much time does it take?",
+            "title": "Time",
+            "values": {
+                "hour": "under an hour",
+                "half": "half a day",
+                "day": "a day or more"
+            }
+        },
+        "parking": {
+            "question": "Where do you leave the car?",
+            "title": "Parking",
+            "values": {
+                "near": "at the place",
+                "far": "far, then on foot",
+                "none": "nowhere"
+            }
+        },
+        "cell": {
+            "question": "Is there mobile signal?",
+            "title": "Signal",
+            "values": {
+                "good": "yes",
+                "weak": "weak",
+                "none": "none"
+            }
+        },
+        "facilities": {
+            "question": "What is there on site?",
+            "title": "On site",
+            "values": {
+                "none": "nothing",
+                "basic": "toilets, shelters",
+                "full": "a café or a shop"
+            }
+        },
+        "safety": {
+            "question": "How safe is it?",
+            "title": "Safety",
+            "values": {
+                "safe": "safe",
+                "care": "take care",
+                "danger": "dangerous"
+            }
+        },
+        "access": {
+            "question": "Wheelchair or stroller friendly?",
+            "title": "Wheelchair",
+            "values": {
+                "full": "yes",
+                "partial": "partly",
+                "none": "no"
+            }
+        },
+        "can": {
+            "question": "What can you do here?",
+            "title": "Can"
+        }
+    },
+    "visitFeatures": {
+        "swim": "swimming",
+        "fish": "fishing",
+        "raft": "rafting",
+        "beach": "beach",
+        "camp": "camping",
+        "winter": "in winter",
+        "ski": "skiing",
+        "kids": "with kids",
+        "dog": "with a dog",
+        "drink": "drinking water",
+        "fire": "campfire"
+    }
 }

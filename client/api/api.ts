@@ -450,6 +450,14 @@ export const API = createApi({
             })
         }),
 
+        /** Controller: Exploration **/
+        explorationGetPoints: builder.query<ApiType.Exploration.PointsResponse, void>({
+            // The answer is the same for everybody and the server keeps it for 10 minutes too: a zoom
+            // into the points and back must not fetch and parse the 400 KB again
+            keepUnusedDataFor: 600,
+            query: () => 'exploration/points'
+        }),
+
         /** Controller: OSM Candidates **/
         osmCandidatesGetList: builder.query<ApiType.OsmCandidates.ListResponse, ApiType.OsmCandidates.ListRequest>({
             providesTags: ['OsmCandidates'],
@@ -458,21 +466,6 @@ export const API = createApi({
         osmCandidatesGetItem: builder.query<ApiType.OsmCandidates.Candidate, string>({
             providesTags: (res, err, id) => [{ id, type: 'OsmCandidates' }],
             query: (id) => `osm-candidates/${id}`
-        }),
-        osmCandidatesPatchLink: builder.mutation<void, ApiType.OsmCandidates.LinkRequest>({
-            invalidatesTags: ['OsmCandidates'],
-            query: ({ id, placeId }) => ({ body: { placeId }, method: 'PATCH', url: `osm-candidates/${id}/link` }),
-            transformErrorResponse: extractErrorMessage
-        }),
-        osmCandidatesPatchUnlink: builder.mutation<void, string>({
-            invalidatesTags: ['OsmCandidates'],
-            query: (id) => ({ method: 'PATCH', url: `osm-candidates/${id}/unlink` }),
-            transformErrorResponse: extractErrorMessage
-        }),
-        osmCandidatesPatchReject: builder.mutation<void, string>({
-            invalidatesTags: ['OsmCandidates'],
-            query: (id) => ({ method: 'PATCH', url: `osm-candidates/${id}/reject` }),
-            transformErrorResponse: extractErrorMessage
         }),
 
         /** Controller: ExternalPhotos (Wikimedia Commons and PastVu photos linked to places) **/
@@ -544,6 +537,8 @@ export const API = createApi({
         photoPostUpload: builder.mutation<ApiType.Photos.UploadResponse, ApiType.Photos.UploadRequest>({
             invalidatesTags: (res, err, arg) => [
                 { id: arg.place, type: 'Photos' },
+                // A photo uploaded on the day of a visit shows in the visit
+                { id: arg.place, type: 'Visits' },
                 { type: 'Feed' },
                 { type: 'Notifications' }
             ],
@@ -644,6 +639,8 @@ export const API = createApi({
             query: ({ id, ...params }) => `poi/${id}${encodeQueryData(params)}`
         }),
         poiGetList: builder.query<ApiType.POI.PlacesListResponse, Maybe<ApiType.POI.ListRequest>>({
+            // The visitor's own visited places (the green cells of the hex layer) follow their check-ins
+            providesTags: (res, err, arg) => (arg?.visited ? [{ type: 'Visits' }] : []),
             query: (params) => `poi${encodeQueryData(params)}`
         }),
         poiGetPhotoList: builder.query<
@@ -688,11 +685,6 @@ export const API = createApi({
             query: () => 'stats'
         }),
 
-        /** Controller: Tags **/
-        tagsGetSearch: builder.mutation<ApiType.Tags.SearchResponse, Maybe<string>>({
-            query: (searchString) => `tags/search?text=${searchString || ''}`
-        }),
-
         /** Controller: User **/
         usersGetItem: builder.query<ApiType.Users.ItemResponse, string>({
             providesTags: ['Users'],
@@ -729,32 +721,61 @@ export const API = createApi({
             transformErrorResponse: extractErrorData
         }),
 
-        /** Controller: Visited **/
-        visitedCheckPlace: builder.query<ApiType.Visited.CheckResponse, ApiType.Visited.CheckRequest>({
-            providesTags: (res, err, arg) => [{ id: arg.placeId, type: 'Visited' }],
-            query: (params) => `visited${encodeQueryData(params)}`
-        }),
-        visitedGetUsersList: builder.query<ApiType.Visited.ListResponse, string>({
-            providesTags: (result, error, arg) => [{ id: arg, type: 'Visited' }],
-            query: (item) => `visited/${item}`
-        }),
-        visitedPutPlace: builder.mutation<ApiType.Visited.PutResponse, ApiType.Visited.PutRequest>({
+        /** Controller: Visits **/
+        visitsDelete: builder.mutation<void, ApiType.Visits.DeleteRequest>({
             invalidatesTags: (res, err, arg) => [
-                { id: arg.place, type: 'Visited' },
+                { id: arg.place, type: 'Visits' },
+                { id: arg.place, type: 'Photos' },
+                { type: 'Visits' },
+                { type: 'Feed' },
+                { type: 'Notifications' }
+            ],
+            query: ({ id }) => ({
+                method: 'DELETE',
+                url: `visits/${id}`
+            }),
+            transformErrorResponse: extractErrorData
+        }),
+        visitsGetList: builder.query<ApiType.Visits.ListResponse, ApiType.Visits.ListRequest>({
+            providesTags: (res, err, arg) => [{ id: arg.place ?? arg.user, type: 'Visits' }],
+            query: (params) => `visits${encodeQueryData(params)}`
+        }),
+        visitsGetMe: builder.query<ApiType.Visits.MeResponse, ApiType.Visits.MeRequest>({
+            providesTags: (res, err, arg) => [{ id: `me-${arg.place}`, type: 'Visits' }],
+            query: (params) => `visits/me${encodeQueryData(params)}`
+        }),
+        visitsGetPlaces: builder.query<ApiType.Visits.PlacesResponse, ApiType.Visits.PlacesRequest>({
+            providesTags: (res, err, arg) => [{ id: arg.user, type: 'Visits' }],
+            query: (params) => `visits/places${encodeQueryData(params)}`
+        }),
+        visitsPatch: builder.mutation<ApiType.Visits.UpdateResponse, ApiType.Visits.UpdateRequest>({
+            // An answer changes the place's "how it is now" and the visitor's own visit: the lists of
+            // other places and the profile timelines are left alone (a tap is one PATCH and two GETs)
+            invalidatesTags: (res, err, arg) => [
+                { id: arg.place, type: 'Visits' },
+                { id: `me-${arg.place}`, type: 'Visits' }
+            ],
+            query: ({ id, answers }) => ({
+                body: { answers },
+                method: 'PATCH',
+                url: `visits/${id}`
+            }),
+            transformErrorResponse: extractErrorData
+        }),
+        visitsPost: builder.mutation<ApiType.Visits.CreateResponse, ApiType.Visits.CreateRequest>({
+            invalidatesTags: (res, err, arg) => [
+                { id: arg.place, type: 'Visits' },
+                { id: `me-${arg.place}`, type: 'Visits' },
+                { type: 'Visits' },
                 { type: 'Feed' },
                 { type: 'Notifications' }
             ],
             query: (data) => ({
                 body: data,
-                method: 'PUT',
-                url: 'visited'
+                method: 'POST',
+                url: 'visits'
             }),
             transformErrorResponse: extractErrorData
-        }),
-        visitedGetUserPlaces: builder.query<ApiType.Visited.UserPlacesResponse, ApiType.Visited.UserPlacesRequest>({
-            providesTags: (res, err, arg) => [{ id: arg.userId, type: 'Visited' }],
-            query: (params) =>
-                `visited/user/${params.userId}${encodeQueryData({ limit: params.limit, offset: params.offset })}`
         })
     }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -784,6 +805,6 @@ export const API = createApi({
         'SendingMail',
         'UserAchievements',
         'Users',
-        'Visited'
+        'Visits'
     ]
 })

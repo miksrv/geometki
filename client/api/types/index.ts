@@ -3,6 +3,7 @@ export * as Auth from './auth'
 export * as Bookmarks from './bookmarks'
 export * as Collections from './collections'
 export * as Comments from './comments'
+export * as Exploration from './exploration'
 export * as ExternalPhotos from './externalPhotos'
 export * as Feed from './feed'
 export * as Location from './location'
@@ -19,9 +20,8 @@ export * as Search from './search'
 export * as SendingMail from './sending-mail'
 export * as SiteMap from './siteMap'
 export * as Stats from './stats'
-export * as Tags from './tags'
 export * as Users from './users'
-export * as Visited from './visited'
+export * as Visits from './visits'
 
 export interface DateTime {
     date: string

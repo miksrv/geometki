@@ -21,7 +21,6 @@ export interface ListRequest {
     author?: string
     lat?: number | null
     lon?: number | null
-    tag?: string | null
     search?: string
     country?: number | null
     region?: number | null
@@ -65,7 +64,6 @@ export interface PostItemRequest {
     content?: string
     category?: string
     photos?: string[]
-    tags?: string[]
     lat?: number
     lon?: number
     /** OSM candidate the place is created from: links them and hides the candidate from the map */
@@ -75,7 +73,6 @@ export interface PostItemRequest {
 export interface PatchItemResponse {
     content?: string
     locale?: ApiType.Locale
-    tags?: string[]
 }
 
 export interface TextsResponse {
@@ -84,4 +81,6 @@ export interface TextsResponse {
 
 export interface PostItemResponse {
     id: string
+    /** The new place closed a white spot: the OSM candidate was linked to it */
+    spotOpened?: boolean
 }
