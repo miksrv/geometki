@@ -65,7 +65,13 @@ class ActivityRemoval
         return $ratingIds ? self::collect('rating_id IN ?', [$ratingIds]) : new self([], [], []);
     }
 
-    /** A user's activity of one type about a place: a visit or a bookmark taken back */
+    /** The event of one visit: the visit is deleted */
+    public static function forVisit(string $visitId): self
+    {
+        return self::collect('visit_id = ?', [$visitId]);
+    }
+
+    /** A user's activity of one type about a place: a bookmark taken back */
     public static function forUserPlace(string $userId, string $placeId, string $type): self
     {
         return self::collect('user_id = ? AND place_id = ? AND type = ?', [$userId, $placeId, $type]);

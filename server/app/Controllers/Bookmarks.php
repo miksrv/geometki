@@ -94,7 +94,7 @@ class Bookmarks extends ResourceController
      * Notifies the place author (in-app + email, subject to their settings)
      * when someone else bookmarks their place. Removing a bookmark deletes
      * the matching activity record so a later re-add is treated as a fresh
-     * action and notifies again, mirroring Visited::set().
+     * action and notifies again.
      *
      * @throws ReflectionException
      *

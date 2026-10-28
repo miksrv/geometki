@@ -41,11 +41,13 @@ class GuestCacheFilter implements FilterInterface
             return null;
         }
 
-        return service('response')
+        $response = service('response')
             ->setStatusCode(200)
             ->setContentType('application/json')
             ->setHeader('X-Guest-Cache', 'HIT')
             ->setBody($body);
+
+        return $this->withBrowserCache($request, $response, $config);
     }
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
@@ -59,6 +61,7 @@ class GuestCacheFilter implements FilterInterface
         if ($this->isCacheable($request, $config)) {
             if ($response->getStatusCode() === 200) {
                 (new GuestCache($config))->save($this->key($request), (string) $response->getBody(), self::$generation);
+                $this->withBrowserCache($request, $response, $config);
             }
 
             return null;
@@ -104,6 +107,18 @@ class GuestCacheFilter implements FilterInterface
         $query  = (string) $request->getUri()->getQuery();
 
         return $locale . ' ' . $this->path($request) . '?' . $query;
+    }
+
+    /** `Cache-Control` for the browser when the path is in $browserTtls (the framework's no-cache otherwise) */
+    private function withBrowserCache(RequestInterface $request, ResponseInterface $response, GuestCacheConfig $config): ResponseInterface
+    {
+        $match = $this->longestMatch($this->path($request), array_keys($config->browserTtls));
+
+        if ($match !== null) {
+            $response->removeHeader('Cache-Control')->setHeader('Cache-Control', 'public, max-age=' . $config->browserTtls[$match]);
+        }
+
+        return $response;
     }
 
     /** Seconds the answer is served: its own in $ttls, or the common one */

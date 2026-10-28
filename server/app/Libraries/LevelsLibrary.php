@@ -2,6 +2,7 @@
 
 use App\Entities\UserEntity;
 use App\Models\ActivityModel;
+use App\Models\OsmCandidatesModel;
 use App\Models\UsersModel;
 use ReflectionException;
 
@@ -69,6 +70,10 @@ class LevelsLibrary {
         $experience += $statistic->cover * MODIFIER_COVER;
         $experience += $statistic->comment * MODIFIER_COMMENT;
         $experience += $statistic->photo_link * MODIFIER_PHOTO_LINK;
+        // Visits with a contribution: counted from the log, never pushed (VisitsLibrary)
+        $experience += (new VisitsLibrary())->contributions($userId) * MODIFIER_VISIT;
+        // White spots opened: counted from the candidates' links, never pushed (OsmCandidatesModel)
+        $experience += (new OsmCandidatesModel())->spotsOpened($userId) * MODIFIER_SPOT;
 
         // Add XP bonuses from earned achievements (only current tier per group)
         $db  = \Config\Database::connect();

@@ -97,9 +97,12 @@ class ActivityLibrary {
      * @param $placeId
      * @throws ReflectionException
      */
-    public function visit($placeId): void
+    /**
+     * A check-in: one event per visit (users_visited_places.id), so deleting the visit removes it alone
+     */
+    public function visit(string $placeId, string $visitId): void
     {
-        $this->_add('visit', null, $placeId);
+        $this->_add('visit', null, $placeId, visitId: $visitId);
     }
 
     /**
@@ -152,6 +155,7 @@ class ActivityLibrary {
      * @param string|null $asUserId Attribute the activity (and its XP/achievements)
      *                              to this user instead of the current session's user.
      * @param string|null $externalPhotoId A linked PastVu / Commons photo (places_external_photos.id)
+     * @param string|null $visitId The visit of a 'visit' event (users_visited_places.id)
      * @throws ReflectionException
      * @throws Exception
      */
@@ -164,6 +168,7 @@ class ActivityLibrary {
         string|null $collectionId = null,
         string|null $asUserId = null,
         string|null $externalPhotoId = null,
+        string|null $visitId = null,
     ): void {
         // Whatever happened on a place shows on its page, but a bookmark: the page shows no
         // count of them, and the write leaves the guest cache, so a render would read it stale
@@ -221,6 +226,7 @@ class ActivityLibrary {
         $activity->rating_id  = $ratingId;
         $activity->comment_id = $commentId;
         $activity->collection_id = $collectionId;
+        $activity->visit_id   = $visitId;
 
         $model->insert($activity);
         $session->update();

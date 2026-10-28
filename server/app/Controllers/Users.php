@@ -9,7 +9,7 @@ use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Models\UsersModel;
-use App\Models\UsersVisitedPlacesModel;
+use App\Models\VisitsModel;
 use CodeIgniter\Files\File;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -116,12 +116,12 @@ class Users extends ResourceController
             }
         }
 
-        // Bulk query: visited counts per user
+        // Bulk query: visited places per user (a place with several visits counts once)
         $visitedStats = [];
         if (!empty($userIds)) {
             $placeholders = implode(',', array_fill(0, count($userIds), '?'));
             $visitedRows = $db->query(
-                "SELECT user_id, COUNT(*) AS visited FROM users_visited_places WHERE user_id IN ($placeholders) GROUP BY user_id",
+                "SELECT user_id, COUNT(DISTINCT place_id) AS visited FROM users_visited_places WHERE user_id IN ($placeholders) GROUP BY user_id",
                 $userIds
             )->getResultObject();
             foreach ($visitedRows as $row) {
@@ -260,8 +260,13 @@ class Users extends ResourceController
         $usersData->statistic = $userLevels->statistic($usersData->id);
         $usersData->avatar    = $avatarLibrary->buildPath($usersData->id, $usersData->avatar, 'medium');
 
-        $visitedModel = new UsersVisitedPlacesModel();
-        $usersData->statistic->visited = $visitedModel->where('user_id', $id)->countAllResults();
+        // Visits are a log: the distinct places, and all the check-ins
+        $visitsRow = (new VisitsModel())
+            ->select('COUNT(DISTINCT place_id) AS visited, COUNT(*) AS visits', false)
+            ->where('user_id', $id)
+            ->first();
+        $usersData->statistic->visited = (int) ($visitsRow->visited ?? 0);
+        $usersData->statistic->visits  = (int) ($visitsRow->visits ?? 0);
 
         unset($usersData->experience, $usersData->level);
 

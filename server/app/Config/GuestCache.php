@@ -35,6 +35,18 @@ class GuestCache extends BaseConfig
         'feed/calendar' => 10 * MINUTE,
         // `unexplored` is counted from the OSM candidates a cron job collects every minute
         'stats'         => 10 * MINUTE,
+        // The open candidates come and go with the tile collection
+        'exploration'   => 10 * MINUTE,
+    ];
+
+    /**
+     * Answers a visitor's browser may keep too (`Cache-Control: public, max-age`), served from
+     * the cache or fresh: big answers that change by time only, like the points of the hex layer.
+     *
+     * @var array<string, int>
+     */
+    public array $browserTtls = [
+        'exploration/points' => 10 * MINUTE,
     ];
 
     public string $path = WRITEPATH . 'cache/guest/';
@@ -47,7 +59,7 @@ class GuestCache extends BaseConfig
      */
     public array $groups = [
         'poi', 'places', 'photos', 'external-photos', 'comments', 'rating', 'feed', 'users',
-        'categories', 'location', 'locations', 'collections', 'visited', 'tags', 'stats', 'sitemap',
+        'categories', 'location', 'locations', 'collections', 'visits', 'stats', 'sitemap', 'exploration',
     ];
 
     /**

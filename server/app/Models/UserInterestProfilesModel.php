@@ -8,7 +8,7 @@ use CodeIgniter\Database\BaseConnection;
  * Model for the `users_interest_profiles` table.
  *
  * Computes, stores, and queries per-user affinity scores for both place
- * categories and tags. Scores are normalised to [0, 1] and refreshed
+ * categories and place features (`places_now`, the `can_*` answers). Scores are normalised to [0, 1] and refreshed
  * asynchronously after user interactions.
  *
  * updated_at is in $allowedFields because it is managed manually via raw SQL
@@ -62,12 +62,12 @@ class UserInterestProfilesModel extends ApplicationBaseModel
     ];
 
     /**
-     * Signal weights for tag interest scoring.
-     * Tags carry higher weight than categories as they are more specific.
+     * Signal weights for feature interest scoring ("can swim", "can camp"…).
+     * Features carry higher weight than categories as they are more specific.
      *
      * @var array<string, float>
      */
-    private const TAG_WEIGHTS = [
+    private const FEATURE_WEIGHTS = [
         'bookmarks' => 4.5,
         'visited'   => 3.0,
         'ratings'   => 3.5,
@@ -81,7 +81,7 @@ class UserInterestProfilesModel extends ApplicationBaseModel
 
     /**
      * Compute and persist affinity scores for a single user.
-     * Calculates interests for both categories and tags.
+     * Calculates interests for both categories and features.
      *
      * @param string $userId
      * @return void
@@ -92,9 +92,9 @@ class UserInterestProfilesModel extends ApplicationBaseModel
         $escapedUserId = $db->escape($userId);
 
         $categoryTotals = $this->collectCategoryScores($db, $escapedUserId);
-        $tagTotals      = $this->collectTagScores($db, $escapedUserId);
+        $featureTotals  = $this->collectFeatureScores($db, $escapedUserId);
 
-        if (empty($categoryTotals) && empty($tagTotals)) {
+        if (empty($categoryTotals) && empty($featureTotals)) {
             return;
         }
 
@@ -104,8 +104,8 @@ class UserInterestProfilesModel extends ApplicationBaseModel
             $this->saveInterests($db, $escapedUserId, 'category', $categoryTotals, $now);
         }
 
-        if (!empty($tagTotals)) {
-            $this->saveInterests($db, $escapedUserId, 'tag', $tagTotals, $now);
+        if (!empty($featureTotals)) {
+            $this->saveInterests($db, $escapedUserId, 'feature', $featureTotals, $now);
         }
     }
 
@@ -113,7 +113,7 @@ class UserInterestProfilesModel extends ApplicationBaseModel
      * Get user interests by type, optionally including ignored ones.
      *
      * @param string $userId
-     * @param string $type           'category' or 'tag'.
+     * @param string $type           'category' or 'feature'.
      * @param bool   $includeIgnored Whether to include ignored interests.
      * @return array<int, object>
      */
@@ -134,7 +134,7 @@ class UserInterestProfilesModel extends ApplicationBaseModel
      *
      * @param string $userId
      * @param bool   $includeIgnored  Whether to include ignored interests.
-     * @return array{categories: array<int, object>, tags: array<int, object>}
+     * @return array{categories: array<int, object>, features: array<int, object>}
      */
     public function getAllInterests(string $userId, bool $includeIgnored = false): array
     {
@@ -146,13 +146,13 @@ class UserInterestProfilesModel extends ApplicationBaseModel
 
         $interests = $query->orderBy('affinity', 'DESC')->findAll();
 
-        $result = ['categories' => [], 'tags' => []];
+        $result = ['categories' => [], 'features' => []];
 
         foreach ($interests as $interest) {
             if ($interest->interest_type === 'category') {
                 $result['categories'][] = $interest;
             } else {
-                $result['tags'][] = $interest;
+                $result['features'][] = $interest;
             }
         }
 
@@ -163,8 +163,8 @@ class UserInterestProfilesModel extends ApplicationBaseModel
      * Mark a specific interest as ignored for a user.
      *
      * @param string $userId
-     * @param string $type   'category' or 'tag'.
-     * @param string $value  Category slug or tag ID.
+     * @param string $type   'category' or 'feature'.
+     * @param string $value  Category key or feature key.
      * @return bool
      */
     public function ignoreInterest(string $userId, string $type, string $value): bool
@@ -180,8 +180,8 @@ class UserInterestProfilesModel extends ApplicationBaseModel
      * Un-ignore (restore) a specific interest for a user.
      *
      * @param string $userId
-     * @param string $type   'category' or 'tag'.
-     * @param string $value  Category slug or tag ID.
+     * @param string $type   'category' or 'feature'.
+     * @param string $value  Category key or feature key.
      * @return bool
      */
     public function restoreInterest(string $userId, string $type, string $value): bool
@@ -197,7 +197,7 @@ class UserInterestProfilesModel extends ApplicationBaseModel
      * Get ignored interests for a user, grouped by type.
      *
      * @param string $userId
-     * @return array{categories: array<int, object>, tags: array<int, object>}
+     * @return array{categories: array<int, object>, features: array<int, object>}
      */
     public function getIgnoredInterests(string $userId): array
     {
@@ -206,13 +206,13 @@ class UserInterestProfilesModel extends ApplicationBaseModel
             ->orderBy('affinity', 'DESC')
             ->findAll();
 
-        $result = ['categories' => [], 'tags' => []];
+        $result = ['categories' => [], 'features' => []];
 
         foreach ($interests as $interest) {
             if ($interest->interest_type === 'category') {
                 $result['categories'][] = $interest;
             } else {
-                $result['tags'][] = $interest;
+                $result['features'][] = $interest;
             }
         }
 
@@ -274,60 +274,61 @@ class UserInterestProfilesModel extends ApplicationBaseModel
     }
 
     /**
-     * Collect raw weighted scores for tags from all signal sources.
+     * Collect raw weighted scores for the features of places ("what can you do here", the
+     * `can_*` rows of `places_now` with the value `yes`) from all signal sources: the places
+     * a person keeps, visits, rates well and looks at. Their own answers are no signal.
      *
      * @param BaseConnection $db
      * @param string         $escapedUserId  Already-escaped user ID for interpolation.
      * @return array<string, float>
      */
-    private function collectTagScores(BaseConnection $db, string $escapedUserId): array
+    private function collectFeatureScores(BaseConnection $db, string $escapedUserId): array
     {
-        $w = self::TAG_WEIGHTS;
+        $w      = self::FEATURE_WEIGHTS;
+        $prefix = \Config\VisitQuestions::FEATURE_PREFIX;
+        $key    = "SUBSTRING(pn.question, " . (strlen($prefix) + 1) . ") AS interest_key";
+        $like   = str_replace('_', '\\_', $prefix) . '%';
+        $join   = "JOIN places_now pn ON pn.place_id = p.id AND pn.question LIKE '{$like}' AND pn.value = 'yes'";
 
         $queries = [
-            "SELECT t.id AS interest_key, COUNT(*) * {$w['bookmarks']} AS score
+            "SELECT {$key}, COUNT(*) * {$w['bookmarks']} AS score
                FROM users_bookmarks ub
                JOIN places p ON p.id = ub.place_id AND p.deleted_at IS NULL
-               JOIN places_tags pt ON pt.place_id = p.id AND pt.deleted_at IS NULL
-               JOIN tags t ON t.id = pt.tag_id
+               {$join}
               WHERE ub.user_id = {$escapedUserId}
-              GROUP BY t.id",
+              GROUP BY pn.question",
 
-            "SELECT t.id AS interest_key, COUNT(*) * {$w['visited']} AS score
+            "SELECT {$key}, COUNT(DISTINCT uv.place_id) * {$w['visited']} AS score
                FROM users_visited_places uv
                JOIN places p ON p.id = uv.place_id AND p.deleted_at IS NULL
-               JOIN places_tags pt ON pt.place_id = p.id AND pt.deleted_at IS NULL
-               JOIN tags t ON t.id = pt.tag_id
+               {$join}
               WHERE uv.user_id = {$escapedUserId}
-              GROUP BY t.id",
+              GROUP BY pn.question",
 
-            "SELECT t.id AS interest_key, COUNT(*) * {$w['ratings']} AS score
+            "SELECT {$key}, COUNT(*) * {$w['ratings']} AS score
                FROM rating r
                JOIN places p ON p.id = r.place_id AND p.deleted_at IS NULL
-               JOIN places_tags pt ON pt.place_id = p.id AND pt.deleted_at IS NULL
-               JOIN tags t ON t.id = pt.tag_id
+               {$join}
               WHERE r.user_id = {$escapedUserId}
                 AND r.value >= 4
                 AND r.deleted_at IS NULL
-              GROUP BY t.id",
+              GROUP BY pn.question",
 
-            "SELECT t.id AS interest_key, COUNT(*) * {$w['views']} AS score
+            "SELECT {$key}, COUNT(*) * {$w['views']} AS score
                FROM users_place_views upv
                JOIN places p ON p.id = upv.place_id AND p.deleted_at IS NULL
-               JOIN places_tags pt ON pt.place_id = p.id AND pt.deleted_at IS NULL
-               JOIN tags t ON t.id = pt.tag_id
+               {$join}
               WHERE upv.user_id = {$escapedUserId}
-              GROUP BY t.id",
+              GROUP BY pn.question",
 
-            "SELECT t.id AS interest_key, COUNT(DISTINCT a.place_id) * {$w['activity']} AS score
+            "SELECT {$key}, COUNT(DISTINCT a.place_id) * {$w['activity']} AS score
                FROM activity a
                JOIN places p ON p.id = a.place_id AND p.deleted_at IS NULL
-               JOIN places_tags pt ON pt.place_id = p.id AND pt.deleted_at IS NULL
-               JOIN tags t ON t.id = pt.tag_id
+               {$join}
               WHERE a.user_id = {$escapedUserId}
                 AND a.deleted_at IS NULL
                 AND a.place_id IS NOT NULL
-              GROUP BY t.id",
+              GROUP BY pn.question",
         ];
 
         return $this->aggregateScores($db, $queries);
@@ -360,7 +361,7 @@ class UserInterestProfilesModel extends ApplicationBaseModel
      *
      * @param BaseConnection       $db
      * @param string               $escapedUserId  Already-escaped user ID.
-     * @param string               $interestType   'category' or 'tag'.
+     * @param string               $interestType   'category' or 'feature'.
      * @param array<string, float> $totals         Raw score map.
      * @param string               $now            Formatted datetime string for updated_at.
      * @return void

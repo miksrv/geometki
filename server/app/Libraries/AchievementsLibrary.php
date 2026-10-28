@@ -11,12 +11,14 @@ class AchievementsLibrary
     private const TIER_ORDER = ['none' => 0, 'bronze' => 1, 'silver' => 2, 'gold' => 3];
 
     private array $metricMap = [
-        'place'   => ['places_created'],
+        'place'   => ['places_created', 'spots_opened'],
         'edit'    => ['places_edited'],
         'photo'   => ['photos_uploaded'],
         'cover'   => ['photos_uploaded'],
         'rating'  => ['ratings_given'],
         'comment' => ['comments_written'],
+        // A check-in (features/25, step 1): the visit metrics only, not every achievement there is
+        'visit'   => ['places_visited', 'visits_total', 'places_revisited', 'winter_visits', 'first_visit_of_year'],
         // A linked photo is not an uploaded one: it moves only the experience and the days
         'photo_link' => [],
     ];
@@ -327,6 +329,11 @@ class AchievementsLibrary
                 return (int) ($builder->get()->getRow()->cnt ?? 0);
             }
 
+            case 'spots_opened': {
+                // White spots: places created from an OSM candidate (features/25, step 4); no period filter
+                return (new \App\Models\OsmCandidatesModel())->spotsOpened($userId);
+            }
+
             case 'places_edited': {
                 $builder = $db->table('activity')
                     ->selectCount('activity.id', 'cnt')
@@ -342,15 +349,51 @@ class AchievementsLibrary
                 return (int) ($builder->get()->getRow()->cnt ?? 0);
             }
 
-            case 'places_visited': {
+            // Visits are a log (features/25, step 1): the distinct places, all the check-ins,
+            // the places seen in 2+ calendar years, the winter check-ins, the check-ins that
+            // opened a place's year. The season window applies to the visit day.
+            case 'places_visited':
+            case 'visits_total':
+            case 'winter_visits': {
                 $builder = $db->table('users_visited_places')
-                    ->selectCount('users_visited_places.id', 'cnt')
+                    ->select($metric === 'places_visited' ? 'COUNT(DISTINCT users_visited_places.place_id) AS cnt' : 'COUNT(*) AS cnt', false)
                     ->where('users_visited_places.user_id', $userId);
+                if ($metric === 'winter_visits') {
+                    $builder->where('MONTH(users_visited_places.visited_at) IN (12, 1, 2)', null, false);
+                }
                 if (!empty($filter['category_id'])) {
                     $builder->join('places', 'places.id = users_visited_places.place_id', 'inner')
                             ->where('places.category', $filter['category_id']);
                 }
+                if ($from) $builder->where('users_visited_places.visited_at >=', $from);
+                if ($to)   $builder->where('users_visited_places.visited_at <=', $to);
                 return (int) ($builder->get()->getRow()->cnt ?? 0);
+            }
+
+            case 'places_revisited': {
+                $row = $db->query(
+                    'SELECT COUNT(*) AS cnt FROM (
+                        SELECT place_id FROM users_visited_places WHERE user_id = ?
+                         GROUP BY place_id HAVING COUNT(DISTINCT YEAR(visited_at)) >= 2
+                    ) revisited',
+                    [$userId]
+                )->getRow();
+                return (int) ($row->cnt ?? 0);
+            }
+
+            case 'first_visit_of_year': {
+                $row = $db->query(
+                    'SELECT COUNT(*) AS cnt FROM users_visited_places v
+                      WHERE v.user_id = ?
+                        AND NOT EXISTS (
+                            SELECT 1 FROM users_visited_places o
+                             WHERE o.place_id = v.place_id AND o.id != v.id
+                               AND YEAR(o.visited_at) = YEAR(v.visited_at)
+                               AND (o.visited_at < v.visited_at OR (o.visited_at = v.visited_at AND o.created_at < v.created_at))
+                        )',
+                    [$userId]
+                )->getRow();
+                return (int) ($row->cnt ?? 0);
             }
 
             case 'photos_uploaded': {
