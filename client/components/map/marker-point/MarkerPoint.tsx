@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Marker, Popup } from 'react-leaflet'
+import { Marker, Popup, Tooltip } from 'react-leaflet'
 import Leaflet from 'leaflet'
 import { Button, Skeleton } from 'simple-react-ui-kit'
 
@@ -43,7 +43,9 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
                 className: styles.markerIcon,
                 iconAnchor: [10, 10],
                 iconSize: [20, 20],
-                iconUrl: categoryImage(place.category).src
+                iconUrl: categoryImage(place.category).src,
+                // The hint starts a little above the icon, not from its centre
+                tooltipAnchor: [0, -12]
             }),
         [place.category]
     )
@@ -76,6 +78,12 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
                     click: placeClickHandler
                 }}
             >
+                {/* The name on hover, as the undiscovered places have; styled with the site's tooltips (globals.sass) */}
+                {place.title && (
+                    <Tooltip direction={'top'}>
+                        <span className={'mapHint'}>{place.title}</span>
+                    </Tooltip>
+                )}
                 {place.id && (
                     <Popup
                         autoClose={true}

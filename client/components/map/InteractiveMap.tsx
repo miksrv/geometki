@@ -16,6 +16,7 @@ import { CategoryControl } from './category-control'
 import { ContextMenu } from './context-menu'
 import { CoordinatesControl } from './coordinates-control'
 import { FitBounds } from './fit-bounds'
+import { HEX_MAX_ZOOM, HexLayer, HexLegend } from './hex-layer'
 import { DEFAULT_HILLSHADE_OPACITY, HillshadeLayer } from './hillshade-layer'
 import { HistoricalPhotos } from './historical-photos'
 import { LayerSwitcherControl } from './layer-switcher-control'
@@ -71,6 +72,8 @@ type MapProps = {
     hideAdditionalLayers?: boolean
     /** New interesting places from OpenStreetMap and their panel "Места для исследования" */
     enableOsmCandidates?: boolean
+    /** Zoomed out, hexagons with the counts of places and undiscovered places replace the place markers */
+    enableHexes?: boolean
     /** Keep the chosen map layer, objects type and additional layers between visits (see mapSettings) */
     storeMapSettings?: boolean
     fullMapLink?: string
@@ -150,6 +153,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
     enableContextMenu,
     hideAdditionalLayers,
     enableOsmCandidates,
+    enableHexes,
     storeMapSettings,
     fullMapLink,
     enableUserLocation,
@@ -186,7 +190,6 @@ export const InteractiveMap: React.FC<MapProps> = ({
     const [mapType, setMapType] = useState<MapObjectsTypeEnum>(
         (storeMapSettings && savedSettings.type) || DEFAULT_MAP_TYPE
     )
-    const [bottomSlot, setBottomSlot] = useState<HTMLDivElement | null>(null)
     const [additionalLayers, setAdditionalLayers] = useState<MapAdditionalLayersEnum[] | undefined>(
         storeMapSettings ? savedSettings.additionalLayers : undefined
     )
@@ -217,13 +220,17 @@ export const InteractiveMap: React.FC<MapProps> = ({
     // only the LayersStatus panel re-renders on a report, not the map with all its markers
     const [layerStatuses] = useState(createLayerStatusStore)
 
-    const controlsContext = useMemo(() => ({ bottomSlot, layerStatuses }), [bottomSlot, layerStatuses])
+    const controlsContext = useMemo(() => ({ layerStatuses }), [layerStatuses])
 
     const toggleTool = (tool: MeasureTool) => setActiveTool((prev) => (prev === tool ? undefined : tool))
 
     // Stable, so MapEvents does not re-bind the map listeners on every render.
     // The last position is compared through a ref: the state is for the coordinates readout
     const mapPositionRef = useRef<MapPositionType>(undefined)
+
+    // The zoom the map is at (the position is kept up to date on every `moveend`)
+    const currentZoom = mapPosition?.zoom ?? props.zoom ?? savedPosition?.zoom ?? DEFAULT_MAP_ZOOM
+    const hexMode = !!enableHexes && currentZoom < HEX_MAX_ZOOM
 
     const handleChangeBounds = useCallback(
         (bounds: LatLngBounds, zoom: number) => {
@@ -439,7 +446,9 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         <WikimediaCommons onPhotoClick={onPhotoClick} />
                     )}
 
-                    {enableOsmCandidates && <OsmCandidates />}
+                    {enableOsmCandidates && <OsmCandidates categories={categories} />}
+
+                    {hexMode && <HexLayer categories={categories} />}
 
                     {additionalLayers?.includes(MapAdditionalLayersEnum.WIKIPEDIA) && (
                         <Wikipedia onPhotoClick={onPhotoClick} />
@@ -537,23 +546,24 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         />
                     )}
 
-                    {places?.map((place, i) =>
-                        place.type === 'cluster' ? (
-                            <MarkerPointCluster
-                                key={`markerPointCluster${i}`}
-                                marker={place}
-                                onClick={handleClusterClick}
-                            />
-                        ) : (
-                            <MarkerPoint
-                                // By place: a marker keeps its loaded popup data, which must not move to
-                                // another place when the list changes order
-                                key={place.id ?? `markerPoint${i}`}
-                                place={place}
-                                keepInView={enableCenterPopup}
-                            />
-                        )
-                    )}
+                    {!hexMode &&
+                        places?.map((place, i) =>
+                            place.type === 'cluster' ? (
+                                <MarkerPointCluster
+                                    key={`markerPointCluster${i}`}
+                                    marker={place}
+                                    onClick={handleClusterClick}
+                                />
+                            ) : (
+                                <MarkerPoint
+                                    // By place: a marker keeps its loaded popup data, which must not move to
+                                    // another place when the list changes order
+                                    key={place.id ?? `markerPoint${i}`}
+                                    place={place}
+                                    keepInView={enableCenterPopup}
+                                />
+                            )
+                        )}
 
                     {photos?.map((photo, i) =>
                         photo.type === 'cluster' ? (
@@ -727,16 +737,12 @@ export const InteractiveMap: React.FC<MapProps> = ({
                     </div>
 
                     <div className={styles.bottomControls}>
-                        {/* Layers' panels go here, above the coordinates and as wide as them */}
-                        <div
-                            ref={setBottomSlot}
-                            className={enableCoordsControl ? styles.bottomSlot : styles.bottomSlotStandalone}
-                        />
-                        {/* Below the panels: "Places to explore" can be collapsed into a button above it */}
                         <LayersStatus
                             layers={additionalLayers}
                             className={enableCoordsControl ? styles.bottomSlot : styles.bottomSlotStandalone}
                         />
+
+                        {hexMode && <HexLegend />}
 
                         {enableCoordsControl && <CoordinatesControl coordinates={mapPosition} />}
                     </div>

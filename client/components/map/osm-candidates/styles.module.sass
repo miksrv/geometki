@@ -1,109 +1,5 @@
 @use '../../../styles/variables' as variables
 
-// Only without the map's bottom slot (see MapControlsContext): there the slot places the panel
-.panelWrapper
-    position: absolute
-    z-index: 1000
-    left: 10px
-    bottom: 10px
-
-    .panel
-        width: 260px
-
-.panel
-    box-sizing: border-box
-    max-height: 50vh
-    overflow: auto
-    display: flex
-    flex-direction: column
-    gap: 4px
-    padding: 8px 10px
-    font-size: var(--font-size-small)
-    background: var(--container-background)
-    color: var(--text-color-primary)
-    border: var(--input-border)
-    border-radius: var(--border-radius)
-    cursor: default
-
-    label
-        display: flex
-        align-items: center
-        gap: 6px
-        cursor: pointer
-
-    ul
-        margin: 4px 0 0
-        padding-left: 16px
-
-.header
-    display: flex
-    align-items: center
-    justify-content: space-between
-    gap: 6px
-
-// Plain text cross. The map styles every button in its control blocks
-// (.mapContainer .bottomControls button), so the selector must be stronger than that
-.panel .header button.close
-    min-height: 0 !important
-    padding: 0 2px !important
-    border: none !important
-    box-shadow: none !important
-    background: none !important
-    font-size: var(--font-size-small)
-    line-height: 1
-    color: var(--text-color-secondary)
-    cursor: pointer
-
-    &:hover
-        color: var(--text-color-primary)
-
-// Copies the look of the map's left controls (InteractiveMap styles)
-.collapsedTrigger
-    position: relative
-    display: inline-flex
-
-.collapsedButton
-    width: var(--map-control-size, 30px)
-    height: var(--map-control-size, 30px)
-    min-height: 0
-    padding: 0 !important
-    border: var(--input-border) !important
-    background-color: var(--container-background) !important
-
-    svg
-        fill: var(--text-color-primary)
-
-    &:hover
-        background-color: var(--dropdown-background-color-hover) !important
-
-// The `Counter` pill over the button's corner
-.collapsedCounter
-    position: absolute
-    top: -5px
-    right: -5px
-
-.statusLine
-    display: flex
-    align-items: center
-    gap: 6px
-    margin: 4px 0
-
-.dot
-    width: 10px
-    height: 10px
-    border-radius: 50%
-    flex-shrink: 0
-
-.stats, .attribution
-    color: var(--text-color-secondary)
-
-.attribution
-    font-size: 10px
-
-.error
-    color: var(--color-red)
-    word-break: break-word
-
 // ----- Candidate popup -----
 // Leaflet's own frame: no inner margins (the cover is full-bleed), the radius of the other map popups
 .candidatePopup
@@ -239,11 +135,7 @@ article.popup
     &:empty
         display: none
 
-.groupBadge .dot
-    width: 8px
-    height: 8px
-
-// Objects that are already on Geometki (admins only)
+// A place on Geometki that looks like the candidate
 .callout
     display: flex
     flex-direction: column
@@ -263,85 +155,6 @@ article.popup
 .calloutLink
     font-weight: var(--font-weight-medium)
     overflow-wrap: anywhere
-
-.rating
-    border-top: 1px solid var(--border)
-    padding-top: var(--space-2)
-
-    summary
-        display: flex
-        align-items: center
-        gap: var(--space-1)
-        list-style: none
-        cursor: pointer
-        user-select: none
-        font-size: var(--font-size-secondary)
-        color: var(--text-color-secondary)
-
-        &::-webkit-details-marker
-            display: none
-
-        &:hover
-            color: var(--text-color-primary)
-
-        &:focus-visible
-            outline: var(--focus-outline)
-            outline-offset: 2px
-            border-radius: var(--radius-sm)
-
-    &[open] .chevron
-        transform: rotate(90deg)
-
-    ul
-        display: flex
-        flex-direction: column
-        gap: var(--space-1)
-        margin: var(--space-2) 0 0
-        padding: 0
-        list-style: none
-
-    li
-        display: flex
-        justify-content: space-between
-        align-items: baseline
-        gap: var(--space-3)
-        font-size: var(--font-size-small)
-        line-height: 1.4
-        overflow-wrap: anywhere
-
-.chevron
-    flex-shrink: 0
-    width: 16px
-    height: 16px
-    fill: currentColor
-    transition: transform .15s ease
-
-.ratingLabel
-    flex: 1
-
-.ratingValue, .points
-    font-variant-numeric: tabular-nums
-    font-weight: var(--font-weight-semibold)
-
-.ratingValue
-    min-width: 24px
-    padding: 0 6px
-    border-radius: var(--radius-full)
-    background: var(--surface-2)
-    color: var(--text-color-primary)
-    text-align: center
-    font-size: var(--font-size-small)
-    line-height: 20px
-
-.points
-    flex-shrink: 0
-    color: var(--text-color-secondary)
-
-.positive
-    color: var(--color-green)
-
-.negative
-    color: var(--color-red)
 
 .facts
     display: flex
@@ -398,3 +211,20 @@ article.popup
             width: 12px
             height: 12px
             fill: currentColor
+
+// A white spot on the map (users): a white circle with a question mark
+// The ghost of a place marker (`marker-point`): the same square, radius and white frame, only
+// the whole marker faded, so it sits among the real ones without catching the eye
+.whiteSpot
+    box-sizing: border-box
+    width: 20px
+    height: 20px
+    border-radius: 3px
+    box-shadow: 0 0 0 1px #FFF
+    opacity: 0.4
+    overflow: hidden
+
+    img
+        display: block
+        width: 100%
+        height: 100%

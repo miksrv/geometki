@@ -27,7 +27,7 @@ const storeWith = (statuses: LayerStatuses): LayerStatusStore => {
 
 const renderStatus = (layers: MapAdditionalLayersEnum[], statuses: LayerStatuses = {}) =>
     render(
-        <MapControlsContext.Provider value={{ bottomSlot: null, layerStatuses: storeWith(statuses) }}>
+        <MapControlsContext.Provider value={{ layerStatuses: storeWith(statuses) }}>
             <LayersStatus layers={layers} />
         </MapControlsContext.Provider>
     )
@@ -88,7 +88,7 @@ describe('useReportLayerStatus', () => {
     const store = createLayerStatusStore()
 
     const Map: React.FC<{ show: boolean; count: number }> = ({ show, count }) => (
-        <MapControlsContext.Provider value={{ bottomSlot: null, layerStatuses: store }}>
+        <MapControlsContext.Provider value={{ layerStatuses: store }}>
             {show && <Layer count={count} />}
             <LayersStatus layers={[WIKIPEDIA]} />
         </MapControlsContext.Provider>

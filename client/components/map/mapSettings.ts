@@ -18,7 +18,6 @@ export type MapSettings = {
     type?: MapObjectsTypeEnum
     additionalLayers?: MapAdditionalLayersEnum[]
     categories?: ApiModel.Categories[]
-    osmCandidatesCollapsed?: boolean
     hillshade?: boolean
     hillshadeOpacity?: number
     trails?: MapTrailsLayerEnum[]
@@ -77,17 +76,8 @@ const readMapSettings = (): MapSettings => {
         return { position: legacyPosition }
     }
 
-    const {
-        position,
-        layer,
-        type,
-        additionalLayers,
-        categories,
-        osmCandidatesCollapsed,
-        hillshade,
-        hillshadeOpacity,
-        trails
-    } = stored as Record<string, unknown>
+    const { position, layer, type, additionalLayers, categories, hillshade, hillshadeOpacity, trails } =
+        stored as Record<string, unknown>
 
     return {
         position: toPosition(position) ?? legacyPosition,
@@ -101,7 +91,6 @@ const readMapSettings = (): MapSettings => {
         // A layer saved where its key was set (e.g. production) may be unavailable here
         layer: isOneOf(MapLayersEnum, layer) && isMapLayerAvailable(layer) ? layer : undefined,
         trails: onlyKnown(MapTrailsLayerEnum, trails),
-        osmCandidatesCollapsed: typeof osmCandidatesCollapsed === 'boolean' ? osmCandidatesCollapsed : undefined,
         type: isOneOf(MapObjectsTypeEnum, type) ? type : undefined
     }
 }

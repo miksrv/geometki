@@ -21,7 +21,6 @@ describe('mapSettings', () => {
             additionalLayers: [MapAdditionalLayersEnum.WIKIPEDIA],
             categories: [ApiModel.Categories.engineering],
             layer: MapLayersEnum.OPEN_TOPO,
-            osmCandidatesCollapsed: false,
             position: { lat: 51.7, lon: 55.1, zoom: 14 },
             type: MapObjectsTypeEnum.PHOTOS
         })
@@ -30,7 +29,6 @@ describe('mapSettings', () => {
             additionalLayers: [MapAdditionalLayersEnum.WIKIPEDIA],
             categories: [ApiModel.Categories.engineering],
             layer: MapLayersEnum.OPEN_TOPO,
-            osmCandidatesCollapsed: false,
             position: { lat: 51.7, lon: 55.1, zoom: 14 },
             type: MapObjectsTypeEnum.PHOTOS
         })
@@ -64,7 +62,6 @@ describe('mapSettings', () => {
                 ],
                 categories: 'engineering',
                 layer: 'Removed',
-                osmCandidatesCollapsed: 'yes',
                 position: { lat: 'x', lon: 55 },
                 type: 42
             }
@@ -74,7 +71,6 @@ describe('mapSettings', () => {
             additionalLayers: [MapAdditionalLayersEnum.WIKIPEDIA],
             categories: undefined,
             layer: undefined,
-            osmCandidatesCollapsed: undefined,
             position: undefined,
             type: undefined
         })

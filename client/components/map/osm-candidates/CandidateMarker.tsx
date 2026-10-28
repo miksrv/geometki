@@ -1,56 +1,69 @@
 import React, { useMemo } from 'react'
-import { CircleMarker, Popup, Tooltip } from 'react-leaflet'
-import type { PathOptions } from 'leaflet'
+import { Marker, Popup, Tooltip } from 'react-leaflet'
+import Leaflet from 'leaflet'
 
-import { ApiType } from '@/api'
+import { ApiModel, ApiType } from '@/api'
+import { categoryImage } from '@/utils/categories'
 
 import { CandidatePopup } from './CandidatePopup'
-import { GROUP_COLORS, GROUPS } from './constants'
-import { CandidateGroup } from './utils'
 
 import styles from './styles.module.sass'
 
-// One options object per group: react-leaflet restyles the circle when it gets a new object
-const PATH_OPTIONS = Object.fromEntries(
-    GROUPS.map((group) => [group, { color: '#fff', fillColor: GROUP_COLORS[group], fillOpacity: 0.9, weight: 1.5 }])
-) as Record<CandidateGroup, PathOptions>
+/**
+ * A white spot: the ghost of a place marker — the same 20px square with the icon of
+ * the candidate's category, the whole marker faded — so it reads as "a place like the
+ * others, not here yet" without catching the eye. One icon per category, shared by all its markers
+ */
+const ghostIcons = new Map<string, Leaflet.DivIcon>()
 
-const markerRadius = (candidate: ApiType.OsmCandidates.Candidate, group: CandidateGroup): number =>
-    group === 'known' || group === 'explore' ? Math.min(14, 6 + Math.max(0, candidate.score) / 2) : 5
+const ghostIcon = (category: string | null): Leaflet.DivIcon => {
+    const key = category ?? ''
+    let icon = ghostIcons.get(key)
+
+    if (!icon) {
+        icon = Leaflet.divIcon({
+            className: styles.whiteSpot,
+            html: `<img src="${categoryImage((category ?? undefined) as ApiModel.Categories | undefined).src}" alt="" />`,
+            iconAnchor: [10, 10],
+            iconSize: [20, 20],
+            // The hint starts a little above the icon, as on the place markers
+            tooltipAnchor: [0, -12]
+        })
+        ghostIcons.set(key, icon)
+    }
+
+    return icon
+}
 
 interface CandidateMarkerProps {
     candidate: ApiType.OsmCandidates.Candidate
-    group: CandidateGroup
     /** The tooltip text, made by the parent for all markers at once */
     title: string
-    isAdmin: boolean
 }
 
 /**
- * One candidate on the map. Memoized with stable `center` and `pathOptions`, so that a re-render
- * of the layer (a map move, a new list) does not move and restyle every circle again
+ * One candidate on the map: the ghost of a place marker. Memoized with a stable `position`, so that
+ * a re-render of the layer (a map move, a new list) does not move every marker again
  */
-export const CandidateMarker = React.memo<CandidateMarkerProps>(({ candidate, group, title, isAdmin }) => {
+export const CandidateMarker = React.memo<CandidateMarkerProps>(({ candidate, title }) => {
     const center = useMemo<[number, number]>(() => [candidate.lat, candidate.lon], [candidate.lat, candidate.lon])
 
     return (
-        <CircleMarker
-            center={center}
-            radius={markerRadius(candidate, group)}
-            pathOptions={PATH_OPTIONS[group]}
+        <Marker
+            position={center}
+            icon={ghostIcon(candidate.category)}
         >
-            <Tooltip direction={'top'}>{title}</Tooltip>
+            <Tooltip direction={'top'}>
+                <span className={'mapHint'}>{title}</span>
+            </Tooltip>
             <Popup
                 className={styles.candidatePopup}
                 maxWidth={320}
                 autoPanPadding={[16, 16]}
             >
-                <CandidatePopup
-                    candidate={candidate}
-                    isAdmin={isAdmin}
-                />
+                <CandidatePopup candidate={candidate} />
             </Popup>
-        </CircleMarker>
+        </Marker>
     )
 })
 
