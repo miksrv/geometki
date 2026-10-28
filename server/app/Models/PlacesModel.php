@@ -135,8 +135,7 @@ class PlacesModel extends ApplicationBaseModel
                 location_districts.title_en as district_en, location_districts.title_ru as district_ru,
                 location_localities.title_en as city_en, location_localities.title_ru as city_ru,
                 slug_country.slug as country_slug, slug_region.slug as region_slug,
-                slug_district.slug as district_slug, slug_locality.slug as city_slug,
-                places.visit_radius_m, places.verification_exempt' . $distanceSQL
+                slug_district.slug as district_slug, slug_locality.slug as city_slug' . $distanceSQL
             )
             // The place page is the only reader that needs the author — list rows do not
             ->join('users', 'places.user_id = users.id', 'left')
@@ -189,17 +188,20 @@ class PlacesModel extends ApplicationBaseModel
     }
 
     /**
-     * Constrain the query to places visited by the given user.
-     * Applies an INNER JOIN against users_visited_places.
+     * Constrain the query to places visited by the given user: a place once, however many
+     * times they checked in (visits are a log).
      *
      * @param string $userId
      * @return static
      */
     public function filterByVisitedUser(string $userId): static
     {
-        return $this
-            ->join('users_visited_places', 'users_visited_places.place_id = places.id', 'inner')
-            ->where('users_visited_places.user_id', $userId);
+        return $this->where(
+            'EXISTS (SELECT 1 FROM users_visited_places uvp WHERE uvp.place_id = places.id AND uvp.user_id = '
+            . $this->db->escape($userId) . ')',
+            null,
+            false
+        );
     }
 
     /**
@@ -377,8 +379,9 @@ class PlacesModel extends ApplicationBaseModel
     /**
      * Apply the personalised recommendation score join for a given user.
      *
-     * Scoring weights: category affinity 0.3, tag affinity 0.5, trending 0.2.
-     * Tags carry higher weight because they are more specific than categories.
+     * Scoring weights: category affinity 0.3, feature affinity 0.5 ("can swim", "can camp"…:
+     * the `can_*` rows of `places_now` with `yes`, the person's `feature` interests), trending 0.2.
+     * Features carry higher weight because they are more specific than categories.
      *
      * Returns $this for method chaining.
      *
@@ -389,13 +392,14 @@ class PlacesModel extends ApplicationBaseModel
     {
         $db            = \Config\Database::connect();
         $escapedUserId = $db->escape($userId);
+        $featurePrefix = \Config\VisitQuestions::FEATURE_PREFIX;
 
         $this->join(
             "(SELECT
                 p2.id,
                 (
                     COALESCE(uip_cat.affinity, 0) * 0.3
-                    + COALESCE(tag_scores.max_tag_affinity, 0) * 0.5
+                    + COALESCE(feature_scores.max_feature_affinity, 0) * 0.5
                     + (p2.trending_score / NULLIF((SELECT MAX(trending_score) FROM places WHERE deleted_at IS NULL), 0)) * 0.2
                 ) AS rec_score
             FROM places p2
@@ -406,17 +410,17 @@ class PlacesModel extends ApplicationBaseModel
                 AND uip_cat.ignored = 0
             LEFT JOIN (
                 SELECT
-                    pt.place_id,
-                    MAX(uip_tag.affinity) AS max_tag_affinity
-                FROM places_tags pt
-                JOIN users_interest_profiles uip_tag
-                    ON uip_tag.user_id = {$escapedUserId}
-                    AND uip_tag.interest_type = 'tag'
-                    AND uip_tag.interest_value = pt.tag_id
-                    AND uip_tag.ignored = 0
-                WHERE pt.deleted_at IS NULL
-                GROUP BY pt.place_id
-            ) AS tag_scores ON tag_scores.place_id = p2.id
+                    pn.place_id,
+                    MAX(uip_feature.affinity) AS max_feature_affinity
+                FROM places_now pn
+                JOIN users_interest_profiles uip_feature
+                    ON uip_feature.user_id = {$escapedUserId}
+                    AND uip_feature.interest_type = 'feature'
+                    AND pn.question = CONCAT('{$featurePrefix}', uip_feature.interest_value)
+                    AND uip_feature.ignored = 0
+                WHERE pn.value = 'yes'
+                GROUP BY pn.place_id
+            ) AS feature_scores ON feature_scores.place_id = p2.id
             WHERE p2.deleted_at IS NULL
             ) AS rec",
             'rec.id = places.id',

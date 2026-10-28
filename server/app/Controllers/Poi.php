@@ -42,7 +42,14 @@ class Poi extends ResourceController
         $bounds  = $this->getBounds();
 
         $placesModel = new PlacesModel();
-        $placesData  = $placesModel->select('places.id, places.category, places.lat, places.lon');
+        $locale      = $placesModel->db->escape($this->request->getLocale());
+        // The name for the marker's hint, in the request locale or the other one: one indexed
+        // lookup per point (one row per place and locale in places_content)
+        $placesData  = $placesModel->select(
+            'places.id, places.category, places.lat, places.lon,'
+            . " (SELECT pc.title FROM places_content pc WHERE pc.place_id = places.id ORDER BY pc.locale = {$locale} DESC LIMIT 1) AS title",
+            false
+        );
 
         if ($bounds) {
             $placesData->where([
