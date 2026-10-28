@@ -124,6 +124,10 @@ $routes->group('push', static function ($routes) {
 $routes->get('stats', 'Stats::index');
 $routes->options('stats', static function () {});
 
+/** Exploration: the points of the hex layer (features/25, step 6) **/
+$routes->get('exploration/points', 'Exploration::points');
+$routes->options('exploration/points', static function () {});
+
 /** Categories Controller **/
 $routes->group('categories', static function ($routes) {
     $routes->get('(:segment)/locations', 'Categories::locations/$1');
@@ -237,13 +241,6 @@ $routes->post('(:segment)/image', 'Achievements::uploadImage/$1');
     $routes->options('(:segment)/(:segment)', static function () {});
 });
 
-/** Tags Controller **/
-$routes->group('tags', static function ($routes) {
-    $routes->get('search', 'Tags::search');
-
-    $routes->options('(:alphanum)', static function () {});
-});
-
 /** Bookmarks Controller **/
 $routes->group('bookmarks', static function ($routes) {
     $routes->get('/', 'Bookmarks::check');
@@ -254,15 +251,18 @@ $routes->group('bookmarks', static function ($routes) {
     $routes->options('(:alphanum)', static function () {});
 });
 
-/** Visited Controller **/
-$routes->group('visited', static function ($routes) {
-    $routes->get('/', 'Visited::check');
-    $routes->get('user/(:alphanum)', 'Visited::user/$1');
-    $routes->get('(:alphanum)', 'Visited::place/$1');
-    $routes->put('/', 'Visited::set');
+/** Visits Controller **/
+$routes->group('visits', static function ($routes) {
+    $routes->get('/', 'Visits::list');
+    $routes->get('places', 'Visits::places');
+    $routes->get('me', 'Visits::me');
+    $routes->post('/', 'Visits::create');
+    $routes->patch('(:alphanum)', 'Visits::update/$1');
+    $routes->delete('(:alphanum)', 'Visits::delete/$1');
 
     $routes->options('/', static function () {});
-    $routes->options('user/(:alphanum)', static function () {});
+    $routes->options('places', static function () {});
+    $routes->options('me', static function () {});
     $routes->options('(:alphanum)', static function () {});
 });
 

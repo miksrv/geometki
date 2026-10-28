@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from 'react'
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { cn, Icon, Spinner } from 'simple-react-ui-kit'
 
@@ -8,6 +8,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
 import { useAppSelector } from '@/app/store'
+import { groupPhotosByYear } from '@/utils/photoYears'
 
 import { isAbsoluteUrl, resolveImageUrl } from '../photo-lightbox/utils'
 
@@ -135,12 +136,90 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
         </button>
     )
 
+    // "Then and now": photos of two or more years get a heading per year; the lightbox walks the
+    // photos in the order of the grid, the indexes of the state stay those of `photos`
+    const yearGroups = useMemo(() => groupPhotosByYear(photos), [photos])
+    const ordered = useMemo(() => yearGroups?.flatMap((group) => group.items), [yearGroups])
+    const lightboxPhotos = useMemo(() => ordered?.map((item) => item.photo) ?? photos, [ordered, photos])
+
+    const renderCell = (photo: ApiModel.Photo, index: number) => {
+        const own = !!userId && photo.author?.id === userId
+
+        return (
+            <div
+                key={photo.id}
+                className={styles.cell}
+            >
+                <button
+                    type={'button'}
+                    className={styles.open}
+                    data-index={index}
+                    aria-label={photoName(index)}
+                    onClick={() => onStateChange({ mode: 'single', index })}
+                >
+                    <Image
+                        src={resolveImageUrl(photo.preview) ?? ''}
+                        unoptimized={isAbsoluteUrl(photo.preview)}
+                        alt={photoName(index)}
+                        width={700}
+                        height={500}
+                        sizes={'(max-width: 768px) 50vw, 320px'}
+                    />
+                </button>
+
+                {own && <span className={styles.own}>{t('photos-viewer-own', { defaultValue: 'ваше фото' })}</span>}
+
+                {photo.id === loadingId && (
+                    <span className={styles.loader}>
+                        <Spinner />
+                    </span>
+                )}
+
+                {canEdit && (
+                    <span className={styles.tools}>
+                        {!photo.external && onRotate && (
+                            <button
+                                type={'button'}
+                                className={styles.tool}
+                                aria-label={t('to-turn', { defaultValue: 'Повернуть' })}
+                                title={t('to-turn', { defaultValue: 'Повернуть' })}
+                                disabled={!!loadingId}
+                                onClick={() => onRotate(photo)}
+                            >
+                                <Icon name={'Rotate'} />
+                            </button>
+                        )}
+                        {onDelete && (
+                            <button
+                                type={'button'}
+                                className={styles.tool}
+                                aria-label={t('delete', { defaultValue: 'Удалить' })}
+                                title={t('delete', { defaultValue: 'Удалить' })}
+                                disabled={!!loadingId}
+                                onClick={() => onDelete(photo)}
+                            >
+                                <Icon name={'Close'} />
+                            </button>
+                        )}
+                    </span>
+                )}
+            </div>
+        )
+    }
+
     return (
         <>
             {state?.mode === 'single' && !!photos.length && (
                 <PhotoLightbox
-                    photos={photos}
-                    photoIndex={state.index}
+                    photos={lightboxPhotos}
+                    photoIndex={
+                        ordered
+                            ? Math.max(
+                                  0,
+                                  ordered.findIndex((item) => item.index === state.index)
+                              )
+                            : state.index
+                    }
                     showLightbox={true}
                     showCounter={true}
                     toolbarButtons={[
@@ -156,7 +235,7 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
                         addButton &&
                             React.cloneElement(addButton, { className: cn(styles.button, styles.toolbarButton) })
                     ].filter(Boolean)}
-                    onIndexChange={setCurrent}
+                    onIndexChange={(index) => setCurrent(ordered ? (ordered[index]?.index ?? index) : index)}
                     onCloseLightBox={() => onStateChange(null)}
                 />
             )}
@@ -201,74 +280,16 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
                             ref={gridRef}
                             className={styles.grid}
                         >
-                            {photos.map((photo, index) => {
-                                const own = !!userId && photo.author?.id === userId
-
-                                return (
-                                    <div
-                                        key={photo.id}
-                                        className={styles.cell}
-                                    >
-                                        <button
-                                            type={'button'}
-                                            className={styles.open}
-                                            data-index={index}
-                                            aria-label={photoName(index)}
-                                            onClick={() => onStateChange({ mode: 'single', index })}
-                                        >
-                                            <Image
-                                                src={resolveImageUrl(photo.preview) ?? ''}
-                                                unoptimized={isAbsoluteUrl(photo.preview)}
-                                                alt={photoName(index)}
-                                                width={700}
-                                                height={500}
-                                                sizes={'(max-width: 768px) 50vw, 320px'}
-                                            />
-                                        </button>
-
-                                        {own && (
-                                            <span className={styles.own}>
-                                                {t('photos-viewer-own', { defaultValue: 'ваше фото' })}
-                                            </span>
-                                        )}
-
-                                        {photo.id === loadingId && (
-                                            <span className={styles.loader}>
-                                                <Spinner />
-                                            </span>
-                                        )}
-
-                                        {canEdit && (
-                                            <span className={styles.tools}>
-                                                {!photo.external && onRotate && (
-                                                    <button
-                                                        type={'button'}
-                                                        className={styles.tool}
-                                                        aria-label={t('to-turn', { defaultValue: 'Повернуть' })}
-                                                        title={t('to-turn', { defaultValue: 'Повернуть' })}
-                                                        disabled={!!loadingId}
-                                                        onClick={() => onRotate(photo)}
-                                                    >
-                                                        <Icon name={'Rotate'} />
-                                                    </button>
-                                                )}
-                                                {onDelete && (
-                                                    <button
-                                                        type={'button'}
-                                                        className={styles.tool}
-                                                        aria-label={t('delete', { defaultValue: 'Удалить' })}
-                                                        title={t('delete', { defaultValue: 'Удалить' })}
-                                                        disabled={!!loadingId}
-                                                        onClick={() => onDelete(photo)}
-                                                    >
-                                                        <Icon name={'Close'} />
-                                                    </button>
-                                                )}
-                                            </span>
-                                        )}
-                                    </div>
-                                )
-                            })}
+                            {yearGroups
+                                ? yearGroups.map(({ year, items }) => (
+                                      <React.Fragment key={year ?? 'none'}>
+                                          <h3 className={styles.year}>
+                                              {year ?? t('photos-year-unknown', { defaultValue: 'Без даты' })}
+                                          </h3>
+                                          {items.map(({ photo, index }) => renderCell(photo, index))}
+                                      </React.Fragment>
+                                  ))
+                                : photos.map((photo, index) => renderCell(photo, index))}
                         </div>
                     </div>,
                     document.body

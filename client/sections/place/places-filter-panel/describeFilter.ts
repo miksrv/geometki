@@ -8,7 +8,7 @@ import { PlacesFilterPatch, PlacesFilterState } from './types'
 
 /** Something narrows the list: the "applied" row, the memory and the badge care about this */
 export const isFilterActive = (filter: PlacesFilterState): boolean =>
-    !!(filter.location || filter.categories.length || filter.notVisited || filter.tag)
+    !!(filter.location || filter.categories.length || filter.notVisited)
 
 /** "Рядом со мной": no location, nearest first */
 export const isNearFilter = (filter: PlacesFilterState): boolean =>
@@ -29,10 +29,6 @@ export const describeFilter = (t: TFunction, filter: PlacesFilterState): string 
         parts.push(t('location-near', 'Рядом со мной'))
     }
 
-    if (filter.tag) {
-        parts.push(`#${filter.tag}`)
-    }
-
     if (filter.notVisited) {
         parts.push(t('filter-not-visited-short', 'без посещённых'))
     }
@@ -44,17 +40,15 @@ export const describeFilter = (t: TFunction, filter: PlacesFilterState): string 
 export const filterToListRequest = (filter: PlacesFilterState): ApiType.Places.ListRequest => ({
     category: filter.categories.length ? filter.categories.join(',') : undefined,
     [filter.location?.type ?? 'locality']: filter.location?.id,
-    notVisited: filter.notVisited ? 1 : undefined,
-    tag: filter.tag
+    notVisited: filter.notVisited ? 1 : undefined
 })
 
-/** The filter state with a change applied (`location: null` / `tag: null` clear them) */
+/** The filter state with a change applied (`location: null` clears it) */
 export const applyFilterPatch = (filter: PlacesFilterState, patch: PlacesFilterPatch): PlacesFilterState => ({
     categories: patch.categories ?? filter.categories,
     location: 'location' in patch ? (patch.location ?? undefined) : filter.location,
     notVisited: patch.notVisited ?? filter.notVisited,
-    sort: patch.sort ?? filter.sort,
-    tag: 'tag' in patch ? (patch.tag ?? undefined) : filter.tag
+    sort: patch.sort ?? filter.sort
 })
 
 interface FilterHrefOptions {
@@ -92,8 +86,7 @@ export const buildFilterHref = (
             notVisited: next.notVisited,
             // The presets have no order: picking one drops the `?order=` of an old link
             order: patch.sort !== undefined ? undefined : order,
-            sort: next.sort,
-            tag: next.tag
+            sort: next.sort
         },
         flags
     ).href

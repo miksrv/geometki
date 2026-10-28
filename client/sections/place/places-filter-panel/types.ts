@@ -7,7 +7,6 @@ export type PlacesFilterType = {
     locality?: number
     category?: string
     page?: number
-    tag?: string
     lat?: number
     lon?: number
     order?: ApiType.SortOrdersType
@@ -23,11 +22,9 @@ export interface PlacesFilterState {
     sort: ApiType.SortFieldsType
     /** "Скрыть посещённые" — signed-in visitors only */
     notVisited: boolean
-    tag?: string
 }
 
-/** A change of the filters: only the given keys change, `location: null` / `tag: null` clear them */
-export type PlacesFilterPatch = Partial<Omit<PlacesFilterState, 'location' | 'tag'>> & {
+/** A change of the filters: only the given keys change, `location: null` clears it */
+export type PlacesFilterPatch = Partial<Omit<PlacesFilterState, 'location'>> & {
     location?: ApiModel.AddressItem | null
-    tag?: string | null
 }

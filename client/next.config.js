@@ -2,6 +2,8 @@ const { i18n } = require('./next-i18next.config.js')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    // `next dev` would otherwise write AGENTS.md / CLAUDE.md here; the root CLAUDE.md covers the client
+    agentRules: false,
     // The categories page is gone (the catalogue lives in the client, see CLAUDE.md →
     // Categories): its indexed URL goes to the places listing instead of a 404
     async redirects() {

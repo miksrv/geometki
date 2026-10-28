@@ -47,7 +47,6 @@ const normalizeCategoryList = (category: LandingCategoryInput): string[] => {
 export interface PlacesHrefInput {
     location?: LandingLocationRef | null
     category?: LandingCategoryInput
-    tag?: string | null
     sort?: ApiType.SortFieldsType
     order?: ApiType.SortOrdersType
     page?: number | null
@@ -113,8 +112,7 @@ export const buildPlacesHref = (input: PlacesHrefInput, flags: LandingFlags): Pl
         order: input.order !== undefined && input.order !== input.defaultOrder ? input.order : undefined,
         page: input.page && input.page !== 1 ? input.page : undefined,
         region: !useLocationPath && input.location?.type === 'region' ? input.location.id : undefined,
-        sort: input.sort !== undefined && input.sort !== input.defaultSort ? input.sort : undefined,
-        tag: input.tag ?? undefined
+        sort: input.sort !== undefined && input.sort !== input.defaultSort ? input.sort : undefined
     }
 
     return {

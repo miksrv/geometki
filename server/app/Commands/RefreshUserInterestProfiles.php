@@ -11,7 +11,7 @@ class RefreshUserInterestProfiles extends BaseCommand
 {
     protected $group       = 'interests';
     protected $name        = 'interests:refresh';
-    protected $description = 'Refresh user interest profiles (categories and tags) based on activity';
+    protected $description = 'Refresh user interest profiles (categories and place features) based on activity';
 
     protected $arguments = [];
 

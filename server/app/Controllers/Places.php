@@ -6,11 +6,12 @@ use App\Entities\PhotoEntity;
 use App\Entities\PlaceEntity;
 use App\Libraries\AvatarLibrary;
 use App\Libraries\Geocoder;
+use App\Libraries\LevelsLibrary;
 use App\Libraries\PhotoLibrary;
 use App\Libraries\PlaceCoverLibrary;
 use App\Libraries\PlaceFormatterLibrary;
-use App\Libraries\PlaceTags;
 use App\Libraries\PlacesContent;
+use App\Libraries\AchievementsLibrary;
 use App\Libraries\ActivityRemoval;
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
@@ -23,10 +24,8 @@ use App\Models\OsmCandidatesModel;
 use App\Models\PhotosModel;
 use App\Models\PlacesExternalPhotosModel;
 use App\Models\PlacesModel;
-use App\Models\PlacesTagsModel;
 use App\Models\RatingModel;
 use App\Models\PlacesContentModel;
-use App\Models\TagsModel;
 use App\Models\UsersBookmarksModel;
 use CodeIgniter\Files\File;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -65,7 +64,7 @@ class Places extends ResourceController
      * GET /places — optional query params: sort, order, category (comma-
      * separated list accepted), limit, offset, author, country, region,
      * district, locality, location (a location slug — see GET /locations/resolve
-     * — in addition to the id-based params), search, tag, bookmarkUser,
+     * — in addition to the id-based params), search, bookmarkUser,
      * lat, lon, excludePlaces, missingLocale (places with no text in that locale),
      * notVisited (signed-in visitors only: drops the places they marked "I was here").
      * For a signed-in visitor every item also carries `bookmarked` and `visited`, so a list
@@ -82,7 +81,6 @@ class Places extends ResourceController
         $bookmarksUser = $this->request->getGet('bookmarkUser', FILTER_SANITIZE_SPECIAL_CHARS);
         $lat    = $this->request->getGet('lat', FILTER_VALIDATE_FLOAT);
         $lon    = $this->request->getGet('lon', FILTER_VALIDATE_FLOAT);
-        $tag    = $this->request->getGet('tag', FILTER_SANITIZE_SPECIAL_CHARS);
         $search = $this->request->getGet('search', FILTER_SANITIZE_SPECIAL_CHARS);
         $locale = $this->request->getLocale();
         $bookmarksPlacesIds = [];
@@ -98,40 +96,6 @@ class Places extends ResourceController
                     $bookmarksPlacesIds[] = $bookmark->place_id;
                 }
             }
-        }
-
-        // if filtering by tag ID
-        if ($tag) {
-            $tagModel = new TagsModel();
-            $tagData  = $tagModel
-                ->select('id')
-                ->orWhere(['title_ru' => $tag, 'title_en' => $tag])
-                ->first();
-
-            if (!$tagData || !$tagData->id) {
-                return $this->respond([
-                    'items'  => [],
-                    'count'  => 0,
-                ]);
-            }
-
-            $placesTagsModel = new PlacesTagsModel();
-            $placesTagsData  = $placesTagsModel
-                ->select('place_id')
-                ->where('tag_id', $tagData->id)
-                ->groupBy('place_id')
-                ->findAll();
-
-            if (empty($placesTagsData)) {
-                return $this->respond([
-                    'items'  => [],
-                    'count'  => 0,
-                ]);
-            }
-
-            $tag = array_column($placesTagsData, 'place_id');
-        } else {
-            $tag = [];
         }
 
         // Filtering by user bookmarks (like any other) - if we don’t find a single place in the bookmarks, we return an empty array
@@ -168,9 +132,9 @@ class Places extends ResourceController
         $this->model->applyListSelect($coordinates);
 
         // If search or any other filter is not used, then we always use an empty array
-        $searchPlacesIds = !$search && !$bookmarksUser && !$tag
+        $searchPlacesIds = !$search && !$bookmarksUser
             ? []
-            : array_unique(array_merge($placeContent->placeIds, $bookmarksPlacesIds, $tag));
+            : array_unique(array_merge($placeContent->placeIds, $bookmarksPlacesIds));
 
         // Find all places
         // If a search was enabled, the second argument to the _makeListFilters function will contain the
@@ -241,10 +205,6 @@ class Places extends ResourceController
             return $this->failNotFound();
         }
 
-        // Collect tags
-        $placesTagsModel = new PlacesTagsModel();
-        $placeData->tags = $placesTagsModel->getAllByPlaceId($id);
-
         $formatter = new PlaceFormatterLibrary();
         $avatarLibrary = new AvatarLibrary();
         $placeData->editors = $this->editors($id, $placeData->user_id);
@@ -279,26 +239,11 @@ class Places extends ResourceController
             $placeData->address->street = $placeData->{"address_$locale"};
         }
 
-        if ($placeData->tags) {
-            $tags = [];
-
-            foreach ($placeData->tags as $tag) {
-                $tags[] = $locale === 'en' && !empty($tag->title_en)
-                    ? $tag->title_en
-                    : (!empty($tag->title_ru) ? $tag->title_ru : $tag->title_en);
-            }
-
-            $placeData->tags = $tags;
-        }
-
         $placeData->title   = $placeContent->title($id);
         $placeData->content = $this->plainContent($placeContent->content($id));
         // The locale of title/content: differs from the request locale when the place has no text in it
         $placeData->locale  = $placeContent->locale($id);
         $placeData->locales = $placeContent->locales($id);
-
-        $placeData->visitRadiusM       = (int) $placeData->visit_radius_m;
-        $placeData->verificationExempt = (bool) $placeData->verification_exempt;
 
         unset($placeData->user_id, $placeData->user_name, $placeData->user_avatar, $placeData->activity_at,
             $placeData->country_id, $placeData->region_id, $placeData->district_id, $placeData->locality_id,
@@ -307,7 +252,7 @@ class Places extends ResourceController
             $placeData->region_en, $placeData->region_ru,
             $placeData->district_en, $placeData->district_ru,
             $placeData->city_en, $placeData->city_ru,
-            $placeData->visit_radius_m, $placeData->verification_exempt, $placeData->cover_external_id,
+            $placeData->cover_external_id,
         );
 
         return $this->respond($placeData);
@@ -438,7 +383,6 @@ class Places extends ResourceController
                 return $this->respondCreated(['id' => $existingPlace->id]);
             }
 
-            $placeTags = new PlaceTags();
             $geocoder  = new Geocoder();
             $place     = new \App\Entities\PlaceEntity();
 
@@ -472,10 +416,6 @@ class Places extends ResourceController
 
             $newPlaceId = $this->model->getInsertID();
 
-            if (!empty($input->tags)) {
-                $placeTags->saveTags($input->tags, $newPlaceId);
-            }
-
             $placesContentModel = new PlacesContentModel();
 
             $content = new \App\Entities\PlaceContentEntity();
@@ -501,18 +441,21 @@ class Places extends ResourceController
             }
 
             // Created from an OSM candidate: the same link an admin sets by hand, hides it from the map.
-            // Only a similar place takes it, otherwise the candidate stays on the map
-            if (!empty($input->candidate) && is_string($input->candidate)) {
-                (new OsmCandidatesModel())->linkToNewPlace(
-                    $input->candidate,
-                    $newPlaceId,
-                    $this->session->user?->id,
-                    (float) $input->lat,
-                    (float) $input->lon,
-                    (string) $input->category,
-                    [$placeTitle]
-                );
-            }
+            // Only a similar place takes it, otherwise the candidate stays on the map. The author
+            // opened a white spot (features/25, step 4): MODIFIER_SPOT on top of the place
+            $candidates = new OsmCandidatesModel();
+            $spotOpened = !empty($input->candidate) && is_string($input->candidate) && $candidates->linkToNewPlace(
+                $input->candidate,
+                $newPlaceId,
+                $this->session->user?->id,
+                (float) $input->lat,
+                (float) $input->lon,
+                (string) $input->category,
+                [$placeTitle]
+            );
+
+            // Any other candidate the new place is a duplicate of is linked to it, so it is no white spot
+            $candidates->linkDuplicatesAround((float) $input->lat, (float) $input->lon);
 
             $db->transComplete();
 
@@ -522,7 +465,13 @@ class Places extends ResourceController
                 return $this->failServerError(lang('Places.createTransactionError'));
             }
 
-            return $this->respondCreated(['id' => $newPlaceId]);
+            if ($spotOpened && $this->session->user) {
+                // The place's activity checked the achievements before the link existed
+                (new LevelsLibrary())->calculate($this->session->user);
+                (new AchievementsLibrary())->check($this->session->user->id, 'place');
+            }
+
+            return $this->respondCreated(['id' => $newPlaceId, 'spotOpened' => $spotOpened]);
         } catch (Throwable $e) {
             log_message('error', '{exception}', ['exception' => $e]);
             return $this->failServerError(lang('Places.createTransactionError'));
@@ -530,7 +479,7 @@ class Places extends ResourceController
     }
 
     /**
-     * Update place content, tags, category, and/or coordinates.
+     * Update place content, category, and/or coordinates.
      *
      * PATCH /places/:id — auth required.
      * The text is saved per locale and logged as a revision; edits by the same author
@@ -572,7 +521,6 @@ class Places extends ResourceController
         helper('slug');
 
         try {
-            $placeTags    = new PlaceTags();
             $contentModel = new PlacesContentModel();
             $activity     = new ActivityLibrary();
             $placeData    = $this->model->find($id);
@@ -632,11 +580,9 @@ class Places extends ResourceController
                 $shouldRecordActivity = true;
             }
 
-            // After the text: a text that failed to save leaves the tags as they were
-            $updatedTags = isset($input->tags) ? $placeTags->saveTags($input->tags, $id) : null;
-
             $place = new PlaceEntity();
             $hasChanges = false;
+            $moved      = false;
 
             $lat = isset($input->lat) ? round($input->lat, 6) : $placeData->lat;
             $lon = isset($input->lon) ? round($input->lon, 6) : $placeData->lon;
@@ -668,6 +614,7 @@ class Places extends ResourceController
 
                 $hasChanges = true;
                 $shouldRecordActivity = true;
+                $moved      = true;
             }
 
             // Change category
@@ -696,6 +643,15 @@ class Places extends ResourceController
                 $this->model->touch($id);
             }
 
+            // Moved: the candidates it left behind are open again, the ones it now stands on are
+            // its duplicates. After the save: the linking reads the places from the database, at
+            // the old position it would miss them
+            if ($moved) {
+                $candidates = new OsmCandidatesModel();
+                $candidates->reopenFarFrom($id, (float) $lat, (float) $lon);
+                $candidates->linkDuplicatesAround((float) $lat, (float) $lon);
+            }
+
             // Record activity and send notifications once for all edit types; a bot's edits are silent
             if ($shouldRecordActivity && !$isBot) {
                 $activity->owner($placeData->user_id)->edit($id);
@@ -705,10 +661,6 @@ class Places extends ResourceController
                 'content' => !empty($updatedContent) ? $updatedContent : (string) $currentText?->content,
                 'locale'  => $locale,
             ];
-
-            if (isset($input->tags)) {
-                $return['tags'] = $updatedTags;
-            }
 
             return $this->respond($return);
         } catch (Throwable $e) {
@@ -750,7 +702,8 @@ class Places extends ResourceController
         // photos below are deleted (their activity rows cascade away with them)
         $removal = ActivityRemoval::forPlace($id);
 
-        (new PlaceTags())->deletePlace($id);
+        // The OSM candidates linked to it are white spots again (the pioneer's credit goes with the place)
+        (new OsmCandidatesModel())->reopenOfPlace($id);
 
         // Remove all photos
         $photosModel = new PhotosModel();

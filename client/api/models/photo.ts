@@ -35,6 +35,8 @@ export type Photo = {
     created?: DateTime
     filesize?: number
     placeId?: string
+    /** The day of the visit the photo was uploaded from (`YYYY-MM-DD`): the gallery groups photos by year on it, else on `created` */
+    visitedAt?: string
     /** Set for the linked photos: they can be removed from the place, but not rotated */
     external?: PhotoExternal
 }

@@ -7,6 +7,8 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 - Auth: `responseUser()` (`Auth.php`) unsets `password`, `auth_type`, `level`, `experience` on the shared `$this->session->user` object, so code after it in the same request reads null; nothing reads them today, build a copy instead.
 - VPS: the Next.js process grows to 1 GB and PM2 restarts it every 15–30 minutes (`max_memory_restart: '1G'`, 141 restarts by 2026-10-17) on a 1-CPU, 1.5 GB VPS without swap; find the leak (heap snapshot under load) or lower the limit and add swap.
 
+- Migrations: rolling back all migrations on MySQL (`tests/database` run against the MySQL `tests` group) stops at `AddLocationDedupSlugsAndLegacyIds::down()`: `Cannot drop index 'idx_locality_category': needed in a foreign key constraint` (MySQL dropped the implicit foreign key index when the composite one covered it); a committed migration, so fix it with a new one or accept that it does not roll back. On SQLite the suite passes.
+
 ## Improvements
 
 - Places: `GET /places?search=` with 1–3 characters takes the 100 most recently updated matches (`PlacesContent::SHORT_TERM_LIMIT`) before the other filters (category, bounds, distance sort), so a filtered short search may miss places; move the short search into the list query.
@@ -28,4 +30,10 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 - Reputation: `Reputation` (`client/components/ui/reputation`) has `tabIndex=0` and an `aria-label` without a role, so every card adds a tab stop (30 on a page of people) and screen readers mostly ignore the label; add `role="img"` or make only the tile's reputation focusable.
 - People: the "+N" tile of `UserCardPlaces` shows only when 4 covers came, while the API sends only places with a cover; a user with 5 places and 3 covers gets no "+N".
 - People: the sort tabs of `UsersFilterPanel` navigate with the default scroll, the search with `scroll: false`; a tab click jumps the page to the top.
+- Map: on touch devices the hex counts are unreachable (the tooltip is hover-only, a tap zooms in); the phone could show the tooltip on the first tap and zoom on the second.
+- Visits: the old `verified` GPS flag, the visitor's coordinates and `places.visit_radius_m` were dropped by `ReworkVisits` (1.18.0); the production backup before the deploy is the only copy of them.
+- SEO: http → https on the VPS is a 302 (`http://www.geometki.com` → 302 → 301, two hops); nginx should send one 301 straight to `https://geometki.com$request_uri`.
+- SEO: the location landings (`NEXT_PUBLIC_LANDING_LOCATIONS`, stage 3 of `features/20-location-seo-pages.md`) are off while place cards link to `/places?region=2` with a weak title; before switching them on check the category indexing in Yandex Webmaster, run `php spark locations:rebuild` on production and add the declension of location names.
+- SEO: 2 of ~130 bot requests in the audit of 2026-10-23 got a 502 (retries were 200); regular 502s to bots lower Yandex's crawl rate, check the logs.
+- SEO: the `keyOverride` attribute leaks into the HTML (next-seo) and the `x-powered-by: Next.js` header is sent; no ranking effect.
 - Server: `LevelsLibrary::calculate()` writes through `UsersModel::update()`, which bumps `users.updated_at` (the profile's sitemap lastmod) on every experience change; write `experience` and `level` through the query builder like `ReputationLibrary::save()`.

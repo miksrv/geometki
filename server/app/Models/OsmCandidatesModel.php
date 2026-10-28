@@ -198,4 +198,191 @@ class OsmCandidatesModel extends ApplicationBaseModel
 
         return $similar && $this->linkToPlace($candidateId, $placeId, $userId);
     }
+
+    /**
+     * Our places in the area with their titles, for the duplicate rules (OsmScoring::duplicateOf()).
+     *
+     * @param array{0: float, 1: float, 2: float, 3: float} $bounds south, west, north, east
+     * @param float $margin degrees around the bounds
+     * @return array<int, array> [id, category, lat, lon, titles]
+     */
+    public function placesAround(array $bounds, float $margin = 0.01): array
+    {
+        [$south, $west, $north, $east] = $bounds;
+
+        $rows = (new PlacesModel())
+            ->select('places.id, places.category, places.lat, places.lon, GROUP_CONCAT(places_content.title SEPARATOR "\n") as titles')
+            ->join('places_content', 'places_content.place_id = places.id', 'left')
+            ->where([
+                'places.lat >=' => $south - $margin,
+                'places.lat <=' => $north + $margin,
+                'places.lon >=' => $west - $margin,
+                'places.lon <=' => $east + $margin,
+            ])
+            ->groupBy('places.id')
+            ->asArray()
+            ->findAll();
+
+        foreach ($rows as &$row) {
+            $row['titles'] = array_values(array_unique(array_filter(explode("\n", (string) $row['titles']))));
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Stores the duplicates (features/25, step 4): every open candidate in the bounds that looks
+     * like one of our places (OsmScoring::duplicateOf()) is linked to it automatically,
+     * `linked_by` NULL. Called after a tile is collected, after a place is created or moved
+     * (the bounds around it), and by `osm:link-duplicates` for the stored ones. Only the open
+     * candidates: a link set by a person, a rejection, a gone one are kept.
+     *
+     * @param array{0: float, 1: float, 2: float, 3: float} $bounds south, west, north, east
+     * @return int how many candidates got linked
+     */
+    public function linkDuplicatesIn(array $bounds, ?OsmScoring $scoring = null): int
+    {
+        [$south, $west, $north, $east] = $bounds;
+
+        $places = $this->placesAround($bounds);
+
+        if (!$places) {
+            return 0;
+        }
+
+        $scoring ??= new OsmScoring(config('OsmCandidates'));
+        $grid   = $scoring->placesGrid($places, max(abs($south), abs($north)));
+        $linked = 0;
+        $now    = Time::now()->toDateTimeString();
+
+        $rows = $this->builder()
+            ->select('id, name, category, lat, lon')
+            ->where('status', self::STATUS_OPEN)
+            ->where('lat >=', $south)->where('lat <=', $north)
+            ->where('lon >=', $west)->where('lon <=', $east)
+            ->get()->getResultArray();
+
+        foreach ($rows as $row) {
+            foreach ($scoring->placesNear($grid, (float) $row['lat'], (float) $row['lon']) as $place) {
+                if ($scoring->duplicateOf($row['name'], (string) $row['category'], (float) $row['lat'], (float) $row['lon'], $place) === null) {
+                    continue;
+                }
+
+                $this->builder()
+                    ->set([
+                        'status'     => self::STATUS_LINKED,
+                        'place_id'   => $place['id'],
+                        'linked_by'  => null,
+                        'linked_at'  => $now,
+                        'updated_at' => $now,
+                    ])
+                    ->where('id', $row['id'])
+                    ->where('status', self::STATUS_OPEN)
+                    ->update();
+
+                $linked += $this->db->affectedRows();
+                break;
+            }
+        }
+
+        return $linked;
+    }
+
+    /**
+     * The duplicates around one place, after it was created or moved: the bounds of the
+     * duplicate radius around it.
+     */
+    public function linkDuplicatesAround(float $lat, float $lon): int
+    {
+        $margin    = config('OsmCandidates')->duplicateRadius / 111000 * 1.5;
+        $lonMargin = $margin / max(cos(deg2rad($lat)), 0.1);
+
+        return $this->linkDuplicatesIn([$lat - $margin, $lon - $lonMargin, $lat + $margin, $lon + $lonMargin]);
+    }
+
+    /**
+     * After a place was moved: the candidates linked to it automatically that are now farther
+     * than the duplicate radius are open again. Links by hand (an admin's) and the pioneer's
+     * (the place was created from the candidate) stay: they were made on purpose.
+     *
+     * @return int how many candidates are open again
+     */
+    public function reopenFarFrom(string $placeId, float $lat, float $lon): int
+    {
+        $radius = config('OsmCandidates')->duplicateRadius;
+        $rows   = $this->builder()
+            ->select('id, lat, lon')
+            ->where('place_id', $placeId)
+            ->where('status', self::STATUS_LINKED)
+            ->where('linked_by', null)
+            ->get()->getResultArray();
+
+        $far = [];
+
+        foreach ($rows as $row) {
+            $dLat = deg2rad((float) $row['lat'] - $lat);
+            $dLon = deg2rad((float) $row['lon'] - $lon) * cos(deg2rad($lat));
+
+            if (sqrt($dLat ** 2 + $dLon ** 2) * 6371000 > $radius) {
+                $far[] = $row['id'];
+            }
+        }
+
+        if (!$far) {
+            return 0;
+        }
+
+        $this->builder()
+            ->set([
+                'status'     => self::STATUS_OPEN,
+                'place_id'   => null,
+                'linked_at'  => null,
+                'updated_at' => Time::now()->toDateTimeString(),
+            ])
+            ->whereIn('id', $far)
+            ->where('status', self::STATUS_LINKED)
+            ->update();
+
+        return $this->db->affectedRows();
+    }
+
+    /**
+     * Before a place is deleted: the candidates linked to it are open again (the place's key
+     * would only clear `place_id`, leaving them `linked`). The pioneer's link goes too: the
+     * place is gone, so is the credit.
+     *
+     * @return int how many candidates are open again
+     */
+    public function reopenOfPlace(string $placeId): int
+    {
+        $this->builder()
+            ->set([
+                'status'     => self::STATUS_OPEN,
+                'place_id'   => null,
+                'linked_by'  => null,
+                'linked_at'  => null,
+                'updated_at' => Time::now()->toDateTimeString(),
+            ])
+            ->where('place_id', $placeId)
+            ->where('status', self::STATUS_LINKED)
+            ->update();
+
+        return $this->db->affectedRows();
+    }
+
+    /**
+     * The white spots a person opened: the candidates linked to a place of theirs that they
+     * created from the candidate (`linked_by` is the author; an admin linking somebody else's
+     * place by hand is no pioneer). Counted for the experience (MODIFIER_SPOT) and the
+     * `spots_opened` metric.
+     */
+    public function spotsOpened(string $userId): int
+    {
+        return (int) $this->builder()
+            ->selectCount('osm_candidates.id', 'cnt')
+            ->join('places', 'places.id = osm_candidates.place_id AND places.deleted_at IS NULL AND places.user_id = osm_candidates.linked_by')
+            ->where('osm_candidates.linked_by', $userId)
+            ->where('osm_candidates.status', self::STATUS_LINKED)
+            ->get()->getRow()->cnt;
+    }
 }

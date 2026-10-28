@@ -26,6 +26,7 @@ class PhotosModel extends ApplicationBaseModel
     /** @var array<int, string> */
     protected $allowedFields = [
         'place_id',
+        'visit_id',
         'user_id',
         'lat',
         'lon',

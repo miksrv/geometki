@@ -1,15 +1,12 @@
 import React from 'react'
 
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 
 import { API, ApiType } from '@/api'
-import { useAppSelector } from '@/app/store'
-
-import { MapControlsContext } from '../MapControlsContext'
 
 import { OsmCandidates } from './OsmCandidates'
 
-// Every `center` and `pathOptions` object gets a number: the same object keeps its number across renders
+// Every `position` and `icon` object gets a number: the same object keeps its number across renders
 const objectIds = new WeakMap<object, number>()
 const objectId = (value: object): number => {
     if (!objectIds.has(value)) {
@@ -20,20 +17,19 @@ const objectId = (value: object): number => {
 }
 
 jest.mock('react-leaflet', () => ({
-    CircleMarker: ({
+    Marker: ({
         children,
-        center,
-        pathOptions
+        position,
+        icon
     }: {
         children?: React.ReactNode
-        center: [number, number]
-        pathOptions: { fillColor: string }
+        position: [number, number]
+        icon: object
     }) => (
         <div
-            data-testid={'candidate-marker'}
-            data-color={pathOptions.fillColor}
-            data-center={objectId(center)}
-            data-options={objectId(pathOptions)}
+            data-testid={'white-spot-marker'}
+            data-center={objectId(position)}
+            data-options={objectId(icon)}
         >
             {children}
         </div>
@@ -55,7 +51,9 @@ jest.mock('react-leaflet', () => ({
 
 jest.mock('leaflet', () => ({
     __esModule: true,
-    default: { DomEvent: { disableClickPropagation: jest.fn(), disableScrollPropagation: jest.fn() } }
+    default: {
+        divIcon: (options: object) => ({ ...options })
+    }
 }))
 
 jest.mock('next-i18next/pages', () => ({
@@ -66,19 +64,7 @@ jest.mock('next-i18next/pages', () => ({
     })
 }))
 
-jest.mock('simple-react-ui-kit', () => ({
-    Button: ({ onClick, 'aria-label': ariaLabel }: { onClick?: () => void; 'aria-label'?: string }) => (
-        <button
-            aria-label={ariaLabel}
-            onClick={onClick}
-        />
-    ),
-    cn: (...args: unknown[]) => args.filter(Boolean).join(' ')
-}))
-
 jest.mock('./CandidatePopup', () => ({ CandidatePopup: () => null }))
-
-jest.mock('@/app/store', () => ({ useAppSelector: jest.fn() }))
 
 jest.mock('@/api', () => ({
     API: { useOsmCandidatesGetListQuery: jest.fn() },
@@ -124,11 +110,6 @@ const mockList = (items: ApiType.OsmCandidates.Candidate[], pendingTiles = 0) =>
         isFetching: false
     })
 
-const mockRole = (role?: string) =>
-    (useAppSelector as jest.Mock).mockImplementation((selector: (state: unknown) => unknown) =>
-        selector({ auth: { user: role ? { role } : undefined } })
-    )
-
 const items = [
     candidate('1', 'known'),
     candidate('2', 'known'),
@@ -139,136 +120,76 @@ const items = [
 
 describe('OsmCandidates', () => {
     beforeEach(() => {
-        localStorage.clear()
         mockZoom = 12
-        mockRole()
         mockList(items)
     })
 
-    it('shows the known and unexplored places by default', () => {
+    it('shows the open known and unexplored places as white spots, without a panel', () => {
         render(<OsmCandidates />)
 
-        expect(screen.getAllByTestId('candidate-marker')).toHaveLength(3)
-        expect(screen.getByText('Хорошо описанные: 2')).toBeInTheDocument()
-        expect(screen.getByText('Неисследованные: 1')).toBeInTheDocument()
-        expect(screen.getByText('Найдено мест: 4')).toBeInTheDocument()
+        expect(screen.getAllByTestId('white-spot-marker')).toHaveLength(3)
+        expect(screen.queryByRole('button')).not.toBeInTheDocument()
+        expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
     })
 
-    it('asks for the rounded map area with all tiers', () => {
+    it('titles the markers with the place name', () => {
+        render(<OsmCandidates />)
+
+        expect(screen.getAllByTestId('candidate-tooltip').map((node) => node.textContent)).toEqual([
+            'Место 1',
+            'Место 2',
+            'Место 3'
+        ])
+    })
+
+    it('asks for the map area widened to whole tiles, with the known and unexplored tiers only', () => {
         render(<OsmCandidates />)
 
         expect(API.useOsmCandidatesGetListQuery).toHaveBeenLastCalledWith(
-            { bounds: '51.12,54.95,51.18,55.05', tiers: 'known,explore,other' },
+            { bounds: '51.1,54.9,51.2,55.1', tiers: 'known,explore' },
             expect.objectContaining({ skip: false })
         )
     })
 
-    it('shows the other objects when their group is switched on', () => {
-        render(<OsmCandidates />)
-
-        fireEvent.click(screen.getByLabelText('Прочие объекты: 1', { exact: false }))
-
-        expect(screen.getAllByTestId('candidate-marker')).toHaveLength(4)
-    })
-
-    it('hides the "already on Geometki" group from users', () => {
-        render(<OsmCandidates />)
-
-        expect(screen.queryByText(/Уже на Геометках/)).not.toBeInTheDocument()
-    })
-
-    it('shows the "already on Geometki" group to admins', () => {
-        mockRole('admin')
-        render(<OsmCandidates />)
-
-        expect(screen.getByText('Уже на Геометках: 1')).toBeInTheDocument()
-    })
-
-    it('collapses into a button with the counter of new places', () => {
-        render(<OsmCandidates />)
-
-        fireEvent.click(screen.getByLabelText('Свернуть'))
-
-        expect(screen.queryByText(/Хорошо описанные/)).not.toBeInTheDocument()
-        expect(screen.getByText('3')).toBeInTheDocument()
-
-        fireEvent.click(screen.getByLabelText('Места для исследования'))
-
-        expect(screen.getByText('Хорошо описанные: 2')).toBeInTheDocument()
-    })
-
-    it('remembers the collapsed panel for the next visit', () => {
-        const { unmount } = render(<OsmCandidates />)
-
-        fireEvent.click(screen.getByLabelText('Свернуть'))
-        unmount()
-        render(<OsmCandidates />)
-
-        expect(screen.queryByText(/Хорошо описанные/)).not.toBeInTheDocument()
-        expect(screen.getByLabelText('Места для исследования')).toBeInTheDocument()
-    })
-
-    it('starts collapsed on a phone screen unless the user opened it before', () => {
-        const matchMedia = jest.fn().mockReturnValue({ matches: true })
-        Object.defineProperty(window, 'matchMedia', { configurable: true, value: matchMedia, writable: true })
-
-        const { unmount } = render(<OsmCandidates />)
-
-        expect(matchMedia).toHaveBeenCalledWith('(max-width: 768px)')
-        expect(screen.queryByText(/Хорошо описанные/)).not.toBeInTheDocument()
-        expect(screen.getByLabelText('Места для исследования')).toBeInTheDocument()
-
-        fireEvent.click(screen.getByLabelText('Места для исследования'))
-        unmount()
-        render(<OsmCandidates />)
-
-        expect(screen.getByText('Хорошо описанные: 2')).toBeInTheDocument()
-
-        Object.defineProperty(window, 'matchMedia', { configurable: true, value: undefined, writable: true })
-    })
-
     it('does not move or restyle the markers when the layer re-renders', () => {
         const { rerender } = render(<OsmCandidates />)
-        const marker = screen.getAllByTestId('candidate-marker')[0]
+        const marker = screen.getAllByTestId('white-spot-marker')[0]
         const center = marker.getAttribute('data-center')
         const options = marker.getAttribute('data-options')
 
         rerender(<OsmCandidates />)
 
-        const same = screen.getAllByTestId('candidate-marker')[0]
+        const same = screen.getAllByTestId('white-spot-marker')[0]
         expect(same.getAttribute('data-center')).toBe(center)
         expect(same.getAttribute('data-options')).toBe(options)
     })
 
-    it('puts the legend into the map slot above the coordinates', () => {
-        const slot = document.createElement('div')
-        document.body.appendChild(slot)
-
-        render(
-            <MapControlsContext.Provider value={{ bottomSlot: slot }}>
-                <OsmCandidates />
-            </MapControlsContext.Provider>
-        )
-
-        expect(slot).toHaveTextContent('Места для исследования')
-        slot.remove()
-    })
-
-    it('tells that the area is being collected', () => {
+    it('polls only while the area is being collected', () => {
         mockList(items, 2)
         render(<OsmCandidates />)
 
-        expect(screen.getByText('Собираем данные…')).toBeInTheDocument()
+        expect(API.useOsmCandidatesGetListQuery).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ pollingInterval: 30000, skipPollingIfUnfocused: true })
+        )
     })
 
-    it('asks to zoom in on a small zoom and does not load', () => {
+    it('does not poll when nothing is being collected', () => {
+        render(<OsmCandidates />)
+
+        expect(API.useOsmCandidatesGetListQuery).toHaveBeenLastCalledWith(
+            expect.anything(),
+            expect.objectContaining({ pollingInterval: 0 })
+        )
+    })
+
+    it('does not load and shows nothing on a small zoom', () => {
         mockZoom = 8
         render(<OsmCandidates />)
 
         act(() => undefined)
 
-        expect(screen.getByText('Приблизьте карту')).toBeInTheDocument()
-        expect(screen.queryAllByTestId('candidate-marker')).toHaveLength(0)
+        expect(screen.queryAllByTestId('white-spot-marker')).toHaveLength(0)
         expect(API.useOsmCandidatesGetListQuery).toHaveBeenLastCalledWith(
             expect.anything(),
             expect.objectContaining({ skip: true })

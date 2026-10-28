@@ -6,12 +6,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
-import { API, ApiModel } from '@/api'
+import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'
-import { Notify } from '@/app/notificationSlice'
+import { Notify, NotifyReplace } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
-import { MapLinks, useBookmark, WasHereButton } from '@/components/shared'
+import { checkInMessage, MapLinks, useBookmark, WasHereButton } from '@/components/shared'
 import { BottomSheet, ScreenSpinner } from '@/components/ui'
+
+import { PlaceVisitQuestions } from '../place-visit-questions'
 
 import styles from './styles.module.sass'
 
@@ -31,7 +33,7 @@ const AddToCollectionModal = dynamic(
 // react-share is client-only and the popout content renders on open, so no placeholder is needed
 const ShareButtons = dynamic(() => import('./ShareButtons'), { ssr: false })
 
-type SheetType = 'route' | 'save' | 'share' | 'menu'
+type SheetType = 'route' | 'save' | 'share' | 'menu' | 'visit'
 
 interface MenuRowProps {
     icon: IconTypes
@@ -126,6 +128,10 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
     const [showRemoveDialog, setShowRemoveDialog] = useState<boolean>(false)
     const [collectionsOpen, setCollectionsOpen] = useState<boolean>(false)
     const [sheet, setSheet] = useState<SheetType>()
+    // The last check-in from the bar: the title of the questions sheet, or a toast when there is nothing to ask
+    const [checkIn, setCheckIn] = useState<ApiType.Visits.CreateResponse>()
+    // The questions sheet opens only once its block has something to ask (a repeated tap of the day may have nothing)
+    const [visitAsks, setVisitAsks] = useState(false)
     const [nativeShare, setNativeShare] = useState<boolean>(false)
 
     const isBar = variant === 'bar'
@@ -303,6 +309,35 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
         </>
     )
 
+    const visitQuestions = (
+        <>
+            {checkIn && checkInMessage(checkIn, t).note && (
+                <p className={styles.sheetNote}>{checkInMessage(checkIn, t).note}</p>
+            )}
+            <PlaceVisitQuestions
+                placeId={place?.id}
+                variant={'sheet'}
+                onAsk={() => setVisitAsks(true)}
+                onFinish={(reason) => {
+                    setSheet(undefined)
+
+                    // Nothing was asked: the check-in is still answered, as a toast
+                    if (reason === 'nothing' && checkIn) {
+                        const { title, note } = checkInMessage(checkIn, t)
+
+                        void dispatch(
+                            NotifyReplace({
+                                id: 'visited',
+                                message: [title, note].filter(Boolean).join('. '),
+                                type: 'success'
+                            })
+                        )
+                    }
+                }}
+            />
+        </>
+    )
+
     if (isBar) {
         return (
             <>
@@ -325,7 +360,11 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
                         size={'large'}
                         hideLabel={true}
                         placeId={place?.id}
-                        verificationExempt={place?.verificationExempt}
+                        onCheckedIn={(visit) => {
+                            setCheckIn(visit)
+                            setVisitAsks(false)
+                            setSheet('visit')
+                        }}
                     />
 
                     <Button
@@ -356,8 +395,11 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
                     />
                 </div>
 
+                {/* Mounted before the sheet: it tells whether there is anything to ask */}
+                {sheet === 'visit' && !visitAsks && <div hidden={true}>{visitQuestions}</div>}
+
                 <BottomSheet
-                    open={!!sheet}
+                    open={!!sheet && (sheet !== 'visit' || visitAsks)}
                     title={
                         sheet === 'route'
                             ? labels.route
@@ -365,14 +407,21 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
                               ? t('place-save-to', { defaultValue: 'Сохранить в' })
                               : sheet === 'share'
                                 ? labels.share
-                                : place?.title
+                                : sheet === 'visit'
+                                  ? checkIn
+                                      ? checkInMessage(checkIn, t).title
+                                      : t('visit-questions-title', { defaultValue: 'Вы были здесь' })
+                                  : place?.title
                     }
+                    // The questions are chips in the sheet: it stays open while they are answered
+                    closeOnSelect={sheet !== 'visit'}
                     onClose={() => setSheet(undefined)}
                 >
                     {sheet === 'route' && routeItems}
                     {sheet === 'save' && saveItems}
                     {sheet === 'share' && shareItems}
                     {sheet === 'menu' && menuItems}
+                    {sheet === 'visit' && visitQuestions}
                 </BottomSheet>
 
                 {dialogs}
@@ -401,7 +450,6 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
                 <WasHereButton
                     size={'medium'}
                     placeId={place?.id}
-                    verificationExempt={place?.verificationExempt}
                 />
 
                 <Popout

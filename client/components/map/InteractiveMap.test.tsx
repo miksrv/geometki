@@ -141,6 +141,12 @@ jest.mock('./place-mark', () => ({
     PlaceMark: () => <div data-testid={'place-mark'} />
 }))
 
+jest.mock('./hex-layer', () => ({
+    HEX_MAX_ZOOM: 11,
+    HexLayer: () => <div data-testid={'hex-layer'} />,
+    HexLegend: () => <div data-testid={'hex-legend'} />
+}))
+
 jest.mock('./osm-candidates', () => ({
     OsmCandidates: () => <div data-testid={'osm-candidates'} />
 }))
@@ -327,6 +333,36 @@ describe('InteractiveMap', () => {
             screen.getAllByTestId('marker-photo')[1].click()
 
             expect(onPhotoClick).toHaveBeenCalledWith([photos[1], photos[3]], 1)
+        })
+    })
+
+    describe('hexes', () => {
+        const places = [{ id: 'p1', lat: 51.765, lon: 55.099, type: 'place', category: 'abandoned', count: 1 }]
+
+        it('replaces the place markers with the hex layer when zoomed out', () => {
+            render(
+                <InteractiveMap
+                    enableHexes
+                    zoom={8}
+                    places={places as any}
+                />
+            )
+            expect(screen.getByTestId('hex-layer')).toBeInTheDocument()
+            expect(screen.getByTestId('hex-legend')).toBeInTheDocument()
+            expect(screen.queryByTestId('marker-point')).not.toBeInTheDocument()
+        })
+
+        it('shows the place markers and no hex layer when zoomed in', () => {
+            render(
+                <InteractiveMap
+                    enableHexes
+                    zoom={12}
+                    places={places as any}
+                />
+            )
+            expect(screen.queryByTestId('hex-layer')).not.toBeInTheDocument()
+            expect(screen.queryByTestId('hex-legend')).not.toBeInTheDocument()
+            expect(screen.getByTestId('marker-point')).toBeInTheDocument()
         })
     })
 })

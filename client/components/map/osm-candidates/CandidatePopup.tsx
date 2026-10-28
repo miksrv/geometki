@@ -1,19 +1,14 @@
 import React, { useState } from 'react'
 import { Badge, Button, cn, Icon } from 'simple-react-ui-kit'
 
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
-import { API, ApiType } from '@/api'
-import { Notify } from '@/app/notificationSlice'
-import { useAppDispatch } from '@/app/store'
+import { ApiType } from '@/api'
 import useRequireAuth from '@/hooks/useRequireAuth'
-import { getErrorMessage } from '@/utils/api'
 import { buildPlaceUrl } from '@/utils/helpers'
 
-import { GROUP_COLORS, useGroupHints, useGroupTitles } from './constants'
-import { breakdownText, candidateGroup, displayName, formatPoints, settlementText, wikipediaUrl } from './utils'
+import { breakdownText, displayName, settlementText, wikipediaUrl } from './utils'
 
 import styles from './styles.module.sass'
 
@@ -27,40 +22,21 @@ const VISITOR_FACTS = new Set<ApiType.OsmCandidates.BreakdownCode>([
     'lakeSize'
 ])
 
-const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
-    ssr: false
-})
-
 interface CandidatePopupProps {
     candidate: ApiType.OsmCandidates.Candidate
-    isAdmin?: boolean
 }
-
-type AdminAction = 'link' | 'unlink' | 'reject'
 
 /**
  * Popup of an OSM candidate on the map: the cover (a Commons photo with its credits, or an OSM image),
  * what and where the object is, a few facts about it, the sources and the "create a place" action.
- * Admins also see the rating with its points, the objects that are already on Geometki
- * and can link, unlink or hide them.
  */
-export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdmin }) => {
+export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate }) => {
     const { t, i18n } = useTranslation()
-    const dispatch = useAppDispatch()
     const requireAuth = useRequireAuth()
-    const groupTitles = useGroupTitles()
-    const groupHints = useGroupHints()
 
-    const [pending, setPending] = useState<AdminAction>()
-    const [confirmReject, setConfirmReject] = useState(false)
     const [coverFailed, setCoverFailed] = useState(false)
 
-    const [link] = API.useOsmCandidatesPatchLinkMutation()
-    const [unlink] = API.useOsmCandidatesPatchUnlinkMutation()
-    const [reject] = API.useOsmCandidatesPatchRejectMutation()
-
     const locale = i18n.language
-    const group = candidateGroup(candidate)
     const title = displayName(t, candidate, locale)
     const settlement = settlementText(t, candidate, locale)
     const photo = candidate.photos[0]
@@ -95,47 +71,8 @@ export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdm
                   href: `https://www.openstreetmap.org/${candidate.osmType}/${candidate.osmId}`,
                   label: 'OpenStreetMap'
               }
-            : undefined,
-        isAdmin && candidate.wikidata
-            ? { href: `https://www.wikidata.org/wiki/${candidate.wikidata}`, label: 'Wikidata' }
             : undefined
     ].filter((source): source is { href: string; label: string } => !!source)
-
-    const run = async (action: AdminAction, request: () => Promise<unknown>, success: string) => {
-        setPending(action)
-
-        try {
-            await request()
-            void dispatch(Notify({ id: 'osmCandidateAction', message: success, type: 'success' }))
-        } catch (error) {
-            void dispatch(Notify({ id: 'osmCandidateError', message: getErrorMessage(error), type: 'error' }))
-        } finally {
-            setPending(undefined)
-        }
-    }
-
-    const handleLink = (id: string) =>
-        run(
-            'link',
-            () => link({ id: candidate.id, placeId: id }).unwrap(),
-            t('osm-candidates_linked', { defaultValue: 'Объект связан с геометкой' })
-        )
-
-    const handleUnlink = () =>
-        run(
-            'unlink',
-            () => unlink(candidate.id).unwrap(),
-            t('osm-candidates_unlinked', { defaultValue: 'Связь с геометкой удалена' })
-        )
-
-    const handleReject = () => {
-        setConfirmReject(false)
-        void run(
-            'reject',
-            () => reject(candidate.id).unwrap(),
-            t('osm-candidates_rejected', { defaultValue: 'Объект скрыт с карты' })
-        )
-    }
 
     return (
         <article className={cn(styles.popup, !coverUrl && styles.noCover)}>
@@ -193,15 +130,12 @@ export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdm
                 <div className={styles.badges}>
                     <Badge
                         size={'small'}
-                        className={styles.groupBadge}
-                        icon={
-                            <span
-                                className={styles.dot}
-                                style={{ background: GROUP_COLORS[group] }}
-                            />
-                        }
-                        label={groupTitles[group]}
-                        tooltip={groupHints[group]}
+                        icon={'Search'}
+                        label={t('white-spots_badge', { defaultValue: 'Не открыто' })}
+                        tooltip={t('white-spots_hint', {
+                            defaultValue:
+                                'Это место ещё никто не открыл на Геометках: оно есть в OpenStreetMap, но без описания'
+                        })}
                         tabIndex={0}
                     />
                     {candidate.heritage && (
@@ -223,7 +157,7 @@ export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdm
                         {facts.map((item, index) => (
                             <li key={`${item.code}${index}`}>
                                 <Icon name={'CheckCircle'} />
-                                <span>{breakdownText(t, item, candidate)}</span>
+                                <span>{breakdownText(t, item)}</span>
                             </li>
                         ))}
                     </ul>
@@ -259,39 +193,6 @@ export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdm
                         >
                             {candidate.place.title ?? candidate.place.id}
                         </Link>
-                        {isAdmin && candidate.place.similarity !== undefined && (
-                            <span className={styles.calloutLabel}>
-                                {t('osm-candidates_similarity', {
-                                    defaultValue: 'Совпадение названия: {{value}}%',
-                                    value: candidate.place.similarity
-                                })}
-                            </span>
-                        )}
-
-                        {isAdmin && candidate.status === 'duplicate' && (
-                            <Button
-                                stretched={true}
-                                size={'small'}
-                                mode={'secondary'}
-                                icon={'CheckCircle'}
-                                loading={pending === 'link'}
-                                disabled={!!pending}
-                                label={t('osm-candidates_confirm-link', { defaultValue: 'Подтвердить связь' })}
-                                onClick={() => handleLink(candidate.place!.id)}
-                            />
-                        )}
-
-                        {isAdmin && candidate.status === 'linked' && (
-                            <Button
-                                stretched={true}
-                                size={'small'}
-                                mode={'secondary'}
-                                loading={pending === 'unlink'}
-                                disabled={!!pending}
-                                label={t('osm-candidates_unlink', { defaultValue: 'Отвязать' })}
-                                onClick={handleUnlink}
-                            />
-                        )}
                     </div>
                 )}
 
@@ -299,11 +200,9 @@ export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdm
                     <div className={styles.cta}>
                         {candidate.status === 'open' && (
                             <span className={styles.ctaText}>
-                                {candidate.tier === 'explore'
-                                    ? t('osm-candidates_cta-explore', {
-                                          defaultValue: 'О месте почти ничего не известно. Опишите его первым'
-                                      })
-                                    : t('osm-candidates_cta', { defaultValue: 'Этого места ещё нет на Геометках' })}
+                                {t('white-spots_cta', {
+                                    defaultValue: 'Откройте это место первым: +35 опыта'
+                                })}
                             </span>
                         )}
                         <Button
@@ -313,68 +212,11 @@ export const CandidatePopup: React.FC<CandidatePopupProps> = ({ candidate, isAdm
                             link={`/places/create?candidate=${candidate.id}`}
                             noIndex={true}
                             onClick={requireAuth}
-                            label={t('osm-candidates_create', { defaultValue: 'Создать геометку' })}
+                            label={t('white-spots_create', { defaultValue: 'Добавить это место' })}
                         />
                     </div>
                 )}
-
-                {isAdmin && candidate.breakdown.length > 0 && (
-                    <details className={styles.rating}>
-                        <summary>
-                            <Icon
-                                name={'KeyboardRight'}
-                                className={styles.chevron}
-                            />
-                            <span className={styles.ratingLabel}>
-                                {t('osm-candidates_rating-label', { defaultValue: 'Рейтинг интереса' })}
-                            </span>
-                            <span className={styles.ratingValue}>{candidate.score}</span>
-                        </summary>
-                        <ul>
-                            {candidate.breakdown.map((item, index) => (
-                                <li key={`${item.code}${index}`}>
-                                    <span>{breakdownText(t, item, candidate)}</span>
-                                    <span
-                                        className={cn(
-                                            styles.points,
-                                            item.points > 0 && styles.positive,
-                                            item.points < 0 && styles.negative
-                                        )}
-                                    >
-                                        {formatPoints(item.points)}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </details>
-                )}
-
-                {isAdmin && (
-                    <Button
-                        stretched={true}
-                        mode={'outline'}
-                        variant={'negative'}
-                        size={'medium'}
-                        loading={pending === 'reject'}
-                        disabled={!!pending}
-                        label={t('osm-candidates_reject', { defaultValue: 'Скрыть навсегда' })}
-                        onClick={() => setConfirmReject(true)}
-                    />
-                )}
             </div>
-
-            {isAdmin && (
-                <ConfirmationDialog
-                    open={confirmReject}
-                    message={t('osm-candidates_reject-confirm', {
-                        defaultValue: 'Скрыть «{{title}}» с карты навсегда? Повторный сбор данных его не вернёт.',
-                        title
-                    })}
-                    confirmLabel={t('osm-candidates_reject-action', { defaultValue: 'Скрыть' })}
-                    onCancel={() => setConfirmReject(false)}
-                    onConfirm={handleReject}
-                />
-            )}
         </article>
     )
 }

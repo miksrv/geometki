@@ -51,16 +51,55 @@ class OsmTilesModel extends ApplicationBaseModel
      * Marks the tiles as wanted: new ones are queued, the known ones get a higher priority,
      * and the ones due for a refresh (or a retry after a failure) are queued again.
      *
+     * A tile asked for within the last `requestCooldownMinutes` is only read: looking at a
+     * collected area writes nothing, and the map polling a pending area every 30 seconds
+     * does not pump up its priority.
+     *
      * @param array<int, array{0: int, 1: int}> $tiles tile_lat, tile_lon
+     * @param callable(): bool|null $mayWrite asked only when there is something to write (the per-IP limit);
+     *                                        false leaves the queue as it is and only reads the tiles
      * @return array<string, array> "lat:lon" => [id, status, fetched_at] after the update
      */
-    public function request(array $tiles): array
+    public function request(array $tiles, ?OsmCandidates $config = null, ?callable $mayWrite = null): array
     {
         if (!$tiles) {
             return [];
         }
 
-        $now    = Time::now()->toDateTimeString();
+        $config ??= config('OsmCandidates');
+
+        $now      = Time::now();
+        $cooldown = $now->subMinutes($config->requestCooldownMinutes)->toDateTimeString();
+        $result   = $this->findTiles($tiles);
+        $wanted   = [];
+
+        foreach ($tiles as [$tileLat, $tileLon]) {
+            $row = $result["{$tileLat}:{$tileLon}"] ?? null;
+
+            $due = $row
+                && in_array($row['status'], [self::STATUS_DONE, self::STATUS_FAILED], true)
+                && $row['next_fetch_at'] !== null
+                && $row['next_fetch_at'] <= $now->toDateTimeString();
+
+            if (!$row || $due || $row['requested_at'] === null || $row['requested_at'] < $cooldown) {
+                $wanted[] = [$tileLat, $tileLon];
+            }
+        }
+
+        if ($wanted && (!$mayWrite || $mayWrite())) {
+            $this->upsertRequested($wanted, $now->toDateTimeString());
+
+            $result = array_merge($result, $this->findTiles($wanted));
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<int, array{0: int, 1: int}> $tiles tile_lat, tile_lon
+     */
+    private function upsertRequested(array $tiles, string $now): void
+    {
         $values = [];
         $binds  = [];
 
@@ -79,9 +118,16 @@ class OsmTilesModel extends ApplicationBaseModel
             . " status = IF(status IN ('done', 'failed') AND next_fetch_at IS NOT NULL AND next_fetch_at <= VALUES(requested_at), 'queued', status)",
             $binds
         );
+    }
 
+    /**
+     * @param array<int, array{0: int, 1: int}> $tiles tile_lat, tile_lon
+     * @return array<string, array> "lat:lon" => [id, status, fetched_at, next_fetch_at, requested_at]
+     */
+    private function findTiles(array $tiles): array
+    {
         $rows = $this->builder()
-            ->select('id, tile_lat, tile_lon, status, fetched_at')
+            ->select('id, tile_lat, tile_lon, status, fetched_at, next_fetch_at, requested_at')
             ->groupStart();
 
         foreach ($tiles as [$tileLat, $tileLon]) {

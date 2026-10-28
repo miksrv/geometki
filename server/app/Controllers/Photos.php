@@ -10,6 +10,7 @@ use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
 use App\Libraries\ActivityLibrary;
 use App\Libraries\SitePages;
+use App\Libraries\VisitsLibrary;
 use App\Models\PhotosModel;
 use App\Models\PlacesExternalPhotosModel;
 use App\Models\PlacesModel;
@@ -78,6 +79,10 @@ class Photos extends ResourceController
             $photo->full    = $path . '.' . $photo->extension;
             $photo->preview = $path . '_preview.' . $photo->extension;
 
+            if (!empty($photo->visit_day)) {
+                $photo->visitedAt = substr((string) $photo->visit_day, 0, 10);
+            }
+
             if ($photo->user_id) {
                 $photo->author = [
                     'id'     => $photo->user_id,
@@ -88,7 +93,7 @@ class Photos extends ResourceController
 
             unset(
                 $photo->place_id, $photo->title_ru, $photo->title_en, $photo->extension, $photo->filename,
-                $photo->user_id, $photo->user_avatar, $photo->user_name,
+                $photo->user_id, $photo->user_avatar, $photo->user_name, $photo->visit_day, $photo->visit_id,
             );
         }
 
@@ -194,6 +199,9 @@ class Photos extends ResourceController
             return $this->failValidationErrors($photo->getErrorString());
         }
 
+        // Uploaded on the day of the uploader's visit: the photo belongs to that visit
+        $visit = (new VisitsLibrary())->photoVisit($this->session->user?->id, $placesData->id);
+
         try {
             $photoDir = UPLOAD_PHOTOS . $placesData->id . '/';
             $newName  = $photo->getRandomName();
@@ -217,6 +225,7 @@ class Photos extends ResourceController
             $photo->lat       = $processed->coordinates?->lat ?? $placesData->lat;
             $photo->lon       = $processed->coordinates?->lon ?? $placesData->lon;
             $photo->place_id  = $placesData->id;
+            $photo->visit_id  = $visit?->id;
             $photo->user_id   = $this->session->user?->id;
             $photo->title_en  = $placeContent->title($id);
             $photo->title_ru  = $placeContent->title($id);
@@ -235,16 +244,22 @@ class Photos extends ResourceController
             // Update the time and photos count
             $placesModel->update($id, ['photos' => $placesData->photos + 1]);
 
+            // A photo makes the visit a contribution: its author's experience is recounted
+            if ($visit) {
+                (new VisitsLibrary())->afterChange($visit->user_id, $visit->place_id);
+            }
+
             $photoPath = PATH_PHOTOS . $placesData->id . '/';
 
             return $this->respondCreated((object)[
-                'id'      => $photoId,
-                'full'    => $photoPath . $name . '.' . $ext,
-                'preview' => $photoPath . $name . '_preview.' . $ext,
-                'width'   => $photo->width,
-                'height'  => $photo->height,
-                'title'   => $photo->title_en ?: $photo->title_ru,
-                'placeId' => $photo->place_id
+                'id'        => $photoId,
+                'full'      => $photoPath . $name . '.' . $ext,
+                'preview'   => $photoPath . $name . '_preview.' . $ext,
+                'width'     => $photo->width,
+                'height'    => $photo->height,
+                'title'     => $photo->title_en ?: $photo->title_ru,
+                'placeId'   => $photo->place_id,
+                'visitedAt' => $visit ? substr((string) $visit->visited_at, 0, 10) : null,
             ]);
 
         } catch (Throwable $e) {
@@ -396,8 +411,11 @@ class Photos extends ResourceController
             ->select(
                 'photos.id, photos.place_id, photos.user_id, photos.filename, photos.extension, photos.width, 
                     photos.height, photos.title_ru, photos.title_en, photos.created_at,
-                    users.id as user_id, users.name as user_name, users.avatar as user_avatar')
-            ->join('users', 'photos.user_id = users.id', 'left');
+                    users.id as user_id, users.name as user_name, users.avatar as user_avatar,
+                    visits.visited_at as visit_day')
+            ->join('users', 'photos.user_id = users.id', 'left')
+            // The day of the visit a photo was uploaded from: the gallery groups photos by year on it
+            ->join('users_visited_places visits', 'photos.visit_id = visits.id', 'left');
 
         if ($place) {
             $photosModel->where(['photos.place_id' => $place]);

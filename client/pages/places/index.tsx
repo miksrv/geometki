@@ -37,7 +37,6 @@ interface PlacesPageProps {
     district: number | null
     locality: number | null
     category: string | null
-    tag: string | null
     lat: number | null
     lon: number | null
     /** Where the distances are from: the URL's `lat`/`lon`, else the visitor's `location` cookie */
@@ -64,7 +63,6 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
     district,
     locality,
     category,
-    tag,
     lat,
     lon,
     distanceOrigin,
@@ -91,8 +89,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         order: order !== DEFAULT_ORDER ? order : undefined,
         page: currentPage !== 1 ? currentPage : undefined,
         region: region ?? undefined,
-        sort: sort !== defaultSort ? sort : undefined,
-        tag: tag ?? undefined
+        sort: sort !== defaultSort ? sort : undefined
     }
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
@@ -115,8 +112,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                 ? { id: locationData.id, name: locationData.name, slug: null, type: locationType }
                 : undefined,
         notVisited,
-        sort,
-        tag: tag ?? undefined
+        sort
     }
 
     // This page never fetched a slug for the current location (it has no SSR resolve call), so
@@ -136,11 +132,10 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
     const currentCategory = isCategoryName(category) ? getCategoryTitle(t, category) : undefined
 
     const title = useMemo(() => {
-        const titleTag = tag ? ` #${tag}` : ''
         const titlePage = initialFilter.page && initialFilter.page > 1 ? ` - ${t('page')} ${initialFilter.page}` : ''
 
         if (!currentCategory && !locationType) {
-            return t('interesting-places') + titleTag + titlePage
+            return t('interesting-places') + titlePage
         }
 
         const titles = []
@@ -153,21 +148,21 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
             titles.push(currentCategory)
         }
 
-        return `${t('interesting-places')}: ${titles.join(', ')}` + titleTag + titlePage
+        return `${t('interesting-places')}: ${titles.join(', ')}` + titlePage
     }, [currentCategory, locationData, locationType, i18n.language, initialFilter])
 
     const description = useMemo(() => {
         const base = t('places-seo-description')
-        if (!currentCategory && !locationType && !tag) {
+        if (!currentCategory && !locationType) {
             return base
         }
         return `${title} — ${base}`
-    }, [title, currentCategory, locationType, tag, i18n.language])
+    }, [title, currentCategory, locationType, i18n.language])
 
     const breadcrumbsLinks = useMemo(() => {
         const breadcrumbs = []
 
-        if (category || locationType || tag || currentPage > 1) {
+        if (category || locationType || currentPage > 1) {
             breadcrumbs.push({
                 link: '/places',
                 text: t('nav-places', { defaultValue: 'Места' })
@@ -182,17 +177,15 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         }
 
         return breadcrumbs
-    }, [category, locationData, locationType, tag, currentPage])
+    }, [category, locationData, locationType, currentPage])
 
     const breadCrumbCurrent = category
         ? currentCategory
         : locationType
           ? locationData?.name
-          : tag
-            ? `#${tag}`
-            : currentPage > 1
-              ? `${t('page')} ${initialFilter.page}`
-              : t('interesting-places')
+          : currentPage > 1
+            ? `${t('page')} ${initialFilter.page}`
+            : t('interesting-places')
 
     const breadCrumbSchema = {
         '@context': 'https://schema.org',
@@ -236,8 +229,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
         notVisited: notVisited ? 1 : undefined,
         order: getRequestOrder(sort, order),
         region,
-        sort,
-        tag
+        sort
     }
 
     return (
@@ -277,7 +269,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                 scriptKey={'places-list'}
                 data={placesList.map((place) => PlaceSchema(place, SITE_LINK))}
             />
-            {!isGeoFiltered && (category || tag) && (
+            {!isGeoFiltered && !!category && (
                 <JsonLdScript
                     scriptKey={'places-item-list'}
                     data={{
@@ -298,11 +290,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                 title={title}
                 count={t('places-count', '{{count}} мест', { count: placesCount })}
                 breadcrumbs={breadcrumbsLinks}
-                lede={
-                    currentPage === 1 && !currentCategory && !locationType && !tag
-                        ? t('places-seo-description')
-                        : undefined
-                }
+                lede={currentPage === 1 && !currentCategory && !locationType ? t('places-seo-description') : undefined}
             />
 
             <PlaceFilterPanel
@@ -362,7 +350,6 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const lon = parseFloat(context.query.lon as string) || null
             const distanceOrigin = getDistanceOrigin(lat, lon, cookies)
 
-            const tag = (context.query.tag as string) || null
             const defaultSort = cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT
             const sort = (context.query.sort as ApiType.SortFieldsType) || defaultSort
             const order = (context.query.order as ApiType.SortOrdersType) || DEFAULT_ORDER
@@ -456,8 +443,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         notVisited,
                         order,
                         page: currentPage,
-                        sort,
-                        tag
+                        sort
                     },
                     flags
                 )
@@ -492,8 +478,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     offset: (currentPage - 1) * POST_PER_PAGE,
                     order: getRequestOrder(sort, order),
                     region,
-                    sort: sort,
-                    tag
+                    sort: sort
                 })
             )
 
@@ -523,8 +508,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     placesCount: placesList?.count ?? 0,
                     placesList: placesList?.items ?? [],
                     region,
-                    sort,
-                    tag
+                    sort
                 }
             }
         }

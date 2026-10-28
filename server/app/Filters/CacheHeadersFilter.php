@@ -13,7 +13,8 @@ class CacheHeadersFilter implements FilterInterface
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null): ResponseInterface
     {
         $maxAge = $arguments[0] ?? 300;
-        $response->setHeader('Cache-Control', "public, max-age={$maxAge}");
+        // The response starts with the framework's no-cache header: replaced, not joined
+        $response->removeHeader('Cache-Control')->setHeader('Cache-Control', "public, max-age={$maxAge}");
         return $response;
     }
 }

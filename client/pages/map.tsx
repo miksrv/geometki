@@ -13,6 +13,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
+import { HEX_MAX_ZOOM } from '@/components/map/hex-layer/constants'
 import { getMapSettings, saveMapSettings } from '@/components/map/mapSettings'
 import { AppLayout, MapObjectsTypeEnum } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
@@ -54,10 +55,16 @@ const MapPage: NextPage<object> = () => {
     const [mapType, setMapType] = useState<MapObjectsTypeEnum>()
     const [mapBounds, setMapBounds] = useState<string>()
     const [mapZoom, setMapZoom] = useState<number>()
+    // The zoom as the map reports it, not debounced: the hexagons and the markers swap at once
+    const [liveZoom, setLiveZoom] = useState<number>()
 
     const mapSetHashRef = useRef<string>('')
 
     const canonicalUrl = SITE_LINK + (i18n.language === 'en' ? 'en/' : '')
+
+    // Below HEX_MAX_ZOOM the hexagons replace the markers: the points are not asked for until the map
+    // is zoomed in (its first report comes on the mount)
+    const hexesShown = mapType === 'Places' && (liveZoom === undefined || liveZoom < HEX_MAX_ZOOM)
 
     // Without clusters every point is loaded once, all categories, and the chosen ones are
     // filtered here: a category toggle costs no request, and every visitor asks the same URL,
@@ -69,7 +76,7 @@ const MapPage: NextPage<object> = () => {
             categories: ENABLE_POI_CLUSTERIZATION ? (mapCategories ?? []) : undefined,
             zoom: ENABLE_POI_CLUSTERIZATION ? mapZoom : undefined
         },
-        { skip: (ENABLE_POI_CLUSTERIZATION && !mapBounds) || mapType !== 'Places' }
+        { skip: (ENABLE_POI_CLUSTERIZATION && !mapBounds) || mapType !== 'Places' || hexesShown }
     )
 
     const shownPlaces = useMemo(() => {
@@ -130,6 +137,14 @@ const MapPage: NextPage<object> = () => {
             setMapZoom(zoom)
         }, 500),
         []
+    )
+
+    const handleChangeBounds = useCallback(
+        (bounds: LatLngBounds, zoom: number) => {
+            setLiveZoom(zoom)
+            void debounceSetMapBounds(bounds, zoom)
+        },
+        [debounceSetMapBounds]
     )
 
     const debounceSetMapCategories = useCallback(
@@ -258,6 +273,8 @@ const MapPage: NextPage<object> = () => {
                 />
             )}
 
+            {/* The page's one h1, out of sight: the map is the page (SEO audit, 2026-10-23: no h1) */}
+            <h1 className={'mapTitle'}>{t('map-of-interesting-pages')}</h1>
             <div className={'mapContainer'}>
                 <InteractiveMap
                     center={initMapCoords}
@@ -275,6 +292,7 @@ const MapPage: NextPage<object> = () => {
                     enableCoordsControl={true}
                     enableLayersSwitcher={true}
                     enableOsmCandidates={true}
+                    enableHexes={mapType === 'Places'}
                     enableContextMenu={true}
                     enableCategoryControl={mapType === 'Places'}
                     loading={placesLoading || photosLoading}
@@ -284,7 +302,7 @@ const MapPage: NextPage<object> = () => {
                     onChangeCategories={handleChangeCategories}
                     onClickCreatePlace={handleCreatePlace}
                     onChangeMapType={setMapType}
-                    onChangeBounds={debounceSetMapBounds}
+                    onChangeBounds={handleChangeBounds}
                     enableUserLocation={true}
                 />
             </div>

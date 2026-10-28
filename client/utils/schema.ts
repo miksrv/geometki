@@ -2,44 +2,40 @@ import { LocalBusiness, Person } from 'schema-dts'
 
 import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
-import { formatDateISO } from '@/utils/date'
 import { buildPlaceUrl } from '@/utils/place'
 import { removeMarkdown } from '@/utils/text'
 
 // Categories that represent commercial venues with business hours
 const COMMERCIAL_CATEGORIES = new Set<ApiModel.Categories>([ApiModel.Categories.museum])
 
-const getPlaceSchemaType = (category?: ApiModel.Categories): string => {
-    if (!category) {
-        return 'LocalBusiness'
-    }
+/**
+ * A spring, a ruin or a summit is a `TouristAttraction`, not a business with opening hours and
+ * stars: `LocalBusiness` only for the commercial categories (SEO audit, 2026-10-23: every place
+ * page used to declare both, with an `aggregateRating` that reads as review spam on nature)
+ */
+export const getPlaceSchemaType = (category?: ApiModel.Categories): 'LocalBusiness' | 'TouristAttraction' =>
+    category && COMMERCIAL_CATEGORIES.has(category) ? 'LocalBusiness' : 'TouristAttraction'
 
-    return COMMERCIAL_CATEGORIES.has(category) ? 'LocalBusiness' : 'TouristAttraction'
-}
+/**
+ * The geocoder puts a road number (`80К-007`, `Р-240`, `М-5`) into `street` for a place by a
+ * highway; a street name has a lowercase letter in it, a road code never does
+ */
+export const isStreetName = (street?: string): street is string => !!street && /\p{Ll}/u.test(street)
+
+export const buildPlaceAddress = (address?: ApiModel.Address) => ({
+    '@type': 'PostalAddress',
+    addressCountry: address?.country?.name ? { '@type': 'Country', name: address.country.name } : undefined,
+    addressLocality: address?.locality?.name,
+    addressRegion: address?.region?.name,
+    streetAddress: isStreetName(address?.street) ? address.street : undefined
+})
 
 export const PlaceSchema = (place: ApiModel.Place, canonicalUrl?: string): unknown | LocalBusiness => ({
     '@context': 'https://schema.org',
     '@type': getPlaceSchemaType(place.category),
-    address: {
-        '@type': 'PostalAddress',
-        addressCountry: place.address?.country?.name,
-        addressLocality: place.address?.locality?.name,
-        addressRegion: place.address?.region?.name,
-        streetAddress: place.address?.street
-    },
-    ...(place.author
-        ? {
-              author: {
-                  '@type': 'Person',
-                  image: place.author.avatar ? `${IMG_HOST}${place.author.avatar}` : undefined,
-                  name: place.author.name,
-                  url: canonicalUrl ? `${canonicalUrl}users/${place.author.id}` : undefined
-              }
-          }
-        : {}),
-    // Lists send no text and no creation date: leave the fields out rather than empty
-    dateModified: formatDateISO(place?.updated?.date) || undefined,
-    datePublished: formatDateISO(place?.created?.date) || undefined,
+    address: buildPlaceAddress(place.address),
+    // No author and dates: they are CreativeWork properties, a place is not one (the place page
+    // puts them on its `WebPage` node)
     description: removeMarkdown(place.content) || undefined,
     geo: {
         '@type': 'GeoCoordinates',

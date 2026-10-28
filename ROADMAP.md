@@ -24,7 +24,7 @@ Target definition: *a field game for curious people — an ever-incomplete map o
 
 ## Phase 2 — the ongoing game
 
-- **Capture mechanic for OSM candidates.** OSM candidates are already on the map; still missing: claiming a candidate by a verified visit or the first photo/description for bonus XP, and an "N uncaptured places in this area" counter that toggles the layer.
+- **Exploration per location.** The undiscovered places and the pioneer bonus are live (1.18.0); still missing: the explored share of a region or district (places against the undiscovered ones), "N places wait to be discovered" there, and its top explorers. Spec: feature 25, step 5.
 - **Regional territory / district champions.** Daily score per district (places ×3 + photos ×1 + edits ×2), champion badge, notification on being overtaken. Spec: features 04, 13.
 - **Place quality score and curator rank.** Quality tiers on place cards, passive XP for authors of featured places, curator rank by average quality. Spec: feature 05.
 - **Freshness badges with decay.** Stub / Draft / Complete / Verified / Exemplary, degrading without updates; "your place dropped a tier" notification and a "needs attention" list. Spec: feature 15.
@@ -48,7 +48,7 @@ Target definition: *a field game for curious people — an ever-incomplete map o
 - **Map search.** Jump to a city or address via the server geocoder (Nominatim + Yandex), with our places in the results.
 - **"What's here?" in the context menu.** Reverse-geocoded address, nearest places, Wikipedia articles and Commons photos for a clicked point in one card.
 - **Trip planner.** Pick several places, build a road route (OSRM / GraphHopper / OpenRouteService) with order, distance and travel time; save as a collection, export GPX, open in Yandex Navigator.
-- **Fog of war.** Personal explored-area layer. Spec: feature 17.
+- **Personal exploration map.** The hex layer of `/map` is live (1.18.0); still missing: one map of a person's places and visits on their page, their share of each region. Spec: feature 25, step 7.
 
 ## Quick wins
 
@@ -56,7 +56,7 @@ Target definition: *a field game for curious people — an ever-incomplete map o
 - **First-session onboarding:** pin your home area → create your first place → "come back tomorrow".
 - **Category completion progress** for logged-in users: "You've added 3 of 47" in the category filter or on the profile.
 - **Top explorers in your city this week** on the home page, by XP earned, grouped by the place locality.
-- **Weekly digest sections** still missing: streak, freshness alerts, rank changes, new followers, uncaptured places nearby — each blocked on its feature above.
+- **Weekly digest sections** still missing: streak, freshness alerts, rank changes, new followers, undiscovered places nearby — each blocked on its feature above.
 
 ## Metrics
 

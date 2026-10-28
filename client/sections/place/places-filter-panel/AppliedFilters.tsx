@@ -70,10 +70,6 @@ export const AppliedFilters: React.FC<AppliedFiltersProps> = ({ filter, defaultS
         })
     )
 
-    if (filter.tag) {
-        filters.push({ href: buildHref({ tag: null }), key: 'tag', label: `#${filter.tag}` })
-    }
-
     if (filter.notVisited) {
         filters.push({
             href: buildHref({ notVisited: false }),
@@ -98,8 +94,7 @@ export const AppliedFilters: React.FC<AppliedFiltersProps> = ({ filter, defaultS
                 categories: [],
                 location: null,
                 notVisited: false,
-                sort: defaultSort,
-                tag: null
+                sort: defaultSort
             })}
         />
     )

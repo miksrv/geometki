@@ -7,6 +7,7 @@ use CodeIgniter\Entity\Entity;
 class PhotoEntity extends Entity {
     protected $attributes = [
         'place_id'  => null,
+        'visit_id'  => null,
         'user_id'   => null,
         'lat'       => 0,
         'lon'       => 0,
@@ -27,6 +28,7 @@ class PhotoEntity extends Entity {
 
     protected $casts = [
         'place_id'  => 'string',
+        'visit_id'  => '?string',
         'user_id'   => 'string',
         'lat'       => 'float',
         'lon'       => 'float',

@@ -1,19 +1,32 @@
 import type { TFunction } from 'i18next'
+import type { LatLngBounds } from 'leaflet'
 
 import { ApiType } from '@/api'
 
-type Candidate = ApiType.OsmCandidates.Candidate
+import { roundBoundsOutwards } from '../bounds'
 
-/** Legend groups: the three tiers, and the objects that are already on Geometki (admins only) */
-export type CandidateGroup = ApiType.OsmCandidates.Tier | 'onsite'
+import { OSM_CANDIDATES_MAX_AREA, OSM_TILES_PER_DEGREE } from './constants'
+
+type Candidate = ApiType.OsmCandidates.Candidate
 
 /** Natural objects: the bare name ("Паршино") does not tell what it is */
 const NATURAL_CATEGORIES = ['water', 'mountain', 'cave', 'spring', 'waterfall', 'landscape', 'viewpoint']
 
 const SETTLEMENT_PREFIX: Record<string, string> = { city: 'г.', hamlet: 'д.', town: 'г.', village: 'с.' }
 
-export const candidateGroup = (candidate: Candidate): CandidateGroup =>
-    candidate.status === 'open' ? candidate.tier : 'onsite'
+/**
+ * The area to ask for: widened to whole tiles, so that panning inside the same tiles asks the same
+ * URL and is answered from the RTK cache. When the tiles would go over the server limit, it is
+ * rounded to 0.01° as before, so that a view near the limit is not refused as `tooLarge`
+ */
+export const candidatesBounds = (bounds: LatLngBounds): string => {
+    const tiles = roundBoundsOutwards(bounds, OSM_TILES_PER_DEGREE)
+    const [south, west, north, east] = tiles
+    // A hair below the limit: the server multiplies the same floats and must not land just above it
+    const fits = (north - south) * (east - west) < OSM_CANDIDATES_MAX_AREA - 1e-6
+
+    return (fits ? tiles : roundBoundsOutwards(bounds)).join(',')
+}
 
 export const formatDistance = (t: TFunction, meters: number): string =>
     meters >= 1000
@@ -82,15 +95,9 @@ export const displayName = (t: TFunction, candidate: Candidate, locale: string):
         : candidate.name
 }
 
-/** Human text of one line of the score breakdown */
-export const breakdownText = (
-    t: TFunction,
-    item: ApiType.OsmCandidates.BreakdownItem,
-    candidate: Candidate
-): string => {
+/** Human text of one score signal shown to a visitor (the others are not shown, see the popup) */
+export const breakdownText = (t: TFunction, item: ApiType.OsmCandidates.BreakdownItem): string => {
     switch (item.code) {
-        case 'type':
-            return t('osm-candidates_score-type', { defaultValue: 'Тип: {{value}}', value: candidate.typeTitle })
         case 'wiki':
             return t('osm-candidates_score-wiki', { defaultValue: 'Есть статья в Википедии' })
         case 'nearbyWiki':
@@ -102,16 +109,6 @@ export const breakdownText = (
             })
         case 'protected':
             return t('osm-candidates_score-protected', { defaultValue: 'Охраняемый объект' })
-        case 'photo':
-            return t('osm-candidates_score-photo', { defaultValue: 'Есть фото' })
-        case 'description':
-            return t('osm-candidates_score-description', { defaultValue: 'Есть описание' })
-        case 'website':
-            return t('osm-candidates_score-website', { defaultValue: 'Есть сайт' })
-        case 'names':
-            return t('osm-candidates_score-names', { defaultValue: 'Названия на {{value}} языках', value: item.value })
-        case 'contour':
-            return t('osm-candidates_score-contour', { defaultValue: 'Нарисован контуром на карте' })
         case 'salt':
             return t('osm-candidates_score-salt', { defaultValue: 'Солёное озеро' })
         case 'lakeSize':
@@ -119,18 +116,19 @@ export const breakdownText = (
                 defaultValue: 'Размер {{value}}',
                 value: formatDistance(t, Number(item.value))
             })
+        case 'type':
+        case 'description':
+        case 'website':
+        case 'photo':
+        case 'names':
+        case 'contour':
         case 'dimensions':
-            return t('osm-candidates_score-dimensions', { defaultValue: 'Известны размеры' })
         case 'noName':
-            return t('osm-candidates_score-no-name', { defaultValue: 'Нет названия' })
         case 'private':
-            return t('osm-candidates_score-private', { defaultValue: 'Закрытая территория' })
         default:
             return item.code
     }
 }
-
-export const formatPoints = (points: number): string => (points > 0 ? `+${points}` : String(points))
 
 /** Article link from the OSM "lang:Title" value; anything else (a pasted URL, a typo) gives no link */
 export const wikipediaUrl = (value: string): string | undefined => {

@@ -6,4 +6,6 @@ export type PlaceMark = Pick<Place, 'lat' | 'lon' | 'distance'> & {
     type?: 'cluster' | 'point'
     count?: number
     category: Categories
+    /** The name for the marker's hint, in the request locale; clusters have none */
+    title?: string
 }

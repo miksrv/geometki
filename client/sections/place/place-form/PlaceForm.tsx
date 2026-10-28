@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import type { LatLngBounds } from 'leaflet'
 import debounce from 'lodash-es/debounce'
-import { Button, Input, Message, Select, SelectOptionType } from 'simple-react-ui-kit'
+import { Button, Input, Message, Select } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
 import Image from 'next/image'
@@ -22,12 +22,12 @@ const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), 
     ssr: false
 })
 
-type PlaceFormValues = Required<Pick<ApiType.Places.PostItemRequest, 'title' | 'category' | 'content' | 'tags'>> &
+type PlaceFormValues = Required<Pick<ApiType.Places.PostItemRequest, 'title' | 'category' | 'content'>> &
     Pick<ApiType.Places.PostItemRequest, 'lat' | 'lon'>
 
 type PlaceFormErrors = Partial<Record<keyof ApiType.Places.PostItemRequest, string>>
 
-const FIELDS: Array<keyof PlaceFormValues> = ['title', 'category', 'tags', 'lat', 'lon', 'content']
+const FIELDS: Array<keyof PlaceFormValues> = ['title', 'category', 'lat', 'lon', 'content']
 
 // Map center differences below this are float noise of the bounds → center round trip, not a move
 const COORDS_EPSILON = 0.000001
@@ -37,7 +37,6 @@ const toFormValues = (values?: ApiType.Places.PostItemRequest): PlaceFormValues 
     content: values?.content ?? '',
     lat: values?.lat,
     lon: values?.lon,
-    tags: values?.tags ?? [],
     title: values?.title ?? ''
 })
 
@@ -85,7 +84,6 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
 
     const [uploadingPhotos, setUploadingPhotos] = useState<string[]>()
     const [localPhotos, setLocalPhotos] = useState<ApiModel.Photo[]>([])
-    const [tagSearch, setTagSearch] = useState('')
     // Edit page, or a new place prefilled from an OSM candidate: the map starts at the given point
     const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(() => {
         if (values?.lat != null && values?.lon != null) {
@@ -95,11 +93,8 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
     })
 
     const category = watch('category')
-    const tags = watch('tags')
 
     const { data: poiListData } = API.usePoiGetListQuery()
-
-    const [searchTags, { data: searchResult, isLoading: searchLoading }] = API.useTagsGetSearchMutation()
 
     const onValid = (data: PlaceFormValues) => {
         onSubmit?.({
@@ -126,43 +121,9 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
         }
     }
 
-    const debouncedSearchTags = useCallback(
-        debounce(async (value: string) => {
-            if (value.length > 0) {
-                await searchTags(value)
-            }
-        }, 500),
-        []
-    )
-
-    const handleSearchTags = (value?: string) => {
-        const text = value ?? ''
-        setTagSearch(text)
-        void debouncedSearchTags(text)
-    }
-
     const categoryOptions = useMemo(() => getCategoryOptions(t), [t])
 
     const selectedCategory = categoryOptions?.find(({ key }) => key === category)
-
-    const tagOptions = useMemo<Array<SelectOptionType<string>>>(() => {
-        const selected = (tags ?? []).map((tag) => ({ key: tag, value: tag }))
-        const results = (searchResult?.items ?? []).map((tag) => ({ key: tag, value: tag }))
-        const merged = [...selected]
-        for (const opt of results) {
-            if (!merged.find((m) => m.key === opt.key)) {
-                merged.push(opt)
-            }
-        }
-        return merged
-    }, [tags, searchResult?.items])
-
-    const tagsWithCustom = useMemo<Array<SelectOptionType<string>>>(() => {
-        if (!tagSearch || tagOptions.find((opt) => opt.key.toLowerCase() === tagSearch.toLowerCase())) {
-            return tagOptions
-        }
-        return [{ key: tagSearch, value: tagSearch }, ...tagOptions]
-    }, [tagOptions, tagSearch])
 
     // The map center is the place's position. Only a real move on the edit page counts as a
     // change: on the create page the map just starts wherever it was last left, so its center
@@ -279,29 +240,6 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
                             value={selectedCategory?.key}
                             options={categoryOptions}
                             onSelect={(option) => field.onChange(option?.[0]?.key ?? '')}
-                        />
-                    )}
-                />
-            </div>
-
-            <div className={styles.formElement}>
-                <Controller
-                    name={'tags'}
-                    control={control}
-                    render={({ field }) => (
-                        <Select<string>
-                            multiple
-                            searchable
-                            closeOnSelect={false}
-                            label={t('input_tags-label')}
-                            placeholder={t('input_tags-placeholder')}
-                            notFoundCaption={t('nothing-found')}
-                            disabled={locked}
-                            value={field.value}
-                            loading={searchLoading}
-                            options={tagsWithCustom}
-                            onSearch={handleSearchTags}
-                            onSelect={(selected) => field.onChange(selected?.map((opt) => opt.key) ?? [])}
                         />
                     )}
                 />

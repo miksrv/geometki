@@ -1,0 +1,41 @@
+// The pane of the cells: they multiply the tiles, so the colours keep their strength over the light
+// map and its roads and labels show through them
+.pane
+    mix-blend-mode: multiply
+
+// The hint of a cell: one count a line (the box is styled with the site's tooltips, globals.sass)
+.hint
+    display: grid
+    gap: 2px
+    white-space: nowrap
+
+// The legend under the map's bottom-left corner: the look and the height of the coordinates
+// readout under it, so the two bars read as one column
+.legend
+    box-sizing: border-box
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: 2px 8px
+    margin: 0
+    padding: 2px 6px
+    list-style: none
+    font-size: var(--font-size-micro)
+    line-height: 16px
+    background: var(--container-background)
+    color: var(--text-color-primary)
+    border: var(--input-border)
+    border-radius: var(--border-radius)
+    cursor: default
+    user-select: none
+
+    li
+        display: inline-flex
+        align-items: center
+        gap: 3px
+        white-space: nowrap
+
+.swatch
+    width: 10px
+    height: 12px
+    flex-shrink: 0

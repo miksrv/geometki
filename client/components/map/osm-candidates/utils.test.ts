@@ -1,16 +1,9 @@
 import type { TFunction } from 'i18next'
+import type { LatLngBounds } from 'leaflet'
 
 import { ApiType } from '@/api'
 
-import {
-    breakdownText,
-    candidateGroup,
-    displayName,
-    formatDistance,
-    formatPoints,
-    settlementText,
-    wikipediaUrl
-} from './utils'
+import { breakdownText, candidatesBounds, displayName, formatDistance, settlementText, wikipediaUrl } from './utils'
 
 // Returns the default text with the {{placeholders}} filled in
 const t = ((key: string, opts?: Record<string, unknown>) =>
@@ -96,27 +89,11 @@ describe('formatDistance', () => {
     })
 })
 
-describe('candidateGroup', () => {
-    it('groups open candidates by tier and the rest as already on the site', () => {
-        expect(candidateGroup(candidate({ tier: 'explore' }))).toBe('explore')
-        expect(candidateGroup(candidate({ status: 'duplicate' }))).toBe('onsite')
-        expect(candidateGroup(candidate({ status: 'linked' }))).toBe('onsite')
-    })
-})
-
 describe('breakdownText', () => {
     it('describes the score signals', () => {
-        expect(breakdownText(t, { code: 'sitelinks', points: 2, value: 5 }, candidate())).toBe('Статьи на 5 языках')
-        expect(breakdownText(t, { code: 'type', points: 1, value: 'natural=water' }, candidate())).toBe('Тип: Озеро')
-        expect(breakdownText(t, { code: 'lakeSize', points: 2, value: 2500 }, candidate())).toBe('Размер 2.5 км')
-    })
-})
-
-describe('formatPoints', () => {
-    it('shows the sign of positive points', () => {
-        expect(formatPoints(5)).toBe('+5')
-        expect(formatPoints(-2)).toBe('-2')
-        expect(formatPoints(0)).toBe('0')
+        expect(breakdownText(t, { code: 'sitelinks', points: 2, value: 5 })).toBe('Статьи на 5 языках')
+        expect(breakdownText(t, { code: 'protected', points: 2 })).toBe('Охраняемый объект')
+        expect(breakdownText(t, { code: 'lakeSize', points: 2, value: 2500 })).toBe('Размер 2.5 км')
     })
 })
 
@@ -131,5 +108,25 @@ describe('wikipediaUrl', () => {
         expect(wikipediaUrl('https://ru.wikipedia.org/wiki/X')).toBeUndefined()
         expect(wikipediaUrl('evil.com/?:x')).toBeUndefined()
         expect(wikipediaUrl('Развал')).toBeUndefined()
+    })
+})
+
+describe('candidatesBounds', () => {
+    const bounds = (south: number, west: number, north: number, east: number): LatLngBounds =>
+        ({ getEast: () => east, getNorth: () => north, getSouth: () => south, getWest: () => west }) as LatLngBounds
+
+    it('widens the view to whole 0.1° tiles', () => {
+        expect(candidatesBounds(bounds(51.123, 54.956, 51.381, 55.341))).toBe('51.1,54.9,51.4,55.4')
+    })
+
+    it('asks the same area for a small pan inside the same tiles', () => {
+        expect(candidatesBounds(bounds(51.13, 54.96, 51.37, 55.33))).toBe(
+            candidatesBounds(bounds(51.12, 54.94, 51.39, 55.38))
+        )
+    })
+
+    it('keeps the 0.01° rounding when the tiles would go over the server limit', () => {
+        // 1.32° × 0.71° fits, the tiles 1.5° × 0.8° do not
+        expect(candidatesBounds(bounds(51.05, 54.95, 51.76, 56.27))).toBe('51.05,54.95,51.76,56.27')
     })
 })

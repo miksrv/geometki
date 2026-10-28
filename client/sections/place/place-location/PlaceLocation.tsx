@@ -9,6 +9,9 @@ import { ApiModel, ApiType } from '@/api'
 import { CopyCoordinates, MapLinks, WasHereButton } from '@/components/shared'
 import { buildLocationHref, formatThousands, getLandingFlags } from '@/utils/helpers'
 
+import { PlaceNow } from '../place-now'
+import { PlaceVisitQuestions } from '../place-visit-questions'
+
 import styles from './styles.module.sass'
 
 const InteractiveMap = dynamic(() => import('@/components/map/InteractiveMap'), { ssr: false })
@@ -20,15 +23,16 @@ interface PlaceLocationProps {
     place?: ApiModel.Place
     /** The closest places: markers on the mini map, each opening its card and page */
     nearPlaces?: ApiModel.PlaceListItem[] | null
-    /** Who has been here and the collections with the place (`PlaceVisited`, `PlaceCollections`) */
+    /** Who has been here and the collections with the place (`PlaceVisitors`, `PlaceCollections`), before the button */
     children?: React.ReactNode
 }
 
 /**
  * "Где это": everything about getting there in one card — the map with the place and its
  * neighbours, the distance and the address (every level a link to its places), the
- * coordinates, the navigators, then who has been here with "Я здесь был(а)" and the
- * collections with the place. Sticky in the right column on desktop, right after the text
+ * coordinates, the navigators, "Как сейчас" (the visitors' answers: road, entry, state…), then the
+ * visitors (who was here) with "Я здесь был(а)", under the button the one-tap questions after a
+ * check-in (`PlaceVisitQuestions`) and the collections with the place. Sticky in the right column on desktop, right after the text
  * on phones: read → see where → go. The author and the dates are in "О месте".
  */
 export const PlaceLocation: React.FC<PlaceLocationProps> = ({ place, nearPlaces, children }) => {
@@ -174,6 +178,8 @@ export const PlaceLocation: React.FC<PlaceLocationProps> = ({ place, nearPlaces,
                     />
                 </div>
 
+                <PlaceNow placeId={place.id} />
+
                 <div className={styles.divider} />
 
                 {children}
@@ -182,8 +188,9 @@ export const PlaceLocation: React.FC<PlaceLocationProps> = ({ place, nearPlaces,
                     size={'medium'}
                     stretched={true}
                     placeId={place.id}
-                    verificationExempt={place.verificationExempt}
                 />
+
+                <PlaceVisitQuestions placeId={place.id} />
             </div>
         </Container>
     )

@@ -28,7 +28,7 @@ Positioning: **a map of unusual and wild places in Russia with GPS coordinates â
 4. No radius geosearch or spatial index.
 5. No export or embed (GeoJSON, GPX, KML, RSS, widget).
 6. Anonymous votes change the author's reputation; changing a vote adds reputation again.
-7. EXIF not stripped from originals; temp uploads never cleaned; `visit` gives no XP.
+7. EXIF not stripped from originals; temp uploads never cleaned.
 
 ## Plan
 

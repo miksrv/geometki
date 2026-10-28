@@ -13,9 +13,8 @@ Specs for open features. Shipped ones are removed; their history is in `CHANGELO
 - [14 — Photo Challenges & Community Albums](./14-photo-challenges-community-albums.md)
 - [15 — Dynamic Place Freshness Badges](./15-dynamic-place-freshness-badges.md)
 - [16 — Weekly Digest Additions & More Push Triggers](./16-weekly-digest-push-notifications.md)
-- [17 — Fog of War: Blank Spots](./17-fog-of-war-blank-spots.md) — shared fog over cells with candidates but no places, pioneers
 - [20 — Location SEO Pages](./20-location-seo-pages.md) — rules for the `/places/{location}/{category}` landings and the remaining launch steps
 - [21 — Search: Russian morphology](./21-search-redesign.md)
 - [22 — XP Snackbar & Notification Groups](./22-xp-snackbar-notifications.md)
 - [23 — Map Tools from nakarte.me](./23-map-tools-from-nakarte.md)
-- [24 — Place Features](./24-place-features.md) — idea: replace tags with geocaching-style attributes
+- [25 — Visits and Exploration](./25-visits-and-exploration.md) — repeatable check-ins, visit questions and features ("can/cannot", replaced feature 24 and the tags), white spots, exploration %, hexes, regional leaders

@@ -64,27 +64,3 @@
 // height: the line of the font size plus the margin of the button)
 .readMoreSpace
     height: calc(var(--font-size) * 1.5 + var(--space-2))
-
-.tagList
-    display: flex
-    flex-wrap: wrap
-    gap: var(--space-2)
-    margin: var(--space-5) 0 0
-    padding: 0
-    list-style: none
-
-    // Quiet chips: the pill corners of the site, never round ends
-    a
-        display: inline-flex
-        align-items: center
-        height: 26px
-        padding: 0 var(--space-3)
-        border-radius: var(--border-radius)
-        background: var(--surface-1)
-        box-shadow: var(--container-shadow)
-        color: var(--text-color-secondary)
-        font-size: var(--font-size-secondary)
-        text-decoration: none
-
-        &:hover
-            color: var(--link-color)

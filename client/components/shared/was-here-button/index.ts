@@ -1,1 +1,1 @@
-export { WasHereButton } from './WasHereButton'
+export { checkInMessage, WasHereButton } from './WasHereButton'

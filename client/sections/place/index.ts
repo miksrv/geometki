@@ -8,9 +8,11 @@ export { PlaceExplore, RELATED_PLACES_COUNT, type RelatedPlacesLocation } from '
 export { PlaceForm } from './place-form'
 export { PlaceHero, RATE_ANCHOR, REVIEWS_ANCHOR } from './place-hero'
 export { PlaceLocation } from './place-location'
+export { PlaceNow } from './place-now'
 export { PlaceRatePrompt } from './place-rate-prompt'
 export { PlaceReviews } from './place-reviews'
-export { PlaceVisited } from './place-visited'
+export { PlaceVisitQuestions } from './place-visit-questions'
+export { PlaceVisitors } from './place-visitors'
 export {
     buildFilterHref,
     getRequestOrder,

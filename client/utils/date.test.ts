@@ -2,7 +2,17 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import utc from 'dayjs/plugin/utc'
 
-import { dateToUnixTime, formatDate, formatDateISO, formatDateUTC, minutesAgo, timeAgo } from './date'
+import {
+    dateToUnixTime,
+    formatDate,
+    formatDateISO,
+    formatDateUTC,
+    formatPlainDate,
+    localPlainDate,
+    minutesAgo,
+    plainDateYear,
+    timeAgo
+} from './date'
 
 dayjs.extend(utc)
 dayjs.extend(relativeTime)
@@ -122,5 +132,28 @@ describe('date utilities', () => {
             const result = formatDateUTC('2024-06-15T00:00:00')
             expect(result).toContain('2024-06-15')
         })
+    })
+})
+
+describe('plain dates', () => {
+    it('formats a plain day without a time zone shift', () => {
+        expect(formatPlainDate('2026-10-13', 'D.M.YYYY')).toBe('13.10.2026')
+        expect(formatPlainDate('2026-01-01', 'D.M.YYYY')).toBe('1.1.2026')
+        expect(formatPlainDate('2026-10-13 12:00:00', 'D.M.YYYY')).toBe('13.10.2026')
+        expect(formatPlainDate(undefined)).toBe('')
+        expect(formatPlainDate('nonsense')).toBe('')
+    })
+
+    it('gives the local day, shifted by days', () => {
+        const now = new Date(2026, 2, 1, 0, 30)
+
+        expect(localPlainDate(0, now)).toBe('2026-03-01')
+        expect(localPlainDate(-1, now)).toBe('2026-02-28')
+    })
+
+    it('reads the year', () => {
+        expect(plainDateYear('2026-10-13')).toBe(2026)
+        expect(plainDateYear('2019-07-01 10:00:00')).toBe(2019)
+        expect(plainDateYear(undefined)).toBeUndefined()
     })
 })

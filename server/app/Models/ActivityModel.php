@@ -39,6 +39,7 @@ class ActivityModel extends ApplicationBaseModel
         'comment_id',
         'rating_id',
         'collection_id',
+        'visit_id',
     ];
 
     protected $useTimestamps = true;

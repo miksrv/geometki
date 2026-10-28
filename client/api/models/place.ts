@@ -30,15 +30,12 @@ export type Place = {
     /** The category key; its label and texts come from `utils/categories.ts` */
     category?: Categories
     address?: Address
-    tags?: string[]
     cover?: {
         full?: string
         preview: string
         /** Set when the cover is cut from a linked Wikimedia Commons or PastVu photo: credited under it */
         credit?: PlaceCoverCredit
     }
-    visitRadiusM?: number
-    verificationExempt?: boolean
     /** `GET /places` for a signed-in visitor only: the place is in their bookmarks */
     bookmarked?: boolean
     /** `GET /places` for a signed-in visitor only: they marked "I was here" */

@@ -15,8 +15,13 @@ type AchievementInput = ApiType.Achievements.AchievementInput
 
 const METRICS = [
     'places_created',
+    'spots_opened',
     'places_edited',
     'places_visited',
+    'places_revisited',
+    'visits_total',
+    'winter_visits',
+    'first_visit_of_year',
     'photos_uploaded',
     'ratings_given',
     'comments_written',

@@ -6,6 +6,8 @@
  * unit-testable without mocking the API or Next's request/response objects.
  */
 
+import { encodeQueryData } from '@/utils/url'
+
 /** The minimal shape `classifyLandingSegments` needs from a `GET /locations/resolve` result, already narrowed by the caller (`ApiType.Locations.isResolvedLocation`/`isResolvedCategory`) */
 export type ResolvedSegment = { kind: 'location'; slug: string | null } | { kind: 'category'; name: string }
 
@@ -122,7 +124,7 @@ export interface NoindexInput {
     multiCategory: boolean
     /**
      * Any `?category=` on a location page (a filter the page's canonical does not carry; with
-     * the pair pages on, a single one is a 301 instead) or a `?tag=`: the content differs from
+     * the pair pages on, a single one is a 301 instead): the content differs from
      * the canonical page, so the page must not be indexed under it (SEO review, 2026-10-10)
      */
     filtered?: boolean
@@ -132,3 +134,40 @@ export interface NoindexInput {
 
 export const computeLandingNoindex = ({ isGeoFiltered, multiCategory, filtered, indexable }: NoindexInput): boolean =>
     isGeoFiltered || multiCategory || !!filtered || !indexable
+
+export const LOCATION_QUERY_KEYS = ['country', 'region', 'district', 'locality'] as const
+
+export interface LocationQueryRedirectInput {
+    classification: LandingClassification
+    /** The request query without the path segments (`slug`) */
+    query: Record<string, string | string[] | undefined>
+}
+
+/**
+ * A location given as a query param under a landing URL (`/places/waterfall?region=2`): the
+ * landing ignores it, so the page would serve the canonical content under one more indexable
+ * URL (SEO audit, 2026-10-23). A category page sends it to `/places`, the list that applies
+ * both filters (and 301s on to the location pages once those are on); a location or pair page
+ * already names its location in the path and drops the param. Returns the href to 301 to, or
+ * `null` when the query carries no location.
+ */
+export const decideLocationQueryRedirect = ({ classification, query }: LocationQueryRedirectInput): string | null => {
+    const hasLocation = LOCATION_QUERY_KEYS.some((key) => key in query)
+
+    if (!hasLocation || classification.kind === 'not-found') {
+        return null
+    }
+
+    const rest = Object.fromEntries(
+        Object.entries(query).filter(([key]) => !(LOCATION_QUERY_KEYS as readonly string[]).includes(key))
+    )
+
+    if (classification.kind === 'category') {
+        const location = Object.fromEntries(
+            LOCATION_QUERY_KEYS.filter((key) => key in query).map((key) => [key, query[key]])
+        )
+        return `/places${encodeQueryData({ ...rest, category: classification.categoryName, ...location })}`
+    }
+
+    return `${buildLandingCanonicalPath(classification)}${encodeQueryData(rest)}`
+}

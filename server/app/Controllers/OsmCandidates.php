@@ -83,10 +83,13 @@ class OsmCandidates extends ResourceController
         $locale  = $this->request->getLocale();
 
         // Ask for the tiles in the background and report how many are being collected.
-        // Limited per IP, so that a script walking the map cannot flood the queue
-        $tiles = $this->mayQueueTiles()
-            ? (new OsmTilesModel())->request($osmTiles->tilesInBounds($bounds))
-            : [];
+        // Writes are limited per IP, so that a script walking the map cannot flood the queue;
+        // an area asked for recently is only read and does not count
+        $tiles = (new OsmTilesModel())->request(
+            $osmTiles->tilesInBounds($bounds),
+            $this->config,
+            fn (): bool => $this->mayQueueTiles()
+        );
         // Only the tiles that are really being collected: a failed one waits for its retry for hours
         $pendingTiles = count(array_filter($tiles, static fn ($tile) => $tile['fetched_at'] === null
             && in_array($tile['status'], [OsmTilesModel::STATUS_QUEUED, OsmTilesModel::STATUS_PROCESSING], true)));
@@ -240,27 +243,7 @@ class OsmCandidates extends ResourceController
      */
     private function placesAround(array $bounds): array
     {
-        [$south, $west, $north, $east] = $bounds;
-        $margin = self::PLACES_MARGIN;
-
-        $rows = (new PlacesModel())
-            ->select('places.id, places.category, places.lat, places.lon, GROUP_CONCAT(places_content.title SEPARATOR "\n") as titles')
-            ->join('places_content', 'places_content.place_id = places.id', 'left')
-            ->where([
-                'places.lat >=' => $south - $margin,
-                'places.lat <=' => $north + $margin,
-                'places.lon >=' => $west - $margin,
-                'places.lon <=' => $east + $margin,
-            ])
-            ->groupBy('places.id')
-            ->asArray()
-            ->findAll();
-
-        foreach ($rows as &$row) {
-            $row['titles'] = array_values(array_unique(array_filter(explode("\n", (string) $row['titles']))));
-        }
-
-        return $rows;
+        return $this->model->placesAround($bounds, self::PLACES_MARGIN);
     }
 
     /**

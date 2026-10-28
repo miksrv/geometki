@@ -3,7 +3,7 @@
 namespace App\Libraries;
 
 use App\Models\UsersBookmarksModel;
-use App\Models\UsersVisitedPlacesModel;
+use App\Models\VisitsModel;
 
 class PlaceFormatterLibrary
 {
@@ -33,7 +33,7 @@ class PlaceFormatterLibrary
             'place_id'
         ));
         $visited    = array_flip(array_column(
-            (new UsersVisitedPlacesModel())->asArray()->select('place_id')->where('user_id', $userId)->whereIn('place_id', $ids)->findAll(),
+            (new VisitsModel())->asArray()->select('place_id')->where('user_id', $userId)->whereIn('place_id', $ids)->findAll(),
             'place_id'
         ));
 
@@ -217,8 +217,7 @@ class PlaceFormatterLibrary
             $row->region_id, $row->region_en, $row->region_ru, $row->region_slug,
             $row->district_id, $row->district_en, $row->district_ru, $row->district_slug,
             $row->locality_id, $row->city_en, $row->city_ru, $row->city_slug,
-            $row->created_at, $row->updated_at, $row->deleted_at,
-            $row->visit_radius_m, $row->verification_exempt, $row->cover_external_id
+            $row->created_at, $row->updated_at, $row->deleted_at, $row->cover_external_id
         );
     }
 }

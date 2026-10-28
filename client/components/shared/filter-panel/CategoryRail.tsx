@@ -21,7 +21,7 @@ interface CategoryRailProps {
     /** The chips change only the URL's query of this page (see `Chip`) */
     shallow?: boolean
     /**
-     * Every category chip is a button, not a link: on a narrow list (a tag, a small location)
+     * Every category chip is a button, not a link: on a narrow list (a small location)
      * most categories are empty, and crawlers rendered all of them
      */
     noLinks?: boolean

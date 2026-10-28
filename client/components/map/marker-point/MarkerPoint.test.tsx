@@ -3,7 +3,7 @@ import { Provider } from 'react-redux'
 import * as Leaflet from 'leaflet'
 
 import { configureStore } from '@reduxjs/toolkit'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { API } from '@/api'
 import applicationReducer from '@/app/applicationSlice'
@@ -23,7 +23,8 @@ jest.mock('react-leaflet', () => ({
             {children}
         </div>
     ),
-    Popup: ({ children }: any) => <div data-testid={'marker-popup'}>{children}</div>
+    Popup: ({ children }: any) => <div data-testid={'marker-popup'}>{children}</div>,
+    Tooltip: ({ children }: any) => <div data-testid={'marker-tooltip'}>{children}</div>
 }))
 
 jest.mock('leaflet', () => ({
@@ -161,6 +162,15 @@ describe('MarkerPoint', () => {
         const marker = screen.getByTestId('point-marker')
         expect(marker).toHaveAttribute('data-lat', '51.765')
         expect(marker).toHaveAttribute('data-lon', '55.099')
+    })
+
+    it('shows the name of the place on hover and nothing for a point without one', () => {
+        renderWithStore(<MarkerPoint place={{ ...mockPlace, title: 'Водопад Атыш' } as any} />)
+        expect(screen.getByTestId('marker-tooltip')).toHaveTextContent('Водопад Атыш')
+
+        cleanup()
+        renderWithStore(<MarkerPoint place={mockPlace as any} />)
+        expect(screen.queryByTestId('marker-tooltip')).not.toBeInTheDocument()
     })
 
     it('renders a Popup for places with an id', () => {

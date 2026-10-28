@@ -22,10 +22,12 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const { data, error } = await store.dispatch(API.endpoints.sitemapGetList.initiate())
 
             if (error) {
-                console.error('Sitemap: failed to load places/users', error)
+                console.error('Sitemap: failed to load places/collections', error)
             }
 
-            const staticPages = ['map', 'places', 'users', 'collections']
+            // No profiles and no /users: the profile pages are noindex (`UserPage`), a sitemap entry
+            // would only ask the crawler to fetch a page it must not index (SEO audit, 2026-10-23)
+            const staticPages = ['map', 'places', 'collections']
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
@@ -34,12 +36,6 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     link: buildPlaceUrl(place.id, place.slug).replace(/^\//, ''),
                     locales: place.locales,
                     update: new Date(place.updated.date).toISOString()
-                })) || []
-
-            const usersPages: SitemapDynamicPage[] =
-                data?.users?.map((user) => ({
-                    link: `users/${user.id}`,
-                    update: new Date(user.updated.date).toISOString()
                 })) || []
 
             const collectionsPages: SitemapDynamicPage[] =
@@ -112,12 +108,19 @@ export const getServerSideProps = wrapper.getServerSideProps(
             // see them as "just updated" on every request, which wastes crawl budget.
             const STATIC_LASTMOD = '2026-05-26T00:00:00.000Z'
 
+            // The homepage and the feed show the newest places: they change when a place does
+            // (ISO strings of one format compare as dates)
+            const placesLastmod = placesPages.reduce(
+                (latest, page) => (page.update > latest ? page.update : latest),
+                STATIC_LASTMOD
+            )
+
             // Homepage
-            sitemap += makeUrlNode('', STATIC_LASTMOD, 'daily', '1.0', makeHreflang('', 'en'))
+            sitemap += makeUrlNode('', placesLastmod, 'daily', '1.0', makeHreflang('', 'en'))
 
             // Activity feed: changes all day, like the homepage (its ?type= filters are noindex)
             sitemap += ['activity', 'en/activity']
-                .map((url) => makeUrlNode(url, STATIC_LASTMOD, 'daily', '0.6', makeHreflang('activity', 'en/activity')))
+                .map((url) => makeUrlNode(url, placesLastmod, 'daily', '0.6', makeHreflang('activity', 'en/activity')))
                 .join('')
 
             // Static pages (RU + EN paired with hreflang)
@@ -131,7 +134,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 )
                 .join('')
 
-            const dynamicPages = [...placesPages, ...usersPages, ...landingPages]
+            const dynamicPages = [...placesPages, ...landingPages]
             // A page without `locales` exists in both; one in a single locale gets no hreflang pair
             const hasLocale = (page: SitemapDynamicPage, locale: ApiType.Locale) =>
                 !page.locales || page.locales.includes(locale)

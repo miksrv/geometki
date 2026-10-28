@@ -1,6 +1,6 @@
 import { ApiModel } from '@/api'
 
-import { PlaceSchema, UserSchema } from './schema'
+import { buildPlaceAddress, getPlaceSchemaType, isStreetName, PlaceSchema, UserSchema } from './schema'
 
 jest.mock('@/config/env', () => ({
     IMG_HOST: 'https://cdn.example.com/'
@@ -55,8 +55,7 @@ describe('PlaceSchema', () => {
     it('uses TouristAttraction type when category is undefined', () => {
         const noCategory = { ...mockPlace, category: undefined }
         const schema = PlaceSchema(noCategory as ApiModel.Place)
-        // getPlaceSchemaType(undefined) returns 'LocalBusiness'
-        expect((schema as Record<string, unknown>)['@type']).toBe('LocalBusiness')
+        expect((schema as Record<string, unknown>)['@type']).toBe('TouristAttraction')
     })
 
     it('includes the place title as name', () => {
@@ -90,6 +89,13 @@ describe('PlaceSchema', () => {
         const noCoverPlace = { ...mockPlace, cover: undefined }
         const schema = PlaceSchema(noCoverPlace as ApiModel.Place) as Record<string, unknown>
         expect(schema.image).toBeUndefined()
+    })
+
+    it('leaves out the author and the dates: they are not properties of a place', () => {
+        const schema = PlaceSchema(mockPlace as ApiModel.Place, 'https://geometki.com/') as Record<string, unknown>
+        expect(schema.author).toBeUndefined()
+        expect(schema.datePublished).toBeUndefined()
+        expect(schema.dateModified).toBeUndefined()
     })
 
     it('includes view count in interactionStatistic', () => {
@@ -138,5 +144,43 @@ describe('UserSchema', () => {
     it('returns undefined for url when canonicalUrl is not provided', () => {
         const schema = UserSchema(mockUser) as Record<string, unknown>
         expect(schema.url).toBeUndefined()
+    })
+})
+
+describe('getPlaceSchemaType', () => {
+    it('LocalBusiness only for a commercial category', () => {
+        expect(getPlaceSchemaType(ApiModel.Categories.museum)).toBe('LocalBusiness')
+    })
+
+    it('TouristAttraction for nature, ruins and an unknown category', () => {
+        expect(getPlaceSchemaType(ApiModel.Categories.waterfall)).toBe('TouristAttraction')
+        expect(getPlaceSchemaType(undefined)).toBe('TouristAttraction')
+    })
+})
+
+describe('isStreetName', () => {
+    it('accepts a street name', () => {
+        expect(isStreetName('ул. Ленина, 5')).toBe(true)
+        expect(isStreetName('Red Square')).toBe(true)
+    })
+
+    it('rejects a road code, an empty and a missing value', () => {
+        expect(isStreetName('80К-007')).toBe(false)
+        expect(isStreetName('Р-240')).toBe(false)
+        expect(isStreetName('M-5')).toBe(false)
+        expect(isStreetName('')).toBe(false)
+        expect(isStreetName(undefined)).toBe(false)
+    })
+})
+
+describe('buildPlaceAddress', () => {
+    it('leaves a road code out of streetAddress', () => {
+        const address = buildPlaceAddress({ country: { id: 1, name: 'Russia' }, street: '80К-007' })
+        expect(address.streetAddress).toBeUndefined()
+        expect(address.addressCountry).toStrictEqual({ '@type': 'Country', name: 'Russia' })
+    })
+
+    it('has no country without one', () => {
+        expect(buildPlaceAddress(undefined).addressCountry).toBeUndefined()
     })
 })

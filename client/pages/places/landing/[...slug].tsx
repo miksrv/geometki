@@ -39,6 +39,7 @@ import {
     classifyLandingSegments,
     computeLandingNoindex,
     decideLandingRedirect,
+    decideLocationQueryRedirect,
     isLandingEmpty,
     isLandingPageOutOfRange,
     LANDING_INDEX_THRESHOLD
@@ -81,7 +82,6 @@ interface PlacesLandingPageProps {
     chips: LocationLinkListItem[]
     children: LocationLinkListItem[]
     relatedLocations: LocationLinkListItem[]
-    tag: string | null
     queryCategories: string[]
     sort: ApiType.SortFieldsType
     /**
@@ -116,7 +116,6 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
     chips,
     children,
     relatedLocations,
-    tag,
     queryCategories,
     sort,
     defaultSort,
@@ -152,8 +151,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
         categories: currentFilterCategory ? currentFilterCategory.split(',') : [],
         location: locationRef ? { ...locationRef, name: locationTitle ?? '' } : undefined,
         notVisited,
-        sort,
-        tag: tag ?? undefined
+        sort
     }
 
     const buildHref = (patch: PlacesFilterPatch) =>
@@ -176,21 +174,17 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                 })
               : t('landing-title-location', 'Интересные места: {{location}}', { location: locationTitle })
 
-    // A tag filter and the page number are part of the page name, in the h1 as well as in the
-    // <title> (spec decision 4; the same as `/places`), so pages 2+ and tag pages never share a
-    // heading with page 1
-    const titleTag = tag ? ` #${tag}` : ''
+    // The page number is part of the page name, in the h1 as well as in the <title> (spec
+    // decision 4; the same as `/places`), so pages 2+ never share a heading with page 1
     const titlePageSuffix = currentPage > 1 ? ` - ${t('page')} ${currentPage}` : ''
-    const h1 = `${pageName}${titleTag}${titlePageSuffix}`
+    const h1 = `${pageName}${titlePageSuffix}`
     // The <title> of a category page carries the search modifiers ("карта, фото, координаты")
     const title =
         (kind === 'category'
             ? t('landing-title-category-seo', '{{category}}: map and photos', {
                   category: categoryTitle
               })
-            : pageName) +
-        titleTag +
-        titlePageSuffix
+            : pageName) + titlePageSuffix
 
     // The listing's intro text (features/20-location-seo-pages.md, "Шаблон страницы →
     // Описание"): the category's own text, or a summary built from the location/pair's data.
@@ -295,8 +289,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
         lat: undefined,
         order: undefined,
         page: currentPage !== 1 ? currentPage : undefined,
-        sort: undefined,
-        tag: tag ?? undefined
+        sort: undefined
     })
     const canonicalPage = `${canonicalUrl}${pathname.replace(/^\//, '')}${canonicalQuery}`
 
@@ -343,9 +336,9 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
 
     const isGeoFiltered = !!(lat || lon || sort !== defaultSort || order !== DEFAULT_ORDER || notVisited)
     const multiCategory = queryCategories.length >= 2
-    // A tag, or a category filter on a location page (a single one is a 301 to the pair page
-    // when those are on): content the canonical page does not have
-    const filtered = !!tag || (kind === 'location' && queryCategories.length >= 1)
+    // A category filter on a location page (a single one is a 301 to the pair page when those
+    // are on): content the canonical page does not have
+    const filtered = kind === 'location' && queryCategories.length >= 1
     const noindex = computeLandingNoindex({ filtered, indexable, isGeoFiltered, multiCategory })
 
     const mapQuery = categoryName ? `?category=${categoryName}` : ''
@@ -358,8 +351,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
         lon: distanceOrigin?.lon,
         notVisited: notVisited ? 1 : undefined,
         order: getRequestOrder(sort, order),
-        sort,
-        tag
+        sort
     }
 
     return (
@@ -467,12 +459,11 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                         lon,
                         notVisited: notVisited ? 1 : undefined,
                         order: order !== DEFAULT_ORDER ? order : undefined,
-                        sort: sort !== defaultSort ? sort : undefined,
-                        tag
+                        sort: sort !== defaultSort ? sort : undefined
                     }}
                     linkPart={pathname.replace(/^\//, '')}
                 />
-            ) : kind === 'category' && !placesCount && categoryName && !tag && !isGeoFiltered ? (
+            ) : kind === 'category' && !placesCount && categoryName && !isGeoFiltered ? (
                 <Container>
                     <EmptyState
                         title={t('landing-category-empty-title', { defaultValue: 'Здесь пока нет мест' })}
@@ -575,7 +566,6 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const lat = parseFloat(context.query.lat as string) || null
             const lon = parseFloat(context.query.lon as string) || null
             const distanceOrigin = getDistanceOrigin(lat, lon, cookies)
-            const tag = (context.query.tag as string) || null
             const defaultSort = cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT
             const sort = (context.query.sort as ApiType.SortFieldsType) || defaultSort
             const order = (context.query.order as ApiType.SortOrdersType) || DEFAULT_ORDER
@@ -671,6 +661,14 @@ export const getServerSideProps = wrapper.getServerSideProps(
                 return { props: {} as PlacesLandingPageProps }
             }
 
+            // `?region=2` and the like under a landing URL: see `decideLocationQueryRedirect`
+            const locationQueryRedirect = decideLocationQueryRedirect({ classification, query })
+
+            if (locationQueryRedirect) {
+                writeRedirect(context, locale, locationQueryRedirect)
+                return { props: {} as PlacesLandingPageProps }
+            }
+
             const canonicalPathname = buildLandingCanonicalPath(classification) ?? '/places'
             const locationData = fullA?.location ?? fullB?.location
             const categoryData = fullA?.category ?? fullB?.category
@@ -717,8 +715,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                             notVisited: notVisited ? 1 : undefined,
                             offset: (currentPage - 1) * POST_PER_PAGE,
                             order: getRequestOrder(sort, order),
-                            sort,
-                            tag
+                            sort
                         })
                     ),
                     translationsPromise
@@ -766,8 +763,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         })),
                         sort,
                         defaultSort,
-                        summary: null,
-                        tag
+                        summary: null
                     }
                 }
             }
@@ -807,8 +803,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                             notVisited: notVisited ? 1 : undefined,
                             offset: (currentPage - 1) * POST_PER_PAGE,
                             order: getRequestOrder(sort, order),
-                            sort,
-                            tag
+                            sort
                         })
                     ),
                     translationsPromise
@@ -864,8 +859,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                                   lastAddedAt: summaryData.lastAddedAt,
                                   placesCount: summaryData.placesCount
                               }
-                            : null,
-                        tag
+                            : null
                     }
                 }
             }
@@ -894,8 +888,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         notVisited: notVisited ? 1 : undefined,
                         offset: (currentPage - 1) * POST_PER_PAGE,
                         order: getRequestOrder(sort, order),
-                        sort,
-                        tag
+                        sort
                     })
                 ),
                 translationsPromise
@@ -956,8 +949,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
                         })),
                     sort,
                     defaultSort,
-                    summary: null,
-                    tag
+                    summary: null
                 }
             }
         }

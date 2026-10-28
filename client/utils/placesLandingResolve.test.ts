@@ -5,6 +5,7 @@ import {
     classifyLandingSegments,
     computeLandingNoindex,
     decideLandingRedirect,
+    decideLocationQueryRedirect,
     isLandingEmpty,
     isLandingPageOutOfRange
 } from './placesLandingResolve'
@@ -173,5 +174,46 @@ describe('computeLandingNoindex', () => {
 
     it('indexable, geo-free, single category → not noindex', () => {
         expect(computeLandingNoindex({ indexable: true, isGeoFiltered: false, multiCategory: false })).toBe(false)
+    })
+})
+
+describe('decideLocationQueryRedirect', () => {
+    it('null without a location in the query', () => {
+        expect(
+            decideLocationQueryRedirect({
+                classification: { categoryName: 'waterfall', kind: 'category' },
+                query: { page: '2' }
+            })
+        ).toBeNull()
+    })
+
+    it('a category page sends a location filter to the list, which applies both', () => {
+        expect(
+            decideLocationQueryRedirect({
+                classification: { categoryName: 'waterfall', kind: 'category' },
+                query: { page: '2', region: '2' }
+            })
+        ).toBe('/places?page=2&category=waterfall&region=2')
+    })
+
+    it('a location or pair page drops the param: the path already names the location', () => {
+        expect(
+            decideLocationQueryRedirect({
+                classification: { kind: 'location', locationSlug: 'bashkortostan' },
+                query: { region: '2', sort: 'rating' }
+            })
+        ).toBe('/places/bashkortostan?sort=rating')
+        expect(
+            decideLocationQueryRedirect({
+                classification: { categoryName: 'cave', kind: 'pair', locationSlug: 'bashkortostan', reversed: false },
+                query: { locality: '7' }
+            })
+        ).toBe('/places/bashkortostan/cave')
+    })
+
+    it('null for an unresolved page (the caller 404s)', () => {
+        expect(
+            decideLocationQueryRedirect({ classification: { kind: 'not-found' }, query: { region: '2' } })
+        ).toBeNull()
     })
 })

@@ -45,6 +45,13 @@ class OsmCandidates extends BaseConfig
     /** Map requests per minute from one IP that may queue tiles; the rest only read the database */
     public int $queueRequestsPerMinute = 30;
 
+    /**
+     * A tile asked for within these minutes is not written again: neither its priority nor its
+     * `requested_at` (which only has to be fresh within `activeDays`) changes, so one viewer
+     * polling a pending area adds one to the priority per this period, not per poll
+     */
+    public int $requestCooldownMinutes = 10;
+
     /** Collector: tiles per run and the pause between them, seconds */
     public int $tilesPerRun = 5;
     public int $pauseSeconds = 3;

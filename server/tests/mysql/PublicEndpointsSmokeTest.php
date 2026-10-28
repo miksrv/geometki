@@ -44,6 +44,15 @@ final class PublicEndpointsSmokeTest extends MySqlTestCase
         $this->db->table('collections_places')->insert(['collection_id' => 'coll1', 'place_id' => 'place1', 'position' => 0]);
     }
 
+    public function testThePointsOfTheMapCarryTheirNames(): void
+    {
+        $items = json_decode($this->get('poi')->getJSON(), true)['items'];
+
+        $this->assertNotEmpty($items);
+        $this->assertSame('place1', $items[0]['id']);
+        $this->assertNotSame('', (string) $items[0]['title']);
+    }
+
     public static function endpoints(): array
     {
         $paths = [
@@ -65,11 +74,11 @@ final class PublicEndpointsSmokeTest extends MySqlTestCase
             'locations/resolve?slug=bashkortostan&type=region',
             'locations/region/1/categories', 'locations/region/1/children', 'locations/region/1/summary',
             'achievements', 'achievements/progress',
-            'tags/search?text=вод',
             'bookmarks?place=place1', 'bookmarks/places',
-            'visited?place=place1', 'visited/user/user1', 'visited/place1',
+            'visits?place=place1', 'visits?user=user1', 'visits/places?user=user1', 'visits/me?place=place1',
             'collections', 'collections?user=user1', 'collections/coll1', 'collections/coll1/recommended', 'collections/membership?placeId=place1',
             'sitemap',
+            'exploration/points',
         ];
 
         $cases = [];

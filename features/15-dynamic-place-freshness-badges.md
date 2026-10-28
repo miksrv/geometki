@@ -12,7 +12,7 @@ For explorers the badge answers "is this information current?".
 |------|----------|
 | **Stub** | title only |
 | **Draft** | description OR 1 photo |
-| **Complete** | description AND 2+ photos AND 1+ tag |
+| **Complete** | description AND 2+ photos AND 1+ answer from a visit (`places_now`) |
 | **Verified** | Complete + updated within 6 months + 3+ ratings |
 | **Exemplary** | Verified + 5+ photos + 10+ ratings + updated within 3 months |
 
@@ -21,7 +21,7 @@ For explorers the badge answers "is this information current?".
 ```
 base_score (0–100) =
     (has_description ? 15 : 0) + (description_length > 200 ? 10 : 0)
-  + min(photos, 5) * 5 + min(tags, 5) * 3 + min(ratings, 10) * 2
+  + min(photos, 5) * 5 + min(answers in places_now, 5) * 3 + min(ratings, 10) * 2
   + (avg_rating >= 4.0 ? 10 : 0) + (has_cover ? 5 : 0)
 
 multiplier by days since last meaningful update: <=90 → 1.0, <=180 → 0.85, <=365 → 0.7, else 0.5
@@ -36,7 +36,7 @@ The date caps on Exemplary/Verified are hard: perfect content not updated for 7 
 Verified.
 
 **Meaningful update** (resets the clock): description edit changing more than 20 characters, new
-photo, cover change, new tag, a comment by the author, or a "Я здесь был" visit by the author.
+photo, cover change, a new answer from a visit, a comment by the author, or a "Я здесь был" visit by the author.
 Ratings, comments, visits and bookmarks by other users don't reset it.
 
 Existing places start with `last_meaningful_update = updated_at`, so there is no retroactive

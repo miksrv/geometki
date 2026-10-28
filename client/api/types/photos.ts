@@ -10,6 +10,7 @@ export interface DeleteResponse {
 }
 
 export interface UploadRequest {
+    /** `photo`; the server links it to the uploader's visit of that day */
     formData?: FormData
     place?: string
     count?: number

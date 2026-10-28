@@ -122,6 +122,10 @@ const MODIFIER_EDIT = 5;
 const MODIFIER_COMMENT = 5;
 // A PastVu or Wikimedia Commons photo linked to a place: less than an uploaded one, the file is not ours
 const MODIFIER_PHOTO_LINK = 1;
+// A visit with photos, once per place and month; a bare visit is worth nothing
+const MODIFIER_VISIT = 10;
+// A white spot opened: a place created from an OSM candidate, on top of the place (features/25, step 4)
+const MODIFIER_SPOT = 15;
 
 /*
  | --------------------------------------------------------------------------
