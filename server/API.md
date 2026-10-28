@@ -318,9 +318,9 @@ List places with optional filtering, sorting, and pagination.
 | district | integer | No | Filter by district ID |
 | locality | integer | No | Filter by locality/city ID |
 | location | string | No | Filter by a location slug (any level) — see `GET /locations/resolve`. Applied in addition to the id-based params above; an unknown slug matches no places |
-| tag | string | No | Filter by tag title (Russian or English) |
 | search | string | No | Full-text search in place titles and content |
 | bookmarkUser | string | No | Return only places bookmarked by this user ID |
+| notVisited | boolean | No | Signed-in visitors only: drop the places they have a visit at (the "not been there yet" view); ignored for guests |
 | excludePlaces | string | No | Comma-separated list of place IDs to exclude |
 | lat | float | No | Viewer latitude for distance calculation |
 | lon | float | No | Viewer longitude for distance calculation |
@@ -362,7 +362,7 @@ List places with optional filtering, sorting, and pagination.
 }
 ```
 
-Note: `distance` (km) is only present when `lat`/`lon` query parameters are provided. `cover` is only present when a cover image exists. `address` sub-fields are only present when geocoding data is available; each sub-field's `slug` is the location's path segment for the landing pages (see `GET /locations/resolve`) and is `null` until a slug has been assigned.
+Note: for a signed-in visitor every item also carries `bookmarked` and `visited` (booleans: a bookmark, at least one visit). `distance` (km) is only present when `lat`/`lon` query parameters are provided. `cover` is only present when a cover image exists. `address` sub-fields are only present when geocoding data is available; each sub-field's `slug` is the location's path segment for the landing pages (see `GET /locations/resolve`) and is `null` until a slug has been assigned.
 
 ---
 
@@ -403,8 +403,6 @@ Get full details for a single place by ID. Increments the view counter.
   "title": "Waterfall Gadelsha",
   "content": "Beautiful waterfall in the southern Urals with a 15m drop...",
   "category": "waterfall",
-  "visitRadiusM": 500,
-  "verificationExempt": false,
   "author": {
     "id": "u1u2u3u4",
     "name": "traveler42",
@@ -418,7 +416,6 @@ Get full details for a single place by ID. Increments the view counter.
       "avatar": "/uploads/avatars/u5u6u7u8/photo_small.jpg"
     }
   ],
-  "tags": ["waterfall", "nature", "ural"],
   "address": {
     "country": { "id": 1, "name": "Russia", "slug": "russia" },
     "region": { "id": 5, "name": "Bashkortostan", "slug": "bashkortostan" },
@@ -433,8 +430,6 @@ Get full details for a single place by ID. Increments the view counter.
   "distance": 12.4
 }
 ```
-
-`visitRadiusM` and `verificationExempt` drive the verified "visited" mark (see `PUT /visited`).
 
 A cover cut from a linked photo (see `PATCH /places/cover/:id`) also has `cover.credit`: `{ "source": "wikimedia" | "pastvu", "author", "license", "licenseUrl", "url" }` — the photo's author, licence and source page, to be shown with the cover.
 
@@ -467,19 +462,19 @@ Create a new place.
 | lat | float | Yes | Latitude (min 3 chars) |
 | lon | float | Yes | Longitude (min 3 chars) |
 | content | string | No | Description text (HTML stripped) |
-| tags | array | No | Array of tag strings |
 | photos | array | No | Array of temporary photo filenames to attach |
-| candidate | string | No | OSM candidate id the place is created from: links the candidate to the new place and hides it from the map. Ignored (the place is still created) when the candidate is already taken, or the place is not the same object: it must stand within `linkRadius` (1 km) and have a similar title, or be of the same category within `sameCategoryRadius` (50 m) |
+| candidate | string | No | OSM candidate id the place is created from (a white spot): links the candidate to the new place and hides it from the map. Ignored (the place is still created) when the candidate is already taken, or the place is not the same object: it must stand within `linkRadius` (1 km) and have a similar title, or be of the same category within `sameCategoryRadius` (50 m) |
 
 **Response:** `201 Created`
 
 ```json
 {
-  "id": "a1b2c3d4e5f6g"
+  "id": "a1b2c3d4e5f6g",
+  "spotOpened": false
 }
 ```
 
-Note: If a place already exists at the same coordinates for the same user, its ID is returned without creating a duplicate.
+`spotOpened` is `true` when the place was created from an OSM candidate (`candidate`) and the candidate was linked to it: the author opened a white spot and gets the pioneer's experience. Other open candidates the new place duplicates are linked to it automatically. Note: If a place already exists at the same coordinates for the same user, its ID is returned without creating a duplicate.
 
 **Error responses:**
 
@@ -490,7 +485,7 @@ Note: If a place already exists at the same coordinates for the same user, its I
 
 #### `PATCH /places/:id`
 
-Update an existing place's content, category, coordinates, or tags.
+Update an existing place's content, category or coordinates. A moved place links the open OSM candidates it now stands on.
 
 **Auth required:** Yes
 
@@ -509,18 +504,16 @@ Update an existing place's content, category, coordinates, or tags.
 | category | string | New category key |
 | lat | float | New latitude |
 | lon | float | New longitude |
-| tags | array | Replacement tag list |
 
 **Response:**
 
 ```json
 {
-  "content": "Updated description.",
-  "tags": ["updated", "tag"]
+  "content": "Updated description."
 }
 ```
 
-Note: The `tags` key is only present in the response when `tags` was included in the request. If the same author edits within 3 months, the existing content version is overwritten; otherwise a new version is created.
+Note: If the same author edits within 3 months, the existing content version is overwritten; otherwise a new version is created.
 
 **Error responses:**
 
@@ -603,7 +596,7 @@ Get a list of POI markers, optionally clustered, within optional map bounds.
 | bounds | string | No | Viewport bounding box `west,south,east,north` (Leaflet `toBBoxString()`); ignored when malformed |
 | categories | string | No | Comma-separated list of category keys to filter |
 | author | string | No | Filter by user ID |
-| visited | string | No | Only places marked visited by this user ID |
+| visited | string | No | Only places this user ID has visited (has at least one visit at) |
 | bookmarks | string | No | Only places bookmarked by this user ID |
 | zoom | integer | No | Map zoom level used for clustering (default 10) |
 | cluster | boolean | No | Set `true` to receive clustered markers |
@@ -614,8 +607,8 @@ Get a list of POI markers, optionally clustered, within optional map bounds.
 {
   "count": 3,
   "items": [
-    { "id": "a1b2c3d4e5f6g", "category": "landscape", "lat": 51.7686, "lon": 55.1014 },
-    { "id": "h7i8j9k0l1m2n", "category": "castle", "lat": 52.2865, "lon": 56.8412 }
+    { "id": "a1b2c3d4e5f6g", "category": "landscape", "lat": 51.7686, "lon": 55.1014, "title": "Гора Шихан" },
+    { "id": "h7i8j9k0l1m2n", "category": "castle", "lat": 52.2865, "lon": 56.8412, "title": "Усадьба Тимашевых" }
   ]
 }
 ```
@@ -705,7 +698,7 @@ Interesting objects from OpenStreetMap and Wikidata that are not on Geometki yet
 
 #### `GET /osm-candidates`
 
-Candidates inside the map area. Objects already on Geometki (`status` `linked` or `duplicate`) are returned to admins only.
+Candidates inside the map area. Objects already on Geometki (`status` `linked` or `duplicate`) are returned to admins only. Open candidates that duplicate one of our places are linked to it automatically (status `linked`, `place` set) when a tile is collected and when a place is created or moved, so they disappear from the public answer; when a place is deleted its candidates are open again.
 
 **Auth required:** No (admin data needs auth)
 
@@ -762,7 +755,7 @@ Candidates inside the map area. Objects already on Geometki (`status` `linked` o
 
 `photos` — Commons photos, to be shown only with `author` and `license`. `image` — a photo link from OSM with an unknown licence, set only when there are no Commons photos. `heritage` — the Russian cultural heritage register code.
 
-Tiles are queued at most `queueRequestsPerMinute` times a minute per IP; above that the endpoint only reads the database.
+A tile asked for within the last `requestCooldownMinutes` (10) is only read: looking at a collected area or polling a pending one writes nothing and does not raise the tile's priority. Writes to the queue are limited to `queueRequestsPerMinute` a minute per IP (only the requests that have something to write count); above that the endpoint only reads the database. The map asks for the area widened to whole 0.1° tiles, so panning inside the same tiles is answered from the client cache.
 
 `pendingTiles` — tiles of the area that are queued or being collected now (a failed tile waits for its retry and is not counted).
 
@@ -1206,13 +1199,14 @@ Get full profile for a single user, including gamification statistics.
     "edit": 5,
     "cover": 3,
     "comment": 8,
-    "visited": 20
+    "visited": 20,
+    "visits": 34
   },
   "settings": { "emailComment": true, "pushComment": true, "…": "…" }
 }
 ```
 
-`settings` (the keys of `PATCH /users/:id`) is only included on the user's own profile.
+`visited` — distinct places the user has visited, `visits` — all their check-ins (a place can be visited many times; see `GET /visits`); `GET /users` lists carry `visited` only. `settings` (the keys of `PATCH /users/:id`) is only included on the user's own profile.
 
 **Error responses:**
 
@@ -1648,91 +1642,173 @@ Toggle a bookmark for a place. If the bookmark exists it is removed; otherwise i
 
 ---
 
-### Visited
+### Visits
 
-#### `GET /visited`
+"I was here" is a log: a visit is repeatable, one per user, place and day. No location is asked or stored. Public lists are in the guest cache (`visits` group). Spec: `features/25-visits-and-exploration.md`.
 
-Check whether the authenticated user has marked a place as visited.
+A **visit** object:
 
-**Auth required:** No (returns `{ "result": false }` if not authenticated)
+```json
+{
+  "id": "v1v2v3v4v5v6v",
+  "visitedAt": "2026-10-24",
+  "created": "2026-10-24T12:31:00+00:00",
+  "photos": [
+    { "id": "p1p2p3p4p5p6p", "full": "/uploads/photos/a1b2c3d4e5f6g/x.jpg", "preview": "/uploads/photos/a1b2c3d4e5f6g/x_preview.jpg", "width": 1600, "height": 1200, "title": "…", "placeId": "a1b2c3d4e5f6g" }
+  ],
+  "answers": { "road": "dirt", "can_swim": "yes" },
+  "author": { "id": "u1u2u3u4", "name": "traveler42", "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg" },
+  "place": { "…": "GET /places list item (only in GET /visits?user=)" }
+}
+```
+
+`visitedAt` is the visitor's day, `YYYY-MM-DD`. `photos` are the photos the author uploaded to the place within the visit's day (`photos.visit_id`). `answers` is an object `question -> value` (empty when unanswered).
+
+#### `GET /visits`
+
+Visits of a place or of a person, newest first by the visit day. **Auth required:** No
 
 **Query parameters:**
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| placeId | string | Yes | Place ID to check |
+| place | string | One of `place`/`user` | Place ID |
+| user | string | One of `place`/`user` | User ID; every item then carries its `place` |
+| limit | integer | No | Max results (default 10, max 40) |
+| offset | integer | No | Pagination offset (default 0) |
 
-**Response:** `{ "result": true }`
+**Response:** `{ "items": [<visit>], "count": 12 }`. With `place` also:
 
-**Error responses:**
+```json
+{
+  "items": [],
+  "count": 12,
+  "people": 8,
+  "last": "2026-10-24",
+  "visitors": [{ "id": "u1u2u3u4", "name": "traveler42", "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg" }],
+  "now": [
+    {
+      "question": "road",
+      "value": "dirt",
+      "visitedAt": "2026-10-24",
+      "agree": 3,
+      "total": 4,
+      "history": [{ "year": 2025, "value": "asphalt" }]
+    }
+  ]
+}
+```
 
-- `400` — No `placeId` provided
+`people` — distinct visitors, `last` — the latest visit day (or `null`), `visitors` — the 5 latest distinct visitors. `now` is "How it is now": per answered question (the `can_<feature>` keys included) the latest answer, `agree` of `total` recent answers agree with it, `history` the latest value of each earlier year; empty without answers.
+
+**Error responses:** `400` — neither `place` nor `user`
 
 ---
 
-#### `GET /visited/:id`
+#### `GET /visits/places`
 
-Get the users who have marked a place as visited.
+The distinct places a person visited, the latest visit first, in the `GET /places` list shape (deleted places are left out).
 
 **Auth required:** No
 
-**Path parameters:**
+**Query parameters:** `user` (required), `limit` (default 10, max 40), `offset`.
 
-| Name | Type | Description |
-|------|------|-------------|
-| id | string (alphanum) | Place ID |
+**Response:** `{ "items": [ ... ], "count": 12 }`; `400` — no `user`.
+
+---
+
+#### `GET /visits/me`
+
+The signed-in user's own visits of a place and the questions the place's category asks. For the "I was here" button state and the questions block (the place page is cached without a visitor).
+
+**Auth required:** No (a guest gets empty lists)
+
+**Query parameters:** `place` (required; without it the answer is empty).
 
 **Response:**
 
 ```json
 {
-  "items": [
-    {
-      "id": "u1u2u3u4",
-      "name": "traveler42",
-      "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg"
-    }
-  ],
-  "verified_count": 1,
-  "total_count": 3
+  "items": [<visit>],
+  "count": 1,
+  "questions": [
+    { "key": "road", "values": ["asphalt", "dirt", "offroad", "foot", "water"] },
+    { "key": "walk", "values": ["short", "medium", "long"] },
+    { "key": "can", "features": ["swim", "camp", "kids", "winter", "drink"] }
+  ]
 }
 ```
 
----
-
-#### `GET /visited/user/:id`
-
-Places a user has marked as visited, in the `GET /places` list shape (plus `content`).
-
-**Auth required:** No
-
-**Query parameters:** `limit` (default 21, max 40), `offset` (default 0).
-
-**Response:** `{ "items": [ ... ], "count": 12 }`
+`questions` are three of the category's pool (`Config\VisitQuestions::$categories`, six to eight per category): the ones the place has no answer to yet first, in the order of the pool, then the stale (older than a year) and the contested ones, the oldest first; the questions the current visit (the latest within the check-in window) has answered come off the three. Then, if the category has features, the last step `{ "key": "can", "features": [...] }`. Question keys and values: `road` (`asphalt`, `dirt`, `offroad`, `foot`, `water`), `walk` (`short`, `medium`, `long`), `trail` (`marked`, `faint`, `none`), `entry` (`free`, `paid`, `guarded`, `outside`, `closed`), `state` (`intact`, `decaying`, `demolished`), `water` (`present`, `dry`), `crowd` (`empty`, `some`, `crowded`), `time` (`hour`, `half`, `day`), `parking` (`near`, `far`, `none`), `cell` (`good`, `weak`, `none`), `facilities` (`none`, `basic`, `full`), `safety` (`safe`, `care`, `danger`), `access` (`full`, `partial`, `none`). The texts are on the client.
 
 ---
 
-#### `PUT /visited`
+#### `POST /visits`
 
-Toggle a "visited" mark for a place. If already marked as visited, the mark is removed. When the request carries the user's coordinates and they are within the place's `visitRadiusM` (and the place is not `verificationExempt`), the visit is marked verified.
-
-**Auth required:** Yes
+Check in at a place. **Auth required:** Yes
 
 **Request body (JSON):**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | place | string | Yes | Place ID |
-| lat | float | No | User's current latitude |
-| lon | float | No | User's current longitude |
+| visitedAt | string | No | The visitor's day, `YYYY-MM-DD`; today (server) by default. Must be a real date within a day of the server's today: up to two days back, one day forward |
 
-**Response:** `201 Created` with `{ "visited": true, "verified": true }` when marked, `200 OK` with `{ "visited": false, "verified": false }` when unmarked.
+**Response:** `201 Created` with the visit and `isNew: true`, `ordinal` (which visit of the place this is, counting everybody's) and `firstThisYear` (no other visit of the place this year up to it). `200 OK` with the existing visit and `isNew: false` when the user already has a visit of that place on that day (idempotent; also for two simultaneous taps). The photos the user uploaded to the place that day before the tap become the visit's. The place's author is notified; a bare visit gives no experience.
 
 **Error responses:**
 
 - `401` — Not authenticated
-- `400` — No place ID provided
+- `400` — No place ID, or `visitedAt` malformed or outside the window
 - `404` — Place not found
+
+---
+
+#### `PATCH /visits/:id`
+
+Answer the questions of a visit. **Auth required:** Yes (the visit's author)
+
+**Request body (JSON):** `{ "answers": { "road": "dirt", "walk": null, "can_swim": "yes" } }`. A value sets the answer, `null` removes it. Keys and values must be those of the place's category (`GET /visits/me` → `questions`); a feature of the last step is the key `can_<feature>` with `yes` or `no`.
+
+**Response:** the visit.
+
+**Error responses:**
+
+- `401` — Not authenticated
+- `403` — Not the author
+- `404` — Visit not found
+- `400` — `answers` is empty or not an object of strings/`null`, or a key or value is not asked for the place's category
+
+---
+
+#### `DELETE /visits/:id`
+
+Delete a visit: its `visit` activity goes, the feed, experience and "now" answers are recounted; its photos stay with the place. **Auth required:** Yes (the author or an admin)
+
+**Response:** `{ "id": "<visit id>" }`
+
+**Error responses:** `401`, `403` — neither the author nor an admin, `404` — not found.
+
+---
+
+### Exploration
+
+#### `GET /exploration/points`
+
+The points of the map's exploration (hex) layer: every place and every open OSM candidate of the `known` and `explore` tiers (the white spots), as compact points with coordinates rounded to ~100 m and no ids. The client bins them into hexagons.
+
+**Auth required:** No. Cached 10 minutes on the server (and in the guest cache); `Cache-Control: public, max-age=600`.
+
+**Response:**
+
+```json
+{
+  "places": [[51.769, 55.101, "waterfall"], [52.287, 56.841, "castle"]],
+  "spots": [[51.15, 55.001, "water"]]
+}
+```
+
+`category` is `null` for a point without one.
 
 ---
 
@@ -1934,7 +2010,7 @@ An unknown `id` returns an empty body.
 
 #### `PUT /location`
 
-Save the signed-in user's last known position. Called by the client only after the user has asked for their location (the map's "My location" button, sorting by distance). The point is not returned by any endpoint; it is kept for the future explorer map (`features/17-personal-fog-of-war-explorer-map.md`). A move shorter than 200 m from the saved point is not written. Anonymous visitors' positions are not stored: pass `lat`/`lon` to the endpoints that compute a distance instead.
+Save the signed-in user's last known position. Called by the client only after the user has asked for their location (the map's "My location" button, sorting by distance). The point is not returned by any endpoint; it is kept for the user page map of `features/25-visits-and-exploration.md` (step 7). A move shorter than 200 m from the saved point is not written. Anonymous visitors' positions are not stored: pass `lat`/`lon` to the endpoints that compute a distance instead.
 
 **Auth required:** Yes
 
@@ -2145,30 +2221,6 @@ Ordered by `placesCount` descending.
 **Error responses:**
 
 - `404` — Unknown category
-
----
-
-### Tags
-
-#### `GET /tags/search`
-
-Search for up to 10 tags matching a text string. Used for autocomplete.
-
-**Auth required:** No
-
-**Query parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| text | string | Yes | Search string (1–29 chars; otherwise `items` is empty) |
-
-**Response:** tag titles in the request locale.
-
-```json
-{
-  "items": ["waterfall", "water", "watermill"]
-}
-```
 
 ---
 
@@ -2594,7 +2646,7 @@ One email: the list item plus `message` and `error`, wrapped in `{ "data": { ...
 
 #### `GET /sitemap`
 
-Returns the ids/slugs and last-modified timestamps of everything the client's XML sitemap (`client/pages/sitemap.tsx`) needs: places, users, indexable collections, and — for the landing pages — indexable categories, locations, and location×category pairs.
+Returns the ids/slugs and last-modified timestamps of everything the client's XML sitemap (`client/pages/sitemap.tsx`) needs: places, indexable collections, and — for the landing pages — indexable categories, locations, and location×category pairs.
 
 **Auth required:** No
 
@@ -2604,9 +2656,6 @@ Returns the ids/slugs and last-modified timestamps of everything the client's XM
 {
   "places": [
     { "id": "a1b2c3d4e5f6g", "slug": "vodopad-gadelsha", "updated": "2026-11-01T12:00:00+00:00" }
-  ],
-  "users": [
-    { "id": "u1u2u3u4", "updated": "2026-11-10T08:00:00+00:00" }
   ],
   "collections": [
     { "id": "c1c2c3c4c5c6c", "slug": "peshchery-bashkortostana", "updated": "2026-10-20T09:00:00+00:00" }
@@ -2623,7 +2672,7 @@ Returns the ids/slugs and last-modified timestamps of everything the client's XM
 }
 ```
 
-`categories`/`locations`/`locationCategories` only include entries with `placesCount >= 5` (the indexing threshold — see `GET /locations/resolve`); `updated` is the most recent `updated_at` among that entry's places. `collections` is already filtered to `hidden=false, indexable=true`. A `slug` is `null` for a location that has not been assigned one yet.
+User profiles are `noindex`, so there is no `users` list. `categories`/`locations`/`locationCategories` only include entries with `placesCount >= 5` (the indexing threshold — see `GET /locations/resolve`); `updated` is the most recent `updated_at` among that entry's places. `collections` is already filtered to `hidden=false, indexable=true`. A `slug` is `null` for a location that has not been assigned one yet.
 
 ---
 
@@ -2642,6 +2691,7 @@ Spark commands (`php spark <command>`), not accessible over HTTP:
 | `feed:rebuild` | Regroup the activity log into feed stories (after changing the grouping rules) |
 | `locations:rebuild` | Re-geocode every place, merge duplicate locations, assign slugs |
 | `osm:collect` | Collect OSM candidates for the queued tiles (cron, every minute) |
+| `osm:link-duplicates` | One-off: link the stored open candidates that duplicate our places to them |
 | `osm:rescore` | Recalculate OSM candidate scores from the stored tags |
 | `achievements:evaluate` | Evaluate and award achievements (by hand, `--all` after adding or changing an achievement; not scheduled) |
 | `trending:refresh` | Refresh place trending scores |

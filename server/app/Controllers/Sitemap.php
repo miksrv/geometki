@@ -5,7 +5,6 @@ namespace App\Controllers;
 use App\Models\CollectionsModel;
 use App\Models\LocationSlugsModel;
 use App\Models\PlacesModel;
-use App\Models\UsersModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use Config\Database;
@@ -13,8 +12,8 @@ use Config\Database;
 /**
  * Sitemap controller
  *
- * Returns the IDs and last-modified timestamps for all places, users and
- * collections, plus the indexable landing pages of features/20-location-seo-pages.md
+ * Returns the IDs and last-modified timestamps for all places and
+ * collections (user profiles are noindex, so they are not listed), plus the indexable landing pages of features/20-location-seo-pages.md
  * (categories, locations, location×category pairs — "SEO-паттерны: Sitemap:
  * только индексируемые страницы"), consumed by the client to generate the
  * XML sitemap.
@@ -31,7 +30,7 @@ class Sitemap extends ResourceController
     ];
 
     /**
-     * Return all place and user IDs with their last-updated timestamps, plus
+     * Return all place and collection IDs with their last-updated timestamps, plus
      * the indexable category/location/location×category landing pages.
      *
      * GET /sitemap
@@ -41,7 +40,6 @@ class Sitemap extends ResourceController
     public function index(): ResponseInterface
     {
         $placesModel      = new PlacesModel();
-        $usersModel       = new UsersModel();
         $collectionsModel = new CollectionsModel();
 
         // locales: the languages a place has a text in, only those are its language versions.
@@ -55,8 +53,6 @@ class Sitemap extends ResourceController
                 false
             )
             ->findAll();
-        // Bot accounts have no profile worth indexing
-        $users       = $usersModel->select('id, updated_at as updated')->where('role !=', 'bot')->findAll();
         $collections = $collectionsModel
             ->select('id, slug, updated_at as updated')
             ->where(['hidden' => 0, 'indexable' => 1])
@@ -66,7 +62,7 @@ class Sitemap extends ResourceController
             $place->locales = $place->locales ? explode(',', $place->locales) : [];
         }
 
-        foreach ([...$places, ...$users, ...$collections] as $row) {
+        foreach ([...$places, ...$collections] as $row) {
             if (!empty($row->updated)) {
                 $row->updated = new \DateTime((string) $row->updated);
             }
@@ -74,7 +70,6 @@ class Sitemap extends ResourceController
 
         return $this->respond([
             'places'             => $places,
-            'users'              => $users,
             'collections'        => $collections,
             'categories'         => $this->indexableCategories(),
             'locations'          => $this->indexableLocations(),
