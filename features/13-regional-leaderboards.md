@@ -1,6 +1,7 @@
 # Feature: Regional Leaderboards
 
-> Status: not implemented.
+> Status: not implemented. The first step, the top explorers of a location (home page, location pages),
+> is step 5 of `25-visits-and-exploration.md` with its own score; this spec is the full leaderboards after it.
 
 Ranked lists of users by contribution within a location (locality, region, country). "Level 14" has
 no social context; "#3 in Saint Petersburg, and Anna is catching up" does. It also gives high-level

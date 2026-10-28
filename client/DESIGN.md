@@ -120,13 +120,15 @@ re-implement them.
       target. `FileDropZone` wraps it all. Phones do not show the section.
     - The text — `PlaceDescription` with a visually hidden h2: `prose` at the reading size, the
       first paragraph a lead, markdown `#`/`##` rendered as h3, clamped at 540px (420 on phones)
-      with a fade and "Читать полностью ⌄"; under it the tags as quiet chips. Read only: the
+      with a fade and "Читать полностью ⌄". Read only: the
       text is edited in the place form ("⋯ → Редактировать"), a place without one links there.
     - "Где это" — `PlaceLocation` (`Container`): the interactive map (230px, the nearby places as
       markers) bleeding to the card edges, the distance over the address (most specific first,
       every level a link), the coordinates (copy on click), the navigators as three equal tiles,
-      a rule, `PlaceVisited` (overlapping avatars + "3 человека были здесь"), the stretched
-      "Я здесь был(а)" and the `PlaceCollections` line ("В 2 коллекциях: A, B и ещё N").
+      "Как сейчас" (`PlaceNow`, 1–3 rows from the visitors' answers: "Дорога грунтовка…", under it "5 из 6 · day" and earlier years; then the features as two rows, "**Можно** купаться · рыбачить" and "**Нельзя** костёр", with the latest day, the agreement of each only in its `title`; hidden without answers),
+      a rule, `PlaceVisitors` (up to five overlapping avatars and "N человек были здесь", under it
+      "Последний визит: 13 октября 2026 · 23 визита"), the stretched "Я здесь был(а)" (`WasHereButton`:
+      one tap checks in and a toast tells the visit number, no sheet, no form), under it `PlaceVisitQuestions` while the visitor's latest visit, of any day, lacks answers (up to three one-tap questions, one at a time: a short heading, `Chip`s, a quiet "Пропустить"; the last step, "Что здесь можно?", is a three-state `Chip` per feature — plain → `selected` yes → `negative` no → cleared, the taps of a few seconds saved in one request, the quiet button "Готово") and the `PlaceCollections` line ("В 2 коллекциях: A, B и ещё N").
     - "Оценки и отзывы" — `PlaceReviews` (`#reviews`, a `Container` because it is interactive):
       the average (44px number, five read-only stars, the count) next to the bars of the scores
       5…1 (`distribution` of `GET /rating/:id`), `PlaceRatePrompt` (`#rate`) on a `--surface-2`
@@ -543,7 +545,7 @@ actions, active days, the longest and the current run of days in a row (22px num
   scrolling content.
 - **Filter primitives** (`components/ui`, kit candidates, made in the app for the places
   filters): `Chip` — a 36px pill (28px `small`) with an optional icon, a toggle (`selected`,
-  `--color-main` fill, `aria-pressed`) or a removal (`removable`, tinted with a ✕), a link with
+  `--color-main` fill, `aria-pressed`; `negative` — the "no" of a three-state toggle: struck label, muted tint, `aria-pressed="mixed"`) or a removal (`removable`, tinted with a ✕), a link with
   `href`, an optional quiet `count` after the label (facets); `ScrollRail` — the one horizontal scroller of the site (native scroll, no carousel
   library): round white arrows with a shadow while there is more to a side, hidden on touch
   screens; `chips` (items of their own width, faded edges, `ScrollRailSeparator` between
@@ -568,8 +570,29 @@ actions, active days, the longest and the current run of days in a row (22px num
   is the place popup's plain 24px cross: white over a cover, grey without one.
   Admin actions are full-width buttons: confirming a found duplicate inside its callout, "hide for good"
   (`outline` `negative`) last; destructive ones ask for confirmation.
-  Exception to "tokens, not values": the candidate group colours (`GROUP_COLORS`) are hex
-  values in JS, because Leaflet paints the markers from `pathOptions`;
+- **Hex layer** (`components/map/hex-layer`, `/map`, places mode): below zoom 11 (`HEX_MAX_ZOOM`) the place
+  and spot markers give way to pointy-top hexagons (32px circumradius) binned in the browser from one
+  `GET /exploration/points`. One fill per cell (`hexFill`): its three states mixed by their
+  shares, in quarters, in OKLab (two hues meet in a clean middle, not in grey), at one opacity
+  (0.8): pale green (`#d4ece0`) for the places nobody has added yet (the open candidates), green
+  (`#2f9e77`) for the places on the map, the main blue for the places the signed-in visitor has
+  been to (at least a quarter of blue with one visit, so it is seen). Every state has a hue, so a
+  guest sees a map of green, not of grey. The cells sit in their own pane (`hexes`) that
+  multiplies the tiles (`mix-blend-mode`; a path cannot, the pane isolates it): the colours keep
+  their strength over the light map, its roads and labels show through. The edge is blue in the
+  cells the visitor has been to, dark green (`#24785b`) otherwise and dashed while nothing in the
+  cell is on the map. No label inside; the counts are in the tooltip, one a line ("Вы были", "На
+  карте", "Не добавлено"), the zeros left out. A click on a cell zooms in by two on its centre.
+  `HexLegend` names the colours in the map's bottom-left column while the hexagons are shown
+  ("Вы были" for a signed-in visitor only).
+  White spots ("Неоткрытые места" to the visitor, the same for admins): the layer is the
+  ghosts of place markers: the same 20px square with the candidate's category icon, the whole
+  marker at 40% opacity, no extra frame (`Marker` + `divIcon`, one icon per category), no panel
+  and no map button (the layer loads quietly, nothing to switch), a "Не открыто" badge and the
+  "add this place first: +35" action in the popup. No admin mode: linking candidates to places
+  is a separate admin page to come, not a map popup.
+  Exception to "tokens, not values": the hex layer's colours (`#3770b1`, the greens `#2f9e77`,
+  `#d4ece0` and the edge `#24785b`, `hex-layer/constants.ts`) are hex values in JS, because Leaflet paints the polygons from `pathOptions`;
   the photo counter over a cover is the same fixed dark pill as the stats over `MediaTile`.
 - **Photo gallery** (`PhotoGallery`: profile, place page, place form, the user's photos page):
   a grid of 4:3 tiles, four columns (two on phones) with 4px gaps, so 8 photos make two

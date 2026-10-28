@@ -18,7 +18,7 @@ Make XP quality-aware. Places get a **Quality Score** from completeness and comm
 | Rated 5+ times | +20 |
 | Average rating ≥ 4.0 | +15 |
 | Edited after creation | +10 |
-| Has a verified visit (`users_visited_places.verified`) | +15 |
+| Has a visit with photos or answers (`users_visited_places`, `visit_answers`) | +15 |
 
 ### Quality Tiers
 
