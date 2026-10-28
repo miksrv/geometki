@@ -97,7 +97,7 @@ export const PlaceFiltersSheet: React.FC<PlaceFiltersSheetProps> = ({
             nothingFound={changed && !isFetching && total === 0}
             onSort={(sort) => void handleSort(sort)}
             onToggleCategory={toggleCategory}
-            onReset={() => setDraft({ categories: [], notVisited: false, sort: defaultSort, tag: undefined })}
+            onReset={() => setDraft({ categories: [], notVisited: false, sort: defaultSort })}
             onApply={() => onApply(draft)}
             onClose={onClose}
         >

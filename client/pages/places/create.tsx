@@ -11,7 +11,8 @@ import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
-import { wrapper } from '@/app/store'
+import { NotifyReplace } from '@/app/notificationSlice'
+import { useAppDispatch, wrapper } from '@/app/store'
 import { displayName } from '@/components/map/osm-candidates/utils'
 import { AppLayout, PageHeader } from '@/components/shared'
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
@@ -28,6 +29,7 @@ const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmatio
 
 const CreatePlacePage: NextPage<object> = () => {
     const { t, i18n } = useTranslation()
+    const dispatch = useAppDispatch()
 
     const router = useRouter()
 
@@ -87,6 +89,16 @@ const CreatePlacePage: NextPage<object> = () => {
 
     useEffect(() => {
         if (data?.id && isSuccess) {
+            if (data.spotOpened) {
+                void dispatch(
+                    NotifyReplace({
+                        id: 'placeCreated',
+                        message: t('white-spots_opened', { defaultValue: 'Вы открыли новое место! +35 опыта' }),
+                        type: 'success'
+                    })
+                )
+            }
+
             allowNavigation()
             void router.push(buildPlaceUrl(data.id))
         } else if (isSuccess) {

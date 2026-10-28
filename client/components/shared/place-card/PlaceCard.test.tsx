@@ -113,12 +113,12 @@ describe('PlaceCard', () => {
             )
         })
 
-        it('renders the cover with a cache-busting key, decorative next to the title link', () => {
+        it('renders the cover with a cache-busting key, named for image search inside the hidden cover link', () => {
             const { container } = render(<PlaceCard place={place} />)
 
             const cover = container.querySelector('img')
             expect(cover).toHaveAttribute('src', 'https://img.test/covers/p1-preview.jpg?d=1700000000')
-            expect(cover).toHaveAttribute('alt', '')
+            expect(cover).toHaveAttribute('alt', 'Cool Cave')
         })
 
         it('shows neither who added the place nor when', () => {

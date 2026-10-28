@@ -16,7 +16,7 @@ import { SITE_LINK } from '@/config/env'
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import { PlaceForm } from '@/sections/place'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
-import { equalsArrays, parsePlaceId } from '@/utils/helpers'
+import { parsePlaceId } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 import { loadPageTranslations } from '@/utils/translations.server'
 
@@ -64,7 +64,6 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place, texts, textLocale 
             content: currentText?.content ?? '',
             lat: place?.lat ?? 0,
             lon: place?.lon ?? 0,
-            tags: place?.tags,
             title: currentText?.title ?? ''
         }),
         [place?.id, textLocale]
@@ -90,7 +89,6 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place, texts, textLocale 
             content: content !== (currentText?.content ?? '') ? content : undefined,
             id: place?.id ?? '',
             locale: textLocale,
-            tags: !equalsArrays(place?.tags, formData?.tags) ? formData?.tags : undefined,
             title: title !== (currentText?.title ?? '') ? title : undefined
         })
     }

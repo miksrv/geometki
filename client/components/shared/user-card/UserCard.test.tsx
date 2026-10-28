@@ -73,7 +73,7 @@ const user = (fields: Partial<ApiModel.User> = {}): ApiModel.User => ({
     levelData: { experience: 1316, level: 7, levelExperience: 1000, nextLevel: 1350 },
     name: 'Мария Соколова',
     reputation: 12,
-    statistic: { comment: 0, edit: 0, photo: 40, place: 9, rating: 0, visited: 3 },
+    statistic: { comment: 0, edit: 0, photo: 40, place: 9, rating: 0, visited: 3, visits: 5 },
     ...fields
 })
 

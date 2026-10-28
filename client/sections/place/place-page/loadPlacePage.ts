@@ -139,7 +139,7 @@ export const loadPlacePage = async (
             nearRequest,
             relatedRequest,
             store.dispatch(API.endpoints.commentsGetList.initiate({ place: id })),
-            store.dispatch(API.endpoints.visitedGetUsersList.initiate(id)),
+            store.dispatch(API.endpoints.visitsGetList.initiate({ limit: 1, place: id })),
             store.dispatch(API.endpoints.collectionsGetList.initiate({ limit: IN_COLLECTIONS_LIMIT, placeId: id })),
             store.dispatch(API.endpoints.feedGetStories.initiate({ countOnly: true, place: id })),
             translationsPromise

@@ -26,7 +26,7 @@ import {
     PlaceHero,
     PlaceLocation,
     PlaceReviews,
-    PlaceVisited
+    PlaceVisitors
 } from '@/sections/place'
 import type { RelatedPlacesLocation } from '@/sections/place/place-explore'
 import { getCategoryTitle } from '@/utils/categories'
@@ -41,6 +41,7 @@ import {
     removeMarkdown,
     truncateText
 } from '@/utils/helpers'
+import { buildPlaceAddress, getPlaceSchemaType } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
 
 import styles from './styles.module.sass'
@@ -269,17 +270,9 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
     const placeSchema = useMemo(
         () => ({
             '@context': 'https://schema.org',
-            '@type': ['TouristAttraction', 'LocalBusiness'],
+            '@type': getPlaceSchemaType(place?.category),
             '@id': pagePlaceUrl,
-            address: {
-                '@type': 'PostalAddress',
-                addressCountry: place?.address?.country?.name
-                    ? { '@type': 'Country', name: place.address.country.name }
-                    : undefined,
-                addressLocality: place?.address?.locality?.name,
-                addressRegion: place?.address?.region?.name,
-                streetAddress: place?.address?.street
-            },
+            address: buildPlaceAddress(place?.address),
             aggregateRating: ratingCount
                 ? {
                       '@type': 'AggregateRating',
@@ -289,14 +282,6 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                       worstRating: '1'
                   }
                 : undefined,
-            author: {
-                '@type': 'Person',
-                image: place?.author?.avatar ? `${IMG_HOST}${place?.author?.avatar}` : undefined,
-                name: place?.author?.name,
-                url: `${canonicalUrl}users/${place?.author?.id}`
-            },
-            dateModified: formatDateISO(place?.updated?.date),
-            datePublished: formatDateISO(place?.created?.date),
             description: removeMarkdown(place?.content),
             geo: {
                 '@type': 'GeoCoordinates',
@@ -318,7 +303,30 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
             name: place?.title,
             url: pagePlaceUrl
         }),
-        [canonicalUrl, pagePlaceUrl, ownPhotos, place, ratingCount]
+        [pagePlaceUrl, ownPhotos, place, ratingCount]
+    )
+
+    // The page about the place carries the author and the dates (CreativeWork properties, not a Place's)
+    const webPageSchema = useMemo(
+        () => ({
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            '@id': `${pagePlaceUrl}#page`,
+            about: { '@id': pagePlaceUrl },
+            author: place?.author
+                ? {
+                      '@type': 'Person',
+                      image: place.author.avatar ? `${IMG_HOST}${place.author.avatar}` : undefined,
+                      name: place.author.name,
+                      url: `${canonicalUrl}users/${place.author.id}`
+                  }
+                : undefined,
+            dateModified: formatDateISO(place?.updated?.date) || undefined,
+            datePublished: formatDateISO(place?.created?.date) || undefined,
+            name: place?.title,
+            url: pagePlaceUrl
+        }),
+        [canonicalUrl, pagePlaceUrl, place]
     )
 
     useEffect(() => {
@@ -356,8 +364,7 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                             authors: [`${SITE_LINK}users/${place?.author?.id}`],
                             modifiedTime: formatDateUTC(place?.updated?.date),
                             publishedTime: formatDateUTC(place?.created?.date),
-                            section: place?.category ? getCategoryTitle(t, place.category) : undefined,
-                            tags: place?.tags
+                            section: place?.category ? getCategoryTitle(t, place.category) : undefined
                         },
                         description: placeDescription,
                         images: [
@@ -394,6 +401,10 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
             <JsonLdScript
                 scriptKey={'place-schema'}
                 data={placeSchema}
+            />
+            <JsonLdScript
+                scriptKey={'place-page-schema'}
+                data={webPageSchema}
             />
 
             <div>
@@ -447,7 +458,6 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                                 placeId={place?.id}
                                 content={place?.content}
                                 locale={place?.locale}
-                                tags={place?.tags}
                             />
                         </div>
 
@@ -482,7 +492,7 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                             place={place}
                             nearPlaces={nearPlaces}
                         >
-                            <PlaceVisited place={place} />
+                            <PlaceVisitors placeId={place?.id} />
                             <PlaceCollections placeId={place?.id} />
                         </PlaceLocation>
                     </aside>

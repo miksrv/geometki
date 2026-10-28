@@ -216,8 +216,7 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                                         ? describeFilter(t, {
                                               ...filter,
                                               location: undefined,
-                                              notVisited: false,
-                                              tag: undefined
+                                              notVisited: false
                                           })
                                         : t('filters-all-categories-long', 'Все категории'),
                                     sortLabel
@@ -241,11 +240,9 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                     selected={filter.categories}
                     hrefFor={(categories) => buildHref({ categories })}
                     // TEMPORARILY (1.17.5), until the rail gets the numbers of places per category:
-                    // 90% of the tag / locality / district × category lists were empty, and crawlers
+                    // 90% of the locality / district × category lists were empty, and crawlers
                     // rendered every one of them through these links
-                    noLinks={
-                        !!filter.tag || filter.location?.type === 'locality' || filter.location?.type === 'district'
-                    }
+                    noLinks={filter.location?.type === 'locality' || filter.location?.type === 'district'}
                 />
 
                 <AppliedFilters

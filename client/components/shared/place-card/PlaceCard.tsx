@@ -153,7 +153,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                     {place.cover?.preview && (
                         <Image
                             src={`${IMG_HOST}${place.cover.preview}`}
-                            alt={''}
+                            alt={place.title ?? ''}
                             fill
                             sizes={size === 'small' ? '96px' : '120px'}
                             style={{ objectFit: 'cover' }}
@@ -211,7 +211,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                     {place.cover?.preview && (
                         <Image
                             className={styles.tileImage}
-                            alt={''}
+                            alt={place.title ?? ''}
                             quality={75}
                             fill
                             priority={priority}

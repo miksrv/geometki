@@ -205,7 +205,7 @@ describe('buildPlacesHref — stage 4, all flags on', () => {
 })
 
 describe('buildPlacesHref — extra params survive on top of the canonical path', () => {
-    it('tag, non-default sort/order and page 2+ stay as query params', () => {
+    it('non-default sort/order and page 2+ stay as query params', () => {
         expect(
             buildPlacesHref(
                 {
@@ -213,12 +213,11 @@ describe('buildPlacesHref — extra params survive on top of the canonical path'
                     category: 'cave',
                     order: ApiType.SortOrders.ASC,
                     page: 3,
-                    sort: ApiType.SortFields.Rating,
-                    tag: 'waterfall'
+                    sort: ApiType.SortFields.Rating
                 },
                 CATEGORIES_ON
             )
-        ).toMatchObject({ href: '/places/cave?order=ASC&page=3&sort=rating&tag=waterfall', pathname: '/places/cave' })
+        ).toMatchObject({ href: '/places/cave?order=ASC&page=3&sort=rating', pathname: '/places/cave' })
     })
 
     it('page 1 and the default sort/order are dropped, not just hidden', () => {

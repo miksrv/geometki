@@ -35,13 +35,12 @@ describe('describeFilter', () => {
 
 describe('applyFilterPatch', () => {
     it('changes only the given keys and clears with null', () => {
-        const filter = { ...base, categories: ['cave'], location: region, tag: 'lake' }
+        const filter = { ...base, categories: ['cave'], location: region }
 
         expect(applyFilterPatch(filter, { notVisited: true })).toStrictEqual({ ...filter, notVisited: true })
-        expect(applyFilterPatch(filter, { location: null, tag: null })).toStrictEqual({
+        expect(applyFilterPatch(filter, { location: null })).toStrictEqual({
             ...filter,
-            location: undefined,
-            tag: undefined
+            location: undefined
         })
     })
 })
@@ -74,8 +73,7 @@ describe('filterToListRequest', () => {
         ).toStrictEqual({
             category: 'cave,water',
             notVisited: 1,
-            region: 56,
-            tag: undefined
+            region: 56
         })
     })
 })
