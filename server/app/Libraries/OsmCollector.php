@@ -642,6 +642,9 @@ class OsmCollector
 
         $gone->update();
 
+        // The candidates that are our places already are linked to them, so they are no white spots
+        $this->model->linkDuplicatesIn($this->tiles->tileBounds($tile->tile_lat, $tile->tile_lon), $this->scoring);
+
         return count($objects);
     }
 
