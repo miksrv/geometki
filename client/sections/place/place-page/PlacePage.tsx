@@ -41,7 +41,7 @@ import {
     removeMarkdown,
     truncateText
 } from '@/utils/helpers'
-import { buildPlaceAddress, getPlaceSchemaType } from '@/utils/schema'
+import { buildPlaceAddress, buildPlaceRating, getPlaceSchemaType } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
 
 import styles from './styles.module.sass'
@@ -273,15 +273,7 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
             '@type': getPlaceSchemaType(place?.category),
             '@id': pagePlaceUrl,
             address: buildPlaceAddress(place?.address),
-            aggregateRating: ratingCount
-                ? {
-                      '@type': 'AggregateRating',
-                      bestRating: '5',
-                      ratingCount: ratingCount,
-                      ratingValue: String(place?.rating),
-                      worstRating: '1'
-                  }
-                : undefined,
+            aggregateRating: buildPlaceRating(place?.category, place?.rating, ratingCount),
             description: removeMarkdown(place?.content),
             geo: {
                 '@type': 'GeoCoordinates',

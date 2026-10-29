@@ -1,6 +1,13 @@
 import { ApiModel } from '@/api'
 
-import { buildPlaceAddress, getPlaceSchemaType, isStreetName, PlaceSchema, UserSchema } from './schema'
+import {
+    buildPlaceAddress,
+    buildPlaceRating,
+    getPlaceSchemaType,
+    isStreetName,
+    PlaceSchema,
+    UserSchema
+} from './schema'
 
 jest.mock('@/config/env', () => ({
     IMG_HOST: 'https://cdn.example.com/'
@@ -182,5 +189,27 @@ describe('buildPlaceAddress', () => {
 
     it('has no country without one', () => {
         expect(buildPlaceAddress(undefined).addressCountry).toBeUndefined()
+    })
+})
+
+describe('buildPlaceRating', () => {
+    it('a rating for a commercial category', () => {
+        expect(buildPlaceRating(ApiModel.Categories.museum, 4.5, 12)).toStrictEqual({
+            '@type': 'AggregateRating',
+            bestRating: '5',
+            ratingCount: 12,
+            ratingValue: '4.5',
+            worstRating: '1'
+        })
+    })
+
+    it('no rating on a TouristAttraction, Google does not take it there', () => {
+        expect(buildPlaceRating(ApiModel.Categories.waterfall, 4.5, 12)).toBeUndefined()
+        expect(buildPlaceRating(undefined, 4.5, 12)).toBeUndefined()
+    })
+
+    it('no rating without votes', () => {
+        expect(buildPlaceRating(ApiModel.Categories.museum, 0, 0)).toBeUndefined()
+        expect(buildPlaceRating(ApiModel.Categories.museum, undefined, 3)).toBeUndefined()
     })
 })
