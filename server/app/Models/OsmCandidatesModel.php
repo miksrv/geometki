@@ -231,7 +231,7 @@ class OsmCandidatesModel extends ApplicationBaseModel
     }
 
     /**
-     * Stores the duplicates (features/25, step 4): every open candidate in the bounds that looks
+     * Stores the duplicates: every open candidate in the bounds that looks
      * like one of our places (OsmScoring::duplicateOf()) is linked to it automatically,
      * `linked_by` NULL. Called after a tile is collected, after a place is created or moved
      * (the bounds around it), and by `osm:link-duplicates` for the stored ones. Only the open

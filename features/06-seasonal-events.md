@@ -23,7 +23,7 @@ Timed community events (1–4 weeks) around a theme — usually a set of categor
 | 15 | +500 XP | Gold event badge |
 | Top 10 | +1,000 XP | "Elite" badge variant |
 
-The tier badges can be ordinary seasonal achievements with a category filter, so only the community goal and the leaderboard need new code. When the community goal is reached, every participant gets +100 XP.
+The tier badges can be ordinary seasonal achievements with a category filter, so only the community goal and the leaderboard need new code. When the community goal is reached, every participant gets +100 XP. Every bonus is an activity (`event`), so `LevelsLibrary::experience()` counts it; none is pushed alone.
 
 ## Server Design
 
@@ -54,6 +54,6 @@ Events are created via a seeder or the admin area; no user-facing creation UI.
 ## Client Design
 
 - Event banner on the main page and map: name, community progress ("847 / 1,000"), user's tier, countdown.
-- Leaderboard modal from the banner.
+- Leaderboard on the event page `/events/{id}` (banner links to it), not a modal.
 - `/events` archive with outcomes and earned badges.
 - Optional themed marker overlay for places added during the event.

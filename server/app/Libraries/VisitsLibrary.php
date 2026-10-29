@@ -12,7 +12,7 @@ use Config\VisitQuestions;
 use Throwable;
 
 /**
- * Visits ("I was here", features/25-visits-and-exploration.md, step 1): the rules of a
+ * Visits ("I was here"): the rules of a
  * contribution and the API shape of a visit.
  *
  * A bare visit gives no experience (without a location it would be a free farm). A visit

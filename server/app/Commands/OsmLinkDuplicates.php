@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Links the stored OSM candidates that are duplicates of our places (features/25, step 4):
+ * Links the stored OSM candidates that are duplicates of our places:
  * a one-off for the candidates collected before the links were stored, harmless to repeat.
  *
  *   cd server

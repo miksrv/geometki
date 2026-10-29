@@ -1,7 +1,7 @@
 /**
  * A grid of pointy-top hexagons in a flat pixel space (the Web Mercator pixels of a map zoom),
- * for binning points on the map (features/25-visits-and-exploration.md, step 6). Axial
- * coordinates `(q, r)`, the usual cube rounding; no library, the whole thing is a few formulas.
+ * for binning points on the map. Axial coordinates `(q, r)`, the usual cube rounding; no
+ * library, the whole thing is a few formulas.
  *
  * `size` is the circumradius in pixels: a hexagon is `sqrt(3) * size` wide and `2 * size` tall.
  */

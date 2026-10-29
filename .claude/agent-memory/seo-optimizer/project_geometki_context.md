@@ -12,7 +12,7 @@ Geometki (https://geometki.com) is a Russian-primary geospatial POI sharing plat
 **Stack:** Next.js 16 Pages Router / React 19, next-i18next (ru default `/`, en at `/en/`), next-seo v7 via `generateNextSeo()` from `next-seo/pages` inside `<Head>` and `JsonLdScript` from `next-seo`, RTK Query SSR, Leaflet (ssr:false), schema-dts for JSON-LD types. Do not suggest switching SEO libraries.
 
 **Key patterns:**
-- Pages use `getServerSideProps` — fully server-rendered for bots
+- Place, home, activity, collection and user pages are ISR (`getStaticProps`, rendered without cookies; signed-in users and some guests get the `pages/live/...` copy via `proxy.ts`), the rest `getServerSideProps` — all fully server-rendered for bots
 - Canonical URLs from `NEXT_PUBLIC_SITE_LINK`; hreflang via `buildHreflangTags()` in `client/utils/seo.ts`
 - JSON-LD helpers `PlaceSchema()` / `UserSchema()` in `client/utils/schema.ts`
 - Sitemap: `client/pages/sitemap.tsx`, data from the API `GET /sitemap`

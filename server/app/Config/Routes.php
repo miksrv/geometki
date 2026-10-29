@@ -124,7 +124,7 @@ $routes->group('push', static function ($routes) {
 $routes->get('stats', 'Stats::index');
 $routes->options('stats', static function () {});
 
-/** Exploration: the points of the hex layer (features/25, step 6) **/
+/** Exploration: the points of the hex layer **/
 $routes->get('exploration/points', 'Exploration::points');
 $routes->options('exploration/points', static function () {});
 

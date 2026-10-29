@@ -20,11 +20,11 @@ use ReflectionException;
 use Throwable;
 
 /**
- * Visits controller: the log of check-ins ("I was here"), features/25-visits-and-exploration.md, step 1.
+ * Visits controller: the log of check-ins ("I was here").
  *
  * A visit is repeatable (one per user, place and day), asks no location and is made in one
  * tap; the photos its author uploads to the place that day are its (VisitsLibrary::photoVisit()),
- * and it answers the one-tap questions of the place's category (Config\VisitQuestions, step 2).
+ * and it answers the one-tap questions of the place's category (Config\VisitQuestions).
  * The public lists are in the guest cache (`visits` group); `GET /visits/me` answers a guest
  * with nothing.
  *
