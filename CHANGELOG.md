@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.18.1
+
+### Patch Changes
+
+- Search: suggestions no longer fail when the address search is unavailable
+
 ## 1.18.0
 
 Visits instead of the "I was here" toggle, undiscovered places and hexagons on the map, tags removed.
