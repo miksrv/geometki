@@ -83,6 +83,17 @@ final class MailQueueTest extends MySqlTestCase
         $this->assertSame('rejected', $this->mail('mail1')->status);
     }
 
+    public function testAnInvalidAddressIsNotSent(): void
+    {
+        $this->db->table('users')->where('id', 'user1')->update(['email' => 'traveller@mail']);
+        $this->queueDigest('mail1');
+
+        (new MailQueue($this->mailer))->process();
+
+        $this->assertSame([], $this->mailer->sent);
+        $this->assertSame('rejected', $this->mail('mail1')->status);
+    }
+
     public function testAnEventAPushDeliveredIsNotEmailed(): void
     {
         $this->db->table('push_messages')->insert([

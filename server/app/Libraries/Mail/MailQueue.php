@@ -237,6 +237,11 @@ class MailQueue
             return 'The user has no email address';
         }
 
+        // Old accounts from before the address was validated (`x@mail`): no server takes them
+        if (!filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+            return 'The user\'s email address is invalid';
+        }
+
         if (!empty($user->email_bounced_at)) {
             return 'The address was rejected by the mail server earlier';
         }
