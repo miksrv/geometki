@@ -41,7 +41,7 @@ import {
     removeMarkdown,
     truncateText
 } from '@/utils/helpers'
-import { buildPlaceAddress, getPlaceSchemaType } from '@/utils/schema'
+import { buildPlaceAddress, buildPlaceRating, getPlaceSchemaType } from '@/utils/schema'
 import { buildHreflangTags } from '@/utils/seo'
 
 import styles from './styles.module.sass'
@@ -67,6 +67,8 @@ const PhotoUploader = dynamic(
 export interface PlacePageProps {
     ratingCount: number
     place?: ApiModel.Place
+    /** The place's text as HTML, made from its markdown on the server */
+    contentHtml?: string | null
     photoList?: ApiModel.Photo[]
     nearPlaces?: ApiModel.PlaceListItem[] | null
     /** "Ещё {category}: {region}" — the same category in the place's region (null without a region) */
@@ -82,6 +84,7 @@ export interface PlacePageProps {
 const PlacePageContent: React.FC<PlacePageProps> = ({
     ratingCount,
     place: cachedPlace,
+    contentHtml,
     photoList,
     nearPlaces,
     relatedPlaces,
@@ -273,15 +276,7 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
             '@type': getPlaceSchemaType(place?.category),
             '@id': pagePlaceUrl,
             address: buildPlaceAddress(place?.address),
-            aggregateRating: ratingCount
-                ? {
-                      '@type': 'AggregateRating',
-                      bestRating: '5',
-                      ratingCount: ratingCount,
-                      ratingValue: String(place?.rating),
-                      worstRating: '1'
-                  }
-                : undefined,
+            aggregateRating: buildPlaceRating(place?.category, place?.rating, ratingCount),
             description: removeMarkdown(place?.content),
             geo: {
                 '@type': 'GeoCoordinates',
@@ -457,6 +452,7 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                             <PlaceDescription
                                 placeId={place?.id}
                                 content={place?.content}
+                                contentHtml={contentHtml}
                                 locale={place?.locale}
                             />
                         </div>

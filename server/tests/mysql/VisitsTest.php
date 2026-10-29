@@ -6,9 +6,9 @@ use CodeIgniter\Test\FeatureTestTrait;
 use Tests\Support\MySqlTestCase;
 
 /**
- * Visits are a log (features/25-visits-and-exploration.md, step 1): a check-in is one tap,
+ * Visits are a log: a check-in is one tap,
  * repeatable, one per day, asks no location; the photos of the day are the visit's; a visit
- * can be deleted; the one-tap questions of the category are answered after it (step 2).
+ * can be deleted; the one-tap questions of the category are answered after it.
  *
  * @internal
  */

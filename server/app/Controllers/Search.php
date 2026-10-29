@@ -13,6 +13,7 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use Config\Database;
 use Geocoder\Exception\Exception;
+use Throwable;
 
 /**
  * Search controller
@@ -341,8 +342,14 @@ class Search extends ResourceController
         }
 
         // Geocoder addresses: a point on the map, only when the site knows no such location (its
-        // places answer better, and the geocoder's loose matches of a known name are noise)
-        $geoItems = $areas ? [] : (new Geocoder())->search($q);
+        // places answer better, and the geocoder's loose matches of a known name are noise). Its
+        // failure (Nominatim's quota, a timeout) costs the addresses only, not the whole suggestion list
+        try {
+            $geoItems = $areas ? [] : (new Geocoder())->search($q);
+        } catch (Throwable $e) {
+            log_message('warning', 'Search::suggest geocoding failed: {message}', ['message' => $e->getMessage() ?: get_class($e)]);
+            $geoItems = [];
+        }
 
         foreach (array_slice($geoItems, 0, self::SUGGEST_ADDRESSES) as $location) {
             $title = $location['locality'] ?? '';

@@ -63,7 +63,7 @@ jobs:
           path: |
             client/node_modules
             ~/.npm
-          key: ${{ runner.os }}-modules-${{ hashFiles('yarn.lock') }}
+          key: ${{ runner.os }}-modules-${{ hashFiles('client/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-modules-
             ${{ runner.os }}-

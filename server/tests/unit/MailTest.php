@@ -398,12 +398,16 @@ final class MailTest extends CIUnitTestCase
         $this->assertTrue(Mailer::isPermanent("to: 553 5.1.3 Bad recipient address syntax"));
         $this->assertTrue(Mailer::isPermanent("to: 550 Message was not accepted -- no such user"));
         $this->assertTrue(Mailer::isPermanent("to: 550 5.7.1 No such user!"), 'Yandex: an unknown mailbox under a policy code');
+        $this->assertTrue(Mailer::isPermanent("to: 504 5.5.2 <x@mail>: Recipient address rejected: need fully-qualified address"), 'Postfix: no domain zone');
+        $this->assertTrue(Mailer::isPermanent("to: 554 5.7.1 <x@yanbex.ru>: Recipient address rejected: Invalid domain"), 'Postfix: the domain does not resolve');
 
         // Not about the recipient: the sender, policy, spam, temporary, connection
         $this->assertFalse(Mailer::isPermanent("from: 553 5.1.8 Sender address rejected: not owned by user"), 'sender at MAIL FROM');
         $this->assertFalse(Mailer::isPermanent("from: 550 5.1.8 Access denied, bad sender domain"));
         $this->assertFalse(Mailer::isPermanent("to: 553 5.1.8 Sender address rejected"), '5.1.8 is a sender code even at RCPT');
         $this->assertFalse(Mailer::isPermanent("to: 550 5.7.1 Relay access denied, domain not found in whitelist"));
+        $this->assertFalse(Mailer::isPermanent("to: 554 5.7.1 <x@y.z>: Recipient address rejected: Access denied"), 'a policy rejection of a real address');
+        $this->assertFalse(Mailer::isPermanent("to: 450 4.1.2 <x@y.z>: Recipient address rejected: Domain not found"), 'a temporary DNS failure');
         $this->assertFalse(Mailer::isPermanent("from: 550 Spam message rejected; sender not found in allow list"));
         $this->assertFalse(Mailer::isPermanent("data: 550 5.7.1 Message rejected as spam"));
         $this->assertFalse(Mailer::isPermanent("to: 450 4.2.0 Mailbox busy"));

@@ -5,9 +5,9 @@ namespace Config;
 use CodeIgniter\Config\BaseConfig;
 
 /**
- * The one-tap questions a visitor answers after a check-in (features/25-visits-and-exploration.md,
- * step 2): a closed list, like the categories. Keys and values live here; the texts are on the
- * client (`common.json` → `visitQuestions.<key>`, `visitFeatures.<key>`). The answers feed
+ * The one-tap questions a visitor answers after a check-in: a closed list, like the
+ * categories. Keys and values live here; the texts are on the client (`common.json` →
+ * `visitQuestions.<key>`, `visitFeatures.<key>`). The answers feed
  * "How it is now" on the place page (VisitsLibrary::now(), table `places_now`) and the
  * recommendations (UserInterestProfilesModel).
  *

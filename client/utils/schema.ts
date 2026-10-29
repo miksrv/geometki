@@ -17,6 +17,22 @@ export const getPlaceSchemaType = (category?: ApiModel.Categories): 'LocalBusine
     category && COMMERCIAL_CATEGORIES.has(category) ? 'LocalBusiness' : 'TouristAttraction'
 
 /**
+ * Google takes a rating (Review snippets) only on a few types, `LocalBusiness` among them and
+ * `TouristAttraction` not: on a spring or a summit it is the "Invalid object type for field
+ * <parent_node>" error of Search Console. So the stars go only on the commercial categories
+ */
+export const buildPlaceRating = (category?: ApiModel.Categories, rating?: number, ratingCount?: number) =>
+    ratingCount && rating && getPlaceSchemaType(category) === 'LocalBusiness'
+        ? {
+              '@type': 'AggregateRating',
+              bestRating: '5',
+              ratingCount,
+              ratingValue: String(rating),
+              worstRating: '1'
+          }
+        : undefined
+
+/**
  * The geocoder puts a road number (`80К-007`, `Р-240`, `М-5`) into `street` for a place by a
  * highway; a street name has a lowercase letter in it, a road code never does
  */

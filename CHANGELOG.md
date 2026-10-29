@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.18.1
+
+### Patch Changes
+
+- Optimized place pages, listings and the map: they open faster on phones
+- Search: suggestions no longer fail when the address search is unavailable
+
 ## 1.18.0
 
 Visits instead of the "I was here" toggle, undiscovered places and hexagons on the map, tags removed.

@@ -1644,7 +1644,7 @@ Toggle a bookmark for a place. If the bookmark exists it is removed; otherwise i
 
 ### Visits
 
-"I was here" is a log: a visit is repeatable, one per user, place and day. No location is asked or stored. Public lists are in the guest cache (`visits` group). Spec: `features/25-visits-and-exploration.md`.
+"I was here" is a log: a visit is repeatable, one per user, place and day. No location is asked or stored. Public lists are in the guest cache (`visits` group).
 
 A **visit** object:
 

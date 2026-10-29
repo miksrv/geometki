@@ -7,7 +7,7 @@ use CodeIgniter\CLI\CLI;
 use Config\Database;
 
 /**
- * Exports the tags before they are dropped (migration DropTags, features/25 step 3):
+ * Exports the tags before they are dropped (migration DropTags):
  * writable/exports/tags.csv (id, title_ru, title_en, count) and places_tags.csv (place_id,
  * tag_id, title_ru). Keep the files next to the database backup.
  *

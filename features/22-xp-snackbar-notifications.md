@@ -49,7 +49,7 @@ Reducers `openGroupSlot` / `mergeGroupSlot` / `closeGroupSlot` and a thunk `Noti
 
 ## Call Sites
 
-Dispatch `NotifyXp` on mutation success in: `PhotoUploader`, `PlaceDescription`, `PlaceCoverEditor`, `PlaceForm` (new place), `WasHereButton`, `PlaceRatePrompt` (rating).
+Dispatch `NotifyXp` on mutation success in: `PhotoUploader`, `PlaceDescription`, `PlaceCoverEditor`, `PlaceForm` (new place), `PlaceRatePrompt` (rating). Not `WasHereButton`: a bare visit gives no experience, and a visit with photos or answers is worth it once per place and month, counted from the log; its XP comes only from the server poll.
 
 XP values are the `MODIFIER_*` constants in `server/app/Config/Constants.php`; they are not exposed to the client yet — return them from `GET /auth/me` (or a small endpoint) instead of hardcoding.
 

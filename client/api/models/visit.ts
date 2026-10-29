@@ -6,7 +6,7 @@ import { User } from './user'
 
 /**
  * One check-in at a place ("I was here"): a log entry, a person can have many of them at
- * one place, one per day (features/25-visits-and-exploration.md, step 1)
+ * one place, one per day
  */
 export type Visit = {
     id: string

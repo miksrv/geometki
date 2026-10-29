@@ -24,7 +24,7 @@ Let users recognize each other's contributions with typed endorsements. Receivin
 
 ### Reputation
 
-`ReputationLibrary::recalculate()` rebuilds `users.reputation` from scratch out of ratings of the user's places, so kudos must be added inside that calculation (sum from the `kudos` table), not as a one-off increment that the next recalculation would wipe.
+`ReputationLibrary` rebuilds `users.reputation` from the votes (half of a vote to the place's author, half to those who made the card by then), so kudos must be a term of that rebuild (a sum from the `kudos` table), not a one-off increment the next rebuild would wipe. The kudos XP is a `kudos` activity, so `LevelsLibrary::experience()` counts it and a removal takes it back.
 
 ## Server Design
 

@@ -442,7 +442,7 @@ class Places extends ResourceController
 
             // Created from an OSM candidate: the same link an admin sets by hand, hides it from the map.
             // Only a similar place takes it, otherwise the candidate stays on the map. The author
-            // opened a white spot (features/25, step 4): MODIFIER_SPOT on top of the place
+            // opened a white spot: MODIFIER_SPOT on top of the place
             $candidates = new OsmCandidatesModel();
             $spotOpened = !empty($input->candidate) && is_string($input->candidate) && $candidates->linkToNewPlace(
                 $input->candidate,

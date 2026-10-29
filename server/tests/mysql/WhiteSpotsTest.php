@@ -7,7 +7,7 @@ use CodeIgniter\Test\FeatureTestTrait;
 use Tests\Support\MySqlTestCase;
 
 /**
- * White spots (features/25-visits-and-exploration.md, step 4): an open OSM candidate is a spot
+ * White spots: an open OSM candidate is a spot
  * nobody has added yet. A candidate that duplicates one of our places is linked to it
  * automatically and stays out of the map; the author of a place created from a candidate is its
  * pioneer (MODIFIER_SPOT, `spots_opened`); a deleted place opens its candidates again.

@@ -124,7 +124,7 @@ const MODIFIER_COMMENT = 5;
 const MODIFIER_PHOTO_LINK = 1;
 // A visit with photos, once per place and month; a bare visit is worth nothing
 const MODIFIER_VISIT = 10;
-// A white spot opened: a place created from an OSM candidate, on top of the place (features/25, step 4)
+// A white spot opened: a place created from an OSM candidate, on top of the place
 const MODIFIER_SPOT = 15;
 
 /*

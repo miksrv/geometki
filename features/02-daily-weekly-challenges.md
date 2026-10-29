@@ -36,7 +36,9 @@ id, user_id, challenge_id, progress, completed_at
 **`ChallengesLibrary.php`**
 - `getActive(): array` — today's / this week's challenges.
 - `increment(string $actionType, string $userId)` — called from `ActivityLibrary` next to `LevelsLibrary::push()` / `AchievementsLibrary::check()`.
-- `complete(string $userId, string $challengeId)` — award bonus XP, mark done.
+- `complete(string $userId, string $challengeId)` — mark done and write a `challenge` activity, so the bonus is in the log that `LevelsLibrary::experience()` counts (never pushed alone).
+
+Progress counts the actions that give experience; a bare visit (one tap) does not, nor a guest's rating.
 
 A Spark command run by cron rotates challenges and resets progress.
 

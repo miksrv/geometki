@@ -8,6 +8,7 @@ import type { RelatedPlacesLocation } from '@/sections/place'
 import { RELATED_PLACES_COUNT } from '@/sections/place/place-explore'
 import { buildPlaceUrl, encodeQueryData, parsePlaceId } from '@/utils/helpers'
 import { dropFromHydration } from '@/utils/hydration'
+import { renderMarkdown } from '@/utils/markdown.server'
 import { loadPageTranslations } from '@/utils/translations.server'
 
 import type { PlacePageProps } from './PlacePage'
@@ -15,9 +16,7 @@ import type { PlacePageProps } from './PlacePage'
 const NEAR_PLACES_COUNT = 10
 
 export type PlacePageResult =
-    | { props: PlacePageProps }
-    | { notFound: true }
-    | { redirect: { destination: string; statusCode: 301 } }
+    { props: PlacePageProps } | { notFound: true } | { redirect: { destination: string; statusCode: 301 } }
 
 interface LoadPlacePageOptions {
     /** The route param: the bare id or `{id}-{slug}` */
@@ -156,6 +155,7 @@ export const loadPlacePage = async (
     return {
         props: {
             ...translations,
+            contentHtml: renderMarkdown(placeData?.content),
             nearPlaces: nearPlaces?.items ?? null,
             photoList: photosData?.items,
             place: placeData,

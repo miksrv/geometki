@@ -9,7 +9,7 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
 /**
- * Exploration (features/25-visits-and-exploration.md, step 6): what is opened and what is not,
+ * Exploration: what is opened and what is not,
  * for the hex layer of the map. The browser bins the points into hexagons for its zoom, so
  * nothing is kept per cell on the server.
  *

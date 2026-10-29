@@ -7,9 +7,9 @@
 
 Possible now:
 
-- **"What to do this week"** (2–3 prompts by priority): unexplored places near the user
+- **"What to do this week"** (2–3 prompts by priority): white spots (undiscovered places) near the user
   (open `osm_candidates` of the `known` / `explore` tiers), then "rate N more places".
-- **Community highlights:** places created from the "Places to explore" layer this week
+- **Community highlights:** white spots opened this week: places created from an undiscovered place
   (`osm_candidates.place_id`).
 - **Re-engagement version** for users inactive 14+ days: a single-focus "what happened near you"
   email with one call to action. Today inactive users with no activity on their places are
@@ -27,6 +27,8 @@ Each needs its feature first:
 
 | Push | Trigger |
 |---|---|
-| Unexplored place nearby | `osm:collect` adds a candidate within ~1 km of the user's last location |
+| Undiscovered place nearby | `osm:collect` adds a candidate within ~1 km of the user's last location (open question, see below) |
 | Place trending | your place gets 20+ views in a week |
 | Streak expiry, rank overtaken, new follower, freshness drop | once features 03 / 13 / 12 / 15 exist |
+
+**Open question:** "near the user" here means `users.last_lat/last_lon` (`PUT /location`), which today is stored only for the user page map and used nowhere else. Using it for a digest or a push is a privacy decision of its own: decide it (and say so in the settings) before building these.

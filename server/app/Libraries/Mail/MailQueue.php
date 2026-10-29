@@ -7,6 +7,7 @@ use App\Libraries\NotificationSettings;
 use App\Models\PushMessagesModel;
 use App\Models\SendingMail;
 use App\Models\UsersModel;
+use CodeIgniter\Validation\FormatRules;
 use Config\Database;
 use Config\Notifications;
 use Throwable;
@@ -235,6 +236,12 @@ class MailQueue
 
         if (empty($user->email)) {
             return 'The user has no email address';
+        }
+
+        // Old accounts from before the address was validated (`x@mail`): no server takes them.
+        // The rule of the sign-up form: it takes an IDN domain (`@почта.рф`), filter_var alone does not
+        if (!(new FormatRules())->valid_email($user->email)) {
+            return 'The user\'s email address is invalid';
         }
 
         if (!empty($user->email_bounced_at)) {

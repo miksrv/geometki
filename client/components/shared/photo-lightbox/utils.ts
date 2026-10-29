@@ -1,4 +1,4 @@
-import { SlideImage } from 'yet-another-react-lightbox'
+import type { SlideImage } from 'yet-another-react-lightbox'
 
 import { getImageProps } from 'next/image'
 

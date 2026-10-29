@@ -249,6 +249,12 @@ const MapPage: NextPage<object> = () => {
                     twitter: { cardType: 'summary_large_image' },
                     additionalLinkTags: buildHreflangTags('map')
                 })}
+                {/* The tiles of the default layer are the largest paint (LCP): the connection is
+                    opened while the map's code still loads */}
+                <link
+                    rel={'preconnect'}
+                    href={'https://tile.openstreetmap.org'}
+                />
             </Head>
             <JsonLdScript
                 scriptKey={'map-app'}

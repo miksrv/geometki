@@ -9,9 +9,7 @@ import { loadPageTranslations } from '@/utils/translations.server'
 import type { CollectionPageProps } from './CollectionPage'
 
 export type CollectionPageResult =
-    | { props: CollectionPageProps }
-    | { notFound: true }
-    | { redirect: { destination: string; statusCode: 301 } }
+    { props: CollectionPageProps } | { notFound: true } | { redirect: { destination: string; statusCode: 301 } }
 
 interface LoadCollectionPageOptions {
     /** The route param: the bare id or `{id}-{slug}` */

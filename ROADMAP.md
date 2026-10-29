@@ -25,16 +25,15 @@ Target definition: *a field game for curious people — an ever-incomplete map o
 ## Phase 2 — the ongoing game
 
 - **Exploration per location.** The undiscovered places and the pioneer bonus are live (1.18.0); still missing: the explored share of a region or district (places against the undiscovered ones), "N places wait to be discovered" there, and its top explorers. Spec: feature 25, step 5.
-- **Regional territory / district champions.** Daily score per district (places ×3 + photos ×1 + edits ×2), champion badge, notification on being overtaken. Spec: features 04, 13.
-- **Place quality score and curator rank.** Quality tiers on place cards, passive XP for authors of featured places, curator rank by average quality. Spec: feature 05.
-- **Freshness badges with decay.** Stub / Draft / Complete / Verified / Exemplary, degrading without updates; "your place dropped a tier" notification and a "needs attention" list. Spec: feature 15.
+- **Regional leaderboards and champions.** Rankings per location on the score of feature 25 step 5 (all time / this year), the #1 of a locality or region is its champion (a badge, no passive XP), notification on being overtaken. Spec: feature 13.
+- **Place quality tiers with decay, curator rank.** Stub / Draft / Complete / Verified / Exemplary on place cards, degrading without updates; a one-time bonus to those who brought a place up a tier, curator rank by the average tier; "your place dropped a tier" notification and a "needs attention" list. Spec: feature 15.
 - **Seasonal events and community goals.** Themed 1–4 week events by category with tiered badges and a shared progress bar. Seasonal achievement windows already exist; events, banner and lifecycle do not. Spec: feature 06.
 - **Follow system and personal feed.** Follow users, "Following / Global" toggle on the feed, new-follower notification, follower counts. Spec: feature 12.
 
 ## Phase 3 — only after Phases 1–2 are live
 
 - **Social kudos** — peer endorsements ("Accurate mapper", "Local expert"), one per type per recipient per month. Spec: feature 07.
-- **Photo challenges and community albums** with voting. Spec: feature 14.
+- **Photo contests and community albums** with voting. Spec: feature 14.
 - **Streak freeze** — consumable that protects a streak for one missed day.
 
 ## Map as a tool

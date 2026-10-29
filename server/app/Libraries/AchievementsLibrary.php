@@ -17,7 +17,7 @@ class AchievementsLibrary
         'cover'   => ['photos_uploaded'],
         'rating'  => ['ratings_given'],
         'comment' => ['comments_written'],
-        // A check-in (features/25, step 1): the visit metrics only, not every achievement there is
+        // A check-in: the visit metrics only, not every achievement there is
         'visit'   => ['places_visited', 'visits_total', 'places_revisited', 'winter_visits', 'first_visit_of_year'],
         // A linked photo is not an uploaded one: it moves only the experience and the days
         'photo_link' => [],
@@ -330,7 +330,7 @@ class AchievementsLibrary
             }
 
             case 'spots_opened': {
-                // White spots: places created from an OSM candidate (features/25, step 4); no period filter
+                // White spots: places created from an OSM candidate; no period filter
                 return (new \App\Models\OsmCandidatesModel())->spotsOpened($userId);
             }
 
@@ -349,7 +349,7 @@ class AchievementsLibrary
                 return (int) ($builder->get()->getRow()->cnt ?? 0);
             }
 
-            // Visits are a log (features/25, step 1): the distinct places, all the check-ins,
+            // Visits are a log: the distinct places, all the check-ins,
             // the places seen in 2+ calendar years, the winter check-ins, the check-ins that
             // opened a place's year. The season window applies to the visit day.
             case 'places_visited':

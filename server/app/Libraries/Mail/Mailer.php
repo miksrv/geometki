@@ -68,8 +68,10 @@ class Mailer
      * again is pointless. Only the reply to RCPT TO counts (`to: …` lines of the
      * dialogue), and only the codes about the recipient address: 5.1.1 (no such
      * user), 5.1.2 (no such domain), 5.1.3 (bad address), 5.1.6 (moved), 5.1.10
-     * (domain accepts no mail). Sender errors (5.1.7, 5.1.8 at MAIL FROM) and
-     * policy or spam rejections (5.7.x) are not about the address.
+     * (domain accepts no mail), and Postfix's rejections of an address that cannot
+     * exist (no domain zone, a domain that does not resolve). Sender errors (5.1.7,
+     * 5.1.8 at MAIL FROM) and other policy or spam rejections (5.7.x) are not about
+     * the address.
      */
     public static function isPermanent(string $dialogue): bool
     {
@@ -87,6 +89,12 @@ class Mailer
             // Servers without enhanced codes, and those that put an unknown mailbox under a
             // policy code (Yandex: "550 5.7.1 No such user!")
             if (preg_match('/^55[03][ -](?!5\.(?!7\.))/', $reply) && preg_match('/no such user|user unknown|mailbox (does not exist|not found|unavailable)|recipient (does not exist|not found|unknown)/i', $reply)) {
+                return true;
+            }
+
+            // Postfix on an address that cannot exist: a domain with no zone (`x@mail`, 504 5.5.2)
+            // or one that does not resolve (`x@yanbex.ru`, 554 5.7.1)
+            if (preg_match('/^5\d\d[ -]/', $reply) && preg_match('/recipient address rejected: (need fully-qualified address|invalid domain)/i', $reply)) {
                 return true;
             }
         }
