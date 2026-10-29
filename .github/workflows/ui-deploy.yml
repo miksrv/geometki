@@ -97,9 +97,9 @@ jobs:
       - name: Send files
         run: |
           # Everything but .next/cache: the optimized images there do not depend on the build, and a
-          # wiped cache makes every cover a slow miss after a release (LCP). Images not refreshed for
+          # wiped cache makes every cover a slow miss after a release (LCP). Images nobody requested for
           # a month go, so the folder does not grow forever
-          ssh vps "cd /var/www/geometki.com && mkdir -p .next && find .next -mindepth 1 -maxdepth 1 ! -name cache -exec rm -rf {} + && (find .next/cache/images -type f -mtime +30 -delete 2>/dev/null || true)"
+          ssh vps "cd /var/www/geometki.com && mkdir -p .next && find .next -mindepth 1 -maxdepth 1 ! -name cache -exec rm -rf {} + && (find .next/cache/images -type f -atime +30 -delete 2>/dev/null || true)"
           rsync -avz -e ssh client/.next/standalone/ vps:/var/www/geometki.com
           rsync -avz -e ssh client/.next/static vps:/var/www/geometki.com/.next
           rsync -avz -e ssh client/public vps:/var/www/geometki.com
