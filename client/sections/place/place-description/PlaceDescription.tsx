@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react'
-import Markdown from 'react-markdown'
 import { Button, cn, Icon } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
@@ -25,15 +24,12 @@ const LIKELY_LONG_LENGTH = 1200
 // after hydration only fills it or leaves it empty, and nothing below moves
 const MAYBE_LONG_LENGTH = 400
 
-// The page has its own h2 sections: headings inside the text are one level below them
-const markdownComponents = {
-    h1: ({ children }: { children?: React.ReactNode }) => <h3>{children}</h3>,
-    h2: ({ children }: { children?: React.ReactNode }) => <h3>{children}</h3>
-}
-
 interface PlaceDescriptionProps {
     placeId?: string
+    /** The markdown source: its length tells a long text before the measurement */
     content?: string
+    /** The text as HTML, rendered from `content` on the server (utils/markdown.server.tsx) */
+    contentHtml?: string | null
     /** The locale of `content`: another one than the interface locale when the place is not translated */
     locale?: ApiType.Locale
 }
@@ -43,7 +39,7 @@ interface PlaceDescriptionProps {
  * reading typography with a lead, a long text clamped with a fade. The text is edited in the place form only
  * ("⋯ → Редактировать"); a place without a text links there.
  */
-export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, content, locale }) => {
+export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, content, contentHtml, locale }) => {
     const dispatch = useAppDispatch()
     const { t, i18n } = useTranslation()
 
@@ -86,7 +82,7 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
         if (fits) {
             setClamped(false)
         }
-    }, [content])
+    }, [contentHtml])
 
     return (
         // The text is the main thing of the page: no visible heading, it starts right under the hero
@@ -107,14 +103,13 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
                 </div>
             )}
 
-            {content ? (
+            {contentHtml ? (
                 <>
                     <div
                         ref={contentRef}
                         className={cn(styles.content, clamped && styles.clamped)}
-                    >
-                        <Markdown components={markdownComponents}>{content}</Markdown>
-                    </div>
+                        dangerouslySetInnerHTML={{ __html: contentHtml }}
+                    />
                     {overflows && (
                         <Button
                             unstyled={true}

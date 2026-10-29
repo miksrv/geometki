@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import dynamic from 'next/dynamic'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 
-import { CommentForm } from './CommentForm'
 import { CommentListItem } from './CommentListItem'
 
 import styles from './styles.module.sass'
+
+// Signed-in users only: the cached page of a guest does not load the form and its form library
+const CommentForm = dynamic(() => import('./CommentForm').then((m) => ({ default: m.CommentForm })))
 
 interface CommentListProps {
     placeId?: string

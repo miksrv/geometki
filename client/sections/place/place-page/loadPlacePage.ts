@@ -8,6 +8,7 @@ import type { RelatedPlacesLocation } from '@/sections/place'
 import { RELATED_PLACES_COUNT } from '@/sections/place/place-explore'
 import { buildPlaceUrl, encodeQueryData, parsePlaceId } from '@/utils/helpers'
 import { dropFromHydration } from '@/utils/hydration'
+import { renderMarkdown } from '@/utils/markdown.server'
 import { loadPageTranslations } from '@/utils/translations.server'
 
 import type { PlacePageProps } from './PlacePage'
@@ -156,6 +157,7 @@ export const loadPlacePage = async (
     return {
         props: {
             ...translations,
+            contentHtml: renderMarkdown(placeData?.content),
             nearPlaces: nearPlaces?.items ?? null,
             photoList: photosData?.items,
             place: placeData,

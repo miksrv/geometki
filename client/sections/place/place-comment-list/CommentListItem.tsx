@@ -1,5 +1,4 @@
-import React from 'react'
-import Markdown from 'react-markdown'
+import React, { useEffect, useState } from 'react'
 import { TFunction } from 'i18next'
 import { Button, cn } from 'simple-react-ui-kit'
 
@@ -12,6 +11,33 @@ import useClientOnly from '@/hooks/useClientOnly'
 import { formatDate, timeAgo } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
+
+type MarkdownComponent = typeof import('react-markdown').default
+
+/**
+ * A comment's text: as typed (line breaks kept) in the server HTML and until the markdown parser
+ * has loaded after the page, then as markdown. The parser is not part of the page's first load:
+ * the comments are far below the picture and the text
+ */
+const CommentText: React.FC<{ content: string }> = ({ content }) => {
+    const [Markdown, setMarkdown] = useState<MarkdownComponent>()
+
+    useEffect(() => {
+        let active = true
+
+        void import('react-markdown').then((module) => {
+            if (active) {
+                setMarkdown(() => module.default)
+            }
+        })
+
+        return () => {
+            active = false
+        }
+    }, [])
+
+    return Markdown ? <Markdown>{content}</Markdown> : <p className={styles.plainText}>{content}</p>
+}
 
 interface CommentListItemProps {
     t: TFunction
@@ -54,7 +80,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
                             {comment.author.name}
                         </Link>
                     </div>
-                    <Markdown>{comment.content}</Markdown>
+                    <CommentText content={comment.content} />
                     <div
                         className={styles.info}
                         suppressHydrationWarning={true}

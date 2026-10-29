@@ -67,6 +67,8 @@ const PhotoUploader = dynamic(
 export interface PlacePageProps {
     ratingCount: number
     place?: ApiModel.Place
+    /** The place's text as HTML, made from its markdown on the server */
+    contentHtml?: string | null
     photoList?: ApiModel.Photo[]
     nearPlaces?: ApiModel.PlaceListItem[] | null
     /** "Ещё {category}: {region}" — the same category in the place's region (null without a region) */
@@ -82,6 +84,7 @@ export interface PlacePageProps {
 const PlacePageContent: React.FC<PlacePageProps> = ({
     ratingCount,
     place: cachedPlace,
+    contentHtml,
     photoList,
     nearPlaces,
     relatedPlaces,
@@ -449,6 +452,7 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                             <PlaceDescription
                                 placeId={place?.id}
                                 content={place?.content}
+                                contentHtml={contentHtml}
                                 locale={place?.locale}
                             />
                         </div>

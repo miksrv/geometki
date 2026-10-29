@@ -2,6 +2,11 @@
     "name": "geometki",
     "version": "1.18.1",
     "private": true,
+    "sideEffects": [
+        "*.css",
+        "*.sass",
+        "*.scss"
+    ],
     "engines": {
         "node": ">=20.11.0"
     },

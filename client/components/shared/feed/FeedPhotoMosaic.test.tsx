@@ -35,15 +35,17 @@ jest.mock('next/image', () => {
 
 jest.mock('@/config/env', () => ({ IMG_HOST: 'https://img.test/' }))
 
-jest.mock('@/components/shared/photo-lightbox', () => ({
+// The lightbox is loaded lazily on the first tap
+jest.mock('next/dynamic', () => () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    PhotoLightbox: ({ showLightbox, photoIndex, photos }: any) =>
+    const PhotoLightbox = ({ showLightbox, photoIndex, photos }: any) =>
         showLightbox ? (
             <div data-testid={'lightbox'}>
                 {photoIndex}/{photos.length}
             </div>
         ) : null
-}))
+    return PhotoLightbox
+})
 
 const photos: ApiModel.Photo[] = Array.from({ length: 8 }, (_, index) => ({
     full: `p${index}.jpg`,

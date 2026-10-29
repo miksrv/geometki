@@ -506,7 +506,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
                             {mapLayer === MapLayersEnum.OSM && (
                                 <ReactLeaflet.TileLayer
                                     attribution={'Open Street Map'}
-                                    url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                                    // One host, as OSM asks: the a/b/c subdomains cost a phone two more connections
+                                    url='https://tile.openstreetmap.org/{z}/{x}/{y}.png'
                                 />
                             )}
                             {mapLayer === MapLayersEnum.GOOGLE_MAP && (

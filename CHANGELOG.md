@@ -4,6 +4,7 @@
 
 ### Patch Changes
 
+- Optimized place pages, listings and the map: they open faster on phones
 - Search: suggestions no longer fail when the address search is unavailable
 
 ## 1.18.0

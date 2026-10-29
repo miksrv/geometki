@@ -1,16 +1,21 @@
 import React, { useState } from 'react'
 import { cn } from 'simple-react-ui-kit'
 
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
-import { PhotoLightbox } from '@/components/shared/photo-lightbox'
 import { isAbsoluteUrl, resolveImageUrl } from '@/components/shared/photo-lightbox/utils'
 
 import type { FeedDensity } from './FeedStory'
 
 import styles from './styles.module.sass'
+
+const PhotoLightbox = dynamic(
+    () => import('@/components/shared/photo-lightbox/PhotoLightbox').then((m) => ({ default: m.PhotoLightbox })),
+    { ssr: false }
+)
 
 export interface FeedPhotoMosaicProps {
     photos: ApiModel.Photo[]
@@ -81,12 +86,15 @@ export const FeedPhotoMosaic: React.FC<FeedPhotoMosaicProps> = ({ photos, total,
                 })}
             </div>
 
-            <PhotoLightbox
-                photos={photos}
-                photoIndex={photoIndex}
-                showLightbox={showLightbox}
-                onCloseLightBox={() => setShowLightbox(false)}
-            />
+            {/* Loaded on the first tap: the lightbox is not part of the feed's first load */}
+            {showLightbox && (
+                <PhotoLightbox
+                    photos={photos}
+                    photoIndex={photoIndex}
+                    showLightbox={true}
+                    onCloseLightBox={() => setShowLightbox(false)}
+                />
+            )}
         </>
     )
 }
