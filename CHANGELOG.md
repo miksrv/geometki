@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.18.2
+
+### Patch Changes
+
+- Optimized page and image delivery: photos and pages load faster, no broken icons after a release
+
 ## 1.18.1
 
 ### Patch Changes

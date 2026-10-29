@@ -4,11 +4,14 @@ module.exports = {
             args: 'start',
             autorestart: true,
             env: {
+                // Fewer glibc malloc arenas: the image optimizer (sharp) otherwise bloats RSS
+                // far beyond the JS heap on a 1 CPU VPS
+                MALLOC_ARENA_MAX: '2',
                 NODE_ENV: 'production',
                 PORT: 3005
             },
             instances: 1,
-            max_memory_restart: '1G',
+            max_memory_restart: '800M',
             name: 'geometki.com',
             script: 'server.js',
             watch: false
