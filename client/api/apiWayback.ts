@@ -51,7 +51,7 @@ export const collectLocalChanges = async (
     const indexById = new Map(releases.map((release, index) => [release.id, index]))
     const changes: WaybackRelease[] = []
 
-    for (let index = 0; index < releases.length && !isCancelled?.(); ) {
+    for (let index = 0; index < releases.length && !isCancelled?.();) {
         const tilemap = await getTilemap(releases[index].id)
 
         if (!tilemap.data?.[0] || isCancelled?.()) {

@@ -16,9 +16,7 @@ import type { PlacePageProps } from './PlacePage'
 const NEAR_PLACES_COUNT = 10
 
 export type PlacePageResult =
-    | { props: PlacePageProps }
-    | { notFound: true }
-    | { redirect: { destination: string; statusCode: 301 } }
+    { props: PlacePageProps } | { notFound: true } | { redirect: { destination: string; statusCode: 301 } }
 
 interface LoadPlacePageOptions {
     /** The route param: the bare id or `{id}-{slug}` */

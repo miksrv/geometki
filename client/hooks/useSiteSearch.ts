@@ -206,15 +206,13 @@ const useSiteSearch = (open: boolean) => {
                         key: 'all',
                         label: t('search-all', 'Искать «{{query}}»', { query: text })
                     },
-                    ...coordinates.map(
-                        ({ lat, lon }): SiteSearchItem => ({
-                            caption: t('search-point-caption', 'Точка на карте'),
-                            href: mapHref(lat, lon, 14),
-                            icon: { name: 'PinDrop' },
-                            key: `point:${lat},${lon}`,
-                            label: `${lat}, ${lon}`
-                        })
-                    )
+                    ...coordinates.map(({ lat, lon }): SiteSearchItem => ({
+                        caption: t('search-point-caption', 'Точка на карте'),
+                        href: mapHref(lat, lon, 14),
+                        icon: { name: 'PinDrop' },
+                        key: `point:${lat},${lon}`,
+                        label: `${lat}, ${lon}`
+                    }))
                 ],
                 key: 'query'
             },
