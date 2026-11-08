@@ -157,7 +157,9 @@
     background-image: url('/images/no-image.svg')
     background-position: center
     background-repeat: no-repeat
-    background-size: 60%
+    // The placeholder is a square with its own tinted background: cover fills the frame with it,
+    // a smaller size left a tinted square in the middle of a wider cover
+    background-size: cover
 
 .tileCoverLink
     position: absolute
