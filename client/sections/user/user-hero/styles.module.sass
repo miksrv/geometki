@@ -1,0 +1,16 @@
+@use '../../../styles/variables' as variables
+
+// The breadcrumbs on the page background, then the profile card (UserProfileCard)
+.hero
+    min-width: 0
+    margin-top: var(--space-4)
+
+    // Phones: the app bar shows the section
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        margin-top: 0
+
+        nav:first-child
+            display: none
+
+.breadcrumbs
+    margin-bottom: var(--space-3)
