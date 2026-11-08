@@ -178,7 +178,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, variant = 'tile', rank
                     unit={t('user-card-photos', { count: user.statistic?.photo ?? 0 })}
                 />
                 <UserCardStat
-                    href={`${profileHref}/visited`}
+                    href={`${profileHref}/places?show=visited`}
                     icon={'CheckCircle'}
                     value={user.statistic?.visited ?? 0}
                     unit={t('user-card-visited', { count: user.statistic?.visited ?? 0 })}
