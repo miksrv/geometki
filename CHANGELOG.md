@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.18.3
+
+Protection from scrapers that overloaded the site.
+
+### Patch Changes
+
+- Links to a list with several categories now open the list of the first one
+- Optimized page delivery under heavy bot traffic
+- Places and collections without a photo: the placeholder now fills the whole cover
+
 ## 1.18.2
 
 ### Patch Changes
