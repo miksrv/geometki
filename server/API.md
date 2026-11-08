@@ -1163,7 +1163,7 @@ List users, by default ordered by recent activity.
 
 Get full profile for a single user, including gamification statistics.
 
-**Auth required:** No (own profile includes `settings` field when viewing yourself)
+**Auth required:** No (the own profile adds the private fields `email`, `locale`, `authType` and `settings`)
 
 **Path parameters:**
 
@@ -1206,7 +1206,7 @@ Get full profile for a single user, including gamification statistics.
 }
 ```
 
-`visited` — distinct places the user has visited, `visits` — all their check-ins (a place can be visited many times; see `GET /visits`); `GET /users` lists carry `visited` only. `settings` (the keys of `PATCH /users/:id`) is only included on the user's own profile.
+`visited` — distinct places the user has visited, `visits` — all their check-ins (a place can be visited many times; see `GET /visits`); `GET /users` lists carry `visited` only. `email`, `locale`, `authType` and `settings` (the keys of `PATCH /users/:id`) are only included on the user's own profile; anyone else gets the public fields alone.
 
 **Error responses:**
 
