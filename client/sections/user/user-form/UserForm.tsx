@@ -244,7 +244,8 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
                 <p className={styles.hint}>{t('push-column-hint')}</p>
             </Container>
 
-            {!loading && !!values?.authType && (
+            {/* Not hidden while loading: the side navigation links here, and the page must not jump on a save */}
+            {!!values?.authType && (
                 <Container
                     id={'security'}
                     className={styles.section}

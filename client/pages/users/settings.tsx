@@ -51,6 +51,17 @@ const SettingsUserPage: NextPage<object> = () => {
 
     const serverError = useMemo(() => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined), [error])
 
+    // Scrolls to a section without a history entry: the unsaved-changes guard reads Back from a
+    // `#section` entry as leaving the page
+    const handleSectionClick = (section: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+        const target = document.getElementById(section)
+
+        if (target) {
+            event.preventDefault()
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+    }
+
     // Leaving by Cancel goes through the same unsaved-changes guard as any other navigation
     const handleCancel = () => {
         router.back()
@@ -122,7 +133,12 @@ const SettingsUserPage: NextPage<object> = () => {
                     <ul>
                         {USER_FORM_SECTIONS.map((section) => (
                             <li key={section}>
-                                <a href={`#${section}`}>{t(`settings-section-${section}`)}</a>
+                                <a
+                                    href={`#${section}`}
+                                    onClick={handleSectionClick(section)}
+                                >
+                                    {t(`settings-section-${section}`)}
+                                </a>
                             </li>
                         ))}
                     </ul>
