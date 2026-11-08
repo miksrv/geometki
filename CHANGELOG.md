@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.19.0
+
+A new profile page and settings.
+
+### Minor Changes
+
+- Profile: a new header with the level, reputation and counts; change your photo right there
+- Profile: a map of the places a person added, visited and saved, in three colours
+- Profile: three sections — Overview, Places and Achievements — right in the profile card
+- Achievements: one card per achievement with all its steps, the progress to the next one and its XP
+- Home: your card shows this week's activity and your streak, the photo opens your profile
+- Settings: sections for profile, notifications and sign-in
+- Privacy: a user's email is no longer sent with their public profile
+
 ## 1.18.3
 
 Protection from scrapers that overloaded the site.
