@@ -1,5 +1,5 @@
 import { API, ApiModel, ApiType } from '@/api'
-import { setLocale } from '@/app/applicationSlice'
+import { setLocale, setTimeZone } from '@/app/applicationSlice'
 import type { AppStore } from '@/app/store'
 import { HOME_COLLECTIONS_COUNT } from '@/sections/home'
 import { dropFromHydration } from '@/utils/hydration'
@@ -19,6 +19,8 @@ interface LoadHomePageOptions {
     locale?: string
     /** The visitor's point (a live render), for the distances on the place cards */
     visitorLocation?: ApiType.Coordinates
+    /** The visitor's zone (a live render): the days of the signed-in card's week and run of days */
+    timeZone?: string
 }
 
 /**
@@ -28,12 +30,13 @@ interface LoadHomePageOptions {
  */
 export const loadHomePage = async (
     store: AppStore,
-    { locale: contextLocale, visitorLocation }: LoadHomePageOptions
+    { locale: contextLocale, visitorLocation, timeZone }: LoadHomePageOptions
 ): Promise<{ props: HomePageProps; failed: boolean }> => {
     const locale = (contextLocale ?? 'en') as ApiType.Locale
     const translations = await loadPageTranslations()
 
     store.dispatch(setLocale(locale))
+    store.dispatch(setTimeZone(timeZone))
 
     const signedIn = !!store.getState().auth.isAuth
 
