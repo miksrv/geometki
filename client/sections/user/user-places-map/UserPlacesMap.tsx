@@ -38,7 +38,12 @@ export const mergeUserPlaces = (
 
 interface UserPlacesMapProps {
     userId: string
+    /** The profile's counts: a set the person has nothing in is not asked for at all */
+    statistic?: ApiModel.UserStatistic
 }
+
+/** A set is asked for unless the profile's count says it is empty (an unknown count is asked) */
+const hasAny = (count?: number) => count === undefined || count > 0
 
 /**
  * The places of a person on one map, the counterpart of the place sets in the "Места" tab:
@@ -46,17 +51,24 @@ interface UserPlacesMapProps {
  * (`PlaceMark.tone`) named in a legend under the map, and chips to show one set. A place in
  * several sets takes the first tone of `TONES`. With one set only there is nothing to tell
  * apart: plain markers, no chips, no legend. No heading: the map speaks for itself, the
- * "Список мест" button over its corner leads to the lists. Loaded in the browser (the cached profile carries
- * no marks); renders nothing for a person without places.
+ * "Список мест" button over its corner leads to the list of the set shown. Loaded in the browser
+ * (the cached profile carries no marks); a set the profile's counts say is empty is not asked
+ * for, and a person without places gets nothing — not even a placeholder.
  */
-export const UserPlacesMap: React.FC<UserPlacesMapProps> = ({ userId }) => {
+export const UserPlacesMap: React.FC<UserPlacesMapProps> = ({ userId, statistic }) => {
     const { t } = useTranslation()
 
     const [filter, setFilter] = useState<Filter>('all')
 
-    const added = API.usePoiGetListQuery({ author: userId })
-    const visited = API.usePoiGetListQuery({ visited: userId })
-    const bookmark = API.usePoiGetListQuery({ bookmarks: userId })
+    const wanted: Record<ApiModel.PlaceMarkTone, boolean> = {
+        added: hasAny(statistic?.place),
+        bookmark: hasAny(statistic?.bookmarks),
+        visited: hasAny(statistic?.visited)
+    }
+
+    const added = API.usePoiGetListQuery({ author: userId }, { skip: !wanted.added })
+    const visited = API.usePoiGetListQuery({ visited: userId }, { skip: !wanted.visited })
+    const bookmark = API.usePoiGetListQuery({ bookmarks: userId }, { skip: !wanted.bookmark })
 
     const sets: Record<ApiModel.PlaceMarkTone, ApiModel.PlaceMark[] | undefined> = {
         added: added.data?.items,
@@ -80,9 +92,13 @@ export const UserPlacesMap: React.FC<UserPlacesMapProps> = ({ userId }) => {
 
     const loading = added.isLoading || visited.isLoading || bookmark.isLoading
 
-    if (!loading && !places.length) {
+    if (!TONES.some((tone) => wanted[tone]) || (!loading && !places.length)) {
         return null
     }
+
+    // The list of the set on the map: the chosen one, or the first that has places
+    const listTone = filter !== 'all' ? filter : (filled[0] ?? 'added')
+    const listHref = `/users/${userId}/places${listTone === 'added' ? '' : `?show=${TONE_SHOW[listTone]}`}`
 
     return (
         <section aria-label={t('user-map-title')}>
@@ -121,7 +137,7 @@ export const UserPlacesMap: React.FC<UserPlacesMapProps> = ({ userId }) => {
                     size={'small'}
                     mode={'secondary'}
                     label={t('user-map-list')}
-                    link={`/users/${userId}/places`}
+                    link={listHref}
                 />
             </div>
 

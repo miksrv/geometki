@@ -207,6 +207,13 @@ describe('UserProfileCard', () => {
         expect(sections.querySelector('[aria-current]')).toBeNull()
     })
 
+    it('shows no counters, not zeros, when the profile came without its statistic', () => {
+        render(<UserProfileCard user={{ ...user, statistic: undefined, reputation: undefined }} />)
+
+        expect(screen.queryByRole('navigation', { name: /user-hero-counters/ })).not.toBeInTheDocument()
+        expect(screen.queryByLabelText(/^reputation:/)).not.toBeInTheDocument()
+    })
+
     it('falls back to the default avatar and leaves out what is unknown', () => {
         render(<UserProfileCard user={{ id: 'u2', name: 'Лена' } as ApiModel.User} />)
 

@@ -44,6 +44,7 @@
     position: absolute
     top: var(--space-3)
     right: var(--space-3)
-    // Over the Leaflet panes and controls
-    z-index: 1000
+    // The level of the Leaflet controls (globals.sass caps them at 400): over the map, under the
+    // fixed app bar and bottom navigation (450) and the overlay (500)
+    z-index: 400
     box-shadow: var(--shadow-md)

@@ -5,7 +5,7 @@ import Image from 'next/image'
 
 import { IMG_HOST } from '@/config/env'
 import useClientOnly from '@/hooks/useClientOnly'
-import { minutesAgo } from '@/utils/helpers'
+import { isOnlineAt } from '@/utils/helpers'
 
 import { UserAvatarProps } from './types'
 import { getDimension, getInitials } from './utils'
@@ -47,7 +47,7 @@ export const AvatarImage: React.FC<UserAvatarProps> = ({ user, size, hideOnlineI
                 className={styles.avatarBorder}
             />
 
-            {isClient && !hideOnlineIcon && user?.activity?.date && minutesAgo(user.activity.date) <= 15 && (
+            {isClient && !hideOnlineIcon && isOnlineAt(user?.activity?.date) && (
                 <div className={cn(styles.online, size === 'large' && styles.onlineLarge)} />
             )}
         </>

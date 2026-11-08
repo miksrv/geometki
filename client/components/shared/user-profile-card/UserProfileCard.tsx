@@ -9,15 +9,12 @@ import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
 import useClientOnly from '@/hooks/useClientOnly'
 import defaultAvatar from '@/public/images/no-avatar.png'
-import { formatThousands, makeActiveLink, minutesAgo, removeProtocolFromUrl, timeAgo } from '@/utils/helpers'
+import { formatThousands, isOnlineAt, makeActiveLink, removeProtocolFromUrl, timeAgo } from '@/utils/helpers'
 import { levelColor, levelProgress, levelTier } from '@/utils/levels'
 
 import { LevelBadge } from '../level-badge/LevelBadge'
 
 import styles from './styles.module.sass'
-
-/** A user counts as online for this long after their last request, as on `UserCard` */
-const ONLINE_MINUTES = 15
 
 export type UserProfileCardVariant = 'home' | 'profile'
 
@@ -76,7 +73,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({
     // The year as the API writes it ("2014-11-12 11:36:18"), not shifted by the reader's time zone
     const since = user.created?.date ? Number(user.created.date.slice(0, 4)) || undefined : undefined
     const lastSeen = user.activity?.date ?? user.updated?.date
-    const isOnline = isClient && !!user.activity?.date && minutesAgo(user.activity.date) <= ONLINE_MINUTES
+    const isOnline = isClient && isOnlineAt(user.activity?.date)
     const reputation = user.reputation ?? 0
     const avatar = avatarSrc || user.avatar
     const size = isHome ? 96 : 160
@@ -193,35 +190,42 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({
                 {actions && <div className={styles.actions}>{actions}</div>}
             </div>
 
-            <nav
-                className={styles.counters}
-                aria-label={t('user-hero-counters', { name: user.name })}
-            >
-                {counters.map(({ key, count, link }) => (
-                    <Link
-                        key={key}
-                        href={link}
-                        className={styles.counter}
-                    >
-                        <b>{formatThousands(count)}</b>
-                        <span>{t(`user-hero-${key}`, { count })}</span>
-                    </Link>
-                ))}
+            {/* No statistic (the profile did not load): no counters, rather than zeros that lie */}
+            {user.statistic && (
+                <nav
+                    className={styles.counters}
+                    aria-label={t('user-hero-counters', { name: user.name })}
+                >
+                    {counters.map(({ key, count, link }) => (
+                        <Link
+                            key={key}
+                            href={link}
+                            className={styles.counter}
+                        >
+                            <b>{formatThousands(count)}</b>
+                            <span>{t(`user-hero-${key}`, { count })}</span>
+                        </Link>
+                    ))}
 
-                {/* Not a list to open: what it is made of is in the tooltip (hover, focus) */}
-                <Tooltip content={t('reputation-hint')}>
-                    <div
-                        className={cn(styles.counter, styles.reputation)}
-                        tabIndex={0}
-                        aria-label={`${t('reputation')}: ${reputation}`}
-                    >
-                        <b className={reputation > 0 ? styles.positive : reputation < 0 ? styles.negative : undefined}>
-                            {reputation > 0 ? `+${formatThousands(reputation)}` : formatThousands(reputation)}
-                        </b>
-                        <span>{t('user-hero-reputation')}</span>
-                    </div>
-                </Tooltip>
-            </nav>
+                    {/* Not a list to open: what it is made of is in the tooltip (hover, focus) */}
+                    <Tooltip content={t('reputation-hint')}>
+                        <div
+                            className={cn(styles.counter, styles.reputation)}
+                            tabIndex={0}
+                            aria-label={`${t('reputation')}: ${reputation}`}
+                        >
+                            <b
+                                className={
+                                    reputation > 0 ? styles.positive : reputation < 0 ? styles.negative : undefined
+                                }
+                            >
+                                {reputation > 0 ? `+${formatThousands(reputation)}` : formatThousands(reputation)}
+                            </b>
+                            <span>{t('user-hero-reputation')}</span>
+                        </div>
+                    </Tooltip>
+                </nav>
+            )}
 
             {/* The pages of the profile, attached to the foot of the card: the tabs on the profile,
                 quick links into one's own profile on the home page */}

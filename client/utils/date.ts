@@ -17,6 +17,12 @@ export const timeAgo = (date?: string | Date, withoutSuffix?: boolean, locale?: 
 
 export const minutesAgo = (date?: string | Date): number => (date ? dayjs().diff(dayjs.utc(date), 'minute') : 99999999)
 
+/** A user counts as online for this long after their last request */
+export const ONLINE_MINUTES = 15
+
+/** Online by their last request (`activity`): the green mark of the avatar, the cards and the profile */
+export const isOnlineAt = (activity?: string | Date): boolean => !!activity && minutesAgo(activity) <= ONLINE_MINUTES
+
 export const formatDateUTC = (date?: string | Date): string =>
     date ? dayjs(date).format('YYYY-MM-DDTHH:mm:ss[Z]') : ''
 

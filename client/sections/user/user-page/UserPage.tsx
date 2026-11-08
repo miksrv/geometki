@@ -111,7 +111,10 @@ export const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photos
                 userId={id}
                 beforeFeed={
                     <>
-                        <UserPlacesMap userId={id} />
+                        <UserPlacesMap
+                            userId={id}
+                            statistic={user?.statistic}
+                        />
                         {!!photosList?.length && (
                             <PhotoGallery
                                 id={'photos'}

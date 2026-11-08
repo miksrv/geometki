@@ -639,8 +639,12 @@ export const API = createApi({
             query: ({ id, ...params }) => `poi/${id}${encodeQueryData(params)}`
         }),
         poiGetList: builder.query<ApiType.POI.PlacesListResponse, Maybe<ApiType.POI.ListRequest>>({
-            // The visitor's own visited places (the green cells of the hex layer) follow their check-ins
-            providesTags: (res, err, arg) => (arg?.visited ? [{ type: 'Visits' }] : []),
+            // The visitor's own visited places (the green cells of the hex layer) follow their check-ins,
+            // a person's bookmarks (their map on the profile) follow the bookmark toggles
+            providesTags: (res, err, arg) => [
+                ...(arg?.visited ? [{ type: 'Visits' as const }] : []),
+                ...(arg?.bookmarks ? [{ id: 'LIST', type: 'Bookmarks' as const }] : [])
+            ],
             query: (params) => `poi${encodeQueryData(params)}`
         }),
         poiGetPhotoList: builder.query<

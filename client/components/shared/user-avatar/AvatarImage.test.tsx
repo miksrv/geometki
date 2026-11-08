@@ -38,9 +38,12 @@ jest.mock('@/config/env', () => ({
     IMG_HOST: 'https://img.example.com'
 }))
 
-jest.mock('@/utils/helpers', () => ({
-    minutesAgo: jest.fn()
-}))
+// The real online rule over a mocked clock
+jest.mock('@/utils/helpers', () => {
+    const minutesAgo = jest.fn()
+
+    return { isOnlineAt: (date?: string) => !!date && minutesAgo(date) <= 15, minutesAgo }
+})
 
 const mockMinutesAgo = jest.mocked(minutesAgo)
 

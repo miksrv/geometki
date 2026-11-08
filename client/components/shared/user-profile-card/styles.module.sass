@@ -253,10 +253,20 @@
     background: var(--surface-2)
     color: var(--text-color-primary)
 
+    // The global `a:focus` (link colour, underline) is more specific than a class: a clicked
+    // tile keeps the focus
+    &:focus
+        color: var(--text-color-primary)
+        text-decoration: none
+
     &:hover
         background: var(--color-main-background)
         color: var(--color-main)
         text-decoration: none
+
+    &:focus-visible
+        outline: 2px solid var(--color-main)
+        outline-offset: 2px
 
     b
         +type.stat

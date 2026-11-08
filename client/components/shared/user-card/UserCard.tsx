@@ -10,7 +10,7 @@ import { Reputation } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
 import useClientOnly from '@/hooks/useClientOnly'
 import { getCategoryTitle, isCategoryName } from '@/utils/categories'
-import { buildPlaceUrl, formatDate, formatThousands, minutesAgo, timeAgo } from '@/utils/helpers'
+import { buildPlaceUrl, formatDate, formatThousands, isOnlineAt, timeAgo } from '@/utils/helpers'
 import { levelColor, levelProgress, levelTier } from '@/utils/levels'
 
 import { CategoryIcon } from '../category-icon'
@@ -21,9 +21,6 @@ import styles from './styles.module.sass'
 
 /** Covers in the strip of a tile: the newest places, the last one turns into "+N" */
 export const USER_CARD_PLACES = 4
-
-/** A user counts as online for this long after their last request (the avatar's green mark) */
-const ONLINE_MINUTES = 15
 
 export type UserCardVariant = 'tile' | 'row'
 
@@ -52,7 +49,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, variant = 'tile', rank
     const Heading = headingLevel === 3 ? 'h3' : 'h2'
     const profileHref = `/users/${user.id}`
     const level = user.levelData?.level
-    const isOnline = isClient && !!user.activity?.date && minutesAgo(user.activity.date) <= ONLINE_MINUTES
+    const isOnline = isClient && isOnlineAt(user.activity?.date)
 
     // Nothing before hydration: the server render carries no time, the line keeps its height in CSS
     const lastSeen = !isClient ? null : isOnline ? (
