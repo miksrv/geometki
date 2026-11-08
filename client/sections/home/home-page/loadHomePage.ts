@@ -46,7 +46,16 @@ export const loadHomePage = async (
             return undefined
         }
 
-        const { data: profile } = await store.dispatch(API.endpoints.usersGetItem.initiate(me.user.id))
+        // The calendar too: the card's line of the week comes from it (kept for the hook)
+        const [{ data: profile }] = await Promise.all([
+            store.dispatch(API.endpoints.usersGetItem.initiate(me.user.id)),
+            store.dispatch(
+                API.endpoints.feedGetCalendar.initiate({
+                    author: me.user.id,
+                    tz: store.getState().application.timeZone
+                })
+            )
+        ])
 
         // The profile's level is counted after the server re-checks it: the fresher one
         return { ...me.user, ...profile, levelData: profile?.levelData ?? me.user.levelData }

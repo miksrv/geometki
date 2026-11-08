@@ -7,6 +7,7 @@ import {
     buildCalendarWeeks,
     calendarLevel,
     calendarSummary,
+    calendarWeekActions,
     dayHeading,
     feedFilterTypes,
     flattenFeedPages,
@@ -233,5 +234,22 @@ describe('calendarSummary', () => {
             longestStreak: 0,
             total: 0
         })
+    })
+})
+
+describe('calendarWeekActions', () => {
+    it('adds up the last seven days, today included', () => {
+        const days = [
+            { count: 5, date: '2026-10-06' },
+            { count: 2, date: '2026-10-07' },
+            { count: 3, date: '2026-10-10' },
+            { count: 1, date: '2026-10-13' }
+        ]
+
+        expect(calendarWeekActions(days, '2026-10-13')).toBe(6)
+    })
+
+    it('is zero for a quiet week', () => {
+        expect(calendarWeekActions([{ count: 4, date: '2026-09-01' }], '2026-10-13')).toBe(0)
     })
 })
