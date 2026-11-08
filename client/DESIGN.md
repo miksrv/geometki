@@ -55,7 +55,7 @@ the rare text that is no role (a glyph, an input that must stay 16px on iOS).
 settings, the sign-in and error (404, 500) pages — the `h1` is `titlePage`, so the reader always knows
 the top level of a page, and a title moving between page kinds never changes its look. The
 guest home hero (and its closing band) is the one showcase on `titleDisplay`, and the greeting
-of the signed-in home (`HomeWelcome`) is the one `h1` on `titleSection`: a line of a card next
+of the signed-in home (`UserProfileCard variant="home"`) is the one `h1` on `titleSection`: a line of a card next
 to the avatar, not the name of a page. A heading on a coloured band may be 700 for contrast,
 never a different size.
 
@@ -182,15 +182,75 @@ re-implement them.
   server counts it) → `HomeCollections` (`CollectionCard`s in a
   `MediaTileGrid`; a short row ends with a dashed "make your own" tile) → the regions
   `LocationLinkList` → the feed (three stories) and people `Container`s → `HomeJoin` (the brand
-  gradient band with the sign-up button). Signed-in user: `HomeWelcome` (a card: the 96px square
-  avatar as on the profile → three lines: the greeting h1 (`titleSection`), a 13px line "since {year} · the
-  experience left to the next level", the `LevelBadge` + kit `Progress` + "experience / next"
-  → the places / photos / visits counters on the right, each a link to that list of the
-  profile, under the rest on phones; no action buttons — adding a place is in the app bar) → a
+  gradient band with the sign-up button). Signed-in user: `UserProfileCard variant="home"` (the
+  profile's card, smaller: the greeting instead of the name, the avatar the only way to the
+  profile (a ring on hover), no buttons; the facts are what moves — the week's actions and the
+  run of days from the user's calendar, never the year of sign-up) → a
   `1fr 360px` grid of the feed and a side column with `HomeUnexplored` (OSM candidates around
   the visitor's location, picker-style rows, each a link to the map there) and the people → the
   categories as a `LocationLinkList` with counts → `HomePlaces` → `HomeCollections`. Chips and
   pills here have the `--border-radius` corners of every pill on the site, never round ends.
+- **Profile** (`pages/users/[id]` and its tabs, `sections/user`): the person archetype — the
+  profile card with its three pages at its foot; every page has the same head, so nothing
+  jumps when switching.
+    - `UserHero` — the `Breadcrumbs` (desktop) on the page background, then `UserProfileCard`
+      (`variant="profile"`, section 5). The owner gets "Сменить фото" (the crop dialog,
+      `UserAvatarEditor`) and "Настройки" under the level row, `small` secondary buttons on the
+      left edge of the text; anyone else sees the same card without buttons.
+    - The pages of the profile — "Обзор", "Места", "Достижения" — are not a bar of their own:
+      they are the foot of the card (`UserProfileCard` `activeSection`), so there is no long
+      strip of three buttons. There are no pages of collections, bookmarks or visits: their old
+      addresses 301 (`next.config.js`) to the profile or to the matching set of "Места"; all
+      the photos are a sub-page (below).
+    - "Обзор" (`UserActivity`) — the place page's two columns, `1fr 320px`. The main column: the
+      `ContributionCalendar` (the year's activity) first, then the person's map (`UserPlacesMap`,
+      no heading — the map speaks for itself: the places the person added, has been to and keeps
+      in bookmarks on one `PlacesMap`, the marker frame in the colour of the relation — added
+      `--color-main`, visited `--color-green`, bookmark `--color-orange`, the first of these for a
+      place in several sets (`PlaceMark.tone`), named by a legend under the map; small `Chip`s
+      "Все N" and each non-empty set over it show one set with plain markers; with a single set
+      there are no chips, no frames and no legend; a `small` secondary "Список мест" button sits
+      over the map's free top-right corner (absolutely positioned, not a map control) and leads
+      to "Места"; loaded in the browser, hidden without places), then "Фотографии"
+      (`PhotoGallery`, eight, "Все N" to the photos sub-page when there are more) and the feed by
+      day. Collections are not on the profile. The side column (not sticky: its blocks may be
+      taller than the screen): `ContributionSummary`, "Достижения" (`UserAchievementsBlock`: the
+      best tier of each group, the newest first, "Все N") and "Вклад" (`UserContribution`:
+      ratings, reviews, edits as icon rows, hidden while all are zero). Below 1024px the side
+      column comes first.
+    - "Места" (`pages/users/[id]/places.tsx`) — `Chip` links of the sets, `?show=`:
+      "Добавленные" (default), "Посещённые" (the distinct places, the card's "посещено"),
+      "Визиты" (the timeline of check-ins — one place can have many — the owner deletes a visit
+      there), "Избранное"; the counts from the profile's statistic. Lists only (`PlacesList` +
+      `PaginationBar`): the map is on the overview. An empty set is the same `EmptyState` in all
+      four (the picture, a title and a sentence of its own): the owner reads what to do and gets
+      a button ("Добавить место" for the added ones, "Найти места" for the rest), anyone else
+      reads what will appear there. `EmptyState` falls back to "try other filters" without a
+      `description`: a page that is not a search always passes one.
+    - "Достижения" (`UserAchievements`, `sections/user/user-achievements`) — one list of low
+      rows across the content width (`AchievementRow`, a `--surface-1` box with the container
+      shadow, 8px apart), one per achievement with all its steps (`groupAchievements` in
+      `utils/achievements.ts`: an awarded higher step counts the lower ones as passed). No
+      sections and no totals: the earned ones come first (the highest step, then the newest),
+      then the ones in progress, the closest to their next step first
+      (`sortAchievementGroups`). A row: the 40px medal of the highest step passed (the first one
+      faded and grey before it) | the title (`titleBlock`) over "Исследование · Серебро ·
+      получено 12 марта 2026" or "… · Ещё не получено" | the next step's goal ("Загрузите 500
+      фотографий", one line) with "101 / 200" over a bar in that tier's colour, or a green
+      "Все ступени пройдены" | the steps as 12px tier dots, filled when passed, the tier and its
+      experience in the hint. On phones the goal goes across under the rest. The tier colours mark
+      dots and bars only: silver and gold are too light for text.
+    - All the photos (`pages/users/[id]/photos.tsx`) — a sub-page, not a tab: `PageHeader`
+      (Люди › name, the avatar, "Фотографии" with the count) and the whole `PhotoGallery`, 32 a
+      page.
+- **Settings** (`pages/users/settings.tsx`, `UserForm`): `PageHeader` (Люди › name) → a
+  `200px 1fr` grid, 960px at most: a sticky list of the sections (anchors, the app bar
+  navigation look; hidden on phones) and the form — "Профиль" (the name and the website side by
+  side, the email read only with a hint; a line links to the profile, where the photo is
+  changed), "Уведомления"
+  (the device's push, the channel × type table) and "Вход и пароль" (the password fields, or the
+  service the account signs in with), each a `Container`, then "Отмена" and "Сохранить" on the
+  right (stretched on phones).
 - **People page** (`pages/users/index.tsx`, `sections/user/users-listing`): a community, not a
   register — no table. `PageHeader` with the people count on the h1's baseline and (page 1, no
   search) the lede → `UsersFilterPanel` (a sticky `FilterPanel`: the name search, 300px, and
@@ -239,8 +299,8 @@ text on phones. The header sits on the page background: the lede is never boxed 
 The place page and the user profile use a hero instead. On the place page the
 `Breadcrumbs` sit above the cover, the h1 and the facts line under it on the page
 background, with the actions on the h1's line (`PlaceHero`, `PlaceActions`); on the profile
-the h1 and actions are in the title row attached to the bottom of the profile card
-(`UserHeader`). The h1 is `titlePage` everywhere (section 1a).
+the `Breadcrumbs` sit above the profile card and the h1 is the name inside it, the owner's
+"Настройки" on its line (`UserHero`). The h1 is `titlePage` everywhere (section 1a).
 
 Breadcrumbs appear only on nested pages, where the app bar cannot show where you are:
 
@@ -252,7 +312,8 @@ Breadcrumbs appear only on nested pages, where the app bar cannot show where you
 | Place page (above the cover, desktop only)                                                                                                                                 | Места › category                    |
 | Collection page                                                                                                                                                            | Коллекции                           |
 | Create / edit place                                                                                                                                                        | Места (› place)                     |
-| User sub-pages (places, photos, bookmarks, …), settings                                                                                                                    | Люди › name                         |
+| Profile and its tabs (above the profile card, desktop only)                                                                                                                | Люди                                |
+| Settings, all the photos of a user                                                                                                                                         | Люди › name                         |
 | Admin sub-pages                                                                                                                                                            | admin section                       |
 
 The trail starts at the section (the logo is the way home) and stops at the parent; the
@@ -416,7 +477,7 @@ Invariant order of a tile: the head (avatar with the online mark, name `titleBlo
 (`LevelBadge` 28, the tier name — every three levels share a colour and a name, `levelTier`
 in `utils/levels.ts`, `levelTier.<n>` in `common.json` — the experience within the level and a
 4px bar in the tier colour) → the strip of covers → the counts: places, photos, visited (each
-a link to that tab of the profile: a 16px icon, the semibold number and the word in its form — "186 мест", never a bare number), `Reputation` on the right.
+a link into the profile — "Места", the photos sub-page, "Места → Посещённые": a 16px icon, the semibold number and the word in its form — "186 мест", never a bare number), `Reputation` on the right.
 The strip is the person's four newest places with a cover (`places` of `GET /users?places=1`,
 one windowed query for a page): 4:3 frames 4px apart with only the outer corners rounded, the
 category icon (16px) over each, the last one "+N" over a dark veil when there are more,
@@ -427,10 +488,37 @@ On phones a tile turns into a line: avatar, name and when, the badge, the counts
 them; no covers and no progress. The time ago and the online mark come in the browser
 (`useClientOnly`): the lists are cached.
 
+### `UserProfileCard` (`components/shared/user-profile-card`)
+
+The card of one person at the top of a page: the profile (`variant="profile"`, the default) and
+the signed-in home page (`variant="home"`). A `--surface-1` card (`--container-shadow`,
+`--container-radius` like every container and the tabs bar): the square avatar | the title, one facts line and the level | the counters.
+
+| Part    | `profile`                                                                 | `home`                                       |
+| ------- | ------------------------------------------------------------------------- | -------------------------------------------- |
+| Padding | `--space-6`, the tallest card of the site                                 | `--space-5`                                  |
+| Avatar  | 160px (88 on phones)                                                      | 96px (64), a link to the profile             |
+| Title   | the name, the page h1 (`titlePage`)                                       | "С возвращением, Имя!" (`titleSection`)      |
+| Facts   | "На сайте" / "Был(а) …" (in the browser), "Участник с 2014 года", website | `facts`: the week's actions, the run of days |
+| Buttons | `actions` under the level: the owner's "Сменить фото", "Настройки"        | none: the avatar leads to the profile        |
+
+At the foot, under a rule and edge to edge: the pages of the profile — "Обзор", "Места",
+"Достижения", each a 16px icon and a 13px word, 40px high (on phones they share the width).
+On the profile the page shown (`activeSection`) is in `--color-main` with a 2px underline; on
+the home page they are quick links into one's own profile, none marked.
+
+The level row: `LevelBadge`, "15 уровень · tier", the experience within the level over a 6px bar
+in the tier colour. The counters, four equal tiles (`--surface-2`, the number in `stat`):
+places, photos and visited places — links to "Места", the photos sub-page and "Места →
+Посещённые" — and the
+reputation, signed and green or red, not a link: its kit `Tooltip` (hover, focus) tells how it
+is made. Below 1024px the counters go under the rest; on phones the avatar and the title share
+the first row and the facts, the level and the counters go across.
+
 **Avatars are round** (`UserAvatar`, `UserAvatarGroup`) everywhere a person is named next to
 something else — cards, bylines, the feed, menus; the size is `tiny` 28, `small` 20, `medium`
 36 or `large` 56 (the `UserCard` tile). The one square avatar (with the `--border-radius`
-corners) is the big one of the profile card and `HomeWelcome`: there it is the picture of the
+corners) is the big one of `UserProfileCard` (160px on the profile, 96px on the home page): there it is the picture of the
 page, not a mark in a line.
 
 ### Activity feed (`components/shared/feed`)
@@ -475,9 +563,9 @@ grouped by day with infinite scroll (`useInfiniteScroll`), `FeedPulse` in the st
 column (first on phones). Home page — a `Container` with the compact pulse and the five
 latest stories of weight 2+, next to the "Активные пользователи" container (the main column
 of the signed-in layout), as an exception to "lists never sit inside a `Container`": the
-home widgets are titled blocks. Profile (`sections/user/user-activity`) — `ContributionCalendar`
-across the page, then the same `1fr 320px` grid: the author's feed by day and
-`ContributionSummary` in the sticky column.
+home widgets are titled blocks. Profile overview (`sections/user/user-activity`) — the same
+`1fr 320px` grid: the photos, the `ContributionCalendar` and the author's feed by day, with
+`ContributionSummary` and the profile's side blocks in the sticky column.
 Place page — the collapsed "История изменений" row at the end of "О месте": compact stories without the place,
 "Показать больше" loads the next page.
 
@@ -606,8 +694,8 @@ actions, active days, the longest and the current run of days in a row (22px num
   own. One photo — `PhotoLightbox` (zoom, swipes, the author caption, the "3 / 12" counter)
   with "Все фото" and "Добавить фото" in its toolbar, back to the grid at the same photo.
   Under the dialogs, so a delete confirmation shows over it.
-- **Tabs** (`components/ui/tabs`, the user profile: activity, achievements, places,
-  bookmarks, visited, collections, photos; the filters of `/activity`): a bar on a card (`--container-shadow`,
+- **Tabs** (`components/ui/tabs`, the filters of `/activity`; the profile's pages are the foot
+  of `UserProfileCard` instead): a bar on a card (`--container-shadow`,
   4px padding) of items styled like the app bar navigation — 28px items, so the bar is 36px like a medium control,
   secondary text, `--surface-2` on hover, `--color-main` on `--color-main-background` for the
   active one. Tabs that are pages are links (`href`, `aria-current="page"`), never

@@ -42,7 +42,7 @@ Experience is counted from the log of actions (`LevelsLibrary::experience()`, `M
 ## API & Client
 
 - `current_streak`, `longest_streak` added to `GET /users/{id}` (`UserEntity`); no new endpoints.
-- `UserHeader`: flame icon with day count next to level and reputation; tooltip with current/longest streak and active multiplier.
+- `UserProfileCard` (the profile and the home page card): flame icon with day count next to the level; tooltip with current/longest streak and active multiplier.
 
 ## Streak Freeze (optional)
 

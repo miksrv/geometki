@@ -47,7 +47,7 @@ Target definition: *a field game for curious people — an ever-incomplete map o
 - **Map search.** Jump to a city or address via the server geocoder (Nominatim + Yandex), with our places in the results.
 - **"What's here?" in the context menu.** Reverse-geocoded address, nearest places, Wikipedia articles and Commons photos for a clicked point in one card.
 - **Trip planner.** Pick several places, build a road route (OSRM / GraphHopper / OpenRouteService) with order, distance and travel time; save as a collection, export GPX, open in Yandex Navigator.
-- **Personal exploration map.** The hex layer of `/map` is live (1.18.0); still missing: one map of a person's places and visits on their page, their share of each region. Spec: feature 25, step 7.
+- **Personal exploration map.** The hex layer of `/map` (1.18.0) and one map of a person's added, visited and bookmarked places on their profile (1.19.0) are live; still missing: the hexes and the opened white spots on that map, their share of each region. Spec: feature 25, step 7.
 
 ## Quick wins
 
@@ -56,6 +56,22 @@ Target definition: *a field game for curious people — an ever-incomplete map o
 - **Category completion progress** for logged-in users: "You've added 3 of 47" in the category filter or on the profile.
 - **Top explorers in your city this week** on the home page, by XP earned, grouped by the place locality.
 - **Weekly digest sections** still missing: streak, freshness alerts, rank changes, new followers, undiscovered places nearby — each blocked on its feature above.
+
+## Profile ideas
+
+Collected 2026-11-08 after the profile redesign (1.19.0); not specced yet. Suggested order: privacy → about and region → follows → reviews.
+
+- **Privacy of bookmarks and visits.** Today anyone sees a person's bookmarks and check-ins (places and days). A setting "Show bookmarks / visits: everyone or only me".
+- **"About" and home region.** One or two lines of text and a region in the card's facts line; the region later feeds "people nearby" and the regional leaderboards (feature 13).
+- **Follows on the profile.** "Follow" in the card, follower / following counts, a new-follower notification. Spec: feature 12.
+- **The person's reviews.** Their comments on places gathered in one place: a fifth set of "Места" or a block on the overview.
+- **Share a profile** like the place page's "Поделиться", and an `og:image` of the profile (avatar, name, level, numbers) instead of their photos.
+- **The author's best places.** 3–6 of their places with the highest rating or views on the overview.
+- **In common with you.** On someone else's profile: "you have both been to 4 places", "12 of their places you have not seen yet" (visits and `notVisited` are there).
+- **First steps for a new owner.** A checklist with the experience for each step (profile photo, first place, first check-in, first rating), gone once done.
+- **Streak in the card.** The run of days and the record next to the level. Spec: feature 03.
+- **Kudos on the profile** after follows: "Most thanked for photos". Spec: feature 07.
+- **Report / hide a user** in a "⋯" menu of the profile, before follows and reviews make it needed.
 
 ## Metrics
 
