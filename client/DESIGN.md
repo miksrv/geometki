@@ -200,7 +200,8 @@ re-implement them.
     - The pages of the profile — "Обзор", "Места", "Достижения" — are not a bar of their own:
       they are the foot of the card (`UserProfileCard` `activeSection`), so there is no long
       strip of three buttons. There are no pages of collections, bookmarks or visits: their old
-      addresses 301 (`next.config.js`) to the profile or to the matching set of "Места"; all
+      addresses redirect (`next.config.js`) to the matching set of "Места" (301) or to the profile
+      (collections: temporary, they may come back); all
       the photos are a sub-page (below).
     - "Обзор" (`UserActivity`) — the place page's two columns, `1fr 320px`. The main column: the
       `ContributionCalendar` (the year's activity) first, then the person's map (`UserPlacesMap`,
@@ -210,8 +211,10 @@ re-implement them.
       place in several sets (`PlaceMark.tone`), named by a legend under the map; small `Chip`s
       "Все N" and each non-empty set over it show one set with plain markers; with a single set
       there are no chips, no frames and no legend; a `small` secondary "Список мест" button sits
-      over the map's free top-right corner (absolutely positioned, not a map control) and leads
-      to "Места"; loaded in the browser, hidden without places), then "Фотографии"
+      over the map's free top-right corner (absolutely positioned at the level of the map controls,
+      under the app bar, not a map control) and leads to the list of the set shown; loaded in the
+      browser, a set the profile's counts say is empty is not asked for, nothing at all without
+      places), then "Фотографии"
       (`PhotoGallery`, eight, "Все N" to the photos sub-page when there are more) and the feed by
       day. Collections are not on the profile. The side column (not sticky: its blocks may be
       taller than the screen): `ContributionSummary`, "Достижения" (`UserAchievementsBlock`: the
@@ -512,7 +515,8 @@ in the tier colour. The counters, four equal tiles (`--surface-2`, the number in
 places, photos and visited places — links to "Места", the photos sub-page and "Места →
 Посещённые" — and the
 reputation, signed and green or red, not a link: its kit `Tooltip` (hover, focus) tells how it
-is made. Below 1024px the counters go under the rest; on phones the avatar and the title share
+is made. A profile that came without its statistic shows no counters, never zeros. Below
+1024px the counters go under the rest; on phones the avatar and the title share
 the first row and the facts, the level and the counters go across.
 
 **Avatars are round** (`UserAvatar`, `UserAvatarGroup`) everywhere a person is named next to

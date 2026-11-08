@@ -19,7 +19,8 @@ const nextConfig = {
             },
             { destination: '/users/:id/places?show=visits', permanent: true, source: '/users/:id/visited' },
             { destination: '/users/:id/places?show=bookmarks', permanent: true, source: '/users/:id/bookmarks' },
-            { destination: '/users/:id', permanent: true, source: '/users/:id/collections' }
+            // Temporary: a person's collections may come back to the profile at this address
+            { destination: '/users/:id', permanent: false, source: '/users/:id/collections' }
         ]
     },
     // robots.txt and search consoles point to /sitemap.xml; the page is pages/sitemap.tsx.
