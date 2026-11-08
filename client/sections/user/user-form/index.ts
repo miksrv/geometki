@@ -1,1 +1,1 @@
-export { UserForm } from './UserForm'
+export { USER_FORM_SECTIONS, UserForm } from './UserForm'

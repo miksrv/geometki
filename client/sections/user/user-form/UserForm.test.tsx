@@ -28,6 +28,13 @@ jest.mock('simple-react-ui-kit', () => ({
         />
     ),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Container: ({ title, children }: any) => (
+        <section>
+            <h2>{title}</h2>
+            {children}
+        </section>
+    ),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Input: ({ label, value, onChange, name }: any) => (
         <input
             aria-label={label}
