@@ -40,14 +40,14 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
     const placeMarkerIcon = useMemo(
         () =>
             new Leaflet.Icon({
-                className: styles.markerIcon,
+                className: place.tone ? `${styles.markerIcon} ${styles[`tone-${place.tone}`]}` : styles.markerIcon,
                 iconAnchor: [10, 10],
                 iconSize: [20, 20],
                 iconUrl: categoryImage(place.category).src,
                 // The hint starts a little above the icon, not from its centre
                 tooltipAnchor: [0, -12]
             }),
-        [place.category]
+        [place.category, place.tone]
     )
 
     const placeClickHandler = async () => {
