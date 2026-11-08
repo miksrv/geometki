@@ -1,4 +1,4 @@
-import { isCategoryCombination, isCrawler, isGeoList } from './crawler'
+import { firstCategory, isCategoryCombination, isCrawler, isGeoList } from './crawler'
 
 describe('isCrawler', () => {
     it.each([
@@ -52,5 +52,17 @@ describe('isGeoList', () => {
     it('is false without coordinates', () => {
         expect(isGeoList(new URLSearchParams('category=cave&sort=distance'))).toBe(false)
         expect(isGeoList(new URLSearchParams(''))).toBe(false)
+    })
+})
+
+describe('firstCategory', () => {
+    it.each([
+        ['category=cave%2Cwater%2Cspring', 'cave'],
+        ['category=cave,water', 'cave'],
+        ['category=%2Ccave', 'cave'],
+        ['category=cave&category=water', 'cave'],
+        ['limit=21', '']
+    ])('%s → %s', (query, expected) => {
+        expect(firstCategory(new URLSearchParams(query))).toBe(expected)
     })
 })

@@ -33,6 +33,15 @@ export const isCategoryCombination = (searchParams: URLSearchParams): boolean =>
     searchParams.getAll('category').some((value) => value.includes(','))
 
 /**
+ * The first category of a `?category=` list (`a,b` → `a`; a repeated parameter counts by its first value)
+ */
+export const firstCategory = (searchParams: URLSearchParams): string =>
+    (searchParams.get('category') ?? '')
+        .split(',')
+        .map((name) => name.trim())
+        .find(Boolean) ?? ''
+
+/**
  * A places list sorted by distance from a point in the URL (`?lat=&lon=`): `noindex`, and one
  * list per place × category × page — an endless set of URLs for a crawler
  */

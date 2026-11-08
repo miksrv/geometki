@@ -250,14 +250,26 @@ describe('proxy', () => {
             expect(isPassThrough(proxy(request('/places?category=cave', undefined, googlebot)))).toBe(true)
         })
 
-        it('lets people through to the combinations', () => {
-            expect(isPassThrough(proxy(request('/places?category=cave,spring', undefined, chrome)))).toBe(true)
+        it('301s a page load of a combination to the first category, the rest of the query dropped', () => {
+            expect(proxy(request('/places?category=cave,spring&offset=42', undefined, chrome))?.status).toBe(301)
+            expect(location(proxy(request('/places?category=cave%2Cspring&sort=trending', 'token', chrome)))).toBe(
+                'http://localhost:3000/places?category=cave'
+            )
+            expect(location(proxy(request('/en/places/bashkortostan?category=cave,spring', undefined, chrome)))).toBe(
+                'http://localhost:3000/en/places/bashkortostan?category=cave'
+            )
+        })
+
+        it('lets people switching the chips on the site through to the combinations', () => {
+            const data = { ...chrome, 'x-nextjs-data': '1' }
+
+            expect(isPassThrough(proxy(request('/places?category=cave,spring', undefined, data)))).toBe(true)
         })
     })
 
     describe('lists by distance from a point in the URL', () => {
         it('301s everybody to the list without the query, locale and landing kept', () => {
-            const geo = '?category=cave,spring&lat=55.7&lon=37.6&offset=42&sort=distance&order=ASC'
+            const geo = '?category=cave&lat=55.7&lon=37.6&offset=42&sort=distance&order=ASC'
             const chrome = {
                 'user-agent':
                     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36'

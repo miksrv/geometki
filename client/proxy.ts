@@ -6,7 +6,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 import { AUTH_COOKIES, LOCALE_HEADER } from '@/config/constants'
-import { isCategoryCombination, isCrawler, isGeoList } from '@/utils/crawler'
+import { firstCategory, isCategoryCombination, isCrawler, isGeoList } from '@/utils/crawler'
 import { getLandingFlags, isLandingSegment, LANDING_PROXY_HEADER } from '@/utils/placesLanding'
 import { SITE_TIME_ZONE, TIME_ZONE_COOKIE } from '@/utils/timeZone'
 import { USER_LOCATION_COOKIE } from '@/utils/userLocation'
@@ -102,6 +102,22 @@ export const proxy = (request: NextRequest) => {
         isCrawler(request.headers.get('user-agent'))
     ) {
         return new NextResponse(null, { headers: { 'X-Robots-Tag': 'noindex' }, status: 410 })
+    }
+
+    // TEMPORARILY (1.18.3): a scraper posing as a browser (Chrome/142, ~170k residential IPs, no
+    // referer) walked every permutation of the category chips page by page, ~50k uncacheable
+    // renders a day that burned the API host's CPU. A full page load of a 2+ categories list goes
+    // to the first category's list, every other parameter dropped: a few dozen URLs, all cached.
+    // People switching chips on the site navigate through `/_next/data` and keep the combinations
+    if (
+        request.nextUrl.pathname.startsWith('/places') &&
+        !request.headers.has('x-nextjs-data') &&
+        isCategoryCombination(request.nextUrl.searchParams)
+    ) {
+        const url = request.nextUrl.clone()
+        url.search = ''
+        url.searchParams.set('category', firstCategory(request.nextUrl.searchParams))
+        return Response.redirect(url.toString(), 301)
     }
 
     // TEMPORARILY (1.17.5): lists sorted by distance from a point in the URL (`/places?lat=…&lon=…`),
