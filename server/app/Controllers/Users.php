@@ -8,6 +8,7 @@ use App\Libraries\NotificationSettings;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
+use App\Models\PlacesModel;
 use App\Models\UsersModel;
 use App\Models\VisitsModel;
 use CodeIgniter\Files\File;
@@ -267,6 +268,9 @@ class Users extends ResourceController
             ->first();
         $usersData->statistic->visited = (int) ($visitsRow->visited ?? 0);
         $usersData->statistic->visits  = (int) ($visitsRow->visits ?? 0);
+
+        // Bookmarked places that still exist: the "Избранное" count of the profile's places
+        $usersData->statistic->bookmarks = (new PlacesModel())->filterByBookmarkUser($id)->countAllResults();
 
         unset($usersData->experience, $usersData->level);
 

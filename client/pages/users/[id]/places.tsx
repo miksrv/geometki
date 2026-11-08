@@ -126,12 +126,9 @@ const UserPlacesPage: React.FC<UserPlacesPageProps> = ({ id, user, currentPage, 
         }
     }
 
-    // The bookmarks have no count in the profile: the marks of the overview's map carry it (cached)
-    const { data: bookmarkMarks } = API.usePoiGetListQuery({ bookmarks: id })
-
     const counts: Record<UserPlacesShow, number | undefined> = {
         added: user?.statistic?.place ?? 0,
-        bookmarks: bookmarkMarks?.count,
+        bookmarks: user?.statistic?.bookmarks ?? 0,
         visited: user?.statistic?.visited ?? 0,
         visits: user?.statistic?.visits ?? 0
     }

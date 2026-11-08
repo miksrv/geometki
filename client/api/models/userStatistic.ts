@@ -8,4 +8,6 @@ export type UserStatistic = {
     visited: number
     /** All their check-ins (a place can have several) */
     visits: number
+    /** `GET /users/:id` only: the places in their bookmarks that still exist */
+    bookmarks?: number
 }

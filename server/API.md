@@ -1206,7 +1206,7 @@ Get full profile for a single user, including gamification statistics.
 }
 ```
 
-`visited` — distinct places the user has visited, `visits` — all their check-ins (a place can be visited many times; see `GET /visits`); `GET /users` lists carry `visited` only. `email`, `locale`, `authType` and `settings` (the keys of `PATCH /users/:id`) are only included on the user's own profile; anyone else gets the public fields alone.
+`bookmarks` — the places in their bookmarks that still exist; `visited` — distinct places the user has visited, `visits` — all their check-ins (a place can be visited many times; see `GET /visits`); `GET /users` lists carry `visited` only. `email`, `locale`, `authType` and `settings` (the keys of `PATCH /users/:id`) are only included on the user's own profile; anyone else gets the public fields alone.
 
 **Error responses:**
 
