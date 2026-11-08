@@ -142,7 +142,7 @@ jobs:
       # loop): ask the server itself. Fails the run with the app's last log lines if it doesn't answer
       - name: Check the site answers
         run: |
-          ssh vps 'for i in $(seq 1 30); do curl -sf -o /dev/null http://127.0.0.1:3005/ && echo "the site answers" && exit 0; sleep 1; done; pm2 logs geometki.com --lines 40 --nostream; exit 1'
+          ssh vps 'for i in $(seq 1 30); do curl -sf -m 10 -o /dev/null http://127.0.0.1:3005/ && echo "the site answers" && exit 0; sleep 1; done; pm2 logs geometki.com --lines 40 --nostream; exit 1'
 
       # Same check on the host: the binary must also load with the server's Node and glibc
       # (see "Check sharp in the standalone bundle"). A block scalar: the `paths: [` in the
