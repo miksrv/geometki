@@ -1,5 +1,4 @@
 import React from 'react'
-import { Button } from 'simple-react-ui-kit'
 
 import Head from 'next/head'
 import Link from 'next/link'
@@ -10,7 +9,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { ApiModel } from '@/api'
 import { AppLayout, PhotoGallery } from '@/components/shared'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
-import { UserActivity, UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
+import { UserAchievementsBlock, UserActivity, UserContribution, UserHero, UserPlacesMap } from '@/sections/user'
 import { formatDateISO } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 
@@ -103,42 +102,43 @@ export const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photos
                 data={userSchema}
             />
 
-            <UserHeader user={user} />
-
-            <UserTabs
+            <UserHero
                 user={user}
-                currentPage={UserPagesEnum.FEED}
+                currentPage={'overview'}
             />
 
-            <PhotoGallery
-                title={t('photos')}
-                photos={photosList}
-                hideActions={true}
-                action={
-                    !!photosList?.length && (
-                        <Link
-                            href={`/users/${id}/photos`}
-                            title={t(`${t('show-all-photos')} (${photosCount})`)}
-                        >
-                            {t('all')}
-                        </Link>
-                    )
+            <UserActivity
+                userId={id}
+                beforeFeed={
+                    <>
+                        <UserPlacesMap
+                            userId={id}
+                            statistic={user?.statistic}
+                        />
+                        {!!photosList?.length && (
+                            <PhotoGallery
+                                id={'photos'}
+                                title={t('photos')}
+                                photos={photosList}
+                                hideActions={true}
+                                action={
+                                    photosCount > photosList.length && (
+                                        <Link href={`/users/${id}/photos`}>
+                                            {t('user-side-all', { count: photosCount })}
+                                        </Link>
+                                    )
+                                }
+                            />
+                        )}
+                    </>
                 }
-                footer={
-                    photosCount > 8 && (
-                        <Button
-                            size={'medium'}
-                            mode={'secondary'}
-                            link={`/users/${id}/photos`}
-                            style={{ marginTop: '5px', width: '100%' }}
-                        >
-                            {`${t('show-all-photos')} (${photosCount})`}
-                        </Button>
-                    )
+                aside={
+                    <>
+                        <UserAchievementsBlock userId={id} />
+                        <UserContribution statistic={user?.statistic} />
+                    </>
                 }
             />
-
-            <UserActivity userId={id} />
         </AppLayout>
     )
 }

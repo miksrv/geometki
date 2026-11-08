@@ -5,6 +5,7 @@ import { HomePage } from '@/sections/home/home-page'
 import type { HomePageProps } from '@/sections/home/home-page/HomePage'
 import { loadHomePage } from '@/sections/home/home-page/loadHomePage'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
+import { getTimeZoneFromCookies } from '@/utils/timeZone'
 import { getUserLocationFromCookies } from '@/utils/userLocation'
 
 /**
@@ -18,6 +19,8 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             const { props } = await loadHomePage(store, {
                 locale: context.locale,
+                // The signed-in card counts the week and the run of days in the visitor's days
+                timeZone: getTimeZoneFromCookies(context.req.cookies),
                 visitorLocation: getUserLocationFromCookies(context.req.cookies)
             })
 

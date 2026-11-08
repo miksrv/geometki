@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { Button, Checkbox, Input, Message } from 'simple-react-ui-kit'
+import { Button, Checkbox, Container, Input, Message } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { Trans, useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
@@ -26,12 +27,19 @@ interface UserFormProps {
     onDirtyChange?: (isDirty: boolean) => void
 }
 
+/** The anchors of the form's sections, for the side navigation of the settings page */
+export const USER_FORM_SECTIONS = ['profile', 'notifications', 'security'] as const
+
 type FormDataType = ApiType.Users.PatchRequest & { confirmPassword?: string }
 
 const TEXT_FIELDS = ['name', 'website', 'oldPassword', 'newPassword', 'confirmPassword'] as const
 
 const SETTINGS = ApiModel.userSettingKeys()
 
+/**
+ * The settings form (`/users/settings`): "Профиль", "Уведомления" and "Вход и пароль", each a
+ * `Container` (a form, DESIGN.md → Containers), then Cancel and Save under them.
+ */
 export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onSubmit, onCancel, onDirtyChange }) => {
     const { t } = useTranslation()
 
@@ -130,39 +138,56 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
                 </Message>
             )}
 
-            <h3 className={styles.header}>{t('general-settings')}</h3>
-            <div className={styles.formElement}>
-                {renderTextInput(
-                    'name',
-                    {
-                        autoFocus: true,
-                        label: t('input_name'),
-                        placeholder: t('input_name-placeholder'),
-                        required: true,
-                        tabIndex: 0
-                    },
-                    { validate: (value) => !!value?.trim() || t('error_name-required') }
+            <Container
+                id={'profile'}
+                className={styles.section}
+                title={t('settings-section-profile')}
+            >
+                <div className={styles.fields}>
+                    <div className={styles.formElement}>
+                        {renderTextInput(
+                            'name',
+                            {
+                                autoFocus: true,
+                                label: t('input_name'),
+                                placeholder: t('input_name-placeholder'),
+                                required: true,
+                                tabIndex: 0
+                            },
+                            { validate: (value) => !!value?.trim() || t('error_name-required') }
+                        )}
+                    </div>
+
+                    <div className={styles.formElement}>
+                        {renderTextInput('website', {
+                            label: t('personal-page'),
+                            placeholder: t('input_website-placeholder')
+                        })}
+                    </div>
+
+                    <div className={styles.formElement}>
+                        <Input
+                            label={t('input_email')}
+                            disabled={true}
+                            value={userEmail ?? ''}
+                        />
+                        <p className={styles.hint}>{t('settings-email-hint')}</p>
+                    </div>
+                </div>
+
+                {!!values?.id && (
+                    <p className={styles.hint}>
+                        {t('settings-avatar-on-profile')}{' '}
+                        <Link href={`/users/${values.id}`}>{t('settings-avatar-on-profile-link')}</Link>
+                    </p>
                 )}
-            </div>
+            </Container>
 
-            <div className={styles.formElement}>
-                <Input
-                    label={t('input_email')}
-                    disabled={true}
-                    value={userEmail ?? ''}
-                />
-            </div>
-
-            <div className={styles.formElement}>
-                {renderTextInput('website', {
-                    label: t('personal-page'),
-                    placeholder: t('input_website-placeholder')
-                })}
-            </div>
-
-            <div className={styles.section}>
-                <h3 className={styles.header}>{t('notifications-settings')}</h3>
-
+            <Container
+                id={'notifications'}
+                className={styles.section}
+                title={t('settings-section-notifications')}
+            >
                 <PushDeviceSettings />
 
                 <table className={styles.notifications}>
@@ -217,11 +242,15 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
 
                 <p className={styles.hint}>{t('email-notifications-hint')}</p>
                 <p className={styles.hint}>{t('push-column-hint')}</p>
-            </div>
+            </Container>
 
-            {!loading && !!values?.authType && (
-                <div className={styles.section}>
-                    <h3 className={styles.header}>{t('change-password')}</h3>
+            {/* Not hidden while loading: the side navigation links here, and the page must not jump on a save */}
+            {!!values?.authType && (
+                <Container
+                    id={'security'}
+                    className={styles.section}
+                    title={t('settings-section-security')}
+                >
                     {values?.authType === 'native' ? (
                         <>
                             <div className={styles.formElement}>
@@ -296,10 +325,18 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
                             </p>
                         </div>
                     )}
-                </div>
+                </Container>
             )}
 
             <div className={styles.actions}>
+                <Button
+                    size={'medium'}
+                    mode={'secondary'}
+                    label={t('cancel')}
+                    disabled={loading}
+                    onClick={onCancel}
+                />
+
                 <Button
                     size={'medium'}
                     mode={'primary'}
@@ -307,14 +344,6 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
                     label={t('save')}
                     disabled={loading || !isDirty}
                     onClick={() => void submit()}
-                />
-
-                <Button
-                    size={'medium'}
-                    mode={'secondary'}
-                    label={t('cancel')}
-                    disabled={loading}
-                    onClick={onCancel}
                 />
             </div>
         </section>

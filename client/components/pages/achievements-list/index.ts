@@ -1,1 +1,0 @@
-export { AchievementsList } from './AchievementsList'

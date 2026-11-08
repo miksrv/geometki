@@ -169,22 +169,25 @@ class UsersModel extends ApplicationBaseModel
     /**
      * Retrieve a public user profile by ID.
      *
-     * Pass $settings = true to include the user's notification preference
-     * object with safe defaults applied.
+     * Pass $settings = true for the owner's own profile: adds the private fields
+     * (email, locale, sign-in method) and the notification preferences with safe
+     * defaults applied.
      *
      * @param string $userId
-     * @param bool   $settings  Whether to include and normalise the settings column.
+     * @param bool   $settings  The owner reads it: include the private fields and the settings.
      * @return array|object|null
      */
     public function getUserById(string $userId, bool $settings = false): array|object|null
     {
-        $settingsCol = $settings ? ', settings' : '';
+        // The email, the sign-in method, the locale and the settings are the owner's: a public
+        // profile (cached for guests, put into the page HTML) never carries them
+        $privateCols = $settings ? ', email, locale, auth_type as authType, settings' : '';
 
         $data = $this
             ->select(
-                'id, name, email, locale, avatar, created_at as created,
+                'id, name, avatar, created_at as created,
                 updated_at as updated, activity_at as activity, level, role,
-                auth_type as authType, website, experience, reputation' . $settingsCol
+                website, experience, reputation' . $privateCols
             )
             ->find($userId);
 

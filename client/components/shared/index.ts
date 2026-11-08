@@ -1,6 +1,6 @@
 export { AppLayout } from '../layout'
 export { MapObjectsTypeEnum } from '../map'
-export { AchievementBadge, AchievementCard } from './achievement-card'
+export { AchievementBadge } from './achievement-card'
 export { AchievementIcon } from './achievement-icon'
 export { AddToCollectionButton, AddToCollectionModal, collectionPickerStyles } from './add-to-collection'
 export { BookmarkButton, useBookmark } from './bookmark-button'
@@ -49,5 +49,11 @@ export { SiteSearch, type SiteSearchHandle, SiteSearchScreen } from './site-sear
 export { UserAvatar, type UserAvatarProps } from './user-avatar'
 export { UserAvatarGroup } from './user-avatar-group'
 export { USER_CARD_PLACES, UserCard, type UserCardProps, type UserCardVariant } from './user-card'
+export {
+    UserProfileCard,
+    type UserProfileCardProps,
+    type UserProfileCardVariant,
+    type UserProfileSection
+} from './user-profile-card'
 export { VisitRow } from './visit-row'
 export { checkInMessage, WasHereButton } from './was-here-button'

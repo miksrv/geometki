@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Container } from 'simple-react-ui-kit'
 
 import type { NextPage } from 'next'
@@ -10,7 +10,7 @@ import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { AppLayout, FeedList, FeedPulse, LocationLinkList, UserCard } from '@/components/shared'
+import { AppLayout, FeedList, FeedPulse, LocationLinkList, UserCard, UserProfileCard } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import {
     HomeCategories,
@@ -19,10 +19,10 @@ import {
     HomeHowItWorks,
     HomeJoin,
     HomePlaces,
-    HomeUnexplored,
-    HomeWelcome
+    HomeUnexplored
 } from '@/sections/home'
 import { getCategoryShortTitle } from '@/utils/categories'
+import { calendarSummary, calendarWeekActions } from '@/utils/feed'
 import { buildCategoryHref, buildLocationHref, buildPlaceUrl, getLandingFlags } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 
@@ -88,6 +88,29 @@ export const HomePage: NextPage<HomePageProps> = ({
                   ? { ...authUser, ...loadedProfile, levelData: loadedProfile.levelData ?? authUser.levelData }
                   : undefined))
             : undefined
+
+    const timeZone = useAppSelector((state) => state.application.timeZone)
+    const { data: calendar } = API.useFeedGetCalendarQuery(
+        { author: user?.id ?? '', tz: timeZone },
+        { skip: !user?.id }
+    )
+
+    // The card's line is what moves: the week's actions and the run of days, never the year of sign-up
+    const welcomeFacts = useMemo(() => {
+        if (!calendar) {
+            return []
+        }
+
+        const week = calendarWeekActions(calendar.items, calendar.to)
+        const { currentStreak } = calendarSummary(calendar.items, calendar.to)
+
+        return [
+            week
+                ? t('home-welcome-week', { actions: t('calendar-actions', { count: week }) })
+                : t('home-welcome-week-empty'),
+            currentStreak > 1 && t('home-welcome-streak', { count: currentStreak })
+        ].filter((fact): fact is string => !!fact)
+    }, [calendar, t])
 
     const flags = getLandingFlags()
     const regionLinks = regions.map((region) => ({
@@ -220,7 +243,11 @@ export const HomePage: NextPage<HomePageProps> = ({
 
             {user ? (
                 <div className={styles.home}>
-                    <HomeWelcome user={user} />
+                    <UserProfileCard
+                        user={user}
+                        variant={'home'}
+                        facts={welcomeFacts}
+                    />
 
                     <div className={styles.userColumns}>
                         {renderFeedWidget(HOME_FEED_LIMIT)}

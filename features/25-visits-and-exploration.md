@@ -1,7 +1,8 @@
 # Feature 25: Visits and Exploration
 
 > Status: open part only. Visits, visit questions, white spots and the hex layer of `/map` shipped
-> in 1.18.0 (see `CLAUDE.md`, "Visits"); steps 5 and 7 are planned for 1.19.0. Takes the first steps
+> in 1.18.0 (see `CLAUDE.md`, "Visits"), the person's map in 1.19.0; step 5 and the rest of step 7
+> are next. Takes the first steps
 > of 13 (Regional Leaderboards).
 
 The map shows how much of an area is explored: a percentage per location and the people who
@@ -72,22 +73,19 @@ reputation. Champions and "you have been overtaken" notifications (feature 13) c
 
 ## Step 7: The user page
 
-Depends on step 5. The "Visits" tab (a timeline) shipped in 1.18.0; there is no map of the person.
+Depends on step 5. Shipped in 1.19.0: the new profile card, the overview with one map of the
+person (`UserPlacesMap`: added, visited and bookmarked places, the marker frame in the colour of
+the relation, chips per set, a legend) and the "Места" tab of lists. Still open:
 
-- **Header:** as now (level, experience, reputation), plus one exploration line: "Opened 19 white
-  spots · 41 visits in 23 places · explores 3 regions".
-- **One map** of the person, the first block of the overview: their places, the places they visited
-  and the white spots they opened, in three tones, the chips "All / Added / Visited" above it. Below
-  zoom ~11 the same browser-side hexes as `/map` (`client/utils/hexGrid.ts`,
-  `components/map/hex-layer`): a cell is darker the more of its places the person has added or
-  visited, the cells where they are the pioneer get a mark. Data from the existing
-  `GET /poi?author=` and `GET /poi?visited=` plus the opened spots, cached for guests; the map loads
-  when it scrolls into view (`next/dynamic`, `ssr: false`), the ISR render stays without API calls
-  for it.
+- **Header:** one exploration line in the profile card: "Opened 19 white spots · 41 visits in 23
+  places · explores 3 regions".
+- **The map:** the white spots the person opened as a fourth set; below zoom ~11 the same
+  browser-side hexes as `/map` (`client/utils/hexGrid.ts`, `components/map/hex-layer`): a cell is
+  darker the more of its places the person has added or visited, the cells where they are the
+  pioneer get a mark.
 - **Their regions:** for each location they have contributed to: their share ("you have added or
   visited 14% of the known places of Orenburg Oblast"), their place among its explorers
   ("3rd"), and the white spots there. From `GET /users/:id/exploration` (cached, `$ttls` 10 min).
-- The "Visited" and "Places" tabs stay as lists for search engines and for people without the map.
 
 Visits are already public (who has been at a place), so the map shows nothing new about a person.
 

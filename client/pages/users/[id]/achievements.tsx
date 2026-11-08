@@ -1,5 +1,4 @@
 import React from 'react'
-import { Container } from 'simple-react-ui-kit'
 
 import type { GetServerSidePropsResult } from 'next'
 import Head from 'next/head'
@@ -9,10 +8,9 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AchievementsList } from '@/components/pages/achievements-list'
 import { AppLayout } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
-import { UserHeader, UserPagesEnum, UserTabs } from '@/sections/user'
+import { UserAchievements, UserHero } from '@/sections/user'
 import { buildHreflangTags } from '@/utils/seo'
 import { loadPageTranslations } from '@/utils/translations.server'
 
@@ -53,19 +51,15 @@ const UserAchievementsPage: React.FC<UserAchievementsPageProps> = ({ id, user })
                 })}
             </Head>
 
-            <UserHeader user={user} />
-
-            <UserTabs
+            <UserHero
                 user={user}
-                currentPage={UserPagesEnum.ACHIEVEMENTS}
+                currentPage={'achievements'}
             />
 
-            <Container>
-                <AchievementsList
-                    achievements={achievements}
-                    isLoading={isLoading}
-                />
-            </Container>
+            <UserAchievements
+                achievements={achievements}
+                loading={isLoading}
+            />
         </AppLayout>
     )
 }

@@ -8,6 +8,7 @@ import {
     formatDateISO,
     formatDateUTC,
     formatPlainDate,
+    isOnlineAt,
     localPlainDate,
     minutesAgo,
     plainDateYear,
@@ -155,5 +156,16 @@ describe('plain dates', () => {
         expect(plainDateYear('2026-10-13')).toBe(2026)
         expect(plainDateYear('2019-07-01 10:00:00')).toBe(2019)
         expect(plainDateYear(undefined)).toBeUndefined()
+    })
+})
+
+describe('isOnlineAt', () => {
+    it('is online up to 15 minutes after the last request', () => {
+        const ago = (minutes: number) => dayjs.utc().subtract(minutes, 'minute').format('YYYY-MM-DD HH:mm:ss')
+
+        expect(isOnlineAt(ago(3))).toBe(true)
+        expect(isOnlineAt(ago(15))).toBe(true)
+        expect(isOnlineAt(ago(16))).toBe(false)
+        expect(isOnlineAt(undefined)).toBe(false)
     })
 })

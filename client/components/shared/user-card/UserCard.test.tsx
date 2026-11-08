@@ -84,7 +84,10 @@ describe('UserCard', () => {
         expect(screen.getByRole('link', { name: 'Мария Соколова' })).toHaveAttribute('href', '/users/u1')
         expect(screen.getByRole('link', { name: /9 user-card-places/ })).toHaveAttribute('href', '/users/u1/places')
         expect(screen.getByRole('link', { name: /40 user-card-photos/ })).toHaveAttribute('href', '/users/u1/photos')
-        expect(screen.getByRole('link', { name: /3 user-card-visited/ })).toHaveAttribute('href', '/users/u1/visited')
+        expect(screen.getByRole('link', { name: /3 user-card-visited/ })).toHaveAttribute(
+            'href',
+            '/users/u1/places?show=visited'
+        )
     })
 
     it('shows the level tier and the progress within the level', () => {

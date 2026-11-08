@@ -45,7 +45,7 @@ export const loadUserPage = async (
         return { notFound: true }
     }
 
-    // The rest at once; the achievements of the header too, else the browser asks for them
+    // The rest at once: the blocks of the overview, else the browser asks for them
     const photosRequest = store.dispatch(API.endpoints.photosGetList.initiate({ author: id, limit: 8, offset: 0 }))
     const [{ data: photosData }] = await Promise.all([
         photosRequest,

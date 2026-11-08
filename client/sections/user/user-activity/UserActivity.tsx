@@ -13,14 +13,18 @@ import styles from './styles.module.sass'
 
 interface UserActivityProps {
     userId: string
+    /** Blocks of the main column between the year's calendar and the feed (the map, the photos) */
+    beforeFeed?: React.ReactNode
+    /** Blocks of the side column under "the year in numbers" (achievements, contribution) */
+    aside?: React.ReactNode
 }
 
 /**
- * The activity tab of the profile: the year's calendar across the page, then the person's
- * feed by day with "the year in numbers" in a sticky column beside it — the same two
- * columns as the feed page with its pulse.
+ * The overview tab of the profile, the two columns of the place page: the main column with the
+ * year's calendar first, then `beforeFeed` and the person's feed by day; the side column with
+ * "the year in numbers" and `aside`. On narrower screens the side column comes first.
  */
-export const UserActivity: React.FC<UserActivityProps> = ({ userId }) => {
+export const UserActivity: React.FC<UserActivityProps> = ({ userId, beforeFeed, aside }) => {
     const { t } = useTranslation()
     const timeZone = useAppSelector((state) => state.application.timeZone)
 
@@ -38,15 +42,18 @@ export const UserActivity: React.FC<UserActivityProps> = ({ userId }) => {
     })
 
     return (
-        <>
-            <ContributionCalendar calendar={calendar} />
+        <div className={styles.layout}>
+            <aside className={styles.aside}>
+                <ContributionSummary calendar={calendar} />
+                {aside}
+            </aside>
 
-            <div className={styles.layout}>
-                <aside className={styles.aside}>
-                    <ContributionSummary calendar={calendar} />
-                </aside>
+            <div className={styles.main}>
+                <ContributionCalendar calendar={calendar} />
 
-                <div className={styles.main}>
+                {beforeFeed}
+
+                <section aria-label={t('activity-feed')}>
                     <FeedList
                         stories={flattenFeedPages(data?.pages)}
                         loading={isLoading || isFetchingNextPage}
@@ -66,8 +73,8 @@ export const UserActivity: React.FC<UserActivityProps> = ({ userId }) => {
                         }
                     />
                     <div ref={sentinelRef} />
-                </div>
+                </section>
             </div>
-        </>
+        </div>
     )
 }

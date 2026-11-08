@@ -22,6 +22,13 @@
     cursor: pointer
     transition: background-color var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease)
 
+    // A chip with `href` is a link: the global `a:focus` / `a:hover` (link colour, underline) are
+    // more specific than a plain class, so the states are spelled out here. A link keeps the focus
+    // after a click that renders the same page anew, and its text turned blue on the blue fill
+    &:focus
+        color: var(--text-color-primary)
+        text-decoration: none
+
     &:hover
         background: var(--surface-2)
         color: var(--text-color-primary)
@@ -59,9 +66,15 @@
     box-shadow: none
     color: #fff
 
+    &:focus
+        color: #fff
+
     &:hover
         background: var(--color-main-hover)
         color: #fff
+
+    &:focus-visible
+        box-shadow: var(--focus-ring)
 
     .count
         color: rgba(255, 255, 255, 0.8)
@@ -77,6 +90,9 @@
 
     .label
         text-decoration: line-through
+
+    &:focus
+        color: var(--text-color-secondary)
 
     &:hover
         background: var(--surface-2)
@@ -98,6 +114,9 @@
     box-shadow: none
     color: var(--color-main)
     font-weight: var(--font-weight-medium)
+
+    &:focus
+        color: var(--color-main)
 
     &:hover
         background: var(--color-main-background)

@@ -7,7 +7,21 @@ const nextConfig = {
     // The categories page is gone (the catalogue lives in the client, see CLAUDE.md →
     // Categories): its indexed URL goes to the places listing instead of a 404
     async redirects() {
-        return [{ destination: '/places', permanent: true, source: '/categories' }]
+        return [
+            { destination: '/places', permanent: true, source: '/categories' },
+            // 1.19.0: the profile tabs of bookmarks, visits and collections were merged into "Места"
+            // and the overview (the query, e.g. `page`, is carried over)
+            {
+                destination: '/users/:id/places?show=visited',
+                has: [{ key: 'view', type: 'query', value: 'places' }],
+                permanent: true,
+                source: '/users/:id/visited'
+            },
+            { destination: '/users/:id/places?show=visits', permanent: true, source: '/users/:id/visited' },
+            { destination: '/users/:id/places?show=bookmarks', permanent: true, source: '/users/:id/bookmarks' },
+            // Temporary: a person's collections may come back to the profile at this address
+            { destination: '/users/:id', permanent: false, source: '/users/:id/collections' }
+        ]
     },
     // robots.txt and search consoles point to /sitemap.xml; the page is pages/sitemap.tsx.
     // On production nginx rewrites it too, this keeps it working without that (local, other

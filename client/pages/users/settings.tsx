@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Container, Message } from 'simple-react-ui-kit'
+import { Message } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
@@ -16,8 +16,11 @@ import { AppLayout, PageHeader } from '@/components/shared'
 import { ScreenSpinner } from '@/components/ui'
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
 import { UserForm } from '@/sections/user'
+import { USER_FORM_SECTIONS } from '@/sections/user/user-form'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
 import { loadPageTranslations } from '@/utils/translations.server'
+
+import styles from './settings.module.sass'
 
 const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
     ssr: false
@@ -47,6 +50,17 @@ const SettingsUserPage: NextPage<object> = () => {
     )
 
     const serverError = useMemo(() => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined), [error])
+
+    // Scrolls to a section without a history entry: the unsaved-changes guard reads Back from a
+    // `#section` entry as leaving the page
+    const handleSectionClick = (section: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+        const target = document.getElementById(section)
+
+        if (target) {
+            event.preventDefault()
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+    }
 
     // Leaving by Cancel goes through the same unsaved-changes guard as any other navigation
     const handleCancel = () => {
@@ -111,30 +125,43 @@ const SettingsUserPage: NextPage<object> = () => {
                 ]}
             />
 
-            <Container>
-                {!authSlice.isAuth && <ScreenSpinner />}
+            <div className={styles.layout}>
+                <nav
+                    className={styles.nav}
+                    aria-label={t('settings-sections')}
+                >
+                    <ul>
+                        {USER_FORM_SECTIONS.map((section) => (
+                            <li key={section}>
+                                <a
+                                    href={`#${section}`}
+                                    onClick={handleSectionClick(section)}
+                                >
+                                    {t(`settings-section-${section}`)}
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
 
-                {serverError && (
-                    <Message
-                        type={'error'}
-                        style={{ marginBottom: 15 }}
-                    >
-                        {serverError}
-                    </Message>
-                )}
+                <div className={styles.form}>
+                    {!authSlice.isAuth && <ScreenSpinner />}
 
-                <UserForm
-                    loading={isLoading || isSuccess || isFetching}
-                    values={userData}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    errors={validationErrors as any}
-                    onSubmit={handleSubmit}
-                    onCancel={handleCancel}
-                    onDirtyChange={setIsDirty}
-                />
+                    {serverError && <Message type={'error'}>{serverError}</Message>}
+
+                    <UserForm
+                        loading={isLoading || isSuccess || isFetching}
+                        values={userData}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        errors={validationErrors as any}
+                        onSubmit={handleSubmit}
+                        onCancel={handleCancel}
+                        onDirtyChange={setIsDirty}
+                    />
+                </div>
 
                 <ConfirmationDialog {...leaveDialogProps} />
-            </Container>
+            </div>
         </AppLayout>
     )
 }

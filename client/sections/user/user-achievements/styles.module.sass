@@ -1,0 +1,158 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+
+// The achievements tab (DESIGN.md → Profile): one list of low rows across the content width,
+// the earned ones first. Medal | title and status | the next step's goal and progress | steps
+.list
+    display: flex
+    flex-direction: column
+    gap: var(--space-2)
+    // With the 15px gap of the layout: the content starts after a pause under the card
+    margin: var(--space-2) 0 0
+    padding: 0
+    list-style: none
+
+// The tier colours (styles/theme.css) mark dots and bars only: silver and gold are too light for text
+.tier-bronze
+    --tier: var(--color-tier-bronze)
+
+.tier-silver
+    --tier: var(--color-tier-silver)
+
+.tier-gold
+    --tier: var(--color-tier-gold)
+
+.tier-none
+    --tier: var(--color-main)
+
+.row
+    display: grid
+    grid-template-columns: 40px minmax(180px, 1fr) minmax(0, 1.4fr) auto
+    align-items: center
+    gap: var(--space-4)
+    padding: var(--space-3) var(--space-4)
+    border-radius: var(--container-radius)
+    background: var(--surface-1)
+    box-shadow: var(--container-shadow)
+
+    // Phones: medal | title and status | steps; the goal across under them
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: 40px minmax(0, 1fr) auto
+        gap: var(--space-2) var(--space-3)
+        padding: var(--space-3)
+
+// A fixed box: the medal files are narrower than tall (1 : 1.414)
+.medalIcon
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 40px
+    height: 48px
+
+// Not yet earned: the medal of the first step, faded
+.locked .medalIcon
+    filter: grayscale(1)
+    opacity: .45
+
+.who
+    min-width: 0
+
+.title
+    +type.titleBlock
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+
+// category · status
+.meta
+    display: flex
+    flex-wrap: wrap
+    margin: 2px 0 0
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
+
+    span + span:before
+        content: '·'
+        margin: 0 var(--space-2)
+        opacity: .7
+
+.goal
+    display: flex
+    flex-direction: column
+    gap: var(--space-1)
+    min-width: 0
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-column: 1 / -1
+        grid-row: 2
+
+.goalRow
+    display: flex
+    justify-content: space-between
+    gap: var(--space-3)
+    font-size: var(--font-size-secondary)
+
+.goalText
+    min-width: 0
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+    color: var(--text-color-primary)
+
+.goalValue
+    flex-shrink: 0
+    color: var(--text-color-secondary)
+    font-variant-numeric: tabular-nums
+
+.bar
+    height: 6px
+    border-radius: 3px
+    background: var(--surface-3)
+    overflow: hidden
+
+.fill
+    height: 100%
+    border-radius: inherit
+    background: var(--tier, var(--color-main))
+    transition: width .3s ease
+
+.done
+    display: inline-flex
+    align-items: center
+    gap: 6px
+    margin: 0
+    color: var(--color-green)
+    font-size: var(--font-size-secondary)
+    font-weight: var(--font-weight-medium)
+
+    svg
+        width: 16px
+        height: 16px
+        fill: currentColor
+
+// The steps: a dot per tier, filled in its colour when passed; the name and the XP in the hint
+.steps
+    display: flex
+    gap: 6px
+    margin: 0
+    padding: 0
+    list-style: none
+
+.step
+    width: 12px
+    height: 12px
+    border-radius: 50%
+    box-shadow: inset 0 0 0 1.5px var(--tier)
+    cursor: help
+
+    &.passed
+        background: var(--tier)
+        box-shadow: none
+
+.srOnly
+    position: absolute
+    width: 1px
+    height: 1px
+    overflow: hidden
+    clip: rect(0 0 0 0)
+    white-space: nowrap

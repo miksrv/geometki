@@ -215,3 +215,15 @@ export const calendarSummary = (items: CalendarDay[], today: string): CalendarSu
         total: active.reduce((sum, item) => sum + item.count, 0)
     }
 }
+
+/**
+ * The actions of the last seven days of the calendar, today included: the line of the signed-in
+ * home card that changes from day to day.
+ *
+ * @param today YYYY-MM-DD, the last day of the calendar
+ */
+export const calendarWeekActions = (items: CalendarDay[], today: string): number => {
+    const from = dayjs(today).subtract(6, 'day').format('YYYY-MM-DD')
+
+    return items.filter((item) => item.date >= from && item.date <= today).reduce((sum, item) => sum + item.count, 0)
+}

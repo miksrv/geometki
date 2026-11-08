@@ -1,69 +1,82 @@
 @use '../../../styles/variables' as variables
 
+// The settings form: three containers one under the other, then the buttons
 .component
     position: relative
+    display: flex
+    flex-direction: column
+    gap: var(--space-5)
 
     .section
-        margin-top: 20px
+        // The side navigation scrolls to a section: it stops under the app bar
+        scroll-margin-top: 64px
 
-        .notifySetting
-            margin-top: 5px
+    .hint
+        margin: var(--space-2) 0 0
+        color: var(--text-color-secondary)
+        font-size: variables.$fontSizeHeadline
 
-        .header
-            margin-bottom: 5px
+    .notifications
+        width: 100%
+        margin-top: var(--space-3)
+        border-collapse: collapse
 
-        .hint
-            margin: 8px 0 0
+        th,
+        td
+            padding: var(--space-2) 0
+            border-bottom: var(--container-border-separator)
+            text-align: center
+            font-weight: normal
+
+        th:first-child
+            text-align: left
+            padding-right: var(--space-3)
+
+        thead th
             color: var(--text-color-secondary)
             font-size: variables.$fontSizeHeadline
 
-        .notifications
-            width: 100%
-            margin-top: 12px
-            border-collapse: collapse
+        // The channel columns: just wide enough for the header and the switch
+        thead th:not(:first-child)
+            width: 72px
 
-            th,
-            td
-                padding: 8px 0
-                border-bottom: var(--container-border-separator)
-                text-align: center
-                font-weight: normal
+        .notApplicable
+            color: var(--text-color-secondary)
 
-            th:first-child
-                text-align: left
-                padding-right: 12px
+        // The kit's checkbox spans the cell and keeps a gap for its label: centre the box itself
+        .channelCheckbox
+            justify-content: center
 
-            thead th
-                color: var(--text-color-secondary)
-                font-size: variables.$fontSizeHeadline
+            label
+                width: auto
 
-            // The channel columns: just wide enough for the header and the switch
-            thead th:not(:first-child)
-                width: 64px
+                > span
+                    margin-right: 0
 
-            .notApplicable
-                color: var(--text-color-secondary)
-
-            // The kit's checkbox spans the cell and keeps a gap for its label: centre the box itself
-            .channelCheckbox
-                justify-content: center
-
-                label
-                    width: auto
-
-                    > span
-                        margin-right: 0
-
+    // Cancel, then Save on the right (DESIGN.md → Dialogs: the primary action last)
     .actions
-        margin-top: 20px
         display: flex
-        flex-direction: row-reverse
+        justify-content: flex-end
+        gap: var(--space-3)
 
-        button
-            margin-left: 15px
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            button
+                flex: 1
+
+    // Two columns of the name and the website on desktop
+    .fields
+        display: grid
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+        gap: var(--space-4)
+
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            grid-template-columns: minmax(0, 1fr)
 
     .formElement
-        margin-bottom: 10px
+        margin-bottom: var(--space-3)
+
+        .fields &
+            margin-bottom: 0
 
         label
             display: block
@@ -76,17 +89,10 @@
             font-size: var(--input-label-font-size)
             font-weight: var(--input-label-font-weight)
 
-    .mapContainer
-        height: 300px
-        margin: 25px 0 10px
-        position: relative
-
-        .categoryImage
-            left: 48.6%
-            top: 45%
-            position: absolute
-            z-index: 401
-
     .authService
-        text-align: center
-        padding: 30px
+        display: flex
+        align-items: center
+        gap: var(--space-4)
+
+        p
+            margin: 0

@@ -43,7 +43,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({ achievement 
         <>
             <Tooltip content={tooltipContent}>
                 <div
-                    className={`${styles.badgeItem} ${styles[`tier--${achievement.tier}`]}`}
+                    className={styles.badgeItem}
                     onClick={() => setModalOpen(true)}
                     role={'button'}
                     tabIndex={0}

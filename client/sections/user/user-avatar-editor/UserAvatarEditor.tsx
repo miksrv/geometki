@@ -25,10 +25,14 @@ type ImageSizesType = {
 }
 
 interface UserAvatarProps {
+    /** The button's label, "Аватар" by default */
+    label?: string
+    /** The button's size, `medium` by default */
+    size?: 'small' | 'medium'
     onSaveAvatar?: (filepath: string) => void
 }
 
-export const UserAvatarEditor: React.FC<UserAvatarProps> = ({ onSaveAvatar }) => {
+export const UserAvatarEditor: React.FC<UserAvatarProps> = ({ label, size = 'medium', onSaveAvatar }) => {
     const dispatch = useAppDispatch()
     const { t } = useTranslation()
 
@@ -138,10 +142,10 @@ export const UserAvatarEditor: React.FC<UserAvatarProps> = ({ onSaveAvatar }) =>
     return (
         <>
             <Button
-                size={'medium'}
+                size={size}
                 icon={'Photo'}
                 mode={'secondary'}
-                label={t('avatar')}
+                label={label ?? t('avatar')}
                 onClick={handleChangeCoverClick}
             />
 
