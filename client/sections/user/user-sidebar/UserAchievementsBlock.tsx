@@ -5,13 +5,12 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
 import { AchievementBadge, Section } from '@/components/shared'
+import { groupAchievements } from '@/utils/achievements'
 
 import styles from './styles.module.sass'
 
 /** Badges shown in the block: the best tier of each group, the newest first */
 const SHOWN_BADGES = 12
-
-const TIER_RANK: Record<string, number> = { bronze: 1, gold: 3, none: 0, silver: 2 }
 
 interface UserAchievementsBlockProps {
     userId: string
@@ -27,23 +26,17 @@ export const UserAchievementsBlock: React.FC<UserAchievementsBlockProps> = ({ us
     // Prefetched with the page (loadUserPage)
     const { data } = API.useGetUserAchievementsQuery(userId)
 
-    const earned = useMemo(() => (data?.data ?? []).filter((achievement) => !!achievement.earned_at), [data])
+    // One per achievement, as the rows of the achievements tab: "Все N" names that tab's rows
+    const groups = useMemo(() => groupAchievements(data?.data ?? []), [data])
 
-    const badges = useMemo(() => {
-        const best = new Map<string, (typeof earned)[number]>()
-
-        for (const achievement of earned) {
-            const existing = best.get(achievement.group_slug)
-
-            if (!existing || (TIER_RANK[achievement.tier] ?? 0) > (TIER_RANK[existing.tier] ?? 0)) {
-                best.set(achievement.group_slug, achievement)
-            }
-        }
-
-        return Array.from(best.values()).sort((a, b) =>
-            (b.earned_at?.date ?? '').localeCompare(a.earned_at?.date ?? '')
-        )
-    }, [earned])
+    // The highest step of each earned achievement, the newest first
+    const badges = useMemo(
+        () =>
+            groups
+                .flatMap((group) => (group.achieved ? [group.achieved] : []))
+                .sort((a, b) => (b.earned_at?.date ?? '').localeCompare(a.earned_at?.date ?? '')),
+        [groups]
+    )
 
     if (!badges.length) {
         return null
@@ -53,7 +46,7 @@ export const UserAchievementsBlock: React.FC<UserAchievementsBlockProps> = ({ us
         <Section
             level={3}
             title={t('achievements-title')}
-            action={<Link href={`/users/${userId}/achievements`}>{t('user-side-all', { count: earned.length })}</Link>}
+            action={<Link href={`/users/${userId}/achievements`}>{t('user-side-all', { count: groups.length })}</Link>}
         >
             <div className={styles.badges}>
                 {badges.slice(0, SHOWN_BADGES).map((achievement) => (
