@@ -1,29 +1,40 @@
 @use '../../../styles/variables' as variables
 
-// The feed with a sticky side column, as on the feed page; on phones the column comes first
+// The profile overview: the place page's two columns — the main column of blocks and the
+// side column; below the feed breakpoint the side column comes first
 .layout
     display: grid
     grid-template-columns: minmax(0, 1fr) 320px
     gap: var(--space-6)
     align-items: start
+    // With the 15px gap of the layout: the content starts after a pause under the tabs
+    margin-top: var(--space-2)
 
     @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
         grid-template-columns: minmax(0, 1fr)
-        gap: var(--space-4)
 
 .main
     min-width: 0
+    display: flex
+    flex-direction: column
+    gap: var(--space-6)
+
+    // A block that rendered nothing leaves no gap
+    & > :empty
+        display: none
 
 .aside
-    position: sticky
-    top: 60px
+    // Not sticky: several blocks may be taller than the screen, their end would never show
     grid-column: 2
     grid-row: 1
+    display: flex
+    flex-direction: column
+    gap: var(--space-8)
 
     &:empty
         display: none
 
     @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
-        position: static
         grid-column: auto
         grid-row: auto
+        gap: var(--space-6)
