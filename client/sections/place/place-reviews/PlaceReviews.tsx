@@ -1,10 +1,10 @@
 import React from 'react'
-import { cn, Container, Icon } from 'simple-react-ui-kit'
+import { Container } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
-import { Section } from '@/components/shared'
+import { ScoreStars, Section } from '@/components/shared'
 import { addDecimalPoint } from '@/utils/helpers'
 
 import { CommentList } from '../place-comment-list/CommentList'
@@ -34,7 +34,6 @@ export const PlaceReviews: React.FC<PlaceReviewsProps> = ({ placeId, authorId })
 
     const count = ratingData?.count ?? 0
     const rating = ratingData?.rating ?? 0
-    const rounded = Math.round(rating)
     const distribution = ratingData?.distribution
     const maxVotes = Math.max(1, ...SCORES.map((score) => distribution?.[score] ?? 0))
 
@@ -49,22 +48,14 @@ export const PlaceReviews: React.FC<PlaceReviewsProps> = ({ placeId, authorId })
                     <div className={styles.summary}>
                         <div className={styles.score}>
                             <strong>{addDecimalPoint(rating)}</strong>
-                            <span
-                                className={styles.stars}
-                                role={'img'}
-                                aria-label={t('rating-n-of-5', {
+                            <ScoreStars
+                                value={rating}
+                                size={'medium'}
+                                label={t('rating-n-of-5', {
                                     value: addDecimalPoint(rating),
                                     defaultValue: 'Рейтинг {{value}} из 5'
                                 })}
-                            >
-                                {SCORES.map((score) => (
-                                    <Icon
-                                        key={score}
-                                        name={'StarFilled'}
-                                        className={cn(6 - score <= rounded && styles.on)}
-                                    />
-                                ))}
-                            </span>
+                            />
                             <small>{t('place-votes-count', { count, defaultValue: '{{count}} оценок' })}</small>
                         </div>
 

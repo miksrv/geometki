@@ -1,5 +1,5 @@
 import React from 'react'
-import { cn, Icon } from 'simple-react-ui-kit'
+import { cn } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
@@ -9,6 +9,7 @@ import { AchievementIcon } from '@/components/shared/achievement-icon'
 import { CollectionCard } from '@/components/shared/collection-card'
 import { LevelBadge } from '@/components/shared/level-badge/LevelBadge'
 import { PlaceCard } from '@/components/shared/place-card'
+import { ScoreStars } from '@/components/shared/score-stars'
 import { UserAvatar } from '@/components/shared/user-avatar'
 import { buildCollectionUrl, formatDate, removeMarkdown, timeAgo } from '@/utils/helpers'
 
@@ -28,27 +29,6 @@ export interface FeedStoryProps {
 
 /** Places of a multi-place story shown before "and N more" */
 const PLACES_SHOWN: Record<FeedDensity, number> = { compact: 2, full: 3 }
-
-/** The author's score in a rating story: five read-only stars */
-const ScoreStars: React.FC<{ value: number }> = ({ value }) => {
-    const { t } = useTranslation()
-
-    return (
-        <span
-            className={styles.score}
-            role={'img'}
-            aria-label={t('feed-score', { value, defaultValue: 'Оценка: {{value}} из 5' })}
-        >
-            {[1, 2, 3, 4, 5].map((star) => (
-                <Icon
-                    key={star}
-                    name={star <= value ? 'StarFilled' : 'StarEmpty'}
-                    className={cn(styles.star, star <= value && styles.starFilled)}
-                />
-            ))}
-        </span>
-    )
-}
 
 /**
  * One card of the activity feed. Every story has the same head — who, what, when — and a
