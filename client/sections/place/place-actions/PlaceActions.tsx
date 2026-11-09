@@ -15,6 +15,8 @@ import { BottomSheet, ScreenSpinner } from '@/components/ui'
 
 import { PlaceVisitQuestions } from '../place-visit-questions'
 
+import { listenVisitSheet, openVisitSheet } from './visitSheet'
+
 import styles from './styles.module.sass'
 
 const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
@@ -135,6 +137,19 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
     const [nativeShare, setNativeShare] = useState<boolean>(false)
 
     const isBar = variant === 'bar'
+
+    // A check-in from any button of the page on a phone (`openVisitSheet`): the questions sheet
+    useEffect(() => {
+        if (!isBar) {
+            return
+        }
+
+        return listenVisitSheet((visit) => {
+            setCheckIn(visit)
+            setVisitAsks(false)
+            setSheet('visit')
+        })
+    }, [isBar])
     const mapLink = `/map#${place?.lat},${place?.lon},14`
 
     const labels = {
@@ -360,11 +375,7 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
                         size={'large'}
                         hideLabel={true}
                         placeId={place?.id}
-                        onCheckedIn={(visit) => {
-                            setCheckIn(visit)
-                            setVisitAsks(false)
-                            setSheet('visit')
-                        }}
+                        onCheckedIn={openVisitSheet}
                     />
 
                     <Button
