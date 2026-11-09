@@ -1,5 +1,5 @@
 import React from 'react'
-import { cn, Icon, IconTypes, Tooltip } from 'simple-react-ui-kit'
+import { cn, Icon, IconTypes } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 import Link from 'next/link'
@@ -51,7 +51,7 @@ export interface UserProfileCardProps {
 /**
  * The card of a person (DESIGN.md → Person): the square avatar, the title with one line of facts
  * and the level with the progress to the next one; the counters on the right — places, photos and
- * visited places, each a link to the "Места" tab, and the reputation. One component for the
+ * visited places, each a link to the "Места" tab, and the reputation, a link to its history. One component for the
  * signed-in home page and the profile, so the person reads the same in both.
  */
 export const UserProfileCard: React.FC<UserProfileCardProps> = ({
@@ -207,44 +207,40 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({
                         </Link>
                     ))}
 
-                    {/* Not a list to open: what it is made of is in the tooltip (hover, focus) */}
-                    <Tooltip content={t('reputation-hint')}>
-                        <div
-                            className={cn(styles.counter, styles.reputation)}
-                            tabIndex={0}
-                            aria-label={`${t('reputation')}: ${reputation}`}
-                        >
-                            <b
-                                className={
-                                    reputation > 0 ? styles.positive : reputation < 0 ? styles.negative : undefined
-                                }
-                            >
-                                {reputation > 0 ? `+${formatThousands(reputation)}` : formatThousands(reputation)}
-                            </b>
-                            <span>{t('user-hero-reputation')}</span>
-                        </div>
-                    </Tooltip>
+                    {/* The history of the reputation: every score that moved it, and what it is made of */}
+                    <Link
+                        href={`${profileHref}/reputation`}
+                        className={cn(styles.counter, styles.reputation)}
+                        aria-label={`${t('reputation')}: ${reputation}`}
+                    >
+                        <b className={reputation > 0 ? styles.positive : reputation < 0 ? styles.negative : undefined}>
+                            {reputation > 0 ? `+${formatThousands(reputation)}` : formatThousands(reputation)}
+                        </b>
+                        <span>{t('user-hero-reputation')}</span>
+                    </Link>
                 </nav>
             )}
 
-            {/* The pages of the profile, attached to the foot of the card: the tabs on the profile,
-                quick links into one's own profile on the home page */}
-            <nav
-                className={styles.sections}
-                aria-label={isHome ? t('user-card-own-sections') : t('user-card-sections', { name: user.name })}
-            >
-                {SECTIONS.map(({ key, icon, label, path }) => (
-                    <Link
-                        key={key}
-                        href={`${profileHref}${path}`}
-                        className={cn(styles.section, activeSection === key && styles.active)}
-                        aria-current={activeSection === key ? 'page' : undefined}
-                    >
-                        <Icon name={icon} />
-                        {t(label)}
-                    </Link>
-                ))}
-            </nav>
+            {/* The pages of the profile, attached to the foot of the card: the profile's tabs. The home
+                card has none: the avatar and the counters already lead into the own profile */}
+            {!isHome && (
+                <nav
+                    className={styles.sections}
+                    aria-label={t('user-card-sections', { name: user.name })}
+                >
+                    {SECTIONS.map(({ key, icon, label, path }) => (
+                        <Link
+                            key={key}
+                            href={`${profileHref}${path}`}
+                            className={cn(styles.section, activeSection === key && styles.active)}
+                            aria-current={activeSection === key ? 'page' : undefined}
+                        >
+                            <Icon name={icon} />
+                            {t(label)}
+                        </Link>
+                    ))}
+                </nav>
+            )}
         </section>
     )
 }
