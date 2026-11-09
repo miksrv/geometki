@@ -34,7 +34,7 @@ class Poi extends ResourceController
     public function list(): ResponseInterface
     {
         $categories = $this->request->getGet('categories', FILTER_SANITIZE_SPECIAL_CHARS);
-        $zoom    = abs($this->request->getGet('zoom', FILTER_SANITIZE_NUMBER_INT) ?? 10);
+        $zoom    = max(1, min(abs((int) ($this->request->getGet('zoom', FILTER_SANITIZE_NUMBER_INT) ?? 10)), 20));
         $author  = $this->request->getGet('author', FILTER_SANITIZE_SPECIAL_CHARS);
         $visited = $this->request->getGet('visited', FILTER_SANITIZE_SPECIAL_CHARS);
         $bookmarks = $this->request->getGet('bookmarks', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -101,7 +101,7 @@ class Poi extends ResourceController
      */
     public function photos(): ResponseInterface
     {
-        $zoom    = abs($this->request->getGet('zoom', FILTER_SANITIZE_NUMBER_INT) ?? 10);
+        $zoom    = max(1, min(abs((int) ($this->request->getGet('zoom', FILTER_SANITIZE_NUMBER_INT) ?? 10)), 20));
         $locale  = $this->request->getLocale();
         $cluster = $this->request->getGet('cluster', FILTER_VALIDATE_BOOL);
         $bounds  = $this->getBounds();

@@ -64,7 +64,7 @@ class Collections extends ResourceController
         $author   = $this->request->getGet('author', FILTER_SANITIZE_SPECIAL_CHARS);
         $placeId  = $this->request->getGet('placeId', FILTER_SANITIZE_SPECIAL_CHARS);
         $sort     = $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS) ?? 'updated';
-        $limit    = abs((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 20));
+        $limit    = max(1, abs((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 20)));
         $offset   = abs((int) ($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0));
 
         $countModel = new CollectionsModel();
@@ -672,7 +672,7 @@ class Collections extends ResourceController
     public function recommended($id = null): ResponseInterface
     {
         $locale = $this->request->getLocale();
-        $limit  = abs((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 20));
+        $limit  = max(1, abs((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 20)));
 
         $collection = $this->model->find($id);
 

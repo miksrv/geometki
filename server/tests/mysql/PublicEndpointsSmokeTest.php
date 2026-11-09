@@ -79,6 +79,9 @@ final class PublicEndpointsSmokeTest extends MySqlTestCase
             'collections', 'collections?user=user1', 'collections/coll1', 'collections/coll1/recommended', 'collections/membership?placeId=place1',
             'sitemap',
             'exploration/points',
+            // Empty, zero and non-numeric paging: never a TypeError
+            'places?limit=&offset=', 'places?limit=abc', 'photos?limit=&offset=', 'collections?limit=&offset=',
+            'poi?zoom=', 'poi/photos?zoom=abc', 'users?offset=', 'search?q=Водопад&limit=0',
         ];
 
         $cases = [];
@@ -122,5 +125,22 @@ final class PublicEndpointsSmokeTest extends MySqlTestCase
             static fn ($item) => basename($item['full'], '.jpg'),
             $body['items']
         ));
+    }
+
+    public function testAZeroLimitIsOnePageNotTheWholeTable(): void
+    {
+        for ($i = 2; $i <= 45; $i++) {
+            $this->db->table('photos')->insert([
+                'id' => 'photo' . $i, 'place_id' => 'place1', 'user_id' => 'user1', 'lat' => 53.1, 'lon' => 57.2,
+                'filename' => 'photo' . $i, 'extension' => 'jpg', 'filesize' => 1000, 'width' => 1200, 'height' => 800,
+            ]);
+        }
+
+        $zero = json_decode($this->get('photos', ['limit' => 0])->getJSON(), true);
+        $many = json_decode($this->get('photos', ['limit' => 1000])->getJSON(), true);
+
+        $this->assertCount(1, $zero['items']);
+        $this->assertCount(40, $many['items']);
+        $this->assertSame(45, $many['count']);
     }
 }
