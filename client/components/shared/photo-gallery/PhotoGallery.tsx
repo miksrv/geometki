@@ -52,6 +52,11 @@ interface PhotoGalleryProps extends ContainerProps {
      */
     variant?: 'grid' | 'mosaic'
     /**
+     * Grid: a boxless `Section` instead of the `Container` — the photos as a part of a page
+     * (the profile, its photos page; DESIGN.md → "Sections, not containers"). A form keeps the box
+     */
+    boxless?: boolean
+    /**
      * Mosaic: the full-screen viewer (`PhotoViewer`) — closed, the grid of all the photos or one
      * photo. Controlled when given: the place page opens it from the hero carousel too
      */
@@ -69,6 +74,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     hideActions,
     showAll,
     variant = 'grid',
+    boxless,
     priority,
     viewer: viewerProp,
     onViewerChange,
@@ -428,13 +434,10 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         )
     }
 
-    return (
-        <Container
-            {...props}
-            className={cn(styles.galleryContainer, props.className)}
-        >
+    const grid = (
+        <>
             {isEmptyPhotoList && (
-                <div className={'emptyList'}>
+                <div className={boxless ? styles.emptyLine : 'emptyList'}>
                     {t('no-photos-here-yet', { defaultValue: 'Тут пока нет фотографий' })}
                 </div>
             )}
@@ -445,7 +448,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                         className={cn(
                             styles.photoGrid,
                             isExpanded && styles.expanded,
-                            (!!props?.title || !!props?.action) && styles.marginTop
+                            !boxless && (!!props?.title || !!props?.action) && styles.marginTop
                         )}
                     >
                         <ul className={styles.photoGallery}>
@@ -507,6 +510,29 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             )}
 
             {dialogs}
+        </>
+    )
+
+    if (boxless) {
+        return (
+            <Section
+                id={props.id}
+                title={props.title}
+                action={props.action}
+                footer={props.footer}
+                className={props.className}
+            >
+                {grid}
+            </Section>
+        )
+    }
+
+    return (
+        <Container
+            {...props}
+            className={cn(styles.galleryContainer, props.className)}
+        >
+            {grid}
         </Container>
     )
 }

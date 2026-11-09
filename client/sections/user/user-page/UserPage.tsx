@@ -118,6 +118,7 @@ export const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photos
                         {!!photosList?.length && (
                             <PhotoGallery
                                 id={'photos'}
+                                boxless={true}
                                 title={t('photos')}
                                 photos={photosList}
                                 hideActions={true}

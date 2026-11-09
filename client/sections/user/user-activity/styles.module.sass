@@ -1,11 +1,12 @@
 @use '../../../styles/variables' as variables
 
 // The profile overview: the place page's two columns — the main column of blocks and the
-// side column; below the feed breakpoint the side column comes first
+// side column, the gaps of the signed-in home page (between the columns and between the side
+// blocks `--space-4`); below the feed breakpoint the side column comes first
 .layout
     display: grid
     grid-template-columns: minmax(0, 1fr) 320px
-    gap: var(--space-6)
+    gap: var(--space-4)
     align-items: start
     // With the 15px gap of the layout: the content starts after a pause under the tabs
     margin-top: var(--space-2)
@@ -29,7 +30,7 @@
     grid-row: 1
     display: flex
     flex-direction: column
-    gap: var(--space-8)
+    gap: var(--space-4)
 
     &:empty
         display: none
@@ -37,4 +38,3 @@
     @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
         grid-column: auto
         grid-row: auto
-        gap: var(--space-6)
