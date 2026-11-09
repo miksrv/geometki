@@ -374,7 +374,7 @@ class VisitsLibrary
 
         $photos  = $this->photosOf(array_column($rows, 'id'), $locale);
         $answers = $this->answersOf(array_column($rows, 'id'));
-        $places  = $withPlace ? $this->placesOf(array_values(array_unique(array_column($rows, 'place_id'))), $locale) : [];
+        $places  = $withPlace ? (new PlaceFormatterLibrary())->listItems(array_values(array_unique(array_column($rows, 'place_id'))), $locale) : [];
         $avatars = new AvatarLibrary();
         $items   = [];
 
@@ -460,37 +460,6 @@ class VisitsLibrary
                 'title'   => $locale === 'ru' ? ($row['title_ru'] ?: $row['title_en']) : ($row['title_en'] ?: $row['title_ru']),
                 'placeId' => $row['place_id'],
             ];
-        }
-
-        return $result;
-    }
-
-    /**
-     * The places of a person's visits as list items (the cards of the profile timeline).
-     *
-     * @param string[] $placeIds
-     * @return array<string, object> place id => list item
-     */
-    private function placesOf(array $placeIds, string $locale): array
-    {
-        if (!$placeIds) {
-            return [];
-        }
-
-        $placesModel = new PlacesModel();
-        $placesModel->applyListSelect();
-        $rows = $placesModel->whereIn('places.id', $placeIds)->get()->getResult();
-
-        // Only the titles: the cards of a timeline carry no text
-        $content = new PlacesContent(1);
-        $content->translate(array_column($rows, 'id'));
-
-        $formatter = new PlaceFormatterLibrary();
-        $result    = [];
-
-        foreach ($rows as $place) {
-            $formatter->formatListRow($place, $locale, $content->title($place->id));
-            $result[$place->id] = $place;
         }
 
         return $result;

@@ -54,3 +54,14 @@ export const plainDateYear = (date?: string): number | undefined => {
 
     return Number.isInteger(year) && year > 0 ? year : undefined
 }
+
+/**
+ * Whole days from one plain day (`YYYY-MM-DD`) to another, negative when `to` is earlier;
+ * `undefined` when either is not a day
+ */
+export const daysBetweenPlainDates = (from: string, to: string): number | undefined => {
+    const parse = (day: string) => (/^\d{4}-\d{2}-\d{2}$/.test(day) ? Date.parse(`${day}T00:00:00Z`) : NaN)
+    const diff = (parse(to) - parse(from)) / 86400000
+
+    return Number.isFinite(diff) ? Math.round(diff) : undefined
+}

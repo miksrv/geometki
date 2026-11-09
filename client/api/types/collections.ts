@@ -83,9 +83,3 @@ export interface RecommendedResponse {
     items: ApiModel.PlaceListItem[]
     count: number
 }
-
-export interface ModerationRequest {
-    id: string
-    hidden?: boolean
-    featured?: boolean
-}

@@ -2,7 +2,6 @@
 
 namespace App\Controllers;
 
-use App\Libraries\Geocoder;
 use App\Libraries\SessionLibrary;
 use App\Models\LocationLocalitiesModel;
 use App\Models\LocationCountriesModel;
@@ -10,7 +9,6 @@ use App\Models\LocationDistrictsModel;
 use App\Models\LocationRegionsModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
-use Geocoder\Exception\Exception;
 
 /**
  * Location controller
@@ -85,29 +83,6 @@ class Location extends ResourceController
         $result['cities']    = $this->prepareSearchData($citiesData);
 
         return $this->respond($result);
-    }
-
-    /**
-     * Perform a free-text geocoder search via the configured geocoding provider.
-     *
-     * GET /location/geo-search?text=:query
-     *
-     * @throws Exception
-     *
-     * @return ResponseInterface
-     */
-    public function geoSearch(): ResponseInterface
-    {
-        $text = $this->request->getGet('text');
-
-        if (!$text || !is_string($text)) {
-            return $this->respond([]);
-        }
-
-        $text = trim($text);
-        $geocoder = new Geocoder();
-
-        return $this->respond(['items' => $geocoder->search($text)]);
     }
 
     /**

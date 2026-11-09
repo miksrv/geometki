@@ -176,6 +176,9 @@ export const InteractiveMap: React.FC<MapProps> = ({
     } = useUserLocation()
 
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false)
+    // An element can go full screen (not an iPhone's Safari, which has it for video only): known
+    // after the mount, the button is not rendered before
+    const [canFullscreen, setCanFullscreen] = useState<boolean>(false)
     // One measuring tool at a time: both take over the map clicks
     const [activeTool, setActiveTool] = useState<MeasureTool>()
     const [placeMark, setPlaceMark] = useState<ApiType.Coordinates>()
@@ -399,14 +402,42 @@ export const InteractiveMap: React.FC<MapProps> = ({
     }, [])
 
     useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        setCanFullscreen(!!(document.fullscreenEnabled || document.webkitFullscreenEnabled))
+    }, [])
+
+    useEffect(() => {
         const handleFullscreenChange = () => {
-            setIsFullscreen(!!document.fullscreenElement)
+            const map = mapRef.current
+            // This map, not any element of the page (a video, another map) going full screen
+            const element =
+                document.fullscreenElement ??
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                (document.webkitFullscreenElement as Element | null | undefined)
+            const fullscreen = !!map && !!element && element === map.getContainer()
+
+            setIsFullscreen(fullscreen)
+
+            // A map on a page leaves the wheel to the page (`scrollWheelZoom={false}`): full screen
+            // there is nothing to scroll, the wheel zooms; back on the page it is as it was
+            if (map && props.scrollWheelZoom === false) {
+                if (fullscreen) {
+                    map.scrollWheelZoom.enable()
+                } else {
+                    map.scrollWheelZoom.disable()
+                }
+            }
         }
 
         document.addEventListener('fullscreenchange', handleFullscreenChange)
+        // Safari before 16.4 tells only with its prefix
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
 
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange)
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
         }
     }, [])
 
@@ -629,7 +660,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
                             />
                         )}
 
-                        {enableFullScreen && (
+                        {enableFullScreen && canFullscreen && (
                             <Button
                                 size={controlsSize}
                                 mode={'secondary'}

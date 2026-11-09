@@ -2,6 +2,7 @@
 
 namespace App\Libraries;
 
+use App\Models\PlacesModel;
 use App\Models\UsersBookmarksModel;
 use App\Models\VisitsModel;
 
@@ -219,5 +220,36 @@ class PlaceFormatterLibrary
             $row->locality_id, $row->city_en, $row->city_ru, $row->city_slug,
             $row->created_at, $row->updated_at, $row->deleted_at, $row->cover_external_id
         );
+    }
+
+    /**
+     * Places as list items with their titles only, by id: the cards of a timeline (the visits
+     * of a profile, the history of a reputation), which carry no text.
+     *
+     * @param string[] $placeIds
+     *
+     * @return array<string, object> place id => list item
+     */
+    public function listItems(array $placeIds, string $locale): array
+    {
+        if (!$placeIds) {
+            return [];
+        }
+
+        $placesModel = new PlacesModel();
+        $placesModel->applyListSelect();
+        $rows = $placesModel->whereIn('places.id', $placeIds)->get()->getResult();
+
+        $content = new PlacesContent(1);
+        $content->translate(array_column($rows, 'id'));
+
+        $result = [];
+
+        foreach ($rows as $place) {
+            $this->formatListRow($place, $locale, $content->title($place->id));
+            $result[$place->id] = $place;
+        }
+
+        return $result;
     }
 }

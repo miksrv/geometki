@@ -14,18 +14,25 @@ const mark = (id: string): ApiModel.PlaceMark => ({
 })
 
 describe('mergeUserPlaces', () => {
-    it('keeps one mark per place, toned by the first set it is in', () => {
+    it('keeps one mark per place: visited first, then bookmarked, the own places plain', () => {
         const places = mergeUserPlaces({
-            added: [mark('a'), mark('b')],
+            added: [mark('a'), mark('b'), mark('e')],
             bookmark: [mark('a'), mark('c'), mark('d')],
             visited: [mark('b'), mark('c')]
         })
 
         expect(places.map(({ id, tone }) => [id, tone])).toStrictEqual([
-            ['a', 'added'],
-            ['b', 'added'],
+            ['b', 'visited'],
             ['c', 'visited'],
-            ['d', 'bookmark']
+            ['a', 'bookmark'],
+            ['d', 'bookmark'],
+            ['e', undefined]
+        ])
+    })
+
+    it('badges the places visited even when they are the only set', () => {
+        expect(mergeUserPlaces({ added: [], bookmark: undefined, visited: [mark('v')] })).toStrictEqual([
+            { ...mark('v'), tone: 'visited' }
         ])
     })
 

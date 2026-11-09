@@ -81,27 +81,35 @@ const closePhotos = {
 
 // 1 degree = 100 000 px: the two close photos share a 64 px cell
 const mockCloseMap = (maxZoom: number, setView = jest.fn()) =>
-    jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(() => ({
-        getBounds: () => mockBounds,
-        getMaxZoom: () => maxZoom,
-        getZoom: () => 17,
-        project: ([lat, lon]: [number, number]) => ({ x: lon * 100000, y: lat * 100000 }),
-        setView
-    }))
+    jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(
+        () =>
+            ({
+                getBounds: () => mockBounds,
+                getMaxZoom: () => maxZoom,
+                getZoom: () => 17,
+                project: ([lat, lon]: [number, number]) => ({ x: lon * 100000, y: lat * 100000 }),
+                setView
+            }) as unknown as ReturnType<typeof ReactLeaflet.useMapEvents>
+    )
 
 describe('HistoricalPhotos', () => {
     beforeEach(() => {
         jest.clearAllMocks()
-        jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(() => ({
-            getBounds: () => mockBounds,
-            getZoom: () => 12,
-            setView: jest.fn()
-        }))
+        jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(
+            () =>
+                ({
+                    getBounds: () => mockBounds,
+                    getZoom: () => 12,
+                    setView: jest.fn()
+                }) as unknown as ReturnType<typeof ReactLeaflet.useMapEvents>
+        )
     })
 
     describe('no data', () => {
         it('renders nothing when query has no data', () => {
-            jest.mocked(APIPastvu.useGetByBoundsQuery).mockReturnValue({ data: undefined })
+            jest.mocked(APIPastvu.useGetByBoundsQuery).mockReturnValue({ data: undefined } as unknown as ReturnType<
+                typeof APIPastvu.useGetByBoundsQuery
+            >)
             const { container } = render(<HistoricalPhotos />)
             expect(container.innerHTML).toBe('')
         })
@@ -109,7 +117,7 @@ describe('HistoricalPhotos', () => {
         it('renders nothing when photos and clusters are empty', () => {
             jest.mocked(APIPastvu.useGetByBoundsQuery).mockReturnValue({
                 data: { result: { clusters: [], photos: [] } }
-            })
+            } as unknown as ReturnType<typeof APIPastvu.useGetByBoundsQuery>)
             const { container } = render(<HistoricalPhotos />)
             expect(container.innerHTML).toBe('')
         })
@@ -117,7 +125,9 @@ describe('HistoricalPhotos', () => {
 
     describe('with photos', () => {
         beforeEach(() => {
-            jest.mocked(APIPastvu.useGetByBoundsQuery).mockReturnValue({ data: mockData })
+            jest.mocked(APIPastvu.useGetByBoundsQuery).mockReturnValue({ data: mockData } as unknown as ReturnType<
+                typeof APIPastvu.useGetByBoundsQuery
+            >)
         })
 
         it('renders a Marker for each photo', () => {
@@ -131,7 +141,9 @@ describe('HistoricalPhotos', () => {
         })
 
         it('draws every photo separately below zoom 17: PastVu has clustered them already', () => {
-            jest.mocked(APIPastvu.useGetByBoundsQuery).mockReturnValue({ data: closePhotos })
+            jest.mocked(APIPastvu.useGetByBoundsQuery).mockReturnValue({ data: closePhotos } as unknown as ReturnType<
+                typeof APIPastvu.useGetByBoundsQuery
+            >)
             render(<HistoricalPhotos />)
             expect(screen.getAllByTestId('historical-marker')).toHaveLength(3)
         })
@@ -149,7 +161,9 @@ describe('HistoricalPhotos', () => {
 
     describe('from zoom 17', () => {
         beforeEach(() => {
-            jest.mocked(APIPastvu.useGetByBoundsQuery).mockReturnValue({ data: closePhotos })
+            jest.mocked(APIPastvu.useGetByBoundsQuery).mockReturnValue({ data: closePhotos } as unknown as ReturnType<
+                typeof APIPastvu.useGetByBoundsQuery
+            >)
         })
 
         it('groups the photos that share a screen cell into one marker', () => {

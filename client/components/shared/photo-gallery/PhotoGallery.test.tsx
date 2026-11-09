@@ -1,7 +1,7 @@
 import React from 'react'
 import { Provider } from 'react-redux'
 
-import { configureStore } from '@reduxjs/toolkit'
+import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 import { ApiModel } from '@/api'
@@ -163,12 +163,13 @@ jest.mock('@/config/constants', () => ({
 
 const makeStore = (preloadedState?: Record<string, unknown>) =>
     configureStore({
-        reducer: {
+        reducer: combineReducers({
             application: applicationReducer,
             auth: authReducer,
             notification: notificationReducer
-        },
-        preloadedState
+        }),
+        // Tests preload partial slices, so the state is not checked against the full slice types
+        preloadedState: preloadedState as never
     })
 
 const renderWithStore = (ui: React.ReactElement, preloadedState?: Record<string, unknown>) => {
@@ -177,8 +178,24 @@ const renderWithStore = (ui: React.ReactElement, preloadedState?: Record<string,
 }
 
 const mockPhotos: ApiModel.Photo[] = [
-    { id: 'ph1', full: '/photos/full-1.jpg', preview: '/photos/prev-1.jpg', title: 'Photo 1', width: 800, height: 600 },
-    { id: 'ph2', full: '/photos/full-2.jpg', preview: '/photos/prev-2.jpg', title: 'Photo 2', width: 800, height: 600 }
+    {
+        author: { id: 'u1', name: 'Alice' },
+        full: '/photos/full-1.jpg',
+        height: 600,
+        id: 'ph1',
+        preview: '/photos/prev-1.jpg',
+        title: 'Photo 1',
+        width: 800
+    },
+    {
+        author: { id: 'u1', name: 'Alice' },
+        full: '/photos/full-2.jpg',
+        height: 600,
+        id: 'ph2',
+        preview: '/photos/prev-2.jpg',
+        title: 'Photo 2',
+        width: 800
+    }
 ]
 
 describe('PhotoGallery', () => {
@@ -287,6 +304,21 @@ describe('PhotoGallery', () => {
             })
             const actionButtons = screen.getAllByRole('button')
             expect(actionButtons.length).toBeGreaterThan(0)
+        })
+
+        it("gives no tools on another person's photo, but gives them to an admin", () => {
+            const others = mockPhotos.map((photo) => ({ ...photo, author: { id: 'u2', name: 'Bob' } }))
+
+            const { unmount } = renderWithStore(<PhotoGallery photos={others} />, {
+                auth: { isAuth: true, user: { id: 'u1', name: 'Alice' } }
+            })
+            expect(screen.queryByRole('button', { name: 'Повернуть' })).not.toBeInTheDocument()
+            unmount()
+
+            renderWithStore(<PhotoGallery photos={[others[0]]} />, {
+                auth: { isAuth: true, user: { id: 'u1', name: 'Alice', role: 'admin' } }
+            })
+            expect(screen.getByRole('button', { name: 'Повернуть' })).toBeInTheDocument()
         })
 
         it('renders rotate and delete as context menu items', () => {

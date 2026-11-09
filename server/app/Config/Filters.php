@@ -129,8 +129,6 @@ class Filters extends BaseFilters
         'cache:300' => [
             'after' => [
                 'GET:categories/*',
-                'GET:levels/*',
-                'GET:levels',
                 'GET:location/*',
             ],
         ],

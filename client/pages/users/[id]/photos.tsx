@@ -8,8 +8,9 @@ import { generateNextSeo } from 'next-seo/pages'
 import { API, ApiModel, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { wrapper } from '@/app/store'
-import { AppLayout, PageHeader, PaginationBar, PhotoGallery, UserAvatar } from '@/components/shared'
+import { AppLayout, PaginationBar, PhotoGallery } from '@/components/shared'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
+import { UserHero } from '@/sections/user'
 import { buildHreflangTags } from '@/utils/seo'
 import { loadPageTranslations } from '@/utils/translations.server'
 
@@ -58,23 +59,15 @@ const UserPhotosPage: React.FC<UserPhotosPageProps> = ({ id, user, photosList, p
                 })}
             </Head>
 
-            {/* A sub-page of the overview's photos, not a tab: the trail leads back to the profile */}
-            <PageHeader
-                title={`${t('photos')}${pageTitle}`}
-                count={t('user-photos-count', { count: photosCount })}
-                breadcrumbs={[
-                    { link: '/users', text: t('users') },
-                    { link: `/users/${id}`, text: user?.name || '' }
-                ]}
-                leading={
-                    <UserAvatar
-                        user={user}
-                        size={'medium'}
-                    />
-                }
+            {/* A sub-page of the overview's photos: the same head as every page of the profile */}
+            <UserHero
+                user={user}
+                currentPage={'overview'}
             />
 
             <PhotoGallery
+                boxless={true}
+                title={`${t('photos')} (${photosCount})${pageTitle}`}
                 photos={photosList}
                 showAll={true}
             />

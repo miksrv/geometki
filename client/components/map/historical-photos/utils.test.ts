@@ -17,6 +17,17 @@ jest.mock('leaflet', () => ({
 
 const mockDivIcon = jest.mocked(Leaflet.divIcon)
 
+/** The html of the first `divIcon` call; fails the test when there was none, so `not.toContain` never passes on nothing */
+const iconHtml = (): string => {
+    const html = mockDivIcon.mock.calls[0]?.[0]?.html
+
+    if (typeof html !== 'string') {
+        throw new Error('divIcon was not called with html')
+    }
+
+    return html
+}
+
 const mockBounds = {
     getEast: () => 37.96,
     getNorth: () => 55.92,
@@ -151,12 +162,12 @@ describe('createDirectionIcon', () => {
 
     it('includes direction arrow polygon when dir is provided', () => {
         createDirectionIcon('n', 1960)
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('polygon')
+        expect(iconHtml()).toContain('polygon')
     })
 
     it('omits direction arrow when dir is undefined', () => {
         createDirectionIcon(undefined, 1960)
-        expect(String(mockDivIcon.mock.calls[0][0].html)).not.toContain('polygon')
+        expect(iconHtml()).not.toContain('polygon')
     })
 
     it('applies correct rotation for each compass direction', () => {
@@ -174,23 +185,23 @@ describe('createDirectionIcon', () => {
         for (const [dir, degrees] of cases) {
             jest.clearAllMocks()
             createDirectionIcon(dir)
-            expect(String(mockDivIcon.mock.calls[0][0].html)).toContain(`rotate(${degrees}, 16, 16)`)
+            expect(iconHtml()).toContain(`rotate(${degrees}, 16, 16)`)
         }
     })
 
     it('is case-insensitive for direction strings', () => {
         createDirectionIcon('NW')
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('rotate(315, 16, 16)')
+        expect(iconHtml()).toContain('rotate(315, 16, 16)')
     })
 
     it('omits arrow for unrecognized direction string', () => {
         createDirectionIcon('unknown')
-        expect(String(mockDivIcon.mock.calls[0][0].html)).not.toContain('polygon')
+        expect(iconHtml()).not.toContain('polygon')
     })
 
     it('includes year-based color in SVG', () => {
         createDirectionIcon(undefined, MIN_YEAR)
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('hsl(240, 75%, 50%)')
+        expect(iconHtml()).toContain('hsl(240, 75%, 50%)')
     })
 })
 
@@ -204,12 +215,12 @@ describe('createThumbnailIcon', () => {
 
     it('includes thumbnail URL in html', () => {
         createThumbnailIcon('path/to/photo.jpg', 1970)
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('https://img.pastvu.com/h/path/to/photo.jpg')
+        expect(iconHtml()).toContain('https://img.pastvu.com/h/path/to/photo.jpg')
     })
 
     it('applies year-based border color', () => {
         createThumbnailIcon('photo.jpg', MIN_YEAR)
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('border-color:hsl(240, 75%, 50%)')
+        expect(iconHtml()).toContain('border-color:hsl(240, 75%, 50%)')
     })
 })
 
@@ -223,17 +234,17 @@ describe('createClusterIcon', () => {
 
     it('shows the count in html', () => {
         createClusterIcon(42)
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('42')
+        expect(iconHtml()).toContain('42')
     })
 
     it('shows "999+" when count exceeds 999', () => {
         createClusterIcon(1000)
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('999+')
+        expect(iconHtml()).toContain('999+')
     })
 
     it('shows exact count at 999', () => {
         createClusterIcon(999)
-        const html = String(mockDivIcon.mock.calls[0][0].html)
+        const html = iconHtml()
         expect(html).toContain('999')
         expect(html).not.toContain('999+')
     })

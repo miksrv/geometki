@@ -167,7 +167,7 @@ class Visits extends ResourceController
      * "I was here" button and the questions block, asked in the browser (the place page is
      * cached without a visitor).
      *
-     * GET /visits/me?place=:id → { items, count, questions: [{ key, values }, …, { key: 'can', features }] }
+     * GET /visits/me?place=:id → { items, count, questions: [{ key, values }, …, { key: 'can', features }], repeatDays }
      *
      * @return ResponseInterface
      */
@@ -176,7 +176,7 @@ class Visits extends ResourceController
         $placeId = $this->request->getGet('place', FILTER_SANITIZE_SPECIAL_CHARS);
 
         if (!$this->session->isAuth || !$this->session->user || !$placeId) {
-            return $this->respond(['items' => [], 'count' => 0, 'questions' => []]);
+            return $this->respond(['items' => [], 'count' => 0, 'questions' => [], 'repeatDays' => VisitsModel::REPEAT_DAYS]);
         }
 
         $place = (new PlacesModel())->select('id, category')->find($placeId);
@@ -192,6 +192,8 @@ class Visits extends ResourceController
             'items'     => $this->visits->format($rows, $this->request->getLocale()),
             'count'     => count($rows),
             'questions' => $place ? $this->visits->questionsFor($place->category, $place->id, $current?->id) : [],
+            // The latest visit younger than this is the one a tap cancels
+            'repeatDays' => VisitsModel::REPEAT_DAYS,
         ]);
     }
 
@@ -262,8 +264,9 @@ class Visits extends ResourceController
     }
 
     /**
-     * Check in: creates the visit, or answers the one of that day (one per user, place and
-     * day, so a second tap and a resend from the offline queue cannot create a duplicate).
+     * Check in: creates the visit, or answers the one of that week (one per user and place in
+     * VisitsModel::REPEAT_DAYS days, so a resend from the offline queue cannot create a duplicate;
+     * the client turns a second tap in the week into cancelling the visit, DELETE).
      *
      * POST /visits { place, visitedAt? } — auth required. `visitedAt` is the visitor's day,
      * `Y-m-d`, within a day of the server's today (the time zones); today without it. 201 with
@@ -300,7 +303,7 @@ class Visits extends ResourceController
 
         $model  = new VisitsModel();
         $userId = $this->session->user->id;
-        $visit  = $model->findByDay($userId, $place->id, $day);
+        $visit  = $model->findWithinWindow($userId, $place->id, $day);
 
         if ($visit) {
             return $this->respond($this->answer($visit, false));
@@ -316,7 +319,7 @@ class Visits extends ResourceController
                 $model->insert($visit);
             } catch (DatabaseException $e) {
                 // Two taps at once: the unique key let the first one through, this one answers it
-                $visit = $model->findByDay($userId, $place->id, $day);
+                $visit = $model->findWithinWindow($userId, $place->id, $day);
 
                 if (!$visit) {
                     throw $e;

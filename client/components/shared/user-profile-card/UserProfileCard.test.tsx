@@ -64,9 +64,9 @@ jest.mock('@/config/env', () => ({ IMG_HOST: 'https://img.test/' }))
 jest.mock('@/public/images/no-avatar.png', () => ({ src: '/no-avatar.png' }))
 
 const user: ApiModel.User = {
-    activity: { date: '2020-01-01 10:00:00' },
+    activity: { date: '2020-01-01 10:00:00', timezone: 'UTC', timezone_type: 3 },
     avatar: 'a.jpg',
-    created: { date: '2014-11-12 11:36:18.000000' },
+    created: { date: '2014-11-12 11:36:18.000000', timezone: 'UTC', timezone_type: 3 },
     id: 'u1',
     levelData: { experience: 6796, level: 15, levelExperience: 6600, nextLevel: 8000 },
     name: 'Миша Топчило',
@@ -94,7 +94,11 @@ describe('UserProfileCard', () => {
                 <UserProfileCard
                     user={{
                         ...user,
-                        activity: { date: dayjs.utc().subtract(3, 'minute').format('YYYY-MM-DD HH:mm:ss') }
+                        activity: {
+                            date: dayjs.utc().subtract(3, 'minute').format('YYYY-MM-DD HH:mm:ss'),
+                            timezone: 'UTC',
+                            timezone_type: 3
+                        }
                     }}
                 />
             )
@@ -102,7 +106,7 @@ describe('UserProfileCard', () => {
             expect(screen.getByText('user-hero-online')).toBeInTheDocument()
         })
 
-        it('links the counters to the lists and explains the reputation', () => {
+        it('links the counters to the lists and the reputation to its history', () => {
             render(<UserProfileCard user={user} />)
 
             expect(screen.getByRole('link', { name: /101/ })).toHaveAttribute('href', '/users/u1/places')
@@ -111,7 +115,8 @@ describe('UserProfileCard', () => {
                 'href',
                 '/users/u1/places?show=visited'
             )
-            expect(screen.getByLabelText('reputation: 12')).toHaveTextContent('+12')
+            expect(screen.getByRole('link', { name: 'reputation: 12' })).toHaveTextContent('+12')
+            expect(screen.getByRole('link', { name: 'reputation: 12' })).toHaveAttribute('href', '/users/u1/reputation')
         })
 
         it('shows the actions it is given, none without them', () => {
@@ -193,7 +198,7 @@ describe('UserProfileCard', () => {
         expect(links.map((link) => link.getAttribute('aria-current'))).toStrictEqual([null, 'page', null])
     })
 
-    it('gives the home card the same links, as quick links into the own profile, none marked', () => {
+    it("gives the home card no links to the pages of the profile: they are the profile's tabs", () => {
         render(
             <UserProfileCard
                 user={user}
@@ -201,10 +206,8 @@ describe('UserProfileCard', () => {
             />
         )
 
-        const sections = screen.getByRole('navigation', { name: 'user-card-own-sections' })
-
-        expect(sections.querySelectorAll('a')).toHaveLength(3)
-        expect(sections.querySelector('[aria-current]')).toBeNull()
+        expect(screen.queryByRole('navigation', { name: /user-card-sections/ })).not.toBeInTheDocument()
+        expect(screen.queryByRole('link', { name: 'user-tab-overview' })).not.toBeInTheDocument()
     })
 
     it('shows no counters, not zeros, when the profile came without its statistic', () => {

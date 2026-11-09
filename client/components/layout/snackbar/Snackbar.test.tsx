@@ -1,7 +1,7 @@
 import React from 'react'
 import { Provider } from 'react-redux'
 
-import { configureStore } from '@reduxjs/toolkit'
+import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import { act, render, screen } from '@testing-library/react'
 
 import { API } from '@/api'
@@ -68,12 +68,13 @@ jest.mock('@/config/constants', () => ({
 
 const makeStore = (preloadedState?: Record<string, unknown>) =>
     configureStore({
-        reducer: {
+        reducer: combineReducers({
             application: applicationReducer,
             auth: authReducer,
             notification: notificationReducer
-        },
-        preloadedState
+        }),
+        // Tests preload partial slices, so the state is not checked against the full slice types
+        preloadedState: preloadedState as never
     })
 
 const renderWithStore = (ui: React.ReactElement, preloadedState?: Record<string, unknown>) => {

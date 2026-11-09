@@ -72,23 +72,9 @@ export const API = createApi({
     }),
     endpoints: (builder) => ({
         /** Controller: Achievements **/
-        getAchievements: builder.query<
-            { data: ApiType.Achievements.Achievement[] },
-            ApiType.Achievements.GetAchievementsParams | void
-        >({
-            providesTags: ['Achievements'],
-            query: (params) => ({ params: params ?? undefined, url: 'achievements' })
-        }),
         getUserAchievements: builder.query<{ data: ApiType.Achievements.Achievement[] }, string>({
             providesTags: ['UserAchievements'],
             query: (userId) => `users/${userId}/achievements`
-        }),
-        getAchievementsProgress: builder.query<
-            { data: Record<string, ApiType.Achievements.AchievementProgress> },
-            void
-        >({
-            providesTags: ['AchievementsProgress'],
-            query: () => 'achievements/progress'
         }),
         getAchievementsManage: builder.query<{ data: ApiType.Achievements.AchievementAdmin[] }, void>({
             providesTags: ['AchievementsManage'],
@@ -98,22 +84,22 @@ export const API = createApi({
             { data: ApiType.Achievements.Achievement },
             ApiType.Achievements.AchievementInput
         >({
-            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            invalidatesTags: ['UserAchievements', 'AchievementsManage'],
             query: (body) => ({ body, method: 'POST', url: 'achievements' })
         }),
         updateAchievement: builder.mutation<
             { data: ApiType.Achievements.Achievement },
             { id: string; body: ApiType.Achievements.AchievementInput }
         >({
-            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            invalidatesTags: ['UserAchievements', 'AchievementsManage'],
             query: ({ id, body }) => ({ body, method: 'PUT', url: `achievements/${id}` })
         }),
         deleteAchievement: builder.mutation<void, string>({
-            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            invalidatesTags: ['UserAchievements', 'AchievementsManage'],
             query: (id) => ({ method: 'DELETE', url: `achievements/${id}` })
         }),
         uploadAchievementImage: builder.mutation<{ id: string; image: string }, { id: string; file: File }>({
-            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            invalidatesTags: ['UserAchievements', 'AchievementsManage'],
             query: ({ id, file }) => {
                 const formData = new FormData()
                 formData.append('image', file)
@@ -275,15 +261,6 @@ export const API = createApi({
             providesTags: (result, error, arg) => [{ id: arg.id, type: 'Collections' }],
             query: ({ id, limit }) => `collections/${id}/recommended${encodeQueryData({ limit })}`
         }),
-        collectionsPatchModeration: builder.mutation<void, ApiType.Collections.ModerationRequest>({
-            invalidatesTags: (res, err, arg) => [{ id: arg.id, type: 'Collections' }],
-            query: ({ id, ...body }) => ({
-                body,
-                method: 'PATCH',
-                url: `collections/${id}/moderation`
-            }),
-            transformErrorResponse: extractErrorData
-        }),
 
         /** Controller: Categories v*/
         categoriesGetLocations: builder.query<
@@ -367,9 +344,6 @@ export const API = createApi({
         /** Controller: Location **/
         locationGetByType: builder.query<ApiType.Location.GetByTypeResponse, ApiType.Location.GetByTypeRequest>({
             query: (params) => `location/${params.id}?type=${params.type}`
-        }),
-        locationGetGeoSearch: builder.mutation<ApiType.Location.GeoSearchResponse, Maybe<string>>({
-            query: (searchString) => `location/geosearch?text=${searchString || ''}`
         }),
         locationGetSearch: builder.mutation<ApiType.Location.SearchResponse, Maybe<string>>({
             query: (searchString) => `location/search?text=${searchString || ''}`
@@ -527,7 +501,9 @@ export const API = createApi({
 
         /** Controller: Photos **/
         photoDeleteItem: builder.mutation<ApiType.Photos.DeleteResponse, ApiType.Photos.DeleteRequest>({
-            invalidatesTags: (res, err, arg) => (arg?.temporary ? [] : ['Feed']),
+            // The request has no place: every list of photos (the cover picker, the profile, a visit's photos)
+            invalidatesTags: (res, err, arg) =>
+                arg?.temporary ? [] : [{ type: 'Photos' }, { type: 'Visits' }, { type: 'Feed' }],
             query: (params) => ({
                 method: 'DELETE',
                 url: `photos/${params?.temporary ? 'temporary/' : ''}${params?.id}`
@@ -599,6 +575,17 @@ export const API = createApi({
             transformErrorResponse: extractErrorMessage
         }),
         placeDelete: builder.mutation<void, string>({
+            // The place is gone from every list, map, feed and collection it was in
+            invalidatesTags: [
+                { type: 'Places' },
+                { type: 'Photos' },
+                { type: 'Feed' },
+                { type: 'Bookmarks' },
+                { type: 'Visits' },
+                { type: 'Collections' },
+                { type: 'Notifications' },
+                { type: 'OsmCandidates' }
+            ],
             query: (id) => ({
                 method: 'DELETE',
                 url: `places/${id}`
@@ -693,6 +680,21 @@ export const API = createApi({
         usersGetItem: builder.query<ApiType.Users.ItemResponse, string>({
             providesTags: ['Users'],
             query: (item) => `users/${item}`
+        }),
+        /** The history of a reputation, newest first: a scrolling list */
+        usersGetReputation: builder.infiniteQuery<
+            ApiType.Users.ReputationResponse,
+            ApiType.Users.ReputationRequest,
+            string
+        >({
+            infiniteQueryOptions: {
+                getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+                initialPageParam: ''
+            },
+            // A score moves it
+            providesTags: (result, error, arg) => [{ id: `reputation-${arg.id}`, type: 'Rating' }],
+            query: ({ pageParam, queryArg }) =>
+                `users/${queryArg.id}/reputation${encodeQueryData({ cursor: pageParam || undefined })}`
         }),
         usersGetList: builder.query<ApiType.Users.ListResponse, Maybe<ApiType.Users.ListRequest>>({
             providesTags: ['Users'],
@@ -790,9 +792,7 @@ export const API = createApi({
     },
     reducerPath: 'api',
     tagTypes: [
-        'Achievements',
         'AchievementsManage',
-        'AchievementsProgress',
         'Bookmarks',
         'CollectionMembership',
         'Collections',

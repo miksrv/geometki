@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, cn } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
@@ -8,7 +8,7 @@ import { openAuthDialog } from '@/app/applicationSlice'
 import { Notify, NotifyReplace } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import { getErrorMessage } from '@/utils/api'
-import { localPlainDate } from '@/utils/date'
+import { daysBetweenPlainDates, localPlainDate } from '@/utils/date'
 
 import styles from './styles.module.sass'
 
@@ -108,7 +108,7 @@ interface WasHereButtonProps {
 }
 
 /**
- * What a check-in says: "Визит №3 в это место" (or "already today") and, for the first visit
+ * What a check-in says: "Визит №3 в это место" (or "already this week") and, for the first visit
  * of the year, a second line. The toast joins them, the phone sheet shows them as its title
  * and a line under it.
  */
@@ -122,15 +122,16 @@ export const checkInMessage = (
             : undefined,
     title: visit.isNew
         ? t('visit-result-title', { defaultValue: 'Визит №{{count}} в это место', count: visit.ordinal })
-        : t('visit-already-today', { defaultValue: 'Вы уже отмечались здесь сегодня' })
+        : t('visit-already-this-week', { defaultValue: 'Вы уже отмечались здесь на этой неделе' })
 })
 
 /**
  * "Я здесь был(а)": one tap checks in, with no location and no form, and a toast tells the number
- * of the visit. A visit is a log entry: with visits the button turns green (success tint, the same
- * in every place it is shown), reads "Вы были здесь · 3 раза" and a tap checks in again (one visit
- * per day, a second tap the same day says so). A guest signs in first and is checked in right after,
- * even when the sign-in reloads the page; closing the sign-in dialog drops the tap.
+ * of the visit. A visit is a log entry, one a week (`repeatDays` of `GET /visits/me`): for a week
+ * after the visit the button is green (success tint, the same in every place it is shown) and
+ * reads "Вы здесь отметились", a tap then cancels the visit (`DELETE`); after the week it reads
+ * "Вы были здесь · 3 раза" and a tap checks in again. A guest signs in first and is checked in
+ * right after, even when the sign-in reloads the page; closing the sign-in dialog drops the tap.
  */
 export const WasHereButton: React.FC<WasHereButtonProps> = ({
     placeId,
@@ -152,10 +153,36 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
     const [postVisit, { isLoading }] = API.useVisitsPostMutation({ fixedCacheKey: `visit-${placeId}` })
     // The queue of the visits saved offline posts for any place: it keeps out of the buttons' state
     const [postQueued] = API.useVisitsPostMutation()
+    const [removeVisit, { isLoading: removing }] = API.useVisitsDeleteMutation({
+        fixedCacheKey: `visit-delete-${placeId}`
+    })
 
     const { data: myVisits } = API.useVisitsGetMeQuery({ place: placeId! }, { skip: !placeId || !isAuth })
 
     const count = myVisits?.count ?? 0
+
+    // The visitor's today, again when the tab comes back: one left open past midnight moves on
+    const [today, setToday] = useState<string>(() => localPlainDate(0))
+
+    useEffect(() => {
+        const refresh = () => {
+            if (document.visibilityState === 'visible') {
+                setToday(localPlainDate(0))
+            }
+        }
+
+        document.addEventListener('visibilitychange', refresh)
+
+        return () => document.removeEventListener('visibilitychange', refresh)
+    }, [])
+
+    // The visit of this week: a tap cancels it. Days are the visitor's (`visitedAt` is the day they sent)
+    const currentVisit = useMemo(() => {
+        const latest = [...(myVisits?.items ?? [])].sort((a, b) => b.visitedAt.localeCompare(a.visitedAt))[0]
+        const days = latest ? daysBetweenPlainDates(latest.visitedAt.slice(0, 10), today) : undefined
+
+        return latest && days !== undefined && days < (myVisits?.repeatDays ?? 1) ? latest : undefined
+    }, [myVisits, today])
 
     const notifyError = useCallback(
         (error: unknown) =>
@@ -322,7 +349,45 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
         }
     }, [isAuth, placeId, showAuthDialog])
 
+    const cancelVisit = async (visitId: string) => {
+        if (!placeId || inFlight.has(placeId)) {
+            return
+        }
+
+        inFlight.add(placeId)
+
+        try {
+            await removeVisit({ id: visitId, place: placeId }).unwrap()
+
+            void dispatch(
+                NotifyReplace({
+                    id: 'visited',
+                    message: t('visit-cancelled', { defaultValue: 'Визит отменён' }),
+                    type: 'success'
+                })
+            )
+        } catch (error) {
+            void dispatch(
+                Notify({
+                    id: 'visited',
+                    message:
+                        getErrorMessage(error) ??
+                        t('visit-cancel-error', { defaultValue: 'Не удалось отменить визит' }),
+                    title: '',
+                    type: 'error'
+                })
+            )
+        } finally {
+            inFlight.delete(placeId)
+        }
+    }
+
     const handleClick = () => {
+        if (currentVisit) {
+            void cancelVisit(currentVisit.id)
+            return
+        }
+
         if (!isAuth) {
             if (placeId) {
                 writeIntent({ placeId, timestamp: Date.now() })
@@ -335,10 +400,16 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
         void checkIn()
     }
 
-    const label =
-        count > 0
-            ? t('visit-button-times', { count, defaultValue: 'Вы были здесь · {{count}}' })
-            : t('visited-was-here')
+    const label = currentVisit
+        ? t('visit-button-current', { defaultValue: 'Вы здесь отметились' })
+        : count > 0
+          ? t('visit-button-times', { count, defaultValue: 'Вы были здесь · {{count}}' })
+          : t('visited-was-here')
+    const busy = isLoading || removing
+    // The label alone does not say a tap cancels: the hint does (the icon-only bar has it as the name)
+    const cancelHint = currentVisit
+        ? t('visit-button-cancel-hint', { defaultValue: 'Нажмите, чтобы отменить' })
+        : undefined
 
     return (
         <>
@@ -348,10 +419,10 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
                 icon={'CheckCircle'}
                 stretched={stretched}
                 className={cn(styles.wasHereButton, count > 0 && styles.visited, className)}
-                disabled={!placeId || isLoading}
-                loading={isLoading}
+                disabled={!placeId || busy}
+                loading={busy}
                 label={hideLabel ? undefined : label}
-                tooltip={hideLabel ? label : undefined}
+                tooltip={hideLabel ? [label, cancelHint].filter(Boolean).join('. ') : cancelHint}
                 onClick={handleClick}
             />
         </>

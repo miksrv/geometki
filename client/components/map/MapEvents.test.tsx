@@ -1,5 +1,6 @@
 import React from 'react'
 import { useMapEvents } from 'react-leaflet'
+import type { LeafletMouseEvent } from 'leaflet'
 
 import { render } from '@testing-library/react'
 
@@ -26,9 +27,7 @@ jest.mock('@/utils/helpers', () => ({
 describe('MapEvents', () => {
     beforeEach(() => {
         jest.clearAllMocks()
-        jest.mocked(useMapEvents).mockImplementation(
-            (_handlers: Record<string, (...args: unknown[]) => unknown>) => mockMapEvents
-        )
+        jest.mocked(useMapEvents).mockImplementation(() => mockMapEvents as unknown as ReturnType<typeof useMapEvents>)
     })
 
     it('renders null', () => {
@@ -58,7 +57,7 @@ describe('MapEvents', () => {
         const onMouseMove = jest.fn()
         render(<MapEvents onMouseMove={onMouseMove} />)
         const { mousemove } = jest.mocked(useMapEvents).mock.calls[0][0]
-        mousemove({ latlng: { lat: 51.765, lng: 55.099 } })
+        mousemove?.({ latlng: { lat: 51.765, lng: 55.099 } } as LeafletMouseEvent)
         expect(onMouseMove).toHaveBeenCalledWith(
             expect.objectContaining({ lat: expect.any(Number), lon: expect.any(Number) })
         )

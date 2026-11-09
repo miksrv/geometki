@@ -58,7 +58,7 @@ class Search extends ResourceController
         $order    = $this->request->getGet('order', FILTER_SANITIZE_SPECIAL_CHARS);
         $lat      = $this->request->getGet('lat', FILTER_VALIDATE_FLOAT);
         $lon      = $this->request->getGet('lon', FILTER_VALIDATE_FLOAT);
-        $limit    = min(abs((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 20)), 40);
+        $limit    = max(1, min(abs((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 20)), 40));
         $offset   = abs((int) ($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0));
         $locale   = $this->request->getLocale();
 

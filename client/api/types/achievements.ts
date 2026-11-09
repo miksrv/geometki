@@ -61,9 +61,3 @@ export interface AchievementAdmin extends Achievement {
     description_ru: string | null
     rules: AchievementRule[]
 }
-
-export interface GetAchievementsParams {
-    category?: string
-    tier?: string
-    type?: string
-}

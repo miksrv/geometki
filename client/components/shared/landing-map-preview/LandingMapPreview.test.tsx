@@ -63,7 +63,7 @@ describe('LandingMapPreview', () => {
         act(() => {
             observeCallback?.(
                 [{ isIntersecting: true } as IntersectionObserverEntry],
-                new MockIntersectionObserver(() => {})
+                new MockIntersectionObserver(() => {}) as unknown as IntersectionObserver
             )
         })
 
@@ -84,7 +84,7 @@ describe('LandingMapPreview', () => {
         act(() => {
             observeCallback?.(
                 [{ isIntersecting: true } as IntersectionObserverEntry],
-                new MockIntersectionObserver(() => {})
+                new MockIntersectionObserver(() => {}) as unknown as IntersectionObserver
             )
         })
 
@@ -97,7 +97,7 @@ describe('LandingMapPreview', () => {
         act(() => {
             observeCallback?.(
                 [{ isIntersecting: true } as IntersectionObserverEntry],
-                new MockIntersectionObserver(() => {})
+                new MockIntersectionObserver(() => {}) as unknown as IntersectionObserver
             )
         })
 
@@ -112,7 +112,7 @@ describe('LandingMapPreview', () => {
         act(() => {
             observeCallback?.(
                 [{ isIntersecting: true } as IntersectionObserverEntry],
-                new MockIntersectionObserver(() => {})
+                new MockIntersectionObserver(() => {}) as unknown as IntersectionObserver
             )
         })
 

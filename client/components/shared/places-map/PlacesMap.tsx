@@ -27,6 +27,8 @@ interface PlacesMapProps {
     compact?: boolean
     /** Appended as a query string on the "Открыть на большой карте" link, after the `#lat,lon,zoom` part (e.g. `?category=cave`) — see `pages/map.tsx` */
     fullMapQuery?: string
+    /** The "Во весь экран" button among the map controls (where the browser can): a person's map */
+    fullScreen?: boolean
 }
 
 /**
@@ -34,7 +36,7 @@ interface PlacesMapProps {
  * category markers with the usual place popup, in a framed card. The viewport is fitted
  * to all of them; a single place is centred at a city zoom. Renders nothing without places.
  */
-export const PlacesMap: React.FC<PlacesMapProps> = ({ places, loading, compact, fullMapQuery }) => {
+export const PlacesMap: React.FC<PlacesMapProps> = ({ places, loading, compact, fullMapQuery, fullScreen }) => {
     // Coordinates are numbers in the API types, but guard against decimal strings anyway:
     // `sum + '50.7'` concatenates instead of adding and Leaflet throws on (NaN, NaN).
     // null and '' are skipped before converting, since Number() turns them into 0 (a point off Africa).
@@ -94,7 +96,7 @@ export const PlacesMap: React.FC<PlacesMapProps> = ({ places, loading, compact, 
                     scrollWheelZoom={false}
                     controlsSize={'small'}
                     fullMapLink={center ? `/map${fullMapQuery ?? ''}#${center[0]},${center[1]},10` : undefined}
-                    enableFullScreen={false}
+                    enableFullScreen={!!fullScreen}
                     enableCategoryControl={false}
                     enableLayersSwitcher={false}
                     enableContextMenu={false}

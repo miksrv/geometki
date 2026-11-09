@@ -1,7 +1,7 @@
 import React from 'react'
 import { Provider } from 'react-redux'
 
-import { configureStore } from '@reduxjs/toolkit'
+import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 import { API } from '@/api'
@@ -73,12 +73,13 @@ jest.mock('@/config/constants', () => ({
 
 const makeStore = (preloadedState?: Record<string, unknown>) =>
     configureStore({
-        reducer: {
+        reducer: combineReducers({
             application: applicationReducer,
             auth: authReducer,
             notification: notificationReducer
-        },
-        preloadedState
+        }),
+        // Tests preload partial slices, so the state is not checked against the full slice types
+        preloadedState: preloadedState as never
     })
 
 const renderWithStore = (ui: React.ReactElement, preloadedState?: Record<string, unknown>) => {
@@ -93,8 +94,11 @@ describe('BookmarkButton', () => {
             data: { result: false },
             isLoading: false,
             isFetching: false
-        })
-        jest.mocked(API.useBookmarksPutPlaceMutation).mockReturnValue([jest.fn(), { isLoading: false }])
+        } as unknown as ReturnType<typeof API.useBookmarksGetPlaceQuery>)
+        jest.mocked(API.useBookmarksPutPlaceMutation).mockReturnValue([
+            jest.fn(),
+            { isLoading: false }
+        ] as unknown as ReturnType<typeof API.useBookmarksPutPlaceMutation>)
     })
 
     describe('rendering', () => {
@@ -113,7 +117,7 @@ describe('BookmarkButton', () => {
                 data: { result: true },
                 isLoading: false,
                 isFetching: false
-            })
+            } as unknown as ReturnType<typeof API.useBookmarksGetPlaceQuery>)
 
             renderWithStore(<BookmarkButton placeId={'place-1'} />)
             expect(screen.getByRole('button')).toHaveAttribute('data-icon', 'Bookmark')
@@ -146,12 +150,15 @@ describe('BookmarkButton', () => {
     describe('authenticated user', () => {
         it('calls setBookmark when clicked while authenticated', async () => {
             const mockSetBookmark = jest.fn().mockResolvedValue({ data: {} })
-            jest.mocked(API.useBookmarksPutPlaceMutation).mockReturnValue([mockSetBookmark, { isLoading: false }])
+            jest.mocked(API.useBookmarksPutPlaceMutation).mockReturnValue([
+                mockSetBookmark,
+                { isLoading: false }
+            ] as unknown as ReturnType<typeof API.useBookmarksPutPlaceMutation>)
             jest.mocked(API.useBookmarksGetPlaceQuery).mockReturnValue({
                 data: { result: false },
                 isLoading: false,
                 isFetching: false
-            })
+            } as unknown as ReturnType<typeof API.useBookmarksGetPlaceQuery>)
 
             renderWithStore(<BookmarkButton placeId={'place-1'} />, {
                 auth: { isAuth: true, user: { id: 'u1', name: 'Alice' } }

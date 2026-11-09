@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.19.1
+
+Reputation history, undo a check-in, check-in questions on phones and profile polish.
+
+### Patch Changes
+
+- Places: tap "You checked in here" within a week to cancel the visit; one visit a week per place
+- Places: on phones the questions after a check-in slide up from the bottom
+- Profile: reputation opens its history — every score that moved it, with the share and why
+- Profile map: badges mark the places a person visited or saved, the chips explain them
+- Profile map: a full-screen button
+- Home: "Waiting to be explored" shows the distance to each spot and its category icon
+- Profile: "Places" keeps one "Visited" list instead of "Visited" and "Visits"
+- Profile: all photos open under the profile header, without a frame
+- Profile: even spacing between the overview blocks, smaller list switches in "Places"
+
 ## 1.19.0
 
 A new profile page and settings.

@@ -7,8 +7,10 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
 import { CopyCoordinates, MapLinks, WasHereButton } from '@/components/shared'
+import useIsPhone from '@/hooks/useIsPhone'
 import { buildLocationHref, formatThousands, getLandingFlags } from '@/utils/helpers'
 
+import { openVisitSheet } from '../place-actions/visitSheet'
 import { PlaceNow } from '../place-now'
 import { PlaceVisitQuestions } from '../place-visit-questions'
 
@@ -32,11 +34,12 @@ interface PlaceLocationProps {
  * neighbours, the distance and the address (every level a link to its places), the
  * coordinates, the navigators, "Как сейчас" (the visitors' answers: road, entry, state…), then the
  * visitors (who was here) with "Я здесь был(а)", under the button the one-tap questions after a
- * check-in (`PlaceVisitQuestions`) and the collections with the place. Sticky in the right column on desktop, right after the text
+ * check-in (`PlaceVisitQuestions`; on a phone they are the bottom bar's sheet) and the collections with the place. Sticky in the right column on desktop, right after the text
  * on phones: read → see where → go. The author and the dates are in "О месте".
  */
 export const PlaceLocation: React.FC<PlaceLocationProps> = ({ place, nearPlaces, children }) => {
     const { t } = useTranslation()
+    const isPhone = useIsPhone()
 
     const mapRef = useRef<HTMLDivElement>(null)
     // The Leaflet chunk is loaded once the card is near the viewport: above the fold on
@@ -184,13 +187,15 @@ export const PlaceLocation: React.FC<PlaceLocationProps> = ({ place, nearPlaces,
 
                 {children}
 
+                {/* On a phone the questions are in the bottom bar's sheet, whichever button checked in */}
                 <WasHereButton
                     size={'medium'}
                     stretched={true}
                     placeId={place.id}
+                    onCheckedIn={isPhone ? openVisitSheet : undefined}
                 />
 
-                <PlaceVisitQuestions placeId={place.id} />
+                {!isPhone && <PlaceVisitQuestions placeId={place.id} />}
             </div>
         </Container>
     )

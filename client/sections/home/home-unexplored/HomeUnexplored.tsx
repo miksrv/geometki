@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { Button, cn, Container, Icon } from 'simple-react-ui-kit'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
-import { API, ApiType } from '@/api'
+import { API, ApiModel, ApiType } from '@/api'
 import { OSM_CANDIDATES_POLLING_MS } from '@/components/map/osm-candidates/constants'
 import { collectionPickerStyles } from '@/components/shared'
 import useUserLocation from '@/hooks/useUserLocation'
+import { categoryImage } from '@/utils/categories'
+import { formatDistance, haversineDistanceKm } from '@/utils/geo'
 import { formatThousands } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
@@ -27,11 +30,12 @@ interface HomeUnexploredProps {
 
 /**
  * "Ждут исследования": interesting OpenStreetMap objects near the user that are not on
- * Geometki yet (the map's "new interesting places" layer), each a link to the map there.
- * Without a known location it is one line and a button that asks for it.
+ * Geometki yet (the map's "new interesting places" layer), each a link to the map there:
+ * the photo or, without one, the category icon of its marker on the map, and the distance
+ * from the visitor. Without a known location it is one line and a button that asks for it.
  */
 export const HomeUnexplored: React.FC<HomeUnexploredProps> = ({ total }) => {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
     const { location: storedLocation, loading: locating, request: requestLocation } = useUserLocation()
 
     // The location lives in a cookie the server render does not read here: use it after
@@ -110,6 +114,7 @@ export const HomeUnexplored: React.FC<HomeUnexploredProps> = ({ total }) => {
                     {candidates.map((candidate) => {
                         const cover = candidate.photos[0]?.url ?? candidate.image
                         const title = candidate.name ?? candidate.typeTitle
+                        const distance = formatDistance(haversineDistanceKm(location, candidate) * 1000, i18n.language)
 
                         return (
                             <li key={candidate.id}>
@@ -127,6 +132,14 @@ export const HomeUnexplored: React.FC<HomeUnexploredProps> = ({ total }) => {
                                                 alt={''}
                                                 loading={'lazy'}
                                             />
+                                        ) : candidate.category ? (
+                                            <Image
+                                                className={styles.categoryIcon}
+                                                src={categoryImage(candidate.category as ApiModel.Categories).src}
+                                                alt={''}
+                                                width={24}
+                                                height={24}
+                                            />
                                         ) : (
                                             <Icon name={'Compass'} />
                                         )}
@@ -139,6 +152,7 @@ export const HomeUnexplored: React.FC<HomeUnexploredProps> = ({ total }) => {
                                                 .join(' · ')}
                                         </span>
                                     </span>
+                                    <span className={styles.distance}>{distance}</span>
                                 </Link>
                             </li>
                         )

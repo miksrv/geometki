@@ -227,6 +227,14 @@ describe('proxy', () => {
         expect(location(proxy(request('/places/create')))).toBe('http://localhost:3000/places')
     })
 
+    it('keeps the English locale in the redirects of the guards', () => {
+        expect(location(proxy(request('/en/places/create')))).toBe('http://localhost:3000/en/places')
+        expect(location(proxy(request('/en/users/settings?tab=push')))).toBe('http://localhost:3000/en/users')
+        expect(location(proxy(request('/en/admin/achievements')))).toBe('http://localhost:3000/en')
+        expect(location(proxy(request('/en/auth', 'jwt')))).toBe('http://localhost:3000/en')
+        expect(location(proxy(request('/users/settings')))).toBe('http://localhost:3000/users')
+    })
+
     describe('category combinations for crawlers', () => {
         const googlebot = { 'user-agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' }
         const chrome = {

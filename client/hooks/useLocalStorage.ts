@@ -13,7 +13,11 @@ export const useLocalStorage = <S>(
 
     useEffect(() => {
         const item = LocalStorage.getItem(key as keyof typeof LOCAL_STORAGE)
-        setState((item ?? null) as S)
+
+        // Nothing stored (`getItem` gives ''): the initial state stays
+        if (item) {
+            setState(item as S)
+        }
     }, [])
 
     useEffect(() => {

@@ -53,7 +53,7 @@ class Users extends ResourceController
     {
         // At least one: `limit=0` would drop the LIMIT and put every user into the IN lists below
         $limit  = max(1, min(abs((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 40)), 40));
-        $offset = abs($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0);
+        $offset = abs((int) ($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0));
         $search = trim((string) ($this->request->getGet('search') ?? ''));
 
         $allowedSortFields = ['created_at', 'activity_at', 'reputation', 'experience'];

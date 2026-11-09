@@ -682,8 +682,12 @@ class Places extends ResourceController
      */
     public function delete($id = null): ResponseInterface
     {
-        if (!$this->session->isAuth || $this->session->user->role !== 'admin') {
+        if (!$this->session->isAuth) {
             return $this->failUnauthorized();
+        }
+
+        if ($this->session->user?->role !== 'admin') {
+            return $this->failForbidden();
         }
 
         if (!$this->model->find($id)) {
@@ -799,13 +803,15 @@ class Places extends ResourceController
                     return $this->failValidationErrors(lang($error));
                 }
             } else {
-                $photoData = (new PhotosModel())->select('id, filename, extension')->find($photoId);
+                // A photo of this place only: another place's photo has no file in this folder
+                $photoData = (new PhotosModel())->select('id, filename, extension')->where('place_id', $id)->find($photoId);
+                $imagePath = $photoData ? UPLOAD_PHOTOS . $id . '/' . $photoData->filename . '.' . $photoData->extension : null;
 
-                if (!$photoData) {
+                if (!$photoData || !is_file($imagePath)) {
                     return $this->failValidationErrors(lang('Places.coverPointNotExist'));
                 }
 
-                $imageFile = new File(UPLOAD_PHOTOS . $id . '/' . $photoData->filename . '.' . $photoData->extension);
+                $imageFile = new File($imagePath);
 
                 list($width, $height) = getimagesize($imageFile->getRealPath());
 
@@ -951,8 +957,8 @@ class Places extends ResourceController
         $district = $this->request->getGet('district', FILTER_SANITIZE_NUMBER_INT);
         $locality = $this->request->getGet('locality', FILTER_SANITIZE_NUMBER_INT);
         $location = $this->request->getGet('location', FILTER_SANITIZE_SPECIAL_CHARS);
-        $limit    = abs($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 20);
-        $offset   = abs($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0);
+        $limit    = max(1, min(abs((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?? 20)), 40));
+        $offset   = abs((int) ($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0));
         $category = $this->request->getGet('category', FILTER_SANITIZE_SPECIAL_CHARS);
         $missing  = $this->request->getGet('missingLocale', FILTER_SANITIZE_SPECIAL_CHARS);
 

@@ -97,19 +97,24 @@ const mockData = {
 describe('Wikipedia', () => {
     beforeEach(() => {
         jest.clearAllMocks()
-        jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(() => ({
-            getBounds: () => mockBounds,
-            getZoom: () => 12,
-            setView: jest.fn()
-        }))
+        jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(
+            () =>
+                ({
+                    getBounds: () => mockBounds,
+                    getZoom: () => 12,
+                    setView: jest.fn()
+                }) as unknown as ReturnType<typeof ReactLeaflet.useMapEvents>
+        )
     })
 
     describe('no data', () => {
         it('renders nothing when query has no data', () => {
-            jest.mocked(APIWikipedia.useGetByBoundsQuery).mockReturnValue({ data: undefined })
+            jest.mocked(APIWikipedia.useGetByBoundsQuery).mockReturnValue({ data: undefined } as unknown as ReturnType<
+                typeof APIWikipedia.useGetByBoundsQuery
+            >)
             jest.mocked(APIWikipedia.useLazyGetExtractQuery).mockReturnValue([
                 jest.fn().mockResolvedValue({ data: undefined })
-            ])
+            ] as unknown as ReturnType<typeof APIWikipedia.useLazyGetExtractQuery>)
             const { container } = render(<Wikipedia />)
             expect(container.innerHTML).toBe('')
         })
@@ -117,10 +122,10 @@ describe('Wikipedia', () => {
         it('renders nothing when geosearch results are empty', () => {
             jest.mocked(APIWikipedia.useGetByBoundsQuery).mockReturnValue({
                 data: { query: { geosearch: [] } }
-            })
+            } as unknown as ReturnType<typeof APIWikipedia.useGetByBoundsQuery>)
             jest.mocked(APIWikipedia.useLazyGetExtractQuery).mockReturnValue([
                 jest.fn().mockResolvedValue({ data: undefined })
-            ])
+            ] as unknown as ReturnType<typeof APIWikipedia.useLazyGetExtractQuery>)
             const { container } = render(<Wikipedia />)
             expect(container.innerHTML).toBe('')
         })
@@ -128,21 +133,26 @@ describe('Wikipedia', () => {
 
     describe('too big area', () => {
         it('does not ask the API and shows nothing when the area is over the geosearch limit', () => {
-            jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(() => ({
-                // The whole of Moscow, about 40 km across
-                getBounds: () => ({
-                    getEast: () => 37.96,
-                    getNorth: () => 55.92,
-                    getSouth: () => 55.57,
-                    getWest: () => 37.29
-                }),
-                getZoom: () => 10,
-                setView: jest.fn()
-            }))
-            jest.mocked(APIWikipedia.useGetByBoundsQuery).mockReturnValue({ data: mockData })
+            jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(
+                () =>
+                    ({
+                        // The whole of Moscow, about 40 km across
+                        getBounds: () => ({
+                            getEast: () => 37.96,
+                            getNorth: () => 55.92,
+                            getSouth: () => 55.57,
+                            getWest: () => 37.29
+                        }),
+                        getZoom: () => 10,
+                        setView: jest.fn()
+                    }) as unknown as ReturnType<typeof ReactLeaflet.useMapEvents>
+            )
+            jest.mocked(APIWikipedia.useGetByBoundsQuery).mockReturnValue({ data: mockData } as unknown as ReturnType<
+                typeof APIWikipedia.useGetByBoundsQuery
+            >)
             jest.mocked(APIWikipedia.useLazyGetExtractQuery).mockReturnValue([
                 jest.fn().mockResolvedValue({ data: undefined })
-            ])
+            ] as unknown as ReturnType<typeof APIWikipedia.useLazyGetExtractQuery>)
 
             const { container } = render(<Wikipedia />)
 
@@ -153,10 +163,12 @@ describe('Wikipedia', () => {
 
     describe('with data', () => {
         beforeEach(() => {
-            jest.mocked(APIWikipedia.useGetByBoundsQuery).mockReturnValue({ data: mockData })
+            jest.mocked(APIWikipedia.useGetByBoundsQuery).mockReturnValue({ data: mockData } as unknown as ReturnType<
+                typeof APIWikipedia.useGetByBoundsQuery
+            >)
             jest.mocked(APIWikipedia.useLazyGetExtractQuery).mockReturnValue([
                 jest.fn().mockResolvedValue({ data: undefined })
-            ])
+            ] as unknown as ReturnType<typeof APIWikipedia.useLazyGetExtractQuery>)
         })
 
         it('renders a Marker for each geosearch item', () => {
@@ -177,7 +189,9 @@ describe('Wikipedia', () => {
 
         it('calls getExtract on marker click', async () => {
             const mockGetExtract = jest.fn().mockResolvedValue({ data: undefined })
-            jest.mocked(APIWikipedia.useLazyGetExtractQuery).mockReturnValue([mockGetExtract])
+            jest.mocked(APIWikipedia.useLazyGetExtractQuery).mockReturnValue([mockGetExtract] as unknown as ReturnType<
+                typeof APIWikipedia.useLazyGetExtractQuery
+            >)
 
             render(<Wikipedia />)
             screen.getAllByTestId('wikipedia-marker')[0].click()
@@ -193,7 +207,9 @@ describe('Wikipedia', () => {
                     resolveExtract = resolve
                 })
             )
-            jest.mocked(APIWikipedia.useLazyGetExtractQuery).mockReturnValue([mockGetExtract])
+            jest.mocked(APIWikipedia.useLazyGetExtractQuery).mockReturnValue([mockGetExtract] as unknown as ReturnType<
+                typeof APIWikipedia.useLazyGetExtractQuery
+            >)
 
             render(<Wikipedia />)
             screen.getAllByTestId('wikipedia-marker')[0].click()
@@ -220,7 +236,9 @@ describe('Wikipedia', () => {
                     }
                 }
             })
-            jest.mocked(APIWikipedia.useLazyGetExtractQuery).mockReturnValue([mockGetExtract])
+            jest.mocked(APIWikipedia.useLazyGetExtractQuery).mockReturnValue([mockGetExtract] as unknown as ReturnType<
+                typeof APIWikipedia.useLazyGetExtractQuery
+            >)
 
             render(<Wikipedia />)
             screen.getAllByTestId('wikipedia-marker')[0].click()

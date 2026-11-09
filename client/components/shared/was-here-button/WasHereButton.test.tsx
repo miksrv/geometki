@@ -7,6 +7,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import applicationReducer, { closeAuthDialog } from '@/app/applicationSlice'
 import authReducer, { login } from '@/app/authSlice'
 import notificationReducer from '@/app/notificationSlice'
+import { localPlainDate } from '@/utils/date'
 
 import { checkInMessage, WasHereButton } from './WasHereButton'
 
@@ -15,10 +16,12 @@ jest.mock('../../../next-i18next.config', () => ({ i18n: { defaultLocale: 'ru' }
 jest.mock('cookies-next', () => ({ deleteCookie: jest.fn(), getCookie: jest.fn(), setCookie: jest.fn() }))
 
 const mockPost = jest.fn()
-let mockMe: { count: number; items: Array<{ id: string; visitedAt: string }> } | undefined
+const mockDelete = jest.fn()
+let mockMe: { count: number; items: Array<{ id: string; visitedAt: string }>; repeatDays?: number } | undefined
 
 jest.mock('@/api', () => ({
     API: {
+        useVisitsDeleteMutation: () => [mockDelete, { isLoading: false }],
         useVisitsGetMeQuery: () => ({ data: mockMe }),
         useVisitsPostMutation: () => [mockPost, { isLoading: false }]
     },
@@ -49,6 +52,7 @@ const renderButton = (isAuth: boolean, copies = 1) => {
 describe('WasHereButton', () => {
     beforeEach(() => {
         mockPost.mockReset()
+        mockDelete.mockReset()
         mockMe = undefined
         localStorage.clear()
         sessionStorage.clear()
@@ -133,7 +137,7 @@ describe('WasHereButton', () => {
         })
     })
 
-    it('says so when the day already has a visit', async () => {
+    it('says so when the week already has a visit', async () => {
         mockPost.mockReturnValue({ unwrap: () => Promise.resolve({ id: 'v1', isNew: false, ordinal: 1 }) })
         const store = renderButton(true)
 
@@ -143,14 +147,39 @@ describe('WasHereButton', () => {
         expect(store.getState().notification.list[0].message).toContain('Вы уже отмечались')
     })
 
-    it('checks in again with a tap when there are visits', async () => {
-        mockMe = { count: 2, items: [{ id: 'v1', visitedAt: '2026-10-01' }] }
-        mockPost.mockReturnValue({ unwrap: () => Promise.resolve({ id: 'v1', isNew: false, ordinal: 1 }) })
+    it('checks in again with a tap a week after the last visit', async () => {
+        mockMe = { count: 2, items: [{ id: 'v1', visitedAt: localPlainDate(-7) }], repeatDays: 7 }
+        mockPost.mockReturnValue({ unwrap: () => Promise.resolve({ id: 'v2', isNew: true, ordinal: 3 }) })
         renderButton(true)
+
+        expect(screen.getByRole('button')).toHaveTextContent('Вы были здесь')
 
         fireEvent.click(screen.getByRole('button'))
 
         await waitFor(() => expect(mockPost).toHaveBeenCalledTimes(1))
+        expect(mockDelete).not.toHaveBeenCalled()
+    })
+
+    it('cancels the visit of this week with a tap', async () => {
+        mockMe = {
+            count: 2,
+            items: [
+                { id: 'v0', visitedAt: '2026-01-10' },
+                { id: 'v1', visitedAt: localPlainDate(-6) }
+            ],
+            repeatDays: 7
+        }
+        mockDelete.mockReturnValue({ unwrap: () => Promise.resolve() })
+        const store = renderButton(true)
+
+        expect(screen.getByRole('button')).toHaveTextContent('Вы здесь отметились')
+
+        fireEvent.click(screen.getByRole('button'))
+
+        await waitFor(() => expect(store.getState().notification.list).toHaveLength(1))
+        expect(mockDelete).toHaveBeenCalledWith({ id: 'v1', place: 'p1' })
+        expect(mockPost).not.toHaveBeenCalled()
+        expect(store.getState().notification.list[0].message).toBe('Визит отменён')
     })
 
     it('sends one request when the place has two buttons tapped in a row', async () => {
@@ -204,10 +233,10 @@ describe('WasHereButton', () => {
             note: undefined,
             title: 'visit-result-title:3'
         })
-        // Already today: the year line would be a lie
+        // Already this week: the year line would be a lie
         expect(checkInMessage({ firstThisYear: true, isNew: false, ordinal: 1 }, t)).toStrictEqual({
             note: undefined,
-            title: 'visit-already-today'
+            title: 'visit-already-this-week'
         })
     })
 

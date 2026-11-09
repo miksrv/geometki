@@ -11,6 +11,17 @@ jest.mock('leaflet', () => ({
 
 const mockDivIcon = jest.mocked(Leaflet.divIcon)
 
+/** The html of the first `divIcon` call; fails the test when there was none, so `not.toContain` never passes on nothing */
+const iconHtml = (): string => {
+    const html = mockDivIcon.mock.calls[0]?.[0]?.html
+
+    if (typeof html !== 'string') {
+        throw new Error('divIcon was not called with html')
+    }
+
+    return html
+}
+
 const mockBounds = {
     getEast: () => 37.96,
     getNorth: () => 55.92,
@@ -156,27 +167,27 @@ describe('createWikipediaIcon', () => {
 
     it('uses WIKIPEDIA_COLOR when not loading', () => {
         createWikipediaIcon(false)
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain(WIKIPEDIA_COLOR)
+        expect(iconHtml()).toContain(WIKIPEDIA_COLOR)
     })
 
     it('uses grey color when loading', () => {
         createWikipediaIcon(true)
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('#999')
+        expect(iconHtml()).toContain('#999')
     })
 
     it('uses WIKIPEDIA_COLOR when loading is undefined', () => {
         createWikipediaIcon()
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain(WIKIPEDIA_COLOR)
+        expect(iconHtml()).toContain(WIKIPEDIA_COLOR)
     })
 
     it('draws a rounded square background', () => {
         createWikipediaIcon()
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('<rect')
+        expect(iconHtml()).toContain('<rect')
     })
 
     it('draws the "W" glyph', () => {
         createWikipediaIcon()
-        expect(String(mockDivIcon.mock.calls[0][0].html)).toContain('<polyline')
+        expect(iconHtml()).toContain('<polyline')
     })
 })
 

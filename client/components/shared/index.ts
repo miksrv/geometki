@@ -44,6 +44,7 @@ export { PlacesList } from './places-list'
 export { PlacesMap } from './places-map'
 export { Rating, type RatingProps } from './rating'
 export { RatingColored, type RatingColoredProps } from './rating-colored'
+export { ScoreStars, type ScoreStarsProps } from './score-stars'
 export { Section, type SectionProps } from './section'
 export { SiteSearch, type SiteSearchHandle, SiteSearchScreen } from './site-search'
 export { UserAvatar, type UserAvatarProps } from './user-avatar'
@@ -55,5 +56,4 @@ export {
     type UserProfileCardVariant,
     type UserProfileSection
 } from './user-profile-card'
-export { VisitRow } from './visit-row'
 export { checkInMessage, WasHereButton } from './was-here-button'

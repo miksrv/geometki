@@ -1,0 +1,39 @@
+.stars
+    display: inline-flex
+    flex-shrink: 0
+    gap: 1px
+    vertical-align: middle
+
+    svg
+        fill: var(--surface-3)
+
+        &.on
+            fill: var(--color-star)
+
+.single
+    display: inline-flex
+    flex-shrink: 0
+    align-items: center
+    gap: 4px
+    vertical-align: middle
+
+    svg
+        flex-shrink: 0
+
+        &.on
+            fill: var(--color-star)
+
+    b
+        color: var(--text-color-primary)
+        font-weight: var(--font-weight-semibold)
+
+.small svg
+    width: 14px
+    height: 14px
+
+.medium
+    gap: 2px
+
+    svg
+        width: 16px
+        height: 16px

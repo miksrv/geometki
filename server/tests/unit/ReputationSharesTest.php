@@ -100,4 +100,19 @@ final class ReputationSharesTest extends CIUnitTestCase
 
         $this->assertEqualsWithDelta(2.0, $points['editor'], 1e-9);
     }
+
+    public function testTheSharesOfOneVoteAddUpToThePlacesPoints(): void
+    {
+        $contributions = [$this->contribution('photographer', 'photo'), $this->contribution('editor', 'edit')];
+        $vote          = $this->vote(5, 'voter');
+
+        $shares = ReputationLibrary::voteShares('author', $vote, $contributions);
+
+        $this->assertEqualsWithDelta(1.0, $shares['author'], 1e-9);
+        $this->assertEqualsWithDelta(2 / 3, $shares['photographer'], 1e-9);
+        $this->assertEqualsWithDelta(1 / 3, $shares['editor'], 1e-9);
+        $this->assertEqualsWithDelta(ReputationLibrary::placePoints('author', [$vote], $contributions), $shares, 1e-9);
+        // A 3★ vote moves nobody
+        $this->assertSame([], ReputationLibrary::voteShares('author', $this->vote(3), $contributions));
+    }
 }

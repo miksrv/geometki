@@ -41,7 +41,7 @@ describe('getNotificationTitle', () => {
     })
 
     it('names the activity, then the type', () => {
-        expect(getNotificationTitle({ activity: 'photo', id: '1', type: 'comment' }, t)).toBe(
+        expect(getNotificationTitle({ activity: 'photo', id: '1', type: 'place' }, t)).toBe(
             'Загружена новая фотография'
         )
         expect(getNotificationTitle({ id: '1', type: 'level' }, t)).toBe('Новый уровень!')

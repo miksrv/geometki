@@ -6,7 +6,7 @@
 import React from 'react'
 import { Provider } from 'react-redux'
 
-import { configureStore } from '@reduxjs/toolkit'
+import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import { render, RenderOptions } from '@testing-library/react'
 
 // ---------------------------------------------------------------------------
@@ -20,12 +20,13 @@ import notificationReducer from '../app/notificationSlice'
  *  RTK Query reducers are intentionally omitted – use mock hooks instead. */
 export const makeTestStore = (preloadedState?: Record<string, unknown>) =>
     configureStore({
-        reducer: {
+        reducer: combineReducers({
             application: applicationReducer,
             auth: authReducer,
             notification: notificationReducer
-        },
-        preloadedState
+        }),
+        // Tests preload partial slices, so the state is not checked against the full slice types
+        preloadedState: preloadedState as never
     })
 
 /** Default store instance (unauthenticated, no notifications). */
@@ -41,7 +42,7 @@ interface WrapperProps {
 }
 
 export const TestWrapper: React.FC<WrapperProps> = ({ store = defaultStore, children }) =>
-    React.createElement(Provider, { store }, children)
+    React.createElement(Provider, { store, children })
 
 /** RTL render helper that automatically wraps children in a Redux Provider. */
 export const renderWithStore = (
@@ -49,7 +50,7 @@ export const renderWithStore = (
     { store = makeTestStore(), ...options }: RenderOptions & { store?: ReturnType<typeof makeTestStore> } = {}
 ) => {
     const Wrapper: React.FC<{ children?: React.ReactNode }> = ({ children }) =>
-        React.createElement(Provider, { store }, children)
+        React.createElement(Provider, { store, children })
 
     return { store, ...render(ui, { wrapper: Wrapper, ...options }) }
 }

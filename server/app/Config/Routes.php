@@ -158,6 +158,7 @@ $routes->group('feed', static function ($routes) {
 $routes->group('users', static function ($routes) {
     $routes->get('/', 'Users::list');
     $routes->get('(:alphanum)/achievements', 'Achievements::userAchievements/$1');
+    $routes->get('(:alphanum)/reputation', 'Reputation::history/$1');
     $routes->get('(:alphanum)', 'Users::show/$1');
     $routes->post('avatar', 'Users::avatar');
     $routes->patch('crop', 'Users::crop');
@@ -197,7 +198,6 @@ $routes->group('search', static function ($routes) {
 /** Location Controller **/
 $routes->group('location', static function ($routes) {
     $routes->get('search', 'Location::search');
-    $routes->get('geosearch', 'Location::geoSearch');
     $routes->get('(:num)', 'Location::show/$1');
     $routes->put('/', 'Location::coordinates');
 
@@ -247,7 +247,7 @@ $routes->group('bookmarks', static function ($routes) {
     $routes->get('places', 'Bookmarks::places');
     $routes->put('/', 'Bookmarks::set');
 
-    $routes->options('/', 'Bookmarks');
+    $routes->options('/', static function () {});
     $routes->options('(:alphanum)', static function () {});
 });
 

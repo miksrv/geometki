@@ -10,6 +10,7 @@ use App\Models\PlacesModel;
 use App\Models\RatingModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
+use Config\Services;
 use Throwable;
 
 /**
@@ -22,6 +23,9 @@ use Throwable;
  */
 class Rating extends ResourceController
 {
+    /** New guest sessions one address may start by scoring, per hour */
+    private const GUEST_SESSIONS_PER_HOUR = 20;
+
 
     protected SessionLibrary $session;
 
@@ -145,6 +149,18 @@ class Rating extends ResourceController
             $newSession = null;
 
             if (!$this->session->isAuth && !$this->session->id) {
+                // Every score without a session starts a new one: a few an hour per address, not
+                // a stream of fresh "guests" scoring a place up or down
+                $ipKey = 'rating_guest_' . str_replace([':', '.'], ['_', '-'], $this->request->getIPAddress());
+
+                $throttler = Services::throttler();
+
+                if (!$throttler->check($ipKey, self::GUEST_SESSIONS_PER_HOUR, HOUR)) {
+                    $this->response->setHeader('Retry-After', (string) max(1, $throttler->getTokenTime()));
+
+                    return $this->respond(['messages' => ['error' => lang('Rating.tooManyGuestScores')]], 429);
+                }
+
                 $newSession = $this->session->update()->id;
                 $this->request->setHeader('Session', $newSession);
             }

@@ -35,6 +35,13 @@ export const Spinner = ({ className }: { className?: string }) => (
     />
 )
 
+export const Skeleton = ({ className }: { className?: string }) => (
+    <div
+        className={className}
+        data-testid={'skeleton'}
+    />
+)
+
 export const Container = ({ header, children, className }: any) => (
     <div className={className}>
         {header && <div data-testid={'container-header'}>{header}</div>}
