@@ -7,8 +7,9 @@ use App\Entities\VisitEntity;
 /**
  * Model for the `users_visited_places` table: the log of check-ins ("I was here").
  *
- * One row per visit; a person can have many at one place, one per day
- * (`Visits::create()` is idempotent per day). No soft-deletion: a deleted visit is gone,
+ * One row per visit; a person can have many at one place, one a week (`REPEAT_DAYS`:
+ * `Visits::create()` answers the visit of the week, a second tap in it cancels the visit on
+ * the client). The unique key stays per day. No soft-deletion: a deleted visit is gone,
  * its photos stay (`photos.visit_id` → NULL) and its `visit` activity is soft-deleted by
  * the controller.
  *
@@ -16,6 +17,9 @@ use App\Entities\VisitEntity;
  */
 class VisitsModel extends ApplicationBaseModel
 {
+    /** A new visit of the same person and place no sooner than this many days after the last one */
+    public const REPEAT_DAYS = 7;
+
     protected $table            = 'users_visited_places';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = false;
@@ -42,15 +46,21 @@ class VisitsModel extends ApplicationBaseModel
     protected $beforeInsert   = ['generateId'];
 
     /**
-     * The user's visit of the place on that day, if any.
+     * The user's visit of the place less than REPEAT_DAYS days from that day either way (a
+     * back-dated resend of the offline queue meets a later visit too), the latest first.
      *
      * @param string $day `Y-m-d`
      */
-    public function findByDay(string $userId, string $placeId, string $day): ?VisitEntity
+    public function findWithinWindow(string $userId, string $placeId, string $day): ?VisitEntity
     {
+        $from = date('Y-m-d', strtotime($day . ' -' . (self::REPEAT_DAYS - 1) . ' days'));
+        $to   = date('Y-m-d', strtotime($day . ' +' . (self::REPEAT_DAYS - 1) . ' days'));
+
         return $this
             ->where(['user_id' => $userId, 'place_id' => $placeId])
-            ->where('DATE(visited_at)', $day)
+            ->where('visited_at >=', $from . ' 00:00:00')
+            ->where('visited_at <=', $to . ' 23:59:59')
+            ->orderBy('visited_at', 'DESC')
             ->first();
     }
 }

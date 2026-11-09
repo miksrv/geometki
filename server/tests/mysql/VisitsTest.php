@@ -7,7 +7,7 @@ use Tests\Support\MySqlTestCase;
 
 /**
  * Visits are a log: a check-in is one tap,
- * repeatable, one per day, asks no location; the photos of the day are the visit's; a visit
+ * repeatable, one a week, asks no location; the photos of the day are the visit's; a visit
  * can be deleted; the one-tap questions of the category are answered after it.
  *
  * @internal
@@ -43,7 +43,7 @@ final class VisitsTest extends MySqlTestCase
         $this->withBodyFormat('json')->post('visits', ['place' => 'place1'])->assertStatus(401);
     }
 
-    public function testACheckInIsRepeatableButOncePerDay(): void
+    public function testACheckInIsRepeatableButOnceAWeek(): void
     {
         $this->signIn('user1');
 
@@ -60,23 +60,33 @@ final class VisitsTest extends MySqlTestCase
         $this->assertFalse($again['isNew']);
         $this->assertSame($first['id'], $again['id']);
 
-        // Yesterday (the visitor's day may be behind the server's): a visit of its own, the
-        // first of the place by the day, so today's is the second
+        // Yesterday (a resend of the offline queue, the visitor's day behind the server's): the
+        // same week, the same visit
         $yesterday = date('Y-m-d', strtotime('-1 day'));
         $past      = json_decode(
             $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => $yesterday])->getJSON(),
             true
         );
 
-        $this->assertTrue($past['isNew']);
-        $this->assertSame($yesterday, $past['visitedAt']);
-        $this->assertTrue($past['firstThisYear']);
-        $this->assertSame(1, $past['ordinal']);
+        $this->assertFalse($past['isNew']);
+        $this->assertSame($first['id'], $past['id']);
+
+        // A week after the last visit: a new one
+        $weekAgo = date('Y-m-d', strtotime('-' . \App\Models\VisitsModel::REPEAT_DAYS . ' days'));
+        $this->db->table('users_visited_places')->insert([
+            'id' => 'old', 'user_id' => 'user1', 'place_id' => 'place2', 'visited_at' => $weekAgo . ' 12:00:00', 'created_at' => $weekAgo . ' 12:00:00',
+        ]);
+        $next = json_decode($this->withBodyFormat('json')->post('visits', ['place' => 'place2'])->getJSON(), true);
+
+        $this->assertTrue($next['isNew']);
+        $this->assertNotSame('old', $next['id']);
+
+        $this->get('visits/me', ['place' => 'place1'])->assertJSONFragment(['repeatDays' => \App\Models\VisitsModel::REPEAT_DAYS]);
 
         // Two taps at once: the unique key lets one visit of a day through
         $this->expectException(\CodeIgniter\Database\Exceptions\DatabaseException::class);
         $this->db->table('users_visited_places')->insert([
-            'id' => 'twin', 'user_id' => 'user1', 'place_id' => 'place1', 'visited_at' => $yesterday . ' 12:00:00', 'created_at' => $yesterday . ' 12:00:00',
+            'id' => 'twin', 'user_id' => 'user1', 'place_id' => 'place1', 'visited_at' => date('Y-m-d') . ' 12:00:00', 'created_at' => date('Y-m-d') . ' 12:00:00',
         ]);
     }
 
@@ -85,13 +95,18 @@ final class VisitsTest extends MySqlTestCase
         $this->signIn('user1');
 
         $this->withBodyFormat('json')->post('visits', ['place' => 'place1'])->assertStatus(201);
-        $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => date('Y-m-d', strtotime('-1 day'))])->assertStatus(201);
+        // The same week: no second visit
+        $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => date('Y-m-d', strtotime('-1 day'))])->assertStatus(200);
+        // An earlier visit, months ago
+        $this->db->table('users_visited_places')->insert([
+            'id' => 'visit5', 'user_id' => 'user1', 'place_id' => 'place1', 'visited_at' => '2025-06-01 12:00:00', 'created_at' => '2025-06-01 12:00:00',
+        ]);
 
         $this->assertSame(2, $this->db->table('users_visited_places')->where('user_id', 'user1')->countAllResults());
-        $this->assertSame(2, $this->db->table('activity')->where(['type' => 'visit', 'user_id' => 'user1'])->countAllResults());
+        $this->assertSame(1, $this->db->table('activity')->where(['type' => 'visit', 'user_id' => 'user1'])->countAllResults());
 
         // The place's author hears of it
-        $this->assertSame(2, $this->db->table('users_notifications')->where('user_id', 'user2')->countAllResults());
+        $this->assertSame(1, $this->db->table('users_notifications')->where('user_id', 'user2')->countAllResults());
 
         $this->withBodyFormat('json')->post('visits', ['place' => 'place2'])->assertStatus(201);
 
@@ -135,7 +150,7 @@ final class VisitsTest extends MySqlTestCase
         $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => '2024-07-01'])->assertStatus(400);
         // A day of slack either way for the visitor's time zone
         $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => date('Y-m-d', strtotime('-2 days'))])->assertStatus(201);
-        $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => date('Y-m-d', strtotime('+1 day'))])->assertStatus(201);
+        $this->withBodyFormat('json')->post('visits', ['place' => 'place2', 'visitedAt' => date('Y-m-d', strtotime('+1 day'))])->assertStatus(201);
     }
 
     public function testThePhotosUploadedBeforeTheTapThatDayAreTheVisits(): void
@@ -184,15 +199,15 @@ final class VisitsTest extends MySqlTestCase
         $me = json_decode($this->get('visits/me', ['place' => 'place1'])->getJSON(), true);
         $this->assertSame(['photo1'], array_column($me['items'][0]['photos'], 'id'));
 
-        // A second visit with a photo the same month: nothing more
-        $second = json_decode(
-            $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => date('Y-m-d', strtotime('-1 day'))])->getJSON(),
-            true
-        );
-        $this->insertPhoto('photo2', $second['id']);
+        // An earlier visit with a photo the same month: nothing more
+        $earlier = date('Y-m-d', strtotime('-' . \App\Models\VisitsModel::REPEAT_DAYS . ' days'));
+        $this->db->table('users_visited_places')->insert([
+            'id' => 'visit8', 'user_id' => 'user1', 'place_id' => 'place1', 'visited_at' => $earlier . ' 12:00:00', 'created_at' => $earlier . ' 12:00:00',
+        ]);
+        $this->insertPhoto('photo2', 'visit8');
         $library->afterChange('user1', 'place1');
 
-        $sameMonth = date('Y-m', strtotime('-1 day')) === date('Y-m');
+        $sameMonth = substr($earlier, 0, 7) === date('Y-m');
         $this->assertSame($sameMonth ? MODIFIER_VISIT : 2 * MODIFIER_VISIT, $this->experience('user1'));
 
         // Another month, another place: one more
