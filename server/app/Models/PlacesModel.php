@@ -432,59 +432,6 @@ class PlacesModel extends ApplicationBaseModel
     }
 
     /**
-     * Increment the photos counter for a place.
-     *
-     * @param string $id  Place primary key.
-     * @return void
-     */
-    public function incrementPhotos(string $id): void
-    {
-        $db = \Config\Database::connect();
-        $db->query('UPDATE places SET photos = photos + 1 WHERE id = ?', [$id]);
-    }
-
-    /**
-     * Decrement the photos counter for a place, floored at 0.
-     *
-     * @param string $id  Place primary key.
-     * @return void
-     */
-    public function decrementPhotos(string $id): void
-    {
-        $db = \Config\Database::connect();
-        $db->query('UPDATE places SET photos = GREATEST(0, photos - 1) WHERE id = ?', [$id]);
-    }
-
-    /**
-     * Re-query and sync the actual photo count for a place.
-     *
-     * @param string $id  Place primary key.
-     * @return void
-     */
-    public function syncPhotosCount(string $id): void
-    {
-        $db = \Config\Database::connect();
-        $db->query(
-            'UPDATE places p
-             SET p.photos = (SELECT COUNT(*) FROM photos ph WHERE ph.place_id = p.id AND ph.deleted_at IS NULL)
-             WHERE p.id = ?',
-            [$id]
-        );
-    }
-
-    /**
-     * Increment the comments counter for a place.
-     *
-     * @param string $id  Place primary key.
-     * @return void
-     */
-    public function incrementComments(string $id): void
-    {
-        $db = \Config\Database::connect();
-        $db->query('UPDATE places SET comments = comments + 1 WHERE id = ?', [$id]);
-    }
-
-    /**
      * Increment the bookmarks counter for a place.
      *
      * @param string $id  Place primary key.

@@ -247,7 +247,7 @@ $routes->group('bookmarks', static function ($routes) {
     $routes->get('places', 'Bookmarks::places');
     $routes->put('/', 'Bookmarks::set');
 
-    $routes->options('/', 'Bookmarks');
+    $routes->options('/', static function () {});
     $routes->options('(:alphanum)', static function () {});
 });
 
