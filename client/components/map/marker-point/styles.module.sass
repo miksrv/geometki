@@ -6,11 +6,11 @@
     border-radius: 3px
     box-shadow: 0 0 0 1px #FFF
 
-// A person's map (UserPlacesMap): the icon with a badge on its corner (tone-badge); the
-// wrapper only positions them, Leaflet's default white box of a div icon is not used
+// A person's map (UserPlacesMap): the icon with a badge on its corner (tone-badge). No position
+// here: the div is Leaflet's absolutely placed `.leaflet-marker-icon`, already the badge's
+// containing block; a `position` of this module could win over leaflet.css and drop the markers
+// into the flow. Leaflet's default white box of a div icon is not used (a className of our own)
 .markerTone
-    position: relative
-
     img
         display: block
         width: 20px

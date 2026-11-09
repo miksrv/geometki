@@ -31,6 +31,9 @@ class ReputationLibrary
         'photo_link' => MODIFIER_PHOTO_LINK,
     ];
 
+    /** The cached history of a user (history()): dropped by every recount of the user */
+    private const HISTORY_CACHE_PREFIX = 'reputation_history_';
+
     /** The points of a vote by its stars, the same as transformRating() */
     public const POINTS = [1 => -2, 2 => -1, 3 => 0, 4 => 1, 5 => 2];
 
@@ -153,6 +156,8 @@ class ReputationLibrary
 
         foreach ($userIds as $userId) {
             $result[$userId] = (int) round($points[$userId] ?? 0);
+            // A vote or a removal moved their shares: the history is read anew
+            cache()->delete(self::HISTORY_CACHE_PREFIX . $userId);
         }
 
         $this->save($result);
@@ -174,6 +179,8 @@ class ReputationLibrary
         foreach ($users as $user) {
             $result[$user->id] = (int) round($points[$user->id] ?? 0);
         }
+
+        cache()->deleteMatching(self::HISTORY_CACHE_PREFIX . '*');
 
         return $this->save($result);
     }
@@ -274,6 +281,26 @@ class ReputationLibrary
      * @return array<int, array{id: string, placeId: string, stars: int, points: float, role: string, created: int}>
      */
     public function history(string $userId): array
+    {
+        // Every page of the history reads it whole: computed once, until a recount of this user
+        $cacheKey = self::HISTORY_CACHE_PREFIX . $userId;
+        $cached   = cache($cacheKey);
+
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $items = $this->computeHistory($userId);
+
+        cache()->save($cacheKey, $items, DAY);
+
+        return $items;
+    }
+
+    /**
+     * @return array<int, array{id: string, placeId: string, stars: int, points: float, role: string, created: int}>
+     */
+    private function computeHistory(string $userId): array
     {
         $places = $this->scoredPlacesOf([$userId]);
 

@@ -19,6 +19,9 @@ final class ReputationHistoryTest extends MySqlTestCase
     {
         parent::setUp();
 
+        // The history cache in memory: nothing left from another run in the file cache
+        \Config\Services::injectMock('cache', new \CodeIgniter\Test\Mock\MockCache());
+
         $this->createUser('author');
         $this->createUser('editor');
         $this->createUser('voter');
@@ -80,12 +83,20 @@ final class ReputationHistoryTest extends MySqlTestCase
 
         $this->assertCount(20, $first['items']);
         $this->assertSame('p34', $first['items'][0]['id']);
-        $this->assertSame('20', $first['next']);
+        $this->assertSame(strtotime('2026-06-06 10:00:00') . '_p15', $first['next']);
+
+        // A new score between the pages: the recount drops the cached history, nothing moves over
+        $this->db->table('rating')->insert(['id' => 'p99', 'place_id' => 'place2', 'value' => 5, 'created_at' => '2026-07-01 10:00:00']);
+        (new ReputationLibrary())->recalculateUsers(['author']);
 
         $second = json_decode($this->get('users/author/reputation', ['cursor' => $first['next']])->getJSON(), true);
 
         $this->assertCount(8, $second['items']);
         $this->assertNull($second['next']);
+        $this->assertSame(29, $second['count']);
         $this->assertSame([], array_intersect(array_column($first['items'], 'id'), array_column($second['items'], 'id')));
+
+        // A broken cursor is the first page
+        $this->assertSame('p99', json_decode($this->get('users/author/reputation', ['cursor' => 'x'])->getJSON(), true)['items'][0]['id']);
     }
 }

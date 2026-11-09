@@ -121,4 +121,24 @@ describe('UserReputation', () => {
         expect(formatPoints(-0.33, 'ru')).toBe('−0,33')
         expect(formatPoints(1.5, 'en')).toBe('+1.5')
     })
+
+    it('offers a retry, not "no scores yet", when the first page failed', () => {
+        mockQuery = { isError: true, isLoading: false, refetch: jest.fn() }
+
+        render(<UserReputation userId={'u1'} />)
+
+        expect(screen.queryByText('reputation-history-empty-title')).not.toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'feed-retry' })).toBeInTheDocument()
+    })
+
+    it('gives the last month its sum only once its scores are all loaded', () => {
+        mockQuery = { ...mockQuery, hasNextPage: true }
+
+        render(<UserReputation userId={'u1'} />)
+
+        const [november, october] = screen.getAllByRole('heading', { level: 3 })
+
+        expect(november).toHaveTextContent('+0,5')
+        expect(october).not.toHaveTextContent('+2')
+    })
 })

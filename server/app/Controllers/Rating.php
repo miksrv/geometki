@@ -153,7 +153,11 @@ class Rating extends ResourceController
                 // a stream of fresh "guests" scoring a place up or down
                 $ipKey = 'rating_guest_' . str_replace([':', '.'], ['_', '-'], $this->request->getIPAddress());
 
-                if (!Services::throttler()->check($ipKey, self::GUEST_SESSIONS_PER_HOUR, HOUR)) {
+                $throttler = Services::throttler();
+
+                if (!$throttler->check($ipKey, self::GUEST_SESSIONS_PER_HOUR, HOUR)) {
+                    $this->response->setHeader('Retry-After', (string) max(1, $throttler->getTokenTime()));
+
                     return $this->respond(['messages' => ['error' => lang('Rating.tooManyGuestScores')]], 429);
                 }
 

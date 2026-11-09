@@ -68,6 +68,7 @@ final class GuestRatingTest extends MySqlTestCase
         $response = $this->withBodyFormat('json')->put('rating', ['place' => 'place1', 'score' => 1]);
 
         $response->assertStatus(429);
+        $this->assertGreaterThan(0, (int) $response->response()->getHeaderLine('Retry-After'));
         $this->assertSame(21, $this->db->table('rating')->where('place_id', 'place1')->countAllResults());
     }
 }

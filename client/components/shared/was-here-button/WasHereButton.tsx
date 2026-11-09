@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, cn } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
@@ -161,13 +161,28 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
 
     const count = myVisits?.count ?? 0
 
+    // The visitor's today, again when the tab comes back: one left open past midnight moves on
+    const [today, setToday] = useState<string>(() => localPlainDate(0))
+
+    useEffect(() => {
+        const refresh = () => {
+            if (document.visibilityState === 'visible') {
+                setToday(localPlainDate(0))
+            }
+        }
+
+        document.addEventListener('visibilitychange', refresh)
+
+        return () => document.removeEventListener('visibilitychange', refresh)
+    }, [])
+
     // The visit of this week: a tap cancels it. Days are the visitor's (`visitedAt` is the day they sent)
     const currentVisit = useMemo(() => {
         const latest = [...(myVisits?.items ?? [])].sort((a, b) => b.visitedAt.localeCompare(a.visitedAt))[0]
-        const days = latest ? daysBetweenPlainDates(latest.visitedAt.slice(0, 10), localPlainDate(0)) : undefined
+        const days = latest ? daysBetweenPlainDates(latest.visitedAt.slice(0, 10), today) : undefined
 
         return latest && days !== undefined && days < (myVisits?.repeatDays ?? 1) ? latest : undefined
-    }, [myVisits])
+    }, [myVisits, today])
 
     const notifyError = useCallback(
         (error: unknown) =>

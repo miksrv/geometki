@@ -18,8 +18,8 @@ class Reputation extends ResourceController
 
     /**
      * GET /users/:id/reputation?cursor= → { reputation, count, items: [{ id, stars, points, role,
-     * created, place }], next }. `cursor` is the offset of the page (the `next` of the previous
-     * one); `next` is null after the last page.
+     * created, place }], next }. `cursor` is the `next` of the previous page (`{created}_{id}` of
+     * its last score); `next` is null after the last page.
      *
      * @param string $userId
      *
@@ -33,9 +33,9 @@ class Reputation extends ResourceController
             return $this->failNotFound();
         }
 
-        $offset = max(0, (int) ($this->request->getGet('cursor') ?? 0));
-        $all    = (new ReputationLibrary())->history($user->id);
-        $page   = array_slice($all, $offset, self::LIMIT);
+        $all   = (new ReputationLibrary())->history($user->id);
+        $start = $this->startAfter($all, $this->request->getGet('cursor'));
+        $page  = array_slice($all, $start, self::LIMIT);
         $places = (new PlaceFormatterLibrary())->listItems(
             array_values(array_unique(array_column($page, 'placeId'))),
             $this->request->getLocale()
@@ -54,13 +54,37 @@ class Reputation extends ResourceController
             ];
         }
 
-        $next = $offset + self::LIMIT;
+        $last = $page[count($page) - 1] ?? null;
 
         return $this->respond([
             'reputation' => (int) $user->reputation,
             'count'      => count($all),
             'items'      => $items,
-            'next'       => $next < count($all) ? (string) $next : null,
+            // The last score shown, not an offset: a score that comes between two pages moves no item over
+            'next'       => $last && $start + self::LIMIT < count($all) ? $last['created'] . '_' . $last['id'] : null,
         ]);
+    }
+
+    /**
+     * Where a page starts: right after the score the cursor names (`{created}_{id}` of the last one
+     * shown), in the history's order — newest first, then by id; the first page without a cursor.
+     *
+     * @param array<int, array{id: string, created: int}> $items
+     */
+    private function startAfter(array $items, mixed $cursor): int
+    {
+        if (!is_string($cursor) || !preg_match('/^(\d+)_([A-Za-z0-9]+)$/', $cursor, $match)) {
+            return 0;
+        }
+
+        $after = [(int) $match[1], $match[2]];
+
+        foreach ($items as $index => $item) {
+            if ([$item['created'], $item['id']] < $after) {
+                return $index;
+            }
+        }
+
+        return count($items);
     }
 }

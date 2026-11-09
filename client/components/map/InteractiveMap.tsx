@@ -409,8 +409,14 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
     useEffect(() => {
         const handleFullscreenChange = () => {
-            const fullscreen = !!document.fullscreenElement
             const map = mapRef.current
+            // This map, not any element of the page (a video, another map) going full screen
+            const element =
+                document.fullscreenElement ??
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                (document.webkitFullscreenElement as Element | null | undefined)
+            const fullscreen = !!map && !!element && element === map.getContainer()
 
             setIsFullscreen(fullscreen)
 
@@ -426,9 +432,12 @@ export const InteractiveMap: React.FC<MapProps> = ({
         }
 
         document.addEventListener('fullscreenchange', handleFullscreenChange)
+        // Safari before 16.4 tells only with its prefix
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
 
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange)
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
         }
     }, [])
 

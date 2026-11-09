@@ -164,9 +164,11 @@ const Loaders: React.FC<{ count: number }> = ({ count }) => (
 export const UserReputation: React.FC<UserReputationProps> = ({ userId }) => {
     const { t, i18n } = useTranslation()
 
-    const { data, isFetching, isFetchingNextPage, isError, isLoading, hasNextPage, fetchNextPage } =
+    const { data, isFetching, isFetchingNextPage, isError, isLoading, hasNextPage, fetchNextPage, refetch } =
         API.useUsersGetReputationInfiniteQuery({ id: userId })
     const nextPageFailed = isError && !!data?.pages.length
+    // The first page failed: not "no scores yet", a retry
+    const firstPageFailed = isError && !data?.pages.length
     const items = data?.pages.flatMap((page) => page.items) ?? []
     const count = data?.pages[0]?.count
 
@@ -195,14 +197,14 @@ export const UserReputation: React.FC<UserReputationProps> = ({ userId }) => {
         >
             {isLoading ? (
                 <Loaders count={LOADER_ROWS_FIRST} />
-            ) : !items.length ? (
+            ) : firstPageFailed ? null : !items.length ? (
                 <EmptyState
                     title={t('reputation-history-empty-title')}
                     description={t('reputation-history-empty-text')}
                 />
             ) : (
                 <div className={styles.months}>
-                    {groupByMonth(items).map(({ month, points, items: monthItems }) => (
+                    {groupByMonth(items).map(({ month, points, items: monthItems }, index, months) => (
                         <section
                             key={month}
                             className={styles.month}
@@ -213,10 +215,13 @@ export const UserReputation: React.FC<UserReputationProps> = ({ userId }) => {
                                 className={styles.monthHeading}
                             >
                                 <span>{monthTitle(month)}</span>
-                                <Points
-                                    value={Math.round(points * 100) / 100}
-                                    className={styles.monthPoints}
-                                />
+                                {/* The last month loaded may go on on the next page: its sum only once it is whole */}
+                                {(index < months.length - 1 || !hasNextPage) && (
+                                    <Points
+                                        value={Math.round(points * 100) / 100}
+                                        className={styles.monthPoints}
+                                    />
+                                )}
                             </h3>
                             <ul className={styles.list}>
                                 {monthItems.map((item) => (
@@ -233,11 +238,11 @@ export const UserReputation: React.FC<UserReputationProps> = ({ userId }) => {
 
             {isFetchingNextPage && <Loaders count={LOADER_ROWS_NEXT} />}
 
-            {nextPageFailed && (
+            {(nextPageFailed || firstPageFailed) && (
                 <Button
                     mode={'secondary'}
                     stretched={true}
-                    onClick={() => fetchNextPage()}
+                    onClick={() => void (firstPageFailed ? refetch() : fetchNextPage())}
                 >
                     {t('feed-retry', { defaultValue: 'Не удалось загрузить. Повторить' })}
                 </Button>

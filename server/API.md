@@ -574,7 +574,8 @@ Delete a place and all its photos. Admin role required.
 
 **Error responses:**
 
-- `401` — Not authenticated or not an admin
+- `401` — Not authenticated
+- `403` — Not an admin
 - `404` — Place not found
 
 ---
@@ -1025,7 +1026,8 @@ Delete a permanent photo. Only the photo's uploader or an admin may delete it.
 **Error responses:**
 
 - `401` — Not authenticated
-- `400` — Photo not found or no access
+- `400` — Photo not found
+- `403` — Neither the uploader nor an admin
 - `500` — Deletion error
 
 ---
@@ -1214,6 +1216,40 @@ Get full profile for a single user, including gamification statistics.
 
 ---
 
+#### `GET /users/:id/reputation`
+
+The history of a user's reputation: every vote on the places they added or contributed to that moved it, the newest first, with their share of it. Computed from the same votes as the stored `reputation` (the shares add up to it before its rounding) and cached per user until their reputation is recounted. Who voted is not told.
+
+**Auth required:** No
+
+**Query parameters:** `cursor` — the `next` of the previous page (`{created}_{id}` of its last score); the first page without it. 20 scores a page.
+
+**Response:**
+
+```json
+{
+  "reputation": 350,
+  "count": 274,
+  "items": [
+    {
+      "id": "r1a2b3c4d5e6f",
+      "stars": 5,
+      "points": 0.83,
+      "role": "contributor",
+      "created": { "date": "2026-08-30 10:00:00.000000", "timezone_type": 3, "timezone": "UTC" },
+      "place": { "id": "...", "title": "...", "slug": "...", "category": "waterfall", "cover": { "preview": "..." } }
+    }
+  ],
+  "next": "1788084000_r1a2b3c4d5e6f"
+}
+```
+
+`points` — the user's share, rounded to two decimals (half of the vote to the place's author, the other half to those who made the card by then by the weight of their photos and edits); `role` — `author` of the place or `contributor` to its card; `place` — a list item (null for a place gone since); `next` — null after the last page.
+
+**Error responses:** `404` — User not found.
+
+---
+
 #### `PATCH /users/:id`
 
 Update user profile fields. Can only update your own profile.
@@ -1355,6 +1391,7 @@ Submit or update a rating for a place.
 - `400` — Missing data or score out of range
 - `403` — The signed-in user is the author of the place (own places cannot be rated)
 - `404` — Place not found
+- `429` — A guest without a `Session` header (each such score starts a new session): at most 20 an hour per IP address; `Retry-After` in seconds
 
 ---
 
@@ -1644,7 +1681,7 @@ Toggle a bookmark for a place. If the bookmark exists it is removed; otherwise i
 
 ### Visits
 
-"I was here" is a log: a visit is repeatable, one per user, place and day. No location is asked or stored. Public lists are in the guest cache (`visits` group).
+"I was here" is a log: a visit is repeatable, one per user and place a week (`VisitsModel::REPEAT_DAYS`, 7 days); the client turns a second tap within the week into cancelling the visit (`DELETE /visits/:id`). No location is asked or stored. Public lists are in the guest cache (`visits` group).
 
 A **visit** object:
 
@@ -1735,9 +1772,12 @@ The signed-in user's own visits of a place and the questions the place's categor
     { "key": "road", "values": ["asphalt", "dirt", "offroad", "foot", "water"] },
     { "key": "walk", "values": ["short", "medium", "long"] },
     { "key": "can", "features": ["swim", "camp", "kids", "winter", "drink"] }
-  ]
+  ],
+  "repeatDays": 7
 }
 ```
+
+`repeatDays`: a new visit is made no sooner than this many days after the latest one; the latest visit younger than this is the one a tap cancels (the days are the visitor's, `visitedAt`).
 
 `questions` are three of the category's pool (`Config\VisitQuestions::$categories`, six to eight per category): the ones the place has no answer to yet first, in the order of the pool, then the stale (older than a year) and the contested ones, the oldest first; the questions the current visit (the latest within the check-in window) has answered come off the three. Then, if the category has features, the last step `{ "key": "can", "features": [...] }`. Question keys and values: `road` (`asphalt`, `dirt`, `offroad`, `foot`, `water`), `walk` (`short`, `medium`, `long`), `trail` (`marked`, `faint`, `none`), `entry` (`free`, `paid`, `guarded`, `outside`, `closed`), `state` (`intact`, `decaying`, `demolished`), `water` (`present`, `dry`), `crowd` (`empty`, `some`, `crowded`), `time` (`hour`, `half`, `day`), `parking` (`near`, `far`, `none`), `cell` (`good`, `weak`, `none`), `facilities` (`none`, `basic`, `full`), `safety` (`safe`, `care`, `danger`), `access` (`full`, `partial`, `none`). The texts are on the client.
 
@@ -1754,7 +1794,7 @@ Check in at a place. **Auth required:** Yes
 | place | string | Yes | Place ID |
 | visitedAt | string | No | The visitor's day, `YYYY-MM-DD`; today (server) by default. Must be a real date within a day of the server's today: up to two days back, one day forward |
 
-**Response:** `201 Created` with the visit and `isNew: true`, `ordinal` (which visit of the place this is, counting everybody's) and `firstThisYear` (no other visit of the place this year up to it). `200 OK` with the existing visit and `isNew: false` when the user already has a visit of that place on that day (idempotent; also for two simultaneous taps). The photos the user uploaded to the place that day before the tap become the visit's. The place's author is notified; a bare visit gives no experience.
+**Response:** `201 Created` with the visit and `isNew: true`, `ordinal` (which visit of the place this is, counting everybody's) and `firstThisYear` (no other visit of the place this year up to it). `200 OK` with the existing visit and `isNew: false` when the user already has a visit of that place less than `repeatDays` (7) days from that day either way (idempotent within the week; also for two simultaneous taps and a resend from the offline queue). The photos the user uploaded to the place that day before the tap become the visit's. The place's author is notified; a bare visit gives no experience.
 
 **Error responses:**
 
@@ -2652,19 +2692,16 @@ Spark commands (`php spark <command>`), not accessible over HTTP:
 | `push:vapid` | Generate the VAPID keys for web push (paste into `.env`; once — new keys invalidate every subscription) |
 | `system:test-email` | Send every kind of email with sample data to an address (`--locale`, `--kind`) |
 | `email:preview` | Render every kind of email with sample data into `writable/email-preview/` |
-| `system:generate-place-slugs` | Backfill place slugs from their titles |
 | `content:revert` | Roll a place text back to an earlier revision |
 | `feed:rebuild` | Regroup the activity log into feed stories (after changing the grouping rules) |
 | `locations:rebuild` | Re-geocode every place, merge duplicate locations, assign slugs |
 | `osm:collect` | Collect OSM candidates for the queued tiles (cron, every minute) |
-| `osm:link-duplicates` | One-off: link the stored open candidates that duplicate our places to them |
 | `osm:rescore` | Recalculate OSM candidate scores from the stored tags |
 | `achievements:evaluate` | Evaluate and award achievements (by hand, `--all` after adding or changing an achievement; not scheduled) |
 | `trending:refresh` | Refresh place trending scores |
 | `interests:refresh` | Refresh user interest profiles |
 | `digest:weekly` | Queue weekly digest emails (cron, weekly; skips users who got one in the last 6 days unless `--force`). `notifications:send` sends them within the hosting limits — 500 an hour, 2000 a day; the rest wait in the queue (up to 6 days) |
 | `notifications:prune` | Delete toast-only and old read notifications (by hand, not scheduled) |
-| `notifications:prune-service` | Delete notifications, pushes and emails of service accounts |
 | `sessions:prune` | Delete stale anonymous sessions that left nothing behind (by hand, not scheduled) |
 
 ---
