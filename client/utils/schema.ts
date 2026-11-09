@@ -1,4 +1,4 @@
-import { LocalBusiness, Person } from 'schema-dts'
+import { LocalBusiness } from 'schema-dts'
 
 import { ApiModel } from '@/api'
 import { IMG_HOST } from '@/config/env'
@@ -69,13 +69,4 @@ export const PlaceSchema = (place: ApiModel.Place, canonicalUrl?: string): unkno
     // declares on itself, so the entity of a list and the entity of its page are one
     '@id': canonicalUrl ? `${canonicalUrl}${buildPlaceUrl(place.id, place.slug).replace(/^\//, '')}` : undefined,
     url: canonicalUrl ? `${canonicalUrl}${buildPlaceUrl(place.id, place.slug).replace(/^\//, '')}` : undefined
-})
-
-export const UserSchema = (user: ApiModel.User, canonicalUrl?: string): unknown | Person => ({
-    '@context': 'https://schema.org',
-    '@type': 'Person',
-    identifier: user.id,
-    image: user.avatar ? `${IMG_HOST}${user.avatar}` : undefined,
-    name: user.name,
-    url: canonicalUrl ? `${canonicalUrl}users/${user.id}` : undefined
 })

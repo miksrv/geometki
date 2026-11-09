@@ -7,10 +7,6 @@ export interface GetByTypeRequest {
     type?: ApiType.LocationTypes
 }
 
-export interface GeoSearchResponse {
-    items?: ApiModel.GeoSearchLocation[]
-}
-
 export interface SearchResponse {
     countries?: ApiModel.AddressItem[]
     regions?: ApiModel.AddressItem[]

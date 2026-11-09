@@ -72,23 +72,9 @@ export const API = createApi({
     }),
     endpoints: (builder) => ({
         /** Controller: Achievements **/
-        getAchievements: builder.query<
-            { data: ApiType.Achievements.Achievement[] },
-            ApiType.Achievements.GetAchievementsParams | void
-        >({
-            providesTags: ['Achievements'],
-            query: (params) => ({ params: params ?? undefined, url: 'achievements' })
-        }),
         getUserAchievements: builder.query<{ data: ApiType.Achievements.Achievement[] }, string>({
             providesTags: ['UserAchievements'],
             query: (userId) => `users/${userId}/achievements`
-        }),
-        getAchievementsProgress: builder.query<
-            { data: Record<string, ApiType.Achievements.AchievementProgress> },
-            void
-        >({
-            providesTags: ['AchievementsProgress'],
-            query: () => 'achievements/progress'
         }),
         getAchievementsManage: builder.query<{ data: ApiType.Achievements.AchievementAdmin[] }, void>({
             providesTags: ['AchievementsManage'],
@@ -98,22 +84,22 @@ export const API = createApi({
             { data: ApiType.Achievements.Achievement },
             ApiType.Achievements.AchievementInput
         >({
-            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            invalidatesTags: ['UserAchievements', 'AchievementsManage'],
             query: (body) => ({ body, method: 'POST', url: 'achievements' })
         }),
         updateAchievement: builder.mutation<
             { data: ApiType.Achievements.Achievement },
             { id: string; body: ApiType.Achievements.AchievementInput }
         >({
-            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            invalidatesTags: ['UserAchievements', 'AchievementsManage'],
             query: ({ id, body }) => ({ body, method: 'PUT', url: `achievements/${id}` })
         }),
         deleteAchievement: builder.mutation<void, string>({
-            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            invalidatesTags: ['UserAchievements', 'AchievementsManage'],
             query: (id) => ({ method: 'DELETE', url: `achievements/${id}` })
         }),
         uploadAchievementImage: builder.mutation<{ id: string; image: string }, { id: string; file: File }>({
-            invalidatesTags: ['Achievements', 'AchievementsManage'],
+            invalidatesTags: ['UserAchievements', 'AchievementsManage'],
             query: ({ id, file }) => {
                 const formData = new FormData()
                 formData.append('image', file)
@@ -275,15 +261,6 @@ export const API = createApi({
             providesTags: (result, error, arg) => [{ id: arg.id, type: 'Collections' }],
             query: ({ id, limit }) => `collections/${id}/recommended${encodeQueryData({ limit })}`
         }),
-        collectionsPatchModeration: builder.mutation<void, ApiType.Collections.ModerationRequest>({
-            invalidatesTags: (res, err, arg) => [{ id: arg.id, type: 'Collections' }],
-            query: ({ id, ...body }) => ({
-                body,
-                method: 'PATCH',
-                url: `collections/${id}/moderation`
-            }),
-            transformErrorResponse: extractErrorData
-        }),
 
         /** Controller: Categories v*/
         categoriesGetLocations: builder.query<
@@ -367,9 +344,6 @@ export const API = createApi({
         /** Controller: Location **/
         locationGetByType: builder.query<ApiType.Location.GetByTypeResponse, ApiType.Location.GetByTypeRequest>({
             query: (params) => `location/${params.id}?type=${params.type}`
-        }),
-        locationGetGeoSearch: builder.mutation<ApiType.Location.GeoSearchResponse, Maybe<string>>({
-            query: (searchString) => `location/geosearch?text=${searchString || ''}`
         }),
         locationGetSearch: builder.mutation<ApiType.Location.SearchResponse, Maybe<string>>({
             query: (searchString) => `location/search?text=${searchString || ''}`
@@ -818,9 +792,7 @@ export const API = createApi({
     },
     reducerPath: 'api',
     tagTypes: [
-        'Achievements',
         'AchievementsManage',
-        'AchievementsProgress',
         'Bookmarks',
         'CollectionMembership',
         'Collections',
