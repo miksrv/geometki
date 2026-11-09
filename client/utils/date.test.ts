@@ -4,6 +4,7 @@ import utc from 'dayjs/plugin/utc'
 
 import {
     dateToUnixTime,
+    daysBetweenPlainDates,
     formatDate,
     formatDateISO,
     formatDateUTC,
@@ -150,6 +151,14 @@ describe('plain dates', () => {
 
         expect(localPlainDate(0, now)).toBe('2026-03-01')
         expect(localPlainDate(-1, now)).toBe('2026-02-28')
+    })
+
+    it('counts the days between two plain days, across months and the clock change', () => {
+        expect(daysBetweenPlainDates('2026-11-02', '2026-11-09')).toBe(7)
+        expect(daysBetweenPlainDates('2026-02-28', '2026-03-01')).toBe(1)
+        expect(daysBetweenPlainDates('2026-03-28', '2026-03-30')).toBe(2)
+        expect(daysBetweenPlainDates('2026-11-09', '2026-11-08')).toBe(-1)
+        expect(daysBetweenPlainDates('2026-11-09 12:00:00', '2026-11-09')).toBeUndefined()
     })
 
     it('reads the year', () => {

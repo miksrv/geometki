@@ -52,9 +52,11 @@ export interface MeResponse {
     count: number
     /** The questions for the place's category in a fixed order (up to three), then, last, `{ key: 'can', features }` (up to five) when the category has features; empty for a guest */
     questions: Array<{ key: string; values?: string[]; features?: string[] }>
+    /** One visit a week: the latest visit younger than this many days is the one a tap cancels */
+    repeatDays?: number
 }
 
-/** `POST /visits`: idempotent per day — a second check-in the same day answers that day's visit */
+/** `POST /visits`: idempotent per week — a check-in within `repeatDays` of a visit answers that visit */
 export interface CreateRequest {
     place: string
     /** `YYYY-MM-DD`, the visitor's day; today without it */
