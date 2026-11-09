@@ -9,12 +9,10 @@ describe('useLocalStorage', () => {
         localStorage.clear()
     })
 
-    it('returns the initial state before the effect fires', () => {
+    it('keeps the initial state when nothing is stored', () => {
         const { result } = renderHook(() => useLocalStorage('THEME', 'light'))
-        // On first render, useState initializes with the provided initialState
-        // After mount effect fires it reads from storage (empty → null), but
-        // we care that the hook mounts without error.
-        expect(result.current[0]).toBeDefined()
+
+        expect(result.current[0]).toBe('light')
     })
 
     it('reads from localStorage after mount', () => {

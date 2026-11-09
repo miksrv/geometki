@@ -170,8 +170,17 @@ export const proxy = (request: NextRequest) => {
         return NextResponse.rewrite(url, { request: { headers: sanitizedHeaders } })
     }
 
+    // A guard's redirect keeps the locale: nextUrl.pathname comes without the prefix, the clone puts it back
+    const redirectTo = (pathname: string) => {
+        const url = request.nextUrl.clone()
+        url.pathname = pathname
+        url.search = ''
+
+        return Response.redirect(url.toString())
+    }
+
     if (!currentUser && request.nextUrl.pathname.startsWith('/places/create')) {
-        return Response.redirect(new URL('/places', request.url))
+        return redirectTo('/places')
     }
 
     // The edit link is a real link (it can be opened in a new tab), so guests are sent back to the place.
@@ -184,15 +193,15 @@ export const proxy = (request: NextRequest) => {
     }
 
     if (!currentUser && request.nextUrl.pathname.startsWith('/users/settings')) {
-        return Response.redirect(new URL('/users', request.url))
+        return redirectTo('/users')
     }
 
     if (!currentUser && request.nextUrl.pathname.startsWith('/admin')) {
-        return Response.redirect(new URL('/', request.url))
+        return redirectTo('/')
     }
 
     if (currentUser && request.nextUrl.pathname.startsWith('/auth')) {
-        return Response.redirect(new URL('/', request.url))
+        return redirectTo('/')
     }
 
     // Flat landing URLs (features/20-location-seo-pages.md): `/places/{category}`,

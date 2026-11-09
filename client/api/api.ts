@@ -527,7 +527,9 @@ export const API = createApi({
 
         /** Controller: Photos **/
         photoDeleteItem: builder.mutation<ApiType.Photos.DeleteResponse, ApiType.Photos.DeleteRequest>({
-            invalidatesTags: (res, err, arg) => (arg?.temporary ? [] : ['Feed']),
+            // The request has no place: every list of photos (the cover picker, the profile, a visit's photos)
+            invalidatesTags: (res, err, arg) =>
+                arg?.temporary ? [] : [{ type: 'Photos' }, { type: 'Visits' }, { type: 'Feed' }],
             query: (params) => ({
                 method: 'DELETE',
                 url: `photos/${params?.temporary ? 'temporary/' : ''}${params?.id}`
@@ -599,6 +601,17 @@ export const API = createApi({
             transformErrorResponse: extractErrorMessage
         }),
         placeDelete: builder.mutation<void, string>({
+            // The place is gone from every list, map, feed and collection it was in
+            invalidatesTags: [
+                { type: 'Places' },
+                { type: 'Photos' },
+                { type: 'Feed' },
+                { type: 'Bookmarks' },
+                { type: 'Visits' },
+                { type: 'Collections' },
+                { type: 'Notifications' },
+                { type: 'OsmCandidates' }
+            ],
             query: (id) => ({
                 method: 'DELETE',
                 url: `places/${id}`
