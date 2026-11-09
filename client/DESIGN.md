@@ -99,7 +99,8 @@ re-implement them.
       "Где это" card, the views only in "О месте".
     - `PlaceActions` — one main path: "Маршрут" is the only primary button, its menu holds
       "Карта Геометок" and the navigators (`MapLinks label="brand"`); then "Я здесь
-      был(а)" (`WasHereButton`, green once marked), "Сохранить" (icon; a menu with the bookmark
+      был(а)" (`WasHereButton`, green once marked; a check-in from it or from the "Где это"
+      card opens the bar's sheet with the visit's questions on phones, `openVisitSheet`), "Сохранить" (icon; a menu with the bookmark
       toggle and "В коллекцию"), "Поделиться" (icon; native share or the networks + copy link)
       and "⋯" (add photo, link photos nearby, change cover, edit, copy link, delete for admins).
       `variant="toolbar"` sits on the h1's line on desktop; `variant="bar"` is passed to
@@ -128,9 +129,9 @@ re-implement them.
       "Как сейчас" (`PlaceNow`, 1–3 rows from the visitors' answers: "Дорога грунтовка…", under it "5 из 6 · day" and earlier years; then the features as two rows, "**Можно** купаться · рыбачить" and "**Нельзя** костёр", with the latest day, the agreement of each only in its `title`; hidden without answers),
       a rule, `PlaceVisitors` (up to five overlapping avatars and "N человек были здесь", under it
       "Последний визит: 13 октября 2026 · 23 визита"), the stretched "Я здесь был(а)" (`WasHereButton`:
-      one tap checks in and a toast tells the visit number, no sheet, no form), under it `PlaceVisitQuestions` while the visitor's latest visit, of any day, lacks answers (up to three one-tap questions, one at a time: a short heading, `Chip`s, a quiet "Пропустить"; the last step, "Что здесь можно?", is a three-state `Chip` per feature — plain → `selected` yes → `negative` no → cleared, the taps of a few seconds saved in one request, the quiet button "Готово") and the `PlaceCollections` line ("В 2 коллекциях: A, B и ещё N").
+      one tap checks in and a toast tells the visit number, no sheet, no form; for a week after a visit it reads "Вы здесь отметились" and a tap cancels the visit), under it (desktop only: on phones they are the bottom bar's sheet) `PlaceVisitQuestions` while the visitor's latest visit, of any day, lacks answers (up to three one-tap questions, one at a time: a short heading, `Chip`s, a quiet "Пропустить"; the last step, "Что здесь можно?", is a three-state `Chip` per feature — plain → `selected` yes → `negative` no → cleared, the taps of a few seconds saved in one request, the quiet button "Готово") and the `PlaceCollections` line ("В 2 коллекциях: A, B и ещё N").
     - "Оценки и отзывы" — `PlaceReviews` (`#reviews`, a `Container` because it is interactive):
-      the average (44px number, five read-only stars, the count) next to the bars of the scores
+      the average (44px number, `ScoreStars size="medium"`, the count) next to the bars of the scores
       5…1 (`distribution` of `GET /rating/:id`), `PlaceRatePrompt` (`#rate`) on a `--surface-2`
       plate — the only interactive stars, empty until hovered, a word per score, none for the
       author — then the reviews and the field with a hint on what to write; a guest gets the
@@ -187,7 +188,8 @@ re-implement them.
   profile (a ring on hover), no buttons; the facts are what moves — the week's actions and the
   run of days from the user's calendar, never the year of sign-up) → a
   `1fr 360px` grid of the feed and a side column with `HomeUnexplored` (OSM candidates around
-  the visitor's location, picker-style rows, each a link to the map there) and the people → the
+  the visitor's location, picker-style rows — the photo or the category icon of its map marker,
+  the distance from the visitor on the right — each a link to the map there) and the people → the
   categories as a `LocationLinkList` with counts → `HomePlaces` → `HomeCollections`. Chips and
   pills here have the `--border-radius` corners of every pill on the site, never round ends.
 - **Profile** (`pages/users/[id]` and its tabs, `sections/user`): the person archetype — the
@@ -203,30 +205,39 @@ re-implement them.
       addresses redirect (`next.config.js`) to the matching set of "Места" (301) or to the profile
       (collections: temporary, they may come back); all
       the photos are a sub-page (below).
-    - "Обзор" (`UserActivity`) — the place page's two columns, `1fr 320px`. The main column: the
+    - "Обзор" (`UserActivity`) — the place page's two columns, `1fr 320px`, `--space-4` apart
+      like the signed-in home, the side blocks `--space-4` apart too. The main column: the
       `ContributionCalendar` (the year's activity) first, then the person's map (`UserPlacesMap`,
       no heading — the map speaks for itself: the places the person added, has been to and keeps
-      in bookmarks on one `PlacesMap`, the marker frame in the colour of the relation — added
-      `--color-main`, visited `--color-green`, bookmark `--color-orange`, the first of these for a
-      place in several sets (`PlaceMark.tone`), named by a legend under the map; small `Chip`s
-      "Все N" and each non-empty set over it show one set with plain markers; with a single set
-      there are no chips, no frames and no legend; a `small` secondary "Список мест" button sits
+      in bookmarks on one `PlacesMap`, the places the person has been to and keeps in
+      bookmarks with a round badge on the marker's top-right corner (`ToneBadge`,
+      `components/map/tone-badge`), told by a white glyph as well as the colour — visited a check
+      on `--color-green`, bookmark a bookmark on `--color-orange` — always, with one set only
+      too; the places they added are plain markers; a place in several sets takes the badge of
+      the first of visited, bookmark, added (`PlaceMark.tone`); the category icon itself stays
+      clean, never framed; small `Chip`s "Все N" and each non-empty set over the map, the
+      visited and bookmarks chips with the same badge as their icon — the chips are the legend,
+      there is none under the map — show one set; with a single set there are no chips; a `small` secondary "Список мест" button sits
       over the map's free top-right corner (absolutely positioned at the level of the map controls,
-      under the app bar, not a map control) and leads to the list of the set shown; loaded in the
+      under the app bar, not a map control) and leads to the list of the set shown; "Во весь
+      экран" among the map controls on the left (`PlacesMap fullScreen`: only where the browser
+      can put an element full screen — not an iPhone's Safari; full screen the wheel zooms);
+      loaded in the
       browser, a set the profile's counts say is empty is not asked for, nothing at all without
       places), then "Фотографии"
-      (`PhotoGallery`, eight, "Все N" to the photos sub-page when there are more) and the feed by
+      (`PhotoGallery boxless`, a section like the rest of the column, eight, "Все N" to the photos
+      sub-page when there are more) and the feed by
       day. Collections are not on the profile. The side column (not sticky: its blocks may be
       taller than the screen): `ContributionSummary`, "Достижения" (`UserAchievementsBlock`: the
       best tier of each group, the newest first, "Все N") and "Вклад" (`UserContribution`:
       ratings, reviews, edits as icon rows, hidden while all are zero). Below 1024px the side
       column comes first.
-    - "Места" (`pages/users/[id]/places.tsx`) — `Chip` links of the sets, `?show=`:
-      "Добавленные" (default), "Посещённые" (the distinct places, the card's "посещено"),
-      "Визиты" (the timeline of check-ins — one place can have many — the owner deletes a visit
-      there), "Избранное"; the counts from the profile's statistic. Lists only (`PlacesList` +
-      `PaginationBar`): the map is on the overview. An empty set is the same `EmptyState` in all
-      four (the picture, a title and a sentence of its own): the owner reads what to do and gets
+    - "Места" (`pages/users/[id]/places.tsx`) — `small` `Chip` links of the sets, `?show=`:
+      "Добавленные" (default), "Посещённые" (the places visited at least once, the card's
+      "посещено"; `?show=visits` of old links opens them), "Избранное"; the counts from the
+      profile's statistic. Lists only (`PlacesList` + `PaginationBar`): the map is on the
+      overview. An empty set is the same `EmptyState` in all
+      three (the picture, a title and a sentence of its own): the owner reads what to do and gets
       a button ("Добавить место" for the added ones, "Найти места" for the rest), anyone else
       reads what will appear there. `EmptyState` falls back to "try other filters" without a
       `description`: a page that is not a search always passes one.
@@ -243,9 +254,19 @@ re-implement them.
       "Все ступени пройдены" | the steps as 12px tier dots, filled when passed, the tier and its
       experience in the hint. On phones the goal goes across under the rest. The tier colours mark
       dots and bars only: silver and gold are too light for text.
-    - All the photos (`pages/users/[id]/photos.tsx`) — a sub-page, not a tab: `PageHeader`
-      (Люди › name, the avatar, "Фотографии" with the count) and the whole `PhotoGallery`, 32 a
-      page.
+    - All the photos (`pages/users/[id]/photos.tsx`) — a sub-page of the overview, not a tab:
+      the same `UserHero` ("Обзор" marked), then "Фотографии (N)" as a boxless
+      `PhotoGallery`, 32 a page.
+    - The reputation history (`pages/users/[id]/reputation.tsx`, `UserReputation`) — a sub-page
+      the card's reputation leads to: the same `UserHero`, then a `Section` "История репутации"
+      with the number of scores on the title's line, and every score that moved the reputation,
+      the newest first, loaded as the list scrolls (`GET /users/:id/reputation`, 20 a page),
+      grouped by month under the feed's overline with the month's sum at its end. A score is a
+      low card like `AchievementRow` (`--surface-1`, the container shadow, 8px apart): the 56×42
+      cover (the category icon without one) | the title, one line, over the score's
+      `ScoreStars variant="single"` (★ 5), then "за добавление места · 3 ноября" (caption) | the share in a tinted badge in the secondary size,
+      green or red — not a `stat`: a list of many numbers. Who scored is not told. Skeleton rows
+      while loading; no scores — `EmptyState`.
 - **Settings** (`pages/users/settings.tsx`, `UserForm`): `PageHeader` (Люди › name) → a
   `200px 1fr` grid, 960px at most: a sticky list of the sections (anchors, the app bar
   navigation look; hidden on phones) and the form — "Профиль" (the name and the website side by
@@ -275,6 +296,12 @@ re-implement them.
   pages (`LocationLinkList`). They carry a `title` and an optional `action`. Page chrome —
   the page header, filters, lists, pagination — sits on the page background, never in a
   `Container`. Empty states are a single line in place of the content, never an empty box.
+- **Loading is a skeleton.** Content that loads (a list, a card, a block) shows `Skeleton`
+  placeholders of its own shape — the rows or cards it will be, with the sizes of their parts
+  (`PlaceCardLoader`, `FeedStoryLoader`, the reputation history's rows). The kit `Spinner` is
+  `width: 100%; height: 100%`: dropped bare into a page it grows to the width of its container
+  and looks huge. It goes only inside a box of a set size that is busy — a button's `loading`,
+  a photo tile being uploaded or rotated, an icon slot — never as the placeholder of content.
 - **Breakpoint.** One: `$mobileMaxWidth` (768px). The one exception is the feed's side column
   (`/activity`, the profile), which goes on top below `$feedSideColumnMaxWidth` (1024px): next
   to it the feed column would be under ~500px. Below 768px columns stack and side action
@@ -315,8 +342,8 @@ Breadcrumbs appear only on nested pages, where the app bar cannot show where you
 | Place page (above the cover, desktop only)                                                                                                                                 | Места › category                    |
 | Collection page                                                                                                                                                            | Коллекции                           |
 | Create / edit place                                                                                                                                                        | Места (› place)                     |
-| Profile and its tabs (above the profile card, desktop only)                                                                                                                | Люди                                |
-| Settings, all the photos of a user                                                                                                                                         | Люди › name                         |
+| Profile, its tabs and photos (above the profile card, desktop only)                                                                                                        | Люди                                |
+| Settings                                                                                                                                                                   | Люди › name                         |
 | Admin sub-pages                                                                                                                                                            | admin section                       |
 
 The trail starts at the section (the logo is the way home) and stops at the parent; the
@@ -450,6 +477,18 @@ category is the first fact, so it is spelled out). The place page names the cate
 in the hero; the breadcrumbs repeat it in text on desktop (and the schema.org
 `BreadcrumbList` has the same category level).
 
+### `ScoreStars` (`components/shared/score-stars`)
+
+One score — a person's vote or a place's average — is five read-only solid stars everywhere:
+the given ones in `--color-star`, the rest in `--surface-3`; an average is rounded to whole
+stars and its number goes next to them. `small` (14px) in a line of text (the feed's rating
+stories), `medium` (16px) in the reviews summary; `variant="single"` — one star in
+`--color-star` and the semibold number, the rating stat of a `PlaceCard` tile — in a list of
+many scores (the reputation history). Never "5★" in
+text, never `--color-orange` stars. A place's rating as a fact or a stat is one
+`StarFilled` in `--color-star` before the number (the hero, the card tiles). The interactive
+stars of rating a place are `Rating`.
+
 ### `CollectionCard` (`components/shared/collection-card`)
 
 `MediaTile` with a **cover mosaic** instead of one cover: the covers of the first places
@@ -505,17 +544,18 @@ the signed-in home page (`variant="home"`). A `--surface-1` card (`--container-s
 | Facts   | "На сайте" / "Был(а) …" (in the browser), "Участник с 2014 года", website | `facts`: the week's actions, the run of days |
 | Buttons | `actions` under the level: the owner's "Сменить фото", "Настройки"        | none: the avatar leads to the profile        |
 
-At the foot, under a rule and edge to edge: the pages of the profile — "Обзор", "Места",
-"Достижения", each a 16px icon and a 13px word, 40px high (on phones they share the width).
-On the profile the page shown (`activeSection`) is in `--color-main` with a 2px underline; on
-the home page they are quick links into one's own profile, none marked.
+On the profile, at the foot, under a rule and edge to edge: the pages of the profile —
+"Обзор", "Места", "Достижения", each a 16px icon and a 13px word, 40px high (on phones they
+share the width); the page shown (`activeSection`) is in `--color-main` with a 2px underline.
+The home card has no such row: the profile's tabs belong to the profile, and the avatar and the
+counters already lead into it.
 
 The level row: `LevelBadge`, "15 уровень · tier", the experience within the level over a 6px bar
 in the tier colour. The counters, four equal tiles (`--surface-2`, the number in `stat`):
 places, photos and visited places — links to "Места", the photos sub-page and "Места →
 Посещённые" — and the
-reputation, signed and green or red, not a link: its kit `Tooltip` (hover, focus) tells how it
-is made. A profile that came without its statistic shows no counters, never zeros. Below
+reputation, signed and green or red, a link to its history (the reputation sub-page) like the
+other counters. A profile that came without its statistic shows no counters, never zeros. Below
 1024px the counters go under the rest; on phones the avatar and the title share
 the first row and the facts, the level and the counters go across.
 
@@ -539,7 +579,7 @@ achievement / a new level (`ApiModel.FeedStory`; grouping rules in
   its description + the mosaic of its photos, a photo story is the mosaic with the place as
   a `PlaceCard` row; a review is a quote with
   the place row; ratings, visits and places added to a collection are up to three place rows
-  (a rating with the author's five read-only stars in the row footer) and "and N more"; a
+  (a rating with the author's `ScoreStars` in the row footer) and "and N more"; a
   collection is a `CollectionCard` without the author; an achievement / a level is its badge
   on a `--surface-2` plate. The action never carries a grammatical gender: Russian uses a noun
   phrase after a dash ("Мария — новое место"), English a verb ("Maria added a place").
