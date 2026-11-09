@@ -158,6 +158,7 @@ $routes->group('feed', static function ($routes) {
 $routes->group('users', static function ($routes) {
     $routes->get('/', 'Users::list');
     $routes->get('(:alphanum)/achievements', 'Achievements::userAchievements/$1');
+    $routes->get('(:alphanum)/reputation', 'Reputation::history/$1');
     $routes->get('(:alphanum)', 'Users::show/$1');
     $routes->post('avatar', 'Users::avatar');
     $routes->patch('crop', 'Users::crop');

@@ -47,48 +47,64 @@ class ReputationLibrary
         $points = [];
 
         foreach ($votes as $vote) {
-            $value = self::POINTS[(int) $vote->value] ?? 0;
-
-            if ($value === 0) {
-                continue;
-            }
-
-            // What the card was when the vote was given, without the voter's own part
-            $weights = [];
-
-            foreach ($contributions as $contribution) {
-                if ($contribution->created_at > $vote->created_at
-                    || ($vote->user_id !== null && $contribution->user_id === $vote->user_id)) {
-                    continue;
-                }
-
-                $weights[$contribution->user_id] = ($weights[$contribution->user_id] ?? 0)
-                    + (self::CONTRIBUTIONS[$contribution->type] ?? 0);
-            }
-
-            $total = array_sum($weights);
-
-            if ($total <= 0) {
-                if ($authorId) {
-                    $points[$authorId] = ($points[$authorId] ?? 0) + $value;
-                }
-
-                continue;
-            }
-
-            $pool = $value;
-
-            if ($authorId) {
-                $points[$authorId] = ($points[$authorId] ?? 0) + $value * self::AUTHOR_SHARE;
-                $pool              = $value * (1 - self::AUTHOR_SHARE);
-            }
-
-            foreach ($weights as $userId => $weight) {
-                $points[$userId] = ($points[$userId] ?? 0) + $pool * $weight / $total;
+            foreach (self::voteShares($authorId, $vote, $contributions) as $userId => $share) {
+                $points[$userId] = ($points[$userId] ?? 0) + $share;
             }
         }
 
         return $points;
+    }
+
+    /**
+     * The shares of one vote on a place, by user: the author's half and the contributors' half
+     * by the weight of what they had done by then; none for a 3★ vote.
+     *
+     * @param string|null $authorId      The place's author
+     * @param object      $vote          {user_id: ?string, value: int, created_at: int}
+     * @param object[]    $contributions {user_id: string, type: string, created_at: int}
+     *
+     * @return array<string, float> Points by user
+     */
+    public static function voteShares(?string $authorId, object $vote, array $contributions): array
+    {
+        $value = self::POINTS[(int) $vote->value] ?? 0;
+
+        if ($value === 0) {
+            return [];
+        }
+
+        // What the card was when the vote was given, without the voter's own part
+        $weights = [];
+
+        foreach ($contributions as $contribution) {
+            if ($contribution->created_at > $vote->created_at
+                || ($vote->user_id !== null && $contribution->user_id === $vote->user_id)) {
+                continue;
+            }
+
+            $weights[$contribution->user_id] = ($weights[$contribution->user_id] ?? 0)
+                + (self::CONTRIBUTIONS[$contribution->type] ?? 0);
+        }
+
+        $total = array_sum($weights);
+
+        if ($total <= 0) {
+            return $authorId ? [$authorId => $value] : [];
+        }
+
+        $shares = [];
+        $pool   = $value;
+
+        if ($authorId) {
+            $shares[$authorId] = $value * self::AUTHOR_SHARE;
+            $pool              = $value * (1 - self::AUTHOR_SHARE);
+        }
+
+        foreach ($weights as $userId => $weight) {
+            $shares[$userId] = ($shares[$userId] ?? 0) + $pool * $weight / $total;
+        }
+
+        return $shares;
     }
 
     /**
@@ -131,21 +147,8 @@ class ReputationLibrary
             return [];
         }
 
-        $db     = Database::connect();
-        // Only the places with votes: a vote on a place moves this on every score, and a busy editor has
-        // touched many places nobody scored
-        $places = $db->query(
-            'SELECT t.id FROM (
-                 SELECT id FROM places WHERE user_id IN ? AND deleted_at IS NULL
-                 UNION
-                 SELECT place_id FROM activity
-                 WHERE user_id IN ? AND deleted_at IS NULL AND type IN ?
-             ) t
-             WHERE EXISTS (SELECT 1 FROM rating r WHERE r.place_id = t.id AND r.deleted_at IS NULL)',
-            [$userIds, $userIds, array_keys(self::CONTRIBUTIONS)]
-        )->getResult();
-
-        $points = $places ? $this->points(array_column($places, 'id')) : [];
+        $places = $this->scoredPlacesOf($userIds);
+        $points = $places ? $this->points($places) : [];
         $result = [];
 
         foreach ($userIds as $userId) {
@@ -244,6 +247,101 @@ class ReputationLibrary
      */
     private function points(?array $placeIds): array
     {
+        [$authors, $votesByPlace, $contributionsByPlace] = $this->load($placeIds);
+
+        $points = [];
+
+        foreach ($authors as $place) {
+            if (empty($votesByPlace[$place->id])) {
+                continue;
+            }
+
+            $shares = self::placePoints($place->user_id, $votesByPlace[$place->id], $contributionsByPlace[$place->id] ?? []);
+
+            foreach ($shares as $userId => $share) {
+                $points[$userId] = ($points[$userId] ?? 0) + $share;
+            }
+        }
+
+        return $points;
+    }
+
+    /**
+     * The history of a user's reputation: every vote that moved it, the newest first, with the
+     * user's share of it and why they got one (`author` of the place or a `contributor` to its
+     * card). The shares add up to the reputation (before its rounding). Who voted is not told.
+     *
+     * @return array<int, array{id: string, placeId: string, stars: int, points: float, role: string, created: int}>
+     */
+    public function history(string $userId): array
+    {
+        $places = $this->scoredPlacesOf([$userId]);
+
+        if (!$places) {
+            return [];
+        }
+
+        [$authors, $votesByPlace, $contributionsByPlace] = $this->load($places);
+
+        $items = [];
+
+        foreach ($authors as $place) {
+            foreach ($votesByPlace[$place->id] ?? [] as $vote) {
+                $share = self::voteShares($place->user_id, $vote, $contributionsByPlace[$place->id] ?? [])[$userId] ?? 0;
+
+                if (abs($share) < 1e-9) {
+                    continue;
+                }
+
+                $items[] = [
+                    'id'      => $vote->id,
+                    'placeId' => $place->id,
+                    'stars'   => (int) $vote->value,
+                    'points'  => round($share, 2),
+                    'role'    => $place->user_id === $userId ? 'author' : 'contributor',
+                    'created' => $vote->created_at,
+                ];
+            }
+        }
+
+        usort($items, static fn (array $a, array $b) => [$b['created'], $b['id']] <=> [$a['created'], $a['id']]);
+
+        return $items;
+    }
+
+    /**
+     * The places these users added or contributed to that have votes: a vote on a place moves
+     * the reputation on every score, and a busy editor has touched many places nobody scored.
+     *
+     * @param string[] $userIds
+     *
+     * @return string[]
+     */
+    private function scoredPlacesOf(array $userIds): array
+    {
+        $rows = Database::connect()->query(
+            'SELECT t.id FROM (
+                 SELECT id FROM places WHERE user_id IN ? AND deleted_at IS NULL
+                 UNION
+                 SELECT place_id FROM activity
+                 WHERE user_id IN ? AND deleted_at IS NULL AND type IN ?
+             ) t
+             WHERE EXISTS (SELECT 1 FROM rating r WHERE r.place_id = t.id AND r.deleted_at IS NULL)',
+            [$userIds, $userIds, array_keys(self::CONTRIBUTIONS)]
+        )->getResult();
+
+        return array_column($rows, 'id');
+    }
+
+    /**
+     * The places (all when null) with their authors, their votes and the contributions to them.
+     *
+     * @param string[]|null $placeIds
+     *
+     * @return array{0: object[], 1: array<string, object[]>, 2: array<string, object[]>}
+     */
+    private function load(?array $placeIds): array
+    {
         $db       = Database::connect();
         $inPlaces = $placeIds === null ? '' : ' AND p.id IN ?';
         $binds    = $placeIds === null ? [] : [$placeIds];
@@ -254,7 +352,7 @@ class ReputationLibrary
         )->getResult();
 
         $votes = $db->query(
-            'SELECT r.place_id, r.user_id, r.value, r.created_at
+            'SELECT r.id, r.place_id, r.user_id, r.value, r.created_at
              FROM rating r
              JOIN places p ON p.id = r.place_id AND p.deleted_at IS NULL
              WHERE r.deleted_at IS NULL
@@ -274,32 +372,18 @@ class ReputationLibrary
         $votesByPlace = [];
 
         foreach ($votes as $vote) {
-            $vote->created_at                 = strtotime($vote->created_at);
+            $vote->created_at                = strtotime($vote->created_at);
             $votesByPlace[$vote->place_id][] = $vote;
         }
 
         $contributionsByPlace = [];
 
         foreach ($contributions as $contribution) {
-            $contribution->created_at                         = strtotime($contribution->created_at);
+            $contribution->created_at                        = strtotime($contribution->created_at);
             $contributionsByPlace[$contribution->place_id][] = $contribution;
         }
 
-        $points = [];
-
-        foreach ($authors as $place) {
-            if (empty($votesByPlace[$place->id])) {
-                continue;
-            }
-
-            $shares = self::placePoints($place->user_id, $votesByPlace[$place->id], $contributionsByPlace[$place->id] ?? []);
-
-            foreach ($shares as $userId => $share) {
-                $points[$userId] = ($points[$userId] ?? 0) + $share;
-            }
-        }
-
-        return $points;
+        return [$authors, $votesByPlace, $contributionsByPlace];
     }
 
     /**
