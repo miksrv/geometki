@@ -87,6 +87,19 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     const dispatch = useAppDispatch()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const userId = useAppSelector((state) => state.auth.user?.id)
+    const isAdmin = useAppSelector((state) => state.auth.user?.role === 'admin')
+
+    /**
+     * The tools of a photo only where the server allows them: an uploaded photo is turned or
+     * deleted by its author or an admin; a photo of the place form (temporary) by the one who
+     * added it; a linked one is unlinked by its linker or the place's author too, which the
+     * gallery does not know — the server decides there
+     */
+    const canManage = (photo: ApiModel.Photo) =>
+        isAuth === true &&
+        !hideActions &&
+        (isAdmin || !!photo.external || photo.placeId === 'temporary' || (!!userId && photo.author?.id === userId))
 
     const [deletePhoto, { data: deleteData, isLoading: deleteLoading, error: deleteError }] =
         API.usePhotoDeleteItemMutation()
@@ -237,7 +250,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 />
             </Link>
 
-            {!hideActions && isAuth && variant !== 'mosaic' && (
+            {canManage(photo) && variant !== 'mosaic' && (
                 <Popout
                     className={styles.actions}
                     closeOnChildrenClick={true}
@@ -422,6 +435,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                         title={placeTitle}
                         state={viewer}
                         canEdit={isAuth && !hideActions}
+                        canEditPhoto={canManage}
                         loadingId={photoLoadingID}
                         onStateChange={setViewer}
                         onRotate={(photo) => void handleRotateClick(photo.id, photo.placeId === 'temporary')}

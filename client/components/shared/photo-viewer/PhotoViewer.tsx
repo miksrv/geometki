@@ -30,6 +30,8 @@ interface PhotoViewerProps {
     onStateChange: (state: PhotoViewerState) => void
     /** Signed-in visitors get the tools on the tiles; the server decides what they may change */
     canEdit?: boolean
+    /** With `canEdit`: the photos that get the tools (the visitor's own, all for an admin); all without it */
+    canEditPhoto?: (photo: ApiModel.Photo) => boolean
     /** A photo being rotated or deleted: a spinner over its tile */
     loadingId?: string
     onRotate?: (photo: ApiModel.Photo) => void
@@ -50,6 +52,7 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
     state,
     onStateChange,
     canEdit,
+    canEditPhoto,
     loadingId,
     onRotate,
     onDelete,
@@ -175,7 +178,7 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
                     </span>
                 )}
 
-                {canEdit && (
+                {canEdit && (canEditPhoto?.(photo) ?? true) && (
                     <span className={styles.tools}>
                         {!photo.external && onRotate && (
                             <button
@@ -268,7 +271,7 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
                             </button>
                         </header>
 
-                        {canEdit && (
+                        {canEdit && photos.some((photo) => canEditPhoto?.(photo) ?? true) && (
                             <p className={styles.hint}>
                                 {t('photos-viewer-hint', {
                                     defaultValue: 'Наведите на фото, чтобы повернуть или удалить его'
