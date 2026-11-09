@@ -694,6 +694,21 @@ export const API = createApi({
             providesTags: ['Users'],
             query: (item) => `users/${item}`
         }),
+        /** The history of a reputation, newest first: a scrolling list */
+        usersGetReputation: builder.infiniteQuery<
+            ApiType.Users.ReputationResponse,
+            ApiType.Users.ReputationRequest,
+            string
+        >({
+            infiniteQueryOptions: {
+                getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+                initialPageParam: ''
+            },
+            // A score moves it
+            providesTags: (result, error, arg) => [{ id: `reputation-${arg.id}`, type: 'Rating' }],
+            query: ({ pageParam, queryArg }) =>
+                `users/${queryArg.id}/reputation${encodeQueryData({ cursor: pageParam || undefined })}`
+        }),
         usersGetList: builder.query<ApiType.Users.ListResponse, Maybe<ApiType.Users.ListRequest>>({
             providesTags: ['Users'],
             query: (params) => `users${encodeQueryData(params)}`

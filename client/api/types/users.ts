@@ -1,4 +1,5 @@
 import { ApiModel } from '@/api'
+import { DateTime } from '@/api/types'
 
 export type ItemResponse = ApiModel.User
 
@@ -50,4 +51,32 @@ export interface UploadAvatarResponse {
     filepath: string
     width: number
     height: number
+}
+
+/** `GET /users/:id/reputation?cursor=`: the history of the reputation, a page at a time */
+export interface ReputationRequest {
+    id: string
+}
+
+/** One vote that moved the reputation: the person's share of it and why they got one */
+export interface ReputationItem {
+    /** The vote's id */
+    id: string
+    /** The vote, 1–5 */
+    stars: number
+    /** The person's share of the vote, a fraction for a share of a card made together */
+    points: number
+    /** `author` of the place or a `contributor` to its card (photos, edits) */
+    role: 'author' | 'contributor'
+    created?: DateTime
+    place?: ApiModel.PlaceListItem | null
+}
+
+export interface ReputationResponse {
+    reputation: number
+    /** All the votes in the history */
+    count: number
+    items: ReputationItem[]
+    /** The cursor of the next page; null after the last one */
+    next: string | null
 }
