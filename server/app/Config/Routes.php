@@ -198,7 +198,6 @@ $routes->group('search', static function ($routes) {
 /** Location Controller **/
 $routes->group('location', static function ($routes) {
     $routes->get('search', 'Location::search');
-    $routes->get('geosearch', 'Location::geoSearch');
     $routes->get('(:num)', 'Location::show/$1');
     $routes->put('/', 'Location::coordinates');
 

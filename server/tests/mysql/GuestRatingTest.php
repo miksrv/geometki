@@ -23,6 +23,9 @@ final class GuestRatingTest extends MySqlTestCase
         $this->db->table('places')->insert(['id' => 'place1', 'user_id' => 'author1', 'lat' => 53.1, 'lon' => 57.2]);
         // A signed-in user's vote kept no session
         $this->db->table('rating')->insert(['id' => 'rating1', 'place_id' => 'place1', 'user_id' => 'user1', 'session_id' => null, 'value' => 2]);
+
+        // The guest throttle in memory: every test starts with a full bucket, nothing left in the file cache
+        \Config\Services::injectMock('throttler', new \CodeIgniter\Throttle\Throttler(new \CodeIgniter\Test\Mock\MockCache()));
     }
 
     private function score(int $score, ?string $session = null): array
@@ -52,5 +55,19 @@ final class GuestRatingTest extends MySqlTestCase
     public function testAGuestWithoutASessionSeesNoVoteAsTheirs(): void
     {
         $this->assertArrayNotHasKey('vote', json_decode($this->get('rating/place1')->getJSON(), true));
+    }
+
+    public function testAnAddressStartsOnlyAFewGuestSessionsAnHour(): void
+    {
+        $this->assertSame('0.0.0.0', service('request')->getIPAddress());
+
+        for ($i = 0; $i < 20; $i++) {
+            $this->assertNotEmpty($this->score(5)['session'] ?? null);
+        }
+
+        $response = $this->withBodyFormat('json')->put('rating', ['place' => 'place1', 'score' => 1]);
+
+        $response->assertStatus(429);
+        $this->assertSame(21, $this->db->table('rating')->where('place_id', 'place1')->countAllResults());
     }
 }

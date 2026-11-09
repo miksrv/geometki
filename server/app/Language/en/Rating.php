@@ -8,4 +8,5 @@ return [
     'placeNotFound' => 'The geotag you are rating does not exist',
     'ownPlace'      => 'You cannot rate your own place',
     'setError'      => 'An error occurred while saving the rating, please try again',
+    'tooManyGuestScores' => 'Too many scores from this address, try again later',
 ];

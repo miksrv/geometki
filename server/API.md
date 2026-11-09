@@ -1939,40 +1939,6 @@ Without `text` the response is an empty array `[]`.
 
 ---
 
-#### `GET /location/geosearch`
-
-Search for addresses and coordinates using the external geocoder (Nominatim / Yandex).
-
-**Auth required:** No
-
-**Query parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| text | string | Yes | Free-text address or place name |
-
-**Response:**
-
-```json
-{
-  "items": [
-    {
-      "lat": 51.7686,
-      "lon": 55.1014,
-      "locality": "Gadelsha",
-      "country": "Russia",
-      "region": "Bashkortostan",
-      "district": "Baymaksky District",
-      "street": "Lenina, 1"
-    }
-  ]
-}
-```
-
-`country`, `region`, `district` and `street` are present only when the geocoder knows them. Without `text` the response is an empty array `[]`.
-
----
-
 #### `GET /location/:id`
 
 Get details for a specific location entity by ID and type.
@@ -2255,7 +2221,7 @@ Full search: places by title/content, geocoder locations, and a coordinates entr
 }
 ```
 
-`locations.items` are geocoder results (up to 5, the `GET /location/geosearch` shape); `places.items` use the `GET /places` list shape. `places.count` is every found place with the category filter, `places.categories` every found place per category before it (the facets). Only the 50 most relevant places (with the filter) are sorted and paged: `places.available` is how many `offset` reaches. `coordinates` is the parsed query when it is a coordinate pair, otherwise the position of the first place or location found; it is absent when there is none.
+`locations.items` are geocoder results (up to 5: `lat`, `lon`, `locality`, and `country`, `region`, `district`, `street` when the geocoder knows them); `places.items` use the `GET /places` list shape. `places.count` is every found place with the category filter, `places.categories` every found place per category before it (the facets). Only the 50 most relevant places (with the filter) are sorted and paged: `places.available` is how many `offset` reaches. `coordinates` is the parsed query when it is a coordinate pair, otherwise the position of the first place or location found; it is absent when there is none.
 
 ---
 

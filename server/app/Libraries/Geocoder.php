@@ -64,6 +64,9 @@ use ReflectionException;
   * @link https://nominatim.org/release-docs/latest/api/Details/
   */
 class Geocoder{
+    /** The longest free-text query sent to the provider */
+    public const SEARCH_MAX_LENGTH = 100;
+
     /** @var int|null */
     public ?int $countryId = null;
 
@@ -134,6 +137,12 @@ class Geocoder{
     public function search($text): array
     {
         $result    = [];
+
+        // No address is this long: a longer query only spends the provider's quota
+        if (mb_strlen(trim((string) $text)) > self::SEARCH_MAX_LENGTH) {
+            return $result;
+        }
+
         $geocoder  = new StatefulGeocoder($this->provider, $this->requestApi->getLocale());
         $locations = $geocoder->geocodeQuery(GeocodeQuery::create($text))->all();
 
