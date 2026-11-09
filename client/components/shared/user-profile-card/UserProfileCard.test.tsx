@@ -64,9 +64,9 @@ jest.mock('@/config/env', () => ({ IMG_HOST: 'https://img.test/' }))
 jest.mock('@/public/images/no-avatar.png', () => ({ src: '/no-avatar.png' }))
 
 const user: ApiModel.User = {
-    activity: { date: '2020-01-01 10:00:00' },
+    activity: { date: '2020-01-01 10:00:00', timezone: 'UTC', timezone_type: 3 },
     avatar: 'a.jpg',
-    created: { date: '2014-11-12 11:36:18.000000' },
+    created: { date: '2014-11-12 11:36:18.000000', timezone: 'UTC', timezone_type: 3 },
     id: 'u1',
     levelData: { experience: 6796, level: 15, levelExperience: 6600, nextLevel: 8000 },
     name: 'Миша Топчило',
@@ -94,7 +94,11 @@ describe('UserProfileCard', () => {
                 <UserProfileCard
                     user={{
                         ...user,
-                        activity: { date: dayjs.utc().subtract(3, 'minute').format('YYYY-MM-DD HH:mm:ss') }
+                        activity: {
+                            date: dayjs.utc().subtract(3, 'minute').format('YYYY-MM-DD HH:mm:ss'),
+                            timezone: 'UTC',
+                            timezone_type: 3
+                        }
                     }}
                 />
             )

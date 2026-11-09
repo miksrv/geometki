@@ -67,8 +67,8 @@ const place = (id: string): ApiModel.UserPlacePreview => ({
 })
 
 const user = (fields: Partial<ApiModel.User> = {}): ApiModel.User => ({
-    activity: { date: '2020-01-01 10:00:00' },
-    created: { date: '2022-05-01 10:00:00' },
+    activity: { date: '2020-01-01 10:00:00', timezone: 'UTC', timezone_type: 3 },
+    created: { date: '2022-05-01 10:00:00', timezone: 'UTC', timezone_type: 3 },
     id: 'u1',
     levelData: { experience: 1316, level: 7, levelExperience: 1000, nextLevel: 1350 },
     name: 'Мария Соколова',
@@ -121,7 +121,13 @@ describe('UserCard', () => {
     it('says the person is online after a request in the last minutes', () => {
         render(
             <UserCard
-                user={user({ activity: { date: dayjs.utc().subtract(3, 'minute').format('YYYY-MM-DD HH:mm:ss') } })}
+                user={user({
+                    activity: {
+                        date: dayjs.utc().subtract(3, 'minute').format('YYYY-MM-DD HH:mm:ss'),
+                        timezone: 'UTC',
+                        timezone_type: 3
+                    }
+                })}
             />
         )
 

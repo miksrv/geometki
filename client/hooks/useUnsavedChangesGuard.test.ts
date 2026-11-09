@@ -4,7 +4,7 @@ import { useUnsavedChangesGuard } from './useUnsavedChangesGuard'
 
 let popStateCallback: ((state: unknown) => boolean) | undefined
 
-const mockPush = jest.fn(() => Promise.resolve(true))
+const mockPush = jest.fn((..._args: unknown[]) => Promise.resolve(true))
 
 // The hook wraps `push` on this instance, so tests navigate through `router.push`
 const mockRouter = {

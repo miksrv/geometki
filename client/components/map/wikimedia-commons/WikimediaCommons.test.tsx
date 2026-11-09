@@ -82,16 +82,21 @@ const mockData = {
 describe('WikimediaCommons', () => {
     beforeEach(() => {
         jest.clearAllMocks()
-        jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(() => ({
-            getBounds: () => mockBounds,
-            getZoom: () => 12,
-            setView: jest.fn()
-        }))
+        jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(
+            () =>
+                ({
+                    getBounds: () => mockBounds,
+                    getZoom: () => 12,
+                    setView: jest.fn()
+                }) as unknown as ReturnType<typeof ReactLeaflet.useMapEvents>
+        )
     })
 
     describe('no data', () => {
         it('renders nothing when query has no data', () => {
-            jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({ data: undefined })
+            jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({
+                data: undefined
+            } as unknown as ReturnType<typeof APIWikimediaCommons.useGetByBoundsQuery>)
             const { container } = render(<WikimediaCommons />)
             expect(container.innerHTML).toBe('')
         })
@@ -99,7 +104,7 @@ describe('WikimediaCommons', () => {
         it('renders nothing when geosearch results are empty', () => {
             jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({
                 data: { query: { pages: {} } }
-            })
+            } as unknown as ReturnType<typeof APIWikimediaCommons.useGetByBoundsQuery>)
             const { container } = render(<WikimediaCommons />)
             expect(container.innerHTML).toBe('')
         })
@@ -107,18 +112,23 @@ describe('WikimediaCommons', () => {
 
     describe('too big area', () => {
         it('does not ask the API and shows nothing when the area is over the geosearch limit', () => {
-            jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(() => ({
-                // The whole of Moscow, about 40 km across
-                getBounds: () => ({
-                    getEast: () => 37.96,
-                    getNorth: () => 55.92,
-                    getSouth: () => 55.57,
-                    getWest: () => 37.29
-                }),
-                getZoom: () => 10,
-                setView: jest.fn()
-            }))
-            jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({ data: mockData })
+            jest.mocked(ReactLeaflet.useMapEvents).mockImplementation(
+                () =>
+                    ({
+                        // The whole of Moscow, about 40 km across
+                        getBounds: () => ({
+                            getEast: () => 37.96,
+                            getNorth: () => 55.92,
+                            getSouth: () => 55.57,
+                            getWest: () => 37.29
+                        }),
+                        getZoom: () => 10,
+                        setView: jest.fn()
+                    }) as unknown as ReturnType<typeof ReactLeaflet.useMapEvents>
+            )
+            jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({
+                data: mockData
+            } as unknown as ReturnType<typeof APIWikimediaCommons.useGetByBoundsQuery>)
 
             const { container } = render(<WikimediaCommons />)
 
@@ -129,7 +139,9 @@ describe('WikimediaCommons', () => {
 
     describe('with data', () => {
         beforeEach(() => {
-            jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({ data: mockData })
+            jest.mocked(APIWikimediaCommons.useGetByBoundsQuery).mockReturnValue({
+                data: mockData
+            } as unknown as ReturnType<typeof APIWikimediaCommons.useGetByBoundsQuery>)
         })
 
         it('asks the API for the visible area', () => {

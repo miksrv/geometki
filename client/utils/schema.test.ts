@@ -15,13 +15,13 @@ const mockPlace: Partial<ApiModel.Place> = {
     content: '**Bold** content',
     category: ApiModel.Categories.museum,
     address: {
-        country: { id: 'ru', name: 'Russia' },
-        region: { id: 'reg1', name: 'Moscow Oblast' },
-        locality: { id: 'msk', name: 'Moscow' },
+        country: { id: 1, name: 'Russia' },
+        region: { id: 2, name: 'Moscow Oblast' },
+        locality: { id: 3, name: 'Moscow' },
         street: 'Red Square'
     },
     author: { id: 'user-1', name: 'Alice', avatar: '/avatars/alice.jpg' },
-    cover: { full: '/covers/place-1.jpg', small: '' },
+    cover: { full: '/covers/place-1.jpg', preview: '' },
     created: { date: '2023-01-15T10:00:00Z', timezone_type: 1, timezone: 'UTC' },
     updated: { date: '2024-06-15T12:00:00Z', timezone_type: 1, timezone: 'UTC' }
 }

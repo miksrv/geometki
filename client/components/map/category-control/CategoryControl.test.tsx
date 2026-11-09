@@ -2,6 +2,8 @@ import React from 'react'
 
 import { fireEvent, render, screen } from '@testing-library/react'
 
+import { ApiModel } from '@/api'
+
 import { CategoryControl } from './CategoryControl'
 
 jest.mock('simple-react-ui-kit', () => ({
@@ -122,7 +124,7 @@ describe('CategoryControl', () => {
             const onChangeCategories = jest.fn()
             render(
                 <CategoryControl
-                    categories={['abandoned']}
+                    categories={[ApiModel.Categories.abandoned]}
                     onChangeCategories={onChangeCategories}
                 />
             )
