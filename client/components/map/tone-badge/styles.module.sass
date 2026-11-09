@@ -1,0 +1,43 @@
+// A round badge with a white glyph; the white ring parts it from the icon under it
+.badge
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    flex-shrink: 0
+    box-sizing: border-box
+    width: 16px
+    height: 16px
+    border-radius: 50%
+    // The glyph fills the badge inside the padding: a chip's icon slot sizes its svg to 100% too
+    padding: 3px
+    color: #FFF
+    box-shadow: 0 0 0 1.5px #FFF
+
+    svg
+        display: block
+        width: 100%
+        height: 100%
+        fill: none
+        stroke: currentColor
+        stroke-width: 1.6
+        stroke-linecap: round
+        stroke-linejoin: round
+
+// On the top-right corner of a 20px marker, over its edge
+.onMarker
+    position: absolute
+    top: -6px
+    right: -6px
+    width: 13px
+    height: 13px
+    padding: 2px
+    pointer-events: none
+
+.visited
+    background: var(--color-green)
+
+.bookmark
+    background: var(--color-orange)
+
+    svg path
+        stroke: none

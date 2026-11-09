@@ -15,6 +15,8 @@ import { IMG_HOST } from '@/config/env'
 import { categoryImage } from '@/utils/categories'
 import { addDecimalPoint, buildPlaceUrl, numberFormatter } from '@/utils/helpers'
 
+import { toneBadgeHtml } from '../tone-badge'
+
 import styles from './styles.module.sass'
 
 const NearbyPhotosDialog = dynamic(
@@ -37,18 +39,24 @@ const MarkerPointComponent: React.FC<MarkerPointProps> = ({ place, keepInView })
     const [bookmarkReady, setBookmarkReady] = useState(false)
     const [nearbyPhotosOpen, setNearbyPhotosOpen] = useState(false)
 
-    const placeMarkerIcon = useMemo(
-        () =>
-            new Leaflet.Icon({
-                className: place.tone ? `${styles.markerIcon} ${styles[`tone-${place.tone}`]}` : styles.markerIcon,
-                iconAnchor: [10, 10],
-                iconSize: [20, 20],
-                iconUrl: categoryImage(place.category).src,
-                // The hint starts a little above the icon, not from its centre
-                tooltipAnchor: [0, -12]
-            }),
-        [place.category, place.tone]
-    )
+    const placeMarkerIcon = useMemo(() => {
+        const iconUrl = categoryImage(place.category).src
+        // The hint starts a little above the icon, not from its centre
+        const geometry: Pick<Leaflet.BaseIconOptions, 'iconAnchor' | 'iconSize' | 'tooltipAnchor'> = {
+            iconAnchor: [10, 10],
+            iconSize: [20, 20],
+            tooltipAnchor: [0, -12]
+        }
+
+        // A person's map (UserPlacesMap): the icon and a badge of what they did with the place
+        return place.tone
+            ? Leaflet.divIcon({
+                  ...geometry,
+                  className: styles.markerTone,
+                  html: `<img class="${styles.markerIcon}" src="${iconUrl}" width="20" height="20" alt="" />${toneBadgeHtml(place.tone)}`
+              })
+            : new Leaflet.Icon({ ...geometry, className: styles.markerIcon, iconUrl })
+    }, [place.category, place.tone])
 
     const placeClickHandler = async () => {
         if (!place.id) {

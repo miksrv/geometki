@@ -226,7 +226,9 @@ describe('InteractiveMap', () => {
             expect(onClickCreatePlace).toHaveBeenCalledTimes(1)
         })
 
-        it('renders the fullscreen button when enableFullScreen is true', () => {
+        it('renders the fullscreen button when enableFullScreen is true and the browser can', () => {
+            Object.defineProperty(document, 'fullscreenEnabled', { configurable: true, value: true })
+
             render(<InteractiveMap enableFullScreen />)
             const btn = screen
                 .getAllByRole('button')
@@ -236,6 +238,16 @@ describe('InteractiveMap', () => {
                         b.getAttribute('data-icon') === 'FullscreenOut'
                 )
             expect(btn).toBeInTheDocument()
+        })
+
+        it("has no fullscreen button where an element cannot go full screen (an iPhone's Safari)", () => {
+            Object.defineProperty(document, 'fullscreenEnabled', { configurable: true, value: false })
+
+            render(<InteractiveMap enableFullScreen />)
+
+            expect(screen.queryAllByRole('button').some((b) => b.getAttribute('data-icon') === 'FullscreenIn')).toBe(
+                false
+            )
         })
 
         it('shows the imagery archive in place of the base map while its button is on', () => {

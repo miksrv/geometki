@@ -5,37 +5,6 @@
     gap: var(--space-2)
     margin-bottom: var(--space-3)
 
-// What the marker frames mean: a swatch drawn like a marker (a white ring and the colour)
-.legend
-    display: flex
-    flex-wrap: wrap
-    gap: var(--space-1) var(--space-4)
-    margin: var(--space-2) 0 0
-    padding: 0
-    list-style: none
-    color: var(--text-color-secondary)
-    font-size: var(--font-size-small)
-
-    li
-        display: inline-flex
-        align-items: center
-        gap: var(--space-2)
-
-.swatch
-    width: 12px
-    height: 12px
-    border-radius: 3px
-    background: var(--surface-2)
-
-.added
-    box-shadow: 0 0 0 1px #FFF, 0 0 0 3px var(--color-main)
-
-.visited
-    box-shadow: 0 0 0 1px #FFF, 0 0 0 3px var(--color-green)
-
-.bookmark
-    box-shadow: 0 0 0 1px #FFF, 0 0 0 3px var(--color-orange)
-
 // The map with the button over its top-right corner (the map's own controls are on the left)
 .mapBox
     position: relative
@@ -47,4 +16,7 @@
     // The level of the Leaflet controls (globals.sass caps them at 400): over the map, under the
     // fixed app bar and bottom navigation (450) and the overlay (500)
     z-index: 400
-    box-shadow: var(--shadow-md)
+    display: flex
+
+    button
+        box-shadow: var(--shadow-md)
