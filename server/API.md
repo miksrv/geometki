@@ -954,7 +954,7 @@ Rotate a temporary photo 90 degrees counter-clockwise and regenerate its preview
 
 Rotate a permanent (place-attached) photo 90 degrees counter-clockwise and regenerate its preview.
 
-**Auth required:** Yes
+**Auth required:** Yes — the photo's author or an admin (403 for anyone else, 404 when the file is missing on disk)
 
 **Path parameters:**
 

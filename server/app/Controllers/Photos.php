@@ -294,7 +294,7 @@ class Photos extends ResourceController
         }
 
         if ($photoData->user_id !== $this->session->user?->id && $this->session->user->role !== 'admin') {
-            return $this->failValidationErrors(lang('Photos.noAccessForDelete'));
+            return $this->failForbidden(lang('Photos.noAccessForDelete'));
         }
 
         $placesModel = new PlacesModel();
@@ -338,7 +338,7 @@ class Photos extends ResourceController
     /**
      * Rotate a photo 90° counter-clockwise and regenerate its preview.
      *
-     * PUT /photos/:id/rotate — auth required.
+     * PUT /photos/:id/rotate — the photo's author or an admin, like a delete.
      * Saves the rotated file under a new random name, regenerates the preview,
      * removes the old files from disk, and updates the DB record.
      *
@@ -355,13 +355,23 @@ class Photos extends ResourceController
         }
 
         $photosModel = new PhotosModel();
-        $photoData   = $photosModel->select('id, place_id, filename, extension, width, height')->find($id);
+        $photoData   = $photosModel->select('id, user_id, place_id, filename, extension, width, height')->find($id);
 
         if (!$photoData) {
             return $this->failValidationErrors(lang('Photos.noPhotoFound'));
         }
 
+        if ($photoData->user_id !== $this->session->user?->id && $this->session->user?->role !== 'admin') {
+            return $this->failForbidden(lang('Photos.noAccessForRotate'));
+        }
+
         $photoDir = UPLOAD_PHOTOS . $photoData->place_id . '/';
+
+        // The record without its file (a local copy of the production database): nothing to turn
+        if (!is_file($photoDir . $photoData->filename . '.' . $photoData->extension)) {
+            return $this->failNotFound(lang('Photos.noPhotoFound'));
+        }
+
         $file  = new File($photoDir . $photoData->filename . '.' . $photoData->extension);
         $image = Services::image('gd');
         $name  = pathinfo($file->getRandomName(), PATHINFO_FILENAME);
