@@ -10,7 +10,15 @@ let mockAuthState = { isAuth: false, user: undefined as { id: string } | undefin
 
 jest.mock('simple-react-ui-kit', () => ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Button: ({ label, link }: any) => <a href={link}>{label}</a>
+    Button: ({ label, link, mode }: any) => (
+        <a
+            href={link}
+            data-mode={mode}
+        >
+            {label}
+        </a>
+    ),
+    Skeleton: () => <div data-testid={'card-loader'} />
 }))
 
 jest.mock('next/dynamic', () => () => {
@@ -72,6 +80,7 @@ describe('UserHero', () => {
 
         expect(screen.getByRole('button', { name: 'user-hero-change-avatar' })).toBeInTheDocument()
         expect(screen.getByRole('link', { name: 'settings' })).toHaveAttribute('href', '/users/settings')
+        expect(screen.getByRole('link', { name: 'settings' })).toHaveAttribute('data-mode', 'secondary')
     })
 
     it('shows no buttons to another signed-in user', () => {
@@ -80,5 +89,21 @@ describe('UserHero', () => {
         render(<UserHero user={user} />)
 
         expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    })
+
+    it('on the settings page: the settings button marked as the page shown, a skeleton until the user loads', () => {
+        mockAuthState = { isAuth: true, user: { id: 'u1' } }
+
+        const { rerender } = render(<UserHero isSettings={true} />)
+        expect(screen.getByTestId('card-loader')).toBeInTheDocument()
+
+        rerender(
+            <UserHero
+                user={user}
+                isSettings={true}
+            />
+        )
+        expect(screen.getByRole('button', { name: 'user-hero-change-avatar' })).toBeInTheDocument()
+        expect(screen.getByRole('link', { name: 'settings' })).toHaveAttribute('data-mode', 'primary')
     })
 })

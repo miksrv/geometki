@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Button } from 'simple-react-ui-kit'
+import { Button, Skeleton } from 'simple-react-ui-kit'
 
 import dynamic from 'next/dynamic'
 import { useTranslation } from 'next-i18next/pages'
@@ -19,6 +19,8 @@ interface UserHeroProps {
     user?: ApiModel.User
     /** The page of the profile shown: underlined among the links at the foot of the card */
     currentPage?: UserProfileSection
+    /** The settings page: "Настройки" is `primary`, the page shown, and a skeleton of the card until the user loads */
+    isSettings?: boolean
 }
 
 /**
@@ -26,7 +28,7 @@ interface UserHeroProps {
  * `UserProfileCard` of the person with the pages of the profile at its foot. The owner gets
  * "Сменить фото" and "Настройки" under the level; anyone else sees the same card without buttons.
  */
-export const UserHero: React.FC<UserHeroProps> = ({ user, currentPage }) => {
+export const UserHero: React.FC<UserHeroProps> = ({ user, currentPage, isSettings }) => {
     const { t } = useTranslation()
 
     const isOwner = useAppSelector((state) => !!user?.id && state.auth.isAuth && state.auth.user?.id === user.id)
@@ -40,6 +42,8 @@ export const UserHero: React.FC<UserHeroProps> = ({ user, currentPage }) => {
                 className={styles.breadcrumbs}
                 links={[{ link: '/users', text: t('users') }]}
             />
+
+            {!user && isSettings && <Skeleton className={styles.cardLoader} />}
 
             {user && (
                 <UserProfileCard
@@ -57,7 +61,7 @@ export const UserHero: React.FC<UserHeroProps> = ({ user, currentPage }) => {
                                 />
                                 <Button
                                     size={'small'}
-                                    mode={'secondary'}
+                                    mode={isSettings ? 'primary' : 'secondary'}
                                     icon={'Settings'}
                                     label={t('settings')}
                                     link={'/users/settings'}
