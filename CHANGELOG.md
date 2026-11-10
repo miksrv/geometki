@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.19.2
+
+### Patch Changes
+
+- Settings: redesigned page under your profile card, a side menu of its parts, full width
+- Settings: the save buttons stay in view while there are unsaved changes
+- Settings: notifications as rows with "Email" and "Push" toggles instead of a checkbox table
+
 ## 1.19.1
 
 Reputation history, undo a check-in, check-in questions on phones and profile polish.
