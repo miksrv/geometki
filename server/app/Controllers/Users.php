@@ -8,6 +8,7 @@ use App\Libraries\NotificationSettings;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
+use App\Libraries\UserName;
 use App\Models\PlacesModel;
 use App\Models\UsersModel;
 use App\Models\VisitsModel;
@@ -296,8 +297,13 @@ class Users extends ResourceController
         }
 
         $input = $this->request->getJSON();
+
+        if (isset($input->name) && is_string($input->name)) {
+            $input->name = UserName::normalize($input->name);
+        }
+
         $rules = [
-            'name'    => 'if_exist|min_length[6]|max_length[150]|is_unique[users.name]',
+            'name'    => 'if_exist|valid_user_name',
             'website' => 'if_exist|max_length[150]|string',
             'oldPassword' => 'if_exist|min_length[8]|max_length[50]',
             'newPassword' => 'if_exist|min_length[8]|max_length[50]'

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Entities\UserEntity;
 use App\Libraries\NotificationSettings;
 use App\Libraries\OsmScoring;
+use App\Libraries\UserName;
 use CodeIgniter\I18n\Time;
 use ReflectionException;
 
@@ -90,10 +91,11 @@ class UsersModel extends ApplicationBaseModel
      *
      * @param string $email    Email address, already validated by the caller.
      * @param string $authType auth_type to assign only if a new user is created.
+     * @param string|null $locale Language of the default name a new user gets.
      * @return array{0: UserEntity, 1: bool} The user, and whether it was just created.
      * @throws ReflectionException
      */
-    public function findOrCreateByEmail(string $email, string $authType): array
+    public function findOrCreateByEmail(string $email, string $authType, ?string $locale = null): array
     {
         $userData = $this->findUserByEmailAddress($email);
 
@@ -102,7 +104,8 @@ class UsersModel extends ApplicationBaseModel
         }
 
         $newUser = new UserEntity();
-        $newUser->name      = explode('@', $email)[0];
+        // Not the part of the address before "@": the name is public, the address is not
+        $newUser->name      = UserName::forNewUser(null, $locale);
         $newUser->email     = $email;
         $newUser->auth_type = $authType;
 

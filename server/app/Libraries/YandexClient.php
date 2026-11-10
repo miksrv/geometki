@@ -103,7 +103,9 @@ class YandexClient {
             $data = json_decode($response->getBody());
 
             $userData->id     = $data->id ?? null;
-            $userData->name   = $data->real_name ?? null;
+            $userData->name   = ($data->real_name ?? '') !== ''
+                ? $data->real_name
+                : (trim(($data->first_name ?? '') . ' ' . ($data->last_name ?? '')) ?: ($data->display_name ?? null));
             $userData->email  = !empty($data->default_email) ? strtolower($data->default_email) ?? null : null;
             $userData->sex    = $data->sex ?? null;
             $userData->avatar = !$data->is_avatar_empty && $data->default_avatar_id
