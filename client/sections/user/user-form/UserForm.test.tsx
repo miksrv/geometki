@@ -52,6 +52,7 @@ jest.mock('@/app/store', () => ({
 }))
 
 jest.mock('@/components/ui', () => ({
+    ...jest.requireActual('@/components/ui/form-sections'),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Chip: ({ label, selected, onClick, ...rest }: any) => (
         <button

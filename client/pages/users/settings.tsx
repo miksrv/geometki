@@ -46,7 +46,11 @@ const SettingsUserPage: NextPage<object> = () => {
         [error]
     )
 
-    const serverError = useMemo(() => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined), [error])
+    // A validation answer may carry a message of no field (`error`): it is shown above the form
+    const serverError = useMemo(
+        () => (isApiValidationErrors<{ error?: string }>(error) ? error.messages.error : getErrorMessage(error)),
+        [error]
+    )
 
     // Leaving by Cancel goes through the same unsaved-changes guard as any other navigation
     const handleCancel = () => {

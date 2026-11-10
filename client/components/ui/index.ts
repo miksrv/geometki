@@ -7,6 +7,13 @@ export { ExpandableText } from './expandable-text'
 export { FieldTrigger, type FieldTriggerProps } from './field-trigger'
 export { FileDropZone } from './file-drop-zone'
 export { FormActions, type FormActionsProps } from './form-actions'
+export {
+    FormSection,
+    type FormSectionProps,
+    FormSections,
+    type FormSectionsItem,
+    type FormSectionsProps
+} from './form-sections'
 export { ImageUploader } from './image-uploader'
 export { OptionList, type OptionListGroup, type OptionListItem, type OptionListProps } from './option-list'
 export { Pagination, type PaginationProps } from './pagination'

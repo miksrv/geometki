@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { cn, Container, Icon, IconTypes, Input, Message, Skeleton } from 'simple-react-ui-kit'
+import { IconTypes, Input, Message, Skeleton } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 import { Trans, useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { Chip, FormActions } from '@/components/ui'
+import { Chip, FormActions, FormSection, FormSections } from '@/components/ui'
 import googleLogo from '@/public/images/google-logo.png'
 import vkLogo from '@/public/images/vk-logo.png'
 import yandexLogo from '@/public/images/yandex-logo.png'
@@ -51,12 +51,6 @@ const NOTIFICATION_GROUPS = [
     { key: 'places', types: PLACE_NOTIFICATIONS },
     { key: 'other', types: ApiModel.NotificationTypes.filter((type) => !PLACE_NOTIFICATIONS.includes(type)) }
 ] as const
-
-// The line under the app bar a card's top passes to become the current part; a menu click
-// stops the card at 64px (`scroll-margin-top`)
-const SPY_OFFSET = 80
-// No scroll events for this long: a menu click's smooth scroll is over, ms
-const SCROLL_IDLE = 150
 
 type SettingsSectionKey = 'profile' | 'notifications' | 'security'
 
@@ -150,14 +144,18 @@ export const UserForm: React.FC<UserFormProps> = ({
         onDirtyChange?.(isDirty)
     }, [isDirty])
 
-    const sections = SECTIONS.filter(({ key }) => key !== 'security' || !values || !!values.authType)
+    const sections = SECTIONS.filter(({ key }) => key !== 'security' || !values || !!values.authType).map(
+        ({ key, icon }) => ({ icon, key, title: t(`settings-section-${key}`) })
+    )
 
     if (!values?.id) {
         return (
-            <div className={styles.layout}>
-                <SettingsMenu sections={sections} />
+            <FormSections
+                sections={sections}
+                label={t('settings-sections')}
+            >
                 <UserFormLoader />
-            </div>
+            </FormSections>
         )
     }
 
@@ -204,350 +202,215 @@ export const UserForm: React.FC<UserFormProps> = ({
     }
 
     return (
-        <div className={styles.layout}>
-            <SettingsMenu sections={sections} />
+        <FormSections
+            sections={sections}
+            label={t('settings-sections')}
+        >
+            {serverError && <Message type={'error'}>{serverError}</Message>}
 
-            <div className={styles.content}>
-                {serverError && <Message type={'error'}>{serverError}</Message>}
+            {!!errorMessages.length && (
+                <Message
+                    type={'error'}
+                    title={t('correct-errors-on-form')}
+                >
+                    <ul className={'errorMessageList'}>
+                        {errorMessages.map((item) => (
+                            <li key={`item${item}`}>{item}</li>
+                        ))}
+                    </ul>
+                </Message>
+            )}
 
-                {!!errorMessages.length && (
-                    <Message
-                        type={'error'}
-                        title={t('correct-errors-on-form')}
+            <FormSection
+                id={'profile'}
+                title={t('settings-section-profile')}
+                description={t('settings-section-profile-description')}
+            >
+                <div className={styles.fields}>
+                    {renderTextInput(
+                        'name',
+                        {
+                            autoFocus: true,
+                            label: t('input_name'),
+                            maxLength: USER_NAME_MAX,
+                            placeholder: t('input_name-placeholder'),
+                            required: true
+                        },
+                        { validate: validateName }
+                    )}
+
+                    {renderTextInput('website', {
+                        label: t('personal-page'),
+                        placeholder: t('input_website-placeholder')
+                    })}
+
+                    <div className={styles.wide}>
+                        <Input
+                            size={'medium'}
+                            label={t('input_email')}
+                            disabled={true}
+                            value={userEmail ?? ''}
+                        />
+                        <p className={styles.hint}>{t('settings-email-hint')}</p>
+                    </div>
+                </div>
+            </FormSection>
+
+            <FormSection
+                id={'notifications'}
+                title={t('settings-section-notifications')}
+                description={t('settings-section-notifications-description')}
+            >
+                <PushDeviceSettings />
+
+                {NOTIFICATION_GROUPS.map((group) => (
+                    <div
+                        key={group.key}
+                        className={styles.notificationGroup}
+                        role={'group'}
+                        aria-labelledby={`notifications-${group.key}`}
                     >
-                        <ul className={'errorMessageList'}>
-                            {errorMessages.map((item) => (
-                                <li key={`item${item}`}>{item}</li>
+                        <div
+                            id={`notifications-${group.key}`}
+                            className={styles.groupLabel}
+                        >
+                            {t(`notification-group_${group.key}`)}
+                        </div>
+
+                        <ul className={styles.notificationList}>
+                            {group.types.map((type) => (
+                                <li
+                                    key={type}
+                                    className={styles.notificationRow}
+                                >
+                                    <span className={styles.notificationTitle}>{t(`notification-type_${type}`)}</span>
+
+                                    <span className={styles.channels}>
+                                        {ApiModel.NotificationChannels.map((channel) => (
+                                            <span
+                                                key={channel}
+                                                className={styles.channel}
+                                            >
+                                                {ApiModel.NotificationChannelTypes[channel].includes(type) && (
+                                                    <Controller
+                                                        name={`settings.${ApiModel.userSettingKey(channel, type)}`}
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Chip
+                                                                size={'small'}
+                                                                label={t(`notification-channel_${channel}`)}
+                                                                aria-label={`${t(`notification-channel_${channel}`)}: ${t(`notification-type_${type}`)}`}
+                                                                selected={!!field.value}
+                                                                disabled={loading}
+                                                                className={styles.channelChip}
+                                                                onClick={() => field.onChange(!field.value)}
+                                                            />
+                                                        )}
+                                                    />
+                                                )}
+                                            </span>
+                                        ))}
+                                    </span>
+                                </li>
                             ))}
                         </ul>
-                    </Message>
-                )}
-
-                <SettingsSection
-                    id={'profile'}
-                    title={t('settings-section-profile')}
-                    description={t('settings-section-profile-description')}
-                >
-                    <div className={styles.fields}>
-                        {renderTextInput(
-                            'name',
-                            {
-                                autoFocus: true,
-                                label: t('input_name'),
-                                maxLength: USER_NAME_MAX,
-                                placeholder: t('input_name-placeholder'),
-                                required: true
-                            },
-                            { validate: validateName }
-                        )}
-
-                        {renderTextInput('website', {
-                            label: t('personal-page'),
-                            placeholder: t('input_website-placeholder')
-                        })}
-
-                        <div className={styles.wide}>
-                            <Input
-                                size={'medium'}
-                                label={t('input_email')}
-                                disabled={true}
-                                value={userEmail ?? ''}
-                            />
-                            <p className={styles.hint}>{t('settings-email-hint')}</p>
-                        </div>
                     </div>
-                </SettingsSection>
+                ))}
 
-                <SettingsSection
-                    id={'notifications'}
-                    title={t('settings-section-notifications')}
-                    description={t('settings-section-notifications-description')}
+                <p className={styles.hint}>{t('email-notifications-hint')}</p>
+                <p className={styles.hint}>{t('push-column-hint')}</p>
+            </FormSection>
+
+            {!!values.authType && (
+                <FormSection
+                    id={'security'}
+                    title={t('settings-section-security')}
                 >
-                    <PushDeviceSettings />
-
-                    {NOTIFICATION_GROUPS.map((group) => (
-                        <div
-                            key={group.key}
-                            className={styles.notificationGroup}
-                            role={'group'}
-                            aria-labelledby={`notifications-${group.key}`}
-                        >
-                            <div
-                                id={`notifications-${group.key}`}
-                                className={styles.groupLabel}
-                            >
-                                {t(`notification-group_${group.key}`)}
-                            </div>
-
-                            <ul className={styles.notificationList}>
-                                {group.types.map((type) => (
-                                    <li
-                                        key={type}
-                                        className={styles.notificationRow}
-                                    >
-                                        <span className={styles.notificationTitle}>
-                                            {t(`notification-type_${type}`)}
-                                        </span>
-
-                                        <span className={styles.channels}>
-                                            {ApiModel.NotificationChannels.map((channel) => (
-                                                <span
-                                                    key={channel}
-                                                    className={styles.channel}
-                                                >
-                                                    {ApiModel.NotificationChannelTypes[channel].includes(type) && (
-                                                        <Controller
-                                                            name={`settings.${ApiModel.userSettingKey(channel, type)}`}
-                                                            control={control}
-                                                            render={({ field }) => (
-                                                                <Chip
-                                                                    size={'small'}
-                                                                    label={t(`notification-channel_${channel}`)}
-                                                                    aria-label={`${t(`notification-channel_${channel}`)}: ${t(`notification-type_${type}`)}`}
-                                                                    selected={!!field.value}
-                                                                    disabled={loading}
-                                                                    className={styles.channelChip}
-                                                                    onClick={() => field.onChange(!field.value)}
-                                                                />
-                                                            )}
-                                                        />
-                                                    )}
-                                                </span>
-                                            ))}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
-
-                    <p className={styles.hint}>{t('email-notifications-hint')}</p>
-                    <p className={styles.hint}>{t('push-column-hint')}</p>
-                </SettingsSection>
-
-                {!!values.authType && (
-                    <SettingsSection
-                        id={'security'}
-                        title={t('settings-section-security')}
-                    >
-                        {isNative ? (
-                            <div className={styles.fields}>
-                                <div className={styles.wide}>
-                                    {renderTextInput(
-                                        'oldPassword',
-                                        {
-                                            label: t('input_old-password'),
-                                            placeholder: t('input_old-password-placeholder'),
-                                            type: 'password'
-                                        },
-                                        {
-                                            validate: (value) =>
-                                                !getValues('newPassword') || !!value || t('error_old-password-required')
-                                        }
-                                    )}
-                                </div>
-
+                    {isNative ? (
+                        <div className={styles.fields}>
+                            <div className={styles.wide}>
                                 {renderTextInput(
-                                    'newPassword',
+                                    'oldPassword',
                                     {
-                                        label: t('input_new-password'),
-                                        placeholder: t('input_new-password-placeholder'),
-                                        type: 'password'
-                                    },
-                                    {
-                                        validate: (value) => {
-                                            if (!value) {
-                                                return !getValues('oldPassword') || t('error_new-password-required')
-                                            }
-                                            return value.length >= 8 || t('error_password-length')
-                                        }
-                                    }
-                                )}
-
-                                {renderTextInput(
-                                    'confirmPassword',
-                                    {
-                                        label: t('input_password-repeat'),
+                                        label: t('input_old-password'),
+                                        placeholder: t('input_old-password-placeholder'),
                                         type: 'password'
                                     },
                                     {
                                         validate: (value) =>
-                                            !getValues('newPassword') ||
-                                            value === getValues('newPassword') ||
-                                            t('error_password-mismatch')
+                                            !getValues('newPassword') || !!value || t('error_old-password-required')
                                     }
                                 )}
                             </div>
-                        ) : (
-                            <div className={styles.authService}>
-                                <Image
-                                    src={AUTH_SERVICE_LOGOS[values.authType] ?? yandexLogo.src}
-                                    width={32}
-                                    height={32}
-                                    alt={''}
+
+                            {renderTextInput(
+                                'newPassword',
+                                {
+                                    label: t('input_new-password'),
+                                    placeholder: t('input_new-password-placeholder'),
+                                    type: 'password'
+                                },
+                                {
+                                    validate: (value) => {
+                                        if (!value) {
+                                            return !getValues('oldPassword') || t('error_new-password-required')
+                                        }
+                                        return value.length >= 8 || t('error_password-length')
+                                    }
+                                }
+                            )}
+
+                            {renderTextInput(
+                                'confirmPassword',
+                                {
+                                    label: t('input_password-repeat'),
+                                    type: 'password'
+                                },
+                                {
+                                    validate: (value) =>
+                                        !getValues('newPassword') ||
+                                        value === getValues('newPassword') ||
+                                        t('error_password-mismatch')
+                                }
+                            )}
+                        </div>
+                    ) : (
+                        <div className={styles.authService}>
+                            <Image
+                                src={AUTH_SERVICE_LOGOS[values.authType] ?? yandexLogo.src}
+                                width={32}
+                                height={32}
+                                alt={''}
+                            />
+                            <p>
+                                <Trans
+                                    i18nKey={'you-logged-via-service'}
+                                    values={{ service: values.authType }}
                                 />
-                                <p>
-                                    <Trans
-                                        i18nKey={'you-logged-via-service'}
-                                        values={{ service: values.authType }}
-                                    />
-                                </p>
-                            </div>
-                        )}
-                    </SettingsSection>
-                )}
+                            </p>
+                        </div>
+                    )}
+                </FormSection>
+            )}
 
-                <FormActions
-                    dirty={isDirty}
-                    loading={loading}
-                    onSave={() => void submit()}
-                    onCancel={onCancel}
-                />
-            </div>
-        </div>
-    )
-}
-
-interface SettingsSectionProps {
-    id: string
-    title: string
-    description?: string
-    children: React.ReactNode
-}
-
-/** A part of the settings: a titled card, what it is for in a line under the title */
-const SettingsSection: React.FC<SettingsSectionProps> = ({ id, title, description, children }) => (
-    <Container
-        id={id}
-        className={styles.section}
-        title={title}
-    >
-        {description && <p className={styles.description}>{description}</p>}
-        {children}
-    </Container>
-)
-
-interface SettingsMenuProps {
-    sections: typeof SECTIONS
-}
-
-/**
- * The parts of the settings as a vertical list of links (the look of the old site menu): a
- * click scrolls to the card, the card in view is marked as it scrolls. Hidden on phones
- */
-const SettingsMenu: React.FC<SettingsMenuProps> = ({ sections }) => {
-    const { t } = useTranslation()
-
-    const [active, setActive] = useState<SettingsSectionKey>('profile')
-
-    // The part a menu click is scrolling to: the smooth scroll passes the parts between, and
-    // the mark must not run through them
-    const scrollTarget = useRef<SettingsSectionKey>(undefined)
-    const release = useRef<ReturnType<typeof setTimeout>>(undefined)
-    const keys = sections.map(({ key }) => key)
-
-    // Scroll spy: the current part is the last card whose top has reached the line under the
-    // app bar; at the end of the page — the last card, which may be too short to reach it.
-    // The cards are looked up on each scroll, so they may appear after the menu (the skeleton)
-    useEffect(() => {
-        let frame = 0
-
-        const update = () => {
-            frame = 0
-
-            // Scrolled to the very end of a page that scrolls at all
-            const atEnd =
-                window.scrollY > 0 && window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
-            const passed = keys.filter(
-                (key) => (document.getElementById(key)?.getBoundingClientRect().top ?? Infinity) <= SPY_OFFSET
-            )
-            const current = atEnd ? keys[keys.length - 1] : (passed[passed.length - 1] ?? keys[0])
-
-            if (scrollTarget.current) {
-                // The click's scroll is over when it stops: no scroll events for a moment
-                clearTimeout(release.current)
-                release.current = setTimeout(() => {
-                    scrollTarget.current = undefined
-                    update()
-                }, SCROLL_IDLE)
-
-                return
-            }
-
-            if (current) {
-                setActive(current)
-            }
-        }
-
-        const onScroll = () => {
-            if (!frame) {
-                frame = requestAnimationFrame(update)
-            }
-        }
-
-        update()
-        window.addEventListener('scroll', onScroll, { passive: true })
-        window.addEventListener('resize', onScroll)
-
-        return () => {
-            cancelAnimationFrame(frame)
-            clearTimeout(release.current)
-            window.removeEventListener('scroll', onScroll)
-            window.removeEventListener('resize', onScroll)
-        }
-    }, [keys.join()])
-
-    // Scrolls without a history entry: the unsaved-changes guard reads Back from a `#section`
-    // entry as leaving the page
-    const handleClick = (key: SettingsSectionKey) => (event: React.MouseEvent<HTMLAnchorElement>) => {
-        const target = document.getElementById(key)
-
-        if (target) {
-            event.preventDefault()
-            scrollTarget.current = key
-            // Let go even if the card is already in place and nothing scrolls
-            clearTimeout(release.current)
-            release.current = setTimeout(() => (scrollTarget.current = undefined), SCROLL_IDLE * 4)
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            setActive(key)
-        }
-    }
-
-    return (
-        <nav
-            className={styles.menu}
-            aria-label={t('settings-sections')}
-        >
-            <ul>
-                {sections.map(({ key, icon }) => (
-                    <li key={key}>
-                        <a
-                            href={`#${key}`}
-                            className={cn(active === key && styles.active)}
-                            aria-current={active === key ? 'location' : undefined}
-                            onClick={handleClick(key)}
-                        >
-                            <Icon name={icon} />
-                            {t(`settings-section-${key}`)}
-                        </a>
-                    </li>
-                ))}
-            </ul>
-        </nav>
+            <FormActions
+                dirty={isDirty}
+                loading={loading}
+                onSave={() => void submit()}
+                onCancel={onCancel}
+            />
+        </FormSections>
     )
 }
 
 /** The cards' shape while the profile loads */
 const UserFormLoader: React.FC = () => (
     <div
-        className={styles.content}
+        className={styles.loader}
         aria-busy={true}
     >
         {[3, 6, 2].map((rows, index) => (
-            <Container
-                key={index}
-                className={styles.section}
-            >
+            <FormSection key={index}>
                 <div className={styles.loaderRows}>
                     <Skeleton className={styles.loaderTitle} />
                     {Array.from({ length: rows }, (_, row) => (
@@ -557,7 +420,7 @@ const UserFormLoader: React.FC = () => (
                         />
                     ))}
                 </div>
-            </Container>
+            </FormSection>
         ))}
     </div>
 )
