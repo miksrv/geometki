@@ -1,14 +1,13 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { Button, Checkbox, Container, Input, Message } from 'simple-react-ui-kit'
+import { Button, cn, Container, Icon, IconTypes, Input, Message, Skeleton } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
-import Link from 'next/link'
 import { Trans, useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { ScreenSpinner } from '@/components/ui'
+import { Chip } from '@/components/ui'
 import googleLogo from '@/public/images/google-logo.png'
 import vkLogo from '@/public/images/vk-logo.png'
 import yandexLogo from '@/public/images/yandex-logo.png'
@@ -21,14 +20,13 @@ interface UserFormProps {
     loading?: boolean
     values?: ApiModel.User
     errors?: ApiType.Users.PatchRequest
+    /** A save that failed on the server, over the sections */
+    serverError?: string
     onSubmit?: (formData?: ApiType.Users.PatchRequest) => void
     onCancel?: () => void
     /** Reports whether the form holds changes that would be lost on leaving */
     onDirtyChange?: (isDirty: boolean) => void
 }
-
-/** The anchors of the form's sections, for the side navigation of the settings page */
-export const USER_FORM_SECTIONS = ['profile', 'notifications', 'security'] as const
 
 type FormDataType = ApiType.Users.PatchRequest & { confirmPassword?: string }
 
@@ -36,11 +34,51 @@ const TEXT_FIELDS = ['name', 'website', 'oldPassword', 'newPassword', 'confirmPa
 
 const SETTINGS = ApiModel.userSettingKeys()
 
+/** The events on the user's places first, then the user's own progress and the digest */
+const PLACE_NOTIFICATIONS: readonly ApiModel.NotificationType[] = [
+    'comment',
+    'photo',
+    'rating',
+    'edit',
+    'cover',
+    'bookmark',
+    'visit'
+]
+
+const NOTIFICATION_GROUPS = [
+    { key: 'places', types: PLACE_NOTIFICATIONS },
+    { key: 'other', types: ApiModel.NotificationTypes.filter((type) => !PLACE_NOTIFICATIONS.includes(type)) }
+] as const
+
+type SettingsSectionKey = 'profile' | 'notifications' | 'security'
+
+/** The parts of the settings: the anchors of the side menu and the ids of the cards */
+const SECTIONS: Array<{ key: SettingsSectionKey; icon: IconTypes }> = [
+    { icon: 'User', key: 'profile' },
+    { icon: 'Bell', key: 'notifications' },
+    { icon: 'Lock', key: 'security' }
+]
+
+const AUTH_SERVICE_LOGOS: Record<string, string> = {
+    google: googleLogo.src,
+    vk: vkLogo.src,
+    yandex: yandexLogo.src
+}
+
 /**
- * The settings form (`/users/settings`): "Профиль", "Уведомления" and "Вход и пароль", each a
- * `Container` (a form, DESIGN.md → Containers), then Cancel and Save under them.
+ * The settings form (`/users/settings`, DESIGN.md → Settings): a sticky menu of the parts on the
+ * left — "Профиль", "Уведомления", "Вход и пароль" — scrolling to their cards on the right, then
+ * Cancel and Save, kept at the bottom of the screen while there are changes.
  */
-export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onSubmit, onCancel, onDirtyChange }) => {
+export const UserForm: React.FC<UserFormProps> = ({
+    loading,
+    values,
+    errors,
+    serverError,
+    onSubmit,
+    onCancel,
+    onDirtyChange
+}) => {
     const { t } = useTranslation()
 
     const userEmail = useAppSelector((state) => state.auth.user?.email)
@@ -93,6 +131,17 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
         onDirtyChange?.(isDirty)
     }, [isDirty])
 
+    const sections = SECTIONS.filter(({ key }) => key !== 'security' || !values || !!values.authType)
+
+    if (!values?.id) {
+        return (
+            <div className={styles.layout}>
+                <SettingsMenu sections={sections} />
+                <UserFormLoader />
+            </div>
+        )
+    }
+
     const errorMessages = TEXT_FIELDS.map((field) => formErrors[field]?.message).filter(
         (message): message is string => !!message
     )
@@ -109,6 +158,7 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
             render={({ field, fieldState }) => (
                 <Input
                     {...props}
+                    size={'medium'}
                     name={field.name}
                     disabled={props.disabled ?? loading}
                     value={field.value ?? ''}
@@ -121,154 +171,151 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
         />
     )
 
+    const isNative = values.authType === 'native'
+
     return (
-        <section className={styles.component}>
-            {loading && <ScreenSpinner />}
+        <div className={styles.layout}>
+            <SettingsMenu sections={sections} />
 
-            {!!errorMessages.length && (
-                <Message
-                    type={'error'}
-                    title={t('correct-errors-on-form')}
+            <div className={styles.content}>
+                {serverError && <Message type={'error'}>{serverError}</Message>}
+
+                {!!errorMessages.length && (
+                    <Message
+                        type={'error'}
+                        title={t('correct-errors-on-form')}
+                    >
+                        <ul className={'errorMessageList'}>
+                            {errorMessages.map((item) => (
+                                <li key={`item${item}`}>{item}</li>
+                            ))}
+                        </ul>
+                    </Message>
+                )}
+
+                <SettingsSection
+                    id={'profile'}
+                    title={t('settings-section-profile')}
+                    description={t('settings-section-profile-description')}
                 >
-                    <ul className={'errorMessageList'}>
-                        {errorMessages.map((item) => (
-                            <li key={`item${item}`}>{item}</li>
-                        ))}
-                    </ul>
-                </Message>
-            )}
-
-            <Container
-                id={'profile'}
-                className={styles.section}
-                title={t('settings-section-profile')}
-            >
-                <div className={styles.fields}>
-                    <div className={styles.formElement}>
+                    <div className={styles.fields}>
                         {renderTextInput(
                             'name',
                             {
                                 autoFocus: true,
                                 label: t('input_name'),
                                 placeholder: t('input_name-placeholder'),
-                                required: true,
-                                tabIndex: 0
+                                required: true
                             },
                             { validate: (value) => !!value?.trim() || t('error_name-required') }
                         )}
-                    </div>
 
-                    <div className={styles.formElement}>
                         {renderTextInput('website', {
                             label: t('personal-page'),
                             placeholder: t('input_website-placeholder')
                         })}
+
+                        <div className={styles.wide}>
+                            <Input
+                                size={'medium'}
+                                label={t('input_email')}
+                                disabled={true}
+                                value={userEmail ?? ''}
+                            />
+                            <p className={styles.hint}>{t('settings-email-hint')}</p>
+                        </div>
                     </div>
+                </SettingsSection>
 
-                    <div className={styles.formElement}>
-                        <Input
-                            label={t('input_email')}
-                            disabled={true}
-                            value={userEmail ?? ''}
-                        />
-                        <p className={styles.hint}>{t('settings-email-hint')}</p>
-                    </div>
-                </div>
-
-                {!!values?.id && (
-                    <p className={styles.hint}>
-                        {t('settings-avatar-on-profile')}{' '}
-                        <Link href={`/users/${values.id}`}>{t('settings-avatar-on-profile-link')}</Link>
-                    </p>
-                )}
-            </Container>
-
-            <Container
-                id={'notifications'}
-                className={styles.section}
-                title={t('settings-section-notifications')}
-            >
-                <PushDeviceSettings />
-
-                <table className={styles.notifications}>
-                    <thead>
-                        <tr>
-                            <th scope={'col'}>{t('notifications-settings-type')}</th>
-                            {ApiModel.NotificationChannels.map((channel) => (
-                                <th
-                                    key={channel}
-                                    scope={'col'}
-                                >
-                                    {t(`notification-channel_${channel}`)}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {ApiModel.NotificationTypes.map((type) => (
-                            <tr key={type}>
-                                <th scope={'row'}>{t(`notification-type_${type}`)}</th>
-                                {ApiModel.NotificationChannels.map((channel) => (
-                                    <td key={channel}>
-                                        {ApiModel.NotificationChannelTypes[channel].includes(type) ? (
-                                            <Controller
-                                                name={`settings.${ApiModel.userSettingKey(channel, type)}`}
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <Checkbox
-                                                        id={ApiModel.userSettingKey(channel, type)}
-                                                        className={styles.channelCheckbox}
-                                                        aria-label={`${t(`notification-channel_${channel}`)}: ${t(`notification-type_${type}`)}`}
-                                                        disabled={loading}
-                                                        checked={!!field.value}
-                                                        onChange={(event) => field.onChange(event.target.checked)}
-                                                    />
-                                                )}
-                                            />
-                                        ) : (
-                                            <span
-                                                className={styles.notApplicable}
-                                                aria-hidden={true}
-                                            >
-                                                —
-                                            </span>
-                                        )}
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                <p className={styles.hint}>{t('email-notifications-hint')}</p>
-                <p className={styles.hint}>{t('push-column-hint')}</p>
-            </Container>
-
-            {/* Not hidden while loading: the side navigation links here, and the page must not jump on a save */}
-            {!!values?.authType && (
-                <Container
-                    id={'security'}
-                    className={styles.section}
-                    title={t('settings-section-security')}
+                <SettingsSection
+                    id={'notifications'}
+                    title={t('settings-section-notifications')}
+                    description={t('settings-section-notifications-description')}
                 >
-                    {values?.authType === 'native' ? (
-                        <>
-                            <div className={styles.formElement}>
-                                {renderTextInput(
-                                    'oldPassword',
-                                    {
-                                        label: t('input_old-password'),
-                                        placeholder: t('input_old-password-placeholder'),
-                                        type: 'password'
-                                    },
-                                    {
-                                        validate: (value) =>
-                                            !getValues('newPassword') || !!value || t('error_old-password-required')
-                                    }
-                                )}
+                    <PushDeviceSettings />
+
+                    {NOTIFICATION_GROUPS.map((group) => (
+                        <div
+                            key={group.key}
+                            className={styles.notificationGroup}
+                            role={'group'}
+                            aria-labelledby={`notifications-${group.key}`}
+                        >
+                            <div
+                                id={`notifications-${group.key}`}
+                                className={styles.groupLabel}
+                            >
+                                {t(`notification-group_${group.key}`)}
                             </div>
 
-                            <div className={styles.formElement}>
+                            <ul className={styles.notificationList}>
+                                {group.types.map((type) => (
+                                    <li
+                                        key={type}
+                                        className={styles.notificationRow}
+                                    >
+                                        <span className={styles.notificationTitle}>
+                                            {t(`notification-type_${type}`)}
+                                        </span>
+
+                                        <span className={styles.channels}>
+                                            {ApiModel.NotificationChannels.map((channel) => (
+                                                <span
+                                                    key={channel}
+                                                    className={styles.channel}
+                                                >
+                                                    {ApiModel.NotificationChannelTypes[channel].includes(type) && (
+                                                        <Controller
+                                                            name={`settings.${ApiModel.userSettingKey(channel, type)}`}
+                                                            control={control}
+                                                            render={({ field }) => (
+                                                                <Chip
+                                                                    size={'small'}
+                                                                    label={t(`notification-channel_${channel}`)}
+                                                                    aria-label={`${t(`notification-channel_${channel}`)}: ${t(`notification-type_${type}`)}`}
+                                                                    selected={!!field.value}
+                                                                    disabled={loading}
+                                                                    className={styles.channelChip}
+                                                                    onClick={() => field.onChange(!field.value)}
+                                                                />
+                                                            )}
+                                                        />
+                                                    )}
+                                                </span>
+                                            ))}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
+
+                    <p className={styles.hint}>{t('email-notifications-hint')}</p>
+                    <p className={styles.hint}>{t('push-column-hint')}</p>
+                </SettingsSection>
+
+                {!!values.authType && (
+                    <SettingsSection
+                        id={'security'}
+                        title={t('settings-section-security')}
+                    >
+                        {isNative ? (
+                            <div className={styles.fields}>
+                                <div className={styles.wide}>
+                                    {renderTextInput(
+                                        'oldPassword',
+                                        {
+                                            label: t('input_old-password'),
+                                            placeholder: t('input_old-password-placeholder'),
+                                            type: 'password'
+                                        },
+                                        {
+                                            validate: (value) =>
+                                                !getValues('newPassword') || !!value || t('error_old-password-required')
+                                        }
+                                    )}
+                                </div>
+
                                 {renderTextInput(
                                     'newPassword',
                                     {
@@ -285,9 +332,7 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
                                         }
                                     }
                                 )}
-                            </div>
 
-                            <div className={styles.formElement}>
                                 {renderTextInput(
                                     'confirmPassword',
                                     {
@@ -302,53 +347,173 @@ export const UserForm: React.FC<UserFormProps> = ({ loading, values, errors, onS
                                     }
                                 )}
                             </div>
-                        </>
-                    ) : (
-                        <div className={styles.authService}>
-                            <Image
-                                src={
-                                    values?.authType === 'google'
-                                        ? googleLogo.src
-                                        : values?.authType === 'vk'
-                                          ? vkLogo.src
-                                          : yandexLogo.src
-                                }
-                                width={48}
-                                height={48}
-                                alt={''}
-                            />
-                            <p>
-                                <Trans
-                                    i18nKey={'you-logged-via-service'}
-                                    values={{ service: values?.authType }}
+                        ) : (
+                            <div className={styles.authService}>
+                                <Image
+                                    src={AUTH_SERVICE_LOGOS[values.authType] ?? yandexLogo.src}
+                                    width={32}
+                                    height={32}
+                                    alt={''}
                                 />
-                            </p>
-                        </div>
-                    )}
-                </Container>
-            )}
+                                <p>
+                                    <Trans
+                                        i18nKey={'you-logged-via-service'}
+                                        values={{ service: values.authType }}
+                                    />
+                                </p>
+                            </div>
+                        )}
+                    </SettingsSection>
+                )}
 
-            <div className={styles.actions}>
-                <Button
-                    size={'medium'}
-                    mode={'secondary'}
-                    label={t('cancel')}
-                    disabled={loading}
-                    onClick={onCancel}
-                />
+                <div className={cn(styles.actions, isDirty && styles.sticky)}>
+                    {isDirty && <span className={styles.unsaved}>{t('settings-unsaved')}</span>}
 
-                <Button
-                    size={'medium'}
-                    mode={'primary'}
-                    loading={loading}
-                    label={t('save')}
-                    disabled={loading || !isDirty}
-                    onClick={() => void submit()}
-                />
+                    <div className={styles.buttons}>
+                        <Button
+                            size={'medium'}
+                            mode={'secondary'}
+                            label={t('cancel')}
+                            disabled={loading}
+                            onClick={onCancel}
+                        />
+
+                        <Button
+                            size={'medium'}
+                            mode={'primary'}
+                            loading={loading}
+                            label={t('save')}
+                            disabled={loading || !isDirty}
+                            onClick={() => void submit()}
+                        />
+                    </div>
+                </div>
             </div>
-        </section>
+        </div>
     )
 }
+
+interface SettingsSectionProps {
+    id: string
+    title: string
+    description?: string
+    children: React.ReactNode
+}
+
+/** A part of the settings: a titled card, what it is for in a line under the title */
+const SettingsSection: React.FC<SettingsSectionProps> = ({ id, title, description, children }) => (
+    <Container
+        id={id}
+        className={styles.section}
+        title={title}
+    >
+        {description && <p className={styles.description}>{description}</p>}
+        {children}
+    </Container>
+)
+
+interface SettingsMenuProps {
+    sections: typeof SECTIONS
+}
+
+/**
+ * The parts of the settings as a vertical list of links (the look of the old site menu): a
+ * click scrolls to the card, the card in view is marked as it scrolls. Hidden on phones
+ */
+const SettingsMenu: React.FC<SettingsMenuProps> = ({ sections }) => {
+    const { t } = useTranslation()
+
+    const [active, setActive] = useState<SettingsSectionKey>('profile')
+
+    useEffect(() => {
+        if (typeof IntersectionObserver === 'undefined') {
+            return
+        }
+
+        // A card is current while it crosses the upper part of the screen, under the app bar
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const current = entries
+                    .filter((entry) => entry.isIntersecting)
+                    .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
+
+                if (current) {
+                    setActive(current.target.id as SettingsSectionKey)
+                }
+            },
+            { rootMargin: '-64px 0px -60% 0px' }
+        )
+
+        sections.forEach(({ key }) => {
+            const element = document.getElementById(key)
+            if (element) {
+                observer.observe(element)
+            }
+        })
+
+        return () => observer.disconnect()
+    }, [sections.map(({ key }) => key).join()])
+
+    // Scrolls without a history entry: the unsaved-changes guard reads Back from a `#section`
+    // entry as leaving the page
+    const handleClick = (key: SettingsSectionKey) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+        const target = document.getElementById(key)
+
+        if (target) {
+            event.preventDefault()
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            setActive(key)
+        }
+    }
+
+    return (
+        <nav
+            className={styles.menu}
+            aria-label={t('settings-sections')}
+        >
+            <ul>
+                {sections.map(({ key, icon }) => (
+                    <li key={key}>
+                        <a
+                            href={`#${key}`}
+                            className={cn(active === key && styles.active)}
+                            aria-current={active === key ? 'location' : undefined}
+                            onClick={handleClick(key)}
+                        >
+                            <Icon name={icon} />
+                            {t(`settings-section-${key}`)}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </nav>
+    )
+}
+
+/** The cards' shape while the profile loads */
+const UserFormLoader: React.FC = () => (
+    <div
+        className={styles.content}
+        aria-busy={true}
+    >
+        {[3, 6, 2].map((rows, index) => (
+            <Container
+                key={index}
+                className={styles.section}
+            >
+                <div className={styles.loaderRows}>
+                    <Skeleton className={styles.loaderTitle} />
+                    {Array.from({ length: rows }, (_, row) => (
+                        <Skeleton
+                            key={row}
+                            className={styles.loaderRow}
+                        />
+                    ))}
+                </div>
+            </Container>
+        ))}
+    </div>
+)
 
 const mapFormValues = (values?: FormDataType): FormDataType => ({
     confirmPassword: '',

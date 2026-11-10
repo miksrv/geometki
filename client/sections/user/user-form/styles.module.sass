@@ -1,98 +1,208 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 
-// The settings form: three containers one under the other, then the buttons
-.component
-    position: relative
-    display: flex
-    flex-direction: column
-    gap: var(--space-5)
+// The settings under the profile card: a sticky menu of the parts on the left, the cards on
+// the full rest of the width; phones get the cards alone
+$menuWidth: 240px
 
-    .section
-        // The side navigation scrolls to a section: it stops under the app bar
-        scroll-margin-top: 64px
+.layout
+    display: grid
+    grid-template-columns: $menuWidth minmax(0, 1fr)
+    // The gap of every side column: the signed-in home, the profile's overview
+    gap: var(--space-4)
+    align-items: start
 
-    .hint
-        margin: var(--space-2) 0 0
-        color: var(--text-color-secondary)
-        font-size: variables.$fontSizeHeadline
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
 
-    .notifications
-        width: 100%
-        margin-top: var(--space-3)
-        border-collapse: collapse
+// The old site menu's look: 36px rows, an icon in the link colour, a quiet fill on hover;
+// the part in view is white with the main colour
+.menu
+    position: sticky
+    top: 64px
 
-        th,
-        td
-            padding: var(--space-2) 0
-            border-bottom: var(--container-border-separator)
-            text-align: center
-            font-weight: normal
-
-        th:first-child
-            text-align: left
-            padding-right: var(--space-3)
-
-        thead th
-            color: var(--text-color-secondary)
-            font-size: variables.$fontSizeHeadline
-
-        // The channel columns: just wide enough for the header and the switch
-        thead th:not(:first-child)
-            width: 72px
-
-        .notApplicable
-            color: var(--text-color-secondary)
-
-        // The kit's checkbox spans the cell and keeps a gap for its label: centre the box itself
-        .channelCheckbox
-            justify-content: center
-
-            label
-                width: auto
-
-                > span
-                    margin-right: 0
-
-    // Cancel, then Save on the right (DESIGN.md → Dialogs: the primary action last)
-    .actions
+    ul
         display: flex
-        justify-content: flex-end
-        gap: var(--space-3)
+        flex-direction: column
+        gap: 2px
+        margin: 0
+        padding: 0
+        list-style: none
 
-        @media only screen and (max-width: variables.$mobileMaxWidth)
-            button
-                flex: 1
-
-    // Two columns of the name and the website on desktop
-    .fields
-        display: grid
-        grid-template-columns: repeat(2, minmax(0, 1fr))
-        gap: var(--space-4)
-
-        @media only screen and (max-width: variables.$mobileMaxWidth)
-            grid-template-columns: minmax(0, 1fr)
-
-    .formElement
-        margin-bottom: var(--space-3)
-
-        .fields &
-            margin-bottom: 0
-
-        label
-            display: block
-            color: var(--input-label-color)
-            overflow: hidden
-            padding-bottom: var(--input-label-gap)
-            padding-top: 2px
-            text-overflow: ellipsis
-            white-space: nowrap
-            font-size: var(--input-label-font-size)
-            font-weight: var(--input-label-font-weight)
-
-    .authService
+    a
         display: flex
         align-items: center
-        gap: var(--space-4)
+        gap: var(--space-3)
+        min-height: 36px
+        padding: 0 var(--space-3)
+        border-radius: var(--border-radius)
+        color: var(--text-color-primary)
+        +type.body
+        text-decoration: none
+        transition: background-color var(--duration-fast) var(--ease)
 
-        p
-            margin: 0
+        svg
+            flex-shrink: 0
+            width: 20px
+            height: 20px
+            fill: var(--link-color)
+
+        // The global `a:focus` (link colour, underline) is more specific than a class: a clicked
+        // row keeps the focus
+        &:focus
+            color: var(--text-color-primary)
+            text-decoration: none
+
+        &:hover
+            background: var(--surface-3)
+            color: var(--text-color-primary)
+            text-decoration: none
+
+        &:focus-visible
+            outline: none
+            box-shadow: var(--focus-ring)
+
+        &.active
+            background: var(--surface-1)
+            color: var(--color-main)
+            font-weight: var(--font-weight-semibold)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: none
+
+.content
+    position: relative
+    min-width: 0
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+
+.section
+    // The menu scrolls to a card: it stops under the app bar
+    scroll-margin-top: 64px
+
+.description
+    margin: 0 0 var(--space-4)
+    +type.secondary
+
+.hint
+    margin: var(--space-2) 0 0
+    +type.caption
+
+// Two columns of fields on desktop; `.wide` takes the whole row
+.fields
+    display: grid
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+    gap: var(--space-4)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+
+.wide
+    grid-column: 1 / -1
+
+// Notifications: a group label, then a row per event with a toggle chip per channel in a
+// fixed slot, so "Push" stays in one column where "Почта" is missing
+.notificationGroup
+    margin-top: var(--space-5)
+
+.groupLabel
+    +type.overline
+    margin-bottom: var(--space-1)
+
+.notificationList
+    margin: 0
+    padding: 0
+    list-style: none
+
+.notificationRow
+    display: flex
+    align-items: center
+    justify-content: space-between
+    gap: var(--space-3)
+    min-height: 44px
+    padding: var(--space-1) 0
+    border-bottom: var(--container-border-separator)
+
+    &:last-child
+        border-bottom: none
+
+.notificationTitle
+    +type.body
+    min-width: 0
+
+.channels
+    display: flex
+    flex-shrink: 0
+    gap: var(--space-2)
+
+.channel
+    display: flex
+    width: 76px
+
+.channelChip
+    width: 100%
+    justify-content: center
+
+.authService
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+
+    p
+        margin: 0
+        +type.body
+
+// Cancel and Save under the cards; while there are changes the row sticks to the bottom of
+// the screen (over the bottom navigation on phones)
+.actions
+    display: flex
+    align-items: center
+    justify-content: flex-end
+    gap: var(--space-3)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-wrap: wrap
+
+.sticky
+    position: sticky
+    z-index: 2
+    bottom: 0
+    padding: var(--space-3) 0
+    background: var(--body-background)
+    box-shadow: 0 -1px 0 var(--border)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        bottom: calc(#{variables.$bottomNavHeight} + env(safe-area-inset-bottom, 0px))
+        // Edge to edge: the page content has 10px sides on phones (components/layout)
+        margin-inline: -10px
+        padding-inline: 10px
+
+.unsaved
+    margin-right: auto
+    +type.secondary
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-basis: 100%
+
+.buttons
+    display: flex
+    gap: var(--space-3)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex: 1
+
+        button
+            flex: 1
+
+.loaderRows
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+
+.loaderTitle
+    width: 160px
+    height: 22px
+
+.loaderRow
+    height: 40px

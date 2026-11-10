@@ -267,14 +267,21 @@ re-implement them.
       `ScoreStars variant="single"` (★ 5), then "за добавление места · 3 ноября" (caption) | the share in a tinted badge in the secondary size,
       green or red — not a `stat`: a list of many numbers. Who scored is not told. Skeleton rows
       while loading; no scores — `EmptyState`.
-- **Settings** (`pages/users/settings.tsx`, `UserForm`): `PageHeader` (Люди › name) → a
-  `200px 1fr` grid, 960px at most: a sticky list of the sections (anchors, the app bar
-  navigation look; hidden on phones) and the form — "Профиль" (the name and the website side by
-  side, the email read only with a hint; a line links to the profile, where the photo is
-  changed), "Уведомления"
-  (the device's push, the channel × type table) and "Вход и пароль" (the password fields, or the
-  service the account signs in with), each a `Container`, then "Отмена" and "Сохранить" on the
-  right (stretched on phones).
+- **Settings** (`pages/users/settings.tsx`, `UserForm`): a page of the profile, so it has the
+  profile's head — `UserHero` (`isSettings`: the owner's "Настройки" button turns `primary`, the
+  page shown, next to "Сменить фото"; a skeleton of the card until the user loads) — then a
+  `240px 1fr` grid on the full content width, `--space-4` apart like every side column: a sticky vertical menu of the parts (the old site menu's look:
+  36px rows, a 20px icon in the link colour, `--surface-3` on hover, the part in view white
+  with `--color-main`; a click scrolls to the card without a history entry; hidden on phones)
+  and the titled `Container`s, "Профиль" and "Уведомления" with a secondary line on what they are for. "Профиль" (the name
+  and the website side by side, the email read only with a hint), "Уведомления" (the device's
+  push on a `--surface-2` plate, then the events in two overline groups, "Ваши места" and
+  "Достижения и дайджест": a row per event with a `small` toggle `Chip` per channel in a fixed
+  slot, an empty slot where the channel does not carry the event) and "Вход и пароль" (the
+  password fields, or the service the account signs in with). Then "Отмена" and "Сохранить" on
+  the right (stretched on phones); while there are changes the row sticks to the bottom of the
+  screen (over the bottom navigation on phones) with "Есть несохранённые изменения". Skeleton
+  cards while the profile loads.
 - **People page** (`pages/users/index.tsx`, `sections/user/users-listing`): a community, not a
   register — no table. `PageHeader` with the people count on the h1's baseline and (page 1, no
   search) the lede → `UsersFilterPanel` (a sticky `FilterPanel`: the name search, 300px, and
@@ -343,7 +350,7 @@ Breadcrumbs appear only on nested pages, where the app bar cannot show where you
 | Collection page                                                                                                                                                            | Коллекции                           |
 | Create / edit place                                                                                                                                                        | Места (› place)                     |
 | Profile, its tabs and photos (above the profile card, desktop only)                                                                                                        | Люди                                |
-| Settings                                                                                                                                                                   | Люди › name                         |
+| Settings (above the profile card, desktop only)                                                                                                                            | Люди                                |
 | Admin sub-pages                                                                                                                                                            | admin section                       |
 
 The trail starts at the section (the logo is the way home) and stops at the parent; the
