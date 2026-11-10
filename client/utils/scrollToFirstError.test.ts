@@ -39,6 +39,22 @@ describe('scrollToFirstError', () => {
         expect(scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ block: 'center' }))
     })
 
+    it('finds a field without an input by data-field and focuses what is inside it', () => {
+        Element.prototype.scrollIntoView = jest.fn()
+        document.body.innerHTML = `
+            <div data-field="category"><button type="button">Категория</button></div>
+            <div data-field="lat lon"></div>
+            <input name="title" />
+        `
+
+        expect(scrollToFirstError({ lon: { type: 'server' }, title: { type: 'required' } } as never)).toBe(true)
+        expect(Element.prototype.scrollIntoView).toHaveBeenCalledTimes(1)
+        expect(document.activeElement).toBe(document.body)
+
+        scrollToFirstError({ category: { type: 'required' }, title: { type: 'required' } } as never)
+        expect(document.activeElement).toBe(document.querySelector('button'))
+    })
+
     it('does nothing when no field with an error is on the page', () => {
         expect(scrollToFirstError({ email: { type: 'server' } } as never)).toBe(false)
     })

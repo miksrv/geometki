@@ -68,6 +68,19 @@ describe('FormActions', () => {
         expect(screen.getByText('form-unsaved')).toBeInTheDocument()
     })
 
+    it('takes its own rule for Save', () => {
+        const { rerender } = render(<FormActions saveDisabled={false} />)
+        expect(screen.getByRole('button', { name: 'save' })).toBeEnabled()
+
+        rerender(
+            <FormActions
+                dirty={true}
+                saveDisabled={true}
+            />
+        )
+        expect(screen.getByRole('button', { name: 'save' })).toBeDisabled()
+    })
+
     it('takes its own labels and reports the clicks', () => {
         const onSave = jest.fn()
         const onCancel = jest.fn()

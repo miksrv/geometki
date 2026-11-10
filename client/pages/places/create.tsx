@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Container, Message } from 'simple-react-ui-kit'
+import { Message } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
@@ -119,47 +119,43 @@ const CreatePlacePage: NextPage<object> = () => {
                 title={t('create-geotag')}
                 breadcrumbs={[{ link: '/places', text: t('nav-places', { defaultValue: 'Места' }) }]}
             />
-            <Container>
-                {serverError && <Message type={'error'}>{serverError}</Message>}
+            {serverError && <Message type={'error'}>{serverError}</Message>}
 
-                {/* Taken since the map was opened: somebody created the place, or it was there already */}
-                {candidate?.place && candidate.status !== 'open' && (
-                    <Message type={'warning'}>
-                        {candidate.status === 'linked'
-                            ? t('osm-candidates_create-taken', { defaultValue: 'Это место уже есть на Геометках:' })
-                            : t('osm-candidates_create-duplicate', {
-                                  defaultValue: 'Похоже, это место уже есть на Геометках:'
-                              })}{' '}
-                        <Link href={buildPlaceUrl(candidate.place.id)}>
-                            {candidate.place.title ?? candidate.place.id}
-                        </Link>
-                    </Message>
-                )}
+            {/* Taken since the map was opened: somebody created the place, or it was there already */}
+            {candidate?.place && candidate.status !== 'open' && (
+                <Message type={'warning'}>
+                    {candidate.status === 'linked'
+                        ? t('osm-candidates_create-taken', { defaultValue: 'Это место уже есть на Геометках:' })
+                        : t('osm-candidates_create-duplicate', {
+                              defaultValue: 'Похоже, это место уже есть на Геометках:'
+                          })}{' '}
+                    <Link href={buildPlaceUrl(candidate.place.id)}>{candidate.place.title ?? candidate.place.id}</Link>
+                </Message>
+            )}
 
-                {candidate && (
-                    <Message type={'info'}>
-                        {t('osm-candidates_create-hint', {
-                            defaultValue:
-                                'Название, категория и координаты взяты из OpenStreetMap, проверьте их. Описание напишите своими словами: копировать тексты из Википедии нельзя.'
-                        })}
-                    </Message>
-                )}
+            {candidate && (
+                <Message type={'info'}>
+                    {t('osm-candidates_create-hint', {
+                        defaultValue:
+                            'Название, категория и координаты взяты из OpenStreetMap, проверьте их. Описание напишите своими словами: копировать тексты из Википедии нельзя.'
+                    })}
+                </Message>
+            )}
 
-                <PlaceForm
-                    // A new form once the candidate is loaded: its values are the form's defaults
-                    key={candidate?.id ?? presetCategory ?? 'new'}
-                    values={formValues}
-                    loading={isLoading || isSuccess || clickedButton}
-                    disabled={!!candidateId && candidateLoading}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    errors={validationErrors as any}
-                    onSubmit={handleSubmit}
-                    onCancel={handleCancel}
-                    onDirtyChange={setIsDirty}
-                />
+            <PlaceForm
+                // A new form once the candidate is loaded: its values are the form's defaults
+                key={candidate?.id ?? presetCategory ?? 'new'}
+                values={formValues}
+                loading={isLoading || isSuccess || clickedButton}
+                disabled={!!candidateId && candidateLoading}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                errors={validationErrors as any}
+                onSubmit={handleSubmit}
+                onCancel={handleCancel}
+                onDirtyChange={setIsDirty}
+            />
 
-                <ConfirmationDialog {...leaveDialogProps} />
-            </Container>
+            <ConfirmationDialog {...leaveDialogProps} />
         </AppLayout>
     )
 }

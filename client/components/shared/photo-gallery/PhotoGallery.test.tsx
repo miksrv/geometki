@@ -140,12 +140,12 @@ jest.mock('@/components/shared', () => ({
 }))
 
 jest.mock('@/components/ui', () => ({
-    ImageUploader: ({ onClick }: any) => (
+    UploadZone: ({ title, onClick }: any) => (
         <button
-            data-testid={'image-uploader'}
+            data-testid={'upload-zone'}
             onClick={onClick}
         >
-            Upload
+            {title}
         </button>
     )
 }))
@@ -257,22 +257,22 @@ describe('PhotoGallery', () => {
     })
 
     describe('upload actions', () => {
-        it('renders ImageUploader when onPhotoUploadClick is provided', () => {
+        it('renders the add tile when onPhotoUploadClick is provided', () => {
             renderWithStore(
                 <PhotoGallery
                     photos={mockPhotos}
                     onPhotoUploadClick={jest.fn()}
                 />
             )
-            expect(screen.getByTestId('image-uploader')).toBeInTheDocument()
+            expect(screen.getByRole('button', { name: /Добавить фото/ })).toBeInTheDocument()
         })
 
-        it('does not render ImageUploader when onPhotoUploadClick is not provided', () => {
+        it('does not render the add tile when onPhotoUploadClick is not provided', () => {
             renderWithStore(<PhotoGallery photos={mockPhotos} />)
-            expect(screen.queryByTestId('image-uploader')).not.toBeInTheDocument()
+            expect(screen.queryByRole('button', { name: /Добавить фото/ })).not.toBeInTheDocument()
         })
 
-        it('calls onPhotoUploadClick when ImageUploader is clicked', () => {
+        it('calls onPhotoUploadClick when the add tile is clicked', () => {
             const onPhotoUploadClick = jest.fn()
             renderWithStore(
                 <PhotoGallery
@@ -280,7 +280,7 @@ describe('PhotoGallery', () => {
                     onPhotoUploadClick={onPhotoUploadClick}
                 />
             )
-            fireEvent.click(screen.getByTestId('image-uploader'))
+            fireEvent.click(screen.getByRole('button', { name: /Добавить фото/ }))
             expect(onPhotoUploadClick).toHaveBeenCalledTimes(1)
         })
     })

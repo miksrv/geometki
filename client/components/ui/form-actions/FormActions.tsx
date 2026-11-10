@@ -17,7 +17,9 @@ export interface FormActionsProps {
     loading?: boolean
     /** The note on the left while there are changes; "Есть несохранённые изменения" by default */
     message?: string
-    /** "Сохранить" by default ("Добавить" for a new entity, say) */
+    /** Save is off: by default while there are no changes; a new entity passes its own rule */
+    saveDisabled?: boolean
+    /** "Сохранить" by default ("Добавить место" for a new place, say) */
     saveLabel?: string
     /** "Отмена" by default */
     cancelLabel?: string
@@ -36,6 +38,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
     dirty,
     loading,
     message,
+    saveDisabled,
     saveLabel,
     cancelLabel,
     onSave,
@@ -110,7 +113,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
                             mode={'primary'}
                             loading={loading}
                             label={saveLabel ?? t('save')}
-                            disabled={loading || !dirty}
+                            disabled={loading || (saveDisabled ?? !dirty)}
                             onClick={onSave}
                         />
                     </div>

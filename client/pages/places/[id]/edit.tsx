@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Container, Message } from 'simple-react-ui-kit'
+import { Message } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
@@ -19,8 +19,6 @@ import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
 import { parsePlaceId } from '@/utils/helpers'
 import { hydrateAuthFromCookies } from '@/utils/serverSideAuth'
 import { loadPageTranslations } from '@/utils/translations.server'
-
-import styles from './edit.module.sass'
 
 const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
     ssr: false
@@ -121,36 +119,33 @@ const PlaceEditPage: NextPage<PlaceEditPageProps> = ({ place, texts, textLocale 
                 ]}
             />
 
-            <Container>
-                {serverError && <Message type={'error'}>{serverError}</Message>}
+            {serverError && <Message type={'error'}>{serverError}</Message>}
 
-                {originalText && (
-                    <Message
-                        className={styles.translationNote}
-                        type={'info'}
-                        title={t('place-translation-new', { language: t(`language-name-${textLocale}`) })}
-                    >
-                        {t('place-translation-original', {
-                            language: t(`language-name-${originalText.locale}`),
-                            title: originalText.title
-                        })}
-                    </Message>
-                )}
+            {originalText && (
+                <Message
+                    type={'info'}
+                    title={t('place-translation-new', { language: t(`language-name-${textLocale}`) })}
+                >
+                    {t('place-translation-original', {
+                        language: t(`language-name-${originalText.locale}`),
+                        title: originalText.title
+                    })}
+                </Message>
+            )}
 
-                <PlaceForm
-                    key={textLocale}
-                    placeId={place?.id}
-                    values={placeValuesData}
-                    loading={isLoading || isSuccess}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    errors={validationErrors as any}
-                    onSubmit={handleSubmit}
-                    onCancel={handleCancel}
-                    onDirtyChange={setIsDirty}
-                />
+            <PlaceForm
+                key={textLocale}
+                placeId={place?.id}
+                values={placeValuesData}
+                loading={isLoading || isSuccess}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                errors={validationErrors as any}
+                onSubmit={handleSubmit}
+                onCancel={handleCancel}
+                onDirtyChange={setIsDirty}
+            />
 
-                <ConfirmationDialog {...leaveDialogProps} />
-            </Container>
+            <ConfirmationDialog {...leaveDialogProps} />
         </AppLayout>
     )
 }
