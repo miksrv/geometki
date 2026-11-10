@@ -93,7 +93,8 @@ re-implement them.
       phones it is an edge-to-edge 4:3 carousel (CSS scroll snap) of the cover and the first 8
       photos with a "1 / N" pill of all of them (it opens all the photos in the viewer grid) and a last slide inviting
       to add photos; a tap opens that photo in the viewer. Under the picture, on the page background: the h1
-      (`titlePage`) and one facts line — category (18px icon + name, a link to its
+      (`titlePage`, the full width: a long title is never squeezed by the buttons) and one facts
+      line, the desktop actions on its right — category (18px icon + name, a link to its
       places, in primary text), rating (a link to `#reviews`, or to `#rate` while unrated;
       plain for the author), reviews count (`#reviews`), distance. The address is only in the
       "Где это" card, the views only in "О месте".
@@ -106,8 +107,9 @@ re-implement them.
       `variant="toolbar"` sits on the h1's line on desktop; `variant="bar"` is passed to
       `AppLayout` as `bottomBar` and replaces the bottom navigation on phones (same 52px height
       and translucent surface, 44px buttons), its menus open as `BottomSheet`s.
-    - `.pageLayout` — a `1fr 360px` grid, `--space-6` between the columns. The main column is a
-      flow of boxless sections `--space-10` apart (`--space-8` on phones): the photo mosaic
+    - `.pageLayout` — a `1fr 360px` grid, `--space-4` between the columns like
+      every side column. The main column is a
+      flow of boxless sections `--space-6` apart (`--space-5` on phones) like on every page: the photo mosaic
       (desktop only, below), the text, "Оценки и отзывы", "Что ещё посмотреть", "О месте". The
       sticky right column (`top: 64px`) is the "Где это" card. On phones the column dissolves
       and the order is explicit: text → "Где это" → reviews → explore → about (read → see where
@@ -345,7 +347,8 @@ text on phones. The header sits on the page background: the lede is never boxed 
 `Container` and never greyed out — it is the page's first paragraph, not a footnote.
 The place page and the user profile use a hero instead. On the place page the
 `Breadcrumbs` sit above the cover, the h1 and the facts line under it on the page
-background, with the actions on the h1's line (`PlaceHero`, `PlaceActions`); on the profile
+background: the h1 on the full width, then the facts with the actions on the right of their
+line, centred on it (`PlaceHero`, `PlaceActions`); on the profile
 the `Breadcrumbs` sit above the profile card and the h1 is the name inside it, the owner's
 "Настройки" on its line (`UserHero`). The h1 is `titlePage` everywhere (section 1a).
 
@@ -612,7 +615,8 @@ achievement / a new level (`ApiModel.FeedStory`; grouping rules in
 - Photos of a story are named after the place ("Усадьба — фото 2") in `alt` and in their
   buttons; the last tile's button also says how many photos are left.
 - `FeedList` — the stories in order, under day headings ("Сегодня", "Вчера", "1 октября",
-  12px uppercase secondary) when `groupByDay`; two `FeedStoryLoader` skeletons while loading;
+  12px uppercase secondary) when `groupByDay`; two `FeedStoryLoader` skeletons while loading, in the stories' density (compact: no card,
+  no media block, the rule from the story above);
   an empty feed is one line of text.
 - `FeedPulse` — "This week" (or "This month" when the week was quiet): the non-zero counts
   as 22px numbers with captions, the most active people (`UserAvatarGroup`), "last activity
@@ -783,6 +787,16 @@ actions, active days, the longest and the current run of days in a row (22px num
   a grid of 4:3 tiles, four columns (two on phones) with 4px gaps, so 8 photos make two
   whole rows; only the outer corners of the whole grid are rounded, tiles are square; previews are 700×500. The first 8 are shown and the rest collapse behind
   "Ещё фотографии"; a page of photos passes `showAll`.
+- **Floating prompt** (`components/ui/floating-prompt`, `FloatingPrompt`): the one card the site
+  floats over the page to ask or tell one thing — the cookie notice (`CookieNotice`) and the
+  push offer (`PushPrompt`). Bottom right on desktop, 440px at most, clear of the toasts
+  (bottom left); on phones at the top under the app bar, on the full width, clear of the
+  toasts and the bottom navigation. `--container-background`, `--popout-shadow`, an optional
+  title, the text (primary when there is no title), the buttons with the main one first.
+  One at a time: the cookie notice comes first, to every visitor until closed on the browser
+  ("Понятно"; Escape does not close it); the push offer waits for it and then appears after an
+  action as before (Escape puts it off). Shown only once the browser knows the stored
+  answer, so a cached page never flashes one. Never a modal, never on page load for push.
 - **Photo upload** (`components/ui/upload-zone`, `UploadZone`): every place a photo is
   uploaded from shows one face while there is nothing yet — a dashed field on `--surface-2`
   (180px minimum, `--border-strong` dash, the main colour on hover and focus) with a Camera
