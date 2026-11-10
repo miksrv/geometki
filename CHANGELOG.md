@@ -7,6 +7,7 @@
 - Settings: redesigned page under your profile card, a side menu of its parts, full width
 - Settings: the save buttons stay in view while there are unsaved changes
 - Settings: notifications as rows with "Email" and "Push" toggles instead of a checkbox table
+- Profile: a name needs 2 letters or more, up to 40 characters, and may be the same as someone's
 
 ## 1.19.1
 

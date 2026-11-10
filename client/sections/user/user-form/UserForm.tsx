@@ -11,6 +11,7 @@ import { Chip } from '@/components/ui'
 import googleLogo from '@/public/images/google-logo.png'
 import vkLogo from '@/public/images/vk-logo.png'
 import yandexLogo from '@/public/images/yandex-logo.png'
+import { USER_NAME_ERROR_KEYS, USER_NAME_MAX, USER_NAME_MIN, validateUserName } from '@/utils/userName'
 
 import { PushDeviceSettings } from '../push-device-settings'
 
@@ -173,6 +174,17 @@ export const UserForm: React.FC<UserFormProps> = ({
 
     const isNative = values.authType === 'native'
 
+    // A name saved before the rule stays as it is until its owner changes it
+    const validateName = (value?: string) => {
+        if (!value?.trim()) {
+            return t('error_name-required')
+        }
+
+        const nameError = value === values.name ? undefined : validateUserName(value)
+
+        return !nameError || t(USER_NAME_ERROR_KEYS[nameError], { max: USER_NAME_MAX, min: USER_NAME_MIN })
+    }
+
     return (
         <div className={styles.layout}>
             <SettingsMenu sections={sections} />
@@ -204,10 +216,11 @@ export const UserForm: React.FC<UserFormProps> = ({
                             {
                                 autoFocus: true,
                                 label: t('input_name'),
+                                maxLength: USER_NAME_MAX,
                                 placeholder: t('input_name-placeholder'),
                                 required: true
                             },
-                            { validate: (value) => !!value?.trim() || t('error_name-required') }
+                            { validate: validateName }
                         )}
 
                         {renderTextInput('website', {
