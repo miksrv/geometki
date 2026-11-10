@@ -272,7 +272,9 @@ re-implement them.
   page shown, next to "Сменить фото"; a skeleton of the card until the user loads) — then a
   `240px 1fr` grid on the full content width, `--space-4` apart like every side column: a sticky vertical menu of the parts (the old site menu's look:
   36px rows, a 20px icon in the link colour, `--surface-3` on hover, the part in view white
-  with `--color-main`; a click scrolls to the card without a history entry; hidden on phones)
+  with `--color-main`; a click scrolls smoothly to the card without a history entry and the mark
+  goes straight to it; as the page scrolls the mark follows: the last card whose top has passed
+  the line under the app bar, the last card at the very end of the page; hidden on phones)
   and the titled `Container`s, "Профиль" and "Уведомления" with a secondary line on what they are for. "Профиль" (the name
   and the website side by side, the email read only with a hint), "Уведомления" (the device's
   push on a `--surface-2` plate, then the events in two overline groups, "Ваши места" and
@@ -658,7 +660,11 @@ actions, active days, the longest and the current run of days in a row (22px num
   something changed.
 - **Form state and unsaved changes.** Forms are built on `react-hook-form` (`useForm` +
   `Controller`, since kit fields don't forward refs); validation messages come from `rules`
-  and server errors are put on their fields with `setError`. Anything the user can lose —
+  and server errors are put on their fields with `setError`. A failed save brings the first
+  field with an error (in the page order) to the middle of the screen and focuses it —
+  `handleSubmit(onValid, (errors) => scrollToFirstError(errors))` (`utils/scrollToFirstError`),
+  and the same for the server's errors once they are on their fields; fields are found by
+  `name`, so every field passes its `name` (the kit fields do not forward refs). Anything the user can lose —
   a page form, an inline editor, a dialog, a comment draft — is wrapped in
   `useUnsavedChangesGuard(isDirty)` (`hooks/`): links, Back/Forward and router pushes open
   `<ConfirmationDialog {...dialogProps} />`, closing the tab gets the browser prompt.
