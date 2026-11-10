@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from '@/app/store'
 
 import { AppBar } from './app-bar'
 import { BottomNav } from './bottom-nav'
+import { CookieNotice } from './cookie-notice'
 import { Footer } from './footer'
 import { PushPrompt } from './push-prompt'
 import { Snackbar } from './snackbar'
@@ -113,6 +114,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ className, fullSize, fitVi
 
             <Snackbar />
 
+            <CookieNotice />
             <PushPrompt />
         </div>
     )

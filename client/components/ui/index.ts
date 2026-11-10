@@ -6,6 +6,7 @@ export { Counter } from './counter'
 export { ExpandableText } from './expandable-text'
 export { FieldTrigger, type FieldTriggerProps } from './field-trigger'
 export { FileDropZone } from './file-drop-zone'
+export { FloatingPrompt, type FloatingPromptProps } from './floating-prompt'
 export { FormActions, type FormActionsProps } from './form-actions'
 export {
     FormSection,

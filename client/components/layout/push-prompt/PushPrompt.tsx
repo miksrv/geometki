@@ -8,12 +8,12 @@ import { API } from '@/api'
 import { dismissPushPrompt } from '@/app/applicationSlice'
 import { NotifyReplace } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
+import { FloatingPrompt } from '@/components/ui'
 import { LOCAL_STORAGE } from '@/config/constants'
+import { useCookieConsent } from '@/hooks/useCookieConsent'
 import usePushSubscription from '@/hooks/usePushSubscription'
 import * as LocalStorage from '@/utils/localstorage'
 import * as Push from '@/utils/push'
-
-import styles from './styles.module.sass'
 
 /** "Not now" brings the offer back after this many days */
 export const PUSH_PROMPT_SNOOZE_DAYS = 14
@@ -86,6 +86,8 @@ const PushPromptCard: React.FC = () => {
 
     const { busy, enable, state } = usePushSubscription()
     const [dismissed, setDismissed] = useState(true)
+    // The floating prompts take turns: the cookie notice first
+    const { accepted: cookiesAccepted } = useCookieConsent()
 
     useEffect(() => {
         setDismissed(isPushPromptDismissed(LocalStorage.getItem(LOCAL_STORAGE.PUSH_PROMPT as 'PUSH_PROMPT')))
@@ -93,15 +95,17 @@ const PushPromptCard: React.FC = () => {
 
     // The settings page has its own switch
     const onSettings = router.pathname === '/users/settings'
-    const visible = !dismissed && state === 'off' && !onSettings
+    const offered = !dismissed && state === 'off' && !onSettings
+    const visible = offered && cookiesAccepted === true
 
     // Nothing to offer after this action (push already on, blocked, put off...): the request
-    // ends here, so it cannot pop up later, out of context
+    // ends here, so it cannot pop up later, out of context. While the cookie notice is open
+    // the offer waits for it instead
     useEffect(() => {
-        if (state !== 'loading' && !visible) {
+        if (state !== 'loading' && !offered) {
             dispatch(dismissPushPrompt())
         }
-    }, [state, visible])
+    }, [state, offered])
 
     const close = (stored?: string) => {
         if (stored) {
@@ -113,22 +117,6 @@ const PushPromptCard: React.FC = () => {
     }
 
     const snooze = () => close(String(Date.now() + PUSH_PROMPT_SNOOZE_DAYS * 24 * 60 * 60 * 1000))
-
-    useEffect(() => {
-        if (!visible) {
-            return
-        }
-
-        const onKey = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                snooze()
-            }
-        }
-
-        window.addEventListener('keydown', onKey)
-
-        return () => window.removeEventListener('keydown', onKey)
-    }, [visible])
 
     if (!visible) {
         return null
@@ -159,48 +147,36 @@ const PushPromptCard: React.FC = () => {
     }
 
     return (
-        <section
-            className={styles.prompt}
-            role={'region'}
-            aria-labelledby={'push-prompt-title'}
-            aria-describedby={'push-prompt-text'}
-        >
-            <h2
-                id={'push-prompt-title'}
-                className={styles.title}
-            >
-                {t('push-prompt-title')}
-            </h2>
-            <p
-                id={'push-prompt-text'}
-                className={styles.text}
-            >
-                {t('push-prompt-text')}
-            </p>
-            <div className={styles.actions}>
-                <Button
-                    size={'medium'}
-                    mode={'primary'}
-                    loading={busy}
-                    disabled={busy}
-                    label={t('push-prompt-enable')}
-                    onClick={() => void handleEnable()}
-                />
-                <Button
-                    size={'medium'}
-                    mode={'secondary'}
-                    disabled={busy}
-                    label={t('push-prompt-later')}
-                    onClick={snooze}
-                />
-                <Button
-                    size={'medium'}
-                    mode={'link'}
-                    disabled={busy}
-                    label={t('push-prompt-never')}
-                    onClick={() => close(NEVER)}
-                />
-            </div>
-        </section>
+        <FloatingPrompt
+            title={t('push-prompt-title')}
+            text={t('push-prompt-text')}
+            onEscape={snooze}
+            actions={
+                <>
+                    <Button
+                        size={'medium'}
+                        mode={'primary'}
+                        loading={busy}
+                        disabled={busy}
+                        label={t('push-prompt-enable')}
+                        onClick={() => void handleEnable()}
+                    />
+                    <Button
+                        size={'medium'}
+                        mode={'secondary'}
+                        disabled={busy}
+                        label={t('push-prompt-later')}
+                        onClick={snooze}
+                    />
+                    <Button
+                        size={'medium'}
+                        mode={'link'}
+                        disabled={busy}
+                        label={t('push-prompt-never')}
+                        onClick={() => close(NEVER)}
+                    />
+                </>
+            }
+        />
     )
 }

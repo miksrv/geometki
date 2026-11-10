@@ -87,6 +87,10 @@ jest.mock('./registration-form', () => ({
     )
 }))
 
+jest.mock('./cookie-notice', () => ({
+    CookieNotice: () => <div data-testid={'cookie-notice'} />
+}))
+
 jest.mock('./snackbar', () => ({
     Snackbar: () => <div data-testid={'snackbar'} />
 }))
