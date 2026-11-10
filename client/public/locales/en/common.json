@@ -794,7 +794,7 @@
     "settings-section-notifications-description": "What to tell you about and how: by email or as a push notification.",
     "notification-group_places": "Your places",
     "notification-group_other": "Achievements and digest",
-    "settings-unsaved": "You have unsaved changes",
+    "form-unsaved": "You have unsaved changes",
     "settings-email-hint": "Only you can see it; emails are sent to it.",
     "home-unexplored-title": "Waiting to be explored",
     "home-unexplored-map": "On the map",

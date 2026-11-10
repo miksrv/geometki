@@ -62,6 +62,15 @@ jest.mock('@/components/ui', () => ({
         >
             {label}
         </button>
+    ),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    FormActions: ({ onSave }: any) => (
+        <button
+            type={'button'}
+            onClick={onSave}
+        >
+            {'save'}
+        </button>
     )
 }))
 

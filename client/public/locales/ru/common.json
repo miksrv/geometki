@@ -832,7 +832,7 @@
     "settings-section-notifications-description": "О каких событиях сообщать и куда: письмом на почту или push-уведомлением.",
     "notification-group_places": "Ваши места",
     "notification-group_other": "Достижения и дайджест",
-    "settings-unsaved": "Есть несохранённые изменения",
+    "form-unsaved": "Есть несохранённые изменения",
     "settings-email-hint": "Виден только вам, на него приходят письма.",
     "home-unexplored-title": "Ждут исследования",
     "home-unexplored-map": "На карте",

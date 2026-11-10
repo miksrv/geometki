@@ -278,9 +278,8 @@ re-implement them.
   push on a `--surface-2` plate, then the events in two overline groups, "Ваши места" and
   "Достижения и дайджест": a row per event with a `small` toggle `Chip` per channel in a fixed
   slot, an empty slot where the channel does not carry the event) and "Вход и пароль" (the
-  password fields, or the service the account signs in with). Then "Отмена" and "Сохранить" on
-  the right (stretched on phones); while there are changes the row sticks to the bottom of the
-  screen (over the bottom navigation on phones) with "Есть несохранённые изменения". Skeleton
+  password fields, or the service the account signs in with). Then "Отмена" and "Сохранить" in
+  `FormActions` (section 6, "Page form actions") with "Есть несохранённые изменения". Skeleton
   cards while the profile loads.
 - **People page** (`pages/users/index.tsx`, `sections/user/users-listing`): a community, not a
   register — no table. `PageHeader` with the people count on the h1's baseline and (page 1, no
@@ -665,6 +664,22 @@ actions, active days, the longest and the current run of days in a row (22px num
   `<ConfirmationDialog {...dialogProps} />`, closing the tab gets the browser prompt.
   In-page discards (Cancel, closing a dialog) go through `confirmDiscard`; call
   `allowNavigation()` before navigating away after a successful save.
+- **Page form actions** (`components/ui/form-actions`, `FormActions`): every form on a page (not
+  in a dialog) ends with this component, never a hand-made row of buttons. The page passes
+  `dirty`, `loading`, `onSave` and `onCancel` (no Cancel without it); `saveLabel`,
+  `cancelLabel` and `message` only where the defaults do not fit ("Добавить" for a new place).
+  One row — secondary "Отмена" first, primary "Сохранить" last, `medium`,
+  on the right; stretched in equal halves on phones. Save is disabled until something changed.
+  With no changes the row stays in its place under the form. With changes it shows the note
+  "Есть несохранённые изменения" on the left, and while its place is below the screen (the
+  user scrolled up to the fields) it floats: a bar fixed to the bottom of the screen on the
+  full window width, dressed as the app bar — `--container-background`, a 1px `--border` rule
+  and a light shadow on the page side, 50px tall, the content on `--width-max` with the page's
+  side paddings (16px, 10px on phones) so the buttons line up with the form, 32px buttons,
+  the bottom safe area. On phones it sits over the bottom navigation, the note is hidden (the
+  bar itself says there are changes). As the place scrolls in, the bar lands back into it;
+  the place keeps the row's height, so the page never jumps. Never a sticky row inside the
+  form's column, never a second bar on the page.
 - **Menus** (every kit `Popout` with actions: the place actions, the user menu, a
   collection's and a photo's menus): the kit card (`--popout-radius`, a 1px ring and
   `--shadow-lg`) holds a `ul.contextListMenu` (`styles/globals.sass`), 220px minimum, 4px

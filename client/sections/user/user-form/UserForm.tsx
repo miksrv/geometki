@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { Button, cn, Container, Icon, IconTypes, Input, Message, Skeleton } from 'simple-react-ui-kit'
+import { cn, Container, Icon, IconTypes, Input, Message, Skeleton } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 import { Trans, useTranslation } from 'next-i18next/pages'
 
 import { ApiModel, ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { Chip } from '@/components/ui'
+import { Chip, FormActions } from '@/components/ui'
 import googleLogo from '@/public/images/google-logo.png'
 import vkLogo from '@/public/images/vk-logo.png'
 import yandexLogo from '@/public/images/yandex-logo.png'
@@ -379,28 +379,12 @@ export const UserForm: React.FC<UserFormProps> = ({
                     </SettingsSection>
                 )}
 
-                <div className={cn(styles.actions, isDirty && styles.sticky)}>
-                    {isDirty && <span className={styles.unsaved}>{t('settings-unsaved')}</span>}
-
-                    <div className={styles.buttons}>
-                        <Button
-                            size={'medium'}
-                            mode={'secondary'}
-                            label={t('cancel')}
-                            disabled={loading}
-                            onClick={onCancel}
-                        />
-
-                        <Button
-                            size={'medium'}
-                            mode={'primary'}
-                            loading={loading}
-                            label={t('save')}
-                            disabled={loading || !isDirty}
-                            onClick={() => void submit()}
-                        />
-                    </div>
-                </div>
+                <FormActions
+                    dirty={isDirty}
+                    loading={loading}
+                    onSave={() => void submit()}
+                    onCancel={onCancel}
+                />
             </div>
         </div>
     )
