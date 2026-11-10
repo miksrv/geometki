@@ -27,6 +27,7 @@ export const AUTH_COOKIES = {
 
 // LocalStorage keys (client-side only)
 export const LOCAL_STORAGE = {
+    COOKIE_CONSENT: 'cookieConsent',
     LOCALE: 'locale',
     MAP_CENTER: 'mapCenter',
     MAP_SETTINGS: 'mapSettings',

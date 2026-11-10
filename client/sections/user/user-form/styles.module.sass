@@ -1,98 +1,89 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 
-// The settings form: three containers one under the other, then the buttons
-.component
-    position: relative
+// The settings under the profile card: the parts in `FormSections` (components/ui)
+
+.hint
+    margin: var(--space-2) 0 0
+    +type.caption
+
+// Two columns of fields on desktop; `.wide` takes the whole row
+.fields
+    display: grid
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+    gap: var(--space-4)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+
+.wide
+    grid-column: 1 / -1
+
+// Notifications: a group label, then a row per event with a toggle chip per channel in a
+// fixed slot, so "Push" stays in one column where "Почта" is missing
+.notificationGroup
+    margin-top: var(--space-5)
+
+.groupLabel
+    +type.overline
+    margin-bottom: var(--space-1)
+
+.notificationList
+    margin: 0
+    padding: 0
+    list-style: none
+
+.notificationRow
+    display: flex
+    align-items: center
+    justify-content: space-between
+    gap: var(--space-3)
+    min-height: 44px
+    padding: var(--space-1) 0
+    border-bottom: var(--container-border-separator)
+
+    &:last-child
+        border-bottom: none
+
+.notificationTitle
+    +type.body
+    min-width: 0
+
+.channels
+    display: flex
+    flex-shrink: 0
+    gap: var(--space-2)
+
+.channel
+    display: flex
+    width: 76px
+
+.channelChip
+    width: 100%
+    justify-content: center
+
+.authService
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+
+    p
+        margin: 0
+        +type.body
+
+.loader
     display: flex
     flex-direction: column
-    gap: var(--space-5)
+    gap: var(--space-4)
 
-    .section
-        // The side navigation scrolls to a section: it stops under the app bar
-        scroll-margin-top: 64px
+.loaderRows
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
 
-    .hint
-        margin: var(--space-2) 0 0
-        color: var(--text-color-secondary)
-        font-size: variables.$fontSizeHeadline
+.loaderTitle
+    width: 160px
+    height: 22px
 
-    .notifications
-        width: 100%
-        margin-top: var(--space-3)
-        border-collapse: collapse
-
-        th,
-        td
-            padding: var(--space-2) 0
-            border-bottom: var(--container-border-separator)
-            text-align: center
-            font-weight: normal
-
-        th:first-child
-            text-align: left
-            padding-right: var(--space-3)
-
-        thead th
-            color: var(--text-color-secondary)
-            font-size: variables.$fontSizeHeadline
-
-        // The channel columns: just wide enough for the header and the switch
-        thead th:not(:first-child)
-            width: 72px
-
-        .notApplicable
-            color: var(--text-color-secondary)
-
-        // The kit's checkbox spans the cell and keeps a gap for its label: centre the box itself
-        .channelCheckbox
-            justify-content: center
-
-            label
-                width: auto
-
-                > span
-                    margin-right: 0
-
-    // Cancel, then Save on the right (DESIGN.md → Dialogs: the primary action last)
-    .actions
-        display: flex
-        justify-content: flex-end
-        gap: var(--space-3)
-
-        @media only screen and (max-width: variables.$mobileMaxWidth)
-            button
-                flex: 1
-
-    // Two columns of the name and the website on desktop
-    .fields
-        display: grid
-        grid-template-columns: repeat(2, minmax(0, 1fr))
-        gap: var(--space-4)
-
-        @media only screen and (max-width: variables.$mobileMaxWidth)
-            grid-template-columns: minmax(0, 1fr)
-
-    .formElement
-        margin-bottom: var(--space-3)
-
-        .fields &
-            margin-bottom: 0
-
-        label
-            display: block
-            color: var(--input-label-color)
-            overflow: hidden
-            padding-bottom: var(--input-label-gap)
-            padding-top: 2px
-            text-overflow: ellipsis
-            white-space: nowrap
-            font-size: var(--input-label-font-size)
-            font-weight: var(--input-label-font-weight)
-
-    .authService
-        display: flex
-        align-items: center
-        gap: var(--space-4)
-
-        p
-            margin: 0
+.loaderRow
+    height: 40px

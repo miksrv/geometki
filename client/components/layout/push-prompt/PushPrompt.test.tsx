@@ -17,7 +17,13 @@ jest.mock('simple-react-ui-kit', () => ({
         >
             {label}
         </button>
-    )
+    ),
+    cn: (...args: unknown[]) => args.filter(Boolean).join(' ')
+}))
+
+const mockCookies = { accepted: true as boolean | undefined }
+jest.mock('@/hooks/useCookieConsent', () => ({
+    useCookieConsent: () => ({ accept: jest.fn(), accepted: mockCookies.accepted })
 }))
 
 jest.mock('next-i18next/pages', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
@@ -74,6 +80,7 @@ describe('PushPrompt', () => {
     beforeEach(() => {
         mockState.application.pushPromptRequested = true
         mockState.auth.isAuth = true
+        mockCookies.accepted = true
         mockRouter.pathname = '/places/[slug]'
         mockDispatch.mockReset()
         mockEnable.mockReset()
@@ -89,6 +96,18 @@ describe('PushPrompt', () => {
 
     it('offers push after an action when it can be turned on', () => {
         render(<PushPrompt />)
+
+        expect(screen.getByRole('region')).toHaveTextContent('push-prompt-title')
+    })
+
+    it('waits while the cookie notice is open', () => {
+        mockCookies.accepted = false
+        const { rerender } = render(<PushPrompt />)
+
+        expect(screen.queryByRole('region')).not.toBeInTheDocument()
+
+        mockCookies.accepted = true
+        rerender(<PushPrompt />)
 
         expect(screen.getByRole('region')).toHaveTextContent('push-prompt-title')
     })

@@ -12,4 +12,12 @@ return [
     'translationTitleRequired'   => 'A new translation needs a title',
     'translationContentRequired' => 'A new translation needs a description: this place has one in another language',
     'createTransactionError' => 'An unexpected error occurred while saving the geotag, please try again',
+    'titleRequired'       => 'A title is required',
+    'titleTooShort'       => 'The title must be at least {0} characters long',
+    'titleTooLong'        => 'The title must be at most {0} characters long',
+    'categoryRequired'    => 'Choose a category from the list',
+    'contentTooLong'      => 'The description must be at most {0} characters long',
+    'coordinatesRequired' => 'Mark the place on the map',
+    'coordinatesInvalid'  => 'The coordinates of the place are invalid',
+    'photosInvalid'       => 'The list of photos is invalid',
 ];

@@ -428,7 +428,7 @@ const PlacePageContent: React.FC<PlacePageProps> = ({
                             label={t('photo-drop-label', {
                                 defaultValue: 'Перетащите фотографии сюда, чтобы загрузить'
                             })}
-                            hint={t('photo-drop-hint', { defaultValue: 'JPG, PNG, GIF или WEBP, до 10 МБ' })}
+                            hint={t('photo-drop-hint')}
                             onDrop={handleDropPhotos}
                         >
                             <PhotoGallery

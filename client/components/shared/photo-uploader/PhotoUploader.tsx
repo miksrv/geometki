@@ -8,7 +8,7 @@ import { useAppDispatch } from '@/app/store'
 import { getErrorMessage } from '@/utils/api'
 
 /** Image types the API accepts (`mime_in` rule of the photo upload endpoints) */
-export const PHOTO_ACCEPT_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+export const PHOTO_ACCEPT_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 /** Upload size limit of the API (`max_size[photo,10240]`), bytes */
 export const PHOTO_MAX_SIZE = 10 * 1024 * 1024
@@ -77,7 +77,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         if (accepted.length < files.length) {
             notifyError(
                 t('photo-upload-rejected', {
-                    defaultValue: 'Можно загрузить только фотографии JPG, PNG, GIF или WEBP размером до 10 МБ'
+                    defaultValue: 'Можно загрузить только фотографии JPG, PNG или WEBP размером до 10 МБ'
                 })
             )
         }

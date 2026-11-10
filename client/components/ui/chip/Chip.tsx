@@ -27,6 +27,8 @@ export interface ChipProps {
     size?: 'medium' | 'small'
     /** The accessible name when the label alone is not enough ("Убрать фильтр: Пещеры") */
     'aria-label'?: string
+    /** A toggle that cannot be changed now (a form being saved) */
+    disabled?: boolean
     className?: string
     onClick?: (event: React.MouseEvent) => void
 }
@@ -48,6 +50,7 @@ export const Chip: React.FC<ChipProps> = ({
     shallow,
     size = 'medium',
     'aria-label': ariaLabel,
+    disabled,
     className,
     onClick
 }) => {
@@ -105,6 +108,7 @@ export const Chip: React.FC<ChipProps> = ({
             className={classNames}
             aria-label={ariaLabel}
             aria-pressed={removable ? undefined : !!selected}
+            disabled={disabled}
             onClick={onClick}
         >
             {content}

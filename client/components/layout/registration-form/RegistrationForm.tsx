@@ -10,6 +10,7 @@ import { closeAuthDialog } from '@/app/applicationSlice'
 import { login } from '@/app/authSlice'
 import { useAppDispatch } from '@/app/store'
 import { isApiValidationErrors } from '@/utils/api'
+import { USER_NAME_ERROR_KEYS, USER_NAME_MAX, USER_NAME_MIN, validateUserName } from '@/utils/userName'
 import { validateEmail } from '@/utils/validators'
 
 import styles from './styles.module.sass'
@@ -89,7 +90,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClickLogin
                 validateEmail(value) || t('error_email-incorrect', { defaultValue: 'Некорректный email' })
         },
         name: {
-            validate: (value) => !!value?.trim() || t('error_name-required', { defaultValue: 'Имя обязательно' })
+            validate: (value) => {
+                if (!value?.trim()) {
+                    return t('error_name-required', { defaultValue: 'Имя обязательно' })
+                }
+
+                const nameError = validateUserName(value)
+
+                return !nameError || t(USER_NAME_ERROR_KEYS[nameError], { max: USER_NAME_MAX, min: USER_NAME_MIN })
+            }
         },
         password: {
             minLength: {
@@ -157,6 +166,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onClickLogin
                 autoComplete: 'name',
                 autoFocus: true,
                 label: t('input_name', { defaultValue: 'Имя' }),
+                maxLength: USER_NAME_MAX,
                 tabIndex: 0
             })}
 

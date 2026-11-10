@@ -87,7 +87,7 @@ describe('PhotoUploader', () => {
         it('renders with accept attribute for image types', () => {
             renderWithStore(<PhotoUploader />)
             const input = document.querySelector('input[type="file"]')
-            expect(input).toHaveAttribute('accept', 'image/jpeg, image/png, image/gif, image/webp')
+            expect(input).toHaveAttribute('accept', 'image/jpeg, image/png, image/webp')
         })
 
         it('renders with multiple attribute', () => {

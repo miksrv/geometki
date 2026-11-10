@@ -1,44 +1,43 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 
-.component
+// The place form (create and edit): the parts in `FormSections` (components/ui)
+
+.fieldError
+    margin: var(--space-2) 0 0
+    +type.caption
+    color: var(--color-red)
+
+// The title and the category one under another, on the full width
+.fields
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+
+.mapContainer
     position: relative
+    height: 360px
+    // The map stops under the app bar when an error brings it into view
+    scroll-margin-top: 64px
 
-    .gallery
-        box-shadow: none
-        padding: 5px
+    & > div
+        border: var(--input-border)
+        border-radius: var(--border-radius)
+        overflow: hidden
 
-    .formElement
-        margin-bottom: 10px
+    &.invalid > div
+        border-color: var(--color-red)
 
-        label
-            display: block
-            color: var(--input-label-color)
-            overflow: hidden
-            padding-bottom: var(--input-label-gap)
-            padding-top: 2px
-            text-overflow: ellipsis
-            white-space: nowrap
-            font-size: var(--input-label-font-size)
-            font-weight: var(--input-label-font-weight)
+    // The category's icon on the map center, where the place will stand
+    .categoryImage
+        position: absolute
+        z-index: 401
+        top: 47%
+        left: 49%
 
-    .mapContainer
-        height: 300px
-        margin: 25px 0 10px
-        position: relative
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        height: 280px
 
-        & > div
-            border: var(--input-border)
-
-        .categoryImage
-            top: 47%
-            left: 49%
-            position: absolute
-            z-index: 401
-
-    .actions
-        margin-top: 20px
-        display: flex
-        flex-direction: row-reverse
-
-        button
-            margin-left: 15px
+.gallery
+    box-shadow: none
+    padding: var(--space-1)

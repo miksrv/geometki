@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Message } from 'simple-react-ui-kit'
 
 import { GetServerSidePropsResult, NextPage } from 'next'
 import { useRouter } from 'next/dist/client/router'
@@ -12,11 +11,9 @@ import { API, ApiType } from '@/api'
 import { setLocale } from '@/app/applicationSlice'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, PageHeader } from '@/components/shared'
-import { ScreenSpinner } from '@/components/ui'
+import { AppLayout } from '@/components/shared'
 import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
-import { UserForm } from '@/sections/user'
-import { USER_FORM_SECTIONS } from '@/sections/user/user-form'
+import { UserForm, UserHero } from '@/sections/user'
 import { getErrorMessage, isApiValidationErrors } from '@/utils/api'
 import { loadPageTranslations } from '@/utils/translations.server'
 
@@ -34,7 +31,7 @@ const SettingsUserPage: NextPage<object> = () => {
 
     const authSlice = useAppSelector((state) => state.auth)
 
-    const { data: userData, isFetching } = API.useUsersGetItemQuery(authSlice.user?.id || '', {
+    const { data: userData } = API.useUsersGetItemQuery(authSlice.user?.id || '', {
         refetchOnMountOrArgChange: true,
         skip: !authSlice.user?.id
     })
@@ -49,18 +46,11 @@ const SettingsUserPage: NextPage<object> = () => {
         [error]
     )
 
-    const serverError = useMemo(() => (!isApiValidationErrors(error) ? getErrorMessage(error) : undefined), [error])
-
-    // Scrolls to a section without a history entry: the unsaved-changes guard reads Back from a
-    // `#section` entry as leaving the page
-    const handleSectionClick = (section: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
-        const target = document.getElementById(section)
-
-        if (target) {
-            event.preventDefault()
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
-    }
+    // A validation answer may carry a message of no field (`error`): it is shown above the form
+    const serverError = useMemo(
+        () => (isApiValidationErrors<{ error?: string }>(error) ? error.messages.error : getErrorMessage(error)),
+        [error]
+    )
 
     // Leaving by Cancel goes through the same unsaved-changes guard as any other navigation
     const handleCancel = () => {
@@ -117,51 +107,25 @@ const SettingsUserPage: NextPage<object> = () => {
                 })}
             </Head>
 
-            <PageHeader
-                title={t('settings')}
-                breadcrumbs={[
-                    { link: '/users', text: t('users') },
-                    { link: `/users/${authSlice.user?.id}`, text: authSlice.user?.name || t('my-page') }
-                ]}
+            <UserHero
+                user={userData}
+                isSettings={true}
             />
 
-            <div className={styles.layout}>
-                <nav
-                    className={styles.nav}
-                    aria-label={t('settings-sections')}
-                >
-                    <ul>
-                        {USER_FORM_SECTIONS.map((section) => (
-                            <li key={section}>
-                                <a
-                                    href={`#${section}`}
-                                    onClick={handleSectionClick(section)}
-                                >
-                                    {t(`settings-section-${section}`)}
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
-                </nav>
-
-                <div className={styles.form}>
-                    {!authSlice.isAuth && <ScreenSpinner />}
-
-                    {serverError && <Message type={'error'}>{serverError}</Message>}
-
-                    <UserForm
-                        loading={isLoading || isSuccess || isFetching}
-                        values={userData}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        errors={validationErrors as any}
-                        onSubmit={handleSubmit}
-                        onCancel={handleCancel}
-                        onDirtyChange={setIsDirty}
-                    />
-                </div>
-
-                <ConfirmationDialog {...leaveDialogProps} />
+            <div className={styles.settings}>
+                <UserForm
+                    loading={isLoading || isSuccess}
+                    values={userData}
+                    serverError={serverError}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    errors={validationErrors as any}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
+                    onDirtyChange={setIsDirty}
+                />
             </div>
+
+            <ConfirmationDialog {...leaveDialogProps} />
         </AppLayout>
     )
 }

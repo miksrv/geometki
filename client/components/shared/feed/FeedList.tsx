@@ -94,8 +94,8 @@ export const FeedList: React.FC<FeedListProps> = ({
 
             {loading && (
                 <>
-                    <FeedStoryLoader />
-                    <FeedStoryLoader />
+                    <FeedStoryLoader density={density} />
+                    <FeedStoryLoader density={density} />
                 </>
             )}
 

@@ -93,7 +93,8 @@ re-implement them.
       phones it is an edge-to-edge 4:3 carousel (CSS scroll snap) of the cover and the first 8
       photos with a "1 / N" pill of all of them (it opens all the photos in the viewer grid) and a last slide inviting
       to add photos; a tap opens that photo in the viewer. Under the picture, on the page background: the h1
-      (`titlePage`) and one facts line — category (18px icon + name, a link to its
+      (`titlePage`, the full width: a long title is never squeezed by the buttons) and one facts
+      line, the desktop actions on its right — category (18px icon + name, a link to its
       places, in primary text), rating (a link to `#reviews`, or to `#rate` while unrated;
       plain for the author), reviews count (`#reviews`), distance. The address is only in the
       "Где это" card, the views only in "О месте".
@@ -106,8 +107,9 @@ re-implement them.
       `variant="toolbar"` sits on the h1's line on desktop; `variant="bar"` is passed to
       `AppLayout` as `bottomBar` and replaces the bottom navigation on phones (same 52px height
       and translucent surface, 44px buttons), its menus open as `BottomSheet`s.
-    - `.pageLayout` — a `1fr 360px` grid, `--space-6` between the columns. The main column is a
-      flow of boxless sections `--space-10` apart (`--space-8` on phones): the photo mosaic
+    - `.pageLayout` — a `1fr 360px` grid, `--space-4` between the columns like
+      every side column. The main column is a
+      flow of boxless sections `--space-6` apart (`--space-5` on phones) like on every page: the photo mosaic
       (desktop only, below), the text, "Оценки и отзывы", "Что ещё посмотреть", "О месте". The
       sticky right column (`top: 64px`) is the "Где это" card. On phones the column dissolves
       and the order is explicit: text → "Где это" → reviews → explore → about (read → see where
@@ -117,8 +119,8 @@ re-implement them.
       while there are fewer than five, a full mosaic carries a quiet "Добавить фото" pill over
       the big photo and "+N" on the last tile. A tile opens its photo, "+N" all the photos in
       the `PhotoViewer` (controlled `viewer`, shared with the hero carousel); the mosaic tiles
-      carry no menus, editing is in the viewer. No photos: the whole block is the dashed drop
-      target. `FileDropZone` wraps it all. Phones do not show the section.
+      carry no menus, editing is in the viewer. No photos: the whole block is an `UploadZone`
+      ("Фото этого места пока нет"). `FileDropZone` wraps it all. Phones do not show the section.
     - The text — `PlaceDescription` with a visually hidden h2: `prose` at the reading size, the
       first paragraph a lead, markdown `#`/`##` rendered as h3, clamped at 540px (420 on phones)
       with a fade and "Читать полностью ⌄". Read only: the
@@ -267,14 +269,31 @@ re-implement them.
       `ScoreStars variant="single"` (★ 5), then "за добавление места · 3 ноября" (caption) | the share in a tinted badge in the secondary size,
       green or red — not a `stat`: a list of many numbers. Who scored is not told. Skeleton rows
       while loading; no scores — `EmptyState`.
-- **Settings** (`pages/users/settings.tsx`, `UserForm`): `PageHeader` (Люди › name) → a
-  `200px 1fr` grid, 960px at most: a sticky list of the sections (anchors, the app bar
-  navigation look; hidden on phones) and the form — "Профиль" (the name and the website side by
-  side, the email read only with a hint; a line links to the profile, where the photo is
-  changed), "Уведомления"
-  (the device's push, the channel × type table) and "Вход и пароль" (the password fields, or the
-  service the account signs in with), each a `Container`, then "Отмена" and "Сохранить" on the
-  right (stretched on phones).
+- **Settings** (`pages/users/settings.tsx`, `UserForm`): a page of the profile, so it has the
+  profile's head — `UserHero` (`isSettings`: the owner's "Настройки" button turns `primary`, the
+  page shown, next to "Сменить фото"; a skeleton of the card until the user loads) — then a
+  `FormSections` (section 6, "Page forms in parts"): the menu of the parts and the titled
+  `FormSection` cards, "Профиль" and "Уведомления" with a secondary line on what they are for. "Профиль" (the name
+  and the website side by side, the email read only with a hint), "Уведомления" (the device's
+  push on a `--surface-2` plate, then the events in two overline groups, "Ваши места" and
+  "Достижения и дайджест": a row per event with a `small` toggle `Chip` per channel in a fixed
+  slot, an empty slot where the channel does not carry the event) and "Вход и пароль" (the
+  password fields, or the service the account signs in with). Then "Отмена" and "Сохранить" in
+  `FormActions` (section 6, "Page form actions") with "Есть несохранённые изменения". Skeleton
+  cards while the profile loads.
+- **Place form** (`pages/places/create.tsx`, `pages/places/[id]/edit.tsx`, `PlaceForm`):
+  `PageHeader`, the page's messages (a server error, the OpenStreetMap hint, a new
+  translation), then `FormSections` (section 6): the menu and the cards, each with a secondary
+  line on what goes in it: "Название и категория" (the title and a searchable category select
+  one under another on the full width), "Местоположение" (the map, 360px, 280px on phones: its center
+  is the place, the category's icon marks it; the map shows the coordinates itself, so none
+  under it — only an error on them, in red, with a red map border), "Описание"
+  (`ContentEditor`, a line that the text is in one's own words) and, on a new place only,
+  "Фотографии" (a line that photos can wait; an `UploadZone` "Добавьте фотографии места",
+  then the gallery with its "Добавить фото" tile; `FileDropZone` around both). Then `FormActions`: "Добавить
+  место" on a new place, enabled without changes (a prefilled one may be right as it is),
+  "Сохранить" on an edit; off while photos upload. A new empty place starts at its title; an
+  edit does not autofocus.
 - **People page** (`pages/users/index.tsx`, `sections/user/users-listing`): a community, not a
   register — no table. `PageHeader` with the people count on the h1's baseline and (page 1, no
   search) the lede → `UsersFilterPanel` (a sticky `FilterPanel`: the name search, 300px, and
@@ -328,7 +347,8 @@ text on phones. The header sits on the page background: the lede is never boxed 
 `Container` and never greyed out — it is the page's first paragraph, not a footnote.
 The place page and the user profile use a hero instead. On the place page the
 `Breadcrumbs` sit above the cover, the h1 and the facts line under it on the page
-background, with the actions on the h1's line (`PlaceHero`, `PlaceActions`); on the profile
+background: the h1 on the full width, then the facts with the actions on the right of their
+line, centred on it (`PlaceHero`, `PlaceActions`); on the profile
 the `Breadcrumbs` sit above the profile card and the h1 is the name inside it, the owner's
 "Настройки" on its line (`UserHero`). The h1 is `titlePage` everywhere (section 1a).
 
@@ -343,7 +363,7 @@ Breadcrumbs appear only on nested pages, where the app bar cannot show where you
 | Collection page                                                                                                                                                            | Коллекции                           |
 | Create / edit place                                                                                                                                                        | Места (› place)                     |
 | Profile, its tabs and photos (above the profile card, desktop only)                                                                                                        | Люди                                |
-| Settings                                                                                                                                                                   | Люди › name                         |
+| Settings (above the profile card, desktop only)                                                                                                                            | Люди                                |
 | Admin sub-pages                                                                                                                                                            | admin section                       |
 
 The trail starts at the section (the logo is the way home) and stops at the parent; the
@@ -595,7 +615,8 @@ achievement / a new level (`ApiModel.FeedStory`; grouping rules in
 - Photos of a story are named after the place ("Усадьба — фото 2") in `alt` and in their
   buttons; the last tile's button also says how many photos are left.
 - `FeedList` — the stories in order, under day headings ("Сегодня", "Вчера", "1 октября",
-  12px uppercase secondary) when `groupByDay`; two `FeedStoryLoader` skeletons while loading;
+  12px uppercase secondary) when `groupByDay`; two `FeedStoryLoader` skeletons while loading, in the stories' density (compact: no card,
+  no media block, the rule from the story above);
   an empty feed is one line of text.
 - `FeedPulse` — "This week" (or "This month" when the week was quiet): the non-zero counts
   as 22px numbers with captions, the most active people (`UserAvatarGroup`), "last activity
@@ -652,12 +673,48 @@ actions, active days, the longest and the current run of days in a row (22px num
   something changed.
 - **Form state and unsaved changes.** Forms are built on `react-hook-form` (`useForm` +
   `Controller`, since kit fields don't forward refs); validation messages come from `rules`
-  and server errors are put on their fields with `setError`. Anything the user can lose —
+  and server errors are put on their fields with `setError`. A failed save brings the first
+  field with an error (in the page order) to the middle of the screen and focuses it —
+  `handleSubmit(onValid, (errors) => scrollToFirstError(errors))` (`utils/scrollToFirstError`),
+  and the same for the server's errors once they are on their fields; fields are found by
+  `name`, so every field passes its `name` (the kit fields do not forward refs), and a field
+  without an input of its own carries `data-field` (a `Select`, an editor's wrapper, the map
+  that sets `lat` and `lon`: `data-field="lat lon"`). The error of such a field is shown under
+  it as red caption text. A failed save shows no toast: the fields and the summary tell. Anything the user can lose —
   a page form, an inline editor, a dialog, a comment draft — is wrapped in
   `useUnsavedChangesGuard(isDirty)` (`hooks/`): links, Back/Forward and router pushes open
   `<ConfirmationDialog {...dialogProps} />`, closing the tab gets the browser prompt.
   In-page discards (Cancel, closing a dialog) go through `confirmDiscard`; call
   `allowNavigation()` before navigating away after a successful save.
+- **Page forms in parts** (`components/ui/form-sections`: `FormSections`, `FormSection`): a
+  page form of several parts (the settings, the place form) is a `240px 1fr` grid on the full
+  content width, `--space-4` apart like every side column. On the left a sticky vertical menu
+  of the parts (`top: 64px`; the old site menu's look: 36px rows, a 20px icon in the link
+  colour, `--surface-3` on hover, the part in view white with `--color-main`); a click
+  scrolls smoothly to the card without a history entry and the mark goes straight to it; as
+  the page scrolls the mark follows — the last card whose top has passed the line under the
+  app bar, the last card at the very end of the page. On the right the parts: a titled
+  `FormSection` (a `Container` with an id, a secondary line on what goes in it, stopping under
+  the app bar when scrolled to), the form's messages above them, `FormActions` after them.
+  Phones: no menu, the cards on the full content width. A form of one part takes no menu.
+- **Page form actions** (`components/ui/form-actions`, `FormActions`): every form on a page (not
+  in a dialog) ends with this component, never a hand-made row of buttons. The page passes
+  `dirty`, `loading`, `onSave` and `onCancel` (no Cancel without it); `saveLabel`,
+  `cancelLabel` and `message` only where the defaults do not fit ("Добавить место");
+  `saveDisabled` replaces the default rule (off until a change) for a form that may be saved
+  untouched — a new entity — or must wait (uploads in progress).
+  One row — secondary "Отмена" first, primary "Сохранить" last, `medium`,
+  on the right; stretched in equal halves on phones. Save is disabled until something changed.
+  With no changes the row stays in its place under the form. With changes it shows the note
+  "Есть несохранённые изменения" on the left, and while its place is below the screen (the
+  user scrolled up to the fields) it floats: a bar fixed to the bottom of the screen on the
+  full window width, dressed as the app bar — `--container-background`, a 1px `--border` rule
+  and a light shadow on the page side, 50px tall, the content on `--width-max` with the page's
+  side paddings (16px, 10px on phones) so the buttons line up with the form, 32px buttons,
+  the bottom safe area. On phones it sits over the bottom navigation, the note is hidden (the
+  bar itself says there are changes). As the place scrolls in, the bar lands back into it;
+  the place keeps the row's height, so the page never jumps. Never a sticky row inside the
+  form's column, never a second bar on the page.
 - **Menus** (every kit `Popout` with actions: the place actions, the user menu, a
   collection's and a photo's menus): the kit card (`--popout-radius`, a 1px ring and
   `--shadow-lg`) holds a `ul.contextListMenu` (`styles/globals.sass`), 220px minimum, 4px
@@ -730,6 +787,28 @@ actions, active days, the longest and the current run of days in a row (22px num
   a grid of 4:3 tiles, four columns (two on phones) with 4px gaps, so 8 photos make two
   whole rows; only the outer corners of the whole grid are rounded, tiles are square; previews are 700×500. The first 8 are shown and the rest collapse behind
   "Ещё фотографии"; a page of photos passes `showAll`.
+- **Floating prompt** (`components/ui/floating-prompt`, `FloatingPrompt`): the one card the site
+  floats over the page to ask or tell one thing — the cookie notice (`CookieNotice`) and the
+  push offer (`PushPrompt`). Bottom right on desktop, 440px at most, clear of the toasts
+  (bottom left); on phones at the top under the app bar, on the full width, clear of the
+  toasts and the bottom navigation. `--container-background`, `--popout-shadow`, an optional
+  title, the text (primary when there is no title), the buttons with the main one first.
+  One at a time: the cookie notice comes first, to every visitor until closed on the browser
+  ("Понятно"; Escape does not close it); the push offer waits for it and then appears after an
+  action as before (Escape puts it off). Shown only once the browser knows the stored
+  answer, so a cached page never flashes one. Never a modal, never on page load for push.
+- **Photo upload** (`components/ui/upload-zone`, `UploadZone`): every place a photo is
+  uploaded from shows one face while there is nothing yet — a dashed field on `--surface-2`
+  (180px minimum, `--border-strong` dash, the main colour on hover and focus) with a Camera
+  icon, a title saying what to do and a small hint: "Нажмите или перетащите…" and the formats
+  and limit. A click opens the picker; files dropped on it are taken (`onDrop`), unless a
+  `FileDropZone` around it already takes them (the place page, the place form) — then the
+  zone has no `onDrop`, or one drop would upload twice. The caller owns the file input and
+  checks the type and size before sending, with a toast naming what fits: photos of a place
+  (`PhotoUploader`) — JPG, PNG or WEBP up to 10 MB, several at once; an avatar
+  (`UserAvatarEditor`) — JPG, PNG or WEBP up to 5 MB, one. No GIF anywhere (the API takes
+  none). Once there are photos, adding more is the gallery's "Добавить фото" tile (or the
+  mosaic's pill), not a second zone. Never a bare file input or a hand-made upload button.
 - **Photo viewer** (`PhotoViewer`, the place page): one dark full-screen viewer in both themes,
   two modes. All the photos — a header with the place, "Все фото (N)", "Добавить фото" and
   the close button (icons only on phones), a hint for editors, a grid of 4:3 tiles (200px

@@ -9,7 +9,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { API, ApiModel } from '@/api'
 import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
-import { ImageUploader } from '@/components/ui'
+import { UploadZone } from '@/components/ui'
 import { getErrorMessage } from '@/utils/api'
 
 import { isAbsoluteUrl, resolveImageUrl } from '../photo-lightbox/utils'
@@ -355,19 +355,13 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             >
                 {isEmptyPhotoList ? (
                     onPhotoUploadClick ? (
-                        <button
-                            type={'button'}
-                            className={cn(styles.addTile, styles.addZone)}
+                        <UploadZone
+                            title={t('photos-empty-title', { defaultValue: 'Фото этого места пока нет' })}
+                            hint={t('photos-empty-hint', {
+                                defaultValue: 'Добавьте первое — нажмите или перетащите файлы сюда'
+                            })}
                             onClick={onPhotoUploadClick}
-                        >
-                            <Icon name={'Camera'} />
-                            <strong>{t('photos-empty-title', { defaultValue: 'Фото этого места пока нет' })}</strong>
-                            <span>
-                                {t('photos-empty-hint', {
-                                    defaultValue: 'Добавьте первое — нажмите или перетащите файлы сюда'
-                                })}
-                            </span>
-                        </button>
+                        />
                     ) : (
                         <div className={styles.emptyLine}>
                             {t('no-photos-here-yet', { defaultValue: 'Тут пока нет фотографий' })}
@@ -468,7 +462,15 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                         <ul className={styles.photoGallery}>
                             {onPhotoUploadClick && (
                                 <li className={cn(styles.photoItem, styles.photoUpload)}>
-                                    <ImageUploader onClick={onPhotoUploadClick} />
+                                    <button
+                                        type={'button'}
+                                        className={styles.addTile}
+                                        onClick={onPhotoUploadClick}
+                                    >
+                                        <Icon name={'Camera'} />
+                                        <strong>{t('add-photo', { defaultValue: 'Добавить фото' })}</strong>
+                                        <span>{t('photos-drop-short', { defaultValue: 'или перетащите сюда' })}</span>
+                                    </button>
                                 </li>
                             )}
 

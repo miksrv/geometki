@@ -1,12 +1,19 @@
 import React from 'react'
-import { Skeleton } from 'simple-react-ui-kit'
+import { cn, Skeleton } from 'simple-react-ui-kit'
+
+import type { FeedDensity } from './FeedStory'
 
 import styles from './styles.module.sass'
 
-/** Placeholder of a feed story while the feed loads */
-export const FeedStoryLoader: React.FC = () => (
+interface FeedStoryLoaderProps {
+    /** As the stories it stands for: `compact` — no card and no media, a rule from the story above */
+    density?: FeedDensity
+}
+
+/** Placeholder of a feed story while the feed loads, in the look of the stories around it */
+export const FeedStoryLoader: React.FC<FeedStoryLoaderProps> = ({ density = 'full' }) => (
     <div
-        className={styles.story}
+        className={cn(styles.story, density === 'compact' && styles.compact)}
         data-testid={'feed-story-loader'}
         aria-hidden={true}
     >
@@ -17,6 +24,6 @@ export const FeedStoryLoader: React.FC = () => (
                 <Skeleton className={styles.loaderTime} />
             </div>
         </div>
-        <Skeleton className={styles.loaderMedia} />
+        {density !== 'compact' && <Skeleton className={styles.loaderMedia} />}
     </div>
 )

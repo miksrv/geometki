@@ -26,7 +26,7 @@ interface PlaceHeroProps {
     place?: ApiModel.Place
     photos?: ApiModel.Photo[]
     coverHash?: number
-    /** The desktop actions toolbar on the title's line (`PlaceActions`); phones have the bottom bar */
+    /** The desktop actions toolbar on the facts' line under the title (`PlaceActions`); phones have the bottom bar */
     actions?: React.ReactNode
     onPhotoUploadClick?: (event?: React.MouseEvent) => void
     onAllPhotosClick?: () => void
@@ -159,72 +159,71 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                 onPhotoClick={onPhotoClick}
             />
 
+            {/* The title on the full width, then the facts and the actions on one line under it */}
             <div className={styles.head}>
-                <div className={styles.text}>
-                    <h1>{place?.title}</h1>
+                <h1>{place?.title}</h1>
 
-                    {/* The dots between the facts sit on the list items, outside the links */}
-                    <ul className={styles.facts}>
-                        {place?.category && (
-                            <li>
-                                <Link
-                                    href={buildCategoryHref(place.category, landingFlags)}
-                                    className={styles.category}
-                                    title={`${t('all-places-in-category', { defaultValue: 'Все места категории' })} ${getCategoryTitle(t, place.category)}`}
-                                >
-                                    <Image
-                                        src={categoryImage(place.category).src}
-                                        alt={''}
-                                        width={18}
-                                        height={18}
-                                    />
-                                    {getCategoryTitle(t, place.category)}
-                                </Link>
-                            </li>
-                        )}
-
+                {/* The dots between the facts sit on the list items, outside the links */}
+                <ul className={styles.facts}>
+                    {place?.category && (
                         <li>
-                            {isAuthor ? (
-                                <span className={styles.fact}>{ratingFact}</span>
-                            ) : (
-                                <a
-                                    href={`#${ratingAnchor}`}
-                                    className={styles.fact}
-                                    onClick={scrollTo(ratingAnchor)}
-                                >
-                                    {ratingFact}
-                                </a>
-                            )}
-                        </li>
-
-                        <li>
-                            <a
-                                href={`#${REVIEWS_ANCHOR}`}
-                                className={styles.fact}
-                                onClick={scrollTo(REVIEWS_ANCHOR)}
+                            <Link
+                                href={buildCategoryHref(place.category, landingFlags)}
+                                className={styles.category}
+                                title={`${t('all-places-in-category', { defaultValue: 'Все места категории' })} ${getCategoryTitle(t, place.category)}`}
                             >
-                                {commentsCount
-                                    ? t('place-reviews-count', {
-                                          count: commentsCount,
-                                          defaultValue: '{{count}} отзывов'
-                                      })
-                                    : t('place-no-reviews-yet', { defaultValue: 'Отзывов пока нет' })}
-                            </a>
+                                <Image
+                                    src={categoryImage(place.category).src}
+                                    alt={''}
+                                    width={18}
+                                    height={18}
+                                />
+                                {getCategoryTitle(t, place.category)}
+                            </Link>
                         </li>
+                    )}
 
-                        {!!place?.distance && (
-                            <li>
-                                <span className={styles.fact}>
-                                    <Icon name={'Point'} />
-                                    {t('distance-from-you', {
-                                        distance: formatThousands(place.distance),
-                                        defaultValue: '{{distance}} км от вас'
-                                    })}
-                                </span>
-                            </li>
+                    <li>
+                        {isAuthor ? (
+                            <span className={styles.fact}>{ratingFact}</span>
+                        ) : (
+                            <a
+                                href={`#${ratingAnchor}`}
+                                className={styles.fact}
+                                onClick={scrollTo(ratingAnchor)}
+                            >
+                                {ratingFact}
+                            </a>
                         )}
-                    </ul>
-                </div>
+                    </li>
+
+                    <li>
+                        <a
+                            href={`#${REVIEWS_ANCHOR}`}
+                            className={styles.fact}
+                            onClick={scrollTo(REVIEWS_ANCHOR)}
+                        >
+                            {commentsCount
+                                ? t('place-reviews-count', {
+                                      count: commentsCount,
+                                      defaultValue: '{{count}} отзывов'
+                                  })
+                                : t('place-no-reviews-yet', { defaultValue: 'Отзывов пока нет' })}
+                        </a>
+                    </li>
+
+                    {!!place?.distance && (
+                        <li>
+                            <span className={styles.fact}>
+                                <Icon name={'Point'} />
+                                {t('distance-from-you', {
+                                    distance: formatThousands(place.distance),
+                                    defaultValue: '{{distance}} км от вас'
+                                })}
+                            </span>
+                        </li>
+                    )}
+                </ul>
 
                 {actions && <div className={styles.actions}>{actions}</div>}
             </div>

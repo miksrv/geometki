@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.19.2
+
+Redesigned settings and place form, one photo upload area, a cookie notice and a tidier place page.
+
+### Patch Changes
+
+- Settings: redesigned under your profile card, a side menu of its parts, toggles for notifications
+- Place form: parts with a side menu, every field checked before saving
+- Forms: the save bar stays in view while there are changes, a failed save jumps to the error
+- Photos: one upload area everywhere; avatars take JPG, PNG or WEBP up to 5 MB, GIF is not accepted
+- Cookie notice for new visitors
+- Place page: the title on the full width, tighter spacing between the parts
+- Profile: a name needs 2 letters or more, up to 40 characters, and may be the same as someone's
+
 ## 1.19.1
 
 Reputation history, undo a check-in, check-in questions on phones and profile polish.

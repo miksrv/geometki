@@ -10,6 +10,7 @@ use App\Libraries\Mail\MailUrls;
 use App\Libraries\GoogleClient;
 use App\Libraries\LevelsLibrary;
 use App\Libraries\SessionLibrary;
+use App\Libraries\UserName;
 use App\Libraries\VkClient;
 use App\Libraries\YandexClient;
 use App\Models\MagicLinkTokensModel;
@@ -58,12 +59,16 @@ class Auth extends ResourceController
         }
 
         $validationRules = [
-            'name'     => 'required|is_unique[users.name]',
+            'name'     => 'required|valid_user_name',
             'email'    => 'required|min_length[6]|max_length[50]|valid_email|is_unique[users.email]',
             'password' => 'required|min_length[8]|max_length[50]'
         ];
 
         $input = $this->getRequestInput($this->request);
+
+        if (isset($input['name']) && is_string($input['name'])) {
+            $input['name'] = UserName::normalize($input['name']);
+        }
 
         if (!$this->validateRequest($input, $validationRules)) {
             return $this->failValidationErrors($this->validator->getErrors());
@@ -358,7 +363,11 @@ class Auth extends ResourceController
             return $this->failValidationErrors(lang('Auth.magicLinkInvalidOrExpired'));
         }
 
-        [$userData, $isNewUser] = (new UsersModel())->findOrCreateByEmail($claim['email'], AUTH_TYPE_EMAIL);
+        [$userData, $isNewUser] = (new UsersModel())->findOrCreateByEmail(
+            $claim['email'],
+            AUTH_TYPE_EMAIL,
+            $this->request->getLocale()
+        );
 
         try {
             $this->session->authorization($userData);
@@ -532,10 +541,11 @@ class Auth extends ResourceController
         // If there is no user with this email, then register a new user
         if (empty($userData)) {
             $createUser = new UserEntity();
-            $createUser->name      = $serviceProfile->name;
             $createUser->email     = $serviceProfile->email;
             $createUser->auth_type = $authType;
-            $createUser->locale    = !empty($serviceProfile->locale) ? $serviceProfile->locale : $locale = $this->request->getLocale();
+            $createUser->locale    = !empty($serviceProfile->locale) ? $serviceProfile->locale : $this->request->getLocale();
+            // A service name may be empty, too short or too long: fixed, never refused
+            $createUser->name      = UserName::forNewUser($serviceProfile->name ?? null, $createUser->locale);
 
             // TODO
             // $user->sex      = $serviceProfile->sex ?? null;

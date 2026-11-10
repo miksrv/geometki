@@ -6,7 +6,15 @@ export { Counter } from './counter'
 export { ExpandableText } from './expandable-text'
 export { FieldTrigger, type FieldTriggerProps } from './field-trigger'
 export { FileDropZone } from './file-drop-zone'
-export { ImageUploader } from './image-uploader'
+export { FloatingPrompt, type FloatingPromptProps } from './floating-prompt'
+export { FormActions, type FormActionsProps } from './form-actions'
+export {
+    FormSection,
+    type FormSectionProps,
+    FormSections,
+    type FormSectionsItem,
+    type FormSectionsProps
+} from './form-sections'
 export { OptionList, type OptionListGroup, type OptionListItem, type OptionListProps } from './option-list'
 export { Pagination, type PaginationProps } from './pagination'
 export { RadioButton, type RadioButtonProps } from './radio-button'
@@ -15,3 +23,4 @@ export { ScreenSpinner, type ScreenSpinnerProps } from './screen-spinner'
 export { ScrollRail, type ScrollRailProps, ScrollRailSeparator } from './scroll-rail'
 export { Switch, type SwitchProps } from './switch'
 export { Tabs, type TabsProps } from './tabs'
+export { UploadZone, type UploadZoneProps } from './upload-zone'

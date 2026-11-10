@@ -6,12 +6,19 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
 import { toggleOverlay } from '@/app/applicationSlice'
+import { Notify } from '@/app/notificationSlice'
 import { useAppDispatch } from '@/app/store'
-import { ImageUploader } from '@/components/ui'
+import { UploadZone } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
 
 import 'react-image-crop/src/ReactCrop.scss'
 import styles from './styles.module.sass'
+
+/** Image types the API takes for an avatar (`mime_in` of `POST /users/avatar`) */
+export const AVATAR_ACCEPT_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+/** The API's size limit of an avatar (`max_size`, 5120 KB) */
+export const AVATAR_MAX_SIZE = 5 * 1024 * 1024
 
 type ImageSizesType = {
     ratioWidth: number
@@ -80,18 +87,37 @@ export const UserAvatarEditor: React.FC<UserAvatarProps> = ({ label, size = 'med
         inputFile.current?.click()
     }
 
-    const handleSelectedFilesUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files
+    // A file the API would refuse is not sent: the visitor learns what fits at once
+    const uploadFile = async (file?: File) => {
+        if (!file) {
+            return
+        }
 
-        if (!files?.[0]) {
+        if (!AVATAR_ACCEPT_TYPES.includes(file.type) || file.size > AVATAR_MAX_SIZE) {
+            void dispatch(
+                Notify({
+                    id: 'avatarUploadRejected',
+                    message: t('avatar-upload-rejected'),
+                    type: 'error'
+                })
+            )
             return
         }
 
         const formData = new FormData()
 
-        formData.append('avatar', files[0])
+        formData.append('avatar', file)
 
         await uploadAvatar({ formData })
+    }
+
+    const handleSelectedFilesUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+
+        // The same file can be picked again after a refusal
+        event.target.value = ''
+
+        await uploadFile(file)
     }
 
     // Select a photo to upload
@@ -171,13 +197,17 @@ export const UserAvatarEditor: React.FC<UserAvatarProps> = ({ label, size = 'med
                                         ref={inputFile}
                                         style={{ display: 'none' }}
                                         type={'file'}
-                                        accept={'image/png, image/gif, image/jpeg'}
+                                        accept={AVATAR_ACCEPT_TYPES.join(', ')}
                                         onChange={handleSelectedFilesUpload}
                                     />
 
-                                    <ImageUploader
+                                    <UploadZone
+                                        className={styles.uploadZone}
+                                        title={t('avatar-upload-title')}
+                                        hint={t('avatar-upload-hint')}
                                         disabled={uploadLoading}
                                         onClick={handlePhotoUploadClick}
+                                        onDrop={(files) => void uploadFile(files[0])}
                                     />
                                 </>
                             ) : (
