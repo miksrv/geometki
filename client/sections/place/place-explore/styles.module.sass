@@ -7,3 +7,10 @@
         width: auto
         max-width: 100%
         margin-bottom: var(--space-3)
+
+// "Все — Оренбургская область" on the heading's line: the link button (36px) is taller than
+// the heading's line (`titleSection`, line height 1.3). Negative margins make its box as tall
+// as that line, the text stays on the heading's baseline, so the heading does not move as a
+// tab shows or hides the link
+.allLink > *
+    margin-block: calc((var(--font-size-title-section) * 1.3 - var(--size-control-medium)) / 2)

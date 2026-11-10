@@ -6,9 +6,11 @@
 .pageLayout
     display: grid
     grid-template-columns: minmax(0, 1fr) 360px
-    gap: 0 var(--space-6)
+    // The gap of every side column (DESIGN.md → Layout): the signed-in home, the profile
+    gap: 0 var(--space-4)
     align-items: flex-start
-    margin-top: var(--space-8)
+    // On top of the page's 15px gap: the content starts after a short pause under the head
+    margin-top: var(--space-3)
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
         display: flex
@@ -16,7 +18,8 @@
         // `flex-start` above is for the grid rows; in the column it would size every block
         // by its content (a carousel is many tiles wide) and stretch the page
         align-items: stretch
-        gap: var(--space-8)
+        // The sections' gap of every page on phones (DESIGN.md → Home page)
+        gap: var(--space-5)
         // The hero and the content: 16px above the title, 20px under the facts (the head
         // belongs to the picture, the content starts after a pause)
         margin-top: var(--space-5)
@@ -25,7 +28,8 @@
     min-width: 0
     display: flex
     flex-direction: column
-    gap: var(--space-10)
+    // The sections' gap of every page (DESIGN.md → Home page)
+    gap: var(--space-6)
 
     // A block that rendered nothing (no places around, no photos for a guest) leaves no gap
     & > :empty

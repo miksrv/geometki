@@ -55,7 +55,11 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
     const [clamped, setClamped] = useState<boolean>(true)
     const [overflows, setOverflows] = useState<boolean>((content?.length ?? 0) > LIKELY_LONG_LENGTH)
 
-    const reserveReadMore = !overflows && (content?.length ?? 0) > MAYBE_LONG_LENGTH
+    // Measured: whether the text fits is known, the toggle is shown or not, nothing to reserve
+    const [measured, setMeasured] = useState<boolean>(false)
+
+    // Until measured only: a text that fits must leave no empty row under it
+    const reserveReadMore = !measured && !overflows && (content?.length ?? 0) > MAYBE_LONG_LENGTH
 
     // The edit page is for signed-in users only: a guest gets the sign-in dialog instead
     const handleEditClick = (event: React.MouseEvent) => {
@@ -78,6 +82,7 @@ export const PlaceDescription: React.FC<PlaceDescriptionProps> = ({ placeId, con
         const fits = element.scrollHeight <= limit
 
         setOverflows(!fits)
+        setMeasured(true)
 
         if (fits) {
             setClamped(false)

@@ -31,7 +31,13 @@ jest.mock('./FeedStory', () => ({
 }))
 
 jest.mock('./FeedStoryLoader', () => ({
-    FeedStoryLoader: () => <div data-testid={'loader'} />
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    FeedStoryLoader: ({ density }: any) => (
+        <div
+            data-testid={'loader'}
+            data-density={density}
+        />
+    )
 }))
 
 const story = (id: string, updated: string): ApiModel.FeedStory => ({
@@ -100,6 +106,20 @@ describe('FeedList', () => {
 
         expect(screen.getAllByTestId('loader').length).toBeGreaterThan(0)
         expect(screen.queryByText('Тут пока ничего нет')).toBeNull()
+    })
+
+    it('gives the skeletons the density of the stories', () => {
+        render(
+            <FeedList
+                loading={true}
+                density={'compact'}
+            />
+        )
+
+        expect(screen.getAllByTestId('loader').map((loader) => loader.dataset.density)).toStrictEqual([
+            'compact',
+            'compact'
+        ])
     })
 
     it('renders the footer under the list', () => {

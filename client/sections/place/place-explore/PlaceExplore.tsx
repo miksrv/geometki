@@ -133,7 +133,10 @@ export const PlaceExplore: React.FC<PlaceExploreProps> = ({
                         </span>
                     )} */}
                     {hasRelated && (
-                        <span hidden={activeTab !== 'related'}>
+                        <span
+                            className={styles.allLink}
+                            hidden={activeTab !== 'related'}
+                        >
                             <Button
                                 mode={'link'}
                                 link={relatedHref}
