@@ -63,6 +63,10 @@ final class PlaceInputTest extends CIUnitTestCase
         $this->assertArrayHasKey('content', $errors);
         $this->assertArrayHasKey('category', $errors);
         $this->assertArrayHasKey('photos', $this->check($this->valid(['photos' => 'a.jpg'])));
+
+        // Empty values of another type pass `permit_empty`, never the checks
+        $this->assertArrayHasKey('content', $this->check($this->valid(['content' => []])));
+        $this->assertArrayHasKey('content', $this->check($this->valid(['content' => false])));
     }
 
     public function testAnUnknownCategoryIsRefused(): void

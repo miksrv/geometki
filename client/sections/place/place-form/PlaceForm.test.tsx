@@ -217,6 +217,23 @@ describe('PlaceForm', () => {
         expect(onSubmit.mock.calls[0][0].title).toBe('Водопад Девичьи слёзы')
     })
 
+    it('checks a prefilled title of a new place (an OSM candidate) as a typed one', async () => {
+        const onSubmit = jest.fn()
+        render(
+            <PlaceForm
+                values={{ ...place, title: 'Утёс' }}
+                onSubmit={onSubmit}
+            />
+        )
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: 'place-form-submit-create' }))
+        })
+
+        expect(onSubmit).not.toHaveBeenCalled()
+        expect(screen.getAllByText('error_title-too-short').length).toBeGreaterThan(0)
+    })
+
     it('does not save a new place before the map gives its position', async () => {
         const onSubmit = jest.fn()
         render(

@@ -111,7 +111,10 @@ final class PlaceInput
             }
         }
 
-        if (isset($data['content']) && is_string($data['content']) && strlen($data['content']) > self::CONTENT_MAX_BYTES) {
+        // `permit_empty` lets an empty array or `false` through: a description is a string or nothing
+        if (isset($data['content']) && !is_string($data['content'])) {
+            $errors['content'] = lang('Places.contentTooLong', [self::CONTENT_MAX]);
+        } elseif (isset($data['content']) && strlen($data['content']) > self::CONTENT_MAX_BYTES) {
             $errors['content'] = lang('Places.contentTooLong', [self::CONTENT_MAX]);
         }
 

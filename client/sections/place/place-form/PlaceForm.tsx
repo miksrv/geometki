@@ -233,8 +233,9 @@ export const PlaceForm: React.FC<PlaceFormProps> = ({
     )
 
     // A title or a description saved before the limits stays as it is until it is changed:
-    // an edit of the category must not stumble over an old short title
-    const initial = toFormValues(values)
+    // an edit of the category must not stumble over an old short title. A new place has nothing
+    // saved: a prefilled one (an OSM candidate's name) is checked as typed
+    const initial = toFormValues(placeId ? values : undefined)
 
     const validateTitle = (value: string) => {
         const title = value.trim()
