@@ -10,6 +10,7 @@ use App\Libraries\LevelsLibrary;
 use App\Libraries\PhotoLibrary;
 use App\Libraries\PlaceCoverLibrary;
 use App\Libraries\PlaceFormatterLibrary;
+use App\Libraries\PlaceInput;
 use App\Libraries\PlacesContent;
 use App\Libraries\AchievementsLibrary;
 use App\Libraries\ActivityRemoval;
@@ -355,28 +356,25 @@ class Places extends ResourceController
         }
 
         $locale = $this->request->getLocale();
-        $input  = $this->request->getJSON();
-        $rules  = [
-            'title'    => 'required|min_length[8]|max_length[200]',
-            'category' => 'required|in_list[' . implode(',', config('Categories')->names) . ']',
-            'lat'      => 'numeric|min_length[3]',
-            'lon'      => 'numeric|min_length[3]',
-        ];
+        $input  = $this->readPlaceInput(true);
 
-        if (!$this->validateData((array) $input, $rules)) {
-            return $this->failValidationErrors($this->validator->getErrors());
+        if ($input instanceof ResponseInterface) {
+            return $input;
         }
 
         helper('slug');
 
         try {
-            $placeTitle   = isset($input->title) ? strip_tags(html_entity_decode($input->title)) : null;
-            $placeContent = isset($input->content) ? strip_tags(html_entity_decode($input->content)) : null;
+            $placeTitle   = $input['title'];
+            $placeContent = $input['content'] ?? null;
+            $lat          = round((float) $input['lat'], 6);
+            $lon          = round((float) $input['lon'], 6);
+            $category     = $input['category'];
 
             $existingPlace = $this->model->findDuplicate(
                 $this->session->user?->id,
-                $input->lat,
-                $input->lon
+                $lat,
+                $lon
             );
 
             if ($existingPlace) {
@@ -386,14 +384,14 @@ class Places extends ResourceController
             $geocoder  = new Geocoder();
             $place     = new \App\Entities\PlaceEntity();
 
-            if (!$geocoder->coordinates($input->lat, $input->lon)) {
+            if (!$geocoder->coordinates($lat, $lon)) {
                 return $this->failValidationErrors(lang('Places.createFailError'));
             }
 
-            $place->lat         = $input->lat;
-            $place->lon         = $input->lon;
+            $place->lat         = $lat;
+            $place->lon         = $lon;
             $place->user_id     = $this->session->user?->id;
-            $place->category    = $input->category;
+            $place->category    = $category;
             $place->slug        = generatePlaceSlug($placeTitle);
             $place->address_en  = $geocoder->addressEn;
             $place->address_ru  = $geocoder->addressRu;
@@ -436,26 +434,26 @@ class Places extends ResourceController
             $activity = new ActivityLibrary();
             $activity->place($newPlaceId);
 
-            if (!empty($input->photos)) {
-                $this->savePhotos($input->photos, $newPlaceId, $place, $content);
+            if (!empty($input['photos'])) {
+                $this->savePhotos($input['photos'], $newPlaceId, $place, $content);
             }
 
             // Created from an OSM candidate: the same link an admin sets by hand, hides it from the map.
             // Only a similar place takes it, otherwise the candidate stays on the map. The author
             // opened a white spot: MODIFIER_SPOT on top of the place
             $candidates = new OsmCandidatesModel();
-            $spotOpened = !empty($input->candidate) && is_string($input->candidate) && $candidates->linkToNewPlace(
-                $input->candidate,
+            $spotOpened = !empty($input['candidate']) && $candidates->linkToNewPlace(
+                $input['candidate'],
                 $newPlaceId,
                 $this->session->user?->id,
-                (float) $input->lat,
-                (float) $input->lon,
-                (string) $input->category,
+                $lat,
+                $lon,
+                $category,
                 [$placeTitle]
             );
 
             // Any other candidate the new place is a duplicate of is linked to it, so it is no white spot
-            $candidates->linkDuplicatesAround((float) $input->lat, (float) $input->lon);
+            $candidates->linkDuplicatesAround($lat, $lon);
 
             $db->transComplete();
 
@@ -504,19 +502,13 @@ class Places extends ResourceController
             return $this->failUnauthorized();
         }
 
-        $input  = $this->request->getJSON();
-        $locale = $input?->locale ?? $this->request->getLocale();
-        $rules  = [
-            'locale'   => 'if_exist|in_list[' . implode(',', config('App')->supportedLocales) . ']',
-            'title'    => 'if_exist|required|min_length[8]|max_length[200]',
-            'category' => 'if_exist|required|in_list[' . implode(',', config('Categories')->names) . ']',
-            'lat'      => 'if_exist|numeric|min_length[3]',
-            'lon'      => 'if_exist|numeric|min_length[3]',
-        ];
+        $input = $this->readPlaceInput(false);
 
-        if (!$this->validateData((array) $input, $rules)) {
-            return $this->failValidationErrors($this->validator->getErrors());
+        if ($input instanceof ResponseInterface) {
+            return $input;
         }
+
+        $locale = $input['locale'] ?? $this->request->getLocale();
 
         helper('slug');
 
@@ -534,8 +526,8 @@ class Places extends ResourceController
             // The text being edited is the one in $locale only: never the fallback in another locale
             $currentText = array_values(array_filter($placeTexts, static fn($text) => $text->locale === $locale))[0] ?? null;
 
-            $updatedContent = isset($input->content) ? strip_tags(html_entity_decode($input->content)) : null;
-            $updatedTitle   = isset($input->title) ? strip_tags(html_entity_decode($input->title)) : null;
+            $updatedContent = $input['content'] ?? null;
+            $updatedTitle   = $input['title'] ?? null;
 
             // A new translation has nothing to keep: what is left out would stay empty
             if (!$currentText && ($updatedContent || $updatedTitle)) {
@@ -584,8 +576,8 @@ class Places extends ResourceController
             $hasChanges = false;
             $moved      = false;
 
-            $lat = isset($input->lat) ? round($input->lat, 6) : $placeData->lat;
-            $lon = isset($input->lon) ? round($input->lon, 6) : $placeData->lon;
+            $lat = isset($input['lat']) ? round((float) $input['lat'], 6) : $placeData->lat;
+            $lon = isset($input['lon']) ? round((float) $input['lon'], 6) : $placeData->lon;
 
             // Check and update coordinates, address and location
             if ($lat !== $placeData->lat || $lon !== $placeData->lon) {
@@ -618,8 +610,8 @@ class Places extends ResourceController
             }
 
             // Change category
-            if (isset($input->category)) {
-                $place->category = $input->category;
+            if (isset($input['category'])) {
+                $place->category = $input['category'];
                 $hasChanges = true;
                 $shouldRecordActivity = true;
             }
@@ -835,6 +827,32 @@ class Places extends ResourceController
             log_message('error', '{exception}', ['exception' => $e]);
             return $this->failServerError(lang('Places.createTransactionError'));
         }
+    }
+
+    /**
+     * The body of the place form, cleaned and checked (PlaceInput): the data, or the 400 to
+     * answer with every field's error at once
+     *
+     * @return array<string, mixed>|ResponseInterface
+     */
+    private function readPlaceInput(bool $create): array|ResponseInterface
+    {
+        try {
+            $data = PlaceInput::sanitize($this->request->getJSON());
+        } catch (Throwable) {
+            return $this->failValidationErrors(lang('Places.createFailError'));
+        }
+
+        $rules = PlaceInput::rules($create);
+
+        if (!$create) {
+            $rules['locale'] = 'if_exist|string|in_list[' . implode(',', config('App')->supportedLocales) . ']';
+        }
+
+        $valid  = $this->validateData($data, $rules, PlaceInput::messages());
+        $errors = array_merge($valid ? [] : $this->validator->getErrors(), PlaceInput::errors($data, $create));
+
+        return $errors ? $this->failValidationErrors($errors) : $data;
     }
 
     /**

@@ -11,6 +11,10 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 
 ## Improvements
 
+- Places: no rate limit on `POST /places`, `PATCH /places/:id` and the photo uploads, so one signed-in account can flood the site with places, edits and files; add a per-user limit (an IP one shares a bucket behind a proxy while `App::$proxyIPs` is empty, and `ThrottleFilter` keys by IP only, one bucket for all its routes).
+- Places: an edit cannot clear a description (`Places::update()` reads an empty `content` as "not given" and keeps the old text), yet the form saves without an error; tell the user or allow clearing.
+- Places: a description may embed images from any site (`![](https://…)` in markdown), which loads a third-party URL for every visitor; allow images only from our and Wikimedia hosts, or render them as links.
+- Places: `POST /places` and `PATCH /places/:id` have no endpoint tests (auth, validation answers, the transaction); only `PlaceInput` is covered by unit tests.
 - Places: `GET /places?search=` with 1–3 characters takes the 100 most recently updated matches (`PlacesContent::SHORT_TERM_LIMIT`) before the other filters (category, bounds, distance sort), so a filtered short search may miss places; move the short search into the list query.
 - Push: quiet hours use only the time zone of the user's most recently updated device; a user with devices in different time zones may get a push at night on another one.
 - Achievements: without the hourly `achievements:evaluate`, a reputation achievement (reputation grows from other people's ratings) arrives only with the user's next own action; and every place / photo / rating / comment now also evaluates the experience, level, reputation, active days and streak metrics (`AchievementsLibrary::ALWAYS_METRICS`), `login_streak` reading all the user's activity days. Watch the cost; if it grows, cache the streak or run `achievements:evaluate` for the users active in the last hour.
