@@ -963,7 +963,7 @@ class Places extends ResourceController
     protected function makeListFilters(PlacesModel $placesModel, array $placeIds = []): PlacesModel
     {
         $orderDefault  = 'DESC';
-        $sortingFields = ['views', 'views_week', 'trending', 'recommended', 'rating', 'comments', 'bookmarks', 'category', 'distance', 'created_at', 'updated_at'];
+        $sortingFields = ['views', 'views_week', 'trending', 'recommended', 'visited', 'rating', 'comments', 'bookmarks', 'category', 'distance', 'created_at', 'updated_at'];
         $orderFields   = ['ASC', 'DESC'];
 
         $sort     = $this->request->getGet('sort', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -1045,8 +1045,9 @@ class Places extends ResourceController
             );
         }
 
-        // The visitor's own "not been there yet" view: only a signed-in visitor has visits
-        if ($this->request->getGet('notVisited') && $this->session->isAuth && $this->session->user) {
+        // The visitor's own "not been there yet" view: only a signed-in visitor has visits. Not with
+        // "Посещённые" (`sort=visited`): together they would always find nothing
+        if ($this->request->getGet('notVisited') && $sort !== 'visited' && $this->session->isAuth && $this->session->user) {
             $placesModel->where(
                 'NOT EXISTS (SELECT 1 FROM users_visited_places uvp WHERE uvp.place_id = places.id AND uvp.user_id = '
                 . db_connect()->escape((string) $this->session->user->id) . ')',
@@ -1076,6 +1077,13 @@ class Places extends ResourceController
                     $placesModel->applyRecommendationSort((string) $this->session->user->id);
                 } else {
                     // Unauthenticated fallback: use trending score
+                    $placesModel->orderBy('places.trending_score', 'DESC');
+                }
+            } elseif ($sort === 'visited') {
+                if ($this->session->isAuth && $this->session->user) {
+                    $placesModel->applyVisitedSort((string) $this->session->user->id);
+                } else {
+                    // A guest has no visits: the shared link shows what is popular instead
                     $placesModel->orderBy('places.trending_score', 'DESC');
                 }
             } else {

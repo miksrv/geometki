@@ -377,6 +377,29 @@ class PlacesModel extends ApplicationBaseModel
     }
 
     /**
+     * The signed-in visitor's own visited places ("Посещённые"): only the places they checked in
+     * at, the latest visit first. An inner join, so it filters as well as sorts (the count too).
+     *
+     * Returns $this for method chaining.
+     */
+    public function applyVisitedSort(string $userId): static
+    {
+        $escapedUserId = \Config\Database::connect()->escape($userId);
+
+        $this->join(
+            "(SELECT place_id, MAX(visited_at) AS last_visit
+              FROM users_visited_places
+              WHERE user_id = {$escapedUserId}
+              GROUP BY place_id) AS uvl",
+            'uvl.place_id = places.id',
+            'inner'
+        );
+        $this->orderBy('uvl.last_visit DESC, places.id DESC', '', false);
+
+        return $this;
+    }
+
+    /**
      * Apply the personalised recommendation score join for a given user.
      *
      * Scoring weights: category affinity 0.3, feature affinity 0.5 ("can swim", "can camp"…:
