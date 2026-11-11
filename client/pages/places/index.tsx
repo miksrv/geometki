@@ -358,7 +358,9 @@ export const getServerSideProps = wrapper.getServerSideProps(
                     ? defaultSort
                     : querySort || defaultSort
             const order = (context.query.order as ApiType.SortOrdersType) || DEFAULT_ORDER
-            const notVisited = !!context.query.notVisited && !!cookies[AUTH_COOKIES.TOKEN]
+            // "Скрыть посещённые" means nothing with "Посещённые": an old link with both drops it
+            const notVisited =
+                !!context.query.notVisited && !!cookies[AUTH_COOKIES.TOKEN] && sort !== ApiType.SortFields.Visited
 
             hydrateAuthFromCookies(store, cookies)
 
