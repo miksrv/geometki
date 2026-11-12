@@ -11,7 +11,8 @@ export interface SortPreset {
 /**
  * The sorts of the listing as ready answers ("Новые", "Лучший рейтинг"): each one has its
  * natural direction (most first, the distance — nearest first), so there is no order control. Old URLs with `?order=` still
- * work, the panel just never sets one. "Для вас" is for signed-in visitors only.
+ * work, the panel just never sets one. "Для вас" and "Посещённые" (the visitor's own visited
+ * places, the latest visit first: it filters as well) are for signed-in visitors only.
  */
 export const getSortPresets = (t: TFunction, isAuth: boolean): SortPreset[] =>
     (
@@ -26,6 +27,13 @@ export const getSortPresets = (t: TFunction, isAuth: boolean): SortPreset[] =>
                       caption: t('sort-preset-recommended-caption', 'По вашим интересам'),
                       key: ApiType.SortFields.Recommended,
                       label: t('sort-preset-recommended', 'Для вас')
+                  }
+                : null,
+            isAuth
+                ? {
+                      caption: t('sort-preset-visited-caption', 'Где вы отметились, сначала последние'),
+                      key: ApiType.SortFields.Visited,
+                      label: t('sort-preset-visited', 'Посещённые')
                   }
                 : null,
             {

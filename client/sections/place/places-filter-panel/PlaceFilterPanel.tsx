@@ -113,7 +113,8 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
             return
         }
 
-        go({ sort })
+        // "Посещённые" and "Скрыть посещённые" together would find nothing
+        go(sort === ApiType.SortFields.Visited ? { notVisited: false, sort } : { sort })
     }
 
     const locationValue =
@@ -183,7 +184,7 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                         )}
                     </FilterPopout>
 
-                    {isAuth && (
+                    {isAuth && filter.sort !== ApiType.SortFields.Visited && (
                         <Switch
                             label={t('filter-not-visited', 'Скрыть посещённые')}
                             checked={filter.notVisited}

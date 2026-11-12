@@ -1,11 +1,12 @@
 .visitors
     display: flex
-    align-items: center
-    gap: var(--space-3)
+    flex-direction: column
+    gap: var(--space-1)
     min-width: 0
 
     p
         margin: 0
+        min-width: 0
         color: var(--text-color-secondary)
         font-size: var(--font-size-secondary)
 
@@ -13,16 +14,17 @@
         color: var(--text-color-primary)
         font-weight: var(--font-weight-medium)
 
-.text
-    flex: 1
-    min-width: 0
+// The avatars and "N человек были здесь" on one line, centred on each other
+.summary
     display: flex
-    flex-direction: column
-    gap: var(--space-1)
+    align-items: center
+    gap: var(--space-2)
+    min-width: 0
 
 // Overlapping avatars with a ring of the card colour between them
 .faces
     display: flex
+    align-items: center
     flex-shrink: 0
 
     & > *
@@ -32,3 +34,8 @@
 
         &:first-child
             margin-left: 0
+
+    // A block image fills its round box exactly: an inline one sits on the text baseline and
+    // would ride above the line it is centred on
+    img
+        display: block

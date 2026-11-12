@@ -16,3 +16,4 @@ Specs for open features. Shipped ones are removed; their history is in `CHANGELO
 - [22 — XP Snackbar & Notification Groups](./22-xp-snackbar-notifications.md)
 - [23 — Map Tools from nakarte.me](./23-map-tools-from-nakarte.md)
 - [25 — Visits and Exploration](./25-visits-and-exploration.md) — exploration per location (%, top explorers), the user page map, the admin linking tool
+- [26 — The Game: Seasons and Routes](./26-game-seasons-and-routes.md) — the concept: confirmed visits, automatic seasons, hand-made routes, exploration by added places

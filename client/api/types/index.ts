@@ -79,7 +79,8 @@ export const SortFields = {
     Views: 'views',
     ViewsWeek: 'views_week',
     Trending: 'trending',
-    Recommended: 'recommended'
+    Recommended: 'recommended',
+    Visited: 'visited'
 } as const
 
 export type SortFieldsType = (typeof SortFields)[keyof typeof SortFields]

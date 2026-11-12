@@ -76,4 +76,14 @@ describe('filterToListRequest', () => {
             region: 56
         })
     })
+
+    it('counts "Посещённые" with its sort: it filters as well', () => {
+        expect(filterToListRequest({ ...base, location: region, sort: 'visited' })).toStrictEqual({
+            category: undefined,
+            notVisited: undefined,
+            region: 56,
+            sort: 'visited'
+        })
+        expect(filterToListRequest({ ...base, location: region })).not.toHaveProperty('sort')
+    })
 })

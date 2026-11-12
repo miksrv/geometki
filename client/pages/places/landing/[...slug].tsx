@@ -567,9 +567,16 @@ export const getServerSideProps = wrapper.getServerSideProps(
             const lon = parseFloat(context.query.lon as string) || null
             const distanceOrigin = getDistanceOrigin(lat, lon, cookies)
             const defaultSort = cookies[AUTH_COOKIES.TOKEN] ? ApiType.SortFields.Recommended : DEFAULT_SORT
-            const sort = (context.query.sort as ApiType.SortFieldsType) || defaultSort
+            const querySort = context.query.sort as ApiType.SortFieldsType | undefined
+            // "Посещённые" are the visitor's own: a guest's link opens the default list
+            const sort =
+                querySort === ApiType.SortFields.Visited && !cookies[AUTH_COOKIES.TOKEN]
+                    ? defaultSort
+                    : querySort || defaultSort
             const order = (context.query.order as ApiType.SortOrdersType) || DEFAULT_ORDER
-            const notVisited = !!context.query.notVisited && !!cookies[AUTH_COOKIES.TOKEN]
+            // "Скрыть посещённые" means nothing with "Посещённые": an old link with both drops it
+            const notVisited =
+                !!context.query.notVisited && !!cookies[AUTH_COOKIES.TOKEN] && sort !== ApiType.SortFields.Visited
             const rawQueryCategory = (context.query.category as string) || ''
             const queryCategoriesFromUrl = rawQueryCategory
                 ? Array.from(

@@ -15,9 +15,9 @@ interface PlaceVisitorsProps {
 }
 
 /**
- * Who has been here, in the "Где это" card: a row of overlapping avatars of the latest visitors
- * and "N человек были здесь", under it the day of the last visit and the number of visits; or one
- * quiet line while nobody has checked in. The "Я здесь был(а)" button follows it in the card.
+ * Who has been here, in the "Где это" card: overlapping avatars of the latest visitors and
+ * "N человек были здесь" on one line, under it on the full width the day of the last visit and
+ * the number of visits; or one quiet line while nobody has checked in. The "Я здесь был(а)" button follows it in the card.
  * The query is prefetched with the place page (`loadPlacePage`).
  */
 export const PlaceVisitors: React.FC<PlaceVisitorsProps> = ({ placeId }) => {
@@ -43,28 +43,28 @@ export const PlaceVisitors: React.FC<PlaceVisitorsProps> = ({ placeId }) => {
 
     return (
         <div className={styles.visitors}>
-            {!!visitors?.length && (
-                <div className={styles.faces}>
-                    {visitors.map((user) => (
-                        <UserAvatar
-                            key={user.id}
-                            user={user}
-                            size={'small'}
-                            hideOnlineIcon={true}
-                        />
-                    ))}
-                </div>
-            )}
-            <div className={styles.text}>
+            <div className={styles.summary}>
+                {!!visitors?.length && (
+                    <div className={styles.faces}>
+                        {visitors.map((user) => (
+                            <UserAvatar
+                                key={user.id}
+                                user={user}
+                                size={'small'}
+                                hideOnlineIcon={true}
+                            />
+                        ))}
+                    </div>
+                )}
                 <p>
                     <strong>{t('people-count', { count: people, defaultValue: '{{count}} человек' })}</strong>{' '}
                     {t('visited-were-here', { count: people, defaultValue: 'были здесь' })}
                 </p>
-                <p>
-                    {data?.last && `${t('visit-last', { date: formatPlainDate(data.last) })} · `}
-                    {t('visits-count', { count })}
-                </p>
             </div>
+            <p>
+                {data?.last && `${t('visit-last', { date: formatPlainDate(data.last) })} · `}
+                {t('visits-count', { count })}
+            </p>
         </div>
     )
 }

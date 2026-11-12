@@ -527,7 +527,8 @@ The one card of a person. A person is not a picture, so unlike a place or a coll
 card has no cover: the avatar leads, on a `--surface-1` card (`--container-shadow`,
 `--radius-xl`, `--shadow-md` on hover). The name link is stretched over the whole card (one
 tab stop, the card opens the profile); the covers and the counts sit above it and lead to
-the profile tabs.
+the profile tabs. Hovering the tile lifts it by the shadow only: the name keeps its colour and
+gets no underline, only the counts react to the pointer.
 
 | Variant          | Use                                         | Parts                                                                                          |
 | ---------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------- |

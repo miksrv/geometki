@@ -40,7 +40,9 @@ export const describeFilter = (t: TFunction, filter: PlacesFilterState): string 
 export const filterToListRequest = (filter: PlacesFilterState): ApiType.Places.ListRequest => ({
     category: filter.categories.length ? filter.categories.join(',') : undefined,
     [filter.location?.type ?? 'locality']: filter.location?.id,
-    notVisited: filter.notVisited ? 1 : undefined
+    notVisited: filter.notVisited ? 1 : undefined,
+    // "Посещённые" is a sort that filters: the count depends on it
+    ...(filter.sort === ApiType.SortFields.Visited ? { sort: filter.sort } : {})
 })
 
 /** The filter state with a change applied (`location: null` clears it) */

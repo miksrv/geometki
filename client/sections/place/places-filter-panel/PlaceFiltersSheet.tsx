@@ -52,7 +52,11 @@ export const PlaceFiltersSheet: React.FC<PlaceFiltersSheetProps> = ({
         }
     }, [open])
 
-    const changed = draft.categories.join(',') !== filter.categories.join(',') || draft.notVisited !== filter.notVisited
+    const draftVisited = draft.sort === ApiType.SortFields.Visited
+    const changed =
+        draft.categories.join(',') !== filter.categories.join(',') ||
+        draft.notVisited !== filter.notVisited ||
+        draftVisited !== (filter.sort === ApiType.SortFields.Visited)
 
     useEffect(() => {
         if (!open || !changed) {
@@ -65,7 +69,7 @@ export const PlaceFiltersSheet: React.FC<PlaceFiltersSheetProps> = ({
         )
 
         return () => clearTimeout(timer)
-    }, [open, changed, draft.categories.join(','), draft.notVisited])
+    }, [open, changed, draft.categories.join(','), draft.notVisited, draftVisited])
 
     const total = changed ? (counted?.count ?? count) : count
 
@@ -83,7 +87,12 @@ export const PlaceFiltersSheet: React.FC<PlaceFiltersSheetProps> = ({
             return
         }
 
-        setDraft((prev) => ({ ...prev, sort }))
+        // "Посещённые" and "Скрыть посещённые" together would find nothing
+        setDraft((prev) => ({
+            ...prev,
+            notVisited: sort === ApiType.SortFields.Visited ? false : prev.notVisited,
+            sort
+        }))
     }
 
     return (
@@ -101,7 +110,7 @@ export const PlaceFiltersSheet: React.FC<PlaceFiltersSheetProps> = ({
             onApply={() => onApply(draft)}
             onClose={onClose}
         >
-            {isAuth && (
+            {isAuth && !draftVisited && (
                 <Switch
                     variant={'row'}
                     className={styles.sheetSwitch}

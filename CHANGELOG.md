@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.19.3
+
+A "Visited" sort for your own places and small polish.
+
+### Patch Changes
+
+- Places: "Visited" sort shows the places where you checked in, the latest first
+- Place page: visitors' avatars and "N people were here" on one line
+- People cards: the name no longer turns into a link on hover
+
 ## 1.19.2
 
 Redesigned settings and place form, one photo upload area, a cookie notice and a tidier place page.
