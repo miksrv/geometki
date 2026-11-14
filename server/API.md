@@ -1,6 +1,6 @@
 # Geometki API Reference
 
-The Geometki REST API is a CodeIgniter 4 PHP backend that powers the Geometki geospatial POI platform. All responses are JSON. The base URL in production is `https://api.geometki.com/` (append route paths directly, e.g. `https://api.geometki.com/places`). For local development the server runs on `http://localhost:8080/`.
+The Geometki REST API is a CodeIgniter 4 PHP backend that powers the Geometki geospatial POI platform. All responses are JSON. The base URL in production is `https://api.geometki.com/` (append quest paths directly, e.g. `https://api.geometki.com/places`). For local development the server runs on `http://localhost:8080/`.
 
 ---
 
@@ -362,7 +362,7 @@ List places with optional filtering, sorting, and pagination.
 }
 ```
 
-Note: for a signed-in visitor every item also carries `bookmarked` and `visited` (booleans: a bookmark, at least one visit). `distance` (km) is only present when `lat`/`lon` query parameters are provided. `cover` is only present when a cover image exists. `address` sub-fields are only present when geocoding data is available; each sub-field's `slug` is the location's path segment for the landing pages (see `GET /locations/resolve`) and is `null` until a slug has been assigned.
+Note: for a signed-in visitor every item also carries `visited` (a boolean: at least one visit). `distance` (km) is only present when `lat`/`lon` query parameters are provided. `cover` is only present when a cover image exists. `address` sub-fields are only present when geocoding data is available; each sub-field's `slug` is the location's path segment for the landing pages (see `GET /locations/resolve`) and is `null` until a slug has been assigned.
 
 ---
 
@@ -1577,6 +1577,8 @@ Stories of what people do on the site: the `activity` log grouped into the `feed
 
 A page of stories, the most recently updated first. **Auth required:** No
 
+With the game open to the requester the places of a `visit` story carry `points` (the client sums them in the story's head): the season points that visit brought (it counted the place in a season).
+
 **Query parameters:**
 
 | Name | Type | Required | Description |
@@ -1640,20 +1642,6 @@ Check whether the authenticated user has bookmarked a specific place.
 **Error responses:**
 
 - `400` — No `placeId` provided
-
----
-
-#### `GET /bookmarks/places`
-
-The IDs of all places in the authenticated user's bookmarks: the place cards of any list show their bookmark from it.
-
-**Auth required:** No (returns `{ "items": [] }` if not authenticated)
-
-**Response:**
-
-```json
-{ "items": ["65a1b2c3d4e5f6a", "65a1b2c3d4e5f6b"] }
-```
 
 ---
 
@@ -1773,9 +1761,12 @@ The signed-in user's own visits of a place and the questions the place's categor
     { "key": "walk", "values": ["short", "medium", "long"] },
     { "key": "can", "features": ["swim", "camp", "kids", "winter", "drink"] }
   ],
-  "repeatDays": 7
+  "repeatDays": 7,
+  "game": { "season": "2026-cold", "points": 30, "position": 2, "photoBonus": 5, "radius": 500, "earned": null, "way": null }
 }
 ```
+
+`game` — only for those the game is open to (see Game), `null` outside a season that takes confirmations: what "I am here" at the place gives the visitor now (`points`; a photo adds `photoBonus`), how near "near" is (`radius`, metres), and their own score of the season there (`earned`, `way`: `photo` or `geo`) once the place is counted. A visit confirmed in the game carries `confirmed: "photo" | "geo"`.
 
 `repeatDays`: a new visit is made no sooner than this many days after the latest one; the latest visit younger than this is the one a tap cancels (the days are the visitor's, `visitedAt`).
 
@@ -1793,6 +1784,10 @@ Check in at a place. **Auth required:** Yes
 |-------|------|----------|-------------|
 | place | string | Yes | Place ID |
 | visitedAt | string | No | The visitor's day, `YYYY-MM-DD`; today (server) by default. Must be a real date within a day of the server's today: up to two days back, one day forward |
+| lat, lon | number | No | The game: the visitor's position, the browser's answer to the tap. Near the place the check-in is a confirmed one and counts the place in the season. Compared with the place and dropped; ignored while the game is closed to the user |
+| accuracy | number | No | Metres, as the browser reports it |
+
+With the game open to the user the answer has `game: { confirmed, points, far? }`: whether this check-in counted the place (the position was near), the season points it added (0 when the place was counted already), and how far the place is (`"2,4 км"`) when a position was sent and is not near. Far away or without a position the check-in is a plain visit, never an error. A visit a photo made quietly (shot at the place within the season, no check-in of the person's own: it only carries the score, is in no list and not in `GET /visits/me`) is shown by the person's check-in in its week and answered with `isNew: true`.
 
 **Response:** `201 Created` with the visit and `isNew: true`, `ordinal` (which visit of the place this is, counting everybody's) and `firstThisYear` (no other visit of the place this year up to it). `200 OK` with the existing visit and `isNew: false` when the user already has a visit of that place less than `repeatDays` (7) days from that day either way (idempotent within the week; also for two simultaneous taps and a resend from the offline queue). The photos the user uploaded to the place that day before the tap become the visit's. The place's author is notified; a bare visit gives no experience.
 
@@ -1828,6 +1823,134 @@ Delete a visit: its `visit` activity goes, the feed, experience and "now" answer
 **Response:** `{ "id": "<visit id>" }`
 
 **Error responses:** `401`, `403` — neither the author nor an admin, `404` — not found.
+
+---
+
+### Game
+
+The game (`features/26-game-seasons-and-quests.md`): a visit confirmed by a photo shot at the place or by "I am here" gives season points, once a season for a place; quests are walked point by point. While `game.open` is off in `.env` (`Config\Game::$open`) every endpoint below answers **404 to everyone but administrators**, the awards of the game (the `game` category, or counting `places_confirmed` / `quests_walked`) are left out of the achievements endpoints and `GET /visits/me` carries no `game`. None of it is in the guest cache: every answer depends on the visitor.
+
+A **season** is one of the two halves of the calendar: warm (`2027-warm`: 1 April — 30 September) or cold, named by the year it starts in (`2026-cold`: 1 October 2026 — 31 March 2027). It takes confirmations until `graceDays` after its end, then `php spark game:tick` closes it and freezes its table.
+
+The points of a confirmed place: `round(base × category × order) + photo bonus + white spot bonus` (`Config\Game`; `GET /game` sends every number as `rules`).
+
+#### `GET /game`
+
+The section: the current season, the public table of points, the visitor's own line, the last closed season (`seasons`, a list of one). **Auth required:** No (the game must be open, or the visitor an administrator)
+
+```json
+{
+  "season": { "id": "2026-cold", "key": "cold", "year": 2026, "from": "2026-10-01", "to": "2027-03-31", "daysLeft": 138, "lastDay": "2027-04-07", "closed": false, "current": true },
+  "rules": {
+    "base": 10,
+    "categories": { "memorial": 1, "manor": 1.5, "cave": 2 },
+    "order": [{ "upTo": 1, "factor": 2 }, { "upTo": 5, "factor": 1.5 }],
+    "photoBonus": 5, "spotBonus": 10, "graceDays": 7,
+    "radius": 300, "radiuses": { "memorial": 200, "water": 3000 }
+  },
+  "awards": [{ "id": "…", "title": "…", "description": "…", "image": null, "tier": "none", "category": "exploration", "group": "…", "from": "2026-10-01", "to": "2026-10-31", "experience": 30, "earned": null, "progress": { "current": 1, "required": 3, "pct": 33.3 } }],
+  "totals": { "players": 10, "places": 31, "quests": 1 },
+  "me": { "place": 9, "points": 50, "places": 2, "quests": 0, "players": 10, "ahead": 20 },
+  "seasons": [{ "id": "2026-summer", "closed": true, "players": 4, "places": 12, "winners": [{ "place": 1, "points": 120, "places": 5, "quests": 0, "user": { "id": "…", "name": "…", "avatar": "…", "levelData": { "level": 7 } } }] }]
+}
+```
+
+`me` only for a signed-in visitor (`place` is null while they have no points). A season has no award of its own: `season.image` is its picture (null until the owner uploads one), and `awards` are the limited achievements (`type` = `seasonal`) whose dates lie within the season, with the visitor's `earned` and `progress`. `ahead` is the points to the player above.
+
+#### `GET /game/leaders`
+
+The rating of a season, overall or of a location. **Auth required:** No
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| season | string | No | Season id; the current one by default |
+| type | string | No | `country`, `region`, `district` or `locality`: only the places of that location count (the quests' bonuses are left out) |
+| id | integer | With `type` | The location's id |
+| limit | integer | No | Default 10, max 50 |
+| offset | integer | No | Default 0 |
+
+**Response:** `{ "items": [{ "place": 1, "points": 430, "places": 14, "quests": 0, "user": {…} }], "count": 10, "me": {…}, "locations": [{ "type": "region", "id": 81, "title": "Оренбургская область", "slug": "orenburgskaya-oblast", "players": 9, "points": 900 }] }`. `me` only when the visitor has points in this table; `locations` are the regions and towns the season is played in, the busiest first.
+
+#### `GET /game/seasons/:id`
+
+A season with its podium (`winners`, the first three), its `awards` and totals; a closed season reads its frozen table (`game_results`). 404 for a season nobody has met.
+
+#### `POST /game/seasons/:id/image`
+
+The picture of a season (multipart, field `image`; PNG or SVG up to 1 MB). **Administrators only.** `{ "id": "2026-cold", "image": "uploads/seasons/…" }`.
+
+#### `GET /game/places`
+
+The valuable places: what the visitor has not confirmed this season, the most points first. With `lat` / `lon` — of the 60 places nearest to that point, with `distance`. `limit` default 6, max 24.
+
+**Response:** `{ "items": [<place list item> + { "game": { "points": 40, "position": 1 } }], "count": 6 }`.
+
+#### `GET /game/recent`
+
+What is going on in the game: the latest confirmed places and walked quests of the current season (`limit` default 6, max 20), the hidden visits of an unfinished riddle quest left out. `{ "items": [{ "id": "…", "kind": "place" | "quest", "points": 40, "way": "geo" | "photo" | null, "created": {…}, "user": {…}, "place": { "…": "place list item" } }] }`; a `quest` item carries `quest: { id, title }` instead of `place`.
+
+#### `POST /game/confirm`
+
+"I am here": the position is compared with the place (the radius of its category, plus the reported accuracy up to 150 m) and dropped — nothing of it is stored. Near the place it checks the visitor in (the visit of the week, or a new one), confirms the visit and counts the place in the season. **Auth required:** Yes
+
+```json
+{ "place": "a1b2c3d4e5f6g", "lat": 51.7547, "lon": 55.1065, "accuracy": 20, "visitedAt": "2026-11-11" }
+```
+
+**Response `200`:** `{ "confirmed": true, "isNew": true, "points": 40, "total": 90, "season": "2026-cold", "visit": { "id": "…", "visitedAt": "2026-11-11" } }`. `points` is 0 when the place was counted this season already. **`400`** when the place is far (`messages.error` says how far), the position is missing or the day is out of the check-in window.
+
+A photo confirms a visit too, with no endpoint of its own: `POST /photos/upload/:id` (and the photos of a new place) reads the shot moment and the GPS position from the EXIF; a photo shot near the place within a season that still takes confirmations confirms the uploader's visit of its shot day (making one when there is none) and adds the photo bonus. The upload answers `game: { points, total }` then, `null` otherwise.
+
+#### `GET /game/exploration`
+
+`?user=:id` (the visitor by default): how much of their regions and towns a person has explored — the places they have a visit at (a mark or a photo; the places they added do not count: that is a discovery), of all the places there — and, first, `world`: the same share of the whole map. Never reset. `{ "world": { "explored": 52, "total": 1480 }, "regions": [{ "type": "region", "id": 81, "title": "…", "slug": "…", "explored": 48, "total": 320 }], "localities": […] }`.
+
+#### `GET /game/users/:id`
+
+A person in the game, for their profile: their line of the current season (`place`, `points`, `places`, `quests`, `players`, `ahead`), `season`, `confirmed` (places of all time), `walked` (quests), `seasons` — the seasons they took part in, the latest first: `id`, `key`, `year`, `image`, `closed`, `points`, `places`, `place` (the season badges of a profile).
+
+#### Quests: `GET /game/quests`, `GET /game/quests/:id`
+
+A **quest** is an ordered list of the site's places, made by an administrator. It is no part of a season: walked once, whenever; its points are ordinary confirmed places (they count in the season), the quest itself gives experience (`bonus`, `MODIFIER_QUEST`) and no season points. `mode`: `open` (every point is seen, any order), `steps` (the first point is seen, confirming a point opens the next), `riddles` (a hint instead of the point). The list is paged (`limit` default 12, max 48, `offset`; `count` is the total) and sends the published quests (the drafts too for an administrator), each with the visitor's own `walk`: the ones they are walking first, the walked ones last, within that the nearest to `lat` / `lon` (by the first point) or the newest. `walk`: `todo` (not walked to the end — the game's lists), `active`, `done`; `user` — whose walks are meant (the visitor's by default): `?user=:id&walk=done` is a profile's walked quests.
+
+```json
+{
+  "id": "6fcb5e9416ad5", "title": "Космический Оренбург", "description": "…", "mode": "steps", "status": "published",
+  "length": 7155, "points": 4, "walked": 0, "bonus": 30, "location": "Оренбург",
+  "cover": { "full": "uploads/places/…/cover.jpg", "preview": "uploads/places/…/cover_preview.jpg" },
+  "walk": { "id": "…", "started": "2026-11-11 16:58:31", "finished": null, "confirmed": 2 }
+}
+```
+
+`length` is metres, the sum of the straight lines between the points. A riddle quest has no `cover`.
+
+`GET /game/quests/:id` adds `items` — the points as the visitor sees them —, `author` and `walkers` (who walked it to the end, the latest five):
+
+```json
+{ "id": "…", "position": 3, "state": "current", "place": { "…": "place list item" }, "value": 20, "hint": "…", "confirmedAt": null }
+```
+
+`state` is `done`, `current` (the next one of a step or riddle quest), `open` (any point of an open quest) or `locked`. **The place of a point is sent only once the mode shows it**: every point of an open quest, the reached ones of a step quest, the found ones of a riddle quest; a locked point is `{ id, position, state }` and nothing else. `hint` comes with the place, and with the current riddle. `?edit=1` (administrators): every point with `hintRu` / `hintEn`, and `titleRu`, `titleEn`, `descriptionRu`, `descriptionEn`.
+
+#### `POST /game/quests/:id/start`, `POST /game/quests/:id/confirm`
+
+`start` begins the visitor's walk — the only way a walk begins (from then on a photo of one of the quest's places counts as its point too); `confirm` without it is a `400`. **Auth required:** Yes
+
+`confirm` is "I am here" at a point: `{ "lat", "lon", "accuracy"?, "point"?, "visitedAt"? }`. An open quest takes `point`, or the nearest point still to confirm; a step or riddle quest takes the current one. Near it, the point is confirmed as an ordinary confirmed visit of its place.
+
+**Response `200`:** `{ "point": "…", "place": "…", "finished": false, "points": 30, "bonus": 0, "total": 80 }`; the last point finishes the walk (`finished: true`, `bonus` = the experience of a walked quest, once). **`400`** when the point is far — with the distance for an open or a step quest, without it for a riddle (it would be a hint) — or the quest is walked already.
+
+The visits of a riddle quest's points are hidden (`users_visited_places.hidden`: no `visit` event, not among the visitors of the place or in the person's lists) until the walk is over.
+
+#### `DELETE /game/quests/:id/walk`
+
+Gives up the visitor's walk begun and not finished: the walk and its confirmed points go, the quest is as before it was begun. The visits made on it stay with their season points; the hidden visits of a riddle quest stay hidden (shown, they would give the answers away) until the quest is begun again and walked to the end. Nothing else to take back: a walk gives experience and awards only at its end. **Auth required:** Yes
+
+**Response `204`.** **`404`** when the quest is not found or not begun, **`400`** when it is walked to the end (walked for good).
+
+#### `POST /game/quests`, `PATCH /game/quests/:id`, `DELETE /game/quests/:id`
+
+Administrators only. `{ "titleRu", "titleEn"?, "descriptionRu"?, "descriptionEn"?, "mode", "status": "draft" | "published", "points": [{ "place", "hintRu"?, "hintEn"? }] }` — 2 to 30 different places; a `PATCH` changes the fields sent, `points` replaces the list (a place that stays keeps the walkers' confirmations). `400` with `messages` by field (`titleRu`, `points`, `mode`).
 
 ---
 
@@ -2703,6 +2826,7 @@ Spark commands (`php spark <command>`), not accessible over HTTP:
 | `digest:weekly` | Queue weekly digest emails (cron, weekly; skips users who got one in the last 6 days unless `--force`). `notifications:send` sends them within the hosting limits — 500 an hour, 2000 a day; the rest wait in the queue (up to 6 days) |
 | `notifications:prune` | Delete toast-only and old read notifications (by hand, not scheduled) |
 | `sessions:prune` | Delete stale anonymous sessions that left nothing behind (by hand, not scheduled) |
+| `game:tick` | The game's clock: make sure the current season and its award exist, close the seasons whose grace days are over (their table is frozen in `game_results`). Cron, once a day |
 
 ---
 
