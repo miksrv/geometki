@@ -73,6 +73,13 @@ const nextConfig = {
         unoptimized: false
     },
     output: 'standalone',
+    // The Markdown texts of static pages (client/content, read at run time by
+    // utils/content.server.tsx) go into the standalone bundle with the pages that read them
+    outputFileTracingIncludes: {
+        '/about': ['./content/about.*.md'],
+        '/game/help': ['./content/game-help.*.md'],
+        '/rules': ['./content/rules.*.md']
+    },
     trailingSlash: false,
 
     transpilePackages: ['@uiw/react-md-editor', 'leaflet'],

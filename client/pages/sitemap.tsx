@@ -27,7 +27,7 @@ export const getServerSideProps = wrapper.getServerSideProps(
 
             // No profiles and no /users: the profile pages are noindex (`UserPage`), a sitemap entry
             // would only ask the crawler to fetch a page it must not index (SEO audit, 2026-10-23)
-            const staticPages = ['map', 'places', 'collections']
+            const staticPages = ['map', 'places', 'collections', 'about', 'rules']
 
             await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
 
