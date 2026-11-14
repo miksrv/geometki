@@ -3,17 +3,17 @@
 namespace App\Controllers;
 
 use App\Entities\VisitEntity;
-use App\Libraries\ActivityLibrary;
 use App\Libraries\ActivityRemoval;
 use App\Libraries\AvatarLibrary;
+use App\Libraries\GameLibrary;
 use App\Libraries\PlaceFormatterLibrary;
 use App\Libraries\PlacesContent;
+use App\Libraries\QuestsLibrary;
 use App\Libraries\SessionLibrary;
 use App\Libraries\VisitsLibrary;
 use App\Models\ActivityModel;
 use App\Models\PlacesModel;
 use App\Models\VisitsModel;
-use CodeIgniter\Database\Exceptions\DatabaseException;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use ReflectionException;
@@ -22,8 +22,9 @@ use Throwable;
 /**
  * Visits controller: the log of check-ins ("I was here").
  *
- * A visit is repeatable (one per user, place and day), asks no location and is made in one
- * tap; the photos its author uploads to the place that day are its (VisitsLibrary::photoVisit()),
+ * A visit is repeatable (one per user, place and day) and is made in one tap; with the game
+ * the tap also brings the visitor's position, compared with the place and never stored (a
+ * check-in on the spot counts the place in the season); the photos its author uploads to the place that day are its (VisitsLibrary::photoVisit()),
  * and it answers the one-tap questions of the place's category (Config\VisitQuestions).
  * The public lists are in the guest cache (`visits` group); `GET /visits/me` answers a guest
  * with nothing.
@@ -69,6 +70,15 @@ class Visits extends ResourceController
         [$limit, $offset] = $this->pagination();
 
         $model = $this->listQuery($placeId ?: null, $userId ?: null);
+
+        // A visit of a riddle quest's point is its author's secret until the walk is over
+        if (!$userId || $userId !== $this->session->user?->id) {
+            $model->where('users_visited_places.hidden', 0);
+        } else {
+            // A visit a photo made is no check-in of theirs yet
+            $model->where('users_visited_places.hidden !=', VisitsModel::HIDDEN_PHOTO);
+        }
+
         // No reset: a clone of the model shares its builder, the count must leave the filters for the page
         $count = $model->countAllResults(false);
         $rows  = $model
@@ -85,6 +95,7 @@ class Visits extends ResourceController
             $summary = (new VisitsModel())
                 ->select('COUNT(DISTINCT user_id) AS people, MAX(visited_at) AS last', false)
                 ->where('place_id', $placeId)
+                ->where('hidden', 0)
                 ->first();
 
             $answer['people']   = (int) ($summary->people ?? 0);
@@ -120,6 +131,7 @@ class Visits extends ResourceController
             ->select('users_visited_places.place_id, MAX(users_visited_places.visited_at) AS last', false)
             ->join('places', 'places.id = users_visited_places.place_id AND places.deleted_at IS NULL')
             ->where('users_visited_places.user_id', $userId)
+            ->where('users_visited_places.hidden <=', $userId === $this->session->user?->id ? 1 : 0)
             ->groupBy('users_visited_places.place_id')
             ->orderBy('last', 'DESC')
             ->findAll();
@@ -181,6 +193,8 @@ class Visits extends ResourceController
 
         $place = (new PlacesModel())->select('id, category')->find($placeId);
         $rows  = $this->listQuery($placeId, $this->session->user->id)
+            // A visit a photo made is not the visitor's check-in: the button is not pressed, nothing is asked
+            ->where('users_visited_places.hidden !=', VisitsModel::HIDDEN_PHOTO)
             ->orderBy('users_visited_places.visited_at', 'DESC')
             ->orderBy('users_visited_places.created_at', 'DESC')
             ->findAll();
@@ -188,13 +202,50 @@ class Visits extends ResourceController
         // The visit the questions are for: the latest one
         $current = $rows[0] ?? null;
 
-        return $this->respond([
+        $answer = [
             'items'     => $this->visits->format($rows, $this->request->getLocale()),
             'count'     => count($rows),
             'questions' => $place ? $this->visits->questionsFor($place->category, $place->id, $current?->id) : [],
             // The latest visit younger than this is the one a tap cancels
             'repeatDays' => VisitsModel::REPEAT_DAYS,
-        ]);
+        ];
+
+        // The game: what a confirmed visit of the place gives now
+        if ($place) {
+            $answer['game'] = $this->gameOf($place);
+        }
+
+        return $this->respond($answer);
+    }
+
+    /**
+     * The place in the game for the visitor: the points a confirmation gives now ("I am here";
+     * a photo adds its bonus), how near "near" is, and their own score of the season there.
+     *
+     * @return array<string, mixed>|null null outside a season that takes confirmations
+     */
+    private function gameOf(object $place): ?array
+    {
+        $game   = new GameLibrary();
+        $config = config(\Config\Game::class);
+        $season = $game->openSeason(date('Y-m-d'));
+
+        if (!$season) {
+            return null;
+        }
+
+        $value = $game->values([$place], $season, $this->session->user->id)[$place->id];
+
+        return [
+            'season'     => $season['id'],
+            'points'     => $value['points'],
+            'position'   => $value['position'],
+            'photoBonus' => $config->photoBonus,
+            'radius'     => $config->radiusOf($place->category),
+            // The visitor's score of the season at this place: counted once
+            'earned'     => $value['earned'],
+            'way'        => $value['way'],
+        ];
     }
 
     /**
@@ -264,14 +315,23 @@ class Visits extends ResourceController
     }
 
     /**
-     * Check in: creates the visit, or answers the one of that week (one per user and place in
-     * VisitsModel::REPEAT_DAYS days, so a resend from the offline queue cannot create a duplicate;
-     * the client turns a second tap in the week into cancelling the visit, DELETE).
+     * Check in, the one "I was here" of the site: creates the visit, or answers the one of that
+     * week (one per user and place in VisitsModel::REPEAT_DAYS days, so a resend from the offline
+     * queue cannot create a duplicate; the client turns a second tap in the week into cancelling
+     * the visit, DELETE).
      *
-     * POST /visits { place, visitedAt? } — auth required. `visitedAt` is the visitor's day,
-     * `Y-m-d`, within a day of the server's today (the time zones); today without it. 201 with
-     * the visit and `isNew: true`; 200 with the existing one. The photos the visitor uploaded to
-     * the place that day before the tap become the visit's (VisitsLibrary::adoptPhotos()).
+     * With the visitor's position (`lat`, `lon`, `accuracy?` — the browser's answer to the tap)
+     * a check-in near the place is a confirmed one: the place counts
+     * in the season (GameLibrary::confirm()). The position is compared with the place and
+     * dropped. Far from the place, or without a position, it is a plain visit — never an error.
+     *
+     * POST /visits { place, visitedAt?, lat?, lon?, accuracy? } — auth required. `visitedAt` is
+     * the visitor's day, `Y-m-d`, within a day of the server's today (the time zones); today
+     * without it. 201 with the visit and `isNew: true`; 200 with the existing one; with the game,
+     * `game: { confirmed, points, far? }` — whether this check-in counted the place, the season
+     * points it added, how far the place is when the position was not near. The photos the
+     * visitor uploaded to the place that day before the tap become the visit's
+     * (VisitsLibrary::adoptPhotos()).
      *
      * @throws ReflectionException
      *
@@ -289,56 +349,50 @@ class Visits extends ResourceController
             return $this->failValidationErrors(lang('Visits.missingPlaceId'));
         }
 
-        $day = $this->day($input->visitedAt ?? null);
+        $day = VisitsLibrary::day($input->visitedAt ?? null);
 
         if ($day === false) {
             return $this->failValidationErrors(lang('Visits.badDate'));
         }
 
-        $place = (new PlacesModel())->select('id, user_id')->find($input->place);
+        $place = (new PlacesModel())->select('id, user_id, category, lat, lon, created_at')->find($input->place);
 
         if (!$place) {
             return $this->failNotFound(lang('Visits.placeNotFound'));
         }
 
-        $model  = new VisitsModel();
         $userId = $this->session->user->id;
-        $visit  = $model->findWithinWindow($userId, $place->id, $day);
-
-        if ($visit) {
-            return $this->respond($this->answer($visit, false));
-        }
+        // The position is the visitor's answer to the tap: used for this comparison and dropped
+        $position = Game::position((array) $input);
+        $game     = ['confirmed' => false, 'points' => 0];
+        $near     = false;
 
         try {
-            $visit = new VisitEntity();
-            $visit->user_id    = $userId;
-            $visit->place_id   = $place->id;
-            $visit->visited_at = $day . ' 12:00:00';
+            if ($position) {
+                $library = new GameLibrary();
 
-            try {
-                $model->insert($visit);
-            } catch (DatabaseException $e) {
-                // Two taps at once: the unique key let the first one through, this one answers it
-                $visit = $model->findWithinWindow($userId, $place->id, $day);
+                [$near, $distance] = $library->isNear($place, $position['lat'], $position['lon'], $position['accuracy']);
 
-                if (!$visit) {
-                    throw $e;
+                if (!$near) {
+                    $game['far'] = Game::distanceText($distance, $this->request->getLocale());
                 }
-
-                return $this->respond($this->answer($visit, false));
             }
 
-            $visit->id = $model->getLastGeneratedId();
+            if ($position && $near) {
+                $result = $library->confirm($userId, $place, GameLibrary::WAY_GEO, $day);
 
-            // The place's author hears of it; the page shows the visit; no experience for a bare visit
-            (new ActivityLibrary())->owner($place->user_id)->visit($place->id, $visit->id);
+                (new QuestsLibrary())->placeConfirmed($userId, $place->id, $result['visit']->id);
 
-            // The photos uploaded before the tap that day are the visit's: a contribution
-            if ($this->visits->adoptPhotos($model->find($visit->id)) > 0) {
-                $this->visits->afterChange($userId, $place->id);
+                [$visit, $isNew] = [$result['visit'], $result['isNew']];
+                $game            = ['confirmed' => true, 'points' => $result['points']];
+            } else {
+                [$visit, $isNew] = $this->visits->checkIn($userId, $place, $day);
             }
 
-            return $this->respondCreated($this->answer($model->find($visit->id), true));
+            $answer         = $this->answer($visit, $isNew);
+            $answer['game'] = $game;
+
+            return $isNew ? $this->respondCreated($answer) : $this->respond($answer);
         } catch (Throwable $e) {
             log_message('error', '{exception}', ['exception' => $e]);
 
@@ -374,7 +428,10 @@ class Visits extends ResourceController
         }
 
         try {
-            $removal = ActivityRemoval::forVisit($visit->id);
+            $removal = ActivityRemoval::forVisit($visit->id)->by($this->session->user->id);
+
+            // The game: the season points of the visit go with it, while its season is open
+            (new GameLibrary())->visitDeleted($visit->id);
 
             (new ActivityModel())->where('visit_id', $visit->id)->delete();
             $model->delete($visit->id);
@@ -453,6 +510,7 @@ class Visits extends ResourceController
             ->select('users_visited_places.user_id, users.name, users.avatar, MAX(users_visited_places.visited_at) AS last', false)
             ->join('users', 'users.id = users_visited_places.user_id', 'left')
             ->where('users_visited_places.place_id', $placeId)
+            ->where('users_visited_places.hidden', 0)
             ->groupBy('users_visited_places.user_id, users.name, users.avatar')
             ->orderBy('last', 'DESC')
             ->findAll(self::VISITORS);
@@ -495,37 +553,5 @@ class Visits extends ResourceController
         $offset = abs((int) ($this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT) ?? 0));
 
         return [min($limit ?: self::LIMIT_DEFAULT, self::LIMIT_MAX), $offset];
-    }
-
-    /** How many days back a visit can be dated: yesterday for the visitor's time zone and a day of slack */
-    private const DAYS_BACK = 2;
-
-    /**
-     * The visit day: `Y-m-d`, a real date, up to DAYS_BACK days before the server's today and
-     * a day after it (the visitor's time zone and a day of slack), today without input. False when it is none of that. The
-     * window keeps the log honest: a visit is logged when it happens, and a back-dated one
-     * would farm the experience of a visit with a contribution (once per place and month).
-     */
-    private function day(mixed $input): string|false
-    {
-        if ($input === null || $input === '') {
-            return date('Y-m-d');
-        }
-
-        if (!is_string($input) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $input)) {
-            return false;
-        }
-
-        [$year, $month, $dayOfMonth] = array_map('intval', explode('-', $input));
-
-        if (
-            !checkdate($month, $dayOfMonth, $year)
-            || $input < date('Y-m-d', strtotime('-' . self::DAYS_BACK . ' days'))
-            || $input > date('Y-m-d', strtotime('+1 day'))
-        ) {
-            return false;
-        }
-
-        return $input;
     }
 }

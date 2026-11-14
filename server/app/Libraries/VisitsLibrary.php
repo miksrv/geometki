@@ -17,8 +17,9 @@ use Throwable;
  *
  * A bare visit gives no experience (without a location it would be a free farm). A visit
  * with a contribution — photos (the photos its author uploads to the place on the day of the
- * visit are linked to it, photoVisit()) or an answer to the questions (step 2,
- * Config\VisitQuestions, table visit_answers) — is worth MODIFIER_VISIT, at most once per
+ * visit are linked to it, photoVisit()), an answer to the questions (step 2,
+ * Config\VisitQuestions, table visit_answers) or a confirmation (the game: a photo shot at the
+ * place or "I am here", GameLibrary) — is worth MODIFIER_VISIT, at most once per
  * user, place and calendar month of the visit day: the experience is recounted from the log
  * (LevelsLibrary::experience()), never pushed, so a deleted photo or visit takes it back.
  */
@@ -39,12 +40,158 @@ class VisitsLibrary
             "SELECT COUNT(DISTINCT v.place_id, DATE_FORMAT(v.visited_at, '%Y-%m')) AS cnt
                FROM users_visited_places v
               WHERE v.user_id = ?
-                AND (EXISTS (SELECT 1 FROM photos p WHERE p.visit_id = v.id AND p.deleted_at IS NULL)
+                AND (v.confirmed IS NOT NULL
+                     OR EXISTS (SELECT 1 FROM photos p WHERE p.visit_id = v.id AND p.deleted_at IS NULL)
                      OR EXISTS (SELECT 1 FROM visit_answers a WHERE a.visit_id = v.id))",
             [$userId]
         )->getRow();
 
         return (int) ($row->cnt ?? 0);
+    }
+
+    /** How many days back a check-in can be dated: yesterday for the visitor's time zone and a day of slack */
+    public const DAYS_BACK = 2;
+
+    /**
+     * The day of a check-in: `Y-m-d`, a real date, up to DAYS_BACK days before the server's today
+     * and a day after it (the visitor's time zone and a day of slack), today without input. False
+     * when it is none of that. The window keeps the log honest: a visit is logged when it happens,
+     * and a back-dated one would farm the experience of a visit with a contribution.
+     */
+    public static function day(mixed $input): string|false
+    {
+        if ($input === null || $input === '') {
+            return date('Y-m-d');
+        }
+
+        if (!is_string($input) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $input)) {
+            return false;
+        }
+
+        [$year, $month, $dayOfMonth] = array_map('intval', explode('-', $input));
+
+        if (
+            !checkdate($month, $dayOfMonth, $year)
+            || $input < date('Y-m-d', strtotime('-' . self::DAYS_BACK . ' days'))
+            || $input > date('Y-m-d', strtotime('+1 day'))
+        ) {
+            return false;
+        }
+
+        return $input;
+    }
+
+    /**
+     * Checks a person in at a place on a day: the visit of that week when there is one (one per
+     * user and place in VisitsModel::REPEAT_DAYS days), a new one otherwise — with its `visit`
+     * event (the place's author hears of it, the page shows it) and the photos uploaded that day
+     * before it. A hidden visit (VisitsModel::HIDDEN_RIDDLE: a point of a riddle quest,
+     * HIDDEN_PHOTO: made by a photo shot at the place) gets no event until it is shown: a
+     * riddle's by reveal(), a photo's here — by the person's own check-in in its week, which
+     * then counts as a new one (the tap is new, the questions are asked).
+     *
+     * @param object   $place  `id`, `user_id`
+     * @param string   $day    `Y-m-d`
+     * @param bool|int $hidden false / 0 for a check-in of the person's own, or a VisitsModel::HIDDEN_* value
+     * @return array{0: VisitEntity, 1: bool} the visit and whether it is new
+     */
+    public function checkIn(string $userId, object $place, string $day, bool|int $hidden = false): array
+    {
+        $hidden = (int) $hidden;
+        $model  = new VisitsModel();
+        $visit  = $model->findWithinWindow($userId, $place->id, $day);
+
+        if ($visit) {
+            // The photo made the visit quietly; now the person says it themselves
+            if (!$hidden && (int) $visit->hidden === VisitsModel::HIDDEN_PHOTO) {
+                $model->update($visit->id, ['hidden' => 0]);
+                $visit->hidden = 0;
+
+                $this->logVisit($place->id, $visit->id, $place->user_id ?? null);
+
+                return [$visit, true];
+            }
+
+            return [$visit, false];
+        }
+
+        $visit = new VisitEntity();
+        $visit->user_id    = $userId;
+        $visit->place_id   = $place->id;
+        $visit->visited_at = $day . ' 12:00:00';
+        $visit->hidden     = $hidden;
+
+        try {
+            $model->insert($visit);
+        } catch (\CodeIgniter\Database\Exceptions\DatabaseException $e) {
+            // Two taps at once: the unique key let the first one through, this one answers it
+            $visit = $model->findWithinWindow($userId, $place->id, $day);
+
+            if (!$visit) {
+                throw $e;
+            }
+
+            return [$visit, false];
+        }
+
+        $id = $model->getLastGeneratedId();
+
+        if (!$hidden) {
+            // The place's author hears of it; the page shows the visit; no experience for a bare visit
+            $this->logVisit($place->id, $id, $place->user_id ?? null);
+        }
+
+        $visit = $model->find($id);
+
+        // The photos uploaded before the tap that day are the visit's: a contribution
+        if ($this->adoptPhotos($visit) > 0) {
+            $this->afterChange($userId, $place->id);
+        }
+
+        return [$visit, true];
+    }
+
+    /**
+     * Shows the hidden visits of a finished riddle walk: they get their `visit` events and
+     * appear among the visitors of their places.
+     *
+     * @param string[] $visitIds
+     */
+    public function reveal(array $visitIds): void
+    {
+        if (!$visitIds) {
+            return;
+        }
+
+        $model = new VisitsModel();
+        $rows  = $model
+            ->select('users_visited_places.id, users_visited_places.place_id, places.user_id AS author_id')
+            ->join('places', 'places.id = users_visited_places.place_id', 'left')
+            ->whereIn('users_visited_places.id', $visitIds)
+            ->where('users_visited_places.hidden', VisitsModel::HIDDEN_RIDDLE)
+            ->findAll();
+
+        foreach ($rows as $row) {
+            $model->update($row->id, ['hidden' => 0]);
+
+            try {
+                $this->logVisit($row->place_id, $row->id, $row->author_id ?? null);
+            } catch (Throwable $e) {
+                log_message('error', '{exception}', ['exception' => $e]);
+            }
+        }
+    }
+
+    /** The `visit` event of a visit; the author of the place, when it has one, hears of it */
+    private function logVisit(string $placeId, string $visitId, ?string $authorId): void
+    {
+        $activity = new ActivityLibrary();
+
+        if ($authorId) {
+            $activity->owner($authorId);
+        }
+
+        $activity->visit($placeId, $visitId);
     }
 
     /** An answer older than this is stale: asked again before the known ones */
@@ -386,6 +533,11 @@ class VisitsLibrary
                 'photos'    => $photos[$row->id] ?? [],
                 'answers'   => (object) ($answers[$row->id] ?? []),
             ];
+
+            // The game: how the visit was proved (`photo`, `geo`)
+            if (!empty($row->confirmed)) {
+                $item['confirmed'] = $row->confirmed;
+            }
 
             if ($withAuthor && !empty($row->user_id)) {
                 $item['author'] = [
