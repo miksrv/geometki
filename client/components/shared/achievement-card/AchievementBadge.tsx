@@ -54,6 +54,9 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({ achievement 
                         image={achievement.image}
                         alt={achievement.title}
                         size={58}
+                        tier={achievement.tier}
+                        category={achievement.category}
+                        group={achievement.group_slug}
                     />
                 </div>
             </Tooltip>

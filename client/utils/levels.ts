@@ -1,15 +1,27 @@
 import { UserLevel } from '@/api/models/userLevel'
-import { LEVEL_COLORS } from '@/config/constants'
+import { LEVEL_TIERS } from '@/config/constants'
 
 /** The tier of a level: every three levels share a colour and a name (`levelTier.<index>` in common.json) */
 export const levelTier = (level?: number): number => {
     if (!level || level < 1) {
         return 0
     }
-    return Math.min(Math.floor((level - 1) / 3), LEVEL_COLORS.length - 1)
+    return Math.min(Math.floor((level - 1) / 3), LEVEL_TIERS - 1)
 }
 
-export const levelColors = (level?: number): { fill: string; border: string } => LEVEL_COLORS[levelTier(level)]
+/**
+ * The colours of a level's tier, as the theme's tokens (`var(--color-level-3)`): the field, the
+ * rim around it and the number on it. For `style`, never for an SVG attribute.
+ */
+export const levelColors = (level?: number): { fill: string; border: string; ink: string } => {
+    const tier = levelTier(level)
+
+    return {
+        border: `var(--color-level-${tier}-rim)`,
+        fill: `var(--color-level-${tier})`,
+        ink: `var(--color-level-${tier}-ink)`
+    }
+}
 
 export const levelColor = (level?: number): string => levelColors(level).fill
 

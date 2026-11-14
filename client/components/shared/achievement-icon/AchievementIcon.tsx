@@ -1,24 +1,43 @@
 import React from 'react'
-import { Icon } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 
 import { IMG_HOST } from '@/config/env'
 
+import { AwardBadge } from './AwardBadge'
+
 interface AchievementIconProps {
     image?: string | null
     alt?: string
     size?: number
+    /** For an award without a picture: its tier, category and group draw one (`AwardBadge`) */
+    tier?: string
+    category?: string
+    group?: string
     className?: string
 }
 
-export const AchievementIcon: React.FC<AchievementIconProps> = ({ image, alt = '', size = 36, className }) => {
+/**
+ * The picture of an award: its own drawn one, or — until it is ready — a badge in the same
+ * format drawn from the award's tier, category and group (a season's warm or cold).
+ */
+export const AchievementIcon: React.FC<AchievementIconProps> = ({
+    image,
+    alt = '',
+    size = 36,
+    tier,
+    category,
+    group,
+    className
+}) => {
     if (!image) {
         return (
-            <Icon
-                name={'Award'}
+            <AwardBadge
+                size={size}
+                tier={tier}
+                category={category}
+                group={group}
                 className={className}
-                style={{ width: size, height: size }}
             />
         )
     }

@@ -36,6 +36,9 @@ export const AchievementRow: React.FC<AchievementRowProps> = ({ group }) => {
                     image={shown.image}
                     alt={''}
                     size={48}
+                    tier={shown.tier}
+                    category={shown.category}
+                    group={shown.group_slug}
                 />
             </span>
 

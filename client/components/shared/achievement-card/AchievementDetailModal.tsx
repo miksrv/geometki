@@ -40,6 +40,9 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({ 
                     image={achievement.image}
                     alt={achievement.title}
                     size={136}
+                    tier={achievement.tier}
+                    category={achievement.category}
+                    group={achievement.group_slug}
                 />
             </div>
 

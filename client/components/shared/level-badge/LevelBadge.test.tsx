@@ -2,8 +2,6 @@ import React from 'react'
 
 import { render, screen } from '@testing-library/react'
 
-import { LEVEL_COLORS } from '@/config/constants'
-
 import { hexagonPath, LevelBadge } from './LevelBadge'
 
 jest.mock('simple-react-ui-kit', () => ({
@@ -32,9 +30,11 @@ describe('LevelBadge', () => {
         const badge = screen.getByRole('img', { name: 'Уровень 11' })
         expect(badge).toHaveTextContent('11')
 
-        const [shape] = container.querySelectorAll('path')
-        expect(shape).toHaveAttribute('fill', LEVEL_COLORS[3].fill)
-        expect(shape).toHaveAttribute('stroke', LEVEL_COLORS[3].border)
+        // The make of an award: the rim, the field inside it, the number — in the tier's tokens
+        const [rim, field] = container.querySelectorAll('path')
+        expect(rim).toHaveStyle({ fill: 'var(--color-level-3-rim)' })
+        expect(field).toHaveStyle({ fill: 'var(--color-level-3)' })
+        expect(container.querySelector('text')).toHaveStyle({ fill: 'var(--color-level-3-ink)' })
     })
 
     it('keeps the hexagon proportions at any size', () => {
@@ -45,16 +45,11 @@ describe('LevelBadge', () => {
         expect(badge).toHaveAttribute('height', '57')
     })
 
-    it('gives every badge its own gradient id', () => {
-        const { container } = render(
-            <>
-                <LevelBadge level={1} />
-                <LevelBadge level={2} />
-            </>
-        )
+    it('is flat: no gloss and no outline of the number', () => {
+        const { container } = render(<LevelBadge level={1} />)
 
-        const ids = [...container.querySelectorAll('linearGradient')].map((node) => node.id)
-        expect(new Set(ids).size).toBe(2)
+        expect(container.querySelector('linearGradient')).not.toBeInTheDocument()
+        expect(container.querySelector('text')).not.toHaveAttribute('stroke')
     })
 
     it('adds a tooltip on request, not linked as a description of the already named badge', () => {

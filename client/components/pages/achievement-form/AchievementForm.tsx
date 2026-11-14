@@ -18,6 +18,8 @@ const METRICS = [
     'spots_opened',
     'places_edited',
     'places_visited',
+    'places_confirmed',
+    'quests_walked',
     'places_revisited',
     'visits_total',
     'winter_visits',

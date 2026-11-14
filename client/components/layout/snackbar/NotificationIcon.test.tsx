@@ -114,15 +114,20 @@ describe('NotificationIcon', () => {
     })
 
     describe('achievements type without image', () => {
-        it('renders Award icon when achievements type has no meta image', () => {
-            render(
+        it('draws the award badge when the achievement has no picture of its own', () => {
+            const { container } = render(
                 <NotificationIcon
                     type={'achievements' as any}
                     id={'n1'}
                     read={false}
+                    meta={{ category: 'game', group: 'pathfinder', tier: 'silver' }}
                 />
             )
-            expect(screen.getByTestId('icon-Award')).toBeInTheDocument()
+
+            const badge = container.querySelector('svg')
+
+            expect(badge).toHaveClass('award', 'tier-silver', 'field-game')
+            expect(screen.queryByRole('img')).not.toBeInTheDocument()
         })
     })
 

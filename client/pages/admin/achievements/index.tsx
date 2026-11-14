@@ -64,6 +64,9 @@ const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
                         image={achievement.image}
                         alt={achievement.title}
                         size={24}
+                        tier={achievement.tier}
+                        category={achievement.category}
+                        group={achievement.group_slug}
                     />
                 )
             }

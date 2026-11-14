@@ -1,0 +1,83 @@
+// The award without a picture of its own (AwardBadge): the enamel pin drawn in SVG. The
+// colours are tokens of styles/theme.css; the cream of the symbol and the navy of its details
+// are the same in both themes, as on the drawn awards
+.award
+    display: block
+    flex-shrink: 0
+
+.rim
+    fill: var(--award-rim, var(--color-award-rim-none))
+
+.field
+    fill: var(--award-field, var(--color-award-game))
+
+.symbol
+    fill: var(--color-award-symbol)
+
+// A line of the symbol drawn in the detail colour over the cream shape
+.detail
+    fill: none
+    stroke: var(--color-award-detail)
+    stroke-width: 6
+    stroke-linecap: round
+    stroke-linejoin: round
+
+.detailFill
+    fill: var(--color-award-detail)
+
+// A symbol made of lines alone: a snowflake, the rays of a sun, waves
+.rays
+    fill: none
+    stroke: var(--color-award-symbol)
+    stroke-width: 6
+    stroke-linecap: round
+    stroke-linejoin: round
+
+.dotted
+    fill: none
+    stroke: var(--color-award-symbol)
+    stroke-width: 5
+    stroke-linecap: round
+    stroke-dasharray: 1 10
+
+.tier-bronze
+    --award-rim: var(--color-tier-bronze)
+
+.tier-silver
+    --award-rim: var(--color-tier-silver)
+
+.tier-gold
+    --award-rim: var(--color-tier-gold)
+
+.tier-none
+    --award-rim: var(--color-award-rim-none)
+
+.field-exploration
+    --award-field: var(--color-award-exploration)
+
+.field-content
+    --award-field: var(--color-award-content)
+
+.field-social
+    --award-field: var(--color-award-social)
+
+.field-reputation
+    --award-field: var(--color-award-reputation)
+
+.field-consistency
+    --award-field: var(--color-award-consistency)
+
+.field-game
+    --award-field: var(--color-award-game)
+
+.field-quest
+    --award-field: var(--color-award-quest)
+
+.field-seasonal
+    --award-field: var(--color-award-seasonal)
+
+.field-cold
+    --award-field: var(--color-season-cold)
+
+.field-warm
+    --award-field: var(--color-season-warm)

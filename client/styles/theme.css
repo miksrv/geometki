@@ -44,6 +44,59 @@
     --color-tier-silver: #c0c0c0;
     --color-tier-gold: #ffd700;
     --color-tier-none: var(--icon-color-secondary);
+
+    /* The game (DESIGN.md → The game). Awards are enamel pins (features/26 → "Award pictures"):
+       the rim is the tier — dark steel for an award without one —, the field is the group's
+       colour, the symbol is cream with navy details; a season's field is its time of year.
+       The same in both themes, as the drawn pictures are */
+    --color-award-rim-none: #4a5563;
+    --color-award-symbol: #f6ead0;
+    --color-award-detail: #12284a;
+    --color-award-exploration: #1f5a9e;
+    --color-award-content: #1b8a8f;
+    --color-award-social: #b83260;
+    --color-award-reputation: #6a4aa5;
+    --color-award-consistency: #2f7d4f;
+    --color-award-game: #1f5a9e;
+    --color-award-quest: #d9822b;
+    --color-award-seasonal: #d99a2b;
+    --color-season-cold: #6aa9dc;
+    --color-season-warm: #ea7a5a;
+
+    /* Levels (DESIGN.md → Marks): a hexagon like an award's — the rim, the flat field and the
+       number, by the tier of the level (three levels share one). The fields are deep enough
+       for the awards' cream number to read at 22px (contrast 5:1 and more); the first tier is
+       a pale grey and the last one bright gold, both with the awards' navy on them. The same in both themes */
+    --color-level-0: #b0bec5; /* 1–3   newcomer */
+    --color-level-0-rim: #6f808a;
+    --color-level-0-ink: var(--color-award-detail);
+    --color-level-1: #4d5d68; /* 4–6   beginner */
+    --color-level-1-rim: #333d45;
+    --color-level-1-ink: var(--color-award-symbol);
+    --color-level-2: #0c6c7b; /* 7–9   active */
+    --color-level-2-rim: #084751;
+    --color-level-2-ink: var(--color-award-symbol);
+    --color-level-3: #0f6e5f; /* 10–12 explorer */
+    --color-level-3-rim: #0a493f;
+    --color-level-3-ink: var(--color-award-symbol);
+    --color-level-4: #1e64ac; /* 13–15 experienced */
+    --color-level-4-rim: #144272;
+    --color-level-4-ink: var(--color-award-symbol);
+    --color-level-5: #4453ad; /* 16–18 advanced */
+    --color-level-5-rim: #2d3772;
+    --color-level-5-ink: var(--color-award-symbol);
+    --color-level-6: #6c43b3; /* 19–21 expert */
+    --color-level-6-rim: #472c76;
+    --color-level-6-ink: var(--color-award-symbol);
+    --color-level-7: #b92d2d; /* 22–24 master */
+    --color-level-7-rim: #7a1e1e;
+    --color-level-7-ink: var(--color-award-symbol);
+    --color-level-8: #a44515; /* 25–27 legend */
+    --color-level-8-rim: #6c2e0e;
+    --color-level-8-ink: var(--color-award-symbol);
+    --color-level-9: #ffd23a; /* 28–30 grand legend */
+    --color-level-9-rim: #a8760a;
+    --color-level-9-ink: var(--color-award-detail);
 }
 
 /* Phones ($mobileMaxWidth, 768px): long lines are short there, the reading and title sizes step down */
