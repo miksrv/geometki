@@ -244,7 +244,6 @@ $routes->post('(:segment)/image', 'Achievements::uploadImage/$1');
 /** Bookmarks Controller **/
 $routes->group('bookmarks', static function ($routes) {
     $routes->get('/', 'Bookmarks::check');
-    $routes->get('places', 'Bookmarks::places');
     $routes->put('/', 'Bookmarks::set');
 
     $routes->options('/', static function () {});
@@ -264,6 +263,36 @@ $routes->group('visits', static function ($routes) {
     $routes->options('places', static function () {});
     $routes->options('me', static function () {});
     $routes->options('(:alphanum)', static function () {});
+});
+
+/** Game: the season, its rating, the confirmation of a visit; Quests: the quests of the game **/
+$routes->group('game', static function ($routes) {
+    $routes->get('/', 'Game::index');
+    $routes->get('leaders', 'Game::leaders');
+    $routes->get('places', 'Game::places');
+    $routes->get('mine', 'Game::mine');
+    $routes->get('recent', 'Game::recent');
+    $routes->get('exploration', 'Game::exploration');
+    $routes->get('seasons/(:segment)', 'Game::season/$1');
+    $routes->post('seasons/(:segment)/image', 'Game::seasonImage/$1');
+    $routes->get('users/(:alphanum)', 'Game::user/$1');
+    $routes->post('confirm', 'Game::confirm');
+
+    $routes->get('quests', 'Quests::list');
+    // Before `quests/(:alphanum)`: "marks" is alphanumeric too
+    $routes->get('quests/marks', 'Quests::marks');
+    $routes->get('quests/(:alphanum)', 'Quests::show/$1');
+    $routes->post('quests', 'Quests::create');
+    $routes->post('quests/(:alphanum)/start', 'Quests::start/$1');
+    $routes->delete('quests/(:alphanum)/walk', 'Quests::leave/$1');
+    $routes->post('quests/(:alphanum)/confirm', 'Quests::confirm/$1');
+    $routes->patch('quests/(:alphanum)', 'Quests::update/$1');
+    $routes->delete('quests/(:alphanum)', 'Quests::delete/$1');
+
+    $routes->options('/', static function () {});
+    $routes->options('(:segment)', static function () {});
+    $routes->options('(:segment)/(:segment)', static function () {});
+    $routes->options('(:segment)/(:segment)/(:segment)', static function () {});
 });
 
 /** Collections Controller **/

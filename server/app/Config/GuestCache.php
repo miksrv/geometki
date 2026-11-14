@@ -72,5 +72,8 @@ class GuestCache extends BaseConfig
     public array $privateWrites = [
         'auth', 'location', 'notifications', 'push', 'mail', 'sending-mail', 'osm-candidates', 'bookmarks',
         'photos/upload/temporary', 'photos/rotate/temporary', 'photos/temporary', 'places/*/views',
+        // Starting or giving up a walk of a quest changes nothing a guest sees; a confirmation is
+        // a visit and clears
+        'game/quests/*/start', 'game/quests/*/walk',
     ];
 }
