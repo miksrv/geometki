@@ -16,7 +16,7 @@ class PhotoLibrary
     public const FILENAME_PATTERN = '/^[A-Za-z0-9_]+\.(jpg|jpeg|jpe|png|gif|webp)$/i';
 
     /**
-     * Process an uploaded photo in place: read its GPS position, apply the EXIF orientation,
+     * Process an uploaded photo in place: read its GPS position and shot moment, apply the EXIF orientation,
      * scale it down to the maximum dimensions keeping the aspect ratio, generate a preview,
      * and optionally the place cover.
      *
@@ -26,7 +26,7 @@ class PhotoLibrary
      * @param string $targetDir   Directory where the preview (and cover) are saved.
      * @param bool   $createCover When true, also generate cover.jpg / cover_preview.jpg.
      *
-     * @return object {name: string, ext: string, width: int, height: int, filesize: int, coordinates: ?object}
+     * @return object {name: string, ext: string, width: int, height: int, filesize: int, coordinates: ?object, takenAt: ?string}
      */
     public function processFile(string $sourcePath, string $targetDir, bool $createCover = false): object
     {
@@ -36,6 +36,7 @@ class PhotoLibrary
         $ext  = pathinfo($sourcePath, PATHINFO_EXTENSION);
 
         $coordinates = getPhotoLocation($sourcePath);
+        $takenAt     = getPhotoTakenAt($sourcePath);
 
         // Phone photos are stored sideways with an orientation flag; GD would ignore the flag
         // in the preview and the cover, so the pixels are turned upright once here
@@ -80,6 +81,7 @@ class PhotoLibrary
             'height'      => $height,
             'filesize'    => filesize($sourcePath),
             'coordinates' => $coordinates,
+            'takenAt'     => $takenAt,
         ];
     }
 
