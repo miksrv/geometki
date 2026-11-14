@@ -115,7 +115,7 @@ class FeedModel extends ApplicationBaseModel
         return $this->db->query(
             "SELECT e.*
                FROM (
-                    SELECT a.id, a.feed_id, a.type, a.place_id, a.collection_id, a.created_at,
+                    SELECT a.id, a.feed_id, a.type, a.place_id, a.collection_id, a.visit_id, a.created_at,
                            ph.id AS photo_id, ph.filename, ph.extension, ph.width, ph.height,
                            ep.id AS ep_id, ep.source AS ep_source, ep.external_id AS ep_external_id,
                            ep.title AS ep_title, ep.author AS ep_author, ep.license AS ep_license,

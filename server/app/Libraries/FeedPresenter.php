@@ -25,7 +25,7 @@ use Config\Database;
  *   places?, placesCount?         — rating, visit, collection_place: the places, a rating
  *                                   story with the author's `value` for each;
  *   collection?                   — collection, collection_place;
- *   achievement?                  — achievement: {id, title, image, tier};
+ *   achievement?                  — achievement: {id, title, image, tier, category, group};
  *   level?                        — level: the level reached.
  * A story whose subject is gone (a deleted photo, comment or place) is left out.
  */
@@ -45,11 +45,16 @@ class FeedPresenter
 
     private string $locale;
 
+    /** The season points of the visits shown, by visit ID: only with the game ($withGame) */
+    private array $visitPoints = [];
+
     /**
      * @param string|null $viewerId The signed-in visitor: the places of the stories carry
      *                              their `bookmarked` and `visited` (the place cards show them)
+     * @param bool        $withGame The site's feed, not an email: the places of a visit story
+     *                              carry the season points the visit brought (`points`)
      */
-    public function __construct(string $locale, private ?string $viewerId = null)
+    public function __construct(string $locale, private ?string $viewerId = null, private bool $withGame = false)
     {
         $this->locale = $locale;
     }
@@ -74,6 +79,8 @@ class FeedPresenter
         foreach ($eventRows as $event) {
             $events[$event->feed_id][] = $event;
         }
+
+        $this->visitPoints = $this->withGame ? $this->loadVisitPoints(array_column($eventRows, 'visit_id')) : [];
 
         $places       = $this->loadPlaces(array_merge(array_column($rows, 'place_id'), array_column($eventRows, 'place_id')));
         $authors      = $this->loadAuthors(array_column($rows, 'user_id'));
@@ -336,10 +343,38 @@ class FeedPresenter
                 $entry->value = (int) $event->rating;
             }
 
+            // The game: the visit counted the place in a season
+            if (!empty($event->visit_id) && !empty($this->visitPoints[$event->visit_id])) {
+                $entry->points = $this->visitPoints[$event->visit_id];
+            }
+
             $entries[$event->place_id] = $entry;
         }
 
         return array_values($entries);
+    }
+
+    /**
+     * The season points of visits, by visit ID: the visits that counted a place.
+     *
+     * @param array<int, string|null> $visitIds
+     * @return array<string, int>
+     */
+    protected function loadVisitPoints(array $visitIds): array
+    {
+        $visitIds = array_values(array_unique(array_filter($visitIds)));
+
+        if (!$visitIds) {
+            return [];
+        }
+
+        $rows = Database::connect()->table('game_points')
+            ->select('visit_id, points')
+            ->whereIn('visit_id', $visitIds)
+            ->where('kind', 'place')
+            ->get()->getResultArray();
+
+        return array_map('intval', array_column($rows, 'points', 'visit_id'));
     }
 
     /**
@@ -475,7 +510,7 @@ class FeedPresenter
         }
 
         $rows = Database::connect()->table('achievements')
-            ->select('id, title_en, title_ru, image, tier')
+            ->select('id, title_en, title_ru, image, tier, category, group_slug')
             ->whereIn('id', $ids)
             ->get()
             ->getResult();
@@ -488,6 +523,9 @@ class FeedPresenter
                 'title' => $this->locale === 'en' ? $row->title_en : $row->title_ru,
                 'image' => $row->image,
                 'tier'  => $row->tier,
+                // An award without a picture is drawn from these (the client's AwardBadge)
+                'category' => $row->category,
+                'group'    => $row->group_slug,
             ];
         }
 

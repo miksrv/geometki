@@ -88,7 +88,7 @@ class Feed extends ResourceController
 
         $last     = end($rows);
         $response = [
-            'items' => (new FeedPresenter($this->request->getLocale(), (new SessionLibrary())->user?->id))->present($rows, $place),
+            'items' => $this->presenter()->present($rows, $place),
             'next'  => $hasMore && $last ? self::makeCursor($last->updated_at, $last->id) : null,
         ];
 
@@ -239,5 +239,13 @@ class Feed extends ResourceController
         }
 
         return ['at' => date('Y-m-d H:i:s', (int) $match[1]), 'id' => $match[2]];
+    }
+
+    /** The presenter for this request: the visitor's place marks and the season points of the visits */
+    private function presenter(): FeedPresenter
+    {
+        $user = (new SessionLibrary())->user;
+
+        return new FeedPresenter($this->request->getLocale(), $user?->id, true);
     }
 }
