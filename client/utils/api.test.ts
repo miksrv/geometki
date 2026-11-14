@@ -1,4 +1,4 @@
-import { getErrorMessage, isApiValidationErrors } from './api'
+import { getErrorMessage, isApiRefusal, isApiValidationErrors } from './api'
 
 describe('isApiValidationErrors', () => {
     it('returns true for an object with a messages field that is an object', () => {
@@ -69,5 +69,23 @@ describe('getErrorMessage', () => {
 
     it('handles empty object gracefully', () => {
         expect(getErrorMessage({})).toBeUndefined()
+    })
+
+    it('extracts error from an answer already unwrapped by transformErrorResponse', () => {
+        expect(getErrorMessage({ error: 400, messages: { error: 'До точки квеста 350 м' }, status: 400 })).toBe(
+            'До точки квеста 350 м'
+        )
+    })
+})
+
+describe('isApiRefusal', () => {
+    it('is a 4xx answer with words', () => {
+        expect(isApiRefusal({ error: 400, messages: { error: 'До точки квеста 350 м' }, status: 400 })).toBe(true)
+    })
+
+    it('is not a server error, a network error or an answer without words', () => {
+        expect(isApiRefusal({ error: 500, messages: { error: 'Ошибка' }, status: 500 })).toBe(false)
+        expect(isApiRefusal(undefined)).toBe(false)
+        expect(isApiRefusal({ messages: { lat: 'Неверно' }, status: 400 })).toBe(false)
     })
 })

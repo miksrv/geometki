@@ -12,7 +12,8 @@ export const isApiValidationErrors = <T>(response: unknown): response is ApiResp
 
 /**
  * Safely extracts error message string from RTK Query error.
- * Handles various error formats: string, {data: string}, {data: {messages: {error: string}}}, {message: string}
+ * Handles various error formats: string, {data: string}, {data: {messages: {error: string}}},
+ * {messages: {error: string}} (an answer already unwrapped by `transformErrorResponse`), {message: string}
  */
 export const getErrorMessage = (error: unknown): string | undefined => {
     if (!error) {
@@ -27,6 +28,16 @@ export const getErrorMessage = (error: unknown): string | undefined => {
         // Handle {message: string} format (SerializedError)
         if ('message' in error && typeof (error as { message: unknown }).message === 'string') {
             return (error as { message: string }).message
+        }
+
+        // Handle {messages: {error: string}}: the API's own answer, as `transformErrorResponse`
+        // (`extractErrorData` in api.ts) leaves it
+        if ('messages' in error) {
+            const messages = (error as { messages: unknown }).messages
+
+            return messages && typeof messages === 'object' && 'error' in messages
+                ? String((messages as { error: unknown }).error)
+                : undefined
         }
 
         // Handle {data: ...} format (FetchBaseQueryError after transformErrorResponse)
@@ -53,4 +64,16 @@ export const getErrorMessage = (error: unknown): string | undefined => {
     }
 
     return undefined
+}
+
+/**
+ * A refusal of the API, not a failure: a 4xx answer with a message of its own (too far from the
+ * point, a walk not begun). Shown as a plain notice; a 5xx, a network error or an answer without
+ * words is an error
+ */
+export const isApiRefusal = (error: unknown): boolean => {
+    const status =
+        error && typeof error === 'object' && 'status' in error ? Number((error as { status: unknown }).status) : NaN
+
+    return status >= 400 && status < 500 && !!getErrorMessage(error)
 }
