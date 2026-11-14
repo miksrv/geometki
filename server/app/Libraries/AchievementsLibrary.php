@@ -8,6 +8,30 @@ use ReflectionException;
 
 class AchievementsLibrary
 {
+    /** The metrics of the game: an award that counts one of them is an award of the game */
+    public const GAME_METRICS = ['places_confirmed', 'quests_walked'];
+
+    /**
+     * Whether an award belongs to the game: of its category, or counting its metrics (a limited
+     * award made for a season).
+     */
+    public static function isOfGame(object $achievement): bool
+    {
+        if ($achievement->category === 'game') {
+            return true;
+        }
+
+        $rules = is_string($achievement->rules) ? json_decode($achievement->rules, true) : $achievement->rules;
+
+        foreach ((array) $rules as $rule) {
+            if (in_array($rule['metric'] ?? null, self::GAME_METRICS, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private const TIER_ORDER = ['none' => 0, 'bronze' => 1, 'silver' => 2, 'gold' => 3];
 
     private array $metricMap = [
@@ -21,6 +45,8 @@ class AchievementsLibrary
         'visit'   => ['places_visited', 'visits_total', 'places_revisited', 'winter_visits', 'first_visit_of_year'],
         // A linked photo is not an uploaded one: it moves only the experience and the days
         'photo_link' => [],
+        // The game: a confirmed visit, a walked quest (GameLibrary, QuestsLibrary)
+        'game'    => self::GAME_METRICS,
     ];
 
     /**
@@ -213,6 +239,121 @@ class AchievementsLibrary
     }
 
     /**
+     * The metrics a person lowers by taking their own action back (a cancelled visit, a deleted
+     * photo, place or review): an award counting only these is given back with the action.
+     * The rest either move by themselves (reputation, experience, level) or count days — an
+     * award earned by them stays earned.
+     */
+    private const REVOCABLE_METRICS = [
+        'places_created', 'spots_opened', 'places_edited', 'places_visited', 'visits_total',
+        'winter_visits', 'places_revisited', 'first_visit_of_year', 'places_confirmed',
+        'quests_walked', 'photos_uploaded', 'ratings_given', 'comments_written',
+    ];
+
+    /**
+     * After a person took an action back: the awards they hold whose terms are no longer met
+     * go — down to the highest tier of the group still earned, or away. The award's story
+     * leaves the feed with it; the experience follows on the next recount (it sums the awards
+     * held: LevelsLibrary::experience()). Nothing is told: an award taken back is no news.
+     *
+     * @return string[] the IDs of the awards taken back
+     */
+    public function reconcile(string $userId): array
+    {
+        $db   = \Config\Database::connect();
+        $held = $db->table('users_achievements ua')
+            ->select('ua.id AS row_id, a.*')
+            ->join('achievements a', 'a.id = ua.achievement_id')
+            ->where('ua.user_id', $userId)
+            ->get()->getResult();
+
+        $revoked = [];
+
+        foreach ($held as $achievement) {
+            if (!$this->isRevocable($achievement) || $this->isMet($userId, $achievement)) {
+                continue;
+            }
+
+            // The tiers of the group below this one, the highest first
+            $tiers = $db->table('achievements')
+                ->where(['group_slug' => $achievement->group_slug, 'is_active' => 1])
+                ->get()->getResult();
+            $order = self::TIER_ORDER[$achievement->tier] ?? 0;
+            $tiers = array_filter($tiers, static fn ($tier) => (self::TIER_ORDER[$tier->tier] ?? 0) < $order);
+
+            usort($tiers, static fn ($a, $b) => (self::TIER_ORDER[$b->tier] ?? 0) <=> (self::TIER_ORDER[$a->tier] ?? 0));
+
+            $kept = null;
+            $lost = [$achievement->id];
+
+            foreach ($tiers as $tier) {
+                if ($this->isMet($userId, $tier)) {
+                    $kept = $tier;
+                    break;
+                }
+
+                $lost[] = $tier->id;
+            }
+
+            if ($kept) {
+                $db->table('users_achievements')->where('id', $achievement->row_id)->update(['achievement_id' => $kept->id]);
+            } else {
+                $db->table('users_achievements')->where('id', $achievement->row_id)->delete();
+            }
+
+            $db->table('feed')
+                ->where(['user_id' => $userId, 'type' => 'achievement'])
+                ->whereIn('achievement_id', $lost)
+                ->delete();
+
+            $revoked[] = $achievement->id;
+        }
+
+        if ($revoked) {
+            self::forgetProgress($userId);
+        }
+
+        return $revoked;
+    }
+
+    /** Whether an award counts only what its holder can take back themselves */
+    private function isRevocable(object $achievement): bool
+    {
+        $rules = is_string($achievement->rules) ? json_decode($achievement->rules, true) : $achievement->rules;
+
+        if (empty($rules)) {
+            return false;
+        }
+
+        foreach ($rules as $rule) {
+            if (!in_array($rule['metric'] ?? null, self::REVOCABLE_METRICS, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** Whether the terms of an award are met now (a limited one — within its window) */
+    private function isMet(string $userId, object $achievement): bool
+    {
+        $rules = is_string($achievement->rules) ? json_decode($achievement->rules, true) : $achievement->rules;
+
+        if (empty($rules)) {
+            return false;
+        }
+
+        $seasonal = $achievement->type === 'seasonal';
+
+        return $this->evaluateRules(
+            $userId,
+            $rules,
+            $seasonal ? $achievement->season_start : null,
+            $seasonal ? $achievement->season_end : null
+        );
+    }
+
+    /**
      * Return progress info for all active achievements for a user (cached, PROGRESS_TTL).
      *
      * @return array [achievementId => ['current' => int, 'required' => int, 'pct' => float]]
@@ -394,6 +535,36 @@ class AchievementsLibrary
                     [$userId]
                 )->getRow();
                 return (int) ($row->cnt ?? 0);
+            }
+
+            // The game. Confirmed places: the distinct places with a confirmed visit (a photo
+            // shot there or "I am here"), all time or within the window by the visit day
+            case 'places_confirmed': {
+                $builder = $db->table('users_visited_places')
+                    ->select('COUNT(DISTINCT users_visited_places.place_id) AS cnt', false)
+                    ->where('users_visited_places.user_id', $userId)
+                    ->where('users_visited_places.confirmed IS NOT NULL', null, false);
+                if (!empty($filter['category_id'])) {
+                    $builder->join('places', 'places.id = users_visited_places.place_id', 'inner')
+                            ->where('places.category', $filter['category_id']);
+                }
+                if ($from) $builder->where('users_visited_places.visited_at >=', $from);
+                if ($to)   $builder->where('users_visited_places.visited_at <=', $to);
+                return (int) ($builder->get()->getRow()->cnt ?? 0);
+            }
+
+            // Quests walked to the end; `filter.quest_id` asks for one quest (its own award)
+            case 'quests_walked': {
+                $builder = $db->table('quests_walks')
+                    ->selectCount('quests_walks.id', 'cnt')
+                    ->where('quests_walks.user_id', $userId)
+                    ->where('quests_walks.finished_at IS NOT NULL', null, false);
+                if (!empty($filter['quest_id'])) {
+                    $builder->where('quests_walks.quest_id', $filter['quest_id']);
+                }
+                if ($from) $builder->where('quests_walks.finished_at >=', $from);
+                if ($to)   $builder->where('quests_walks.finished_at <=', $to);
+                return (int) ($builder->get()->getRow()->cnt ?? 0);
             }
 
             case 'photos_uploaded': {
@@ -596,6 +767,10 @@ class AchievementsLibrary
             'title_en' => $achievement->title_en,
             'title_ru' => $achievement->title_ru,
             'image'    => $achievement->image,
+            // An award without a picture is drawn from these (the client's AwardBadge)
+            'tier'     => $achievement->tier,
+            'category' => $achievement->category,
+            'group'    => $achievement->group_slug,
         ]);
     }
 

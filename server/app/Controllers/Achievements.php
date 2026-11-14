@@ -76,8 +76,13 @@ class Achievements extends ResourceController
         }
 
         $result = [];
+        $now    = date('Y-m-d H:i:s');
 
         foreach ($achievements as $achievement) {
+            if ($this->isHidden($achievement, isset($earnedMap[$achievement->id]), $now)) {
+                continue;
+            }
+
             $rules = is_string($achievement->rules)
                 ? json_decode($achievement->rules, true)
                 : $achievement->rules;
@@ -205,7 +210,13 @@ class Achievements extends ResourceController
 
         $result = [];
 
+        $now = date('Y-m-d H:i:s');
+
         foreach ($achievements as $achievement) {
+            if ($this->isHidden($achievement, isset($earnedMap[$achievement->id]), $now)) {
+                continue;
+            }
+
             $item = (object) [
                 'id'           => $achievement->id,
                 'group_slug'   => $achievement->group_slug,
@@ -216,6 +227,7 @@ class Achievements extends ResourceController
                 'description'  => $achievement->{"description_$locale"} ?? $achievement->description_en,
                 'image'        => $achievement->image,
                 'xp_bonus'     => (int) $achievement->xp_bonus,
+                'sort_order'   => (int) $achievement->sort_order,
                 'season_start' => $achievement->season_start,
                 'season_end'   => $achievement->season_end,
                 'earned_at'    => $earnedMap[$achievement->id] ?? null,
@@ -229,6 +241,15 @@ class Achievements extends ResourceController
         }
 
         return $this->respond(['data' => $result]);
+    }
+
+    /**
+     * An award a profile does not list: the award of a season that is over and was not
+     * earned — it cannot be earned any more.
+     */
+    private function isHidden(object $achievement, bool $earned, string $now): bool
+    {
+        return $achievement->type === 'seasonal' && !$earned && $achievement->season_end && $now > $achievement->season_end;
     }
 
     /**

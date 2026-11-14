@@ -227,7 +227,7 @@ class Notifications extends ResourceController
                 $title = $locale === 'en' ? ($meta->title_en ?? '') : ($meta->title_ru ?? $meta->title_en ?? '');
 
                 $meta = $notify->type === 'achievements'
-                    ? ['title' => $title, 'image' => $meta->image ?? null]
+                    ? ['title' => $title, 'image' => $meta->image ?? null, 'tier' => $meta->tier ?? null, 'category' => $meta->category ?? null, 'group' => $meta->group ?? null]
                     : ['title' => $title, 'level' => $meta->level ?? null];
             }
 

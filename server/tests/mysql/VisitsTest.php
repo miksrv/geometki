@@ -246,6 +246,52 @@ final class VisitsTest extends MySqlTestCase
         $this->get('visits/me', ['place' => 'place1'])->assertJSONFragment(['count' => 0]);
     }
 
+    public function testACancelledVisitTakesBackTheAwardItEarned(): void
+    {
+        foreach ([['bronze', 1, 30], ['silver', 2, 70]] as [$tier, $value, $xp]) {
+            $this->db->table('achievements')->insert([
+                'id' => 'visitor-' . $tier, 'group_slug' => 'visitor', 'type' => 'base', 'tier' => $tier, 'category' => 'exploration',
+                'title_en' => 'Visitor', 'title_ru' => 'Гость', 'rules' => json_encode([['metric' => 'places_visited', 'operator' => '>=', 'value' => $value]]),
+                'xp_bonus' => $xp, 'sort_order' => $value, 'is_active' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        $held = fn () => array_column($this->db->table('users_achievements')->where('user_id', 'user1')->get()->getResultArray(), 'achievement_id');
+        $told = fn () => array_column($this->db->table('feed')->where(['user_id' => 'user1', 'type' => 'achievement'])->get()->getResultArray(), 'achievement_id');
+
+        $this->signIn('user1');
+
+        $first  = json_decode($this->withBodyFormat('json')->post('visits', ['place' => 'place1'])->getJSON(), true);
+        $second = json_decode($this->withBodyFormat('json')->post('visits', ['place' => 'place2'])->getJSON(), true);
+
+        $this->assertSame(['visitor-silver'], $held());
+        $this->assertSame(70, $this->experience('user1'));
+
+        // The second visit is taken back: the award goes down a tier, its story leaves the feed
+        $this->delete('visits/' . $second['id'])->assertOK();
+
+        $this->assertSame(['visitor-bronze'], $held());
+        $this->assertNotContains('visitor-silver', $told());
+        $this->assertSame(30, $this->experience('user1'));
+
+        // The last one too: no award, no story, no experience of it
+        $this->delete('visits/' . $first['id'])->assertOK();
+
+        $this->assertSame([], $held());
+        $this->assertSame([], $told());
+        $this->assertSame(0, $this->experience('user1'));
+
+        // Someone else's removal takes no award: an administrator deletes a visit of the person
+        $again = json_decode($this->withBodyFormat('json')->post('visits', ['place' => 'place1'])->getJSON(), true);
+        $this->assertSame(['visitor-bronze'], $held());
+
+        $this->createUser('admin1', ['role' => 'admin']);
+        $this->signIn('admin1');
+        $this->delete('visits/' . $again['id'])->assertOK();
+
+        $this->assertSame(['visitor-bronze'], $held());
+    }
+
     public function testAnOldVisitIsAskedTheQuestionsItHasNoAnswerTo(): void
     {
         // Checked in before the questions came
