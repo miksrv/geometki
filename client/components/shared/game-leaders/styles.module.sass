@@ -1,0 +1,174 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+@use '../../../styles/mixins' as *
+
+// The rating of a season (DESIGN.md → The game → GameLeaders): scope chips over a list of
+// people — place | avatar | name over the facts | level | points
+.leaders
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+    min-width: 0
+
+.scopes
+    min-width: 0
+
+.list
+    display: flex
+    flex-direction: column
+    margin: 0
+    padding: 0
+    list-style: none
+    transition: opacity var(--duration-fast) var(--ease)
+
+    // The previous scope stays while the next one loads
+    &.fetching
+        opacity: .55
+
+.row
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    min-width: 0
+    min-height: 52px
+    // The highlight of the own line reaches the edges of the block
+    margin: 0 calc(-1 * var(--space-2))
+    padding: var(--space-2)
+    border-radius: var(--radius-md)
+
+    transition: background-color var(--duration-fast) var(--ease)
+
+    & + &
+        margin-top: 2px
+
+    &:hover
+        background: var(--surface-2)
+
+    &.own
+        background: var(--color-main-background)
+
+// The visitor's own line when it is not among the ones shown: the same line, set apart
+.apart
+    display: flex
+    flex-direction: column
+    margin: 0
+    padding: var(--space-2) 0 0
+    border-top: 1px dashed var(--border-strong)
+    list-style: none
+
+.place
+    flex-shrink: 0
+    min-width: 24px
+    padding: 2px var(--space-1)
+    border-radius: var(--border-radius)
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
+    font-weight: var(--font-weight-semibold)
+    font-variant-numeric: tabular-nums
+    text-align: center
+
+    // The first three, as the ranks of the people list
+    &.top
+        color: var(--color-orange)
+        background: var(--color-orange-background)
+
+.who
+    display: flex
+    flex: 1
+    flex-direction: column
+    min-width: 0
+
+.name
+    +truncate
+    color: var(--text-color-primary)
+    font-weight: var(--font-weight-medium)
+    text-decoration: none
+
+    &:hover
+        color: var(--link-color-hover)
+        text-decoration: none
+
+.facts
+    +type.caption
+    +truncate
+
+// The same pill of geopoints as everywhere
+.points
+    flex-shrink: 0
+
+.empty
+    +type.secondary
+    margin: 0
+
+// --- `table`: the rating as the main thing of a page ------------------------------------------
+// The lines in a card | the side column: the location filter, then what the page puts there,
+// `--space-4` apart like every side column; it sticks while the lines scroll. One column below
+// 1024px, where the side column is no box of its own: the filter, the lines, the rest
+.table
+    display: grid
+    grid-template-columns: minmax(0, 1fr) 360px
+    grid-template-areas: 'main aside'
+    gap: var(--space-4)
+    align-items: start
+
+    &.tableAlone
+        grid-template-columns: minmax(0, 1fr)
+        grid-template-areas: 'main'
+
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+        grid-template-areas: 'filter' 'main' 'side'
+
+.tableMain
+    grid-area: main
+    min-width: 0
+
+    // The lines reach the card's edges by `--space-2` on the sides: the same above the first
+    // one and under the last, so a highlighted line sits evenly in the card
+    .list:first-child
+        margin-top: calc(-1 * var(--space-2))
+
+    .list:last-child, .apart:last-child
+        margin-bottom: calc(-1 * var(--space-2))
+
+.tableAside
+    grid-area: aside
+    position: sticky
+    top: 64px
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+    min-width: 0
+
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        display: contents
+
+.tableFilter
+    grid-area: filter
+    min-width: 0
+
+.tableSide
+    grid-area: side
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+    min-width: 0
+
+// The location field takes the width of its column
+.scopeField
+    width: 100% !important
+    max-width: 100%
+
+// The page links under the lines: the range on the left, the pages on the right
+.pages
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    justify-content: space-between
+    gap: var(--space-3)
+    padding-top: var(--space-3)
+    border-top: var(--container-border-separator)
+
+.range
+    +type.secondary
+    font-variant-numeric: tabular-nums
