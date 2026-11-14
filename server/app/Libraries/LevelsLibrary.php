@@ -74,6 +74,8 @@ class LevelsLibrary {
         $experience += (new VisitsLibrary())->contributions($userId) * MODIFIER_VISIT;
         // White spots opened: counted from the candidates' links, never pushed (OsmCandidatesModel)
         $experience += (new OsmCandidatesModel())->spotsOpened($userId) * MODIFIER_SPOT;
+        // Quests of the game walked to the end: counted from the walks, never pushed (QuestsLibrary)
+        $experience += (new QuestsLibrary())->walkedExperience($userId);
 
         // Add XP bonuses from earned achievements (only current tier per group)
         $db  = \Config\Database::connect();

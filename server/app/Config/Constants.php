@@ -124,8 +124,14 @@ const MODIFIER_COMMENT = 5;
 const MODIFIER_PHOTO_LINK = 1;
 // A visit with photos, once per place and month; a bare visit is worth nothing
 const MODIFIER_VISIT = 10;
-// A white spot opened: a place created from an OSM candidate, on top of the place
-const MODIFIER_SPOT = 15;
+// A white spot opened: a place created from an OSM candidate, on top of the place (less than
+// the place itself: the spot was already found, a place of one's own is harder)
+const MODIFIER_SPOT = 10;
+// A quest of the game walked to the end (QuestsLibrary::bonusOf()): per point confirmed in the
+// walk, at least the minimum; once per quest, only when finished (the points themselves are
+// visits, MODIFIER_VISIT), counted from the walks, never pushed
+const MODIFIER_QUEST_POINT = 20;
+const MODIFIER_QUEST_MIN   = 100;
 
 /*
  | --------------------------------------------------------------------------
