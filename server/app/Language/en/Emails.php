@@ -46,7 +46,7 @@ return [
 
     'eventsCount'  => 'new event|new events',
     'ratingValue'  => 'Rating: {value} out of 5',
-    'editHint'     => 'Check what has changed — edits make the place more useful for other travellers.',
+    'editHint'     => 'Check what has changed — edits make the place more useful for other explorers.',
     'groupIntro'   => 'While you were away, this happened on your places:',
 
     // Weekly digest

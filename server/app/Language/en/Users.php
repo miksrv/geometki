@@ -8,7 +8,7 @@ return [
     'incorrectAvatarData'    => 'Incorrect avatar dimensions, please try again.',
     'smallAvatarDimensions'  => 'Avatar is too small, its dimensions are less than the minimum values ({0, number}, {1, number}).',
     'avatarProcessingError'  => 'An error occurred while processing the image, please try again',
-    'defaultName'            => 'Traveller',
+    'defaultName'            => 'Explorer',
     'nameTooShort'           => 'The name is too short: it needs at least {0, number} letters or digits.',
     'nameTooLong'            => 'The name must be at most {1, number} characters long.',
     'nameInvalidChars'       => 'The name may contain letters, digits, spaces and . - _ \' ( ).',

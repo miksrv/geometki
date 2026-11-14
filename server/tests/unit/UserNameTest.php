@@ -57,16 +57,16 @@ final class UserNameTest extends CIUnitTestCase
 
     public function testForNewUserAddsTheWordToAShortName(): void
     {
-        $this->assertSame('Я Путешественник', UserName::forNewUser('Я', 'ru'));
-        $this->assertSame('J Traveller', UserName::forNewUser('J', 'en'));
+        $this->assertSame('Я Исследователь', UserName::forNewUser('Я', 'ru'));
+        $this->assertSame('J Explorer', UserName::forNewUser('J', 'en'));
     }
 
     public function testForNewUserGivesTheWordForAnEmptyName(): void
     {
-        $this->assertSame('Путешественник', UserName::forNewUser(null, 'ru'));
-        $this->assertSame('Путешественник', UserName::forNewUser('.', 'ru'));
-        $this->assertSame('Traveller', UserName::forNewUser('', 'en-US'));
-        $this->assertSame('Путешественник', UserName::forNewUser(null, 'de'));
+        $this->assertSame('Исследователь', UserName::forNewUser(null, 'ru'));
+        $this->assertSame('Исследователь', UserName::forNewUser('.', 'ru'));
+        $this->assertSame('Explorer', UserName::forNewUser('', 'en-US'));
+        $this->assertSame('Исследователь', UserName::forNewUser(null, 'de'));
     }
 
     public function testForNewUserDropsSymbolsAndCutsALongNameAtAWord(): void

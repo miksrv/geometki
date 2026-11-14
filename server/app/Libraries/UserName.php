@@ -70,7 +70,7 @@ final class UserName
     /**
      * A valid name for a new account from what a service gave (or nothing, for a magic link):
      * characters out of the rule are dropped, a long name is cut at a word, and a name with
-     * too few letters gets the word "Traveller" in the user's language ("Я" → "Я Путешественник").
+     * too few letters gets the word "Explorer" in the user's language ("Я" → "Я Исследователь").
      */
     public static function forNewUser(?string $name, ?string $locale = null): string
     {
