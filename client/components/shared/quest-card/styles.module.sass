@@ -1,0 +1,364 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+
+// A card on the surface, one link stretched over it. `medium` is a tile (the cover on top),
+// `small` a low row (the cover on the left)
+.questCard
+    position: relative
+    display: grid
+    border-radius: var(--container-radius)
+    background: var(--surface-1)
+    box-shadow: var(--container-shadow)
+    overflow: hidden
+    transition: box-shadow .2s var(--ease), transform .2s var(--ease)
+
+    // Hovering lifts the card by the shadow only, like `UserCard`: the title keeps its colour
+    &:hover
+        box-shadow: var(--container-shadow), var(--shadow-md)
+
+.tile
+    grid-template-rows: auto 1fr
+
+// A quest being walked: a low card the width of the page, the thumbnail on the left (on phones
+// too, smaller)
+.small
+    grid-template-columns: 208px minmax(0, 1fr)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: 120px minmax(0, 1fr)
+        align-items: start
+
+.cover
+    position: relative
+    overflow: hidden
+    background: var(--surface-3)
+
+    img
+        transition: transform .35s var(--ease)
+
+    .questCard:hover & img
+        transform: scale(1.04)
+
+    @media (prefers-reduced-motion: reduce)
+        img
+            transition: none
+
+        .questCard:hover & img
+            transform: none
+
+    // One format in every card: 16:10, the tile's cover on top and the small card's thumbnail
+    .tile &
+        aspect-ratio: 16 / 10
+
+    // A thumbnail in the card's padding, never stretched to the height of the words
+    .small &
+        align-self: center
+        aspect-ratio: 16 / 10
+        margin: var(--space-3) 0 var(--space-3) var(--space-3)
+        border-radius: var(--border-radius)
+
+// A riddle quest keeps its places secret: the mode's icon on a dotted tinted field — a map
+// with nothing marked on it yet
+.noCover
+    display: flex
+    align-items: center
+    justify-content: center
+    background-color: var(--color-main-background)
+    background-image: radial-gradient(var(--color-main) 1px, transparent 1.5px)
+    background-size: 16px 16px
+    background-position: 8px 8px
+
+    > svg
+        width: 64px
+        height: 64px
+        fill: var(--color-main)
+        opacity: .6
+
+    .small & > svg
+        width: 40px
+        height: 40px
+
+    .small &
+        background-image: none
+
+// The pills over a tile's cover: fixed colours over a photo in both themes, like the dark
+// pills over the place tiles
+%coverPill
+    position: absolute
+    display: inline-flex
+    align-items: center
+    gap: 4px
+    height: 24px
+    padding: 0 8px 0 6px
+    border-radius: var(--border-radius)
+    font-size: var(--font-size-small)
+    font-weight: var(--font-weight-medium)
+    white-space: nowrap
+    pointer-events: none
+
+    svg
+        width: 14px
+        height: 14px
+        fill: currentColor
+
+.coverMode
+    @extend %coverPill
+    top: 10px
+    left: 10px
+    background: rgba(255, 255, 255, .94)
+    color: #1f3f66
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .2)
+
+.coverDistance
+    @extend %coverPill
+    top: 10px
+    right: 10px
+    background: rgba(0, 0, 0, .62)
+    color: #fff
+    font-variant-numeric: tabular-nums
+
+.body
+    display: flex
+    flex-direction: column
+    gap: var(--space-2)
+    min-width: 0
+    padding: var(--space-4)
+
+    // The words | the walk and the button, in one row; on phones one under the other
+    .small &
+        flex-direction: row
+        align-items: center
+        gap: var(--space-3) var(--space-6)
+        padding: var(--space-3) var(--space-5)
+
+        // On phones the words stay beside the thumbnail, the walk and the button go under both
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            display: contents
+
+// The small card's words
+.main
+    display: flex
+    flex: 1 1 auto
+    flex-direction: column
+    gap: var(--space-1)
+    min-width: 0
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        padding: var(--space-3)
+
+// Its town, points and length, one line
+.meta
+    +type.secondary
+    margin: 0
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+
+// Its walk and the button
+.side
+    display: flex
+    flex: 0 0 auto
+    align-items: center
+    gap: var(--space-3) var(--space-5)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-wrap: wrap
+        grid-column: 1 / -1
+        padding: 0 var(--space-3) var(--space-3)
+
+
+.labels
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: var(--space-2)
+
+.overline
+    +type.overline
+    color: var(--color-main)
+
+.location
+    +type.secondary
+    display: inline-flex
+    align-items: center
+    gap: 2px
+    min-width: 0
+
+    svg
+        flex-shrink: 0
+        width: 16px
+        height: 16px
+        fill: var(--icon-color-secondary)
+
+.mode,
+.draft,
+.walked,
+.bonus
+    display: inline-flex
+    align-items: center
+    gap: var(--space-1)
+    height: 22px
+    padding: 0 var(--space-2)
+    border-radius: var(--border-radius)
+    font-size: var(--font-size-small)
+    font-weight: var(--font-weight-medium)
+    white-space: nowrap
+
+    svg
+        width: 14px
+        height: 14px
+        fill: currentColor
+
+.mode,
+.bonus
+    background: var(--color-main-background)
+    color: var(--color-main)
+
+.bonus
+    font-variant-numeric: tabular-nums
+
+.draft
+    background: var(--color-orange-background)
+    color: var(--color-orange)
+
+.walked
+    background: var(--color-green-background)
+    color: var(--color-green)
+
+.title
+    +type.titleSection
+    margin: 0
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+
+    // A tile has room for two lines: a quest's name is often a phrase
+    .tile &
+        display: -webkit-box
+        line-height: 1.35
+        white-space: normal
+        -webkit-box-orient: vertical
+        -webkit-line-clamp: 2
+
+// The one link of the card, stretched over all of it
+.link
+    color: var(--text-color-primary)
+    text-decoration: none
+
+    &::after
+        content: ''
+        position: absolute
+        inset: 0
+
+    &:hover,
+    &:focus
+        color: var(--text-color-primary)
+        text-decoration: none
+
+    &:focus-visible
+        outline: none
+
+        &::after
+            border-radius: var(--container-radius)
+            outline: 2px solid var(--color-main)
+            outline-offset: -2px
+
+// Two lines of the description at most
+.text
+    display: -webkit-box
+    margin: 0
+    overflow: hidden
+    color: var(--text-color-secondary)
+    line-height: 1.55
+    -webkit-box-orient: vertical
+    -webkit-line-clamp: 2
+
+// Points, length, time: each with its icon, like the stats of a trail
+.facts
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-1) var(--space-4)
+    margin: 0
+    padding: 0
+    list-style: none
+
+    li
+        display: inline-flex
+        align-items: center
+        gap: 4px
+        font-size: var(--font-size-secondary)
+        font-weight: var(--font-weight-medium)
+        font-variant-numeric: tabular-nums
+        white-space: nowrap
+
+    svg
+        width: 16px
+        height: 16px
+        fill: var(--icon-color-secondary)
+
+// Who walked it and the walker's own state; a begun walk's bar takes all of it
+.footer
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    justify-content: space-between
+    gap: var(--space-2) var(--space-4)
+    margin-top: auto
+    padding-top: var(--space-3)
+    border-top: var(--container-border-separator)
+
+
+.walkers
+    +type.caption
+    display: inline-flex
+    align-items: center
+    gap: 4px
+
+    svg
+        width: 14px
+        height: 14px
+        fill: var(--icon-color-secondary)
+
+.progress
+    display: flex
+    flex: 1 1 200px
+    align-items: center
+    gap: var(--space-3)
+    min-width: 0
+
+    .small &
+        flex: 0 0 240px
+
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            flex: 1 1 100%
+
+.bar
+    flex: 1
+    height: 6px
+    overflow: hidden
+    border-radius: 3px
+    background: var(--surface-3)
+
+    span
+        display: block
+        height: 100%
+        border-radius: 3px
+        background: var(--color-green)
+
+.count
+    +type.secondary
+    font-variant-numeric: tabular-nums
+    white-space: nowrap
+
+// Above the stretched link, so a button is a button of its own. Desktop only: on phones the
+// whole card is the way in ("Продолжить квест" would only repeat it)
+.action
+    position: relative
+    z-index: 1
+    margin-left: auto
+
+    .side &
+        margin-left: 0
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: none
