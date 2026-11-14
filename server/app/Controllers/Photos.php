@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Libraries\ActivityRemoval;
 use App\Entities\PhotoEntity;
 use App\Libraries\AvatarLibrary;
+use App\Libraries\GameLibrary;
 use App\Libraries\PhotoLibrary;
 use App\Libraries\PlacesContent;
 use App\Libraries\SessionLibrary;
@@ -180,7 +181,7 @@ class Photos extends ResourceController
         }
 
         $placesModel = new PlacesModel();
-        $placesData  = $placesModel->select('id, lat, lon, photos, cover_external_id, user_id')->find($id);
+        $placesData  = $placesModel->select('id, lat, lon, category, photos, cover_external_id, user_id, created_at')->find($id);
 
         $placeContent = new PlacesContent();
         $placeContent->translate([$id]);
@@ -224,6 +225,9 @@ class Photos extends ResourceController
             $photo = new PhotoEntity();
             $photo->lat       = $processed->coordinates?->lat ?? $placesData->lat;
             $photo->lon       = $processed->coordinates?->lon ?? $placesData->lon;
+            // The photo's own position and shot moment: what proves a visit in the game
+            $photo->gps       = $processed->coordinates ? 1 : 0;
+            $photo->taken_at  = $processed->takenAt;
             $photo->place_id  = $placesData->id;
             $photo->visit_id  = $visit?->id;
             $photo->user_id   = $this->session->user?->id;
@@ -249,6 +253,13 @@ class Photos extends ResourceController
                 (new VisitsLibrary())->afterChange($visit->user_id, $visit->place_id);
             }
 
+            // The game: a photo shot at the place within the season confirms the visit of its day
+            $game = (new GameLibrary())->photoUploaded($this->session->user, $placesData, $photoId, $processed->coordinates, $processed->takenAt);
+
+            if ($game) {
+                $visit = $game['visit'];
+            }
+
             $photoPath = PATH_PHOTOS . $placesData->id . '/';
 
             return $this->respondCreated((object)[
@@ -260,6 +271,8 @@ class Photos extends ResourceController
                 'title'     => $photo->title_en ?: $photo->title_ru,
                 'placeId'   => $photo->place_id,
                 'visitedAt' => $visit ? substr((string) $visit->visited_at, 0, 10) : null,
+                // The game: the season points the photo brought, when it confirmed a visit
+                'game'      => $game ? ['points' => $game['points'], 'total' => $game['total']] : null,
             ]);
 
         } catch (Throwable $e) {
@@ -301,7 +314,14 @@ class Photos extends ResourceController
         $placesData  = $placesModel->select('id, photos, cover_external_id')->find($photoData->place_id);
 
         // The photo's activity goes with it: collected while it is still there
-        $removal = ActivityRemoval::forPhoto($id);
+        $removal = ActivityRemoval::forPhoto($id)->by($this->session->user?->id);
+
+        // The game: a season score this photo proves moves to another photo or goes
+        try {
+            (new GameLibrary())->photoDeleted((string) $id);
+        } catch (Throwable $e) {
+            log_message('error', '{exception}', ['exception' => $e]);
+        }
 
         if (!$photosModel->delete($id, true)) {
             log_message('error', 'Photos::delete: photo {id} not deleted: {errors}', [
