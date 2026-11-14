@@ -35,7 +35,7 @@ $cardsGap: var(--space-4)
     &.fadeStart.fadeEnd .list
         mask-image: linear-gradient(to right, transparent, #000 $fadeWidth, #000 calc(100% - #{$fadeWidth}), transparent)
 
-// --- Cards: three equal items, snapping; one and a peek of the next on phones ---
+// --- Cards: three equal items, snapping; one the full width on phones ---
 
 .cards
     // The arrows sit at the middle of a place tile's 2:1 cover, measured from the rail's width
@@ -56,7 +56,7 @@ $cardsGap: var(--space-4)
             scroll-snap-align: start
 
             @media only screen and (max-width: variables.$mobileMaxWidth)
-                flex-basis: 85%
+                flex-basis: 100%
 
     .arrow
         top: calc((100cqw - 2 * #{$cardsGap}) / 3 * 0.25)

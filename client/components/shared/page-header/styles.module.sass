@@ -68,12 +68,10 @@
     color: var(--text-color-secondary)
     line-height: 1.5
 
-// The lede reads as body text: primary colour, on the full width of the text column
+// The lede is text on the page background: the reading size, on the full width of the text column
 .lede
     margin-top: 6px
-    font-size: variables.$fontSizeParagraph
-    line-height: 1.55
-    color: var(--text-color-primary)
+    +type.reading
 
 .actions
     display: flex

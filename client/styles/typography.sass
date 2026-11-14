@@ -37,10 +37,12 @@
     font-weight: var(--font-weight-semibold)
     line-height: 1.3
 
-// The first paragraph of an article: the gist, read by everyone
-@mixin lead
-    font-size: var(--font-size-lead)
-    line-height: 1.55
+// Text read on the page background: the lede of a page header, the memo under a head, a
+// paragraph between sections — the size of the long texts (place description, articles)
+@mixin reading
+    font-size: var(--font-size-prose)
+    line-height: 1.7
+    color: var(--text-color-primary)
 
 // UI text: controls, card text, facts lines
 @mixin body
