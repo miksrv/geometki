@@ -52,6 +52,20 @@ describe('ContributionCalendar', () => {
         expect(screen.getByRole('img')).toHaveAccessibleName('calendar-title: calendar-actions:15')
     })
 
+    it('names the busiest day of the year under the squares, by the legend', () => {
+        render(<ContributionCalendar calendar={calendar} />)
+
+        // 12 actions on 13 October: the mock joins the key with nothing, the day is asked for
+        expect(screen.getByText('calendar-summary-busiest')).toBeInTheDocument()
+        expect(screen.getByText('calendar-less', { exact: false })).toBeInTheDocument()
+    })
+
+    it('says nothing of a busiest day in an empty year', () => {
+        render(<ContributionCalendar calendar={{ ...calendar, items: [], total: 0 }} />)
+
+        expect(screen.queryByText('calendar-summary-busiest')).not.toBeInTheDocument()
+    })
+
     it('colours the days by how much was done', () => {
         const { container } = render(<ContributionCalendar calendar={calendar} />)
 
