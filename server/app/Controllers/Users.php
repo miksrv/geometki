@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Libraries\AvatarLibrary;
+use App\Libraries\GameLibrary;
 use App\Libraries\LevelsLibrary;
 use App\Libraries\NotificationSettings;
 use App\Libraries\PlaceFormatterLibrary;
@@ -64,6 +65,11 @@ class Users extends ResourceController
         $sort  = in_array($sortRaw, $allowedSortFields, true) ? $sortRaw : 'activity_at';
         $order = in_array($orderRaw, ['ASC', 'DESC'], true) ? $orderRaw : 'DESC';
 
+        // The game: the current season's points on the cards, and the
+        // list in their order (`sort=season`, the most first) — the season's whole rating
+        $season   = GameLibrary::seasonOf(date('Y-m-d'));
+        $bySeason = $sortRaw === 'season';
+
         $userLevels = new LevelsLibrary();
         $usersModel = new UsersModel();
 
@@ -80,12 +86,25 @@ class Users extends ResourceController
             $usersModel->like('name', $search);
         }
 
+        if ($bySeason) {
+            $usersModel
+                ->join(
+                    '(SELECT user_id, SUM(points) AS season_points FROM game_points WHERE season = '
+                        . $usersModel->db->escape($season['id']) . ' GROUP BY user_id) season_score',
+                    'season_score.user_id = users.id',
+                    'left',
+                    false
+                )
+                ->orderBy('COALESCE(season_score.season_points, 0)', 'DESC', false);
+        } else {
+            $usersModel->orderBy($sort, $order);
+        }
+
         $usersData  = $usersModel
-            ->select('id, name, avatar, created_at, activity_at, updated_at, level, experience, reputation')
-            ->orderBy($sort, $order)
+            ->select('users.id, name, avatar, created_at, activity_at, updated_at, level, experience, reputation')
             // A tie-breaker: equal experience or reputation would otherwise come in any order,
             // so pages could repeat or skip people and the ranking numbers would drift
-            ->orderBy('id', 'ASC')
+            ->orderBy('users.id', 'ASC')
             ->findAll($limit, $offset);
 
         $result = [];
@@ -131,6 +150,19 @@ class Users extends ResourceController
             }
         }
 
+        // The game: the points of the current season per user
+        $seasonPoints = [];
+        if (!empty($userIds)) {
+            $rows = $db->table('game_points')
+                ->select('user_id, SUM(points) AS points')
+                ->where('season', $season['id'])
+                ->whereIn('user_id', $userIds)
+                ->groupBy('user_id')
+                ->get()->getResultArray();
+
+            $seasonPoints = array_map('intval', array_column($rows, 'points', 'user_id'));
+        }
+
         // Only the people page shows the covers: the home page widget asks without them
         $latestPlaces = $this->request->getGet('places') === '1' ? $this->latestPlaces($userIds) : null;
 
@@ -159,6 +191,10 @@ class Users extends ResourceController
 
             if ($latestPlaces !== null) {
                 $card->places = $latestPlaces[$item->id] ?? [];
+            }
+
+            if ($season) {
+                $card->points = $seasonPoints[$item->id] ?? 0;
             }
 
             $result[] = $card;
