@@ -1,0 +1,51 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+
+// A quiet list beside the text: a caption, then the sections as rows on a thin rail; the
+// section in view is in the main colour with the rail marked next to it
+.contents
+    ul
+        display: flex
+        flex-direction: column
+        margin: 0
+        padding: 0
+        list-style: none
+        border-left: 2px solid var(--border)
+
+    a
+        display: block
+        margin-left: -2px
+        padding: 6px var(--space-3)
+        border-left: 2px solid transparent
+        color: var(--text-color-secondary)
+        +type.body
+        line-height: 1.4
+        text-decoration: none
+        transition: color var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease)
+
+        // The global `a:focus` (link colour, underline) is more specific than a class: a clicked
+        // row keeps the focus
+        &:focus
+            color: var(--text-color-secondary)
+            text-decoration: none
+
+        &:hover
+            color: var(--text-color-primary)
+            text-decoration: none
+
+        &:focus-visible
+            outline: none
+            box-shadow: var(--focus-ring)
+
+        &.active
+            border-left-color: var(--color-main)
+            color: var(--color-main)
+            font-weight: var(--font-weight-medium)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: none
+
+.caption
+    margin: 0 0 var(--space-2)
+    +type.secondary
+    font-weight: var(--font-weight-semibold)

@@ -1,13 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React from 'react'
 import { cn, Container, Icon, IconTypes } from 'simple-react-ui-kit'
 
-import styles from './styles.module.sass'
+import { useScrollSpy } from '@/hooks/useScrollSpy'
 
-// The line under the app bar a card's top passes to become the current part; a menu click
-// stops the card at 64px (`scroll-margin-top`)
-const SPY_OFFSET = 80
-// No scroll events for this long: a menu click's smooth scroll is over, ms
-const SCROLL_IDLE = 150
+import styles from './styles.module.sass'
 
 export interface FormSectionsItem {
     /** The id of the part's `FormSection` */
@@ -64,79 +60,13 @@ export const FormSection: React.FC<FormSectionProps> = ({ id, title, description
 )
 
 const FormSectionsMenu: React.FC<Omit<FormSectionsProps, 'children'>> = ({ sections, label }) => {
-    const keys = sections.map(({ key }) => key)
-
-    const [active, setActive] = useState<string | undefined>(keys[0])
-
-    // The part a menu click is scrolling to: the smooth scroll passes the parts between, and
-    // the mark must not run through them
-    const scrollTarget = useRef<string>(undefined)
-    const release = useRef<ReturnType<typeof setTimeout>>(undefined)
-
-    // Scroll spy: the current part is the last card whose top has reached the line under the
-    // app bar; at the end of the page — the last card, which may be too short to reach it.
-    // The cards are looked up on each scroll, so they may appear after the menu (a skeleton)
-    useEffect(() => {
-        let frame = 0
-
-        const update = () => {
-            frame = 0
-
-            // Scrolled to the very end of a page that scrolls at all
-            const atEnd =
-                window.scrollY > 0 && window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
-            const passed = keys.filter(
-                (key) => (document.getElementById(key)?.getBoundingClientRect().top ?? Infinity) <= SPY_OFFSET
-            )
-            const current = atEnd ? keys[keys.length - 1] : (passed[passed.length - 1] ?? keys[0])
-
-            if (scrollTarget.current) {
-                // The click's scroll is over when it stops: no scroll events for a moment
-                clearTimeout(release.current)
-                release.current = setTimeout(() => {
-                    scrollTarget.current = undefined
-                    update()
-                }, SCROLL_IDLE)
-
-                return
-            }
-
-            if (current) {
-                setActive(current)
-            }
-        }
-
-        const onScroll = () => {
-            if (!frame) {
-                frame = requestAnimationFrame(update)
-            }
-        }
-
-        update()
-        window.addEventListener('scroll', onScroll, { passive: true })
-        window.addEventListener('resize', onScroll)
-
-        return () => {
-            cancelAnimationFrame(frame)
-            clearTimeout(release.current)
-            window.removeEventListener('scroll', onScroll)
-            window.removeEventListener('resize', onScroll)
-        }
-    }, [keys.join()])
+    const { active, scrollTo } = useScrollSpy(sections.map(({ key }) => key))
 
     // Scrolls without a history entry: the unsaved-changes guard reads Back from a `#part`
     // entry as leaving the page
     const handleClick = (key: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
-        const target = document.getElementById(key)
-
-        if (target) {
+        if (scrollTo(key)) {
             event.preventDefault()
-            scrollTarget.current = key
-            // Let go even if the card is already in place and nothing scrolls
-            clearTimeout(release.current)
-            release.current = setTimeout(() => (scrollTarget.current = undefined), SCROLL_IDLE * 4)
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            setActive(key)
         }
     }
 
