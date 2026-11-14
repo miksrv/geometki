@@ -12,7 +12,7 @@ import { getErrorMessage } from '@/utils/api'
 /**
  * The visitor's bookmark of a place: whether it is set and the toggle (the auth dialog for
  * guests, a toast with the result). Behind `BookmarkButton` and the "Сохранить" menu of the
- * place page. `known` is the state a list already sent (`PlaceListItem.bookmarked`): then
+ * place page. `known` is the state the caller already has (a map point's `bookmarked`): then
  * nothing is requested, and the hook keeps the state itself after a toggle.
  */
 export const useBookmark = (placeId?: string, known?: boolean) => {

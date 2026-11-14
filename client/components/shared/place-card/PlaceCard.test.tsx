@@ -76,15 +76,6 @@ jest.mock('@/components/shared/category-icon', () => ({
     )
 }))
 
-jest.mock('./PlaceCardBookmark', () => ({
-    PlaceCardBookmark: ({ known }: { known?: boolean }) => (
-        <button
-            data-testid={'card-bookmark'}
-            aria-pressed={!!known}
-        />
-    )
-}))
-
 const place: ApiModel.PlaceListItem = {
     id: 'p1',
     slug: 'cool-cave',
@@ -161,16 +152,11 @@ describe('PlaceCard', () => {
             expect(screen.queryByTestId('category-icon')).not.toBeInTheDocument()
         })
 
-        it('puts the bookmark over the cover, with the state the list sent', () => {
-            render(<PlaceCard place={{ ...place, bookmarked: true }} />)
-
-            expect(screen.getByTestId('card-bookmark')).toHaveAttribute('aria-pressed', 'true')
-        })
-
-        it('replaces the bookmark with the owner actions when given', () => {
+        it('has nothing over the cover but the owner actions, when given: a bookmark is made on the place page', () => {
             const { rerender } = render(<PlaceCard place={place} />)
 
             expect(screen.queryByText('remove')).not.toBeInTheDocument()
+            expect(screen.queryByRole('button')).not.toBeInTheDocument()
 
             rerender(
                 <PlaceCard
@@ -180,7 +166,6 @@ describe('PlaceCard', () => {
             )
 
             expect(screen.getByRole('button', { name: 'remove' })).toBeInTheDocument()
-            expect(screen.queryByTestId('card-bookmark')).not.toBeInTheDocument()
         })
 
         it('marks a place the visitor has been to', () => {
