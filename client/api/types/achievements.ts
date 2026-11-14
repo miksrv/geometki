@@ -2,7 +2,8 @@ import { DateTime } from '@/api/types/index'
 
 export type AchievementTier = 'none' | 'bronze' | 'silver' | 'gold'
 export type AchievementType = 'base' | 'seasonal'
-export type AchievementCategory = 'exploration' | 'content' | 'social' | 'reputation' | 'consistency' | 'seasonal'
+export type AchievementCategory =
+    'exploration' | 'content' | 'social' | 'reputation' | 'consistency' | 'seasonal' | 'game'
 
 export interface AchievementProgress {
     current: number
@@ -32,7 +33,8 @@ export interface AchievementRule {
     metric: string
     operator: '>='
     value: number
-    filter?: { category_id?: string; tag_id?: string }
+    /** `season` — the season of a `season_*` metric (`2026-autumn`); `quest_id` — one quest of `quests_walked` */
+    filter?: { category_id?: string; tag_id?: string; season?: string; quest_id?: string }
 }
 
 export interface AchievementInput {

@@ -21,6 +21,8 @@ export type User = {
     authType?: AuthService
     statistic?: UserStatistic
     settings?: UserSettings
+    /** The game, the people list, for those it is open to: the geopoints of the current season */
+    points?: number
     /** `GET /users?places=1` only: the user's newest places with a cover, at most four */
     places?: UserPlacePreview[]
 }

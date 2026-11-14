@@ -160,16 +160,8 @@ export const API = createApi({
             providesTags: (res, err, arg) => [{ id: arg.placeId, type: 'Bookmarks' }],
             query: (params) => `bookmarks${encodeQueryData(params)}`
         }),
-        /** All the visitor's bookmarked place IDs: the cards of any list show their bookmark from it */
-        bookmarksGetPlaces: builder.query<ApiType.Bookmarks.PlacesResponse, void>({
-            providesTags: [{ id: 'LIST', type: 'Bookmarks' }],
-            query: () => 'bookmarks/places'
-        }),
         bookmarksPutPlace: builder.mutation<void, ApiType.Bookmarks.Request>({
-            invalidatesTags: (res, err, arg) => [
-                { id: arg.placeId, type: 'Bookmarks' },
-                { id: 'LIST', type: 'Bookmarks' }
-            ],
+            invalidatesTags: (res, err, arg) => [{ id: arg.placeId, type: 'Bookmarks' }],
             query: (data) => ({
                 body: data,
                 method: 'PUT',
@@ -339,6 +331,99 @@ export const API = createApi({
         pushPostTest: builder.mutation<ApiType.Push.TestResponse, void>({
             query: () => ({ method: 'POST', url: 'push/test' }),
             transformErrorResponse: extractErrorMessage
+        }),
+
+        /** Controller: Game **/
+        gameGet: builder.query<ApiType.Game.GetResponse, { rivals?: boolean } | void>({
+            providesTags: ['Game'],
+            // `rivals`: with the players right above and below the visitor (the home page's block)
+            query: (params) => `game${params?.rivals ? '?rivals=1' : ''}`
+        }),
+        gameGetExploration: builder.query<ApiType.Game.ExplorationResponse, Maybe<{ user?: string }>>({
+            providesTags: ['Game'],
+            query: (params) => `game/exploration${encodeQueryData(params)}`
+        }),
+        gameGetLeaders: builder.query<ApiType.Game.LeadersResponse, Maybe<ApiType.Game.LeadersRequest>>({
+            providesTags: ['Game'],
+            query: (params) => `game/leaders${encodeQueryData(params)}`
+        }),
+        gameGetMine: builder.query<ApiType.Game.MineResponse, Maybe<{ limit?: number; offset?: number }>>({
+            providesTags: ['Game'],
+            query: (params) => `game/mine${encodeQueryData(params)}`
+        }),
+        gameGetPlaces: builder.query<ApiType.Game.PlacesResponse, Maybe<ApiType.Game.PlacesRequest>>({
+            providesTags: ['Game'],
+            query: (params) => `game/places${encodeQueryData(params)}`
+        }),
+        gamePostSeasonImage: builder.mutation<{ id: string; image: string }, { id: string; file: File }>({
+            invalidatesTags: ['Game'],
+            query: ({ id, file }) => {
+                const formData = new FormData()
+                formData.append('image', file)
+                return { body: formData, method: 'POST', url: `game/seasons/${id}/image` }
+            },
+            transformErrorResponse: extractErrorData
+        }),
+        gameGetSeason: builder.query<ApiType.Game.SeasonResponse, string>({
+            providesTags: ['Game'],
+            query: (id) => `game/seasons/${id}`
+        }),
+        gameGetUser: builder.query<ApiType.Game.UserResponse, string>({
+            providesTags: ['Game'],
+            query: (id) => `game/users/${id}`
+        }),
+
+        /** Controller: Quests (the quests of the game) **/
+        questsDelete: builder.mutation<void, string>({
+            invalidatesTags: ['Quests', 'Game'],
+            query: (id) => ({ method: 'DELETE', url: `game/quests/${id}` }),
+            transformErrorResponse: extractErrorData
+        }),
+        questsGetItem: builder.query<ApiType.Game.QuestResponse, ApiType.Game.QuestGetRequest>({
+            providesTags: (res, err, arg) => [{ id: arg.id, type: 'Quests' }],
+            query: ({ id, edit }) => `game/quests/${id}${edit ? '?edit=1' : ''}`
+        }),
+        questsGetMarks: builder.query<ApiType.Game.QuestMarksResponse, void>({
+            providesTags: ['Quests'],
+            query: () => 'game/quests/marks'
+        }),
+        questsGetList: builder.query<ApiType.Game.QuestsListResponse, Maybe<ApiType.Game.QuestsListRequest>>({
+            providesTags: ['Quests'],
+            query: (params) => `game/quests${encodeQueryData(params)}`
+        }),
+        questsPatch: builder.mutation<{ id: string }, ApiType.Game.QuestInput & { id: string }>({
+            invalidatesTags: ['Quests', 'Game'],
+            query: ({ id, ...body }) => ({ body, method: 'PATCH', url: `game/quests/${id}` }),
+            transformErrorResponse: extractErrorData
+        }),
+        questsPost: builder.mutation<{ id: string }, ApiType.Game.QuestInput>({
+            invalidatesTags: ['Quests', 'Game'],
+            query: (body) => ({ body, method: 'POST', url: 'game/quests' }),
+            transformErrorResponse: extractErrorData
+        }),
+        questsPostConfirm: builder.mutation<ApiType.Game.QuestConfirmResponse, ApiType.Game.QuestConfirmRequest>({
+            // A confirmed point is a confirmed visit of its place
+            invalidatesTags: (res) => [
+                { type: 'Quests' },
+                { type: 'Game' },
+                { type: 'Visits' },
+                { type: 'Feed' },
+                { type: 'Notifications' },
+                { type: 'UserAchievements' },
+                ...(res?.place ? [{ id: `me-${res.place}`, type: 'Visits' as const }] : [])
+            ],
+            query: ({ id, ...body }) => ({ body, method: 'POST', url: `game/quests/${id}/confirm` }),
+            transformErrorResponse: extractErrorData
+        }),
+        questsDeleteWalk: builder.mutation<void, string>({
+            invalidatesTags: ['Quests'],
+            query: (id) => ({ method: 'DELETE', url: `game/quests/${id}/walk` }),
+            transformErrorResponse: extractErrorData
+        }),
+        questsPostStart: builder.mutation<ApiType.Game.QuestWalk, string>({
+            invalidatesTags: ['Quests'],
+            query: (id) => ({ method: 'POST', url: `game/quests/${id}/start` }),
+            transformErrorResponse: extractErrorData
         }),
 
         /** Controller: Location **/
@@ -516,7 +601,16 @@ export const API = createApi({
                 // A photo uploaded on the day of a visit shows in the visit
                 { id: arg.place, type: 'Visits' },
                 { type: 'Feed' },
-                { type: 'Notifications' }
+                { type: 'Notifications' },
+                // A photo shot at the place confirmed a visit: the button, the season, the quests
+                ...(res?.game
+                    ? [
+                          { id: `me-${arg.place}`, type: 'Visits' as const },
+                          { type: 'Game' as const },
+                          { type: 'Quests' as const },
+                          { type: 'UserAchievements' as const }
+                      ]
+                    : [])
             ],
             query: (data) => ({
                 body: data.formData,
@@ -734,7 +828,9 @@ export const API = createApi({
                 { id: arg.place, type: 'Photos' },
                 { type: 'Visits' },
                 { type: 'Feed' },
-                { type: 'Notifications' }
+                { type: 'Notifications' },
+                // The geopoints of a visit go with it
+                { type: 'Game' }
             ],
             query: ({ id }) => ({
                 method: 'DELETE',
@@ -774,7 +870,11 @@ export const API = createApi({
                 { id: `me-${arg.place}`, type: 'Visits' },
                 { type: 'Visits' },
                 { type: 'Feed' },
-                { type: 'Notifications' }
+                { type: 'Notifications' },
+                // A check-in on the spot counts the place in the season, and is a point of a quest
+                ...(res?.game?.confirmed
+                    ? [{ type: 'Game' as const }, { type: 'Quests' as const }, { type: 'UserAchievements' as const }]
+                    : [])
             ],
             query: (data) => ({
                 body: data,
@@ -799,6 +899,7 @@ export const API = createApi({
         'Comments',
         'ExternalPhotos',
         'Feed',
+        'Game',
         'Notifications',
         'OsmCandidates',
         'Photos',
@@ -806,6 +907,7 @@ export const API = createApi({
         'Profile',
         'PushStatus',
         'Rating',
+        'Quests',
         'SendingMail',
         'UserAchievements',
         'Users',

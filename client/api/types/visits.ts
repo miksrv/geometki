@@ -54,6 +54,8 @@ export interface MeResponse {
     questions: Array<{ key: string; values?: string[]; features?: string[] }>
     /** One visit a week: the latest visit younger than this many days is the one a tap cancels */
     repeatDays?: number
+    /** The game, for those it is open to: what a confirmed visit of the place gives now; null outside a season */
+    game?: ApiType.Game.PlaceGame | null
 }
 
 /** `POST /visits`: idempotent per week — a check-in within `repeatDays` of a visit answers that visit */
@@ -61,6 +63,14 @@ export interface CreateRequest {
     place: string
     /** `YYYY-MM-DD`, the visitor's day; today without it */
     visitedAt?: string
+    /**
+     * The visitor's position, the browser's answer to the tap (the game): near the place the
+     * check-in counts it in the season. Compared with the place and dropped by the server
+     */
+    lat?: number
+    lon?: number
+    /** Metres, as the browser reports it */
+    accuracy?: number
 }
 
 export type CreateResponse = ApiModel.Visit & {
@@ -70,6 +80,15 @@ export type CreateResponse = ApiModel.Visit & {
     ordinal: number
     /** Nobody checked in at the place earlier in the calendar year of the visit */
     firstThisYear: boolean
+    /** The game, for those it is open to: what this check-in did in the season */
+    game?: {
+        /** The position was near the place: the place is counted */
+        confirmed: boolean
+        /** The geopoints it added; 0 when the place was counted already */
+        points: number
+        /** A position was sent and is not near: how far the place is ("2,4 км") */
+        far?: string
+    }
 }
 
 /** `DELETE /visits/:id`: author or admin */

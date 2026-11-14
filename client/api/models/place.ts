@@ -36,8 +36,6 @@ export type Place = {
         /** Set when the cover is cut from a linked Wikimedia Commons or PastVu photo: credited under it */
         credit?: PlaceCoverCredit
     }
-    /** `GET /places` for a signed-in visitor only: the place is in their bookmarks */
-    bookmarked?: boolean
     /** `GET /places` for a signed-in visitor only: they marked "I was here" */
     visited?: boolean
 }

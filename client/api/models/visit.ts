@@ -20,6 +20,8 @@ export type Visit = {
     place?: PlaceListItem
     /** The photos uploaded on the day of the visit */
     photos?: Photo[]
+    /** The game: how the visit was proved — a photo shot at the place, or "I am here" */
+    confirmed?: 'photo' | 'geo'
     /** Answers to the visit questions: question key → value; a feature is `can_<feature>` → `yes` | `no` */
     answers?: Record<string, string>
 }
