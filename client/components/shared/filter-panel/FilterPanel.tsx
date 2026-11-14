@@ -62,18 +62,27 @@ interface FilterPopoutProps {
     active?: boolean
     /** The field's width in the row, px */
     width: number
+    className?: string
     /** The dropdown's content; `close` before acting on a pick */
     children: (close: () => void) => React.ReactNode
 }
 
 /** A field of the toolbar: a `FieldTrigger` that opens a dropdown */
-export const FilterPopout: React.FC<FilterPopoutProps> = ({ icon, label, value, active, width, children }) => {
+export const FilterPopout: React.FC<FilterPopoutProps> = ({
+    icon,
+    label,
+    value,
+    active,
+    width,
+    className,
+    children
+}) => {
     const popout = useRef<PopoutHandleProps>(null)
 
     return (
         <Popout
             ref={popout}
-            className={styles.popout}
+            className={cn(styles.popout, className)}
             style={{ width }}
             position={'left'}
             portal={true}

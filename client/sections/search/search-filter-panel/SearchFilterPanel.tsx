@@ -10,14 +10,14 @@ import {
     CategoryRail,
     FilterPanel,
     FilterPhoneBar,
-    FilterPopout,
     FiltersButton,
     FiltersSheet,
     FilterToolbar,
-    FilterToolbarSpacer
+    FilterToolbarSpacer,
+    SortPopout
 } from '@/components/shared/filter-panel'
 import type { AppliedFilter } from '@/components/shared/filter-panel/AppliedFilterList'
-import { OptionList, Tabs } from '@/components/ui'
+import { Tabs } from '@/components/ui'
 import useUserLocation from '@/hooks/useUserLocation'
 import { categoryImage, getCategoryShortTitle } from '@/utils/categories'
 
@@ -159,28 +159,11 @@ export const SearchFilterPanel: React.FC<SearchFilterPanelProps> = ({ query, dat
                     <FilterToolbarSpacer />
 
                     {placeFilters && (
-                        <FilterPopout
-                            width={240}
-                            icon={'BarChart'}
-                            value={sortLabel}
-                        >
-                            {(close) => (
-                                <OptionList
-                                    groups={[
-                                        {
-                                            items: presets.map((preset) => ({
-                                                ...preset,
-                                                selected: preset.key === query.sort
-                                            }))
-                                        }
-                                    ]}
-                                    onSelect={(sort) => {
-                                        close()
-                                        void handleSort(sort)
-                                    }}
-                                />
-                            )}
-                        </FilterPopout>
+                        <SortPopout
+                            presets={presets}
+                            value={query.sort}
+                            onSelect={(sort) => void handleSort(sort)}
+                        />
                     )}
                 </FilterToolbar>
 
