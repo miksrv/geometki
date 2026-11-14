@@ -32,6 +32,8 @@ import { MarkerPointCluster } from './marker-point-cluster'
 import { MarkerUser } from './marker-user'
 import { OsmCandidates } from './osm-candidates'
 import { PlaceMark } from './place-mark'
+import { QuestLayer } from './quest-layer'
+import { QuestMarks } from './quest-marks'
 import { Ruler } from './ruler'
 import { TrailsInfo, TrailsLayer } from './trails-layer'
 import {
@@ -40,7 +42,9 @@ import {
     MapObjectsTypeEnum,
     MapPositionType,
     MapTrailsLayerEnum,
-    MarkerPinData
+    MarkerPinData,
+    QuestPointMark,
+    QuestZoneMark
 } from './types'
 import { Wayback } from './wayback'
 import { WikimediaCommons } from './wikimedia-commons'
@@ -54,6 +58,13 @@ type MapProps = {
     places?: ApiModel.PlaceMark[]
     photos?: ApiModel.PhotoMark[]
     pins?: MarkerPinData[]
+    /** A quest of the game: its opened points, numbered, with a dashed line through them */
+    quest?: QuestPointMark[]
+    /** The search zones of riddle quests: dashed circles */
+    questZones?: QuestZoneMark[]
+    /** Quests as pins with their card in a popup (`/quests`); the "Квесты" layer shows all of them */
+    quests?: ApiType.Game.QuestMark[]
+    onQuestPointClick?: (id: string) => void
     categories?: ApiModel.Categories[]
     layer?: MapLayersEnum
     loading?: boolean
@@ -138,6 +149,10 @@ export const InteractiveMap: React.FC<MapProps> = ({
     places,
     photos,
     pins,
+    quest,
+    questZones,
+    quests,
+    onQuestPointClick,
     categories,
     // layer,
     loading,
@@ -481,6 +496,12 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
                     {hexMode && <HexLayer categories={categories} />}
 
+                    {quests ? (
+                        <QuestMarks marks={quests} />
+                    ) : (
+                        additionalLayers?.includes(MapAdditionalLayersEnum.QUESTS) && <QuestMarks />
+                    )}
+
                     {additionalLayers?.includes(MapAdditionalLayersEnum.WIKIPEDIA) && (
                         <Wikipedia onPhotoClick={onPhotoClick} />
                     )}
@@ -612,6 +633,14 @@ export const InteractiveMap: React.FC<MapProps> = ({
                                 onPhotoClick={handlePhotoMarkerClick}
                             />
                         )
+                    )}
+
+                    {(!!quest?.length || !!questZones?.length) && (
+                        <QuestLayer
+                            points={quest ?? []}
+                            zones={questZones}
+                            onPointClick={onQuestPointClick}
+                        />
                     )}
 
                     {pins?.map((pin, i) => (

@@ -1,0 +1,44 @@
+// The numbered points of a quest (QuestLayer): 28px circles with a white ring, so they read
+// over any map layer
+.point
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 28px
+    height: 28px
+    border: 2px solid #fff
+    border-radius: 50%
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .3)
+    font-family: var(--font-family)
+    font-size: var(--font-size-secondary)
+    font-weight: var(--font-weight-semibold)
+    font-variant-numeric: tabular-nums
+    line-height: 1
+
+    svg
+        width: 14px
+        height: 14px
+        fill: none
+        stroke: currentColor
+        stroke-width: 1.6
+        stroke-linecap: round
+        stroke-linejoin: round
+
+// Still to confirm, any order
+.open
+    background: #fff
+    color: var(--color-main)
+
+// The one to go to now
+.current
+    background: var(--color-main)
+    color: #fff
+
+.done
+    background: var(--color-green)
+    color: #fff
+
+// A confirmed point: the category icon of the place, as the site's place marks (marker-point)
+.category
+    border-radius: 3px
+    box-shadow: 0 0 0 1px #fff

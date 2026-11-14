@@ -223,7 +223,7 @@ describe('HexLayer', () => {
             mockHandlers.moveend()
         })
 
-        expect(mockBinByHex.mock.calls.length).toBe(binned)
+        expect(mockBinByHex.mock.calls).toHaveLength(binned)
 
         mockZoom = 9
         act(() => mockHandlers.zoomend())
@@ -240,7 +240,7 @@ describe('HexLayer', () => {
         mockZoom = 9
         act(() => mockHandlers.zoomend())
 
-        expect(mockProject.mock.calls.length).toBe(projected)
+        expect(mockProject.mock.calls).toHaveLength(projected)
     })
 
     it('keeps the shapes of the cells that stay in view across a pan', () => {
