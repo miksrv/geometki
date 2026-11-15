@@ -1,21 +1,83 @@
-// The chips over the person's map
-.chips
-    display: flex
-    flex-wrap: wrap
-    gap: var(--space-2)
-    margin-bottom: var(--space-3)
+@use '../../../styles/variables' as variables
 
-// The map with the button over its top-right corner (the map's own controls are on the left)
+// The map with its own choice of the set and the way to the lists over its top-right corner
+// (the map's own controls are on the left)
 .mapBox
     position: relative
 
-.listButton
+.overlay
     position: absolute
     top: var(--space-3)
     right: var(--space-3)
+    // Clear of the map's controls on the left
+    left: 56px
     // The level of the Leaflet controls (globals.sass caps them at 400): over the map, under the
     // fixed app bar and bottom navigation (450) and the overlay (500)
     z-index: 400
+    display: flex
+    flex-wrap: wrap
+    align-items: flex-start
+    justify-content: flex-end
+    gap: var(--space-2)
+    // The map under the gaps stays draggable
+    pointer-events: none
+
+    & > *
+        pointer-events: auto
+
+// The sets as a radio group: one small plate of segments, the chosen one tinted. As high as a
+// `small` button of the kit — the one next to it —, by the kit's own token
+.sets
+    display: flex
+    box-sizing: border-box
+    height: var(--size-control-small, var(--size-small))
+    padding: 2px
+    border-radius: var(--border-radius)
+    background: var(--surface-1)
+    box-shadow: var(--shadow-md)
+
+.set
+    display: inline-flex
+    align-items: center
+    gap: 6px
+    height: 100%
+    padding: 0 var(--space-2)
+    border: 0
+    border-radius: calc(var(--border-radius) - 2px)
+    background: none
+    color: var(--text-color-primary)
+    font: inherit
+    font-size: var(--font-size-secondary)
+    white-space: nowrap
+    cursor: pointer
+    transition: background-color var(--duration-fast) var(--ease)
+
+    &:hover
+        background: var(--surface-2)
+
+    &:focus-visible
+        outline: none
+        box-shadow: var(--focus-ring)
+
+.setOn,
+.setOn:hover
+    background: var(--color-main-background)
+    color: var(--color-main)
+    font-weight: var(--font-weight-medium)
+
+.setCount
+    color: var(--text-color-secondary)
+    font-variant-numeric: tabular-nums
+
+    .setOn &
+        color: inherit
+
+// Phones: a set that has a badge is the badge and the number — the name is in the hint
+@media only screen and (max-width: variables.$mobileMaxWidth)
+    .setLabelWide
+        display: none
+
+.listButton
     display: flex
 
     button

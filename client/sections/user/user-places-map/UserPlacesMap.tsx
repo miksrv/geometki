@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react'
-import { Button } from 'simple-react-ui-kit'
+import { Button, cn } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiModel } from '@/api'
 import { ToneBadge } from '@/components/map/tone-badge'
 import { PlacesMap } from '@/components/shared'
-import { Chip } from '@/components/ui'
+import { formatThousands } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
@@ -61,10 +61,13 @@ const hasAny = (count?: number) => count === undefined || count > 0
  * those they added, visited and keep in bookmarks. The places they have been to carry a green check
  * on the marker's corner, the bookmarked ones an orange bookmark (`PlaceMark.tone`, `ToneBadge`),
  * always — with one set only too; their own places are plain markers. A place in several sets
- * takes the badge of the first of `MERGE_ORDER` (visited, bookmark, added). Chips over the map
- * show one set, each with the same badge: the chips are the legend; with one set only there are
- * no chips. No heading: the map speaks for itself, the
- * "Список мест" button over its corner leads to the list of the set shown. Loaded in the browser
+ * takes the badge of the first of `MERGE_ORDER` (visited, bookmark, added). The set shown is
+ * chosen on the map itself — a small radio group over its top-right corner ("Все 108 ·
+ * Добавленные 101 · ✓ Посещённые 10", each set with the badge of its markers: the group is the
+ * legend; on phones a set with a badge is the badge and the number alone); with one set only
+ * there is no group. Nothing stands over the map, so it sits right under the block before it.
+ * No heading: the map speaks for itself, the "Список мест" button next to the group leads to
+ * the list of the set shown. Loaded in the browser
  * (the cached profile carries no marks); a set the profile's counts say is empty is not asked
  * for, and a person without places gets nothing — not even a placeholder.
  */
@@ -111,52 +114,67 @@ export const UserPlacesMap: React.FC<UserPlacesMapProps> = ({ userId, statistic 
         return null
     }
 
+    // The sets to choose from: all of them, then each one that has places — a radio group on the map
+    const options: Array<{ key: Filter; label: string; count: number; tone?: ApiModel.PlaceMarkBadge }> = [
+        { count: places.length, key: 'all', label: t('user-map-all') },
+        ...filled.map((tone) => ({
+            count: sets[tone]?.length ?? 0,
+            key: tone,
+            label: t(`user-places-${TONE_SHOW[tone]}`),
+            tone: badgeOf(tone)
+        }))
+    ]
+
     // The list of the set on the map: the chosen one, or the first that has places
     const listTone = filter !== 'all' ? filter : (filled[0] ?? 'added')
     const listHref = `/users/${userId}/places${listTone === 'added' ? '' : `?show=${TONE_SHOW[listTone]}`}`
 
     return (
         <section aria-label={t('user-map-title')}>
-            {several && (
-                <div className={styles.chips}>
-                    <Chip
-                        size={'small'}
-                        label={t('user-map-all')}
-                        count={places.length || undefined}
-                        selected={filter === 'all'}
-                        onClick={() => setFilter('all')}
-                    />
-                    {TONES.map((tone) =>
-                        sets[tone]?.length ? (
-                            <Chip
-                                key={tone}
-                                size={'small'}
-                                icon={tone !== 'added' ? <ToneBadge tone={tone} /> : undefined}
-                                label={t(`user-places-${TONE_SHOW[tone]}`)}
-                                count={sets[tone]?.length}
-                                selected={filter === tone}
-                                onClick={() => setFilter(tone)}
-                            />
-                        ) : null
-                    )}
-                </div>
-            )}
-
-            {/* The way to the lists is a button over the map's free top-right corner */}
+            {/* Nothing over the map: the choice of the set and the way to the lists are on it, in
+                its free top-right corner (the map's own controls are on the left) */}
             <div className={styles.mapBox}>
                 <PlacesMap
                     places={shown}
                     loading={loading}
                     fullScreen={true}
                 />
-                {/* The kit wraps a link button in an inline-block <a>: positioned here, it adds no line under the map */}
-                <div className={styles.listButton}>
-                    <Button
-                        size={'small'}
-                        mode={'secondary'}
-                        label={t('user-map-list')}
-                        link={listHref}
-                    />
+
+                <div className={styles.overlay}>
+                    {several && (
+                        <div
+                            className={styles.sets}
+                            role={'radiogroup'}
+                            aria-label={t('user-map-title')}
+                        >
+                            {options.map(({ key, label, count, tone }) => (
+                                <button
+                                    key={key}
+                                    type={'button'}
+                                    role={'radio'}
+                                    aria-checked={filter === key}
+                                    aria-label={`${label}: ${count}`}
+                                    title={label}
+                                    className={cn(styles.set, filter === key && styles.setOn)}
+                                    onClick={() => setFilter(key)}
+                                >
+                                    {tone && <ToneBadge tone={tone} />}
+                                    <span className={cn(styles.setLabel, tone && styles.setLabelWide)}>{label}</span>
+                                    <span className={styles.setCount}>{formatThousands(count)}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* The kit wraps a link button in an inline-block <a>: in a flex box it adds no line */}
+                    <div className={styles.listButton}>
+                        <Button
+                            size={'small'}
+                            mode={'secondary'}
+                            label={t('user-map-list')}
+                            link={listHref}
+                        />
+                    </div>
                 </div>
             </div>
         </section>
