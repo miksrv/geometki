@@ -1,0 +1,44 @@
+@use '../../../styles/typography' as type
+@use '../../../styles/mixins' as *
+
+// "Прошлый сезон" in the side column: one low row — picture | name and dates | the podium's faces
+.row
+    position: relative
+    // The row under the pointer reaches the edges of the card's text
+    margin: 0 calc(-1 * var(--space-2))
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    padding: var(--space-2)
+    border-radius: var(--radius-md)
+    transition: background-color var(--duration-fast) var(--ease)
+
+    &:hover
+        background: var(--surface-2)
+
+.who
+    flex: 1
+    min-width: 0
+
+.title
+    +type.titleBlock
+    +truncate
+
+// The whole row opens the season
+.link
+    color: var(--text-color-primary)
+    text-decoration: none
+
+    &:after
+        content: ''
+        position: absolute
+        inset: 0
+
+    &:hover
+        color: var(--text-color-primary)
+        text-decoration: none
+
+.meta
+    +type.secondary
+    +truncate
+    margin: 2px 0 0
