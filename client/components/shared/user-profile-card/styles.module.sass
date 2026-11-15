@@ -82,14 +82,23 @@
 .profile .text
     gap: var(--space-3)
 
-.title
-    min-width: 0
-    overflow-wrap: anywhere
+// The name and the facts: part of the text column on wide screens; on phones a block of its own
+// next to the avatar, the name over the facts
+.head
+    display: contents
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: flex
+        flex-direction: column
+        gap: var(--space-1)
         grid-column: 2
         grid-row: 1
         align-self: center
+        min-width: 0
+
+.title
+    min-width: 0
+    overflow-wrap: anywhere
 
 // The profile's h1 is a page title; the home greeting is a line of the card next to the
 // avatar (the one h1 off the page-title role, DESIGN.md → Type scale)
@@ -137,9 +146,6 @@
             content: '·'
             margin: 0 var(--space-2)
             opacity: .7
-
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        grid-column: 1 / -1
 
 .profile .facts
     font-size: var(--font-size)
@@ -225,67 +231,6 @@
 .progressFill
     height: 100%
     border-radius: inherit
-
-// Big numbers over captions; the links lead to the lists, the reputation explains itself
-.counters
-    display: grid
-    grid-template-columns: repeat(4, minmax(88px, auto))
-    gap: var(--space-2)
-    align-self: center
-
-    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
-        grid-column: 1 / -1
-        grid-template-columns: repeat(4, minmax(0, 1fr))
-
-// The kit tooltip wraps the reputation in its own box: let it fill the cell
-.counters > *
-    min-width: 0
-
-.counter
-    display: flex
-    flex-direction: column
-    align-items: center
-    justify-content: center
-    height: 100%
-    text-align: center
-    padding: var(--space-3) var(--space-4)
-    border-radius: var(--border-radius)
-    background: var(--surface-2)
-    color: var(--text-color-primary)
-
-    // The global `a:focus` (link colour, underline) is more specific than a class: a clicked
-    // tile keeps the focus
-    &:focus
-        color: var(--text-color-primary)
-        text-decoration: none
-
-    &:hover
-        background: var(--color-main-background)
-        color: var(--color-main)
-        text-decoration: none
-
-    &:focus-visible
-        outline: 2px solid var(--color-main)
-        outline-offset: 2px
-
-    b
-        +type.stat
-
-    span
-        font-size: variables.$fontSizeCaption
-        color: var(--text-color-secondary)
-        white-space: nowrap
-
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        padding: var(--space-2)
-
-// The reputation keeps the colour of its sign, a link to its history like the other counters
-.reputation
-    .positive
-        color: var(--color-green)
-
-    .negative
-        color: var(--color-red)
 
 // --- The pages of the profile at the foot of the card -------------------------------------
 // A row across the whole card under a rule, edge to edge; the page shown is underlined in the

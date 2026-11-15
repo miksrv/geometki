@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
+import { StatTiles } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
 import useClientOnly from '@/hooks/useClientOnly'
 import defaultAvatar from '@/public/images/no-avatar.png'
@@ -111,39 +112,42 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({
             )}
 
             <div className={styles.text}>
-                <h1 className={styles.title}>
-                    {isHome ? t('home-welcome-title', { name: user.name.split(' ')[0] }) : user.name}
-                </h1>
+                {/* Phones: the name and the facts under it, next to the avatar; the level goes across */}
+                <div className={styles.head}>
+                    <h1 className={styles.title}>
+                        {isHome ? t('home-welcome-title', { name: user.name.split(' ')[0] }) : user.name}
+                    </h1>
 
-                {/* The dots between the facts sit on the list items, outside the links */}
-                <ul className={styles.facts}>
-                    {/* Nothing before hydration: the cached HTML carries no time */}
-                    {!isHome && isClient && (isOnline || lastSeen) && (
-                        <li suppressHydrationWarning={true}>
-                            {isOnline ? (
-                                <span className={styles.online}>{t('user-hero-online')}</span>
-                            ) : (
-                                t('user-hero-last-seen', { time: timeAgo(lastSeen, undefined, i18n.language) })
-                            )}
-                        </li>
-                    )}
-                    {!isHome && !!since && <li>{t('user-hero-since', { year: since })}</li>}
-                    {isHome && facts?.map((fact, index) => <li key={index}>{fact}</li>)}
-                    {!isHome && !!user.website && (
-                        <li>
-                            <Link
-                                href={makeActiveLink(user.website)}
-                                className={styles.website}
-                                target={'_blank'}
-                                rel={'noopener noreferrer nofollow ugc'}
-                                title={removeProtocolFromUrl(user.website)}
-                            >
-                                <Icon name={'Link'} />
-                                <span>{removeProtocolFromUrl(user.website)}</span>
-                            </Link>
-                        </li>
-                    )}
-                </ul>
+                    {/* The dots between the facts sit on the list items, outside the links */}
+                    <ul className={styles.facts}>
+                        {/* Nothing before hydration: the cached HTML carries no time */}
+                        {!isHome && isClient && (isOnline || lastSeen) && (
+                            <li suppressHydrationWarning={true}>
+                                {isOnline ? (
+                                    <span className={styles.online}>{t('user-hero-online')}</span>
+                                ) : (
+                                    t('user-hero-last-seen', { time: timeAgo(lastSeen, undefined, i18n.language) })
+                                )}
+                            </li>
+                        )}
+                        {!isHome && !!since && <li>{t('user-hero-since', { year: since })}</li>}
+                        {isHome && facts?.map((fact, index) => <li key={index}>{fact}</li>)}
+                        {!isHome && !!user.website && (
+                            <li>
+                                <Link
+                                    href={makeActiveLink(user.website)}
+                                    className={styles.website}
+                                    target={'_blank'}
+                                    rel={'noopener noreferrer nofollow ugc'}
+                                    title={removeProtocolFromUrl(user.website)}
+                                >
+                                    <Icon name={'Link'} />
+                                    <span>{removeProtocolFromUrl(user.website)}</span>
+                                </Link>
+                            </li>
+                        )}
+                    </ul>
+                </div>
 
                 {level !== undefined && (
                     <div className={styles.level}>
@@ -192,33 +196,31 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({
 
             {/* No statistic (the profile did not load): no counters, rather than zeros that lie */}
             {user.statistic && (
-                <nav
-                    className={styles.counters}
+                <StatTiles
                     aria-label={t('user-hero-counters', { name: user.name })}
-                >
-                    {counters.map(({ key, count, link }) => (
-                        <Link
-                            key={key}
-                            href={link}
-                            className={styles.counter}
-                        >
-                            <b>{formatThousands(count)}</b>
-                            <span>{t(`user-hero-${key}`, { count })}</span>
-                        </Link>
-                    ))}
-
-                    {/* The history of the reputation: every score that moved it, and what it is made of */}
-                    <Link
-                        href={`${profileHref}/reputation`}
-                        className={cn(styles.counter, styles.reputation)}
-                        aria-label={`${t('reputation')}: ${reputation}`}
-                    >
-                        <b className={reputation > 0 ? styles.positive : reputation < 0 ? styles.negative : undefined}>
-                            {reputation > 0 ? `+${formatThousands(reputation)}` : formatThousands(reputation)}
-                        </b>
-                        <span>{t('user-hero-reputation')}</span>
-                    </Link>
-                </nav>
+                    items={[
+                        ...counters.map(({ key, count, link }) => ({
+                            href: link,
+                            key,
+                            label: t(`user-hero-${key}`, { count }),
+                            value: formatThousands(count)
+                        })),
+                        // The history of the reputation: every score that moved it, and what it is made of
+                        {
+                            ariaLabel: `${t('reputation')}: ${reputation}`,
+                            href: `${profileHref}/reputation`,
+                            key: 'reputation',
+                            label: t('user-hero-reputation'),
+                            tone:
+                                reputation > 0
+                                    ? ('positive' as const)
+                                    : reputation < 0
+                                      ? ('negative' as const)
+                                      : undefined,
+                            value: reputation > 0 ? `+${formatThousands(reputation)}` : formatThousands(reputation)
+                        }
+                    ]}
+                />
             )}
 
             {/* The pages of the profile, attached to the foot of the card: the profile's tabs. The home
