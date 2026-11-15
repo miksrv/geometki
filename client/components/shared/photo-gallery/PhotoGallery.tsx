@@ -57,6 +57,11 @@ interface PhotoGalleryProps extends ContainerProps {
      */
     boxless?: boolean
     /**
+     * Boxless grid: the heading is kept for screen readers and the page outline, not shown —
+     * a grid of photos says what it is by itself (the profile overview; the mosaic always does so)
+     */
+    titleHidden?: boolean
+    /**
      * Mosaic: the full-screen viewer (`PhotoViewer`) — closed, the grid of all the photos or one
      * photo. Controlled when given: the place page opens it from the hero carousel too
      */
@@ -64,6 +69,13 @@ interface PhotoGalleryProps extends ContainerProps {
     /** Mosaic: the first photo is the largest paint of the page (a place without a cover), loaded eagerly */
     priority?: boolean
     onViewerChange?: (state: PhotoViewerState) => void
+    /**
+     * Grid: the photos given are only the first of `total` — the last tile is darkened and
+     * carries "+N" (the rest), a link to `moreHref`, the page with all of them. The same sign
+     * as the last tile of the mosaic, which opens the viewer instead
+     */
+    total?: number
+    moreHref?: string
     uploadingPhotos?: string[]
     onPhotoDelete?: (photos: ApiModel.Photo[]) => void
     onPhotoUploadClick?: () => void
@@ -75,9 +87,12 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     showAll,
     variant = 'grid',
     boxless,
+    titleHidden,
     priority,
     viewer: viewerProp,
     onViewerChange,
+    total,
+    moreHref,
     uploadingPhotos,
     onPhotoDelete,
     onPhotoUploadClick,
@@ -193,7 +208,11 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         setLocalPhotos(photos ?? [])
     }, [photos])
 
-    // `more`: the last mosaic tile, it opens the whole grid instead of the lightbox
+    // Grid: how many photos there are beyond the ones given, when their page is known
+    const restCount = moreHref && total ? Math.max(0, total - localPhotos.length) : 0
+
+    // `more`: the last tile — of the mosaic, it opens the whole grid instead of the lightbox;
+    // of a grid that shows only the first photos, it is a link to the page with all of them
     const renderPhotoItem = (photo: ApiModel.Photo, listIndex: number, more?: number) => (
         <li
             key={photo.id}
@@ -213,17 +232,22 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
 
             <Link
                 className={styles.link}
-                href={resolveImageUrl(photo.full) ?? ''}
+                href={more && variant !== 'mosaic' && moreHref ? moreHref : (resolveImageUrl(photo.full) ?? '')}
                 title={
                     more
                         ? t('all-photos-count', {
-                              count: localPhotos.length,
+                              count: variant === 'mosaic' ? localPhotos.length : (total ?? localPhotos.length),
                               defaultValue: 'Все фото ({{count}})'
                           })
                         : `${photo.title}. ${t('photo', { defaultValue: 'Фотография' })} ${listIndex + 1}`
                 }
-                aria-expanded={more ? false : undefined}
+                aria-expanded={more && variant === 'mosaic' ? false : undefined}
                 onClick={(event) => {
+                    // The page of all the photos: an ordinary link
+                    if (more && variant !== 'mosaic') {
+                        return
+                    }
+
                     event.preventDefault()
 
                     if (more) {
@@ -491,7 +515,13 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                                 </li>
                             ))}
 
-                            {visiblePhotos.map((photo, index) => renderPhotoItem(photo, index))}
+                            {visiblePhotos.map((photo, index) =>
+                                renderPhotoItem(
+                                    photo,
+                                    index,
+                                    restCount > 0 && index === visiblePhotos.length - 1 ? restCount : undefined
+                                )
+                            )}
                         </ul>
 
                         {!!hiddenPhotos.length && (
@@ -534,6 +564,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             <Section
                 id={props.id}
                 title={props.title}
+                titleHidden={titleHidden}
                 action={props.action}
                 footer={props.footer}
                 className={props.className}
