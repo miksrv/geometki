@@ -7,6 +7,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { ApiModel } from '@/api'
 import { AchievementIcon } from '@/components/shared/achievement-icon'
 import { CollectionCard } from '@/components/shared/collection-card'
+import { GamePoints } from '@/components/shared/game-points'
 import { LevelBadge } from '@/components/shared/level-badge/LevelBadge'
 import { PlaceCard } from '@/components/shared/place-card'
 import { ScoreStars } from '@/components/shared/score-stars'
@@ -82,6 +83,12 @@ export const FeedStory: React.FC<FeedStoryProps> = ({ story, density = 'full', h
                 return t('feed-action-level', { defaultValue: '— новый уровень' })
         }
     })()
+
+    // The game: the geopoints the visits of the story brought (they counted the places in a season)
+    const points =
+        story.type === ApiModel.FeedStoryTypes.Visit
+            ? (story.places ?? []).reduce((sum, place) => sum + (place.points ?? 0), 0)
+            : 0
 
     const authorName = story.author?.name ?? t('feed-guests', { defaultValue: 'Гости' })
 
@@ -220,6 +227,9 @@ export const FeedStory: React.FC<FeedStoryProps> = ({ story, density = 'full', h
                             image={story.achievement.image}
                             alt={story.achievement.title}
                             size={48}
+                            tier={story.achievement.tier}
+                            category={story.achievement.category}
+                            group={story.achievement.group}
                         />
                         <span className={styles.awardText}>
                             <span className={styles.awardTitle}>{story.achievement.title}</span>
@@ -310,6 +320,17 @@ export const FeedStory: React.FC<FeedStoryProps> = ({ story, density = 'full', h
                         {timeAgo(story.updated?.date, false, i18n.language)}
                     </time>
                 </div>
+
+                {/* On the head's line, at its end: the cards under it keep their height */}
+                {points > 0 && (
+                    <GamePoints
+                        value={points}
+                        plus={true}
+                        size={'small'}
+                        label={t('game-points', { count: points })}
+                        className={styles.points}
+                    />
+                )}
             </header>
 
             {body && <div className={styles.body}>{body}</div>}

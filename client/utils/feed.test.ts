@@ -182,6 +182,8 @@ describe('feed utilities', () => {
     describe('filters', () => {
         it('recognises the filters of the feed page', () => {
             expect(isFeedFilter('photos')).toBe(true)
+            // The check-ins
+            expect(isFeedFilter('visits')).toBe(true)
             expect(isFeedFilter('toString')).toBe(false)
             expect(isFeedFilter(undefined)).toBe(false)
         })

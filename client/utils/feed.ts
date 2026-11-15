@@ -152,7 +152,9 @@ export const FEED_FILTERS = {
     collections: [FeedStoryTypes.Collection, FeedStoryTypes.CollectionPlace],
     photos: [FeedStoryTypes.Photo, FeedStoryTypes.PhotoLink],
     places: [FeedStoryTypes.Place],
-    reviews: [FeedStoryTypes.Comment]
+    reviews: [FeedStoryTypes.Comment],
+    // The check-ins of all time, in a season or not (with the geopoints a visit brought)
+    visits: [FeedStoryTypes.Visit]
 } as const
 
 export type FeedFilter = keyof typeof FEED_FILTERS

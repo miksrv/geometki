@@ -26,7 +26,8 @@ const FILTER_LABELS: Record<FeedFilter, string> = {
     collections: 'feed-filter-collections',
     photos: 'feed-filter-photos',
     places: 'feed-filter-places',
-    reviews: 'feed-filter-reviews'
+    reviews: 'feed-filter-reviews',
+    visits: 'feed-filter-visits'
 }
 
 export const feedRequest = (filter: FeedFilter | null): ApiType.Feed.ListRequest => ({
