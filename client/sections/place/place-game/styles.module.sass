@@ -1,0 +1,36 @@
+@use '../../../styles/typography' as type
+
+// The place in the season: one quiet line under "Я здесь был(а)" — what a check-in on the
+// spot gives, that the visit is not counted (and the one action that counts it), or the
+// geopoints got
+.game
+    display: flex
+    flex-direction: column
+    gap: var(--space-1)
+    padding: var(--space-2) var(--space-3)
+    border-radius: var(--border-radius)
+    background: var(--surface-2)
+
+.row
+    display: flex
+    align-items: center
+    gap: var(--space-2)
+    min-height: 28px
+
+    // The action keeps its place on the right; the words before it give way
+    & > button
+        flex-shrink: 0
+        margin-left: auto
+
+.text
+    +type.secondary
+    min-width: 0
+
+.counted
+    color: var(--color-green)
+    font-size: var(--font-size-secondary)
+    font-weight: var(--font-weight-medium)
+
+.note
+    +type.caption
+    margin: 0

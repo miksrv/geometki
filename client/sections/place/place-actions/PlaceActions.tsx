@@ -218,6 +218,7 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
                 showTitle={true}
                 label={'brand'}
                 asListItem={true}
+                directions={true}
             />
         </ul>
     )

@@ -1,0 +1,1 @@
+export { PlaceGame } from './PlaceGame'
