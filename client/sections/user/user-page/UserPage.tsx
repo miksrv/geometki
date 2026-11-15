@@ -1,7 +1,6 @@
 import React from 'react'
 
 import Head from 'next/head'
-import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 import { JsonLdScript } from 'next-seo'
 import { generateNextSeo } from 'next-seo/pages'
@@ -9,7 +8,14 @@ import { generateNextSeo } from 'next-seo/pages'
 import { ApiModel } from '@/api'
 import { AppLayout, PhotoGallery } from '@/components/shared'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
-import { UserAchievementsBlock, UserActivity, UserContribution, UserHero, UserPlacesMap } from '@/sections/user'
+import {
+    UserAchievementsBlock,
+    UserActivity,
+    UserContribution,
+    UserGame,
+    UserHero,
+    UserPlacesMap
+} from '@/sections/user'
 import { formatDateISO } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 
@@ -120,21 +126,20 @@ export const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photos
                                 id={'photos'}
                                 boxless={true}
                                 title={t('photos')}
+                                // The photos say what the block is: its name is for screen readers only
+                                titleHidden={true}
                                 photos={photosList}
                                 hideActions={true}
-                                action={
-                                    photosCount > photosList.length && (
-                                        <Link href={`/users/${id}/photos`}>
-                                            {t('user-side-all', { count: photosCount })}
-                                        </Link>
-                                    )
-                                }
+                                // No "Все N" on the heading's line: the last tile carries "+N"
+                                total={photosCount}
+                                moreHref={`/users/${id}/photos`}
                             />
                         )}
                     </>
                 }
                 aside={
                     <>
+                        <UserGame userId={id} />
                         <UserAchievementsBlock userId={id} />
                         <UserContribution statistic={user?.statistic} />
                     </>
