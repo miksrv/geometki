@@ -1,0 +1,103 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+@use '../../../styles/mixins' as *
+
+// The table of points is folded: its heading is the whole row and the button (the place
+// page's activity log)
+.tableHeading
+    margin: 0
+    font-size: inherit
+
+.toggle
+    +buttonReset
+    display: flex
+    align-items: center
+    gap: var(--space-2)
+    width: 100%
+    min-height: 32px
+    font: inherit
+    font-size: var(--font-size-large)
+    font-weight: var(--font-weight-semibold)
+    color: var(--text-color-primary)
+    text-align: left
+
+    small
+        +type.secondary
+        font-weight: var(--font-weight-normal)
+
+        @media (max-width: variables.$mobileMaxWidth)
+            display: none
+
+    &:hover
+        color: var(--link-color)
+
+    &.open .chevron
+        transform: rotate(180deg)
+
+.toggleIcon
+    flex-shrink: 0
+    width: 20px
+    height: 20px
+    fill: var(--color-main)
+
+.chevron
+    width: 18px
+    height: 18px
+    margin-left: auto
+    fill: var(--icon-color-secondary)
+    transition: transform var(--duration-slow) var(--ease)
+
+// What | how much, a rule between the rows
+.formula
+    +type.secondary
+    margin: var(--space-3) 0 var(--space-2)
+
+.rows
+    margin: 0
+
+.row
+    display: flex
+    align-items: center
+    justify-content: space-between
+    gap: var(--space-4)
+    padding: var(--space-3) 0
+    border-top: var(--container-border-separator)
+
+    dt
+        display: flex
+        flex-direction: column
+        gap: 2px
+        min-width: 0
+
+        strong
+            font-weight: var(--font-weight-medium)
+
+        span
+            +type.secondary
+
+    dd
+        flex-shrink: 0
+        margin: 0
+        font-size: var(--font-size-large)
+        font-weight: var(--font-weight-semibold)
+        font-variant-numeric: tabular-nums
+
+.factor
+    color: var(--text-color-primary)
+
+// The categories of a factor as their icons: the names are in the hints
+.categories
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-1)
+    margin-top: var(--space-1)
+
+.notes
+    +type.secondary
+    display: flex
+    flex-direction: column
+    gap: var(--space-1)
+    margin: 0
+    padding: var(--space-3) 0 0 var(--space-5)
+    border-top: var(--container-border-separator)
+    list-style: disc
