@@ -1,0 +1,59 @@
+@use '../../../styles/typography' as type
+
+// "Мой сезон" (DESIGN.md → The game → GameMine): what the season adds up to over the site's
+// list of places — a row per counted place, the geopoints it brought on the right
+// The paragraph under the heading: text on the page background, on the full width, at the
+// reading size of every long text of the site
+.intro
+    margin: 0 0 var(--space-4)
+    +type.reading
+
+.summary
+    +type.secondary
+    display: flex
+    flex-wrap: wrap
+    margin: 0 0 var(--space-3)
+
+    span + span:before
+        content: '·'
+        margin: 0 var(--space-2)
+        opacity: .7
+
+.list
+    display: flex
+    flex-direction: column
+    margin: 0
+    padding: 0
+    list-style: none
+    transition: opacity var(--duration-fast) var(--ease)
+
+    // The previous page stays while the next one loads
+    &.fetching
+        opacity: .55
+
+.item
+    padding: var(--space-3) 0
+
+    &:first-child
+        padding-top: 0
+
+    &:last-child
+        padding-bottom: 0
+
+    & + &
+        border-top: 1px solid var(--border)
+
+// When · how it was confirmed
+.facts
+    +type.secondary
+    display: flex
+    flex-wrap: wrap
+
+    span + span:before
+        content: '·'
+        margin: 0 var(--space-2)
+        opacity: .7
+
+// The page links under the card: "1–10 из 300" | the pages
+.pages
+    margin-top: var(--space-3)
