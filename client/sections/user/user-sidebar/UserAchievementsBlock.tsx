@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react'
+import { cn, Container } from 'simple-react-ui-kit'
 
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
-import { AchievementBadge, Section } from '@/components/shared'
+import { AchievementBadge } from '@/components/shared'
 import { groupAchievements } from '@/utils/achievements'
 
 import styles from './styles.module.sass'
@@ -43,12 +44,11 @@ export const UserAchievementsBlock: React.FC<UserAchievementsBlockProps> = ({ us
     }
 
     return (
-        <Section
-            level={3}
+        <Container
             title={t('achievements-title')}
             action={<Link href={`/users/${userId}/achievements`}>{t('user-side-all', { count: groups.length })}</Link>}
         >
-            <div className={styles.badges}>
+            <div className={cn(styles.badges, styles.body)}>
                 {badges.slice(0, SHOWN_BADGES).map((achievement) => (
                     <AchievementBadge
                         key={achievement.id}
@@ -56,6 +56,6 @@ export const UserAchievementsBlock: React.FC<UserAchievementsBlockProps> = ({ us
                     />
                 ))}
             </div>
-        </Section>
+        </Container>
     )
 }
