@@ -103,6 +103,29 @@ describe('FormActions', () => {
         expect(onCancel).toHaveBeenCalledTimes(1)
     })
 
+    it('offers the destructive action in its place, never on the floating bar', () => {
+        const onDelete = jest.fn()
+        const { rerender } = render(
+            <FormActions
+                deleteLabel={'Удалить квест'}
+                onDelete={onDelete}
+            />
+        )
+
+        fireEvent.click(screen.getByRole('button', { name: 'Удалить квест' }))
+        expect(onDelete).toHaveBeenCalledTimes(1)
+
+        placeBelow()
+        rerender(
+            <FormActions
+                dirty={true}
+                deleteLabel={'Удалить квест'}
+                onDelete={onDelete}
+            />
+        )
+        expect(screen.queryByRole('button', { name: 'Удалить квест' })).not.toBeInTheDocument()
+    })
+
     it('floats while dirty and its place is below the screen', () => {
         const { container, rerender } = render(<FormActions />)
         const row = () => container.firstElementChild?.firstElementChild

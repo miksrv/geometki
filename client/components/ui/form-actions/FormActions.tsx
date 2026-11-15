@@ -26,10 +26,18 @@ export interface FormActionsProps {
     onSave?: () => void
     /** No Cancel button without it */
     onCancel?: () => void
+    /**
+     * A destructive action of the edited entity ("Удалить квест"), a red secondary button at the
+     * start of the row; in the row's place only, never on the floating bar
+     */
+    deleteLabel?: string
+    deleteDisabled?: boolean
+    onDelete?: () => void
 }
 
 /**
- * The Cancel / Save row at the end of a page form (DESIGN.md → Patterns → Page form actions).
+ * The Cancel / Save row at the end of a page form (DESIGN.md → Patterns → Page form actions),
+ * with an optional destructive action of the entity at its start ("Удалить квест").
  * In its place under the form; while there are changes and the place is below the screen, the
  * same row is a bar fixed to the bottom of the screen on its full width, dressed as the app
  * bar (over the bottom navigation on phones), and lands back in its place as it scrolls in.
@@ -42,7 +50,10 @@ export const FormActions: React.FC<FormActionsProps> = ({
     saveLabel,
     cancelLabel,
     onSave,
-    onCancel
+    onCancel,
+    deleteLabel,
+    deleteDisabled,
+    onDelete
 }) => {
     const { t } = useTranslation()
     const isPhone = useIsPhone()
@@ -95,6 +106,18 @@ export const FormActions: React.FC<FormActionsProps> = ({
                 className={cn(styles.formActions, floating && styles.floating)}
             >
                 <div className={styles.wrapper}>
+                    {onDelete && !floating && (
+                        <Button
+                            size={'medium'}
+                            mode={'secondary'}
+                            variant={'negative'}
+                            label={deleteLabel ?? t('delete')}
+                            disabled={loading || deleteDisabled}
+                            className={styles.delete}
+                            onClick={onDelete}
+                        />
+                    )}
+
                     {dirty && <span className={styles.message}>{message ?? t('form-unsaved')}</span>}
 
                     <div className={styles.buttons}>
