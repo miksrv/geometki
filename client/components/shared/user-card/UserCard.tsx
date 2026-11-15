@@ -14,6 +14,7 @@ import { buildPlaceUrl, formatDate, formatThousands, isOnlineAt, timeAgo } from 
 import { levelColor, levelProgress, levelTier } from '@/utils/levels'
 
 import { CategoryIcon } from '../category-icon'
+import { GamePoints } from '../game-points'
 import { LevelBadge } from '../level-badge/LevelBadge'
 import { UserAvatar } from '../user-avatar'
 
@@ -127,6 +128,17 @@ export const UserCard: React.FC<UserCardProps> = ({ user, variant = 'tile', rank
                         {lastSeen && since ? ' · ' : ''}
                         {since ? t('user-card-since', 'с {{year}} года', { year: since }) : ''}
                     </p>
+                    {/* The third line: the reputation, then — the game — the geopoints of the season */}
+                    <div className={styles.marks}>
+                        <Reputation value={user.reputation ?? 0} />
+                        {!!user.points && (
+                            <GamePoints
+                                value={user.points}
+                                size={'small'}
+                                label={t('game-points', { count: user.points })}
+                            />
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -180,9 +192,6 @@ export const UserCard: React.FC<UserCardProps> = ({ user, variant = 'tile', rank
                     value={user.statistic?.visited ?? 0}
                     unit={t('user-card-visited', { count: user.statistic?.visited ?? 0 })}
                 />
-                <span className={styles.reputation}>
-                    <Reputation value={user.reputation ?? 0} />
-                </span>
             </div>
         </article>
     )
@@ -233,7 +242,7 @@ const UserCardPlaces: React.FC<UserCardPlacesProps> = ({ userId, places, count }
                 {t('places-count', '{{count}} мест', { count })}
             </Link>
         ) : (
-            <p className={styles.placesNone}>{t('user-card-no-places', 'Пока без мест')}</p>
+            <p className={styles.placesNone}>{t('user-card-no-places', 'Открытий пока нет')}</p>
         )
     }
 

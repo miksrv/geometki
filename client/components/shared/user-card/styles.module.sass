@@ -60,7 +60,7 @@
     flex-direction: column
     gap: var(--space-4)
     padding: var(--space-4)
-    border-radius: var(--radius-xl)
+    border-radius: var(--container-radius)
     box-shadow: var(--container-shadow)
     transition: box-shadow .15s ease
 
@@ -212,7 +212,7 @@ a.placesNone:hover
     color: var(--color-main)
     border-color: var(--color-main)
 
-// Places, photos, visits, then the reputation on the right; fixed order
+// Places, photos, visits; fixed order
 .stats
     display: flex
     align-items: center
@@ -250,8 +250,13 @@ a.placesNone:hover
     &:hover b
         color: var(--color-main)
 
-.reputation
-    margin-left: auto
+// The third line under the name: the reputation, then the geopoints of the season
+.marks
+    display: flex
+    align-items: center
+    gap: var(--space-2)
+    min-height: 22px
+    margin-top: var(--space-1)
 
 // Phones: the tile becomes a line of the list — avatar, name, when, the badge; the counts
 // under it; no covers and no progress
@@ -290,11 +295,19 @@ a.placesNone:hover
     display: flex
     align-items: center
     gap: var(--space-3)
-    padding: var(--space-2) 0
+    // The line of the season's rating (`GameLeaders`): no rules between the people, the one
+    // under the pointer is tinted. The list gives the room for the tint (a negative margin)
+    min-height: 52px
+    padding: var(--space-2)
+    border-radius: var(--radius-md)
     background: none
+    transition: background-color var(--duration-fast) var(--ease)
 
     & + &
-        border-top: var(--container-border-separator)
+        margin-top: 2px
+
+    &:hover
+        background: var(--surface-2)
 
     .name
         +type.body
@@ -302,6 +315,3 @@ a.placesNone:hover
 
     .sub
         +type.caption
-
-    &:hover .name
-        color: var(--color-main)
