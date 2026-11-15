@@ -1,13 +1,13 @@
 export { AppLayout } from '../layout'
 export { MapObjectsTypeEnum } from '../map'
 export { AchievementBadge } from './achievement-card'
-export { AchievementIcon } from './achievement-icon'
+export { AchievementIcon, AwardBadge } from './achievement-icon'
 export { AddToCollectionButton, AddToCollectionModal, collectionPickerStyles } from './add-to-collection'
 export { BookmarkButton, useBookmark } from './bookmark-button'
 export { CategoryIcon } from './category-icon'
 export { CollectionCard } from './collection-card'
 export { ConfirmationDialog } from './confirmation-dialog'
-export { ContributionCalendar, ContributionSummary } from './contribution-calendar'
+export { ContributionCalendar } from './contribution-calendar'
 export { CopyCoordinates } from './copy-coordinates'
 export { EmptyState } from './empty-state'
 export { ErrorPage } from './error-page'
@@ -25,6 +25,8 @@ export {
     FilterToolbar,
     FilterToolbarSpacer
 } from './filter-panel'
+export { GameLeaders, type GameLeadersProps } from './game-leaders'
+export { GamePoints, GamePointsIcon, type GamePointsProps } from './game-points'
 export { LandingMapPreview } from './landing-map-preview'
 export { LevelBadge } from './level-badge/LevelBadge'
 export { LevelProgress } from './level-progress/LevelProgress'
@@ -42,6 +44,8 @@ export { PlaceCard, PlaceCardLoader, type PlaceCardProps, type PlaceCardVariant 
 export { PlacePlate, type PlacePlateProps } from './place-plate'
 export { PlacesList } from './places-list'
 export { PlacesMap } from './places-map'
+export { QUEST_MODE_ICONS, QuestCard, type QuestCardProps } from './quest-card'
+export { QuestsPromo, type QuestsPromoProps } from './quests-promo'
 export { Rating, type RatingProps } from './rating'
 export { RatingColored, type RatingColoredProps } from './rating-colored'
 export { ScoreStars, type ScoreStarsProps } from './score-stars'
@@ -56,4 +60,4 @@ export {
     type UserProfileCardVariant,
     type UserProfileSection
 } from './user-profile-card'
-export { checkInMessage, WasHereButton } from './was-here-button'
+export { checkInMessage, currentVisitOf, WasHereButton } from './was-here-button'

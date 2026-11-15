@@ -1,1 +1,1 @@
-export { checkInMessage, WasHereButton } from './WasHereButton'
+export { checkInMessage, currentVisitOf, WasHereButton } from './WasHereButton'
