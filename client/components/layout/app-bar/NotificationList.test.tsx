@@ -113,7 +113,6 @@ const renderWithStore = (ui: React.ReactElement, preloadedState?: Record<string,
     return { store, ...render(<Provider store={store}>{ui}</Provider>) }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockList = (value: Record<string, unknown>) =>
     jest.mocked(API.useNotificationsGetListInfiniteQuery).mockReturnValue(value as any)
 

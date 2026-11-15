@@ -158,8 +158,24 @@ describe('AppBar', () => {
             expect(screen.getByRole('link', { name: 'Карта' })).toHaveAttribute('href', '/map')
             expect(screen.getByRole('link', { name: 'Места' })).toHaveAttribute('href', '/places')
             expect(screen.getByRole('link', { name: 'Коллекции' })).toHaveAttribute('href', '/collections')
-            expect(screen.getByRole('link', { name: 'Люди' })).toHaveAttribute('href', '/users')
-            expect(nav.querySelectorAll('a')).toHaveLength(4)
+            expect(screen.getByRole('link', { name: 'Исследователи' })).toHaveAttribute('href', '/users')
+            expect(nav.querySelectorAll('a')).toHaveLength(6)
+        })
+
+        it('keeps the map first and the game and the quests after the places', () => {
+            renderWithStore(<AppBar />)
+
+            const links = screen.getByRole('navigation', { name: 'Основная навигация' }).querySelectorAll('a')
+
+            expect(Array.from(links).map((link) => link.getAttribute('href'))).toEqual([
+                '/map',
+                '/places',
+                '/game',
+                '/quests',
+                '/collections',
+                '/users'
+            ])
+            expect(links[2]).toHaveTextContent('Игра')
         })
 
         it('does not render the activity feed link (reachable from the home page widget)', () => {
