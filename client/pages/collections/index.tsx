@@ -35,7 +35,7 @@ const CollectionsPage: NextPage<CollectionsPageProps> = ({ region, currentPage, 
     const canonicalQuery = currentPage > 1 ? `?page=${currentPage}` : ''
     const canonicalPage = `${canonicalUrl}collections${canonicalQuery}`
     const description = t('collections_index-description', {
-        defaultValue: 'Тематические подборки мест от путешественников: коллекции с картой и фото'
+        defaultValue: 'Тематические подборки мест от исследователей: коллекции с картой и фото'
     })
 
     return (
@@ -59,6 +59,7 @@ const CollectionsPage: NextPage<CollectionsPageProps> = ({ region, currentPage, 
 
             <PageHeader
                 title={title}
+                count={t('collections_count', { count })}
                 lede={currentPage === 1 ? t('collections_index-lede', { defaultValue: description }) : undefined}
                 actions={<CreateCollectionButton size={'small'} />}
             />

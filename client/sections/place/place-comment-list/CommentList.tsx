@@ -115,7 +115,7 @@ export const CommentList: React.FC<CommentListProps> = ({ placeId }) => {
             {!comments?.length && (
                 <p className={styles.empty}>
                     {t('reviews-empty', {
-                        defaultValue: 'Отзывов пока нет. Первый отзыв поможет следующим путешественникам.'
+                        defaultValue: 'Отзывов пока нет. Первый отзыв поможет следующим исследователям.'
                     })}
                 </p>
             )}
