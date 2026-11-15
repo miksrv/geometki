@@ -5,7 +5,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { ContributionCalendar, ContributionSummary, FeedList } from '@/components/shared'
+import { ContributionCalendar, FeedList } from '@/components/shared'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { flattenFeedPages } from '@/utils/feed'
 
@@ -43,13 +43,13 @@ export const UserActivity: React.FC<UserActivityProps> = ({ userId, beforeFeed, 
 
     return (
         <div className={styles.layout}>
-            <aside className={styles.aside}>
-                <ContributionSummary calendar={calendar} />
-                {aside}
-            </aside>
+            <aside className={styles.aside}>{aside}</aside>
 
             <div className={styles.main}>
-                <ContributionCalendar calendar={calendar} />
+                <ContributionCalendar
+                    calendar={calendar}
+                    className={styles.calendar}
+                />
 
                 {beforeFeed}
 
