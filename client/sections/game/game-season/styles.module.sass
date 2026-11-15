@@ -1,0 +1,341 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+@use '../../../styles/mixins' as *
+
+// The season card (DESIGN.md → The game): badge | name, dates, the bar of time | the score —
+// and under a rule what to do next: whom to catch up with | the next place.
+// The same card as the profile's head; the season, warm or cold, colours its accents
+.card
+    --season: var(--color-main)
+
+    display: flex
+    flex-direction: column
+    gap: var(--card-padding)
+    padding: var(--card-padding)
+    border-radius: var(--container-radius)
+    // The season, warm or cold, tints the left edge of the card, wherever it stands
+    background: linear-gradient(100deg, color-mix(in srgb, var(--season) 14%, var(--surface-1)) 0%, var(--surface-1) 38%)
+    box-shadow: var(--container-shadow)
+
+.top
+    display: grid
+    grid-template-columns: auto minmax(0, 1fr) auto
+    align-items: center
+    gap: var(--space-6)
+
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        grid-template-columns: auto minmax(0, 1fr)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        gap: var(--space-4) var(--space-3)
+
+// On the home page: a block of the page, the size of the home page's welcome card. Compact:
+// the head is no taller than the season's picture — overline, name, bar of time, links
+.block
+    --card-padding: var(--space-5)
+    --badge-phone: 64px
+
+    gap: var(--space-4)
+
+    .main
+        gap: var(--space-1)
+
+    // Two lines of the table fill the height of the place next to them
+    .now
+        align-items: stretch
+        padding-top: var(--space-4)
+
+    .chase, .rivals
+        flex: 1
+
+    .rival
+        flex: 1
+        min-height: 32px
+        padding-top: 0
+        padding-bottom: 0
+
+// On the season's page: the head of the page, the size of the profile's card
+.head
+    --card-padding: var(--space-6)
+    --badge-phone: 72px
+
+@media only screen and (max-width: variables.$mobileMaxWidth)
+    .block, .head
+        --card-padding: var(--space-4)
+
+.cold
+    --season: var(--color-season-cold)
+
+.warm
+    --season: var(--color-season-warm)
+
+.badge
+    display: flex
+    align-items: center
+    justify-content: center
+    align-self: start
+
+    // Phones: the badge shares the first row with the name
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        svg, img
+            width: auto
+            height: var(--badge-phone)
+
+// An administrator's picture is a button: a tap replaces it
+.badgeButton
+    +buttonReset
+    display: flex
+    border-radius: var(--border-radius)
+    cursor: pointer
+    transition: opacity var(--duration-fast) var(--ease)
+
+    &:hover
+        opacity: .8
+
+    &:focus-visible
+        outline: 2px solid var(--color-main)
+        outline-offset: 4px
+
+.badgeLoading
+    opacity: .5
+    cursor: progress
+
+.main
+    display: flex
+    flex-direction: column
+    gap: var(--space-2)
+    min-width: 0
+
+.overline
+    +type.overline
+
+.title
+    +type.titlePage
+
+    // On the home page the season's name is a section title, and the way into the game
+    .block &
+        +type.titleSection
+
+    a
+        color: var(--text-color-primary)
+        text-decoration: none
+
+        &:hover
+            color: var(--link-color-hover)
+            text-decoration: none
+
+.dates
+    +type.secondary
+    margin: 0
+
+// How much of the season has passed: a thin bar in the season's colour and the days left
+.time
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    max-width: 420px
+
+.timeBar
+    flex: 1
+    min-width: 64px
+    height: 6px
+    overflow: hidden
+    border-radius: 3px
+    background: var(--surface-3)
+
+    span
+        display: block
+        height: 100%
+        border-radius: 3px
+        background: var(--season)
+
+.timeLeft
+    +type.secondary
+    font-variant-numeric: tabular-nums
+    white-space: nowrap
+
+// The last week: the season is about to end
+.lastDays
+    .timeBar span
+        background: var(--color-orange)
+
+    .timeLeft
+        color: var(--color-orange)
+        font-weight: var(--font-weight-medium)
+
+// "Рейтинги сезона · Как играть": plain links through a dot
+.links
+    +type.secondary
+    display: flex
+    flex-wrap: wrap
+    margin: 0
+
+    a + a:before
+        content: '·'
+        display: inline-block
+        margin: 0 var(--space-2)
+        color: var(--text-color-secondary)
+        opacity: .7
+
+// "Войти и играть", "Как играть", the administrator's picture button: one wrapping line
+.actions
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: var(--space-2)
+    margin-top: var(--space-2)
+
+// The counters are `StatTiles`: on phones the row goes under the picture and the name
+.stats
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-column: 1 / -1
+
+// What to do next, under a rule: whom to catch up with | the next place
+.now
+    display: grid
+    grid-template-columns: minmax(0, 1fr)
+    align-items: center
+    gap: var(--space-4) var(--space-6)
+    padding-top: var(--card-padding)
+    border-top: 1px solid var(--border)
+
+    &.nowBoth
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)
+
+        @media only screen and (max-width: variables.$mobileMaxWidth)
+            grid-template-columns: minmax(0, 1fr)
+
+.chase
+    display: flex
+    flex-direction: column
+    gap: var(--space-2)
+    min-width: 0
+
+.chaseLine
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    min-width: 0
+    margin: 0
+
+    strong
+        font-weight: var(--font-weight-semibold)
+
+.chaseText
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+    gap: var(--space-1)
+    min-width: 0
+
+// The visitor's name, the way to their profile
+.chaseName
+    +truncate
+    max-width: 100%
+    color: var(--text-color-primary)
+    font-weight: var(--font-weight-semibold)
+    text-decoration: none
+
+    &:hover
+        color: var(--link-color-hover)
+        text-decoration: none
+
+.chasePoints
+    flex-shrink: 0
+
+// "впереди Иван": under the sentence
+.chaseWho
+    +type.secondary
+    display: block
+
+// The visitor's line next to the player above: lines of the table
+.rivals
+    display: flex
+    flex-direction: column
+    gap: 2px
+    margin: 0
+    padding: 0
+    list-style: none
+
+.rival
+    display: flex
+    align-items: center
+    gap: var(--space-2)
+    min-width: 0
+    min-height: 36px
+    padding: var(--space-1) var(--space-2)
+    border-radius: var(--radius-md)
+
+    &.own
+        background: var(--color-main-background)
+
+.rivalPlace
+    flex-shrink: 0
+    min-width: 24px
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
+    font-weight: var(--font-weight-semibold)
+    font-variant-numeric: tabular-nums
+    text-align: center
+
+.rivalName
+    +truncate
+    flex: 1
+    min-width: 0
+    color: var(--text-color-primary)
+    font-weight: var(--font-weight-medium)
+    text-decoration: none
+
+a.rivalName:hover
+    color: var(--link-color-hover)
+    text-decoration: none
+
+// The next step: one place, the whole line is the way to it
+.next
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    min-width: 0
+    padding: var(--space-2)
+    border-radius: var(--radius-md)
+    background: var(--surface-2)
+    color: var(--text-color-primary)
+    text-decoration: none
+    transition: background-color var(--duration-fast) var(--ease)
+
+    &:hover
+        background: var(--surface-3)
+        color: var(--text-color-primary)
+        text-decoration: none
+
+        .nextTitle
+            color: var(--link-color-hover)
+
+.nextCover
+    position: relative
+    flex-shrink: 0
+    width: 72px
+    height: 56px
+    overflow: hidden
+    border-radius: var(--border-radius)
+    background: var(--surface-3)
+
+.nextMain
+    display: flex
+    flex: 1
+    flex-direction: column
+    min-width: 0
+
+.nextTitle
+    +truncate
+    font-weight: var(--font-weight-medium)
+
+.nextFacts
+    +type.secondary
+    display: flex
+    flex-wrap: wrap
+
+    span + span:before
+        content: '·'
+        margin: 0 var(--space-2)
+        opacity: .7
