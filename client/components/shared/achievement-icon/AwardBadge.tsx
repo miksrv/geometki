@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useId } from 'react'
 
 import { hexagonPath } from '../level-badge/LevelBadge'
 
@@ -15,6 +15,8 @@ interface AwardBadgeProps {
     category?: string
     /** `achievements.group_slug`: picks the symbol (`season-2026-cold`, `pathfinder`, `wayfarer`) */
     group?: string
+    /** A photo in place of the field and the symbol, cut to the hexagon (a quest without its medal: its first place) */
+    photo?: string
     className?: string
 }
 
@@ -138,7 +140,9 @@ export const awardSymbol = (group?: string, category?: string): AwardSymbol => {
  * tier (dark steel without one), the field is the group's colour — a season's warm or
  * cold —, one large cream symbol. Decorative: the award's name is next to it.
  */
-export const AwardBadge: React.FC<AwardBadgeProps> = ({ size, tier = 'none', category, group, className }) => {
+export const AwardBadge: React.FC<AwardBadgeProps> = ({ size, tier = 'none', category, group, photo, className }) => {
+    // Only the safe characters of the id: it goes into `url(#…)`
+    const clipId = `award-photo-${useId().replace(/[^\w-]/g, '')}`
     const symbol = awardSymbol(group, category)
     // The field of a season is warm or cold; of a quest — the quests' orange
     const field = ['warm', 'cold'].includes(symbol) ? symbol : symbol === 'quest' ? 'quest' : (category ?? 'game')
@@ -158,11 +162,34 @@ export const AwardBadge: React.FC<AwardBadgeProps> = ({ size, tier = 'none', cat
                 className={styles.rim}
                 d={hexagonPath(0, 12)}
             />
-            <path
-                className={styles.field}
-                d={hexagonPath(9, 9)}
-            />
-            <g className={styles.symbol}>{SYMBOLS[symbol]}</g>
+            {photo ? (
+                <>
+                    <clipPath id={clipId}>
+                        <path d={hexagonPath(9, 9)} />
+                    </clipPath>
+                    <path
+                        className={styles.field}
+                        d={hexagonPath(9, 9)}
+                    />
+                    <image
+                        href={photo}
+                        x={0}
+                        y={0}
+                        width={100}
+                        height={115.47}
+                        preserveAspectRatio={'xMidYMid slice'}
+                        clipPath={`url(#${clipId})`}
+                    />
+                </>
+            ) : (
+                <>
+                    <path
+                        className={styles.field}
+                        d={hexagonPath(9, 9)}
+                    />
+                    <g className={styles.symbol}>{SYMBOLS[symbol]}</g>
+                </>
+            )}
         </svg>
     )
 }

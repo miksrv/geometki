@@ -70,6 +70,25 @@ describe('AwardBadge', () => {
     })
 })
 
+describe('AwardBadge with a photo', () => {
+    it('cuts the photo to the hexagon in place of the field symbol, inside the same rim', () => {
+        const { container } = render(
+            <AwardBadge
+                size={58}
+                photo={'https://img.test/cover.jpg'}
+            />
+        )
+
+        const image = container.querySelector('image')
+        const clip = container.querySelector('clipPath')
+
+        expect(image).toHaveAttribute('href', 'https://img.test/cover.jpg')
+        expect(clip).not.toBeNull()
+        expect(image?.getAttribute('clip-path')).toBe(`url(#${clip?.getAttribute('id')})`)
+        expect(container.querySelector('svg')).toHaveClass('tier-none')
+    })
+})
+
 describe('AchievementIcon', () => {
     it('shows the drawn picture of an award when it has one', () => {
         const { container } = render(

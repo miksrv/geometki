@@ -14,6 +14,8 @@ interface AchievementIconProps {
     tier?: string
     category?: string
     group?: string
+    /** Without `image`: a photo cut to the hexagon in place of the drawn symbol (`AwardBadge`) */
+    photo?: string
     className?: string
 }
 
@@ -28,6 +30,7 @@ export const AchievementIcon: React.FC<AchievementIconProps> = ({
     tier,
     category,
     group,
+    photo,
     className
 }) => {
     if (!image) {
@@ -37,6 +40,7 @@ export const AchievementIcon: React.FC<AchievementIconProps> = ({
                 tier={tier}
                 category={category}
                 group={group}
+                photo={photo}
                 className={className}
             />
         )
@@ -51,7 +55,8 @@ export const AchievementIcon: React.FC<AchievementIconProps> = ({
         <Image
             src={src}
             alt={alt}
-            width={size / 1.414}
+            // A hexagon, point up, as every award: as wide as the drawn badge
+            width={Math.round(size * 0.866)}
             height={size}
             unoptimized
             className={className}
