@@ -6,12 +6,11 @@
 // background: the title, then one line of facts — the same corners and type as the PlaceCard
 // tile, a taller cover.
 
-// 3-column grid for tiles; 1 column on phones. Place tiles carry their text under the
-// cover, so rows get more air than columns
+// 3-column grid for tiles; 1 column on phones. The list gaps of every page (theme.css)
 .grid
     display: grid
     grid-template-columns: repeat(3, minmax(0, 1fr))
-    gap: var(--space-6) var(--space-5)
+    gap: var(--gap-list-row) var(--gap-list-column)
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
         grid-template-columns: minmax(0, 1fr)

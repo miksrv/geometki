@@ -32,7 +32,7 @@ export const UserAvatarGroup: React.FC<UserAvatarGroupProps> = ({ users, totalCo
             <>
                 <div className={styles.totalCountText}>
                     <Trans
-                        i18nKey={'more-count-travelers'}
+                        i18nKey={'more-count-explorers'}
                         values={{ count: totalCount }}
                     />
                 </div>
