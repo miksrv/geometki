@@ -228,7 +228,7 @@ class Visits extends ResourceController
     {
         $game   = new GameLibrary();
         $config = config(\Config\Game::class);
-        $season = $game->openSeason(date('Y-m-d'));
+        $season = $game->openSeason(GameLibrary::today());
 
         if (!$season) {
             return null;

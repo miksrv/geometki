@@ -53,7 +53,7 @@ class VisitsLibrary
     public const DAYS_BACK = 2;
 
     /**
-     * The day of a check-in: `Y-m-d`, a real date, up to DAYS_BACK days before the server's today
+     * The day of a check-in: `Y-m-d`, a real date, up to DAYS_BACK days before the game's today (Moscow)
      * and a day after it (the visitor's time zone and a day of slack), today without input. False
      * when it is none of that. The window keeps the log honest: a visit is logged when it happens,
      * and a back-dated one would farm the experience of a visit with a contribution.
@@ -61,7 +61,7 @@ class VisitsLibrary
     public static function day(mixed $input): string|false
     {
         if ($input === null || $input === '') {
-            return date('Y-m-d');
+            return GameLibrary::today();
         }
 
         if (!is_string($input) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $input)) {
@@ -72,8 +72,8 @@ class VisitsLibrary
 
         if (
             !checkdate($month, $dayOfMonth, $year)
-            || $input < date('Y-m-d', strtotime('-' . self::DAYS_BACK . ' days'))
-            || $input > date('Y-m-d', strtotime('+1 day'))
+            || $input < GameLibrary::today(null, -self::DAYS_BACK)
+            || $input > GameLibrary::today(null, 1)
         ) {
             return false;
         }
@@ -444,8 +444,8 @@ class VisitsLibrary
 
         return (new VisitsModel())
             ->where(['user_id' => $userId, 'place_id' => $placeId])
-            ->where('DATE(visited_at) >=', date('Y-m-d', strtotime('-1 day')))
-            ->where('DATE(visited_at) <=', date('Y-m-d', strtotime('+1 day')))
+            ->where('DATE(visited_at) >=', GameLibrary::today(null, -1))
+            ->where('DATE(visited_at) <=', GameLibrary::today(null, 1))
             ->orderBy('visited_at', 'DESC')
             ->first();
     }

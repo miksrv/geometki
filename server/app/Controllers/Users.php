@@ -67,7 +67,7 @@ class Users extends ResourceController
 
         // The game: the current season's points on the cards, and the
         // list in their order (`sort=season`, the most first) — the season's whole rating
-        $season   = GameLibrary::seasonOf(date('Y-m-d'));
+        $season   = (new GameLibrary())->current();
         $bySeason = $sortRaw === 'season';
 
         $userLevels = new LevelsLibrary();
@@ -90,7 +90,7 @@ class Users extends ResourceController
             $usersModel
                 ->join(
                     '(SELECT user_id, SUM(points) AS season_points FROM game_points WHERE season = '
-                        . $usersModel->db->escape($season['id']) . ' GROUP BY user_id) season_score',
+                        . $usersModel->db->escape($season['id'] ?? '') . ' GROUP BY user_id) season_score',
                     'season_score.user_id = users.id',
                     'left',
                     false
@@ -152,7 +152,7 @@ class Users extends ResourceController
 
         // The game: the points of the current season per user
         $seasonPoints = [];
-        if (!empty($userIds)) {
+        if ($season && !empty($userIds)) {
             $rows = $db->table('game_points')
                 ->select('user_id, SUM(points) AS points')
                 ->where('season', $season['id'])

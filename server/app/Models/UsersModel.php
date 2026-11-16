@@ -133,7 +133,7 @@ class UsersModel extends ApplicationBaseModel
 
     /**
      * Save the user's last known position without altering updated_at. The point is kept for
-     * future features (the explorer map, features/17-personal-fog-of-war-explorer-map.md) and is
+     * future features (a personal exploration map, ROADMAP.md) and is
      * never returned by the API. A move shorter than LOCATION_MIN_DISTANCE is ignored.
      *
      * @return bool Whether the position was saved.
