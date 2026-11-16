@@ -129,6 +129,8 @@ class QuestsLibrary
             'length'      => (int) $quest->length_m,
             'points'      => (int) $quest->points,
             'walked'      => (int) $quest->walked,
+            // The award of a walked quest; null — the profile draws it around the first point's cover
+            'medal'       => $quest->medal ?? null,
             // The experience walking it to the end gives: a quest is no part of a season
             'bonus'       => self::bonusOf((int) $quest->points),
             'updated'     => $quest->updated_at ? new \DateTime((string) $quest->updated_at) : null,
@@ -251,7 +253,7 @@ class QuestsLibrary
 
         // What a place is worth now, for the points still to confirm
         $game   = new GameLibrary();
-        $season = $game->openSeason(date('Y-m-d'));
+        $season = $game->openSeason(GameLibrary::today());
         $values = $season ? $game->values(array_values($places), $season, $userId) : [];
 
         $items = [];
@@ -733,7 +735,7 @@ class QuestsLibrary
                     }
                 }
 
-                $this->markPoint($walk, (object) ['id' => $walk->quest_id, 'mode' => $walk->mode], $walk->point_id, $visitId, date('Y-m-d'));
+                $this->markPoint($walk, (object) ['id' => $walk->quest_id, 'mode' => $walk->mode], $walk->point_id, $visitId, GameLibrary::today());
             }
         } catch (Throwable $e) {
             log_message('error', '{exception}', ['exception' => $e]);

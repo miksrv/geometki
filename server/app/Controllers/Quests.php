@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Libraries\AdminImageLibrary;
 use App\Libraries\AvatarLibrary;
 use App\Libraries\QuestsLibrary;
 use App\Libraries\SessionLibrary;
@@ -10,6 +11,7 @@ use App\Models\QuestsModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use Config\Database;
+use Config\Services;
 use Throwable;
 
 /**
@@ -29,6 +31,13 @@ class Quests extends ResourceController
 
     private const LIMIT_DEFAULT = 12;
     private const LIMIT_MAX     = 48;
+
+    /**
+     * "Я на месте" of a person, over all the quests: enough for a walk with a few tries at every
+     * point, too few for a script that searches the place of a riddle by sending coordinates
+     */
+    private const CONFIRMS_PER_MINUTE = 6;
+    private const CONFIRMS_PER_HOUR   = 60;
 
     protected SessionLibrary $session;
 
@@ -362,6 +371,82 @@ class Quests extends ResourceController
     }
 
     /**
+     * The medal of a quest, uploaded by an administrator: a hexagon in PNG or SVG up to 1 MB, like
+     * the picture of an achievement; the people who walked the quest to the end wear it on their
+     * profile. A new picture replaces the old one.
+     *
+     * POST /game/quests/:id/medal (multipart, `image`) → { medal }
+     *
+     * @param string|null $id
+     *
+     * @return ResponseInterface
+     */
+    public function medal($id = null): ResponseInterface
+    {
+        if (!$this->isAdmin()) {
+            return $this->session->isAuth ? $this->failForbidden() : $this->failUnauthorized();
+        }
+
+        $quest = $this->find($id);
+
+        if (!$quest) {
+            return $this->failNotFound(lang('Game.questNotFound'));
+        }
+
+        $file = $this->request->getFile('image');
+        $type = $file && $file->isValid() ? AdminImageLibrary::kind($file) : null;
+
+        if ($type === null) {
+            return $this->failValidationErrors(lang('Game.badImage'));
+        }
+
+        $stored = AdminImageLibrary::store($file, $type, 'quests', $quest->id);
+
+        if ($stored === null) {
+            return $this->failServerError(lang('Game.questError'));
+        }
+
+        Database::connect()->table('quests')->where('id', $quest->id)->update([
+            'medal'      => $stored,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        AdminImageLibrary::remove($quest->medal ?? null, 'quests');
+
+        return $this->respond(['medal' => $stored]);
+    }
+
+    /**
+     * Takes the medal off a quest and deletes its file: the profile draws the hexagon around the
+     * cover of the first point again.
+     *
+     * DELETE /game/quests/:id/medal → { medal: null }
+     *
+     * @param string|null $id
+     *
+     * @return ResponseInterface
+     */
+    public function medalDelete($id = null): ResponseInterface
+    {
+        if (!$this->isAdmin()) {
+            return $this->session->isAuth ? $this->failForbidden() : $this->failUnauthorized();
+        }
+
+        $quest = $this->find($id);
+
+        if (!$quest) {
+            return $this->failNotFound(lang('Game.questNotFound'));
+        }
+
+        Database::connect()->table('quests')->where('id', $quest->id)->update([
+            'medal'      => null,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        AdminImageLibrary::remove($quest->medal ?? null, 'quests');
+
+        return $this->respond(['medal' => null]);
+    }
+
+    /**
      * Start walking a quest: from then on a photo uploaded to one of its places counts as its
      * point too. "I am here" starts the walk by itself.
      *
@@ -460,6 +545,18 @@ class Quests extends ResourceController
 
         if (!$quest) {
             return $this->failNotFound(lang('Game.questNotFound'));
+        }
+
+        $throttler = Services::throttler();
+        $userId    = $this->session->user->id;
+
+        if (
+            !$throttler->check('quest_confirm_m_' . $userId, self::CONFIRMS_PER_MINUTE, MINUTE)
+            || !$throttler->check('quest_confirm_h_' . $userId, self::CONFIRMS_PER_HOUR, HOUR)
+        ) {
+            $this->response->setHeader('Retry-After', (string) max(1, $throttler->getTokenTime()));
+
+            return $this->failTooManyRequests(lang('Game.questTooManyConfirms'));
         }
 
         $input    = $this->request->getJSON(true) ?: [];
