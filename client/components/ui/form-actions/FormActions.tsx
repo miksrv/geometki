@@ -15,6 +15,8 @@ export interface FormActionsProps {
     dirty?: boolean
     /** Saving: Save spins, both buttons are disabled */
     loading?: boolean
+    /** The form is not ready (its data is loading): every button is off, nothing spins */
+    disabled?: boolean
     /** The note on the left while there are changes; "Есть несохранённые изменения" by default */
     message?: string
     /** Save is off: by default while there are no changes; a new entity passes its own rule */
@@ -45,6 +47,7 @@ export interface FormActionsProps {
 export const FormActions: React.FC<FormActionsProps> = ({
     dirty,
     loading,
+    disabled,
     message,
     saveDisabled,
     saveLabel,
@@ -112,7 +115,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
                             mode={'secondary'}
                             variant={'negative'}
                             label={deleteLabel ?? t('delete')}
-                            disabled={loading || deleteDisabled}
+                            disabled={loading || disabled || deleteDisabled}
                             className={styles.delete}
                             onClick={onDelete}
                         />
@@ -126,7 +129,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
                                 size={'medium'}
                                 mode={'secondary'}
                                 label={cancelLabel ?? t('cancel')}
-                                disabled={loading}
+                                disabled={loading || disabled}
                                 onClick={onCancel}
                             />
                         )}
@@ -136,7 +139,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
                             mode={'primary'}
                             loading={loading}
                             label={saveLabel ?? t('save')}
-                            disabled={loading || (saveDisabled ?? !dirty)}
+                            disabled={loading || disabled || (saveDisabled ?? !dirty)}
                             onClick={onSave}
                         />
                     </div>

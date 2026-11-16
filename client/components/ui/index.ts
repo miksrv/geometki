@@ -4,6 +4,7 @@ export { Chip, type ChipProps } from './chip'
 export { ContentEditor } from './content-editor'
 export { Counter } from './counter'
 export { ExpandableText } from './expandable-text'
+export { FieldHint, type FieldHintProps, HintedField, type HintedFieldProps } from './field-hint'
 export { FieldTrigger, type FieldTriggerProps } from './field-trigger'
 export { FileDropZone } from './file-drop-zone'
 export { FloatingPrompt, type FloatingPromptProps } from './floating-prompt'
@@ -15,6 +16,7 @@ export {
     type FormSectionsItem,
     type FormSectionsProps
 } from './form-sections'
+export { LocaleFieldPair, type LocaleFieldPairProps } from './locale-field-pair'
 export { OptionList, type OptionListGroup, type OptionListItem, type OptionListProps } from './option-list'
 export { Pagination, type PaginationProps } from './pagination'
 export { RadioButton, type RadioButtonProps } from './radio-button'

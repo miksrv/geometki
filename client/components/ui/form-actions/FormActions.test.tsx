@@ -81,6 +81,22 @@ describe('FormActions', () => {
         expect(screen.getByRole('button', { name: 'save' })).toBeDisabled()
     })
 
+    it('turns every button off while the form is not ready, without a spinner', () => {
+        render(
+            <FormActions
+                dirty={true}
+                disabled={true}
+                saveDisabled={false}
+                onCancel={jest.fn()}
+                onDelete={jest.fn()}
+            />
+        )
+
+        expect(screen.getByRole('button', { name: 'save' })).toBeDisabled()
+        expect(screen.getByRole('button', { name: 'cancel' })).toBeDisabled()
+        expect(screen.getByRole('button', { name: 'delete' })).toBeDisabled()
+    })
+
     it('takes its own labels and reports the clicks', () => {
         const onSave = jest.fn()
         const onCancel = jest.fn()
