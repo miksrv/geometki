@@ -1,0 +1,96 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+
+// A card of one section of the admin dashboard: head, body, footer
+.widget
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+    min-width: 0
+    padding: var(--space-5)
+    border-radius: var(--container-radius)
+    background: var(--surface-1)
+    box-shadow: var(--container-shadow)
+    color: var(--text-color-primary)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        padding: var(--space-4)
+
+.head
+    display: flex
+    align-items: center
+    gap: var(--space-2) var(--space-3)
+
+.icon
+    flex-shrink: 0
+    width: 24px
+    height: 24px
+    fill: var(--icon-color-secondary)
+
+.title
+    +type.titleBlock
+    flex: 1
+    min-width: 0
+
+    a
+        color: var(--text-color-primary)
+        text-decoration: none
+
+        &:hover
+            color: var(--link-color-hover)
+
+.body
+    display: flex
+    flex: 1
+    flex-direction: column
+    gap: var(--space-3)
+    min-width: 0
+
+.footer
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: var(--space-2)
+
+// The state of the section: a label and its value on a line, a rule between the lines
+.facts
+    display: flex
+    flex-direction: column
+    margin: 0
+
+.fact
+    display: flex
+    align-items: baseline
+    justify-content: space-between
+    gap: var(--space-3)
+    padding: var(--space-2) 0
+
+    & + &
+        border-top: 1px solid var(--border)
+
+    dt
+        +type.secondary
+        flex-shrink: 0
+
+    dd
+        min-width: 0
+        margin: 0
+        overflow: hidden
+        font-variant-numeric: tabular-nums
+        font-weight: var(--font-weight-medium)
+        text-align: right
+        text-overflow: ellipsis
+        white-space: nowrap
+
+.danger, .danger a
+    color: var(--color-red)
+
+.warning, .warning a
+    color: var(--color-orange)
+
+.quiet
+    +type.secondary
+    margin: 0
+
+.skeleton
+    height: 28px

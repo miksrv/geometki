@@ -1,0 +1,67 @@
+@use '../../../styles/variables' as variables
+
+// In a column of a fixed height (a list page that fits the viewport) the card gives way and
+// the table scrolls inside it; in a regular page both are as high as their rows
+.container
+    display: flex
+    flex: 0 1 auto
+    flex-direction: column
+    min-height: 0
+    padding: 2px
+
+.table
+    flex: 0 1 auto
+    min-height: 0
+
+// A picture cell, shared by the lists: the icon on the text's middle line
+.imageCell
+    img, svg
+        vertical-align: middle
+
+// A count: figures of one width, against the right edge so that the digits line up
+.numberCell
+    font-variant-numeric: tabular-nums
+    text-align: right
+
+.titleCell
+    display: flex
+    flex-direction: column
+    gap: 2px
+    min-width: 0
+
+.titleLine
+    display: flex
+    align-items: center
+    gap: var(--space-2)
+    min-width: 0
+
+// The title that opens a dialog: looks like the title links of the other lists
+.titleButton
+    max-width: 360px
+    padding: 0
+    overflow: hidden
+    border: 0
+    background: none
+    color: var(--link-color)
+    font: inherit
+    text-align: left
+    text-overflow: ellipsis
+    white-space: nowrap
+    cursor: pointer
+
+    &:hover
+        color: var(--link-color-hover)
+        text-decoration: underline
+
+    &:focus-visible
+        outline: 2px solid var(--color-main)
+        outline-offset: 2px
+
+.titleMeta
+    display: block
+    max-width: 300px
+    overflow: hidden
+    font-size: variables.$fontSizeCaption
+    color: var(--text-color-secondary)
+    text-overflow: ellipsis
+    white-space: nowrap

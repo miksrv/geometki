@@ -1,0 +1,21 @@
+// `.statusBadge.tone`: two classes outrank the kit badge's own colours without `!important`
+.statusBadge
+    &.success
+        background: var(--color-green-background)
+        color: var(--color-green)
+
+    &.info
+        background: color-mix(in srgb, var(--link-color) 12%, var(--surface-1))
+        color: var(--link-color)
+
+    &.warning
+        background: color-mix(in srgb, var(--color-orange) 14%, var(--surface-1))
+        color: var(--color-orange)
+
+    &.danger
+        background: var(--color-red-background)
+        color: var(--color-red)
+
+    &.neutral
+        background: var(--surface-2)
+        color: var(--text-color-secondary)
