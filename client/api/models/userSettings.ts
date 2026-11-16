@@ -11,6 +11,7 @@ export const NotificationTypes = [
     'bookmark',
     'visit',
     'digest',
+    'news',
     'achievement',
     'level'
 ] as const
@@ -22,9 +23,9 @@ export const NotificationChannels = ['email', 'push'] as const
 
 export type NotificationChannel = (typeof NotificationChannels)[number]
 
-/** The types each channel carries: the digest is email only, achievements and levels push only */
+/** The types each channel carries: the digest and the news are email only, achievements and levels push only */
 export const NotificationChannelTypes: Record<NotificationChannel, readonly NotificationType[]> = {
-    email: ['comment', 'photo', 'rating', 'edit', 'cover', 'bookmark', 'visit', 'digest'],
+    email: ['comment', 'photo', 'rating', 'edit', 'cover', 'bookmark', 'visit', 'digest', 'news'],
     push: ['comment', 'photo', 'rating', 'edit', 'cover', 'bookmark', 'visit', 'achievement', 'level']
 }
 

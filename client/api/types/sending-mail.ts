@@ -48,10 +48,13 @@ export interface SendingMailListResponse {
 }
 
 export interface SendingMailListRequest {
-    status?: SendingMailStatus
+    /** A status, or `pending`: the letters in the queue (`created` and `process`) */
+    status?: SendingMailStatus | 'pending'
     email?: string
     date_from?: string
     date_to?: string
+    /** `1`: only the bulk mail (digests, mailings); `0`: only the letters that go out at once */
+    bulk?: '0' | '1'
     sort?: keyof SendingMailItem
     order?: 'asc' | 'desc'
     page?: number

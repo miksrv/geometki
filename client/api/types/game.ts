@@ -1,13 +1,17 @@
 import { ApiModel, ApiType } from '@/api'
 
-/** The halves of the year: the warm one (April — September) and the cold one (October — March) */
-export type SeasonKey = 'warm' | 'cold'
+/** The four medals of a season: places 1, 2, 3 and everyone else who took part */
+export type MedalKind = 'gold' | 'silver' | 'bronze' | 'participant'
 
+/** The images of a season's medals, paths relative to the API host; null where not drawn yet */
+export type SeasonMedals = Record<MedalKind, string | null>
+
+/** A season: made by hand by an administrator, with its own dates */
 export interface Season {
-    /** `2026-cold`; a cold season is named by the year it starts in */
+    /** A slug set on creation (`2027-04`) */
     id: string
-    key: SeasonKey
-    year: number
+    title: string
+    description: string | null
     /** The first and the last day, `YYYY-MM-DD` */
     from: string
     to: string
@@ -15,13 +19,55 @@ export interface Season {
     daysLeft: number
     /** The last day a photo shot within the season still counts */
     lastDay: string
-    /** The season's picture, drawn by the owner; a badge is drawn in its place without one */
-    image?: string | null
+    /** The season's picture; a badge is drawn in its place without one */
+    image: string | null
     /** Its table is frozen */
     closed: boolean
     /** Today is within it */
     current: boolean
+    /** Today is before its first day */
+    upcoming: boolean
+    medals: SeasonMedals
 }
+
+/** A season for the administrator: both locales of the texts, the numbers that say if it can go */
+export interface SeasonAdmin {
+    id: string
+    title_ru: string
+    title_en: string | null
+    description_ru: string | null
+    description_en: string | null
+    starts_on: string
+    ends_on: string
+    image: string | null
+    medals: SeasonMedals
+    closed: boolean
+    closed_at: string | null
+    players: number
+    places: number
+    /** Above 0 the season cannot be deleted */
+    points: number
+    current: boolean
+    upcoming: boolean
+    /** Closed, or past its grace days: the dates cannot change */
+    datesLocked: boolean
+    /** The dates are locked, or something is counted in the season: the start cannot change */
+    startLocked: boolean
+}
+
+/** `POST game/seasons` (with `id`), `PATCH game/seasons/:id` */
+export interface SeasonInput {
+    id?: string
+    title_ru: string
+    title_en?: string
+    description_ru?: string
+    description_en?: string
+    starts_on: string
+    ends_on: string
+}
+
+/** One picture of a season, the participant's medal, and its variants for the places 1–3 */
+export type SeasonImageKind = MedalKind
 
 /** The public table of points: every number of the formula */
 export interface Rules {
@@ -88,7 +134,8 @@ export interface Leader {
 
 /** `GET /game` */
 export interface GetResponse {
-    season: Season
+    /** The current season; none — the nearest upcoming one; none of them — null */
+    season: Season | null
     rules: Rules
     /** The limited awards of the season's dates */
     awards: LimitedAward[]
@@ -194,19 +241,21 @@ export interface ExplorationResponse {
 /** A season a person took part in: has a counted place in */
 export interface Participation {
     id: string
-    key: SeasonKey
-    year: number
+    title: string
     image: string | null
     closed: boolean
     points: number
     places: number
     /** Their place in the season's table: the frozen one of a closed season, the live one of an open one */
     place: number | null
+    /** What the closed season gave them; null while it is open */
+    medal: MedalKind | null
+    medalImage: string | null
 }
 
 /** `GET /game/users/:id`: a person in the game, for their profile */
 export interface UserResponse extends Standing {
-    season: Season
+    season: Season | null
     /** Confirmed places of all time */
     confirmed: number
     /** Quests walked to the end */
@@ -264,6 +313,8 @@ export interface Quest {
     walked: number
     /** The experience walking it to the end gives: a quest is no part of a season */
     bonus: number
+    /** The award of the people who walked it to the end (a hexagon); without it the profile draws the hexagon around the cover */
+    medal?: string | null
     updated?: ApiType.DateTime | null
     /** The town (or the region) of the first point */
     location?: string | null

@@ -80,23 +80,33 @@ export const API = createApi({
             providesTags: ['AchievementsManage'],
             query: () => 'achievements/manage'
         }),
+        getAchievementsRecent: builder.query<
+            { items: ApiType.Achievements.AchievementRecent[] },
+            Maybe<{ limit?: number }>
+        >({
+            providesTags: ['AchievementsManage'],
+            query: (params) => `achievements/manage/recent${encodeQueryData(params)}`
+        }),
         createAchievement: builder.mutation<
             { data: ApiType.Achievements.Achievement },
             ApiType.Achievements.AchievementInput
         >({
             invalidatesTags: ['UserAchievements', 'AchievementsManage'],
-            query: (body) => ({ body, method: 'POST', url: 'achievements' })
+            query: (body) => ({ body, method: 'POST', url: 'achievements' }),
+            transformErrorResponse: extractErrorData
         }),
         updateAchievement: builder.mutation<
             { data: ApiType.Achievements.Achievement },
             { id: string; body: ApiType.Achievements.AchievementInput }
         >({
             invalidatesTags: ['UserAchievements', 'AchievementsManage'],
-            query: ({ id, body }) => ({ body, method: 'PUT', url: `achievements/${id}` })
+            query: ({ id, body }) => ({ body, method: 'PUT', url: `achievements/${id}` }),
+            transformErrorResponse: extractErrorData
         }),
         deleteAchievement: builder.mutation<void, string>({
             invalidatesTags: ['UserAchievements', 'AchievementsManage'],
-            query: (id) => ({ method: 'DELETE', url: `achievements/${id}` })
+            query: (id) => ({ method: 'DELETE', url: `achievements/${id}` }),
+            transformErrorResponse: extractErrorData
         }),
         uploadAchievementImage: builder.mutation<{ id: string; image: string }, { id: string; file: File }>({
             invalidatesTags: ['UserAchievements', 'AchievementsManage'],
@@ -104,7 +114,8 @@ export const API = createApi({
                 const formData = new FormData()
                 formData.append('image', file)
                 return { body: formData, method: 'POST', url: `achievements/${id}/image` }
-            }
+            },
+            transformErrorResponse: extractErrorData
         }),
 
         /** Controller: Auth **/
@@ -277,6 +288,76 @@ export const API = createApi({
             transformErrorResponse: extractErrorData
         }),
 
+        /** Controller: Mailings (the newsletters of the admin) **/
+        mailingsGetList: builder.query<
+            ApiType.Mailings.MailingListResponse,
+            Maybe<ApiType.Mailings.MailingListRequest>
+        >({
+            providesTags: ['Mailings'],
+            query: (params) => `mailings/manage${encodeQueryData(params)}`
+        }),
+        mailingsGetItem: builder.query<ApiType.Mailings.MailingAdmin, string>({
+            providesTags: (_result, _error, id) => [{ id, type: 'Mailings' }],
+            query: (id) => `mailings/manage/${id}`
+        }),
+        mailingsGetAudience: builder.query<ApiType.Mailings.MailingAudience, void>({
+            keepUnusedDataFor: 0,
+            query: () => 'mailings/audience'
+        }),
+        mailingsPost: builder.mutation<ApiType.Mailings.MailingAdmin, ApiType.Mailings.MailingInput>({
+            invalidatesTags: ['Mailings'],
+            query: (body) => ({ body, method: 'POST', url: 'mailings' }),
+            transformErrorResponse: extractErrorData
+        }),
+        mailingsPatch: builder.mutation<
+            ApiType.Mailings.MailingAdmin,
+            { id: string; body: ApiType.Mailings.MailingInput }
+        >({
+            invalidatesTags: ['Mailings'],
+            query: ({ id, body }) => ({ body, method: 'PATCH', url: `mailings/${id}` }),
+            transformErrorResponse: extractErrorData
+        }),
+        mailingsDelete: builder.mutation<{ id: string }, string>({
+            invalidatesTags: ['Mailings'],
+            query: (id) => ({ method: 'DELETE', url: `mailings/${id}` }),
+            transformErrorResponse: extractErrorData
+        }),
+        mailingsPostImage: builder.mutation<ApiType.Mailings.MailingAdmin, { id: string; file: File }>({
+            invalidatesTags: ['Mailings'],
+            query: ({ id, file }) => {
+                const formData = new FormData()
+                formData.append('image', file)
+                return { body: formData, method: 'POST', url: `mailings/${id}/image` }
+            },
+            transformErrorResponse: extractErrorData
+        }),
+        mailingsDeleteImage: builder.mutation<ApiType.Mailings.MailingAdmin, string>({
+            invalidatesTags: ['Mailings'],
+            query: (id) => ({ method: 'DELETE', url: `mailings/${id}/image` }),
+            transformErrorResponse: extractErrorData
+        }),
+        mailingsPostPreview: builder.mutation<
+            ApiType.Mailings.MailingPreviewResponse,
+            ApiType.Mailings.MailingPreviewRequest
+        >({
+            query: (body) => ({ body, method: 'POST', url: 'mailings/preview' }),
+            transformErrorResponse: extractErrorData
+        }),
+        mailingsPostTest: builder.mutation<ApiType.Mailings.MailingTestResponse, string>({
+            query: (id) => ({ method: 'POST', url: `mailings/${id}/test` }),
+            transformErrorResponse: extractErrorData
+        }),
+        mailingsPostSend: builder.mutation<ApiType.Mailings.MailingAdmin, string>({
+            invalidatesTags: ['Mailings', 'SendingMail'],
+            query: (id) => ({ method: 'POST', url: `mailings/${id}/send` }),
+            transformErrorResponse: extractErrorData
+        }),
+        mailingsPostCancel: builder.mutation<ApiType.Mailings.MailingAdmin, string>({
+            invalidatesTags: ['Mailings', 'SendingMail'],
+            query: (id) => ({ method: 'POST', url: `mailings/${id}/cancel` }),
+            transformErrorResponse: extractErrorData
+        }),
+
         /** Controller: Sending Mail **/
         getSendingMailList: builder.query<
             ApiType.SendingMail.SendingMailListResponse,
@@ -355,13 +436,61 @@ export const API = createApi({
             providesTags: ['Game'],
             query: (params) => `game/places${encodeQueryData(params)}`
         }),
-        gamePostSeasonImage: builder.mutation<{ id: string; image: string }, { id: string; file: File }>({
-            invalidatesTags: ['Game'],
-            query: ({ id, file }) => {
+        gameGetSeasonsManage: builder.query<{ items: ApiType.Game.SeasonAdmin[] }, void>({
+            providesTags: [{ id: 'LIST', type: 'GameSeasons' }],
+            query: () => 'game/seasons/manage'
+        }),
+        gameGetSeasonManage: builder.query<ApiType.Game.SeasonAdmin, string>({
+            providesTags: (_result, _error, id) => [{ id, type: 'GameSeasons' }],
+            query: (id) => `game/seasons/manage/${id}`
+        }),
+        gamePostSeason: builder.mutation<ApiType.Game.SeasonAdmin, ApiType.Game.SeasonInput>({
+            invalidatesTags: [{ id: 'LIST', type: 'GameSeasons' }, 'Game'],
+            query: (body) => ({ body, method: 'POST', url: 'game/seasons' }),
+            transformErrorResponse: extractErrorData
+        }),
+        gamePatchSeason: builder.mutation<ApiType.Game.SeasonAdmin, { id: string; body: ApiType.Game.SeasonInput }>({
+            invalidatesTags: (_result, _error, { id }) => [
+                { id: 'LIST', type: 'GameSeasons' },
+                { id, type: 'GameSeasons' },
+                'Game'
+            ],
+            query: ({ id, body }) => ({ body, method: 'PATCH', url: `game/seasons/${id}` }),
+            transformErrorResponse: extractErrorData
+        }),
+        // Only the list: the deleted season's own query would refetch into a 404 while its page is being left
+        gameDeleteSeason: builder.mutation<void, string>({
+            invalidatesTags: [{ id: 'LIST', type: 'GameSeasons' }, 'Game'],
+            query: (id) => ({ method: 'DELETE', url: `game/seasons/${id}` }),
+            transformErrorResponse: extractErrorData
+        }),
+        gamePostSeasonImage: builder.mutation<
+            ApiType.Game.SeasonAdmin,
+            { id: string; kind: ApiType.Game.SeasonImageKind; file: File }
+        >({
+            invalidatesTags: (_result, _error, { id }) => [
+                { id: 'LIST', type: 'GameSeasons' },
+                { id, type: 'GameSeasons' },
+                'Game'
+            ],
+            query: ({ id, kind, file }) => {
                 const formData = new FormData()
                 formData.append('image', file)
+                formData.append('kind', kind)
                 return { body: formData, method: 'POST', url: `game/seasons/${id}/image` }
             },
+            transformErrorResponse: extractErrorData
+        }),
+        gameDeleteSeasonImage: builder.mutation<
+            ApiType.Game.SeasonAdmin,
+            { id: string; kind: ApiType.Game.SeasonImageKind }
+        >({
+            invalidatesTags: (_result, _error, { id }) => [
+                { id: 'LIST', type: 'GameSeasons' },
+                { id, type: 'GameSeasons' },
+                'Game'
+            ],
+            query: ({ id, kind }) => ({ method: 'DELETE', url: `game/seasons/${id}/image?kind=${kind}` }),
             transformErrorResponse: extractErrorData
         }),
         gameGetSeason: builder.query<ApiType.Game.SeasonResponse, string>({
@@ -399,6 +528,20 @@ export const API = createApi({
         questsPost: builder.mutation<{ id: string }, ApiType.Game.QuestInput>({
             invalidatesTags: ['Quests', 'Game'],
             query: (body) => ({ body, method: 'POST', url: 'game/quests' }),
+            transformErrorResponse: extractErrorData
+        }),
+        questsPostMedal: builder.mutation<{ medal: string }, { id: string; file: File }>({
+            invalidatesTags: (_res, _err, { id }) => [{ id, type: 'Quests' }, 'Quests'],
+            query: ({ id, file }) => {
+                const formData = new FormData()
+                formData.append('image', file)
+                return { body: formData, method: 'POST', url: `game/quests/${id}/medal` }
+            },
+            transformErrorResponse: extractErrorData
+        }),
+        questsDeleteMedal: builder.mutation<{ medal: null }, string>({
+            invalidatesTags: (_res, _err, id) => [{ id, type: 'Quests' }, 'Quests'],
+            query: (id) => ({ method: 'DELETE', url: `game/quests/${id}/medal` }),
             transformErrorResponse: extractErrorData
         }),
         questsPostConfirm: builder.mutation<ApiType.Game.QuestConfirmResponse, ApiType.Game.QuestConfirmRequest>({
@@ -900,6 +1043,8 @@ export const API = createApi({
         'ExternalPhotos',
         'Feed',
         'Game',
+        'GameSeasons',
+        'Mailings',
         'Notifications',
         'OsmCandidates',
         'Photos',

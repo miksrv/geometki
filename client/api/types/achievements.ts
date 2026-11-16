@@ -62,4 +62,15 @@ export interface AchievementAdmin extends Achievement {
     description_en: string | null
     description_ru: string | null
     rules: AchievementRule[]
+    /** How many users have earned it */
+    holders: number
+    created_at: string | null
+}
+
+/** One line of `GET /achievements/manage/recent`: who earned which award, and when (`Y-m-d H:i:s`) */
+export interface AchievementRecent {
+    id: string
+    earned_at: string
+    achievement: Pick<Achievement, 'id' | 'title' | 'image' | 'tier' | 'category' | 'group_slug'>
+    user: { id: string; name: string; avatar: string | null; levelData?: { level: number } }
 }
