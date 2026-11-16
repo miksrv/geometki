@@ -139,18 +139,18 @@ describe('UserMenu', () => {
                     user={mockUser as any}
                 />
             )
-            expect(screen.queryByText('Настройки наград')).not.toBeInTheDocument()
+            expect(screen.queryByText('app-layout.admin')).not.toBeInTheDocument()
         })
 
-        it('renders admin links for an admin user', () => {
+        it('renders the one admin link for an admin user', () => {
             render(
                 <UserMenu
                     t={mockT as any}
                     user={{ ...mockUser, role: 'admin' } as any}
                 />
             )
-            expect(screen.getByText('Настройки наград').closest('a')).toHaveAttribute('href', '/admin/achievements')
-            expect(screen.getByText('Отправленные письма').closest('a')).toHaveAttribute('href', '/admin/sending-mail')
+            expect(screen.getByText('app-layout.admin').closest('a')).toHaveAttribute('href', '/admin')
+            expect(screen.queryByText('Настройки наград')).not.toBeInTheDocument()
         })
 
         it('renders the logout link', () => {

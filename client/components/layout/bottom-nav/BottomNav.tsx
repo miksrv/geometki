@@ -7,6 +7,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import useRequireAuth from '@/hooks/useRequireAuth'
 import { GAME_HREF } from '@/utils/game'
+import { sitePathname } from '@/utils/sitePathname'
 
 import styles from './styles.module.sass'
 
@@ -22,8 +23,11 @@ type BottomNavItem = {
     primary?: boolean
 }
 
-export const isBottomNavItemActive = (pathname: string, match: string): boolean =>
-    pathname === match || pathname.startsWith(`${match}/`)
+export const isBottomNavItemActive = (pathname: string, match: string): boolean => {
+    const path = sitePathname(pathname)
+
+    return path === match || path.startsWith(`${match}/`)
+}
 
 /**
  * Mobile-only bottom navigation: the same four sections as the desktop app bar with
@@ -66,7 +70,7 @@ export const BottomNav: React.FC = () => {
         }
 
         // Already at the root of this section: back to the top instead of reloading it
-        if (router.pathname === item.href && window.scrollY > 0) {
+        if (sitePathname(router.pathname) === item.href && window.scrollY > 0) {
             event.preventDefault()
             window.scrollTo({ behavior: 'smooth', top: 0 })
         }

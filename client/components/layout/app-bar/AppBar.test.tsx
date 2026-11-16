@@ -127,6 +127,13 @@ describe('isNavItemActive', () => {
         expect(isNavItemActive('/places/123', '/places')).toBe(true)
     })
 
+    it('counts the live page of a signed-in user as its section', () => {
+        expect(isNavItemActive('/live/places/[id]', '/places')).toBe(true)
+        expect(isNavItemActive('/live/collections/[id]', '/collections')).toBe(true)
+        expect(isNavItemActive('/live/users/[id]', '/users')).toBe(true)
+        expect(isNavItemActive('/live/places/[id]', '/users')).toBe(false)
+    })
+
     it('does not match routes with a shared prefix only', () => {
         expect(isNavItemActive('/placesXYZ', '/places')).toBe(false)
         expect(isNavItemActive('/', '/places')).toBe(false)

@@ -10,6 +10,7 @@ import { logoutUser, turnOffPushOnThisDevice } from '@/app/logoutUser'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import useRequireAuth from '@/hooks/useRequireAuth'
 import { GAME_HREF, QUESTS_HREF } from '@/utils/game'
+import { sitePathname } from '@/utils/sitePathname'
 
 import { AppAuthChecker } from './AppAuthChecker'
 import { Logo } from './Logo'
@@ -28,8 +29,12 @@ interface AppBarProps {
     fullSize?: boolean
 }
 
-export const isNavItemActive = (pathname: string, href: string): boolean =>
-    pathname === href || pathname.startsWith(`${href}/`)
+/** The section of the page: its own route and everything under it; a live page counts as its cached one */
+export const isNavItemActive = (pathname: string, href: string): boolean => {
+    const path = sitePathname(pathname)
+
+    return path === href || path.startsWith(`${href}/`)
+}
 
 export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
     const { t } = useTranslation()
