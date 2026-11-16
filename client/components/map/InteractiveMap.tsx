@@ -39,6 +39,7 @@ import { TrailsInfo, TrailsLayer } from './trails-layer'
 import {
     MapAdditionalLayersEnum,
     MapLayersEnum,
+    MapObjectLayersEnum,
     MapObjectsTypeEnum,
     MapPositionType,
     MapTrailsLayerEnum,
@@ -62,7 +63,7 @@ type MapProps = {
     quest?: QuestPointMark[]
     /** The search zones of riddle quests: dashed circles */
     questZones?: QuestZoneMark[]
-    /** Quests as pins with their card in a popup (`/quests`); the "Квесты" layer shows all of them */
+    /** Quests as pins with their card in a popup (`/quests`); the "Геоквесты" layer shows all of them */
     quests?: ApiType.Game.QuestMark[]
     onQuestPointClick?: (id: string) => void
     categories?: ApiModel.Categories[]
@@ -83,6 +84,12 @@ type MapProps = {
     hideAdditionalLayers?: boolean
     /** New interesting places from OpenStreetMap and their panel "Места для исследования" */
     enableOsmCandidates?: boolean
+    /**
+     * "Неоткрытые", "Геометки", "Геоквесты" in the layers panel (the map page), all on by default:
+     * the undiscovered places (with `enableOsmCandidates`), the places (the page reads the choice
+     * from `onChangeObjectLayers`) and every quest
+     */
+    enableObjectLayers?: boolean
     /** Zoomed out, hexagons with the counts of places and undiscovered places replace the place markers */
     enableHexes?: boolean
     /** Keep the chosen map layer, objects type and additional layers between visits (see mapSettings) */
@@ -92,6 +99,7 @@ type MapProps = {
     enableUserLocation?: boolean
     onChangeCategories?: (categories?: ApiModel.Categories[]) => void
     onChangeMapType?: (type?: MapObjectsTypeEnum) => void
+    onChangeObjectLayers?: (layers: MapObjectLayersEnum[]) => void
     onChangeBounds?: (bounds: LatLngBounds, zoom: number) => void
     onPhotoClick?: (photos: ApiModel.PhotoMark[], index?: number) => void
     onClickCreatePlace?: () => void
@@ -144,6 +152,7 @@ const DEFAULT_MAP_ZOOM = 12
 const DEFAULT_MAP_CENTER: LatLngExpression = [51.765445, 55.099745]
 const DEFAULT_MAP_LAYER = MapLayersEnum.OSM
 const DEFAULT_MAP_TYPE = MapObjectsTypeEnum.PLACES
+const DEFAULT_OBJECT_LAYERS = Object.values(MapObjectLayersEnum)
 
 export const InteractiveMap: React.FC<MapProps> = ({
     places,
@@ -168,12 +177,14 @@ export const InteractiveMap: React.FC<MapProps> = ({
     enableContextMenu,
     hideAdditionalLayers,
     enableOsmCandidates,
+    enableObjectLayers,
     enableHexes,
     storeMapSettings,
     fullMapLink,
     enableUserLocation,
     onChangeCategories,
     onChangeMapType,
+    onChangeObjectLayers,
     onChangeBounds,
     onPhotoClick,
     onClickCreatePlace,
@@ -205,8 +216,11 @@ export const InteractiveMap: React.FC<MapProps> = ({
     const [mapLayer, setMapLayer] = useState<MapLayersEnum>(
         (storeMapSettings && savedSettings.layer) || DEFAULT_MAP_LAYER
     )
-    const [mapType, setMapType] = useState<MapObjectsTypeEnum>(
-        (storeMapSettings && savedSettings.type) || DEFAULT_MAP_TYPE
+    // The "Геометки / Фотографии" switch is hidden for now (LayerSwitcherControl): the saved type is not
+    // read, a saved "Фотографии" would leave the map with no way back to the places
+    const [mapType, setMapType] = useState<MapObjectsTypeEnum>(DEFAULT_MAP_TYPE)
+    const [objectLayers, setObjectLayers] = useState<MapObjectLayersEnum[]>(
+        (storeMapSettings && savedSettings.objectLayers) || DEFAULT_OBJECT_LAYERS
     )
     const [additionalLayers, setAdditionalLayers] = useState<MapAdditionalLayersEnum[] | undefined>(
         storeMapSettings ? savedSettings.additionalLayers : undefined
@@ -288,6 +302,15 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
         if (storeMapSettings) {
             saveMapSettings({ type })
+        }
+    }
+
+    const handleSwitchObjectLayers = (layers: MapObjectLayersEnum[]) => {
+        setObjectLayers(layers)
+        onChangeObjectLayers?.(layers)
+
+        if (storeMapSettings) {
+            saveMapSettings({ objectLayers: layers })
         }
     }
 
@@ -414,6 +437,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
     useEffect(() => {
         onChangeMapType?.(mapType)
+        onChangeObjectLayers?.(objectLayers)
     }, [])
 
     useEffect(() => {
@@ -492,14 +516,23 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         <WikimediaCommons onPhotoClick={onPhotoClick} />
                     )}
 
-                    {enableOsmCandidates && <OsmCandidates categories={categories} />}
+                    {enableOsmCandidates &&
+                        (!enableObjectLayers || objectLayers.includes(MapObjectLayersEnum.UNEXPLORED)) && (
+                            <OsmCandidates categories={categories} />
+                        )}
 
-                    {hexMode && <HexLayer categories={categories} />}
+                    {hexMode && (
+                        <HexLayer
+                            categories={categories}
+                            places={!enableObjectLayers || objectLayers.includes(MapObjectLayersEnum.PLACES)}
+                            spots={!enableObjectLayers || objectLayers.includes(MapObjectLayersEnum.UNEXPLORED)}
+                        />
+                    )}
 
                     {quests ? (
                         <QuestMarks marks={quests} />
                     ) : (
-                        additionalLayers?.includes(MapAdditionalLayersEnum.QUESTS) && <QuestMarks />
+                        enableObjectLayers && objectLayers.includes(MapObjectLayersEnum.QUESTS) && <QuestMarks />
                     )}
 
                     {additionalLayers?.includes(MapAdditionalLayersEnum.WIKIPEDIA) && (
@@ -783,6 +816,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
                                 currentLayer={enableWayback && wayback ? undefined : mapLayer}
                                 currentType={mapType}
                                 hideAdditionalLayers={hideAdditionalLayers}
+                                objectLayers={enableObjectLayers ? objectLayers : undefined}
+                                onSwitchObjectLayers={handleSwitchObjectLayers}
                                 additionalLayers={additionalLayers}
                                 onSwitchMapLayer={handleSwitchMapLayer}
                                 onSwitchMapType={handleSwitchMapType}

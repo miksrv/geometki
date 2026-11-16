@@ -19,9 +19,15 @@ export enum MapLayersEnum {
     YANDEX_SAT = 'YandexSat'
 }
 
-// The order of the checkboxes in the layers panel: the site's own quests first
+// The site's own objects on the map page, all on by default; the order of the checkboxes in the layers panel
+export enum MapObjectLayersEnum {
+    UNEXPLORED = 'Unexplored',
+    PLACES = 'Places',
+    QUESTS = 'Quests'
+}
+
+// The order of the checkboxes in the layers panel
 export enum MapAdditionalLayersEnum {
-    QUESTS = 'Quests',
     HISTORICAL_PHOTOS = 'HistoricalPhotos',
     WIKIMEDIA_COMMONS = 'WikimediaCommons',
     WIKIPEDIA = 'Wikipedia'

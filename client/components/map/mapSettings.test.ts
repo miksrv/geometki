@@ -2,7 +2,7 @@ import { ApiModel } from '@/api'
 import { LOCAL_STORAGE_KEY } from '@/config/constants'
 
 import { getMapSettings, saveMapSettings } from './mapSettings'
-import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum } from './types'
+import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectLayersEnum, MapObjectsTypeEnum } from './types'
 
 const stored = () => JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) ?? '{}')
 const store = (data: Record<string, unknown>) => localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data))
@@ -32,6 +32,14 @@ describe('mapSettings', () => {
             position: { lat: 51.7, lon: 55.1, zoom: 14 },
             type: MapObjectsTypeEnum.PHOTOS
         })
+    })
+
+    it('keeps the chosen objects, an empty choice too, and drops the unknown ones', () => {
+        saveMapSettings({ objectLayers: [] })
+        expect(getMapSettings().objectLayers).toEqual([])
+
+        store({ mapSettings: { objectLayers: ['Photos', MapObjectLayersEnum.QUESTS] } })
+        expect(getMapSettings().objectLayers).toEqual([MapObjectLayersEnum.QUESTS])
     })
 
     it('merges a change into the saved settings', () => {

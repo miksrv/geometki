@@ -2,7 +2,7 @@ import React from 'react'
 
 import { fireEvent, render, screen } from '@testing-library/react'
 
-import { MapLayersEnum } from '../types'
+import { MapLayersEnum, MapObjectLayersEnum } from '../types'
 
 import { LayerSwitcherControl } from './LayerSwitcherControl'
 
@@ -77,17 +77,55 @@ describe('LayerSwitcherControl', () => {
             expect(screen.getByText('Google Спутник')).toBeInTheDocument()
         })
 
-        it('renders map type options when hideAdditionalLayers is false', () => {
+        it('does not offer the hidden "Геометки / Фотографии" switch', () => {
             render(<LayerSwitcherControl />)
             fireEvent.click(screen.getByRole('button'))
-            expect(screen.getByText('Places')).toBeInTheDocument()
-            expect(screen.getByText('Photos')).toBeInTheDocument()
+            expect(screen.queryByText('Photos')).not.toBeInTheDocument()
         })
 
-        it('does not render map type options when hideAdditionalLayers is true', () => {
-            render(<LayerSwitcherControl hideAdditionalLayers />)
+        it('renders the objects group when the objects are passed', () => {
+            render(<LayerSwitcherControl objectLayers={[MapObjectLayersEnum.PLACES]} />)
             fireEvent.click(screen.getByRole('button'))
-            expect(screen.queryByText('Places')).not.toBeInTheDocument()
+            expect(screen.getByLabelText('Неоткрытые')).not.toBeChecked()
+            expect(screen.getByLabelText('Геометки')).toBeChecked()
+            expect(screen.getByLabelText('Геоквесты')).not.toBeChecked()
+        })
+
+        it('switches an object on in the order of the panel', () => {
+            const onSwitch = jest.fn()
+            render(
+                <LayerSwitcherControl
+                    objectLayers={[MapObjectLayersEnum.QUESTS]}
+                    onSwitchObjectLayers={onSwitch}
+                />
+            )
+            fireEvent.click(screen.getByRole('button'))
+            fireEvent.click(screen.getByLabelText('Неоткрытые'))
+            expect(onSwitch).toHaveBeenCalledWith([MapObjectLayersEnum.UNEXPLORED, MapObjectLayersEnum.QUESTS])
+        })
+
+        it('switches an object off', () => {
+            const onSwitch = jest.fn()
+            render(
+                <LayerSwitcherControl
+                    objectLayers={[MapObjectLayersEnum.PLACES, MapObjectLayersEnum.QUESTS]}
+                    onSwitchObjectLayers={onSwitch}
+                />
+            )
+            fireEvent.click(screen.getByRole('button'))
+            fireEvent.click(screen.getByLabelText('Геометки'))
+            expect(onSwitch).toHaveBeenCalledWith([MapObjectLayersEnum.QUESTS])
+        })
+
+        it('does not render the objects group when hideAdditionalLayers is true', () => {
+            render(
+                <LayerSwitcherControl
+                    hideAdditionalLayers
+                    objectLayers={[MapObjectLayersEnum.PLACES]}
+                />
+            )
+            fireEvent.click(screen.getByRole('button'))
+            expect(screen.queryByText('Геометки')).not.toBeInTheDocument()
         })
 
         it('renders historical photos when hideAdditionalLayers is false', () => {

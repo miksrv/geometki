@@ -1,1 +1,1 @@
-export { MapObjectsTypeEnum } from './types'
+export { MapObjectLayersEnum, MapObjectsTypeEnum } from './types'
