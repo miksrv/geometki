@@ -23,6 +23,15 @@ class SendingMail extends ApplicationBaseModel
 {
     use QueueRows;
 
+    /** The filter of the letters in the queue: `created` and `process` together */
+    public const PENDING = 'pending';
+
+    /** The types of the bulk mail, sent within the hosting limits */
+    public const BULK_TYPES = ['digest', 'news'];
+
+    /** The statuses a row can have: the list's filter takes one of them */
+    public const STATUSES = ['created', 'process', 'completed', 'grouped', 'error', 'rejected', 'expired'];
+
     protected $table            = 'sending_mail';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = false;
@@ -32,6 +41,7 @@ class SendingMail extends ApplicationBaseModel
     /** @var array<int, string> */
     protected $allowedFields = [
         'activity_id',
+        'mailing_id',
         'user_id',
         'type',
         'status',
@@ -116,16 +126,20 @@ class SendingMail extends ApplicationBaseModel
      * @param string|null $status    Exact status value to filter by.
      * @param string|null $email     Partial email address (LIKE match).
      * @param string|null $dateFrom  Lower bound for created_at (inclusive).
-     * @param string|null $dateTo    Upper bound for created_at (inclusive).
+     * @param string|null $dateTo    Upper bound for created_at (inclusive); see filterDate() for a bare day.
      * @return static
      */
     public function applyFilters(
         ?string $status,
         ?string $email,
         ?string $dateFrom,
-        ?string $dateTo
+        ?string $dateTo,
+        ?bool $bulk = null
     ): static {
-        if ($status) {
+        if ($status === self::PENDING) {
+            // "In the queue": not sent yet, waiting or being sent — the `pending` of getStats()
+            $this->whereIn('sending_mail.status', ['created', 'process']);
+        } elseif ($status) {
             $this->where('sending_mail.status', $status);
         }
 
@@ -141,7 +155,37 @@ class SendingMail extends ApplicationBaseModel
             $this->where('sending_mail.created_at <=', $dateTo);
         }
 
+        // The bulk mail (digests, mailings) waits for the hosting limits for days on purpose;
+        // `false` leaves only the letters that go out at once
+        if ($bulk !== null) {
+            $bulk
+                ? $this->whereIn('sending_mail.type', self::BULK_TYPES)
+                : $this->groupStart()->where('sending_mail.type', null)->orWhereNotIn('sending_mail.type', self::BULK_TYPES)->groupEnd();
+        }
+
         return $this;
+    }
+
+    /**
+     * A date of a list filter as a moment: a bare day (`Y-m-d`) is its first second for the
+     * lower bound and its last for the upper one, so `date_to` includes the whole day; a
+     * `Y-m-d H:i:s` stays. Null for anything else (the filter is then ignored).
+     */
+    public static function filterDate(mixed $value, bool $upper): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        foreach (['Y-m-d' => $upper ? '23:59:59' : '00:00:00', 'Y-m-d H:i:s' => null] as $format => $time) {
+            $date = \DateTime::createFromFormat('!' . $format, $value);
+
+            if ($date !== false && $date->format($format) === $value) {
+                return $time ? $value . ' ' . $time : $value;
+            }
+        }
+
+        return null;
     }
 
     /**

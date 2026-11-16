@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Controllers\Concerns\AdminOnly;
 use App\Libraries\AvatarLibrary;
 use App\Libraries\SessionLibrary;
 use App\Models\SendingMail;
@@ -19,6 +20,8 @@ use CodeIgniter\RESTful\ResourceController;
  */
 class SendingMailManage extends ResourceController
 {
+    use AdminOnly;
+
     protected AvatarLibrary $avatarLibrary;
 
     private SessionLibrary $session;
@@ -39,14 +42,19 @@ class SendingMailManage extends ResourceController
      */
     public function index(): ResponseInterface
     {
-        if (!$this->session->isAuth || $this->session->user?->role !== 'admin') {
-            return $this->failForbidden();
+        if ($denied = $this->adminOnly()) {
+            return $denied;
         }
 
+        // A filter that is not valid is ignored, not an error: the list shows everything then
         $status   = $this->request->getGet('status');
+        $status   = is_string($status) && (in_array($status, SendingMail::STATUSES, true) || $status === SendingMail::PENDING) ? $status : null;
         $email    = $this->request->getGet('email');
-        $dateFrom = $this->request->getGet('date_from');
-        $dateTo   = $this->request->getGet('date_to');
+        $email    = is_string($email) ? $email : null;
+        $dateFrom = SendingMail::filterDate($this->request->getGet('date_from'), false);
+        $dateTo   = SendingMail::filterDate($this->request->getGet('date_to'), true);
+        $bulk     = $this->request->getGet('bulk');
+        $bulk     = $bulk === '1' ? true : ($bulk === '0' ? false : null);
         $sort     = $this->request->getGet('sort');
         $order    = $this->request->getGet('order');
         $page     = (int) ($this->request->getGet('page') ?? 1);
@@ -67,12 +75,12 @@ class SendingMailManage extends ResourceController
             $stats = (new SendingMail())->getStats();
 
             $totalCount = (new SendingMail())
-                ->applyFilters($status, $email, $dateFrom, $dateTo)
+                ->applyFilters($status, $email, $dateFrom, $dateTo, $bulk)
                 ->countAllResults();
 
             $rows = (new SendingMail())
                 ->applyListSelect()
-                ->applyFilters($status, $email, $dateFrom, $dateTo)
+                ->applyFilters($status, $email, $dateFrom, $dateTo, $bulk)
                 ->orderBy('sending_mail.' . $sort, $order)
                 ->findAll($limit, ($page - 1) * $limit);
 
@@ -103,8 +111,8 @@ class SendingMailManage extends ResourceController
      */
     public function show($id = null): ResponseInterface
     {
-        if (!$this->session->isAuth || $this->session->user?->role !== 'admin') {
-            return $this->failForbidden();
+        if ($denied = $this->adminOnly()) {
+            return $denied;
         }
 
         if (!$id) {

@@ -4,6 +4,7 @@ namespace App\Libraries\Mail;
 
 use App\Entities\SendingMailEntity;
 use App\Libraries\NotificationSettings;
+use App\Models\MailingsModel;
 use App\Models\PushMessagesModel;
 use App\Models\SendingMail;
 use App\Models\UsersModel;
@@ -23,8 +24,11 @@ use Throwable;
  *   sent, so turning a notification off stops what is already queued.
  * - Push instead of email: an event a push already told about is not emailed;
  *   the email waits while the push does, and goes when the push failed.
- * - Weekly digests keep within the hosting limits (`digestHourLimit`,
- *   `digestDayLimit`): over them they wait in the queue for the next runs.
+ * - Weekly digests and the letters of news mailings (the bulk mail) keep within
+ *   the hosting limits (`digestHourLimit`, `digestDayLimit`, both counted
+ *   together): over them they wait in the queue for the next runs. A mailing's
+ *   letter keeps only the mailing's id: it is rendered when it is sent, and
+ *   dropped when the mailing is canceled.
  * - Failed sends are retried with exponential back-off; an address the mail
  *   server rejects as nonexistent is marked and gets no more notifications.
  */
@@ -32,6 +36,10 @@ class MailQueue
 {
     private const CHANNEL = 'email';
     private const DIGEST  = 'digest';
+    private const NEWS    = 'news';
+
+    /** The bulk mail: what the hosting limits count */
+    private const BULK = [self::DIGEST, self::NEWS];
 
     /** An email whose event still has a push waiting looks again after this long */
     private const PUSH_WAIT_SECONDS = 15 * 60;
@@ -51,6 +59,9 @@ class MailQueue
 
     /** @var array{sent: int, grouped: int, deferred: int, rejected: int, failed: int, expired: int} */
     private array $stats = [];
+
+    /** @var array<string, array<string, mixed>> The mailings of the claimed rows, by id */
+    private array $mailings = [];
 
     public function __construct(?Mailer $mailer = null, ?SendingMail $model = null, ?Notifications $config = null)
     {
@@ -107,13 +118,50 @@ class MailQueue
         ]);
     }
 
+    /**
+     * Queue the letters of a mailing for these users, as they are (the caller picked the audience).
+     * The body is rendered when the letter is sent; a mailing is in Russian only, so is the row.
+     *
+     * @param object[] $users Rows with id, email
+     *
+     * @return int how many rows were queued
+     */
+    public function queueMailing(array $users, string $mailingId): int
+    {
+        if (!$users) {
+            return 0;
+        }
+
+        $now  = date('Y-m-d H:i:s');
+        $rows = [];
+
+        foreach ($users as $user) {
+            $rows[] = [
+                'id'         => $this->model->createId(),
+                'mailing_id' => $mailingId,
+                'user_id'    => $user->id,
+                'type'       => self::NEWS,
+                'status'     => 'created',
+                'email'      => $user->email,
+                'locale'     => MailingMail::LOCALE,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        $this->model->builder()->insertBatch($rows);
+
+        return count($rows);
+    }
+
     // -------------------------------------------------------------------------
     // Sending
     // -------------------------------------------------------------------------
 
     /**
      * One run: expire and release what is stuck, claim a batch of activity
-     * emails and the digests the hosting limits allow, send them.
+     * emails and the bulk mail (digests, mailings) the hosting limits allow,
+     * send them; then close the mailings whose letters are all done.
      *
      * @param callable(string, string): void|null $log Progress lines (text, colour)
      *
@@ -122,10 +170,26 @@ class MailQueue
     public function process(?callable $log = null): array
     {
         $log ??= static fn (string $line, string $color = 'white') => null;
+
+        try {
+            return $this->processBatch($log);
+        } finally {
+            $this->completeMailings();
+        }
+    }
+
+    /**
+     * @param callable(string, string): void $log
+     *
+     * @return array{sent: int, grouped: int, deferred: int, rejected: int, failed: int, expired: int}
+     */
+    private function processBatch(callable $log): array
+    {
         $this->stats = ['sent' => 0, 'grouped' => 0, 'deferred' => 0, 'rejected' => 0, 'failed' => 0, 'expired' => 0];
 
-        $this->stats['expired'] = $this->model->expireCreatedBefore(self::daysAgo($this->config->expireAfterDays), [self::DIGEST], true)
-            + $this->model->expireCreatedBefore(self::daysAgo($this->config->digestExpireAfterDays), [self::DIGEST]);
+        $this->stats['expired'] = $this->model->expireCreatedBefore(self::daysAgo($this->config->expireAfterDays), self::BULK, true)
+            + $this->model->expireCreatedBefore(self::daysAgo($this->config->digestExpireAfterDays), [self::DIGEST])
+            + $this->model->expireCreatedBefore(self::daysAgo($this->config->newsExpireAfterDays), [self::NEWS]);
         $this->model->releaseStale($this->config->staleLockMinutes, $this->config->maxAttempts);
 
         $this->token    = bin2hex(random_bytes(8));
@@ -133,19 +197,19 @@ class MailQueue
         $this->bounces  = [];
 
         // Activity notifications: not limited
-        $rows = $this->model->claim($this->token, $this->config->batchSize, [self::DIGEST], true);
+        $rows = $this->model->claim($this->token, $this->config->batchSize, self::BULK, true);
 
-        // Digests: within the hosting limits; over them they wait for the next runs
-        $digestBudget = self::digestBudget(
+        // Digests and mailings: within the hosting limits, together; over them they wait for the next runs
+        $bulkBudget = self::digestBudget(
             $this->config,
-            $this->model->countSentSince(60, self::DIGEST),
-            $this->model->countSentSince(24 * 60, self::DIGEST),
+            $this->model->countSentSince(60, self::BULK),
+            $this->model->countSentSince(24 * 60, self::BULK),
         );
 
-        if ($digestBudget > 0) {
-            $rows = $this->model->claim($this->token, $digestBudget, [self::DIGEST]);
-        } elseif ($this->model->where('status', 'created')->where('type', self::DIGEST)->countAllResults() > 0) {
-            $log('Digest limit of the hosting reached: the digests wait for the next runs.', 'yellow');
+        if ($bulkBudget > 0) {
+            $rows = $this->model->claim($this->token, $bulkBudget, self::BULK);
+        } elseif ($this->model->where('status', 'created')->whereIn('type', self::BULK)->countAllResults() > 0) {
+            $log('Mail limit of the hosting reached: the digests and mailings wait for the next runs.', 'yellow');
         }
 
         if (!$rows) {
@@ -172,10 +236,23 @@ class MailQueue
     {
         $users = $this->loadUsers(array_filter(array_unique(array_map(static fn ($row) => $row->user_id, $rows))));
 
+        $this->mailings = $this->loadMailings(array_filter(array_unique(array_map(static fn ($row) => $row->mailing_id ?? null, $rows))));
+
         $activityByUser = [];
 
         foreach ($rows as $row) {
             $user = $users[$row->user_id] ?? null;
+
+            // A mailing canceled while this run sends is seen at its next letter, not at the end of the batch
+            if ($row->mailing_id) {
+                $fresh = $this->loadMailings([$row->mailing_id]);
+
+                if ($fresh) {
+                    $this->mailings = array_replace($this->mailings, $fresh);
+                } else {
+                    unset($this->mailings[$row->mailing_id]);
+                }
+            }
 
             // One bad row (a broken settings value) must not stop the others
             try {
@@ -202,7 +279,7 @@ class MailQueue
                 break;
             }
 
-            $this->guarded([$row], fn () => $this->sendDigest($row, $user));
+            $this->guarded([$row], fn () => $row->mailing_id ? $this->sendNews($row, $user) : $this->sendDigest($row, $user));
         }
 
         foreach ($activityByUser as $userId => $userRows) {
@@ -258,6 +335,16 @@ class MailQueue
             return 'The user turned this notification off';
         }
 
+        if ($row->mailing_id) {
+            $mailing = $this->mailings[$row->mailing_id] ?? null;
+
+            if (!$mailing || $mailing['status'] !== 'sending') {
+                return 'The mailing was canceled';
+            }
+
+            return null;
+        }
+
         if (!$row->activity_id && empty($row->message)) {
             return 'Empty message';
         }
@@ -278,6 +365,25 @@ class MailQueue
             $row,
             [],
             $user,
+        );
+    }
+
+    /**
+     * A letter of a mailing, rendered now from the mailing as it is, in Russian whatever the
+     * recipient's locale.
+     */
+    private function sendNews(SendingMailEntity $row, object $user): void
+    {
+        $mailing = $this->mailings[$row->mailing_id];
+        $token   = $this->tokens()->create($user->id, self::NEWS);
+        $result  = MailingMail::render($mailing, MailUrls::unsubscribePage(MailingMail::LOCALE, $token));
+
+        $this->deliver(
+            new EmailMessage($user->email, $result['subject'], $result['html'], $result['text'], MailUrls::oneClickUnsubscribe($token), self::NEWS),
+            $row,
+            [],
+            $user,
+            $result['subject'],
         );
     }
 
@@ -506,6 +612,35 @@ class MailQueue
         }
 
         return $users;
+    }
+
+    /**
+     * @param string[] $ids
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function loadMailings(array $ids): array
+    {
+        if (!$ids) {
+            return [];
+        }
+
+        $rows = (new MailingsModel())->whereIn('id', array_values($ids))->findAll();
+
+        return array_column($rows, null, 'id');
+    }
+
+    /**
+     * Mailings whose letters are all done are completed. Never breaks the run: a mailing
+     * waits for the next one.
+     */
+    private function completeMailings(): void
+    {
+        try {
+            (new MailingsModel())->completeFinished();
+        } catch (Throwable $e) {
+            log_message('error', '[Mail] Completing the mailings failed: {exception}', ['exception' => $e]);
+        }
     }
 
     private function mailer(): Mailer
