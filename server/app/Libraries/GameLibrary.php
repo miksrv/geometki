@@ -14,25 +14,52 @@ use Throwable;
  *
  * A visit is confirmed by a photo with EXIF (shot near the place, the shot day is the visit's
  * day) or by "I am here" (the visitor's coordinates are compared with the place and dropped).
- * A confirmed place gives season points once a season for a person (`game_points`); the season
- * is the one of the visit day, by the calendar: the warm one (April — September) or the cold one
- * (October — March): two a year, long enough for a small community to fill a table. A season takes confirmations until Config\Game::$graceDays after its end, then
- * `php spark game:tick` closes it: the table is frozen in `game_results`.
+ * A confirmed place gives season points once a season for a person (`game_points`).
  *
- * Closed (Config\Game::$open is false), the game exists only for the administrators.
+ * A season is made by hand by an administrator (`game_seasons`): its own dates, title,
+ * description, picture and four medals; nothing is created by the calendar. The season of a
+ * visit is the one whose dates hold the visit day, while it is not closed. A season takes
+ * confirmations until Config\Game::$graceDays after its end, then `php spark game:tick` closes
+ * it: the table is frozen in `game_results`, and everyone in it has a medal — the first three
+ * places gold, silver and bronze, the others the grey one. Seasons never overlap.
  */
 class GameLibrary
 {
     public const WAY_PHOTO = 'photo';
     public const WAY_GEO   = 'geo';
 
-    /** The first month of each season of the year */
-    private const SEASON_START = ['warm' => 4, 'cold' => 10];
+    /**
+     * The pictures of a season and their columns: one picture, the medal of every participant
+     * (`participant`, also the season's picture everywhere), and its variants for the places 1–3
+     */
+    public const IMAGE_KINDS = [
+        'participant' => 'medal_participant',
+        'gold'        => 'medal_gold',
+        'silver'      => 'medal_silver',
+        'bronze'      => 'medal_bronze',
+    ];
 
-    /** The months of a season */
-    private const SEASON_MONTHS = 6;
+    /** Ids a season cannot have: the words of the game's routes (`game/seasons/manage`, …) */
+    public const RESERVED_IDS = ['manage', 'new', 'create', 'image', 'seasons', 'leaders', 'places', 'mine', 'recent', 'exploration', 'confirm', 'users', 'quests'];
+
+    /** The time zone of the game's days: without the visitor's own (`tz` cookie) days are Moscow days */
+    public const TIMEZONE = 'Europe/Moscow';
 
     private Game $config;
+
+    /**
+     * The game's day: `Y-m-d` in Moscow, whatever the server's time zone (UTC) says. The only
+     * place the game asks for "today".
+     *
+     * @param int|null $timestamp a moment to name the day of; now by default
+     */
+    public static function today(?int $timestamp = null, int|string $shift = 0): string
+    {
+        $day = new \DateTimeImmutable('@' . ($timestamp ?? time()));
+        $day = $day->setTimezone(new \DateTimeZone(self::TIMEZONE));
+
+        return $shift ? $day->modify(is_int($shift) ? "{$shift} days" : $shift)->format('Y-m-d') : $day->format('Y-m-d');
+    }
 
     public function __construct()
     {
@@ -40,54 +67,97 @@ class GameLibrary
     }
 
     /**
-     * The season of a day, by the calendar. A cold season is named by the year it starts in:
-     * January 2027 is in `2026-cold`.
+     * A season as the code works with it: the row of `game_seasons` with `from` / `to` beside
+     * the dates, so a place that needs only the days reads `$season['from']`.
+     *
+     * @return array<string, mixed>
+     */
+    public static function fromRow(object $row): array
+    {
+        return [
+            'id'                => $row->id,
+            'from'              => (string) $row->starts_on,
+            'to'                => (string) $row->ends_on,
+            'title_ru'          => (string) $row->title_ru,
+            'title_en'          => $row->title_en,
+            'description_ru'    => $row->description_ru,
+            'description_en'    => $row->description_en,
+            // The season's picture is the medal of every participant
+            'image'             => $row->medal_participant,
+            'medal_gold'        => $row->medal_gold,
+            'medal_silver'      => $row->medal_silver,
+            'medal_bronze'      => $row->medal_bronze,
+            'medal_participant' => $row->medal_participant,
+            'closed_at'         => $row->closed_at,
+            'players'           => (int) $row->players,
+            'places'            => (int) $row->places,
+        ];
+    }
+
+    /**
+     * A season by its id, null when there is none.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function find(string $id): ?array
+    {
+        $row = Database::connect()->table('game_seasons')->where('id', $id)->get()->getRow();
+
+        return $row ? self::fromRow($row) : null;
+    }
+
+    /**
+     * The season whose dates hold a day, null in the days between seasons.
      *
      * @param string $day `Y-m-d`
-     * @return array{id: string, key: string, year: int, from: string, to: string}
+     * @return array<string, mixed>|null
      */
-    public static function seasonOf(string $day): array
+    public function seasonAt(string $day): ?array
     {
-        $year  = (int) substr($day, 0, 4);
-        $month = (int) substr($day, 5, 2);
+        $row = Database::connect()->table('game_seasons')
+            ->where('starts_on <=', $day)
+            ->where('ends_on >=', $day)
+            ->get()->getRow();
 
-        if ($month >= 4 && $month <= 9) {
-            return self::season('warm', $year);
-        }
-
-        return self::season('cold', $month <= 3 ? $year - 1 : $year);
+        return $row ? self::fromRow($row) : null;
     }
 
     /**
-     * A season by its id (`2026-cold`), null for anything else.
+     * The season that goes on today.
      *
-     * @return array{id: string, key: string, year: int, from: string, to: string}|null
+     * @return array<string, mixed>|null
      */
-    public static function seasonById(string $id): ?array
+    public function current(): ?array
     {
-        if (!preg_match('/^(\d{4})-(warm|cold)$/', $id, $match)) {
-            return null;
-        }
-
-        return self::season($match[2], (int) $match[1]);
+        return $this->seasonAt(self::today());
     }
 
     /**
-     * @return array{id: string, key: string, year: int, from: string, to: string}
+     * The nearest season that has not started yet.
+     *
+     * @return array<string, mixed>|null
      */
-    private static function season(string $key, int $year): array
+    public function upcoming(): ?array
     {
-        $month = self::SEASON_START[$key];
-        $from  = sprintf('%04d-%02d-01', $year, $month);
+        $row = Database::connect()->table('game_seasons')
+            ->where('starts_on >', self::today())
+            ->orderBy('starts_on', 'ASC')
+            ->get()->getRow();
 
-        return [
-            'id'   => $year . '-' . $key,
-            'key'  => $key,
-            'year' => $year,
-            'from' => $from,
-            // The last day of the sixth month
-            'to'   => date('Y-m-d', strtotime($from . ' +' . self::SEASON_MONTHS . ' months -1 day')),
-        ];
+        return $row ? self::fromRow($row) : null;
+    }
+
+    /**
+     * The seasons, the latest start first.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function all(): array
+    {
+        return array_map(
+            [self::class, 'fromRow'],
+            Database::connect()->table('game_seasons')->orderBy('starts_on', 'DESC')->get()->getResult()
+        );
     }
 
     /** The last day a season takes confirmations: its photos are uploaded at home */
@@ -97,52 +167,333 @@ class GameLibrary
     }
 
     /**
-     * The season a confirmation of that day counts in: the season of the day, while it is not
-     * closed and still takes confirmations. Makes sure the season exists.
+     * The season a confirmation of that day counts in: the season whose dates hold the day,
+     * while it is not closed and still takes confirmations. Null in the days between seasons.
      *
-     * @return array{id: string, key: string, year: int, from: string, to: string}|null
+     * @return array<string, mixed>|null
      */
     public function openSeason(string $day): ?array
     {
-        $season = self::seasonOf($day);
-        $today  = date('Y-m-d');
+        $today = self::today();
 
-        // A day ahead of the server's is the visitor's time zone; further is not a visit
-        if ($day > date('Y-m-d', strtotime('+1 day')) || $today > $this->lastDay($season)) {
+        // A day ahead of the game's is the visitor's time zone; further is not a visit
+        if ($day > self::today(null, 1)) {
             return null;
         }
 
-        $row = $this->ensureSeason($season);
+        $season = $this->seasonAt($day);
 
-        return $row && $row->closed_at === null ? $season : null;
+        if (!$season || $season['closed_at'] !== null || $today > $this->lastDay($season)) {
+            return null;
+        }
+
+        return $season;
     }
 
     /**
-     * The row of a season, created when the season is met for the first time: nothing of a
-     * season is made by hand but its picture (`game_seasons.image`). A season has no award and
-     * no tasks: it is the confirmed places of its months, and who has more points.
+     * The medal of a place in the frozen table: gold, silver and bronze for the first three,
+     * the grey one for every other participant.
+     *
+     * @return 'gold'|'silver'|'bronze'|'participant'
      */
-    public function ensureSeason(array $season): ?object
+    public static function medalOf(int $place): string
+    {
+        return [1 => 'gold', 2 => 'silver', 3 => 'bronze'][$place] ?? 'participant';
+    }
+
+    /**
+     * What the administrator sent for a season, checked: the clean fields to save, or the errors by field.
+     * A partial update (`$existing`) checks only what was sent, but the dates always as a pair.
+     *
+     * A closed season keeps its dates, and so does one past its grace days that the tick has not
+     * closed yet (moving its end would reopen it). A season with points keeps its start; its end
+     * cannot move before the latest day counted in it, nor before today.
+     *
+     * @param array<string, mixed>      $input
+     * @param array<string, mixed>|null $existing the season being edited, null for a new one
+     * @return array{0: array<string, mixed>, 1: array<string, string>} fields, errors
+     */
+    public function validateSeason(array $input, ?array $existing = null): array
+    {
+        $db     = Database::connect();
+        $fields = [];
+        $errors = [];
+
+        if (!$existing) {
+            $id = $input['id'] ?? null;
+
+            if (!is_string($id) || !preg_match('/^[a-z0-9][a-z0-9-]{1,15}$/D', $id) || in_array($id, self::RESERVED_IDS, true)) {
+                $errors['id'] = lang('Game.seasonBadId');
+            } elseif ($this->find($id)) {
+                $errors['id'] = lang('Game.seasonIdTaken');
+            } else {
+                $fields['id'] = $id;
+            }
+        }
+
+        if (!$existing || array_key_exists('title_ru', $input)) {
+            $title = is_string($input['title_ru'] ?? null) ? trim($input['title_ru']) : '';
+
+            if ($title === '') {
+                $errors['title_ru'] = lang('Game.seasonTitleRequired');
+            } elseif (mb_strlen($title) > 150) {
+                $errors['title_ru'] = lang('Game.seasonTitleLong', [150]);
+            } else {
+                $fields['title_ru'] = $title;
+            }
+        }
+
+        // The optional texts: a string (empty clears it) or null; anything else is a mistake, not a clear
+        if (array_key_exists('title_en', $input)) {
+            if ($input['title_en'] !== null && !is_string($input['title_en'])) {
+                $errors['title_en'] = lang('Game.seasonBadText');
+            } else {
+                $title = trim((string) $input['title_en']);
+
+                if (mb_strlen($title) > 150) {
+                    $errors['title_en'] = lang('Game.seasonTitleLong', [150]);
+                } else {
+                    $fields['title_en'] = $title !== '' ? $title : null;
+                }
+            }
+        }
+
+        foreach (['description_ru', 'description_en'] as $key) {
+            if (array_key_exists($key, $input)) {
+                if ($input[$key] !== null && !is_string($input[$key])) {
+                    $errors[$key] = lang('Game.seasonBadText');
+
+                    continue;
+                }
+
+                $text = trim((string) $input[$key]);
+
+                if (mb_strlen($text) > 5000) {
+                    $errors[$key] = lang('Game.seasonTextLong', [5000]);
+                } else {
+                    $fields[$key] = $text !== '' ? $text : null;
+                }
+            }
+        }
+
+        $from = array_key_exists('starts_on', $input) || !$existing ? ($input['starts_on'] ?? null) : $existing['from'];
+        $to   = array_key_exists('ends_on', $input) || !$existing ? ($input['ends_on'] ?? null) : $existing['to'];
+
+        if (!self::isDay($from)) {
+            $errors['starts_on'] = lang('Game.seasonBadDate');
+        }
+
+        if (!self::isDay($to)) {
+            $errors['ends_on'] = lang('Game.seasonBadDate');
+        } elseif (self::isDay($from) && $from > $to) {
+            $errors['ends_on'] = lang('Game.seasonDatesOrder');
+        }
+
+        if (!isset($errors['starts_on']) && !isset($errors['ends_on'])) {
+            $moved = $existing && ($from !== $existing['from'] || $to !== $existing['to']);
+
+            if ($moved && ($existing['closed_at'] !== null || self::today() > $this->lastDay($existing))) {
+                $errors['starts_on'] = lang('Game.seasonClosedDates');
+            } elseif ($moved && $this->hasPoints($existing['id'])) {
+                $counted = $this->lastCountedDay($existing['id']);
+
+                if ($from !== $existing['from']) {
+                    $errors['starts_on'] = lang('Game.seasonPointsStart');
+                } elseif ($counted !== null && $to < $counted) {
+                    $errors['ends_on'] = lang('Game.seasonPointsEnd', [$counted]);
+                } elseif ($to < self::today()) {
+                    $errors['ends_on'] = lang('Game.seasonPointsEndPast');
+                }
+            }
+
+            if (!$errors) {
+                $other = $db->table('game_seasons')
+                    ->where('starts_on <=', $to)
+                    ->where('ends_on >=', $from)
+                    ->where('id !=', $existing['id'] ?? '')
+                    ->get()->getRow();
+
+                if ($other) {
+                    $errors['starts_on'] = lang('Game.seasonOverlap', [$other->title_ru !== '' ? $other->title_ru : $other->id]);
+                } else {
+                    $fields['starts_on'] = $from;
+                    $fields['ends_on']   = $to;
+                }
+            }
+        }
+
+        return [$fields, $errors];
+    }
+
+    /** Whether anything is counted in a season */
+    public function hasPoints(string $seasonId): bool
+    {
+        return Database::connect()->table('game_points')->where('season', $seasonId)->countAllResults() > 0;
+    }
+
+    /**
+     * The latest day something is counted in a season: the day of the visit behind a point, the
+     * day it was written for one without a visit. Null for a season without points.
+     */
+    public function lastCountedDay(string $seasonId): ?string
+    {
+        $row = Database::connect()->table('game_points gp')
+            ->select('MAX(DATE(COALESCE(v.visited_at, gp.created_at))) AS day', false)
+            ->join('users_visited_places v', 'v.id = gp.visit_id', 'left')
+            ->where('gp.season', $seasonId)
+            ->get()->getRow();
+
+        return $row && $row->day ? (string) $row->day : null;
+    }
+
+    /**
+     * Runs a change of the seasons alone: the dates are checked against the other seasons and
+     * written under one lock, so two requests do not make overlapping seasons.
+     *
+     * @return array{0: array<string, mixed>|null, 1: array<string, string>} the season, errors
+     */
+    private function locked(callable $change): array
     {
         $db  = Database::connect();
-        $row = $db->table('game_seasons')->where('id', $season['id'])->get()->getRow();
+        $got = (int) ($db->query("SELECT GET_LOCK('game_seasons', 5) AS l")->getRow()->l ?? 0);
 
-        if ($row) {
-            return $row;
+        if (!$got) {
+            return [null, ['error' => lang('Game.seasonBusy')]];
         }
 
         try {
-            $db->table('game_seasons')->insert([
-                'id'         => $season['id'],
-                'starts_on'  => $season['from'],
-                'ends_on'    => $season['to'],
-                'created_at' => date('Y-m-d H:i:s'),
-            ]);
-        } catch (DatabaseException) {
-            // Two requests at the start of a season: the other one made it
+            return $change($db);
+        } catch (Throwable $e) {
+            // A change that failed halfway leaves nothing open on the connection
+            if ($db->transDepth > 0) {
+                $db->transRollback();
+            }
+
+            throw $e;
+        } finally {
+            $db->query("SELECT RELEASE_LOCK('game_seasons')");
+        }
+    }
+
+    /**
+     * Makes a season of what the administrator sent.
+     *
+     * @param array<string, mixed> $input
+     * @return array{0: array<string, mixed>|null, 1: array<string, string>} the new season, errors
+     */
+    public function createSeason(array $input): array
+    {
+        return $this->locked(function ($db) use ($input) {
+            [$fields, $errors] = $this->validateSeason($input);
+
+            if ($errors) {
+                return [null, $errors];
+            }
+
+            $db->transBegin();
+
+            try {
+                $saved = $db->table('game_seasons')->insert($fields + ['created_at' => date('Y-m-d H:i:s')]);
+            } catch (DatabaseException $e) {
+                $saved = false;
+            }
+
+            if (!$saved) {
+                $db->transRollback();
+
+                // Another process took the id between the check and the write (MySQL error 1062)
+                if ($this->find($fields['id'])) {
+                    return [null, ['id' => lang('Game.seasonIdTaken')]];
+                }
+
+                return [null, ['error' => lang('Game.seasonError')]];
+            }
+
+            $db->transCommit();
+
+            return [$this->find($fields['id']), []];
+        });
+    }
+
+    /**
+     * Changes a season; the row is held while its dates are checked against its points, so a
+     * check-in or the tick cannot slip in between.
+     *
+     * @param array<string, mixed> $input
+     * @return array{0: array<string, mixed>|null, 1: array<string, string>} the season (null: it is gone), errors
+     */
+    public function updateSeason(string $id, array $input): array
+    {
+        return $this->locked(function ($db) use ($id, $input) {
+            $db->transBegin();
+
+            $row = $db->query('SELECT * FROM game_seasons WHERE id = ? FOR UPDATE', [$id])->getRow();
+
+            if (!$row) {
+                $db->transRollback();
+
+                return [null, []];
+            }
+
+            $season            = self::fromRow($row);
+            [$fields, $errors] = $this->validateSeason($input, $season);
+
+            if ($errors) {
+                $db->transRollback();
+
+                return [$season, $errors];
+            }
+
+            $db->table('game_seasons')->where('id', $id)->update($fields + ['updated_at' => date('Y-m-d H:i:s')]);
+            $db->transCommit();
+
+            return [$this->find($id), []];
+        });
+    }
+
+    /**
+     * Deletes a season nobody has played in, the check and the delete in one held row.
+     *
+     * @return array{0: array<string, mixed>|null, 1: array<string, string>} the deleted season (null: it is gone), errors
+     */
+    public function deleteSeason(string $id): array
+    {
+        return $this->locked(function ($db) use ($id) {
+            $db->transBegin();
+
+            $row = $db->query('SELECT * FROM game_seasons WHERE id = ? FOR UPDATE', [$id])->getRow();
+
+            if (!$row) {
+                $db->transRollback();
+
+                return [null, []];
+            }
+
+            $season = self::fromRow($row);
+
+            if ($this->hasPoints($id)) {
+                $db->transRollback();
+
+                return [$season, ['error' => lang('Game.seasonHasPoints')]];
+            }
+
+            $db->table('game_seasons')->where('id', $id)->delete();
+            $db->transCommit();
+
+            return [$season, []];
+        });
+    }
+
+    /** Whether a value is a real day in `Y-m-d` */
+    private static function isDay(mixed $value): bool
+    {
+        if (!is_string($value)) {
+            return false;
         }
 
-        return $db->table('game_seasons')->where('id', $season['id'])->get()->getRow();
+        $date = \DateTime::createFromFormat('!Y-m-d', $value);
+
+        return $date !== false && $date->format('Y-m-d') === $value;
     }
 
     /** Metres between two points (haversine) */
@@ -263,7 +614,7 @@ class GameLibrary
         $detail = null;
 
         if ($season) {
-            [$added, $detail] = $this->score($userId, $place, $season, $way, $visit->id, $photoId);
+            [$added, $detail] = $this->score($userId, $place, $season, $way, $visit->id, $photoId, $day);
         }
 
         // The confirmation is saved: what follows must not fail the request
@@ -291,7 +642,38 @@ class GameLibrary
      *
      * @return array{0: int, 1: ?array} the points added, how the score of the place is counted
      */
-    private function score(string $userId, object $place, array $season, string $way, string $visitId, ?string $photoId): array
+    private function score(string $userId, object $place, array $season, string $way, string $visitId, ?string $photoId, string $day): array
+    {
+        $db = Database::connect();
+
+        // The season row is held for sharing while the score is written: the tick (it holds the
+        // row for update) waits for a check-in under way, and a check-in that comes after the
+        // close finds the season closed and counts nowhere
+        $db->transBegin();
+
+        try {
+            $row = $db->query('SELECT closed_at, starts_on, ends_on FROM game_seasons WHERE id = ? FOR SHARE', [$season['id']])->getRow();
+
+            // Closed, or its dates changed under the check-in so that they no longer hold the day
+            if (!$row || $row->closed_at !== null || $day < $row->starts_on || $day > $row->ends_on) {
+                $db->transRollback();
+
+                return [0, null];
+            }
+
+            $result = $this->scoreOpen($userId, $place, $season, $way, $visitId, $photoId);
+            $db->transCommit();
+
+            return $result;
+        } catch (Throwable $e) {
+            $db->transRollback();
+
+            throw $e;
+        }
+    }
+
+    /** score() with the season held */
+    private function scoreOpen(string $userId, object $place, array $season, string $way, string $visitId, ?string $photoId): array
     {
         $db    = Database::connect();
         $table = $db->table('game_points');
@@ -341,22 +723,23 @@ class GameLibrary
         ];
         $points = $this->config->placePoints($place->category ?? null, $position) + $detail['photo'] + $detail['spot'];
 
-        try {
-            $db->table('game_points')->insert([
-                'id'         => substr(bin2hex(random_bytes(7)), 0, 13),
-                'season'     => $season['id'],
-                'user_id'    => $userId,
-                'kind'       => 'place',
-                'place_id'   => $place->id,
-                'visit_id'   => $visitId,
-                'photo_id'   => $photoId,
-                'way'        => $way,
-                'points'     => $points,
-                'detail'     => json_encode($detail),
-                'created_at' => date('Y-m-d H:i:s'),
-            ]);
-        } catch (DatabaseException) {
-            // Two confirmations at once: the unique key let the first one through
+        // `ignore`: two confirmations at once — the unique key lets the first one through, the
+        // second writes nothing (and does not spoil the held season row)
+        $db->table('game_points')->ignore(true)->insert([
+            'id'         => substr(bin2hex(random_bytes(7)), 0, 13),
+            'season'     => $season['id'],
+            'user_id'    => $userId,
+            'kind'       => 'place',
+            'place_id'   => $place->id,
+            'visit_id'   => $visitId,
+            'photo_id'   => $photoId,
+            'way'        => $way,
+            'points'     => $points,
+            'detail'     => json_encode($detail),
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        if (!$db->affectedRows()) {
             return [0, null];
         }
 
@@ -453,7 +836,7 @@ class GameLibrary
             ->get()->getResult();
 
         foreach ($rows as $row) {
-            $season = self::seasonById($row->season);
+            $season = $this->find($row->season);
 
             if ($row->closed_at !== null || !$season) {
                 continue;
@@ -572,6 +955,17 @@ class GameLibrary
             }
         }
 
+        return $this->liveTable($seasonId, $type, $locationId);
+    }
+
+    /**
+     * The table counted from the points, whatever is frozen (the tick freezes it from here).
+     *
+     * @return array<int, array{place: int, user_id: string, points: int, places: int, quests: int}>
+     */
+    private function liveTable(string $seasonId, ?string $type = null, ?int $locationId = null): array
+    {
+        $db      = Database::connect();
         $builder = $db->table('game_points gp')
             ->select("gp.user_id, SUM(gp.points) AS points, SUM(gp.kind = 'place') AS places, SUM(gp.kind = 'quest') AS quests, MAX(gp.created_at) AS last", false)
             ->where('gp.season', $seasonId)
@@ -817,35 +1211,42 @@ class GameLibrary
     /**
      * The seasons a person took part in — has a counted place in —, the latest first, with their
      * points and place there: the season badges of a profile. A closed season reads its frozen
-     * table, an open one the live one.
+     * table and gives its medal (by the place: gold, silver, bronze, or the grey one), an open
+     * one the live table and no medal yet.
      *
-     * @return array<int, array{id: string, key: string, year: int, image: ?string, closed: bool, points: int, places: int, place: ?int}>
+     * @return array<int, array{id: string, title: string, image: ?string, closed: bool, points: int, places: int, place: ?int, medal: ?string, medalImage: ?string}>
      */
-    public function participations(string $userId): array
+    public function participations(string $userId, string $locale = 'ru'): array
     {
         $db   = Database::connect();
         $rows = $db->table('game_points gp')
-            ->select("gp.season, SUM(gp.points) AS points, SUM(gp.kind = 'place') AS places, s.image, s.closed_at, s.starts_on, r.place", false)
-            ->join('game_seasons s', 's.id = gp.season', 'left')
+            ->select("gp.season, SUM(gp.points) AS points, SUM(gp.kind = 'place') AS places, r.place", false)
             ->join('game_results r', 'r.season = gp.season AND r.user_id = gp.user_id', 'left')
             ->where('gp.user_id', $userId)
-            ->groupBy('gp.season, s.image, s.closed_at, s.starts_on, r.place')
-            ->orderBy('s.starts_on', 'DESC')
+            ->groupBy('gp.season, r.place')
             ->get()->getResultArray();
 
-        $items = [];
+        $items   = [];
+        $seasons = [];
+
+        if ($rows) {
+            foreach ($db->table('game_seasons')->whereIn('id', array_column($rows, 'season'))->get()->getResult() as $found) {
+                $seasons[$found->id] = self::fromRow($found);
+            }
+        }
 
         foreach ($rows as $row) {
-            $season = self::seasonById($row['season']);
+            $season = $seasons[$row['season']] ?? null;
 
             if (!$season) {
                 continue;
             }
 
-            $place = $row['place'] !== null ? (int) $row['place'] : null;
+            $closed = $season['closed_at'] !== null;
+            $place  = $row['place'] !== null ? (int) $row['place'] : null;
 
             // An open season: the place of now
-            if ($place === null && $row['closed_at'] === null) {
+            if ($place === null && !$closed) {
                 foreach ($this->table($season['id']) as $line) {
                     if ($line['user_id'] === $userId) {
                         $place = $line['place'];
@@ -854,69 +1255,113 @@ class GameLibrary
                 }
             }
 
-            $items[] = [
-                'id'     => $season['id'],
-                'key'    => $season['key'],
-                'year'   => $season['year'],
-                'image'  => $row['image'],
-                'closed' => $row['closed_at'] !== null,
-                'points' => (int) $row['points'],
-                'places' => (int) $row['places'],
-                'place'  => $place,
+            // A closed season without a frozen line for the person (its table was frozen before them): no medal
+            $medal = $closed && $place !== null ? self::medalOf($place) : null;
+
+            $items[$season['id']] = [
+                'id'         => $season['id'],
+                'title'      => self::localized($season, 'title', $locale) ?? $season['id'],
+                'image'      => $season['image'],
+                'closed'     => $closed,
+                'points'     => (int) $row['points'],
+                'places'     => (int) $row['places'],
+                'place'      => $place,
+                'medal'      => $medal,
+                // A place without its own variant wears the participant's medal
+                'medalImage' => $medal ? ($season['medal_' . $medal] ?? $season['image']) : null,
+                'from'       => $season['from'],
             ];
         }
 
-        return $items;
+        // The latest first
+        uasort($items, static fn (array $a, array $b) => strcmp($b['from'], $a['from']));
+
+        return array_values(array_map(static function (array $item) {
+            unset($item['from']);
+
+            return $item;
+        }, $items));
+    }
+
+    /**
+     * A text of a season in the visitor's language: English falls back to the Russian one.
+     *
+     * @param string $field `title` or `description`
+     */
+    public static function localized(array $season, string $field, string $locale): ?string
+    {
+        $ru = $season[$field . '_ru'] ?? null;
+        $en = $season[$field . '_en'] ?? null;
+        $ru = $ru !== null && $ru !== '' ? $ru : null;
+        $en = $en !== null && $en !== '' ? $en : null;
+
+        return $locale === 'ru' ? ($ru ?? $en) : ($en ?? $ru);
     }
 
     /**
      * Closes the seasons whose grace days are over: the table of each is frozen in
-     * `game_results`, so a photo or a visit deleted later does not rewrite it. Also makes sure
-     * the current season exists.
+     * `game_results`, so a photo or a visit deleted later does not rewrite it. The medals are not
+     * stored: they are read from the frozen places. Seasons are never created here.
      *
      * @return string[] the ids of the seasons closed now
      */
     public function tick(): array
     {
         $db    = Database::connect();
-        $today = date('Y-m-d');
-
-        $this->ensureSeason(self::seasonOf($today));
+        $today = self::today();
 
         $closed = [];
-        $rows   = $db->table('game_seasons')->where('closed_at', null)->get()->getResult();
+        $ids    = array_column($db->table('game_seasons')->select('id')->where('closed_at', null)->get()->getResultArray(), 'id');
 
-        foreach ($rows as $row) {
-            $season = self::seasonById($row->id);
+        foreach ($ids as $id) {
+            // The row is held until the table is frozen: a check-in under way finishes first, a
+            // later one finds the season closed; a second tick finds it closed and does nothing
+            $db->transBegin();
 
-            if (!$season || $today <= $this->lastDay($season)) {
+            $row = $db->query('SELECT * FROM game_seasons WHERE id = ? AND closed_at IS NULL FOR UPDATE', [$id])->getRow();
+
+            if (!$row || $today <= $this->lastDay(self::fromRow($row))) {
+                $db->transRollback();
+
                 continue;
             }
 
-            $table = $this->table($row->id);
+            try {
+                $table = $this->liveTable($id);
 
-            $db->transStart();
-            $db->table('game_results')->where('season', $row->id)->delete();
+                $db->table('game_results')->where('season', $id)->delete();
 
-            if ($table) {
-                $db->table('game_results')->insertBatch(array_map(static fn (array $line) => [
-                    'season'  => $row->id,
-                    'user_id' => $line['user_id'],
-                    'place'   => $line['place'],
-                    'points'  => $line['points'],
-                    'places'  => $line['places'],
-                    'quests'  => $line['quests'],
-                ], $table));
+                if ($table) {
+                    $db->table('game_results')->insertBatch(array_map(static fn (array $line) => [
+                        'season'  => $id,
+                        'user_id' => $line['user_id'],
+                        'place'   => $line['place'],
+                        'points'  => $line['points'],
+                        'places'  => $line['places'],
+                        'quests'  => $line['quests'],
+                    ], $table));
+                }
+
+                $db->table('game_seasons')->where(['id' => $id, 'closed_at' => null])->update([
+                    'closed_at' => date('Y-m-d H:i:s'),
+                    'players'   => count($table),
+                    'places'    => (int) ($db->table('game_points')->select('COUNT(DISTINCT place_id) AS cnt', false)->where(['season' => $id, 'kind' => 'place'])->get()->getRow()->cnt ?? 0),
+                ]);
+
+                if (!$db->affectedRows()) {
+                    $db->transRollback();
+
+                    continue;
+                }
+
+                $db->transCommit();
+            } catch (Throwable $e) {
+                $db->transRollback();
+
+                throw $e;
             }
 
-            $db->table('game_seasons')->where('id', $row->id)->update([
-                'closed_at' => date('Y-m-d H:i:s'),
-                'players'   => count($table),
-                'places'    => $db->table('game_points')->select('COUNT(DISTINCT place_id) AS cnt', false)->where(['season' => $row->id, 'kind' => 'place'])->get()->getRow()->cnt ?? 0,
-            ]);
-            $db->transComplete();
-
-            $closed[] = $row->id;
+            $closed[] = $id;
         }
 
         return $closed;

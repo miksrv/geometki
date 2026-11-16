@@ -1,9 +1,10 @@
 <?php
 
 /**
- * The clock of the game (features/26-game-seasons-and-quests.md): makes sure the current
- * season and its award exist, and closes the seasons whose grace days are over — the table of
- * each is frozen in `game_results`, so a photo or a visit deleted later does not rewrite it.
+ * The clock of the game (features/26-game-seasons-and-quests.md): closes the seasons whose
+ * grace days are over — the table of each is frozen in `game_results`, so a photo or a visit
+ * deleted later does not rewrite it, and the medals follow from the frozen places. Seasons are
+ * made by hand, never here.
  *
  *   cd server
  *   php spark game:tick
@@ -21,7 +22,7 @@ class GameTick extends BaseCommand
 {
     protected $group       = 'game';
     protected $name        = 'game:tick';
-    protected $description = 'Open the current season of the game and close the finished ones';
+    protected $description = 'Close the seasons of the game that are over';
 
     public function run(array $params)
     {

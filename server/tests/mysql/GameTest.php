@@ -26,6 +26,9 @@ final class GameTest extends MySqlTestCase
     {
         parent::setUp();
 
+        // The throttle of "I am here" in memory: every test starts with a full bucket
+        \Config\Services::injectMock('throttler', new \CodeIgniter\Throttle\Throttler(new \CodeIgniter\Test\Mock\MockCache()));
+
         $this->createUser('admin1', ['role' => 'admin']);
         $this->createUser('user1');
         $this->createUser('user2');
@@ -33,6 +36,9 @@ final class GameTest extends MySqlTestCase
         $this->db->table('location_countries')->insert(['id' => 1, 'title_en' => 'Russia', 'title_ru' => 'Россия']);
         $this->db->table('location_regions')->insert(['id' => 10, 'country_id' => 1, 'title_en' => 'Bashkortostan', 'title_ru' => 'Башкортостан']);
         $this->db->table('location_regions')->insert(['id' => 11, 'country_id' => 1, 'title_en' => 'Orenburg Oblast', 'title_ru' => 'Оренбургская область']);
+
+        // Seasons are made by hand: one that goes on today
+        $this->season('current', GameLibrary::today(null, '-60 days'), GameLibrary::today(null, '+120 days'));
 
         $this->place('place1', 'waterfall', 53.1, 57.2, 10);
         $this->place('place2', 'memorial', 53.3, 57.3, 10);
@@ -43,7 +49,7 @@ final class GameTest extends MySqlTestCase
     {
         $game = json_decode($this->get('game')->getJSON(), true);
 
-        $this->assertSame(GameLibrary::seasonOf(date('Y-m-d'))['id'], $game['season']['id']);
+        $this->assertSame('current', $game['season']['id']);
         $this->assertTrue($game['season']['current']);
         $this->assertFalse($game['season']['closed']);
         $this->assertGreaterThan(0, $game['season']['daysLeft']);
@@ -54,8 +60,14 @@ final class GameTest extends MySqlTestCase
         $this->assertNull($game['season']['image']);
         $this->assertArrayNotHasKey('me', $game);
 
-        // The season is made by itself, and has no award of its own
-        $this->assertSame(1, $this->db->table('game_seasons')->where('id', $game['season']['id'])->countAllResults());
+        $this->assertSame('Сезон current', $game['season']['title']);
+        $this->assertFalse($game['season']['upcoming']);
+        $this->assertSame(['gold' => null, 'silver' => null, 'bronze' => null, 'participant' => null], $game['season']['medals']);
+        $this->assertArrayNotHasKey('key', $game['season']);
+        $this->assertArrayNotHasKey('year', $game['season']);
+
+        // A season has no award of its own
+        $this->assertSame(1, $this->db->table('game_seasons')->countAllResults());
         $this->assertSame(0, $this->db->table('achievements')->countAllResults());
     }
 
@@ -98,8 +110,8 @@ final class GameTest extends MySqlTestCase
         $user  = $this->db->table('users')->where('id', 'user1')->get()->getRow();
         $place = $this->db->table('places')->where('id', 'place1')->get()->getRow();
 
-        $this->photo('photo1', 'place1', 'user1', self::NEAR, date('Y-m-d') . ' 10:00:00');
-        $this->assertSame(45, (new GameLibrary())->photoUploaded($user, $place, 'photo1', (object) self::NEAR, date('Y-m-d') . ' 10:00:00')['points']);
+        $this->photo('photo1', 'place1', 'user1', self::NEAR, GameLibrary::today() . ' 10:00:00');
+        $this->assertSame(45, (new GameLibrary())->photoUploaded($user, $place, 'photo1', (object) self::NEAR, GameLibrary::today() . ' 10:00:00')['points']);
 
         // The score is there; the visit is quiet: no event, not the person's check-in, nobody's visitor
         $visit = $this->db->table('users_visited_places')->where('user_id', 'user1')->get()->getRow();
@@ -166,7 +178,7 @@ final class GameTest extends MySqlTestCase
         $visit = $this->db->table('users_visited_places')->where('user_id', 'user1')->get()->getRow();
 
         $this->assertSame('geo', $visit->confirmed);
-        $this->assertSame(date('Y-m-d') . ' 12:00:00', $visit->visited_at);
+        $this->assertSame(GameLibrary::today() . ' 12:00:00', $visit->visited_at);
         // The visit is an ordinary one: its event is in the log
         $this->assertSame(1, $this->db->table('activity')->where(['type' => 'visit', 'visit_id' => $visit->id])->countAllResults());
         // The coordinates are compared and dropped
@@ -203,9 +215,9 @@ final class GameTest extends MySqlTestCase
         $game   = new GameLibrary();
         $user   = $this->db->table('users')->where('id', 'user1')->get()->getRow();
         $place  = $this->db->table('places')->where('id', 'place1')->get()->getRow();
-        $season = GameLibrary::seasonOf(date('Y-m-d'));
+        $season = (new GameLibrary())->current();
         // A day of this season, not today: the photo is uploaded at home
-        $shot   = max($season['from'], date('Y-m-d', strtotime('-3 days')));
+        $shot   = max($season['from'], GameLibrary::today(null, '-3 days'));
 
         // No position, no shot date, shot far away, shot before the season: no proof
         $this->photo('photo0', 'place1', 'user1', self::NEAR, $shot . ' 10:00:00');
@@ -227,10 +239,10 @@ final class GameTest extends MySqlTestCase
         // "I am here" first, a photo later: the photo adds its bonus to the same score
         $this->signIn('user2');
         $this->withBodyFormat('json')->post('game/confirm', ['place' => 'place1'] + self::NEAR)->assertStatus(200);
-        $this->photo('photo1', 'place1', 'user2', self::NEAR, date('Y-m-d') . ' 09:00:00');
+        $this->photo('photo1', 'place1', 'user2', self::NEAR, GameLibrary::today() . ' 09:00:00');
 
         $user2  = $this->db->table('users')->where('id', 'user2')->get()->getRow();
-        $bonus  = $game->photoUploaded($user2, $place, 'photo1', (object) self::NEAR, date('Y-m-d') . ' 09:00:00');
+        $bonus  = $game->photoUploaded($user2, $place, 'photo1', (object) self::NEAR, GameLibrary::today() . ' 09:00:00');
 
         $this->assertSame(5, $bonus['points']);
         $row = $this->db->table('game_points')->where('user_id', 'user2')->get()->getRow();
@@ -239,8 +251,8 @@ final class GameTest extends MySqlTestCase
         $this->assertSame('photo', $this->db->table('users_visited_places')->where('user_id', 'user2')->get()->getRow()->confirmed);
 
         // Another photo of the same place: nothing more
-        $this->photo('photo2', 'place1', 'user2', self::NEAR, date('Y-m-d') . ' 09:05:00');
-        $this->assertSame(0, $game->photoUploaded($user2, $place, 'photo2', (object) self::NEAR, date('Y-m-d') . ' 09:05:00')['points']);
+        $this->photo('photo2', 'place1', 'user2', self::NEAR, GameLibrary::today() . ' 09:05:00');
+        $this->assertSame(0, $game->photoUploaded($user2, $place, 'photo2', (object) self::NEAR, GameLibrary::today() . ' 09:05:00')['points']);
 
         // The photo goes (and the other one with it): the score "I am here" made stays, without the bonus
         $this->db->table('photos')->where('id', 'photo2')->delete();
@@ -257,7 +269,7 @@ final class GameTest extends MySqlTestCase
         $game  = new GameLibrary();
         $user  = $this->db->table('users')->where('id', 'user1')->get()->getRow();
         $place = $this->db->table('places')->where('id', 'place1')->get()->getRow();
-        $now   = date('Y-m-d') . ' 10:00:00';
+        $now   = GameLibrary::today() . ' 10:00:00';
 
         $this->photo('photo1', 'place1', 'user1', self::NEAR, $now);
         $this->photo('photo2', 'place1', 'user1', self::NEAR, $now);
@@ -281,23 +293,83 @@ final class GameTest extends MySqlTestCase
         $this->assertSame(0, $this->db->table('game_points')->countAllResults());
     }
 
-    public function testSeasonsFollowTheCalendar(): void
+    public function testASeasonIsFoundByItsDatesAndNothingIsMadeByTheCalendar(): void
     {
-        $this->assertSame(['id' => '2026-cold', 'key' => 'cold', 'year' => 2026, 'from' => '2026-10-01', 'to' => '2027-03-31'], GameLibrary::seasonOf('2026-11-11'));
-        $this->assertSame('2026-warm', GameLibrary::seasonOf('2026-04-01')['id']);
-        $this->assertSame('2026-warm', GameLibrary::seasonOf('2026-09-30')['id']);
-        // A cold season is named by the year it starts in, and ends with March
-        $this->assertSame('2026-cold', GameLibrary::seasonOf('2026-10-01')['id']);
-        $this->assertSame('2026-cold', GameLibrary::seasonOf('2027-03-31')['id']);
-        $this->assertNull(GameLibrary::seasonById('2026-winter'));
+        $game = new GameLibrary();
+
+        $this->season('next', GameLibrary::today(null, '+121 days'), GameLibrary::today(null, '+200 days'));
+
+        $this->assertSame('current', $game->current()['id']);
+        $this->assertSame('current', $game->seasonAt(GameLibrary::today(null, '+120 days'))['id']);
+        $this->assertSame('next', $game->seasonAt(GameLibrary::today(null, '+121 days'))['id']);
+        $this->assertNull($game->seasonAt(GameLibrary::today(null, '+300 days')));
+        $this->assertSame('next', $game->upcoming()['id']);
+        $this->assertNull($game->find('2026-cold'));
+
+        // Confirmations count in the season of the day, not ahead of the visitor's tomorrow
+        $this->assertSame('current', $game->openSeason(GameLibrary::today())['id']);
+        $this->assertNull($game->openSeason(GameLibrary::today(null, '+121 days')));
+        $this->assertNull($game->openSeason(GameLibrary::today(null, '-70 days')));
+
+        // The tick closes nothing that is on, and makes nothing
+        $this->assertSame([], $game->tick());
+        $this->assertSame(2, $this->db->table('game_seasons')->countAllResults());
+
+        $this->assertSame('gold', GameLibrary::medalOf(1));
+        $this->assertSame('silver', GameLibrary::medalOf(2));
+        $this->assertSame('bronze', GameLibrary::medalOf(3));
+        $this->assertSame('participant', GameLibrary::medalOf(4));
+    }
+
+    public function testBetweenSeasonsTheGameIsEmpty(): void
+    {
+        $this->db->table('game_seasons')->where('1 = 1', null, false)->delete();
+        $this->signIn('user1');
+
+        $game = json_decode($this->get('game')->getJSON(), true);
+
+        $this->assertNull($game['season']);
+        $this->assertSame([], $game['awards']);
+        $this->assertSame(0, $game['totals']['players']);
+        $this->assertSame(0, $game['totals']['places']);
+        $this->assertNull($game['me']['place']);
+        $this->assertSame(['items' => [], 'count' => 0, 'locations' => []], json_decode($this->get('game/leaders')->getJSON(), true));
+        $this->get('game/leaders?season=nope')->assertStatus(404);
+        $this->assertSame(['items' => [], 'count' => 0], json_decode($this->get('game/places')->getJSON(), true));
+        $this->assertSame(['items' => [], 'count' => 0, 'points' => 0], json_decode($this->get('game/mine')->getJSON(), true));
+        $this->assertSame(['items' => []], json_decode($this->get('game/recent')->getJSON(), true));
+        $this->assertNull(json_decode($this->get('game/users/user1')->getJSON(), true)['season']);
+
+        // With no season the visit is plain, never an error
+        $this->withBodyFormat('json')->post('game/confirm', ['place' => 'place1'] + self::NEAR)->assertStatus(200);
+        $this->assertSame(0, $this->db->table('game_points')->countAllResults());
+    }
+
+    public function testASeasonNotBegunIsTheNextOneToCome(): void
+    {
+        $this->db->table('game_seasons')->where('1 = 1', null, false)->delete();
+        $this->season('soon', GameLibrary::today(null, '+10 days'), GameLibrary::today(null, '+90 days'), ['title_en' => null]);
+
+        $game = json_decode($this->withHeaders(['Accept-Language' => 'en'])->get('game')->getJSON(), true);
+
+        $this->assertSame('soon', $game['season']['id']);
+        $this->assertTrue($game['season']['upcoming']);
+        $this->assertFalse($game['season']['current']);
+        // English falls back to the Russian text
+        $this->assertSame('Сезон soon', $game['season']['title']);
+        $this->assertSame(0, $game['totals']['players']);
+
+        $page = json_decode($this->get('game/seasons/soon')->getJSON(), true);
+
+        $this->assertTrue($page['season']['upcoming']);
+        $this->assertSame([], $page['winners']);
     }
 
     public function testAClosedSeasonIsFrozen(): void
     {
         $game = new GameLibrary();
-        $past = GameLibrary::seasonOf(date('Y-m-d', strtotime('-200 days')));
+        $past = $this->season('past', GameLibrary::today(null, '-200 days'), GameLibrary::today(null, '-100 days'));
 
-        $game->ensureSeason($past);
         $this->db->table('users_visited_places')->insert([
             'id' => 'visit1', 'user_id' => 'user1', 'place_id' => 'place1', 'visited_at' => $past['from'] . ' 12:00:00', 'confirmed' => 'geo',
         ]);
@@ -330,20 +402,29 @@ final class GameTest extends MySqlTestCase
         $this->assertSame(2, $page['me']['place']);
         $this->assertSame(40, $page['me']['points']);
 
-        // No more confirmations for it; the current season is made by the same tick
+        // The medals follow the frozen places: gold for the winner, silver for the second
+        $this->db->table('game_seasons')->where('id', $past['id'])->update(['medal_gold' => 'uploads/seasons/g.png', 'medal_silver' => 'uploads/seasons/s.png']);
+        $user2 = json_decode($this->get('game/users/user2')->getJSON(), true)['seasons'][0];
+        $user1 = json_decode($this->get('game/users/user1')->getJSON(), true)['seasons'][0];
+
+        $this->assertSame(['past', 'Сезон past', true, 'gold', 'uploads/seasons/g.png', 1], [$user2['id'], $user2['title'], $user2['closed'], $user2['medal'], $user2['medalImage'], $user2['place']]);
+        $this->assertSame(['silver', 'uploads/seasons/s.png', 2], [$user1['medal'], $user1['medalImage'], $user1['place']]);
+
+        // No more confirmations for it
         $this->assertNull($game->openSeason($past['from']));
         $this->assertSame($past['id'], json_decode($this->get('game')->getJSON(), true)['seasons'][0]['id']);
         $this->get('game/seasons/1999-warm')->assertStatus(404);
+        $this->assertSame('past', $game->find('past')['id']);
         $this->get('game/seasons/nonsense')->assertStatus(404);
     }
 
     public function testALimitedAwardWithinTheSeasonIsListedOnItAndEarnedByItsOwnRule(): void
     {
-        $season = GameLibrary::seasonOf(date('Y-m-d'));
+        $season = (new GameLibrary())->current();
 
         // Within the season's dates: listed on the season. Another one, running past it: not
         $this->award('limited1', 'places_confirmed', 2, $season['from'] . ' 00:00:00', $season['to'] . ' 23:59:59');
-        $this->award('longer1', 'places_confirmed', 1, $season['from'] . ' 00:00:00', date('Y-m-d', strtotime($season['to'] . ' +40 days')) . ' 23:59:59');
+        $this->award('longer1', 'places_confirmed', 1, $season['from'] . ' 00:00:00', GameLibrary::today(null, $season['to'] . ' +40 days') . ' 23:59:59');
 
         $this->signIn('user1');
         $this->withBodyFormat('json')->post('game/confirm', ['place' => 'place1'] + self::NEAR)->assertStatus(200);
@@ -367,23 +448,126 @@ final class GameTest extends MySqlTestCase
         $this->assertSame(60, $profile['seasons'][0]['points']);
         $this->assertSame(1, $profile['seasons'][0]['place']);
         $this->assertFalse($profile['seasons'][0]['closed']);
+        // An open season gives no medal yet
+        $this->assertNull($profile['seasons'][0]['medal']);
+        $this->assertNull($profile['seasons'][0]['medalImage']);
         $this->assertSame([], json_decode($this->get('game/users/user2')->getJSON(), true)['seasons']);
 
         // The awards are on the profile
         $this->assertContains('limited1', array_column(json_decode($this->get('users/user1/achievements')->getJSON(), true)['data'], 'id'));
     }
 
-    public function testThePictureOfASeasonIsTheAdministrators(): void
+    public function testThePicturesOfASeasonAreTheAdministrators(): void
     {
-        $season = GameLibrary::seasonOf(date('Y-m-d'));
-
-        $this->post('game/seasons/' . $season['id'] . '/image')->assertStatus(401);
+        $this->post('game/seasons/current/image')->assertStatus(401);
+        $this->delete('game/seasons/current/image?kind=gold')->assertStatus(401);
         $this->signIn('user1');
-        $this->post('game/seasons/' . $season['id'] . '/image')->assertStatus(403);
+        $this->post('game/seasons/current/image')->assertStatus(403);
         $this->signIn('admin1');
-        // No file: a validation error, the season itself is made
-        $this->post('game/seasons/' . $season['id'] . '/image')->assertStatus(400);
+        // No file: a validation error
+        $this->post('game/seasons/current/image')->assertStatus(400);
+        $this->withBodyFormat('json')->post('game/seasons/current/image', ['kind' => 'platinum'])->assertStatus(400);
         $this->post('game/seasons/nonsense/image')->assertStatus(404);
+
+        // Taking a picture off clears the column
+        $this->db->table('game_seasons')->where('id', 'current')->update(['medal_gold' => 'uploads/seasons/none.png']);
+        $answer = json_decode($this->delete('game/seasons/current/image?kind=gold')->getJSON(), true);
+
+        $this->assertNull($answer['medals']['gold']);
+        $this->delete('game/seasons/current/image?kind=nope')->assertStatus(400);
+        $this->delete('game/seasons/nonsense/image?kind=gold')->assertStatus(404);
+    }
+
+    public function testTheAdministratorMakesAndEditsSeasons(): void
+    {
+        $body = ['id' => 'spring-27', 'title_ru' => 'Весна 2027', 'title_en' => 'Spring 2027', 'description_ru' => 'Описание', 'starts_on' => '2030-03-01', 'ends_on' => '2030-05-31'];
+
+        $this->withBodyFormat('json')->post('game/seasons', $body)->assertStatus(401);
+        $this->get('game/seasons/manage')->assertStatus(401);
+        $this->signIn('user1');
+        $this->withBodyFormat('json')->post('game/seasons', $body)->assertStatus(403);
+        $this->get('game/seasons/manage')->assertStatus(403);
+        $this->signIn('admin1');
+
+        $created = $this->withBodyFormat('json')->post('game/seasons', $body);
+        $created->assertStatus(201);
+        $season = json_decode($created->getJSON(), true);
+
+        $this->assertSame('spring-27', $season['id']);
+        $this->assertSame('Spring 2027', $season['title_en']);
+        $this->assertNull($season['description_en']);
+        $this->assertSame('2030-03-01', $season['starts_on']);
+        $this->assertTrue($season['upcoming']);
+        $this->assertFalse($season['current']);
+        $this->assertSame(0, $season['points']);
+        $this->assertSame(['gold' => null, 'silver' => null, 'bronze' => null, 'participant' => null], $season['medals']);
+
+        // The latest start first
+        $this->assertSame(['spring-27', 'current'], array_column(json_decode($this->get('game/seasons/manage')->getJSON(), true)['items'], 'id'));
+        $this->assertSame('Весна 2027', json_decode($this->get('game/seasons/manage/spring-27')->getJSON(), true)['title_ru']);
+        $this->get('game/seasons/manage/nonsense')->assertStatus(404);
+
+        // Partial update: the title only, the dates stay
+        $changed = json_decode($this->withBodyFormat('json')->patch('game/seasons/spring-27', ['title_en' => ''])->getJSON(), true);
+
+        $this->assertNull($changed['title_en']);
+        $this->assertSame('Весна 2027', $changed['title_ru']);
+        $this->assertSame('2030-05-31', $changed['ends_on']);
+        $this->assertSame('Spring 2027', json_decode($this->withBodyFormat('json')->patch('game/seasons/spring-27', ['title_en' => 'Spring 2027', 'ends_on' => '2030-06-15'])->getJSON(), true)['title_en']);
+        $this->withBodyFormat('json')->patch('game/seasons/nonsense', ['title_en' => 'x'])->assertStatus(404);
+
+        // Nothing played in it: it can go
+        $this->delete('game/seasons/spring-27')->assertStatus(200);
+        $this->assertNull((new GameLibrary())->find('spring-27'));
+        $this->delete('game/seasons/spring-27')->assertStatus(404);
+    }
+
+    public function testASeasonIsCheckedBeforeItIsSaved(): void
+    {
+        $this->signIn('admin1');
+
+        $ok   = ['id' => 'later', 'title_ru' => 'Позже', 'starts_on' => '2031-01-01', 'ends_on' => '2031-02-01'];
+        $post = fn (array $body) => json_decode($this->withBodyFormat('json')->post('game/seasons', $body)->getJSON(), true)['messages'] ?? [];
+
+        $this->assertArrayHasKey('id', $post(['id' => 'Bad Id!'] + $ok));
+        $this->assertArrayHasKey('id', $post(['id' => 'x'] + $ok));
+        $this->assertArrayHasKey('id', $post(['id' => 'current'] + $ok));
+        $this->assertArrayHasKey('title_ru', $post(['title_ru' => ' '] + $ok));
+        $this->assertArrayHasKey('title_ru', $post(['title_ru' => str_repeat('я', 151)] + $ok));
+        $this->assertArrayHasKey('title_en', $post(['title_en' => str_repeat('a', 151)] + $ok));
+        $this->assertArrayHasKey('starts_on', $post(['starts_on' => '2031-02-30'] + $ok));
+        $this->assertArrayHasKey('ends_on', $post(['ends_on' => 'soon'] + $ok));
+        $this->assertArrayHasKey('ends_on', $post(['starts_on' => '2031-03-01'] + $ok));
+
+        // Seasons never overlap, the days included; the message names the other one
+        $overlap = $post(['starts_on' => GameLibrary::today(null, '+120 days'), 'ends_on' => '2031-02-01'] + $ok);
+
+        $this->assertStringContainsString('Сезон current', $overlap['starts_on']);
+        $this->assertSame(1, $this->db->table('game_seasons')->countAllResults());
+
+        // The day after the other one ends is free; a season can sit inside another no more
+        $this->withBodyFormat('json')->post('game/seasons', ['starts_on' => GameLibrary::today(null, '+121 days')] + $ok)->assertStatus(201);
+        $this->assertArrayHasKey('starts_on', json_decode($this->withBodyFormat('json')->patch('game/seasons/later', ['starts_on' => GameLibrary::today(null, '+100 days')])->getJSON(), true)['messages']);
+
+        // A closed season keeps its dates
+        $this->db->table('game_seasons')->where('id', 'later')->update(['closed_at' => date('Y-m-d H:i:s')]);
+        $this->assertArrayHasKey('starts_on', json_decode($this->withBodyFormat('json')->patch('game/seasons/later', ['ends_on' => '2031-12-31'])->getJSON(), true)['messages']);
+        $this->withBodyFormat('json')->patch('game/seasons/later', ['title_ru' => 'Другое имя'])->assertStatus(200);
+    }
+
+    public function testASeasonWithPointsIsNotDeleted(): void
+    {
+        $this->signIn('user1');
+        $this->withBodyFormat('json')->post('game/confirm', ['place' => 'place1'] + self::NEAR)->assertStatus(200);
+        $this->signIn('admin1');
+
+        $this->assertSame(1, json_decode($this->get('game/seasons/manage/current')->getJSON(), true)['points']);
+
+        $answer = $this->delete('game/seasons/current');
+
+        $answer->assertStatus(400);
+        $this->assertArrayHasKey('error', json_decode($answer->getJSON(), true)['messages']);
+        $this->assertNotNull((new GameLibrary())->find('current'));
     }
 
     public function testTheRatingIsOverallAndByLocation(): void
@@ -476,6 +660,28 @@ final class GameTest extends MySqlTestCase
         $explored = json_decode($this->get('game/exploration')->getJSON(), true);
 
         $this->assertSame([['type' => 'region', 'id' => 10, 'title' => 'Башкортостан', 'slug' => null, 'explored' => 1, 'total' => 2]], $explored['regions']);
+    }
+
+    public function testIAmHereOfAQuestIsThrottledPerPerson(): void
+    {
+        $this->signIn('admin1');
+        $id = json_decode($this->withBodyFormat('json')->post('game/quests', [
+            'titleRu' => 'Загадка',
+            'mode'    => 'steps',
+            'status'  => 'published',
+            'points'  => [['place' => 'place1'], ['place' => 'place2']],
+        ])->getJSON(), true)['id'];
+
+        $this->signIn('user1');
+        $this->withBodyFormat('json')->post("game/quests/{$id}/start");
+
+        // Far tries are answered until the minute's limit, then the search by coordinates stops
+        for ($try = 0; $try < 6; $try++) {
+            $this->withBodyFormat('json')->post("game/quests/{$id}/confirm", self::FAR)->assertStatus(400);
+        }
+
+        $this->withBodyFormat('json')->post("game/quests/{$id}/confirm", self::NEAR)->assertStatus(429);
+        $this->assertSame(0, $this->db->table('quests_walks_points')->countAllResults());
     }
 
     public function testAWalkBegunCanBeGivenUpAndBegunAgain(): void
@@ -862,15 +1068,15 @@ final class GameTest extends MySqlTestCase
         // The first one by a photo shot there: the walk takes it too, and is over
         $user  = $this->db->table('users')->where('id', 'user1')->get()->getRow();
         $place = $this->db->table('places')->where('id', 'place1')->get()->getRow();
-        $this->photo('photo1', 'place1', 'user1', self::NEAR, date('Y-m-d') . ' 10:00:00');
-        (new GameLibrary())->photoUploaded($user, $place, 'photo1', (object) self::NEAR, date('Y-m-d') . ' 10:00:00');
+        $this->photo('photo1', 'place1', 'user1', self::NEAR, GameLibrary::today() . ' 10:00:00');
+        (new GameLibrary())->photoUploaded($user, $place, 'photo1', (object) self::NEAR, GameLibrary::today() . ' 10:00:00');
 
         $quest = json_decode($this->get('game/quests/' . $id)->getJSON(), true);
 
         $this->assertSame(['done', 'done'], array_column($quest['items'], 'state'));
         $this->assertNotNull($quest['walk']['finished']);
         // 40 (the cave) + 20 + 45 for the places; the quest itself adds nothing to the season
-        $this->assertSame(105, (new GameLibrary())->total('user1', GameLibrary::seasonOf(date('Y-m-d'))['id']));
+        $this->assertSame(105, (new GameLibrary())->total('user1', (new GameLibrary())->current()['id']));
         $this->assertSame(1, $this->db->table('users_achievements')->where(['user_id' => 'user1', 'achievement_id' => 'wayfarer1'])->countAllResults());
 
         // A person in the game, for their profile
@@ -924,6 +1130,21 @@ final class GameTest extends MySqlTestCase
         $walk = $this->db->table('quests_walks')->where('user_id', 'user1')->get()->getRow();
         $this->assertNotNull($walk->finished_at);
         $this->assertSame(1, (int) $this->db->table('quests')->where('id', $id)->get()->getRow()->walked);
+    }
+
+    /**
+     * A season made by hand.
+     *
+     * @return array<string, mixed>
+     */
+    private function season(string $id, string $from, string $to, array $fields = []): array
+    {
+        $this->db->table('game_seasons')->insert($fields + [
+            'id' => $id, 'title_ru' => 'Сезон ' . $id, 'title_en' => 'Season ' . $id,
+            'starts_on' => $from, 'ends_on' => $to, 'created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return (new GameLibrary())->find($id);
     }
 
     /** An award counting a metric: limited to a window when the dates are given */

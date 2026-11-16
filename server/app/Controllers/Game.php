@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Controllers\Concerns\AdminOnly;
+use App\Libraries\AdminImageLibrary;
 use App\Libraries\AvatarLibrary;
 use App\Libraries\GameLibrary;
 use App\Libraries\PlaceFormatterLibrary;
@@ -27,6 +29,8 @@ use Throwable;
  */
 class Game extends ResourceController
 {
+    use AdminOnly;
+
     private const LEADERS_DEFAULT = 10;
     private const LEADERS_MAX     = 50;
 
@@ -66,14 +70,16 @@ class Game extends ResourceController
      */
     public function index(): ResponseInterface
     {
-        $season = GameLibrary::seasonOf(date('Y-m-d'));
-        $this->game->ensureSeason($season);
-
-        $db    = Database::connect();
-        $table = $this->game->table($season['id']);
+        // The season that goes on; between seasons the nearest one to come, or none
+        $season = $this->game->current() ?? $this->game->upcoming();
+        $today  = GameLibrary::today();
+        $db     = Database::connect();
+        // A season not begun has no table
+        $table  = $season && $season['from'] <= $today ? $this->game->table($season['id']) : [];
+        $locale = $this->request->getLocale();
 
         $answer = [
-            'season' => $this->seasonInfo($season),
+            'season' => $season ? $this->seasonInfo($season, $locale) : null,
             'rules'  => [
                 'base'        => $this->config->base,
                 'categories'  => $this->config->categories,
@@ -89,16 +95,13 @@ class Game extends ResourceController
                 'radiuses'    => $this->config->radiuses,
             ],
             // The awards that can be earned only within this season (limited ones, by their dates)
-            'awards' => $this->game->seasonAwards($season, $this->session->user?->id, $this->request->getLocale()),
+            'awards' => $season ? $this->game->seasonAwards($season, $this->session->user?->id, $locale) : [],
             'totals' => [
                 'players' => count($table),
-                'places'  => (int) ($db->table('game_points')
-                    ->select('COUNT(DISTINCT place_id) AS cnt', false)
-                    ->where(['season' => $season['id'], 'kind' => 'place'])
-                    ->get()->getRow()->cnt ?? 0),
+                'places'  => $table ? $this->placesCount($season['id']) : 0,
                 'quests'  => $db->table('quests')->where(['status' => 'published', 'deleted_at' => null])->countAllResults(),
             ],
-            'seasons' => $this->pastSeasons(),
+            'seasons' => $this->pastSeasons($locale),
         ];
 
         if ($this->session->user) {
@@ -131,10 +134,17 @@ class Game extends ResourceController
      */
     public function leaders(): ResponseInterface
     {
-        $season = $this->requestedSeason();
+        $id = $this->request->getGet('season', FILTER_SANITIZE_SPECIAL_CHARS);
 
-        if (!$season) {
+        $season = $id ? $this->game->find($id) : $this->game->current();
+
+        if ($id && !$season) {
             return $this->failNotFound();
+        }
+
+        // Between seasons there is nobody to rate
+        if (!$season) {
+            return $this->respond(['items' => [], 'count' => 0, 'locations' => []]);
         }
 
         $type = $this->request->getGet('type', FILTER_SANITIZE_SPECIAL_CHARS) ?: null;
@@ -180,30 +190,20 @@ class Game extends ResourceController
      */
     public function season($id = null): ResponseInterface
     {
-        $season = $id ? GameLibrary::seasonById((string) $id) : null;
+        $season = $id ? $this->game->find((string) $id) : null;
 
         if (!$season) {
             return $this->failNotFound();
         }
 
-        $db  = Database::connect();
-        $row = $db->table('game_seasons')->where('id', $season['id'])->get()->getRow();
-
-        // A season nobody has met yet (the future, the years before the game)
-        if (!$row) {
-            return $this->failNotFound();
-        }
-
-        $table  = $this->game->table($season['id']);
+        $locale = $this->request->getLocale();
+        $table  = $season['from'] <= GameLibrary::today() ? $this->game->table($season['id']) : [];
         $answer = [
-            'season'  => $this->seasonInfo($season, $row),
-            'awards'  => $this->game->seasonAwards($season, $this->session->user?->id, $this->request->getLocale()),
+            'season'  => $this->seasonInfo($season, $locale),
+            'awards'  => $this->game->seasonAwards($season, $this->session->user?->id, $locale),
             'totals'  => [
                 'players' => count($table),
-                'places'  => (int) ($db->table('game_points')
-                    ->select('COUNT(DISTINCT place_id) AS cnt', false)
-                    ->where(['season' => $season['id'], 'kind' => 'place'])
-                    ->get()->getRow()->cnt ?? 0),
+                'places'  => $this->placesCount($season['id']),
             ],
             'winners' => $this->game->withUsers(array_slice($table, 0, 3)),
         ];
@@ -220,10 +220,159 @@ class Game extends ResourceController
     }
 
     /**
-     * The picture of a season, uploaded by an administrator: the one thing of a season made by
-     * hand. PNG or SVG, up to 1 MB, like an achievement's picture.
+     * The seasons for the administrator's page, the latest start first.
      *
-     * POST /game/seasons/:id/image (multipart, `image`) → { id, image }
+     * GET /game/seasons/manage → { items: SeasonAdmin[] }
+     *
+     * @return ResponseInterface
+     */
+    public function manage(): ResponseInterface
+    {
+        if ($denied = $this->adminOnly()) {
+            return $denied;
+        }
+
+        $seasons = $this->game->all();
+        $counts  = [];
+
+        // The points of all the seasons in one query
+        if ($seasons) {
+            $rows   = Database::connect()->table('game_points')
+                ->select('season, COUNT(*) AS cnt', false)
+                ->groupBy('season')
+                ->get()->getResultArray();
+            $counts = array_column($rows, 'cnt', 'season');
+        }
+
+        return $this->respond(['items' => array_map(
+            fn (array $season) => $this->adminInfo($season, (int) ($counts[$season['id']] ?? 0)),
+            $seasons
+        )]);
+    }
+
+    /**
+     * One season with everything the form edits.
+     *
+     * GET /game/seasons/manage/:id → SeasonAdmin
+     *
+     * @param string|null $id
+     *
+     * @return ResponseInterface
+     */
+    public function manageShow($id = null): ResponseInterface
+    {
+        if ($denied = $this->adminOnly()) {
+            return $denied;
+        }
+
+        $season = $id ? $this->game->find((string) $id) : null;
+
+        return $season ? $this->respond($this->adminInfo($season)) : $this->failNotFound();
+    }
+
+    /**
+     * A new season: the dates, the title and the texts; the pictures come after, one by one.
+     *
+     * POST /game/seasons { id, title_ru, title_en?, description_ru?, description_en?, starts_on, ends_on } → 201 SeasonAdmin
+     *
+     * @return ResponseInterface
+     */
+    public function create(): ResponseInterface
+    {
+        if ($denied = $this->adminOnly()) {
+            return $denied;
+        }
+
+        $input = $this->adminInput();
+
+        if ($input === null) {
+            return $this->failValidationErrors(lang('Game.badBody'));
+        }
+
+        [$season, $errors] = $this->game->createSeason($input);
+
+        if ($errors) {
+            return $this->failValidationErrors($errors);
+        }
+
+        return $this->respondCreated($this->adminInfo($season));
+    }
+
+    /**
+     * Changes a season; only what is sent. The dates of a closed season stay: its table is frozen.
+     *
+     * PATCH /game/seasons/:id (the fields of create, without id) → SeasonAdmin
+     *
+     * @param string|null $id
+     *
+     * @return ResponseInterface
+     */
+    public function update($id = null): ResponseInterface
+    {
+        if ($denied = $this->adminOnly()) {
+            return $denied;
+        }
+
+        $input = $this->adminInput();
+
+        if ($input === null) {
+            return $this->failValidationErrors(lang('Game.badBody'));
+        }
+
+        [$season, $errors] = $id ? $this->game->updateSeason((string) $id, $input) : [null, []];
+
+        // Errors first: a busy lock answers without a season, and that is not "not found"
+        if ($errors) {
+            return $this->failValidationErrors($errors);
+        }
+
+        if (!$season) {
+            return $this->failNotFound();
+        }
+
+        return $this->respond($this->adminInfo($season));
+    }
+
+    /**
+     * Deletes a season nobody has played in: one with points is a part of the history.
+     *
+     * DELETE /game/seasons/:id → { id }, 400 when it has points
+     *
+     * @param string|null $id
+     *
+     * @return ResponseInterface
+     */
+    public function delete($id = null): ResponseInterface
+    {
+        if ($denied = $this->adminOnly()) {
+            return $denied;
+        }
+
+        [$season, $errors] = $id ? $this->game->deleteSeason((string) $id) : [null, []];
+
+        // Errors first: a busy lock answers without a season, and that is not "not found"
+        if ($errors) {
+            return $this->failValidationErrors($errors);
+        }
+
+        if (!$season) {
+            return $this->failNotFound();
+        }
+
+        foreach (self::IMAGE_COLUMNS as $column) {
+            AdminImageLibrary::remove($season[$column], 'seasons');
+        }
+
+        return $this->respondDeleted(['id' => $season['id']]);
+    }
+
+    /**
+     * A picture of a season, uploaded by an administrator: the medal of every participant
+     * (`kind` = `participant`, the default; it is also the season's picture) or its variant for
+     * the places 1–3 (`gold`, `silver`, `bronze`). PNG or
+     * SVG, up to 1 MB, like an achievement's picture. A new picture replaces the old one.
+     *
+     * POST /game/seasons/:id/image (multipart, `image`, `kind`) → SeasonAdmin
      *
      * @param string|null $id
      *
@@ -231,14 +380,20 @@ class Game extends ResourceController
      */
     public function seasonImage($id = null): ResponseInterface
     {
-        if (!$this->session->isAuth || $this->session->user?->role !== 'admin') {
-            return $this->session->isAuth ? $this->failForbidden() : $this->failUnauthorized();
+        if ($denied = $this->adminOnly()) {
+            return $denied;
         }
 
-        $season = $id ? GameLibrary::seasonById((string) $id) : null;
+        $season = $id ? $this->game->find((string) $id) : null;
 
-        if (!$season || !$this->game->ensureSeason($season)) {
+        if (!$season) {
             return $this->failNotFound();
+        }
+
+        $kind = (string) ($this->request->getPost('kind') ?: 'participant');
+
+        if (!isset(GameLibrary::IMAGE_KINDS[$kind])) {
+            return $this->failValidationErrors(['kind' => lang('Game.seasonBadKind')]);
         }
 
         $file = $this->request->getFile('image');
@@ -247,25 +402,65 @@ class Game extends ResourceController
             return $this->failValidationErrors(lang('Game.badImage'));
         }
 
-        if (!in_array($file->getMimeType(), ['image/png', 'image/svg+xml'], true) || $file->getSize() > 1024 * 1024) {
+        $type = AdminImageLibrary::kind($file);
+
+        if ($type === null) {
             return $this->failValidationErrors(lang('Game.badImage'));
         }
 
-        $path = FCPATH . 'uploads/seasons/';
+        $stored = AdminImageLibrary::store($file, $type, 'seasons', $season['id'] . '_' . $kind);
 
-        if (!is_dir($path)) {
-            mkdir($path, 0755, true);
+        if ($stored === null) {
+            return $this->failServerError(lang('Game.seasonError'));
         }
 
-        $name = $season['id'] . '_' . time() . '.' . $file->getExtension();
+        $column = GameLibrary::IMAGE_KINDS[$kind];
 
-        if (!$file->move($path, $name)) {
-            return $this->failServerError(lang('Game.questError'));
+        Database::connect()->table('game_seasons')->where('id', $season['id'])->update([
+            $column      => $stored,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        AdminImageLibrary::remove($season[$column], 'seasons');
+
+        return $this->respond($this->adminInfo($this->game->find($season['id'])));
+    }
+
+    /**
+     * Takes a picture off a season and deletes its file.
+     *
+     * DELETE /game/seasons/:id/image?kind=gold → SeasonAdmin
+     *
+     * @param string|null $id
+     *
+     * @return ResponseInterface
+     */
+    public function seasonImageDelete($id = null): ResponseInterface
+    {
+        if ($denied = $this->adminOnly()) {
+            return $denied;
         }
 
-        Database::connect()->table('game_seasons')->where('id', $season['id'])->update(['image' => 'uploads/seasons/' . $name]);
+        $season = $id ? $this->game->find((string) $id) : null;
 
-        return $this->respond(['id' => $season['id'], 'image' => 'uploads/seasons/' . $name]);
+        if (!$season) {
+            return $this->failNotFound();
+        }
+
+        $kind = (string) ($this->request->getGet('kind') ?: 'participant');
+
+        if (!isset(GameLibrary::IMAGE_KINDS[$kind])) {
+            return $this->failValidationErrors(['kind' => lang('Game.seasonBadKind')]);
+        }
+
+        $column = GameLibrary::IMAGE_KINDS[$kind];
+
+        Database::connect()->table('game_seasons')->where('id', $season['id'])->update([
+            $column      => null,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        AdminImageLibrary::remove($season[$column], 'seasons');
+
+        return $this->respond($this->adminInfo($this->game->find($season['id'])));
     }
 
     /**
@@ -278,7 +473,13 @@ class Game extends ResourceController
      */
     public function places(): ResponseInterface
     {
-        $season = GameLibrary::seasonOf(date('Y-m-d'));
+        $season = $this->game->current();
+
+        // No season, no points to get
+        if (!$season) {
+            return $this->respond(['items' => [], 'count' => 0]);
+        }
+
         $limit  = max(1, min((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?: self::PLACES_DEFAULT), self::PLACES_MAX));
         $lat    = $this->request->getGet('lat');
         $lon    = $this->request->getGet('lon');
@@ -358,7 +559,12 @@ class Game extends ResourceController
             return $this->failUnauthorized();
         }
 
-        $season = GameLibrary::seasonOf(date('Y-m-d'));
+        $season = $this->game->current();
+
+        if (!$season) {
+            return $this->respond(['items' => [], 'count' => 0, 'points' => 0]);
+        }
+
         $limit  = max(1, min((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?: self::MINE_DEFAULT), self::MINE_MAX));
         $offset = max(0, (int) $this->request->getGet('offset', FILTER_SANITIZE_NUMBER_INT));
 
@@ -407,7 +613,12 @@ class Game extends ResourceController
      */
     public function recent(): ResponseInterface
     {
-        $season = GameLibrary::seasonOf(date('Y-m-d'));
+        $season = $this->game->current();
+
+        if (!$season) {
+            return $this->respond(['items' => []]);
+        }
+
         $limit  = max(1, min((int) ($this->request->getGet('limit', FILTER_SANITIZE_NUMBER_INT) ?: 6), 20));
         $locale = $this->request->getLocale();
 
@@ -566,7 +777,7 @@ class Game extends ResourceController
      * A person in the game, for their profile: the current season's score and place, the
      * confirmed places of all time, the quests walked, the seasons they took part in.
      *
-     * GET /game/users/:id → { season, points, places, place, players, confirmed, walked, seasons }
+     * GET /game/users/:id → { season (null between seasons), points, places, place, players, confirmed, walked, seasons }
      *
      * @param string|null $id
      *
@@ -579,11 +790,12 @@ class Game extends ResourceController
         }
 
         $db     = Database::connect();
-        $season = GameLibrary::seasonOf(date('Y-m-d'));
-        $me     = $this->standing($this->game->table($season['id']), (string) $id);
+        $season = $this->game->current();
+        $locale = $this->request->getLocale();
+        $me     = $this->standing($season ? $this->game->table($season['id']) : [], (string) $id);
 
         return $this->respond($me + [
-            'season'    => $this->seasonInfo($season),
+            'season'    => $season ? $this->seasonInfo($season, $locale) : null,
             'confirmed' => (int) ($db->table('users_visited_places')
                 ->select('COUNT(DISTINCT place_id) AS cnt', false)
                 ->where('user_id', $id)
@@ -592,39 +804,95 @@ class Game extends ResourceController
                 ->get()->getRow()->cnt ?? 0),
             'walked'    => $db->table('quests_walks')->where('user_id', $id)->where('finished_at IS NOT NULL', null, false)->countAllResults(),
             // The seasons they took part in: the season badges of the profile
-            'seasons'   => $this->game->participations((string) $id),
+            'seasons'   => $this->game->participations((string) $id, $locale),
         ]);
     }
 
-    /**
-     * The season of `?season=`, the current one without it.
-     *
-     * @return array{id: string, key: string, year: int, from: string, to: string}|null
-     */
-    private function requestedSeason(): ?array
-    {
-        $id = $this->request->getGet('season', FILTER_SANITIZE_SPECIAL_CHARS);
+    /** The pictures of a season, by column */
+    private const IMAGE_COLUMNS = ['medal_participant', 'medal_gold', 'medal_silver', 'medal_bronze'];
 
-        return $id ? GameLibrary::seasonById($id) : GameLibrary::seasonOf(date('Y-m-d'));
+    /** How many places have a point in a season */
+    private function placesCount(string $seasonId): int
+    {
+        return (int) (Database::connect()->table('game_points')
+            ->select('COUNT(DISTINCT place_id) AS cnt', false)
+            ->where(['season' => $seasonId, 'kind' => 'place'])
+            ->get()->getRow()->cnt ?? 0);
     }
 
     /**
-     * A season as the API sends it.
+     * A season as the API sends it: the texts in the visitor's language (English falls back to
+     * the Russian), the medal pictures, and where the season stands against today.
      *
+     * @param array<string, mixed> $season GameLibrary::find()
      * @return array<string, mixed>
      */
-    private function seasonInfo(array $season, ?object $row = null): array
+    private function seasonInfo(array $season, string $locale): array
     {
-        $today = date('Y-m-d');
-        $row ??= Database::connect()->table('game_seasons')->where('id', $season['id'])->get()->getRow();
+        $today = GameLibrary::today();
 
-        return $season + [
-            // The season's picture, drawn by the owner; a badge is drawn in its place without one
-            'image'    => $row->image ?? null,
-            'daysLeft' => $today <= $season['to'] ? (int) ((strtotime($season['to']) - strtotime($today)) / DAY) + 1 : 0,
-            'lastDay'  => $this->game->lastDay($season),
-            'closed'   => $row && $row->closed_at !== null,
-            'current'  => $today >= $season['from'] && $today <= $season['to'],
+        return [
+            'id'          => $season['id'],
+            'title'       => GameLibrary::localized($season, 'title', $locale) ?? $season['id'],
+            'description' => GameLibrary::localized($season, 'description', $locale),
+            'from'        => $season['from'],
+            'to'          => $season['to'],
+            'daysLeft'    => $today <= $season['to'] ? (int) ((strtotime($season['to']) - strtotime($today)) / DAY) + 1 : 0,
+            'lastDay'     => $this->game->lastDay($season),
+            // The season's picture: the medal of every participant; a badge is drawn in its place without one
+            'image'       => $season['image'],
+            'closed'      => $season['closed_at'] !== null,
+            'current'     => $today >= $season['from'] && $today <= $season['to'],
+            'upcoming'    => $today < $season['from'],
+            'medals'      => [
+                'gold'        => $season['medal_gold'],
+                'silver'      => $season['medal_silver'],
+                'bronze'      => $season['medal_bronze'],
+                'participant' => $season['medal_participant'],
+            ],
+        ];
+    }
+
+    /**
+     * A season as the administrator's page edits it: both languages, the stored dates, and how
+     * much is played in it (`points` above zero keeps it from being deleted).
+     *
+     * @param array<string, mixed> $season GameLibrary::find()
+     * @param int|null             $points the points of the season when the caller counted them already
+     * @return array<string, mixed>
+     */
+    private function adminInfo(array $season, ?int $points = null): array
+    {
+        $today       = GameLibrary::today();
+        $points    ??= Database::connect()->table('game_points')->where('season', $season['id'])->countAllResults();
+        $datesLocked = $season['closed_at'] !== null || $today > $this->game->lastDay($season);
+
+        return [
+            'id'             => $season['id'],
+            'title_ru'       => $season['title_ru'],
+            'title_en'       => $season['title_en'],
+            'description_ru' => $season['description_ru'],
+            'description_en' => $season['description_en'],
+            'starts_on'      => $season['from'],
+            'ends_on'        => $season['to'],
+            'image'          => $season['image'],
+            'medals'         => [
+                'gold'        => $season['medal_gold'],
+                'silver'      => $season['medal_silver'],
+                'bronze'      => $season['medal_bronze'],
+                'participant' => $season['medal_participant'],
+            ],
+            'closed'         => $season['closed_at'] !== null,
+            'closed_at'      => $season['closed_at'],
+            'players'        => $season['players'],
+            'places'         => $season['places'],
+            'points'         => $points,
+            'current'        => $today >= $season['from'] && $today <= $season['to'],
+            'upcoming'       => $today < $season['from'],
+            // The dates are frozen once the season is closed or its grace days are over (the
+            // tick may not have run yet); the start once anything is counted in it
+            'datesLocked'    => $datesLocked,
+            'startLocked'    => $datesLocked || $points > 0,
         ];
     }
 
@@ -661,7 +929,7 @@ class Game extends ResourceController
      *
      * @return array<int, array<string, mixed>>
      */
-    private function pastSeasons(): array
+    private function pastSeasons(string $locale): array
     {
         $rows = Database::connect()->table('game_seasons')
             ->where('closed_at IS NOT NULL', null, false)
@@ -672,16 +940,12 @@ class Game extends ResourceController
         $items = [];
 
         foreach ($rows as $row) {
-            $season = GameLibrary::seasonById($row->id);
+            $season = GameLibrary::fromRow($row);
 
-            if (!$season) {
-                continue;
-            }
-
-            $items[] = $this->seasonInfo($season, $row) + [
-                'players' => (int) $row->players,
-                'places'  => (int) $row->places,
-                'winners' => $this->game->withUsers(array_slice($this->game->table($row->id), 0, 3)),
+            $items[] = $this->seasonInfo($season, $locale) + [
+                'players' => $season['players'],
+                'places'  => $season['places'],
+                'winners' => $this->game->withUsers(array_slice($this->game->table($season['id']), 0, 3)),
             ];
         }
 

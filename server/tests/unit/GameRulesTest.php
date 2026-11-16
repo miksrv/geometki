@@ -6,7 +6,7 @@ use Config\Game;
 
 /**
  * The numbers of the game (Config\Game) and the pure parts of GameLibrary: the points of a
- * place, the seasons of the calendar, "near the place". No database.
+ * place, the medals of a season, "near the place". No database.
  *
  * @internal
  */
@@ -44,30 +44,23 @@ final class GameRulesTest extends CIUnitTestCase
         $this->assertSame($config->radius, $config->radiusOf('unknown'));
     }
 
-    public function testASeasonIsTheWarmOrTheColdHalfOfTheYear(): void
+    public function testTheMedalFollowsThePlaceOfTheFrozenTable(): void
     {
-        $cold = GameLibrary::seasonOf('2026-11-11');
+        $this->assertSame('gold', GameLibrary::medalOf(1));
+        $this->assertSame('silver', GameLibrary::medalOf(2));
+        $this->assertSame('bronze', GameLibrary::medalOf(3));
+        $this->assertSame('participant', GameLibrary::medalOf(4));
+        $this->assertSame('participant', GameLibrary::medalOf(250));
+    }
 
-        $this->assertSame('2026-cold', $cold['id']);
-        $this->assertSame('2026-10-01', $cold['from']);
-        $this->assertSame('2027-03-31', $cold['to']);
+    public function testTheTextsOfASeasonFallBackToRussian(): void
+    {
+        $season = ['title_ru' => 'Зима', 'title_en' => 'Winter', 'description_ru' => 'Текст', 'description_en' => null];
 
-        $warm = GameLibrary::seasonOf('2026-04-01');
-
-        $this->assertSame('2026-warm', $warm['id']);
-        $this->assertSame('2026-04-01', $warm['from']);
-        $this->assertSame('2026-09-30', $warm['to']);
-        $this->assertSame('2026-warm', GameLibrary::seasonOf('2026-09-30')['id']);
-
-        // A cold season spans two years and is named by the first
-        $this->assertSame('2026-cold', GameLibrary::seasonOf('2026-10-01')['id']);
-        $this->assertSame('2026-cold', GameLibrary::seasonOf('2027-03-31')['id']);
-        $this->assertSame('2025-cold', GameLibrary::seasonOf('2026-01-01')['id']);
-
-        $this->assertSame($cold, GameLibrary::seasonById('2026-cold'));
-        $this->assertNull(GameLibrary::seasonById('2026'));
-        $this->assertNull(GameLibrary::seasonById('26-cold'));
-        $this->assertNull(GameLibrary::seasonById('2026-autumn'));
+        $this->assertSame('Зима', GameLibrary::localized($season, 'title', 'ru'));
+        $this->assertSame('Winter', GameLibrary::localized($season, 'title', 'en'));
+        $this->assertSame('Текст', GameLibrary::localized($season, 'description', 'en'));
+        $this->assertNull(GameLibrary::localized(['description_ru' => '', 'description_en' => null], 'description', 'ru'));
     }
 
     public function testNearThePlaceIsTheRadiusOfItsCategoryPlusTheAccuracy(): void
