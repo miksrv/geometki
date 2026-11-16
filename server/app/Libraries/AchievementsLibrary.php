@@ -32,6 +32,21 @@ class AchievementsLibrary
         return false;
     }
 
+    /** What an award can be: its kind, tier, and the shelves it is put on (the ones the seeds use) */
+    public const TYPES      = ['base', 'seasonal'];
+    public const TIERS      = ['none', 'bronze', 'silver', 'gold'];
+    public const CATEGORIES = ['content', 'exploration', 'social', 'reputation', 'consistency', 'seasonal', 'game'];
+
+    /** The metrics resolveMetric() counts: what a rule may name */
+    public const METRICS = [
+        'places_created', 'spots_opened', 'places_edited', 'places_visited', 'visits_total', 'winter_visits',
+        'places_revisited', 'first_visit_of_year', 'places_confirmed', 'quests_walked', 'photos_uploaded',
+        'ratings_given', 'comments_written', 'bookmarks_added', 'reputation_score', 'experience_total',
+        'level_reached', 'days_active', 'login_streak',
+    ];
+
+    private const SMALLINT_MAX = 65535;
+
     private const TIER_ORDER = ['none' => 0, 'bronze' => 1, 'silver' => 2, 'gold' => 3];
 
     private array $metricMap = [
@@ -807,5 +822,219 @@ class AchievementsLibrary
         }
 
         return $map;
+    }
+
+    /**
+     * What the administrator sent for an award, checked: the clean fields to save, or the
+     * errors by field. A partial update (`$existing`) checks only what was sent.
+     *
+     * @param array<string, mixed>       $input
+     * @param array<string, mixed>|null  $existing the award being edited (its `type`, `season_start`, `season_end`), null for a new one
+     * @return array{0: array<string, mixed>, 1: array<string, string>} fields, errors
+     */
+    public static function validateAchievement(array $input, ?array $existing = null): array
+    {
+        $fields = [];
+        $errors = [];
+        $new    = $existing === null;
+        $has    = static fn (string $key): bool => array_key_exists($key, $input);
+
+        if ($new || $has('group_slug')) {
+            $slug = $input['group_slug'] ?? null;
+
+            if (!is_string($slug) || !preg_match('/^[A-Za-z0-9_-]{1,50}$/D', $slug)) {
+                $errors['group_slug'] = lang('Achievements.slugRequired');
+            } else {
+                $fields['group_slug'] = $slug;
+            }
+        }
+
+        foreach (['type' => [self::TYPES, 'base'], 'tier' => [self::TIERS, 'none']] as $key => [$allowed, $default]) {
+            if ($has($key) || $new) {
+                $value = $input[$key] ?? $default;
+
+                if (!is_string($value) || !in_array($value, $allowed, true)) {
+                    $errors[$key] = lang('Achievements.badEnum', [implode(', ', $allowed)]);
+                } else {
+                    $fields[$key] = $value;
+                }
+            }
+        }
+
+        if ($new || $has('category')) {
+            $category = $input['category'] ?? null;
+            $known    = array_merge(
+                self::CATEGORIES,
+                array_column(\Config\Database::connect()->table('achievements')->select('category')->distinct()->get()->getResultArray(), 'category')
+            );
+
+            if (!is_string($category) || !in_array($category, $known, true)) {
+                $errors['category'] = lang('Achievements.badEnum', [implode(', ', array_unique($known))]);
+            } else {
+                $fields['category'] = $category;
+            }
+        }
+
+        if ($new || $has('title_ru')) {
+            $title = is_string($input['title_ru'] ?? null) ? trim($input['title_ru']) : '';
+
+            if ($title === '') {
+                $errors['title_ru'] = lang('Achievements.titleRequired');
+            } elseif (mb_strlen($title) > 150) {
+                $errors['title_ru'] = lang('Achievements.textLong', [150]);
+            } else {
+                $fields['title_ru'] = $title;
+            }
+        }
+
+        // The English texts and the descriptions: a string, or null to clear; the title is never null in the table
+        foreach (['title_en' => 150, 'description_ru' => 5000, 'description_en' => 5000] as $key => $max) {
+            if (!$has($key)) {
+                continue;
+            }
+
+            if ($input[$key] !== null && !is_string($input[$key])) {
+                $errors[$key] = lang('Achievements.notString');
+            } elseif (mb_strlen(trim((string) $input[$key])) > $max) {
+                $errors[$key] = lang('Achievements.textLong', [$max]);
+            } else {
+                $text = trim((string) $input[$key]);
+
+                $fields[$key] = $key === 'title_en' ? $text : ($text !== '' ? $text : null);
+            }
+        }
+
+        if ($has('image')) {
+            if ($input['image'] !== null && !AdminImageLibrary::isOwnPath(is_string($input['image']) ? $input['image'] : null, 'achievements')) {
+                $errors['image'] = lang('Achievements.badImagePath');
+            } else {
+                $fields['image'] = $input['image'];
+            }
+        }
+
+        foreach (['xp_bonus', 'sort_order'] as $key) {
+            if ($has($key)) {
+                $value = $input[$key];
+
+                if (is_string($value) && preg_match('/^\d{1,5}$/', $value)) {
+                    $value = (int) $value;
+                }
+
+                if (!is_int($value) || $value < 0 || $value > self::SMALLINT_MAX) {
+                    $errors[$key] = lang('Achievements.badInt', [self::SMALLINT_MAX]);
+                } else {
+                    $fields[$key] = $value;
+                }
+            }
+        }
+
+        if ($has('is_active')) {
+            $flag = $input['is_active'];
+
+            if (!in_array($flag, [true, false, 0, 1, '0', '1'], true)) {
+                $errors['is_active'] = lang('Achievements.badBool');
+            } else {
+                $fields['is_active'] = (int) $flag;
+            }
+        }
+
+        if ($has('rules')) {
+            $rules = self::cleanRules($input['rules']);
+
+            if ($rules === null) {
+                $errors['rules'] = lang('Achievements.badRules');
+            } else {
+                $fields['rules'] = $rules;
+            }
+        }
+
+        // The window of a limited award: dates (a bare end day lasts to its last second)
+        foreach (['season_start' => '00:00:00', 'season_end' => '23:59:59'] as $key => $time) {
+            if (!$has($key)) {
+                continue;
+            }
+
+            $value = $input[$key];
+
+            if ($value === null || $value === '') {
+                $fields[$key] = null;
+            } elseif (is_string($value) && self::isDate($value, 'Y-m-d')) {
+                $fields[$key] = $value . ' ' . $time;
+            } elseif (is_string($value) && self::isDate($value, 'Y-m-d H:i:s')) {
+                $fields[$key] = $value;
+            } else {
+                $errors[$key] = lang('Achievements.badDate');
+            }
+        }
+
+        $type  = $fields['type'] ?? ($existing['type'] ?? 'base');
+        $start = array_key_exists('season_start', $fields) ? $fields['season_start'] : ($existing['season_start'] ?? null);
+        $end   = array_key_exists('season_end', $fields) ? $fields['season_end'] : ($existing['season_end'] ?? null);
+
+        if ($type === 'seasonal' && !isset($errors['season_start']) && !isset($errors['season_end']) && !isset($errors['type'])) {
+            if (!$start || !$end || (string) $start > (string) $end) {
+                $errors['season_start'] = lang('Achievements.seasonDates');
+            }
+        }
+
+        return [$fields, $errors];
+    }
+
+    /**
+     * The rules as they are stored: `{ metric, operator, value, filter? }` of known metrics.
+     * Null when it is not a list of such rules.
+     *
+     * @return array<int, array<string, mixed>>|null
+     */
+    private static function cleanRules(mixed $rules): ?array
+    {
+        if (!is_array($rules) || !array_is_list($rules) || count($rules) > 20) {
+            return null;
+        }
+
+        $clean = [];
+
+        foreach ($rules as $rule) {
+            if (
+                !is_array($rule)
+                || !is_string($rule['metric'] ?? null) || !in_array($rule['metric'], self::METRICS, true)
+                || !isset($rule['value']) || !is_numeric($rule['value']) || is_bool($rule['value']) || $rule['value'] < 0
+                || (isset($rule['operator']) && $rule['operator'] !== '>=')
+            ) {
+                return null;
+            }
+
+            $item = ['metric' => $rule['metric'], 'operator' => '>=', 'value' => $rule['value'] + 0];
+
+            if (isset($rule['filter'])) {
+                if (!is_array($rule['filter'])) {
+                    return null;
+                }
+
+                // The filters the metrics read (resolveMetric): a category of places, one quest
+                foreach (['category_id', 'quest_id'] as $key) {
+                    $value = $rule['filter'][$key] ?? null;
+
+                    if ($value !== null && !is_string($value) && !is_int($value)) {
+                        return null;
+                    }
+
+                    if ($value !== null && $value !== '') {
+                        $item['filter'][$key] = (string) $value;
+                    }
+                }
+            }
+
+            $clean[] = $item;
+        }
+
+        return $clean;
+    }
+
+    private static function isDate(string $value, string $format): bool
+    {
+        $date = \DateTime::createFromFormat('!' . $format, $value);
+
+        return $date !== false && $date->format($format) === $value;
     }
 }
