@@ -64,13 +64,13 @@ class GuestCache extends BaseConfig
 
     /**
      * Paths whose writes change nothing a guest sees, so they leave the cache: signing in,
-     * the user's own point, notifications, push devices, emails, OSM moderation, bookmarks,
+     * the user's own point, notifications, push devices, emails, the mailings, OSM moderation, bookmarks,
      * a photo not yet attached to a place, a place view
      *
      * @var string[]
      */
     public array $privateWrites = [
-        'auth', 'location', 'notifications', 'push', 'mail', 'sending-mail', 'osm-candidates', 'bookmarks',
+        'auth', 'location', 'notifications', 'push', 'mail', 'mailings', 'sending-mail', 'osm-candidates', 'bookmarks',
         'photos/upload/temporary', 'photos/rotate/temporary', 'photos/temporary', 'places/*/views',
         // Starting or giving up a walk of a quest changes nothing a guest sees; a confirmation is
         // a visit and clears

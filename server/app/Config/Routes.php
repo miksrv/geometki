@@ -230,6 +230,7 @@ $routes->group('achievements', static function ($routes) {
     $routes->get('/', 'Achievements::index');
     $routes->get('progress', 'Achievements::progress');
     $routes->get('manage', 'Achievements::manage');
+    $routes->get('manage/recent', 'Achievements::recent');
     $routes->get('(:segment)', 'Achievements::show/$1');
     $routes->post('/', 'Achievements::create');
     $routes->put('(:segment)', 'Achievements::update/$1');
@@ -273,8 +274,15 @@ $routes->group('game', static function ($routes) {
     $routes->get('mine', 'Game::mine');
     $routes->get('recent', 'Game::recent');
     $routes->get('exploration', 'Game::exploration');
+    // The administrator's seasons: before `seasons/(:segment)`, "manage" is a segment too
+    $routes->get('seasons/manage', 'Game::manage');
+    $routes->get('seasons/manage/(:segment)', 'Game::manageShow/$1');
     $routes->get('seasons/(:segment)', 'Game::season/$1');
+    $routes->post('seasons', 'Game::create');
+    $routes->patch('seasons/(:segment)', 'Game::update/$1');
+    $routes->delete('seasons/(:segment)', 'Game::delete/$1');
     $routes->post('seasons/(:segment)/image', 'Game::seasonImage/$1');
+    $routes->delete('seasons/(:segment)/image', 'Game::seasonImageDelete/$1');
     $routes->get('users/(:alphanum)', 'Game::user/$1');
     $routes->post('confirm', 'Game::confirm');
 
@@ -285,6 +293,8 @@ $routes->group('game', static function ($routes) {
     $routes->post('quests', 'Quests::create');
     $routes->post('quests/(:alphanum)/start', 'Quests::start/$1');
     $routes->delete('quests/(:alphanum)/walk', 'Quests::leave/$1');
+    $routes->post('quests/(:alphanum)/medal', 'Quests::medal/$1');
+    $routes->delete('quests/(:alphanum)/medal', 'Quests::medalDelete/$1');
     $routes->post('quests/(:alphanum)/confirm', 'Quests::confirm/$1');
     $routes->patch('quests/(:alphanum)', 'Quests::update/$1');
     $routes->delete('quests/(:alphanum)', 'Quests::delete/$1');
@@ -293,6 +303,27 @@ $routes->group('game', static function ($routes) {
     $routes->options('(:segment)', static function () {});
     $routes->options('(:segment)/(:segment)', static function () {});
     $routes->options('(:segment)/(:segment)/(:segment)', static function () {});
+});
+
+/** Mailings Controller: the email newsletters of the administrators **/
+$routes->group('mailings', static function ($routes) {
+    // Before `(:alphanum)`: "manage", "audience" and "preview" are alphanumeric too
+    $routes->get('manage', 'Mailings::manage');
+    $routes->get('manage/(:alphanum)', 'Mailings::manageShow/$1');
+    $routes->get('audience', 'Mailings::audience');
+    $routes->post('/', 'Mailings::create');
+    $routes->post('preview', 'Mailings::preview');
+    $routes->patch('(:alphanum)', 'Mailings::update/$1');
+    $routes->delete('(:alphanum)', 'Mailings::delete/$1');
+    $routes->post('(:alphanum)/image', 'Mailings::image/$1');
+    $routes->delete('(:alphanum)/image', 'Mailings::imageDelete/$1');
+    $routes->post('(:alphanum)/test', 'Mailings::test/$1');
+    $routes->post('(:alphanum)/send', 'Mailings::send/$1');
+    $routes->post('(:alphanum)/cancel', 'Mailings::cancel/$1');
+
+    $routes->options('/', static function () {});
+    $routes->options('(:segment)', static function () {});
+    $routes->options('(:segment)/(:segment)', static function () {});
 });
 
 /** Collections Controller **/
