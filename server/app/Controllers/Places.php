@@ -7,6 +7,7 @@ use App\Entities\PlaceEntity;
 use App\Libraries\AvatarLibrary;
 use App\Libraries\GameLibrary;
 use App\Libraries\Geocoder;
+use App\Libraries\PlaceOutlines;
 use App\Libraries\LevelsLibrary;
 use App\Libraries\PhotoLibrary;
 use App\Libraries\PlaceCoverLibrary;
@@ -660,6 +661,11 @@ class Places extends ResourceController
             // where nothing substantive changed but we still need to record the edit time
             if ($hasChanges) {
                 $this->model->update($id, $place);
+
+                // Another point or category may have another outline: looked up again by the cron
+                if ($moved || (isset($input['category']) && $input['category'] !== $placeData->category)) {
+                    PlaceOutlines::forget($id);
+                }
             } elseif (!$isBot) {
                 $this->model->touch($id);
             }

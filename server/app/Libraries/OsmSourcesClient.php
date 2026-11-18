@@ -11,8 +11,8 @@ use Throwable;
 
 /**
  * Network side of OSM candidates: Overpass for the objects, Wikipedia geosearch for the articles
- * missing in OSM, Wikidata for the popularity. Used only by the background collector,
- * never from a user request.
+ * missing in OSM, Wikidata for the popularity; the outlines of places (PlaceOutlines). Used only
+ * by background commands, never from a user request.
  *
  * @package App\Libraries
  */
@@ -79,7 +79,17 @@ class OsmSourcesClient
      */
     public function fetchElements(array $bounds): array
     {
-        $query  = $this->buildQuery($bounds);
+        return $this->overpass($this->buildQuery($bounds));
+    }
+
+    /**
+     * Runs an Overpass QL query (`[out:json]`) on the first server that answers it
+     *
+     * @return array Overpass elements
+     * @throws RuntimeException when every server fails
+     */
+    public function overpass(string $query): array
+    {
         $errors = [];
 
         foreach ($this->config->overpassServers as $server) {
