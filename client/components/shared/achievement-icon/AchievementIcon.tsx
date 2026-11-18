@@ -4,15 +4,15 @@ import Image from 'next/image'
 
 import { IMG_HOST } from '@/config/env'
 
-import { AwardBadge } from './AwardBadge'
+import { AwardBadge, AwardField } from './AwardBadge'
 
 interface AchievementIconProps {
     image?: string | null
     alt?: string
     size?: number
-    /** For an award without a picture: its tier, category and group draw one (`AwardBadge`) */
+    /** For an award without a picture: its tier and group draw one (`AwardBadge`) */
     tier?: string
-    category?: string
+    category?: AwardField
     group?: string
     /** Without `image`: a photo cut to the hexagon in place of the drawn symbol (`AwardBadge`) */
     photo?: string
@@ -21,7 +21,7 @@ interface AchievementIconProps {
 
 /**
  * The picture of an award: its own drawn one, or — until it is ready — a badge in the same
- * format drawn from the award's tier, category and group (a season's warm or cold).
+ * format drawn from the award's tier and group (a season's warm or cold).
  */
 export const AchievementIcon: React.FC<AchievementIconProps> = ({
     image,

@@ -21,13 +21,12 @@ jest.mock('@/config/env', () => ({
 }))
 
 describe('AwardBadge', () => {
-    it('picks the symbol by the group, then by the category', () => {
-        expect(awardSymbol('season-2027-warm', 'seasonal')).toBe('warm')
-        expect(awardSymbol('season-2026-cold', 'seasonal')).toBe('cold')
-        expect(awardSymbol('wayfarer', 'game')).toBe('quest')
-        expect(awardSymbol('pathfinder', 'game')).toBe('pin')
-        expect(awardSymbol('photographer', 'content')).toBe('camera')
-        expect(awardSymbol(undefined, undefined)).toBe('star')
+    it('picks the symbol by the group', () => {
+        expect(awardSymbol('season-2027-warm')).toBe('warm')
+        expect(awardSymbol('season-2026-cold')).toBe('cold')
+        expect(awardSymbol('quest-space-orenburg')).toBe('quest')
+        expect(awardSymbol('pathfinder')).toBe('star')
+        expect(awardSymbol(undefined)).toBe('star')
     })
 
     it('draws the rim by the tier and the field by the group', () => {
@@ -35,7 +34,6 @@ describe('AwardBadge', () => {
             <AwardBadge
                 size={48}
                 tier={'gold'}
-                category={'game'}
                 group={'pathfinder'}
             />
         )
@@ -56,13 +54,12 @@ describe('AwardBadge', () => {
 
         expect(container.querySelector('svg')).toHaveClass('tier-none', 'field-cold')
 
-        // Every quest award is orange, whatever its category
+        // Every quest award is orange, whatever its field
         rerender(
             <AwardBadge
                 size={48}
                 tier={'bronze'}
-                category={'game'}
-                group={'wayfarer'}
+                group={'quest-space-orenburg'}
             />
         )
 
@@ -108,7 +105,6 @@ describe('AchievementIcon', () => {
             <AchievementIcon
                 size={48}
                 tier={'silver'}
-                category={'game'}
                 group={'pathfinder'}
             />
         )

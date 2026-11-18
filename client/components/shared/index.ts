@@ -1,6 +1,5 @@
 export { AppLayout } from '../layout'
 export { MapObjectLayersEnum, MapObjectsTypeEnum } from '../map'
-export { AchievementBadge } from './achievement-card'
 export { AchievementIcon, AwardBadge } from './achievement-icon'
 export { AddToCollectionButton, AddToCollectionModal, collectionPickerStyles } from './add-to-collection'
 export { ADMIN_HREF, AdminPageShell, type AdminPageShellProps, type AdminSection } from './admin-page-shell'
@@ -58,9 +57,7 @@ export { Section, type SectionProps } from './section'
 export { SiteSearch, type SiteSearchHandle, SiteSearchScreen } from './site-search'
 export {
     ACHIEVEMENT_TYPE_TONES,
-    MAIL_STATUS_TONES,
     MAILING_STATUS_TONES,
-    SEASON_STATUS_TONES,
     StatusBadge,
     type StatusBadgeProps,
     type StatusTone

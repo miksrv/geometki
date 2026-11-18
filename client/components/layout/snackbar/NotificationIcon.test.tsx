@@ -120,7 +120,7 @@ describe('NotificationIcon', () => {
                     type={'achievements' as any}
                     id={'n1'}
                     read={false}
-                    meta={{ category: 'game', group: 'pathfinder', tier: 'silver' }}
+                    meta={{ group: 'pathfinder', tier: 'silver' }}
                 />
             )
 
