@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
 
-import packageInfo from '@/package.json'
+import { APP_VERSION } from '@/config/env'
 import { formatDate } from '@/utils/helpers'
 
 import { LanguageSwitcher } from '../language-switcher'
@@ -40,7 +40,7 @@ export const Footer: React.FC<{ className?: string }> = ({ className }) => {
                     </span>
                     <span className={styles.version}>
                         {'v'}
-                        <span>{packageInfo.version}</span>
+                        <span>{APP_VERSION}</span>
                     </span>
                     <Link href={'/about'}>{t('about-title')}</Link>
                     <Link href={'/rules'}>{t('rules-title')}</Link>

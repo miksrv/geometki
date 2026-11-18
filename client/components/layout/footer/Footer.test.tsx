@@ -33,7 +33,7 @@ jest.mock('@/utils/helpers', () => ({
     formatDate: () => '2026'
 }))
 
-jest.mock('@/package.json', () => ({ version: '1.5.0' }), { virtual: true })
+jest.mock('@/config/env', () => ({ APP_VERSION: '1.5.0' }))
 
 describe('Footer', () => {
     describe('rendering', () => {
