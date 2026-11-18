@@ -13,6 +13,7 @@ The whole schedule (times are the server's clock):
 * * * * *  cd /path/to/server && php spark osm:collect >> /dev/null 2>&1          # OSM candidates for queued tiles
 0 * * * *  cd /path/to/server && php spark trending:refresh >> /dev/null 2>&1     # trending scores
 0 9 * * 1  cd /path/to/server && php spark digest:weekly >> /dev/null 2>&1        # weekly digest, Monday
+30 * * * * cd /path/to/server && php spark places:outlines >> /dev/null 2>&1     # OSM outlines of new large places (game)
 ```
 
-Run by hand, not on a schedule: `notifications:prune` and `sessions:prune` when the tables grow; `achievements:evaluate --all` after adding or changing an achievement (achievements are otherwise checked on every action). `interests:refresh` is not needed either: interest profiles refresh on demand when stale. All commands: `php spark list`, or the table in [API.md](API.md#cli-commands).
+Run by hand, not on a schedule: `notifications:prune` and `sessions:prune` when the tables grow; `achievements:evaluate --all` after adding or changing an achievement (achievements are otherwise checked on every action); `achievements:rebuild` after raising a threshold — it quietly takes back the awards no longer met, gives the missing ones and recounts the levels (`--dry-run` first, back up the database). `interests:refresh` is not needed either: interest profiles refresh on demand when stale. All commands: `php spark list`, or the table in [API.md](API.md#cli-commands).

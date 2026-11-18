@@ -1470,8 +1470,7 @@ What a link unsubscribes from and whether those emails are still on. Changes not
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| token | string | One of | Unsubscribe token from an email |
-| mail | string | One of | ID of a `sending_mail` row — the links of emails sent before tokens; they stop working when `notifications:send` deletes the row (90 days) |
+| token | string | Yes | Unsubscribe token from an email |
 
 **Response:**
 
@@ -1479,7 +1478,7 @@ What a link unsubscribes from and whether those emails are still on. Changes not
 { "token": "65cfa7cc34b74.comment.qLEw_exq3BSco2NYTSZ-Ow", "scope": "comment", "subscribed": true }
 ```
 
-`subscribed` is `true` while any type of the scope is on. For a `mail` link, `token` is the token to POST.
+`subscribed` is `true` while any type of the scope is on; `token` is the token to POST.
 
 **Error responses:** `400` — invalid or forged token, unknown email or user
 
@@ -1504,6 +1503,18 @@ Turns the emails of the token's scope off, or every email with `scope: "all"`. S
 **Error responses:** `400` — invalid or forged token
 
 ---
+
+#### `GET /mail/queue`
+
+Whether the emails go out, for the admin dashboard. Admin only (`401` for a guest, `403` for a member); never cached.
+
+**Response:**
+
+```json
+{ "last_run_at": "2026-11-16 10:05:00", "sent_day": 42, "pending": 3, "overdue": 0, "errors_week": 1 }
+```
+
+`last_run_at` — when a `notifications:send` run last got through the email queue (UTC; `null` when unknown: the job never ran or the cache was cleared); with the job every minute an older time means it stopped. `sent_day` — letters sent during the last 24 hours (`completed`, `grouped`); `pending` — letters waiting or being sent; `overdue` — the waiting ones whose time to go came over 30 minutes ago (the bulk mail — digests and mailings — is left out: over the hosting limits it waits on purpose); `errors_week` — letters failed (`error`) during the last 7 days. The done rows are deleted after 7 days, so there is no longer history.
 
 ### Push
 
@@ -1762,11 +1773,11 @@ The signed-in user's own visits of a place and the questions the place's categor
     { "key": "can", "features": ["swim", "camp", "kids", "winter", "drink"] }
   ],
   "repeatDays": 7,
-  "game": { "season": "2026-cold", "points": 30, "position": 2, "photoBonus": 5, "radius": 500, "earned": null, "way": null }
+  "game": { "season": "6f1c2a9e0b3d4", "points": 30, "position": 2, "photoBonus": 5, "radius": 500, "earned": null, "way": null }
 }
 ```
 
-`game` — only for those the game is open to (see Game), `null` outside a season that takes confirmations: what "I am here" at the place gives the visitor now (`points`; a photo adds `photoBonus`), how near "near" is (`radius`, metres), and their own score of the season there (`earned`, `way`: `photo` or `geo`) once the place is counted. A visit confirmed in the game carries `confirmed: "photo" | "geo"`.
+`game` — only for those the game is open to (see Game), `null` outside a season that takes confirmations: what "I am here" at the place gives the visitor now (`points`; a photo adds `photoBonus`), how near "near" is (`radius`, metres: the radius of the place, see "Near the place"), and their own score of the season there (`earned`, `way`: `photo` or `geo`) once the place is counted. A visit confirmed in the game carries `confirmed: "photo" | "geo"`.
 
 `repeatDays`: a new visit is made no sooner than this many days after the latest one; the latest visit younger than this is the one a tap cancels (the days are the visitor's, `visitedAt`).
 
@@ -1784,10 +1795,10 @@ Check in at a place. **Auth required:** Yes
 |-------|------|----------|-------------|
 | place | string | Yes | Place ID |
 | visitedAt | string | No | The visitor's day, `YYYY-MM-DD`; today (server) by default. Must be a real date within a day of the server's today: up to two days back, one day forward |
-| lat, lon | number | No | The game: the visitor's position, the browser's answer to the tap. Near the place the check-in is a confirmed one and counts the place in the season. Compared with the place and dropped; ignored while the game is closed to the user |
+| lat, lon | number | No | The visitor's position, the browser's answer to the tap. Near the place the check-in is a confirmed one, with or without a season; within a season it also counts the place there. Compared with the place and dropped |
 | accuracy | number | No | Metres, as the browser reports it |
 
-With the game open to the user the answer has `game: { confirmed, points, far? }`: whether this check-in counted the place (the position was near), the season points it added (0 when the place was counted already), and how far the place is (`"2,4 км"`) when a position was sent and is not near. Far away or without a position the check-in is a plain visit, never an error. A visit a photo made quietly (shot at the place within the season, no check-in of the person's own: it only carries the score, is in no list and not in `GET /visits/me`) is shown by the person's check-in in its week and answered with `isNew: true`.
+The answer has `game: { confirmed, points, far? }`: whether this check-in confirmed the visit (the position was near), the season points it added (0 outside a season or when the place was counted already), and how far the place is (`"2,4 км"`) when a position was sent and is not near. Far away or without a position the check-in is a plain visit, never an error.
 
 **Response:** `201 Created` with the visit and `isNew: true`, `ordinal` (which visit of the place this is, counting everybody's) and `firstThisYear` (no other visit of the place this year up to it). `200 OK` with the existing visit and `isNew: false` when the user already has a visit of that place less than `repeatDays` (7) days from that day either way (idempotent within the week; also for two simultaneous taps and a resend from the offline queue). The photos the user uploaded to the place that day before the tap become the visit's. The place's author is notified; a bare visit gives no experience.
 
@@ -1830,22 +1841,24 @@ Delete a visit: its `visit` activity goes, the feed, experience and "now" answer
 
 The game (`features/26-game-seasons-and-quests.md`): a visit confirmed by a photo shot at the place or by "I am here" gives season points, once a season for a place; quests are walked point by point. Open to everyone, no switch. None of it is in the guest cache: every answer depends on the visitor.
 
-A **season** is made by hand by an administrator (`/game/seasons/manage`): its own `id`, dates, title, description and one picture — the medal of every participant (`participant`, also the season's `image` everywhere) — with its gold, silver and bronze variants for the places 1–3. Nothing is created by the calendar; seasons never overlap, and between two of them the game is empty (visits are plain). The game's days are Moscow days (`GameLibrary::today()`; the server runs in UTC): a season starts and ends, takes confirmations and closes by them. A season takes confirmations until `graceDays` after its end, then `php spark game:tick` closes it and freezes its table. Everyone in the frozen table has a medal: places 1, 2, 3 — gold, silver, bronze, every other participant — the grey one (`participant`); the medal is read from the frozen place, not stored.
+A **season** is made by hand by an administrator (`/game/seasons/manage`): a random `id` given on creation (13 hex characters, like any other entity's), dates, title, description and one picture — the medal of every participant (`participant`, also the season's `image` everywhere) — with its gold, silver and bronze variants for the places 1–3. Nothing is created by the calendar; seasons never overlap, and between two of them the game is empty (visits are plain). The game's days are Moscow days (`GameLibrary::today()`; the server runs in UTC): a season starts and ends, takes confirmations and closes by them. A season takes confirmations until `graceDays` after its end, then `php spark game:tick` closes it and freezes its table. Everyone in the frozen table has a medal: places 1, 2, 3 — gold, silver, bronze, every other participant — the grey one (`participant`); the medal is read from the frozen place, not stored.
 
 A season as sent everywhere (`season` of `GET /game`, `GET /game/seasons/:id`, `GET /game/users/:id`, and each of `seasons` in `GET /game`):
 
 ```json
 {
-  "id": "2026-cold", "title": "Холодный сезон 2026/27", "description": "…" ,
+  "id": "6f1c2a9e0b3d4", "slug": "kholodnyy-sezon-2026-27", "title": "Холодный сезон 2026/27", "description": "…" ,
   "from": "2026-10-01", "to": "2027-03-31", "daysLeft": 138, "lastDay": "2027-04-07", "image": "uploads/seasons/…",
   "closed": false, "current": true, "upcoming": false,
   "medals": { "gold": "uploads/seasons/…", "silver": null, "bronze": null, "participant": null }
 }
 ```
 
-`title` / `description` are in the visitor's language (English falls back to the Russian text; `description` is null without one); `upcoming` — it has not started yet; picture fields are null until uploaded.
+`slug` is made from the Russian title on the fly (not stored, so it follows the title); a season's page is `/game/seasons/{id}-{slug}`, while the API takes the bare `id`. `title` / `description` are in the visitor's language (English falls back to the Russian text; `description` is null without one); `upcoming` — it has not started yet; picture fields are null until uploaded.
 
 The points of a confirmed place: `round(base × category × order) + photo bonus + white spot bonus` (`Config\Game`; `GET /game` sends every number as `rules`).
+
+**Near the place** (`GameLibrary::isNear()`, numbers in `Config\Game`): within the radius of the place plus the reported accuracy of the position (at most `accuracySlack`, 150 m), or within `outlineBuffer` (250 m, plus the accuracy) of its OSM outline. The radius is the category's (`radiuses`), cut to `neighbourShare` (60%) of the way to the nearest other place, never below `radiusFloor` (75 m); a cut radius takes at most half of itself for the accuracy, so standing at one place never confirms its neighbour. The outlines of large places (a lake, a park, a kremlin) are looked up in OSM by `php spark places:outlines` (`places_outlines`): only the categories of `outlineTags`, only an object named like the place; a place that moves or changes its category is looked up again. A far answer names the metres to the place, or to its outline when that is nearer.
 
 #### `GET /game`
 
@@ -1853,7 +1866,7 @@ The section: the current season (between seasons the nearest one to come, `upcom
 
 ```json
 {
-  "season": { "id": "2026-cold", "title": "Холодный сезон 2026/27", "…": "see the season above" },
+  "season": { "id": "6f1c2a9e0b3d4", "slug": "kholodnyy-sezon-2026-27", "title": "Холодный сезон 2026/27", "…": "see the season above" },
   "rules": {
     "base": 10,
     "categories": { "memorial": 1, "manor": 1.5, "cave": 2 },
@@ -1861,14 +1874,14 @@ The section: the current season (between seasons the nearest one to come, `upcom
     "photoBonus": 5, "spotBonus": 10, "graceDays": 7,
     "radius": 300, "radiuses": { "memorial": 200, "water": 3000 }
   },
-  "awards": [{ "id": "…", "title": "…", "description": "…", "image": null, "tier": "none", "category": "exploration", "group": "…", "from": "2026-10-01", "to": "2026-10-31", "experience": 30, "earned": null, "progress": { "current": 1, "required": 3, "pct": 33.3 } }],
+  "awards": [{ "id": "…", "title": "…", "description": "…", "image": null, "tier": "none", "group": "…", "from": "2026-10-01", "to": "2026-10-31", "experience": 30, "earned": null, "progress": { "current": 1, "required": 3, "pct": 33.3 } }],
   "totals": { "players": 10, "places": 31, "quests": 1 },
   "me": { "place": 9, "points": 50, "places": 2, "quests": 0, "players": 10, "ahead": 20 },
-  "seasons": [{ "id": "2026-warm", "title": "Тёплый сезон 2026", "closed": true, "…": "…", "players": 4, "places": 12, "winners": [{ "place": 1, "points": 120, "places": 5, "quests": 0, "user": { "id": "…", "name": "…", "avatar": "…", "levelData": { "level": 7 } } }] }]
+  "seasons": [{ "id": "9a0e5c71d2b48", "slug": "tyoplyy-sezon-2026", "title": "Тёплый сезон 2026", "closed": true, "…": "…", "players": 4, "places": 12, "winners": [{ "place": 1, "points": 120, "places": 5, "quests": 0, "user": { "id": "…", "name": "…", "avatar": "…", "levelData": { "level": 7 } } }] }]
 }
 ```
 
-`me` only for a signed-in visitor (`place` is null while they have no points). With no season, or one not started, `totals.players` and `totals.places` are 0, `me` is the empty standing, and `awards` is `[]` for no season. A season has no award of its own: `awards` are the limited achievements (`type` = `seasonal`) whose dates lie within the season, with the visitor's `earned` and `progress`. `ahead` is the points to the player above.
+`me` only for a signed-in visitor (`place` is null while they have no points). With no season, or one not started, `totals.players` and `totals.places` are 0, `me` is the empty standing, and `awards` is `[]` for no season. A season has no award of its own: `awards` are the limited achievements (`type` = `seasonal`) whose dates lie within the season and that are running now (begun, not over: one made ahead shows up on the day it begins), with the visitor's `earned` and `progress` (`rules`: each rule apart, as in `GET /users/:id/achievements/:group`). `ahead` is the points to the player above.
 
 #### `GET /game/leaders`
 
@@ -1896,7 +1909,7 @@ All of these are for **administrators only** (`401` for a guest, `403` for anyon
 
 ```json
 {
-  "id": "2026-cold", "title_ru": "Холодный сезон 2026/27", "title_en": "Cold season 2026/27", "description_ru": null, "description_en": null,
+  "id": "6f1c2a9e0b3d4", "slug": "kholodnyy-sezon-2026-27", "title_ru": "Холодный сезон 2026/27", "title_en": "Cold season 2026/27", "description_ru": null, "description_en": null,
   "starts_on": "2026-10-01", "ends_on": "2027-03-31", "image": null,
   "medals": { "gold": null, "silver": null, "bronze": null, "participant": null },
   "closed": false, "closed_at": null, "players": 0, "places": 0,
@@ -1904,47 +1917,46 @@ All of these are for **administrators only** (`401` for a guest, `403` for anyon
 }
 ```
 
-`points` is the number of `game_points` rows: above zero, the season cannot be deleted. `datesLocked` — closed or past its grace days, the dates cannot change; `startLocked` — that, or points are counted: the start cannot change. `players` / `places` are the totals frozen when it closed.
+`points` is the number of `game_points` rows. Only a season still to come (`upcoming`) can be deleted. `datesLocked` — closed or past its grace days, the dates cannot change; `startLocked` — that, or points are counted: the start cannot change. `players` / `places` are the totals frozen when it closed.
 
-All of these are for administrators: `401` for a guest, `403` for a member (the same on the achievements and sending-mail admin endpoints). A body that is not a JSON object (malformed JSON, a string, a list) is `400` with `messages.error`.
+All of these are for administrators: `401` for a guest, `403` for a member (the same on the achievements, mailings and `GET /mail/queue` admin endpoints). A body that is not a JSON object (malformed JSON, a string, a list) is `400` with `messages.error`.
 
 - `GET /game/seasons/manage` → `{ "items": [SeasonAdmin] }`, the latest start first.
 - `GET /game/seasons/manage/:id` → `SeasonAdmin`; 404 for an unknown id.
-- `POST /game/seasons` — JSON `{ id, title_ru, title_en?, description_ru?, description_en?, starts_on, ends_on }` → `201 SeasonAdmin`.
-- `PATCH /game/seasons/:id` — the same fields without `id`, only what is sent → `SeasonAdmin`.
-- `DELETE /game/seasons/:id` → `{ "id": "…" }`; `400` with `messages.error` when the season has points. Its pictures are deleted too.
+- `POST /game/seasons` — JSON `{ title_ru, title_en?, description_ru?, description_en?, starts_on, ends_on }` → `201 SeasonAdmin`.
+- `PATCH /game/seasons/:id` — the same fields, only what is sent → `SeasonAdmin`. A new `title_ru` changes `slug`, and with it the page's address.
+- `DELETE /game/seasons/:id` → `{ "id": "…" }`; `400` with `messages.error` once the season has begun (its first day, Moscow time, has come). Its pictures are deleted too.
 - `POST /game/seasons/:id/image` — multipart: `image` (PNG, or SVG with or without the XML prologue, up to 1 MB; the type is read from the content) and `kind`: `participant` (the default; the season's picture), `gold`, `silver` or `bronze`. Replaces that picture (the old file is deleted) → `SeasonAdmin`.
 - `DELETE /game/seasons/:id/image?kind=…` — takes that picture off and deletes the file → `SeasonAdmin`.
 
-Validation (field → rule): `id` — `^[a-z0-9][a-z0-9-]{1,15}$`, unique; `title_ru` — required, up to 150 characters; `title_en` — up to 150; `description_*` — up to 5000; `starts_on`, `ends_on` — real `Y-m-d` days, `ends_on` not before `starts_on` (error on `ends_on`); `starts_on` also carries the other two errors: dates overlapping another season (inclusive; the message names it) and changed dates of a closed season (its table is frozen). An empty `title_en` / `description_*` clears it; a value that is neither a string nor null is an error on its field. `kind` unknown: `400` on `kind`.
+Validation (field → rule): `title_ru` — required, up to 150 characters; `title_en` — up to 150; `description_*` — up to 5000; `starts_on`, `ends_on` — real `Y-m-d` days, `ends_on` not before `starts_on` (error on `ends_on`); `starts_on` also carries the other two errors: dates overlapping another season (inclusive; the message names it) and changed dates of a closed season (its table is frozen). An empty `title_en` / `description_*` clears it; a value that is neither a string nor null is an error on its field. `kind` unknown: `400` on `kind`.
 
-- Reserved ids: `manage` (it is the route `GET /game/seasons/manage`) and the other words of the game's routes (`new`, `create`, `image`, `seasons`, `leaders`, `places`, `mine`, `recent`, `exploration`, `confirm`, `users`, `quests`) — `400` on `id`.
 - Dates once a season has points: `starts_on` cannot change (`400` on `starts_on`); `ends_on` cannot move before the latest counted day (the visit day behind a point, else the day the point was written) nor before today (`400` on `ends_on`); a later end is fine. A season past its grace days that the tick has not closed yet is treated like a closed one: its dates stay. A season without points has free dates (but never overlapping another).
-- Creating, changing and deleting seasons are serialised by a lock (`GET_LOCK('game_seasons')`) and run in a transaction with the season's row held: parallel requests cannot make overlapping seasons, a taken id is `400` on `id`, and a delete cannot race with a check-in. When the lock cannot be had in 5 seconds: `400` with `messages.error` (try again).
+- Creating, changing and deleting seasons are serialised by a lock (`GET_LOCK('game_seasons')`) and run in a transaction with the season's row held: parallel requests cannot make overlapping seasons, and a delete cannot race with a check-in. When the lock cannot be had in 5 seconds: `400` with `messages.error` (try again).
 - Pictures: an SVG with a `<script>`, an event handler (`on…=`), `<foreignObject>`, a `javascript:` / `data:` link, a `href` / `xlink:href` that is not `#id`, an external `url(…)` / `@import`, a doctype or entity, or that is not well-formed XML is `400`. Files are named by the server; the extension comes from the content.
 - The tick (`php spark game:tick`) closes a season only when today is past its last day (`to` + `graceDays`), holding the row until the table is frozen; a second run closes nothing. A check-in that comes after the close counts nowhere.
 
 #### `GET /game/places`
 
-The valuable places: what the visitor has not confirmed this season, the most points first (`{ items: [], count: 0 }` with no current season). With `lat` / `lon` — of the 60 places nearest to that point, with `distance`. `limit` default 6, max 24.
+The valuable places: what the visitor has not confirmed this season, the most points first (`{ items: [], count: 0 }` with no current season). With `lat` / `lon` — of the 60 places nearest to that point, with `distance`; with `radius` (km, at most 500) too — only those within it, and when none is there, the nearest ones by distance (the home page asks for 20 km). `limit` default 6, max 24.
 
 **Response:** `{ "items": [<place list item> + { "game": { "points": 40, "position": 1 } }], "count": 6 }`.
 
 #### `GET /game/recent`
 
-What is going on in the game: the latest confirmed places and walked quests of the current season (`limit` default 6, max 20), the hidden visits of an unfinished riddle quest left out. `{ "items": [{ "id": "…", "kind": "place" | "quest", "points": 40, "way": "geo" | "photo" | null, "created": {…}, "user": {…}, "place": { "…": "place list item" } }] }`; a `quest` item carries `quest: { id, title }` instead of `place`.
+What is going on in the game: the latest confirmed places and walked quests of the current season (`limit` default 6, max 20), the hidden visits of an unfinished riddle quest left out. `{ "items": [{ "id": "…", "kind": "place" | "quest", "points": 40, "way": "geo" | "photo" | null, "created": {…}, "user": {…}, "place": { "…": "place list item" } }] }`; a `quest` item carries `quest: { id, slug, title }` instead of `place`.
 
 #### `POST /game/confirm`
 
-"I am here": the position is compared with the place (the radius of its category, plus the reported accuracy up to 150 m) and dropped — nothing of it is stored. Near the place it checks the visitor in (the visit of the week, or a new one), confirms the visit and counts the place in the season. **Auth required:** Yes
+"I am here": the position is compared with the place (see "Near the place" below) and dropped — nothing of it is stored. Near the place it checks the visitor in (the visit of the week, or a new one) and confirms the visit, with or without a season; within a season it also counts the place there. **Auth required:** Yes
 
 ```json
 { "place": "a1b2c3d4e5f6g", "lat": 51.7547, "lon": 55.1065, "accuracy": 20, "visitedAt": "2026-11-11" }
 ```
 
-**Response `200`:** `{ "confirmed": true, "isNew": true, "points": 40, "total": 90, "season": "2026-cold", "visit": { "id": "…", "visitedAt": "2026-11-11" } }`. `points` is 0 when the place was counted this season already. **`400`** when the place is far (`messages.error` says how far), the position is missing or the day is out of the check-in window.
+**Response `200`:** `{ "confirmed": true, "isNew": true, "points": 40, "total": 90, "season": "6f1c2a9e0b3d4", "visit": { "id": "…", "visitedAt": "2026-11-11" } }`. `points` is 0 outside a season or when the place was counted this season already; `total` and `season` are `null` outside a season. **`400`** when the place is far (`messages.error` says how far), the position is missing or the day is out of the check-in window.
 
-A photo confirms a visit too, with no endpoint of its own: `POST /photos/upload/:id` (and the photos of a new place) reads the shot moment and the GPS position from the EXIF; a photo shot near the place within a season that still takes confirmations confirms the uploader's visit of its shot day (making one when there is none) and adds the photo bonus. The upload answers `game: { points, total }` then, `null` otherwise.
+A photo confirms a visit too, with no endpoint of its own: `POST /photos/upload/:id` (and the photos of a new place) reads the shot moment and the GPS position from the EXIF; a photo shot near the place (on a day not ahead of today) confirms the uploader's visit of its shot day (making one when there is none — a visit like any other: the button is pressed, it is in the lists and the feed, only no questions are asked), with or without a season; within a season that still takes confirmations it also counts the place there and adds the photo bonus. The upload answers `game: { points, total }` when the photo confirmed a visit (`points` 0 and `total` null outside a season), `null` otherwise.
 
 #### `GET /game/exploration`
 
@@ -1952,7 +1964,17 @@ A photo confirms a visit too, with no endpoint of its own: `POST /photos/upload/
 
 #### `GET /game/users/:id`
 
-A person in the game, for their profile: their line of the current season (`place`, `points`, `places`, `quests`, `players`, `ahead`), `season`, `confirmed` (places of all time), `walked` (quests), `seasons` — the seasons they took part in, the latest first: `id`, `title`, `image`, `closed`, `points`, `places`, `place`, `medal` (`gold` / `silver` / `bronze` / `participant` by the frozen place; null while the season is open, and for a closed season whose frozen table has no line for the person) and `medalImage` (the matching `medals.*` picture, the participant's one when the place has no variant; null when none is uploaded) — the season badges of a profile. `season` is null between seasons (then the line is the empty one).
+A person in the game, for their profile: their line of the current season (`place`, `points`, `places`, `quests`, `players`, `ahead`), `season`, `confirmed` (places of all time), `walked` (quests), `seasons` — the seasons they took part in, the latest first: `id`, `slug`, `title`, `image`, `from` / `to` (`YYYY-MM-DD`), `closed`, `points`, `places`, `place`, `medal` (`gold` / `silver` / `bronze` / `participant` by the frozen place; null while the season is open, and for a closed season whose frozen table has no line for the person) and `medalImage` (the matching `medals.*` picture, the participant's one when the place has no variant; null when none is uploaded) — the season badges of a profile. `season` is null between seasons (then the line is the empty one).
+
+#### `GET /game/users/:id/tasks`
+
+A person's tasks — "Задания" of a profile: every limited achievement running now (begun, not
+over), whatever season is on or none, in the shape of `awards` of `GET /game` with that
+person's `earned` and `progress` (each rule apart in `rules`), counted for these awards only.
+
+**Auth required:** No
+
+**Response:** `{ "data": [ ... ] }`
 
 #### Quests: `GET /game/quests`, `GET /game/quests/:id`
 
@@ -1960,14 +1982,14 @@ A **quest** is an ordered list of the site's places, made by an administrator. I
 
 ```json
 {
-  "id": "6fcb5e9416ad5", "title": "Космический Оренбург", "description": "…", "mode": "steps", "status": "published",
+  "id": "6fcb5e9416ad5", "slug": "kosmicheskiy-orenburg", "title": "Космический Оренбург", "description": "…", "mode": "steps", "status": "published",
   "length": 7155, "points": 4, "walked": 0, "bonus": 30, "medal": "uploads/quests/6fcb5e9416ad5_1763300000_a1b2c3.svg", "location": "Оренбург",
   "cover": { "full": "uploads/places/…/cover.jpg", "preview": "uploads/places/…/cover_preview.jpg" },
   "walk": { "id": "…", "started": "2026-11-11 16:58:31", "finished": null, "confirmed": 2 }
 }
 ```
 
-`length` is metres, the sum of the straight lines between the points. A riddle quest has no `cover`. `medal` is the award of the people who walked it to the end (a hexagon, PNG or SVG), null until an administrator uploads it — the profile then draws the hexagon around the cover.
+`slug` is made from the Russian title on the fly (the English one without it), never stored: the quest's page is `/quests/{id}-{slug}`, the API takes the bare `id`. `length` is metres, the sum of the straight lines between the points. A riddle quest has no `cover`. `medal` is the award of the people who walked it to the end (a hexagon, PNG or SVG), null until an administrator uploads it — the profile then draws the hexagon around the cover.
 
 `GET /game/quests/:id` adds `items` — the points as the visitor sees them —, `author` and `walkers` (who walked it to the end, the latest five):
 
@@ -1995,7 +2017,7 @@ Gives up the visitor's walk begun and not finished: the walk and its confirmed p
 
 #### `POST /game/quests`, `PATCH /game/quests/:id`, `DELETE /game/quests/:id`
 
-Administrators only. `{ "titleRu", "titleEn"?, "descriptionRu"?, "descriptionEn"?, "mode", "status": "draft" | "published", "points": [{ "place", "hintRu"?, "hintEn"? }] }` — 2 to 30 different places; a `PATCH` changes the fields sent, `points` replaces the list (a place that stays keeps the walkers' confirmations). `400` with `messages` by field (`titleRu`, `points`, `mode`).
+Administrators only. `{ "titleRu", "titleEn"?, "descriptionRu"?, "descriptionEn"?, "mode", "status": "draft" | "published", "points": [{ "place", "hintRu"?, "hintEn"? }] }` — 2 to 30 different places; a `PATCH` changes the fields sent, `points` replaces the list (a place that stays keeps the walkers' confirmations). `400` with `messages` by field (`titleRu`, `points`, `mode`). `POST` answers `201 { id, slug }`, `PATCH` — `{ id, slug }` (the slug of the title after the change).
 
 #### `POST /game/quests/:id/medal`, `DELETE /game/quests/:id/medal`
 
@@ -2479,7 +2501,7 @@ Site-wide counters.
 
 ### Collections
 
-Author-curated public lists of places with a description. Any registered user may create one; only the owner and admins may edit, delete or manage its places. Hidden collections are excluded from lists and return `404` to everyone but the owner and admins.
+Author-curated public lists of places with a description. Any registered user may create one; only the owner and admins may edit, delete or manage its places. A collection's `slug` is made from its title on the fly (not stored): its page is `/collections/{id}-{slug}`.
 
 #### `GET /collections`
 
@@ -2510,7 +2532,6 @@ Author-curated public lists of places with a description. Any registered user ma
       "placesCount": 8,
       "views": 120,
       "saves": 4,
-      "featured": false,
       "updated": "2026-10-20T09:00:00+00:00",
       "created": "2026-09-01T09:00:00+00:00",
       "covers": [{ "full": "/uploads/photos/a1b2c3d4e5f6g/cover.jpg", "preview": "/uploads/photos/a1b2c3d4e5f6g/cover_preview.jpg" }],
@@ -2667,23 +2688,9 @@ Remove a place from a collection.
 
 ---
 
-#### `PATCH /collections/:id/moderation`
-
-Hide or feature a collection.
-
-**Auth required:** Yes (admin)
-
-**Request body (JSON):** `{ "hidden": true, "featured": false }` (at least one)
-
-**Response:** `200 OK`
-
-**Error responses:** `401` (not authenticated or not an admin), `404`, `400` (nothing to update)
-
----
-
 ### Achievements
 
-Achievement objects have `id`, `group_slug`, `type`, `tier`, `category`, `title` and `description` (in the request locale), `image`, `xp_bonus`, `season_start`, `season_end`, and `rules`.
+Achievement objects have `id`, `group_slug`, `type`, `tier`, `title` and `description` (in the request locale), `image`, `xp_bonus`, `season_start`, `season_end`, and `rules`.
 
 #### `GET /achievements`
 
@@ -2691,7 +2698,7 @@ Active achievements. For an authenticated user each item also has `earned_at` (o
 
 **Auth required:** No
 
-**Query parameters:** `category`, `tier`, `type` (optional filters).
+**Query parameters:** `tier`, `type` (optional filters).
 
 **Response:** `{ "data": [ ... ] }`
 
@@ -2719,9 +2726,27 @@ One achievement, plus `is_active`.
 
 #### `GET /users/:id/achievements`
 
-All active achievements with that user's `earned_at` and `progress` (no `rules`).
+All active achievements a profile shows (a seasonal one not earned and over is left out) with that
+user's `earned_at`: the cheap list of the profile's hexagons — no `progress`, nothing is counted.
 
 **Auth required:** No
+
+**Response:** `{ "data": [ ... ] }`
+
+---
+
+#### `GET /users/:id/achievements/:group`
+
+One achievement of a profile — every step of the group `:group` (the `group_slug`, or the id of an
+achievement without a group), in `sort_order` — with that user's `earned_at` and `progress`
+counted now: `{ "current": 41, "required": 75, "pct": 54.7, "rules": [{ "metric": "places_created", "current": 12, "required": 25 }, …] }`.
+`current` / `required` sum the rules, each capped at its threshold; `rules` has each rule apart with
+its real count — an achievement of several rules is read from them, not from the sum. The costly
+request: the card of one award asks for it when it opens.
+
+**Auth required:** No
+
+**Error responses:** `404` — no such achievement on a profile
 
 **Response:** `{ "data": [ ... ] }`
 
@@ -2743,15 +2768,15 @@ The latest earned awards across the site, latest first (deleted users are skippe
 
 **Auth required:** Yes (admin)
 
-**Response:** `{ "items": [{ "id": "...", "earned_at": "Y-m-d H:i:s", "achievement": { "id", "title" /* request locale, ru fallback */, "image": string|null, "tier", "category", "group_slug" }, "user": { "id", "name", "avatar" /* small */, "levelData": { "level": 3 } } }] }`
+**Response:** `{ "items": [{ "id": "...", "earned_at": "Y-m-d H:i:s", "achievement": { "id", "title" /* request locale, ru fallback */, "image": string|null, "tier", "group_slug" }, "user": { "id", "name", "avatar" /* small */, "levelData": { "level": 3 } } }] }`
 
 ---
 
 #### `POST /achievements`, `PUT /achievements/:id`, `DELETE /achievements/:id`
 
-Admin CRUD. The body (JSON or form) takes `group_slug`, `type` (default `base`), `tier` (default `none`), `category`, `title_en`, `title_ru`, `description_en`, `description_ru`, `image`, `rules` (a list of `{ metric, value, operator?, filter? }`), `season_start`, `season_end`, `xp_bonus`, `sort_order`, `is_active`; `PUT` updates only the fields sent.
+Admin CRUD. The body (JSON or form) takes `group_slug`, `type` (default `base`), `tier` (default `none`), `title_en`, `title_ru`, `description_en`, `description_ru`, `image`, `rules` (a list of `{ metric, value, operator?, filter? }`), `season_start`, `season_end`, `xp_bonus`, `sort_order`, `is_active`; `PUT` updates only the fields sent.
 
-Validation (`400`, `messages.<field>`): `group_slug` — required on create, `[A-Za-z0-9_-]` up to 50; `type` — `base` / `seasonal`; `tier` — `none` / `bronze` / `silver` / `gold`; `category` — required on create, one of `content`, `exploration`, `social`, `reputation`, `consistency`, `seasonal`, `game` (or a category already in use); `title_ru` — required, up to 150; `title_en` — string up to 150; `description_*` — string or null up to 5000; `image` — null or a file of `uploads/achievements/`; `xp_bonus`, `sort_order` — whole numbers 0–65535; `is_active` — a boolean; `rules` — a list of up to 20 rules, `metric` one of the metrics the code counts (`places_created`, `spots_opened`, `places_edited`, `places_visited`, `visits_total`, `winter_visits`, `places_revisited`, `first_visit_of_year`, `places_confirmed`, `quests_walked`, `photos_uploaded`, `ratings_given`, `comments_written`, `bookmarks_added`, `reputation_score`, `experience_total`, `level_reached`, `days_active`, `login_streak`), `value` a number from 0, `operator` only `>=`, `filter` only `{ category_id }`; `season_start` / `season_end` — `Y-m-d` (or `Y-m-d H:i:s`; a bare start is that day's 00:00:00, a bare end its 23:59:59), a `seasonal` award needs both with the start not after the end. A `PUT` with no known field, and a body that is not a JSON object, are `400`. The rules are stored once-encoded as a JSON array and answered as a list. `POST` returns `201` with the stored row, `PUT` the updated row. `DELETE` deactivates an achievement that someone has earned, otherwise deletes it, and returns `{ "id": "..." }`.
+Validation (`400`, `messages.<field>`): `group_slug` — required on create, `[A-Za-z0-9_-]` up to 50; `type` — `base` / `seasonal`; `tier` — `none` / `bronze` / `silver` / `gold`; `title_ru` — required, up to 150; `title_en` — string up to 150; `description_*` — string or null up to 5000; `image` — null or a file of `uploads/achievements/`; `xp_bonus`, `sort_order` — whole numbers 0–65535; `is_active` — a boolean; `rules` — a list of up to 20 rules, `metric` one of the metrics the code counts (`places_created`, `spots_opened`, `places_edited`, `places_visited`, `visits_total`, `winter_visits`, `places_revisited`, `first_visit_of_year`, `places_confirmed`, `quests_walked`, `photos_uploaded`, `ratings_given`, `comments_written`, `bookmarks_added`, `reputation_score`, `experience_total`, `level_reached`, `days_active`, `login_streak`), `value` a number from 0, `operator` only `>=`, `filter` only `{ category_id }`; `season_start` / `season_end` — `Y-m-d` (or `Y-m-d H:i:s`; a bare start is that day's 00:00:00, a bare end its 23:59:59), a `seasonal` award needs both with the start not after the end. A `PUT` with no known field, and a body that is not a JSON object, are `400`. The rules are stored once-encoded as a JSON array and answered as a list. `POST` returns `201` with the stored row, `PUT` the updated row. `DELETE` deactivates an achievement that someone has earned, otherwise deletes it, and returns `{ "id": "..." }`.
 
 **Auth required:** Yes (admin)
 
@@ -2770,68 +2795,6 @@ Upload an achievement image: `multipart/form-data` field `image`, PNG or SVG (re
 **Response:** `{ "id": "...", "image": "uploads/achievements/<id>_<time>_<hex>.png" }`
 
 **Error responses:** `401`, `403`, `404`, `400` (no file, wrong type, too large, unsafe SVG)
-
----
-
-### Sending Mail (admin)
-
-#### `GET /sending-mail/manage`
-
-The outgoing email queue. Statuses: `created` (waiting; `next_attempt_at` may hold it back), `process` (claimed by a `notifications:send` run), `completed`, `grouped` (went out inside the email of `groupId`), `error` (out of attempts, or the address does not exist), `rejected` (nothing to send, or the recipient turned the notification off; the reason is in `error`), `expired` (not sent within 3 days; the letters of a digest or a mailing, up to 6 days). A letter of a mailing has `type` `news` and no stored `message`: it is rendered from its mailing when it is sent.
-
-**Auth required:** Yes (admin)
-
-**Query parameters:**
-
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| status | string | No | Filter by status (`created`, `process`, `completed`, `grouped`, `error`, `rejected`, `expired`); another value is ignored |
-| email | string | No | Filter by recipient |
-| date_from / date_to | string | No | Creation date range, `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`; a bare `date_to` includes the whole day; an invalid date is ignored |
-| bulk | string | No | `1`: only the bulk mail (digests, mailings: it waits for the hosting limits for days on purpose); `0`: only the letters that go out at once; anything else is ignored |
-| sort | string | No | `created_at` (default), `updated_at`, `sent_at`, `status`, `email` |
-| order | string | No | `asc` or `desc` (default `desc`) |
-| page | integer | No | Page number (default 1) |
-| limit | integer | No | Page size (default 20, max 100) |
-
-**Response:**
-
-```json
-{
-  "items": [
-    {
-      "id": "m1m2m3m4",
-      "status": "completed",
-      "email": "user@example.com",
-      "subject": "New comment on “Gadelsha waterfall”",
-      "type": "comment",
-      "attempts": 1,
-      "groupId": null,
-      "created": { "date": "2026-10-01 10:00:00.000000", "timezone_type": 3, "timezone": "UTC" },
-      "updated": { "date": "2026-10-01 10:01:00.000000", "timezone_type": 3, "timezone": "UTC" },
-      "sent": { "date": "2026-10-01 10:01:00.000000", "timezone_type": 3, "timezone": "UTC" },
-      "user": { "id": "u1u2u3u4", "name": "traveler42", "avatar": "/uploads/avatars/u1u2u3u4/photo_small.jpg" },
-      "activity": { "type": "comment" }
-    }
-  ],
-  "count": 320,
-  "limit": 20,
-  "offset": 0,
-  "stats": { "total": 320, "completed": 300, "error": 5, "pending": 15 }
-}
-```
-
-**Error responses:** `401` — a guest; `403` — not an admin
-
----
-
-#### `GET /sending-mail/manage/:id`
-
-One email: the list item plus `message` and `error`, wrapped in `{ "data": { ... } }`. The sign-in link email is never queued (it is sent at once and not stored), so no login token is in a stored `message`.
-
-**Auth required:** Yes (admin)
-
-**Error responses:** `401`, `403`, `404`
 
 ---
 
@@ -2875,7 +2838,7 @@ An empty optional string is saved as `null`. `PATCH` changes only the fields sen
 }
 ```
 
-`author` is null when the author is gone (`avatar` only when set); times are UTC (`Y-m-d H:i:s`). `recipients` is fixed at the send. `delivery` counts the mailing's queue rows: `sent` = `completed` + `grouped`, `pending` = `created` + `process`, `failed` = `error` + `expired`, `rejected`; zeros for a draft.
+`author` is null when the author is gone (`avatar` only when set); times are UTC (`Y-m-d H:i:s`). `recipients` is fixed at the send. `delivery` counts the mailing's queue rows: `sent` = `completed` + `grouped`, `pending` = `created` + `process`, `failed` = `error` + `expired`, `rejected`; zeros for a draft. When a `completed` or `canceled` mailing has no letter waiting, `notifications:send` keeps these numbers in the mailing (`delivered`, `failed`, `rejected`): its queue rows are deleted after 7 days, and the kept numbers are answered from then on.
 
 #### `GET /mailings/manage`
 
@@ -2963,7 +2926,7 @@ Returns the ids/slugs and last-modified timestamps of everything the client's XM
 }
 ```
 
-User profiles are `noindex`, so there is no `users` list. `categories`/`locations`/`locationCategories` only include entries with `placesCount >= 5` (the indexing threshold — see `GET /locations/resolve`); `updated` is the most recent `updated_at` among that entry's places. `collections` is already filtered to `hidden=false, indexable=true`. A `slug` is `null` for a location that has not been assigned one yet.
+User profiles are `noindex`, so there is no `users` list. `categories`/`locations`/`locationCategories` only include entries with `placesCount >= 5` (the indexing threshold — see `GET /locations/resolve`); `updated` is the most recent `updated_at` among that entry's places. `collections` is already filtered to `indexable=true`. A `slug` is `null` for a location that has not been assigned one yet.
 
 ---
 
@@ -2973,7 +2936,7 @@ Spark commands (`php spark <command>`), not accessible over HTTP:
 
 | Command | Description |
 |---------|-------------|
-| `notifications:send` | Send a batch of queued pushes, then of emails (an email skips an event a push already told about), and, once a day, delete queue rows older than 90 days and push devices that keep failing (`--cleanup` — now). Cron, every minute; overlapping runs are safe |
+| `notifications:send` | Send a batch of queued pushes, then of emails (an email skips an event a push already told about), and, once a day, delete the done queue rows older than 7 days (`retentionDays`; waiting ones stay) and push devices that keep failing (`--cleanup` — now). Cron, every minute; overlapping runs are safe |
 | `push:vapid` | Generate the VAPID keys for web push (paste into `.env`; once — new keys invalidate every subscription) |
 | `system:test-email` | Send every kind of email with sample data to an address (`--locale`, `--kind`) |
 | `email:preview` | Render every kind of email with sample data into `writable/email-preview/` |
@@ -2983,11 +2946,13 @@ Spark commands (`php spark <command>`), not accessible over HTTP:
 | `osm:collect` | Collect OSM candidates for the queued tiles (cron, every minute) |
 | `osm:rescore` | Recalculate OSM candidate scores from the stored tags |
 | `achievements:evaluate` | Evaluate and award achievements (by hand, `--all` after adding or changing an achievement; not scheduled) |
+| `achievements:rebuild` | Quietly bring everyone's awards in line with the achievements as they are now: take back the ones no longer met (only those counting what a person can take back), give the missing ones, recount experience and levels; no notifications. `--dry-run` lists what would be taken back, `--user=<id>` one person. By hand, after raising a threshold; back up first |
 | `trending:refresh` | Refresh place trending scores |
 | `interests:refresh` | Refresh user interest profiles |
 | `digest:weekly` | Queue weekly digest emails (cron, weekly; skips users who got one in the last 6 days unless `--force`). `notifications:send` sends them within the hosting limits — 500 an hour, 2000 a day, shared with the mailings' letters; the rest wait in the queue (up to 6 days) |
 | `notifications:prune` | Delete toast-only and old read notifications (by hand, not scheduled) |
 | `sessions:prune` | Delete stale anonymous sessions that left nothing behind (by hand, not scheduled) |
+| `places:outlines` | Look up the OSM outlines of large places for "near the place" (`places_outlines`): the categories of `Game::$outlineTags`, the places never checked or checked without luck 90 days ago; an outline is taken only when its name is like the title of the place. `--limit N` (30, 0 — all: the first fill), `--place <id>` (one, again), `--dry-run`. Stops when Overpass fails, the next run goes on. Cron, hourly |
 | `game:tick` | The game's clock: close the seasons whose grace days are over (their table is frozen in `game_results`; seasons are never created here). Cron, once a day |
 
 ---
