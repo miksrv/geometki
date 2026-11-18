@@ -1,6 +1,6 @@
 import { ApiType } from '@/api'
 
-import { groupAchievements, sortAchievementGroups } from './achievements'
+import { groupAchievements } from './achievements'
 
 const step = (
     group: string,
@@ -9,7 +9,6 @@ const step = (
     sortOrder = 0
 ): ApiType.Achievements.Achievement =>
     ({
-        category: 'exploration',
         earned_at: earned ? { date: '2026-03-12 10:00:00' } : null,
         group_slug: group,
         id: `${group}-${tier}`,
@@ -54,28 +53,5 @@ describe('groupAchievements', () => {
 
         expect(groups.map((group) => group.key)).toStrictEqual(['-none', 'b'])
         expect(groups[0].passed).toBe(1)
-    })
-})
-
-describe('sortAchievementGroups', () => {
-    it('puts the earned first, the highest step first, then the closest to their next step', () => {
-        const withProgress = (group: string, pct: number) =>
-            ({
-                ...step(group, 'bronze'),
-                progress: { current: pct, pct, required: 100 }
-            }) as ApiType.Achievements.Achievement
-
-        const order = sortAchievementGroups(
-            groupAchievements([
-                withProgress('far', 10),
-                step('bronzed', 'bronze', true),
-                step('bronzed', 'silver'),
-                withProgress('close', 80),
-                step('golden', 'bronze'),
-                step('golden', 'gold', true)
-            ])
-        ).map((group) => group.key)
-
-        expect(order).toStrictEqual(['golden', 'bronzed', 'close', 'far'])
     })
 })

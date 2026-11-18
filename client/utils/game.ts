@@ -1,6 +1,8 @@
 import { ApiModel, ApiType } from '@/api'
 import { IMG_HOST } from '@/config/env'
 
+import { buildSluggedUrl, parseSluggedId } from './slug'
+
 type Translate = (key: string, options?: Record<string, unknown>) => string
 
 export const GAME_HREF = '/game'
@@ -19,25 +21,38 @@ export const VISITS_FEED_HREF = '/activity?type=visits'
 
 export const QUEST_CREATE_HREF = '/quests/create'
 
-export const questHref = (id: string): string => `/quests/${id}`
+/** The page of a quest, `/quests/{id}-{slug}` */
+export const questHref = (id: string, slug?: string | null): string => buildSluggedUrl(QUESTS_HREF, id, slug)
+
+/** The editor of a quest: by the bare id */
+export const questEditHref = (id: string): string => `${QUESTS_HREF}/${id}/edit`
+
+/** The quest's id from the route param: the bare id or `{id}-{slug}`; empty for anything else */
+export const parseQuestId = (param?: string | string[]): string => parseSluggedId(param)
 
 /**
- * The page of a season. Only a past season has one: the current season is the game page
- * itself (`/game/seasons/<current>` redirects there), so pass `current` where it is known.
+ * The page of a season, `/game/seasons/{id}-{slug}`. Only a past season has one: the current
+ * season is the game page itself (its address redirects there), so pass `current` where it is known.
  */
-export const seasonHref = (id: string, current?: boolean): string => (current ? GAME_HREF : `/game/seasons/${id}`)
+export const seasonHref = (id: string, slug?: string | null, current?: boolean): string =>
+    current ? GAME_HREF : buildSluggedUrl('/game/seasons', id, slug)
 
-/** "Тёплый сезон 2027"; a cold season spans two years: "Холодный сезон 2026/27" */
-export const seasonTitle = (t: Translate, season: Pick<ApiType.Game.Season, 'key' | 'year'>): string =>
-    t(`game-season-${season.key}`, {
-        year: season.key === 'cold' ? `${season.year}/${String(season.year + 1).slice(2)}` : season.year
-    })
+/** A new season: seasons are made by hand, by the administrators, on the site like a quest */
+export const SEASON_CREATE_HREF = '/game/seasons/create'
 
-/** A season by its id (`2026-cold`): for a title where only the id is known */
-export const parseSeasonId = (id: string): Pick<ApiType.Game.Season, 'key' | 'year'> | undefined => {
-    const match = /^(\d{4})-(warm|cold)$/.exec(id)
+/** The editor of a season: by the bare id; it works for any season, with a page of its own or not */
+export const seasonEditHref = (id: string): string => `/game/seasons/${id}/edit`
 
-    return match ? { key: match[2] as ApiType.Game.SeasonKey, year: Number(match[1]) } : undefined
+/** The season's id from the route param: the bare id or `{id}-{slug}`; empty for anything else */
+export const parseSeasonId = (param?: string | string[]): string => parseSluggedId(param)
+
+/** The medal a closed season gives for a place in its table: 1, 2, 3 — the podium, the rest — the grey one */
+export const medalForPlace = (place: number | null | undefined): ApiType.Game.MedalKind | null => {
+    if (place == null || place < 1) {
+        return null
+    }
+
+    return place === 1 ? 'gold' : place === 2 ? 'silver' : place === 3 ? 'bronze' : 'participant'
 }
 
 /** "850 м", "1,2 км", "14 км": a quest's length — rounder than the map ruler's `formatDistance` */

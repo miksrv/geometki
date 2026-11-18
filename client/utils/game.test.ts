@@ -7,12 +7,17 @@ import {
     formatWalkTime,
     isSecretMode,
     leadersScopeKey,
+    medalForPlace,
+    parseQuestId,
     parseSeasonId,
     placePoints,
     QUEST_PHOTO_COVER,
     questBounds,
     questCoverSrc,
-    seasonTitle,
+    questEditHref,
+    questHref,
+    seasonEditHref,
+    seasonHref,
     walkingDirectionsHref,
     walkMinutes
 } from './game'
@@ -41,15 +46,35 @@ describe('utils/game', () => {
         )
     })
 
-    it('names a season warm or cold; a cold one spans two years', () => {
-        expect(seasonTitle(t, { key: 'warm', year: 2027 })).toBe('game-season-warm:{"year":2027}')
-        expect(seasonTitle(t, { key: 'cold', year: 2026 })).toBe('game-season-cold:{"year":"2026/27"}')
+    it('builds the address of a season from its id and slug, the current one is the game page', () => {
+        expect(seasonHref('6f1c2a9e0b3d4', 'kholodnyy-sezon')).toBe('/game/seasons/6f1c2a9e0b3d4-kholodnyy-sezon')
+        expect(seasonHref('6f1c2a9e0b3d4')).toBe('/game/seasons/6f1c2a9e0b3d4')
+        expect(seasonHref('6f1c2a9e0b3d4', 'kholodnyy-sezon', true)).toBe('/game')
     })
 
-    it('reads a season id', () => {
-        expect(parseSeasonId('2026-cold')).toEqual({ key: 'cold', year: 2026 })
-        expect(parseSeasonId('2026-fall')).toBeUndefined()
-        expect(parseSeasonId('cold')).toBeUndefined()
+    it('builds the address of a quest from its id and slug, the editor by the bare id', () => {
+        expect(questHref('783ab4504a7d9', 'kosmicheskiy-orenburg')).toBe('/quests/783ab4504a7d9-kosmicheskiy-orenburg')
+        expect(questHref('783ab4504a7d9', null)).toBe('/quests/783ab4504a7d9')
+        expect(questEditHref('783ab4504a7d9')).toBe('/quests/783ab4504a7d9/edit')
+        expect(parseQuestId('783ab4504a7d9-kosmicheskiy-orenburg')).toBe('783ab4504a7d9')
+        expect(parseQuestId('create')).toBe('')
+    })
+
+    it('reads the season id from its address', () => {
+        expect(parseSeasonId('6f1c2a9e0b3d4-kholodnyy-sezon')).toBe('6f1c2a9e0b3d4')
+        expect(parseSeasonId('6f1c2a9e0b3d4')).toBe('6f1c2a9e0b3d4')
+        expect(parseSeasonId('2026-cold')).toBe('')
+    })
+
+    it('gives a medal for a place', () => {
+        expect(medalForPlace(1)).toBe('gold')
+        expect(medalForPlace(3)).toBe('bronze')
+        expect(medalForPlace(40)).toBe('participant')
+        expect(medalForPlace(null)).toBeNull()
+    })
+
+    it('leads to the editor of a season by its bare id', () => {
+        expect(seasonEditHref('c61b27c8d8143')).toBe('/game/seasons/c61b27c8d8143/edit')
     })
 
     it('formats the length of a quest roundly', () => {
