@@ -23,14 +23,11 @@ class SendingMail extends ApplicationBaseModel
 {
     use QueueRows;
 
-    /** The filter of the letters in the queue: `created` and `process` together */
-    public const PENDING = 'pending';
-
     /** The types of the bulk mail, sent within the hosting limits */
     public const BULK_TYPES = ['digest', 'news'];
 
-    /** The statuses a row can have: the list's filter takes one of them */
-    public const STATUSES = ['created', 'process', 'completed', 'grouped', 'error', 'rejected', 'expired'];
+    /** A letter whose time to go came longer ago than this and is still waiting: the sending job is not running */
+    public const OVERDUE_MINUTES = 30;
 
     protected $table            = 'sending_mail';
     protected $primaryKey       = 'id';
@@ -72,149 +69,34 @@ class SendingMail extends ApplicationBaseModel
     protected $allowCallbacks = true;
     protected $beforeInsert   = ['generateId'];
 
-    // -------------------------------------------------------------------------
-    // Custom query methods
-    // -------------------------------------------------------------------------
-
     /**
-     * Apply the SELECT + LEFT JOINs needed for the admin list view.
+     * The state of the queue for the admin dashboard (GET /mail/queue), by the DB clock: letters
+     * sent during the last day, letters waiting, the ones of them overdue (their time to go came
+     * over OVERDUE_MINUTES ago; the bulk mail is left out, it waits for the hosting limits on
+     * purpose) and the letters that failed during the last week.
      *
-     * @return static
+     * @return array{sent_day: int, pending: int, overdue: int, errors_week: int}
      */
-    public function applyListSelect(): static
+    public function health(): array
     {
-        return $this
-            ->select(
-                'sending_mail.id, sending_mail.activity_id, sending_mail.status,
-                sending_mail.email, sending_mail.subject, sending_mail.type, sending_mail.attempts,
-                sending_mail.sent_at, sending_mail.group_id,
-                sending_mail.created_at, sending_mail.updated_at,
-                users.id as user_id, users.name as user_name, users.avatar as user_avatar,
-                activity.type as activity_type'
-            )
-            ->join('users', 'users.id = sending_mail.user_id', 'left')
-            ->join('activity', 'activity.id = sending_mail.activity_id', 'left');
-    }
+        $bulk = "'" . implode("', '", self::BULK_TYPES) . "'";
+        $row  = $this->db->query(
+            "SELECT
+                 SUM(`status` IN ('completed', 'grouped') AND `sent_at` >= DATE_SUB(NOW(), INTERVAL 1 DAY)) AS sent_day,
+                 SUM(`status` IN ('created', 'process')) AS pending,
+                 SUM(`status` = 'created' AND (`type` IS NULL OR `type` NOT IN ({$bulk}))
+                     AND COALESCE(`next_attempt_at`, `created_at`) < DATE_SUB(NOW(), INTERVAL ? MINUTE)) AS overdue,
+                 SUM(`status` = 'error' AND `updated_at` >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS errors_week
+             FROM `sending_mail`
+             WHERE `deleted_at` IS NULL",
+            [self::OVERDUE_MINUTES]
+        )->getRow();
 
-    /**
-     * Apply the SELECT + LEFT JOINs for the single-record detail view,
-     * including the full message body and error fields.
-     *
-     * @return static
-     */
-    public function applyDetailSelect(): static
-    {
-        return $this
-            ->select(
-                'sending_mail.id, sending_mail.activity_id, sending_mail.status,
-                sending_mail.email, sending_mail.subject, sending_mail.message, sending_mail.error,
-                sending_mail.type, sending_mail.attempts, sending_mail.sent_at, sending_mail.group_id,
-                sending_mail.created_at, sending_mail.updated_at,
-                users.id as user_id, users.name as user_name, users.avatar as user_avatar,
-                activity.type as activity_type'
-            )
-            ->join('users', 'users.id = sending_mail.user_id', 'left')
-            ->join('activity', 'activity.id = sending_mail.activity_id', 'left');
-    }
-
-    /**
-     * Apply admin list filters: status, email, and date range.
-     *
-     * Returns $this for chaining — call on a fresh instance to avoid
-     * accumulated Query Builder state.
-     *
-     * @param string|null $status    Exact status value to filter by.
-     * @param string|null $email     Partial email address (LIKE match).
-     * @param string|null $dateFrom  Lower bound for created_at (inclusive).
-     * @param string|null $dateTo    Upper bound for created_at (inclusive); see filterDate() for a bare day.
-     * @return static
-     */
-    public function applyFilters(
-        ?string $status,
-        ?string $email,
-        ?string $dateFrom,
-        ?string $dateTo,
-        ?bool $bulk = null
-    ): static {
-        if ($status === self::PENDING) {
-            // "In the queue": not sent yet, waiting or being sent — the `pending` of getStats()
-            $this->whereIn('sending_mail.status', ['created', 'process']);
-        } elseif ($status) {
-            $this->where('sending_mail.status', $status);
-        }
-
-        if ($email) {
-            $this->like('sending_mail.email', $email);
-        }
-
-        if ($dateFrom) {
-            $this->where('sending_mail.created_at >=', $dateFrom);
-        }
-
-        if ($dateTo) {
-            $this->where('sending_mail.created_at <=', $dateTo);
-        }
-
-        // The bulk mail (digests, mailings) waits for the hosting limits for days on purpose;
-        // `false` leaves only the letters that go out at once
-        if ($bulk !== null) {
-            $bulk
-                ? $this->whereIn('sending_mail.type', self::BULK_TYPES)
-                : $this->groupStart()->where('sending_mail.type', null)->orWhereNotIn('sending_mail.type', self::BULK_TYPES)->groupEnd();
-        }
-
-        return $this;
-    }
-
-    /**
-     * A date of a list filter as a moment: a bare day (`Y-m-d`) is its first second for the
-     * lower bound and its last for the upper one, so `date_to` includes the whole day; a
-     * `Y-m-d H:i:s` stays. Null for anything else (the filter is then ignored).
-     */
-    public static function filterDate(mixed $value, bool $upper): ?string
-    {
-        if (!is_string($value)) {
-            return null;
-        }
-
-        foreach (['Y-m-d' => $upper ? '23:59:59' : '00:00:00', 'Y-m-d H:i:s' => null] as $format => $time) {
-            $date = \DateTime::createFromFormat('!' . $format, $value);
-
-            if ($date !== false && $date->format($format) === $value) {
-                return $time ? $value . ' ' . $time : $value;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Returns global status counters across all records (no filter applied).
-     *
-     * @return array{total: int, completed: int, error: int, pending: int}
-     */
-    public function getStats(): array
-    {
-        $rows = $this
-            ->select('status, COUNT(*) as count')
-            ->groupBy('status')
-            ->findAll();
-
-        $stats = ['total' => 0, 'completed' => 0, 'error' => 0, 'pending' => 0];
-
-        foreach ($rows as $row) {
-            $count = (int) $row->count;
-            $stats['total'] += $count;
-
-            if ($row->status === 'completed') {
-                $stats['completed'] += $count;
-            } elseif ($row->status === 'error') {
-                $stats['error'] += $count;
-            } elseif (in_array($row->status, ['created', 'process'], true)) {
-                $stats['pending'] += $count;
-            }
-        }
-
-        return $stats;
+        return [
+            'sent_day'    => (int) ($row->sent_day ?? 0),
+            'pending'     => (int) ($row->pending ?? 0),
+            'overdue'     => (int) ($row->overdue ?? 0),
+            'errors_week' => (int) ($row->errors_week ?? 0),
+        ];
     }
 }

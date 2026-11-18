@@ -67,4 +67,40 @@ class MailingsModel extends ApplicationBaseModel
 
         return $this->db->affectedRows();
     }
+
+    /**
+     * Keeps the delivery numbers of the finished mailings (`completed`, `canceled`) whose letters
+     * are all done in `delivered` / `failed` / `rejected`, once: the cleanup of the queue
+     * deletes the letters later (MailingsLibrary::present() reads the kept numbers then).
+     *
+     * @return int how many were kept
+     */
+    public function freezeDelivery(): int
+    {
+        $this->db->query(
+            "UPDATE `mailings`
+             LEFT JOIN (
+                 SELECT `mailing_id`,
+                        SUM(`status` IN ('completed', 'grouped')) AS delivered,
+                        SUM(`status` IN ('error', 'expired')) AS failed,
+                        SUM(`status` = 'rejected') AS rejected
+                 FROM `sending_mail`
+                 WHERE `mailing_id` IS NOT NULL AND `deleted_at` IS NULL
+                 GROUP BY `mailing_id`
+             ) AS counts ON counts.`mailing_id` = `mailings`.`id`
+             SET `mailings`.`delivered` = COALESCE(counts.delivered, 0),
+                 `mailings`.`failed`    = COALESCE(counts.failed, 0),
+                 `mailings`.`rejected`  = COALESCE(counts.rejected, 0)
+             WHERE `mailings`.`status` IN ('completed', 'canceled') AND `mailings`.`delivered` IS NULL
+               AND `mailings`.`deleted_at` IS NULL
+               AND NOT EXISTS (
+                   SELECT 1 FROM `sending_mail`
+                   WHERE `sending_mail`.`mailing_id` = `mailings`.`id`
+                     AND `sending_mail`.`status` IN ('created', 'process')
+                     AND `sending_mail`.`deleted_at` IS NULL
+               )"
+        );
+
+        return $this->db->affectedRows();
+    }
 }

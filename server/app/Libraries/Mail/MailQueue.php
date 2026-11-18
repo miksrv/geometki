@@ -34,6 +34,9 @@ use Throwable;
  */
 class MailQueue
 {
+    /** Cache key of the time (Unix) the last `notifications:send` run finished the queue: GET /mail/queue */
+    public const LAST_RUN_CACHE_KEY = 'mail_queue_last_run';
+
     private const CHANNEL = 'email';
     private const DIGEST  = 'digest';
     private const NEWS    = 'news';
@@ -172,10 +175,15 @@ class MailQueue
         $log ??= static fn (string $line, string $color = 'white') => null;
 
         try {
-            return $this->processBatch($log);
+            $stats = $this->processBatch($log);
         } finally {
             $this->completeMailings();
         }
+
+        // Only a run that got through: the dashboard tells a job that stopped or keeps failing
+        cache()->save(self::LAST_RUN_CACHE_KEY, time(), 30 * DAY);
+
+        return $stats;
     }
 
     /**
@@ -631,13 +639,16 @@ class MailQueue
     }
 
     /**
-     * Mailings whose letters are all done are completed. Never breaks the run: a mailing
+     * Mailings whose letters are all done are completed, and the delivery numbers of a finished
+     * one are kept in it before the cleanup deletes its letters. Never breaks the run: a mailing
      * waits for the next one.
      */
     private function completeMailings(): void
     {
         try {
-            (new MailingsModel())->completeFinished();
+            $mailings = new MailingsModel();
+            $mailings->completeFinished();
+            $mailings->freezeDelivery();
         } catch (Throwable $e) {
             log_message('error', '[Mail] Completing the mailings failed: {exception}', ['exception' => $e]);
         }

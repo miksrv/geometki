@@ -113,8 +113,13 @@ class Notifications extends BaseConfig
     /** The same for the letters of a news mailing: it may take days at the daily limit. */
     public int $newsExpireAfterDays = 6;
 
-    /** `notifications:send` deletes queue rows older than this, once a day. */
-    public int $retentionDays = 90;
+    /**
+     * `notifications:send` deletes the done queue rows (sent, failed, dropped) older than this,
+     * once a day; waiting ones stay. Longer than the expiry of the bulk mail and than what the
+     * queue reads back (the hosting limits: a day; the interval of activity emails); a finished
+     * mailing keeps its delivery numbers in `mailings`.
+     */
+    public int $retentionDays = 7;
 
     /** `digest:weekly` skips users who got a digest less than this many days ago. */
     public int $digestMinIntervalDays = 6;

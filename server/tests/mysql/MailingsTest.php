@@ -4,6 +4,7 @@ require_once __DIR__ . '/../_support/UploadFunctions.php';
 
 use App\Libraries\Mail\MailQueue;
 use App\Libraries\Mail\UnsubscribeToken;
+use App\Models\MailingsModel;
 use CodeIgniter\Test\FeatureTestTrait;
 use CodeIgniter\Test\TestResponse;
 use Config\Notifications;
@@ -357,19 +358,32 @@ final class MailingsTest extends MySqlTestCase
         $this->assertSame(2, $this->db->table('sending_mail')->where('status', 'rejected')->countAllResults());
     }
 
-    public function testTheQueueListTellsTheBulkMailApart(): void
+    public function testAFinishedMailingKeepsItsNumbersAfterTheCleanupDeletesItsLetters(): void
     {
         $this->signIn('admin1');
 
         $id = $this->draft();
         $this->post("mailings/{$id}/send")->assertStatus(200);
 
-        $count = fn (string $query) => json_decode($this->get('sending-mail/manage?status=pending' . $query)->getJSON(), true)['count'];
+        // While it is being sent the numbers come from the queue, nothing is kept yet
+        $this->db->table('sending_mail')->where('user_id', 'user1')->update(['status' => 'completed', 'sent_at' => date('Y-m-d H:i:s')]);
+        (new MailingsModel())->freezeDelivery();
+        $this->assertNull($this->mailing($id)->delivered);
 
-        // The letters of a mailing wait for the limits on purpose: they are no "stuck" mail
-        $this->assertSame(3, $count(''));
-        $this->assertSame(3, $count('&bulk=1'));
-        $this->assertSame(0, $count('&bulk=0'));
+        $this->db->table('sending_mail')->where('user_id', 'user2')->update(['status' => 'error']);
+        $this->db->table('sending_mail')->where('user_id', 'admin1')->update(['status' => 'rejected']);
+        (new MailQueue($this->mailer))->process();
+
+        $this->assertSame('completed', $this->mailing($id)->status);
+        $this->assertSame(1, (int) $this->mailing($id)->delivered);
+
+        // The cleanup deletes the letters: the mailing still tells how it went
+        $this->db->table('sending_mail')->where('mailing_id', $id)->update(['created_at' => date('Y-m-d H:i:s', strtotime('-30 days'))]);
+        (new \App\Models\SendingMail())->purgeOlderThan(config('Notifications')->retentionDays);
+        $this->assertSame(0, $this->db->table('sending_mail')->countAllResults());
+
+        $shown = json_decode($this->get("mailings/manage/{$id}")->getJSON(), true);
+        $this->assertSame(['sent' => 1, 'pending' => 0, 'failed' => 1, 'rejected' => 1], $shown['delivery']);
     }
 
     public function testACompletedMailingCannotBeCanceled(): void

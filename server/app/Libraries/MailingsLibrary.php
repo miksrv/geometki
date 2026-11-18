@@ -141,7 +141,13 @@ class MailingsLibrary
                 'sent_at'         => $row['sent_at'],
                 'completed_at'    => $row['completed_at'],
                 'recipients'      => (int) $row['recipients'],
-                'delivery'        => [
+                // A finished mailing keeps its numbers: its letters are deleted by the queue's cleanup
+                'delivery'        => ($row['delivered'] ?? null) !== null ? [
+                    'sent'     => (int) $row['delivered'],
+                    'pending'  => 0,
+                    'failed'   => (int) $row['failed'],
+                    'rejected' => (int) $row['rejected'],
+                ] : [
                     'sent'     => ($count['completed'] ?? 0) + ($count['grouped'] ?? 0),
                     'pending'  => ($count['created'] ?? 0) + ($count['process'] ?? 0),
                     'failed'   => ($count['error'] ?? 0) + ($count['expired'] ?? 0),
