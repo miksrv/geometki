@@ -110,6 +110,21 @@ class QuestsLibrary
     }
 
     /**
+     * The slug of a quest's page address (`/quests/{id}-{slug}`): made from the Russian title on
+     * the fly (the English one when there is no Russian), never stored.
+     *
+     * @param object|array<string, mixed> $quest a row with `title_ru` and `title_en`
+     */
+    public static function slugOf(object|array $quest): ?string
+    {
+        helper('slug');
+
+        $quest = (object) $quest;
+
+        return transliterateToSlug(($quest->title_ru ?? '') ?: ($quest->title_en ?? null));
+    }
+
+    /**
      * A quest as the API sends it, without its points.
      *
      * @return array<string, mixed>
@@ -122,6 +137,7 @@ class QuestsLibrary
 
         return [
             'id'          => $quest->id,
+            'slug'        => self::slugOf($quest),
             'title'       => $pick('title'),
             'description' => $pick('description'),
             'mode'        => $quest->mode,
@@ -707,17 +723,25 @@ class QuestsLibrary
     /**
      * A place was confirmed outside a quest (a photo, "I am here" on its page): the person's
      * unfinished walks with that place as a point they may confirm now take it.
+     *
+     * @param string|null $day the day the place was seen (a photo's shot day): only walks begun
+     *                         by then take it — an old photo never walks a quest from home
      */
-    public function placeConfirmed(string $userId, string $placeId, string $visitId): void
+    public function placeConfirmed(string $userId, string $placeId, string $visitId, ?string $day = null): void
     {
         try {
             $db    = Database::connect();
-            $walks = $db->table('quests_walks w')
+            $query = $db->table('quests_walks w')
                 ->select('w.id, w.quest_id, w.finished_at, quests.mode, rp.id AS point_id')
                 ->join('quests', 'quests.id = w.quest_id AND quests.deleted_at IS NULL')
                 ->join('quests_points rp', 'rp.quest_id = w.quest_id')
-                ->where(['w.user_id' => $userId, 'w.finished_at' => null, 'rp.place_id' => $placeId])
-                ->get()->getResult();
+                ->where(['w.user_id' => $userId, 'w.finished_at' => null, 'rp.place_id' => $placeId]);
+
+            if ($day) {
+                $query->where('w.started_at <=', $day . ' 23:59:59');
+            }
+
+            $walks = $query->get()->getResult();
 
             foreach ($walks as $walk) {
                 if ($walk->mode !== QuestsModel::MODE_OPEN) {

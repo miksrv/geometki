@@ -142,7 +142,7 @@ class Quests extends ResourceController
      * drawn on its own page only. The published ones (an administrator sees the drafts too), no
      * walks: the popup of a mark loads the quest itself.
      *
-     * GET /game/quests/marks → { items: [{ id, title, mode, lat, lon }] }
+     * GET /game/quests/marks → { items: [{ id, slug, title, mode, lat, lon }] }
      *
      * @return ResponseInterface
      */
@@ -169,6 +169,7 @@ class Quests extends ResourceController
 
             $items[] = [
                 'id'    => $row->id,
+                'slug'  => QuestsLibrary::slugOf($row),
                 'title' => $locale === 'ru' ? ($row->title_ru ?: $row->title_en) : ($row->title_en ?: $row->title_ru),
                 'mode'  => $row->mode,
                 'lat'   => (float) $row->lat,
@@ -272,7 +273,7 @@ class Quests extends ResourceController
                 return $this->failValidationErrors(['points' => $this->pointsError($e)]);
             }
 
-            return $this->respondCreated(['id' => $id]);
+            return $this->respondCreated(['id' => $id, 'slug' => QuestsLibrary::slugOf($data)]);
         } catch (Throwable $e) {
             log_message('error', '{exception}', ['exception' => $e]);
 
@@ -334,7 +335,7 @@ class Quests extends ResourceController
                 (new QuestsModel())->update($quest->id, $data);
             }
 
-            return $this->respond(['id' => $quest->id]);
+            return $this->respond(['id' => $quest->id, 'slug' => QuestsLibrary::slugOf($data + (array) $quest)]);
         } catch (\InvalidArgumentException $e) {
             return $this->failValidationErrors(['points' => $this->pointsError($e)]);
         } catch (Throwable $e) {
