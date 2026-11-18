@@ -85,7 +85,7 @@ final class PushTest extends CIUnitTestCase
         $this->assertSame('New achievement', $achievement['title']);
         $this->assertStringContainsString('Streak', $achievement['body']);
         $this->assertStringEndsWith('/uploads/achievements/a.png', $achievement['icon']);
-        $this->assertStringEndsWith('/en/users/u1/achievements', $achievement['url']);
+        $this->assertStringEndsWith('/en/users/u1', $achievement['url']);
 
         $level = PushPayload::level(['level' => 7, 'title' => 'x'], 'u1', 'ru');
         $this->assertSame('Новый уровень: 7', $level['title']);

@@ -25,7 +25,6 @@ class AchievementsModel extends ApplicationBaseModel
         'group_slug',
         'type',
         'tier',
-        'category',
         'title_en',
         'title_ru',
         'description_en',

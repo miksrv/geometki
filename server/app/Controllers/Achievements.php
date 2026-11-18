@@ -38,23 +38,19 @@ class Achievements extends ResourceController
      * Return a filterable list of active achievements with optional auth context.
      *
      * GET /achievements
-     * Optional query params: category, tier, type.
+     * Optional query params: tier, type.
      *
      * @return ResponseInterface
      */
     public function index(): ResponseInterface
     {
         $locale   = $this->request->getLocale();
-        $category = $this->request->getGet('category');
         $tier     = $this->request->getGet('tier');
         $type     = $this->request->getGet('type');
 
         $achievementsModel = new AchievementsModel();
         $query             = $achievementsModel->where('is_active', 1)->orderBy('sort_order', 'ASC');
 
-        if ($category) {
-            $query->where('category', $category);
-        }
         if ($tier) {
             $query->where('tier', $tier);
         }
@@ -98,7 +94,6 @@ class Achievements extends ResourceController
                 'group_slug'   => $achievement->group_slug,
                 'type'         => $achievement->type,
                 'tier'         => $achievement->tier,
-                'category'     => $achievement->category,
                 'title'        => $achievement->{"title_$locale"} ?? $achievement->title_en,
                 'description'  => $achievement->{"description_$locale"} ?? $achievement->description_en,
                 'image'        => $achievement->image,
@@ -151,7 +146,6 @@ class Achievements extends ResourceController
             'group_slug'   => $achievement->group_slug,
             'type'         => $achievement->type,
             'tier'         => $achievement->tier,
-            'category'     => $achievement->category,
             'title'        => $achievement->{"title_$locale"} ?? $achievement->title_en,
             'description'  => $achievement->{"description_$locale"} ?? $achievement->description_en,
             'image'        => $achievement->image,
@@ -183,70 +177,101 @@ class Achievements extends ResourceController
     }
 
     /**
-     * Return all achievements annotated with a specific user's earned status and progress.
+     * Every achievement a profile shows with that user's `earned_at`: the cheap list of the
+     * hexagons — no progress, nothing is counted (one query of the earned ones). The progress of
+     * one achievement comes with its card: `userAchievementGroup()`.
      *
      * GET /users/:id/achievements — public endpoint.
-     *
-     * @param string $userId The target user's ID.
-     *
-     * @return ResponseInterface
      */
     public function userAchievements(string $userId): ResponseInterface
     {
-        $locale            = $this->request->getLocale();
-        $achievementsModel = new AchievementsModel();
+        $locale = $this->request->getLocale();
+        $earned = $this->earnedMap($userId);
+        $now    = date('Y-m-d H:i:s');
+        $result = [];
 
-        $achievements = $achievementsModel
+        foreach ((new AchievementsModel())->where('is_active', 1)->orderBy('sort_order', 'ASC')->findAll() as $achievement) {
+            if (!$this->isHidden($achievement, isset($earned[$achievement->id]), $now)) {
+                $result[] = $this->userItem($achievement, $locale, $earned[$achievement->id] ?? null);
+            }
+        }
+
+        return $this->respond(['data' => $result]);
+    }
+
+    /**
+     * One achievement of a profile with all its steps, each with that user's `earned_at` and
+     * `progress` counted now (each rule apart): the card of the award. The costly request — one
+     * achievement at a time, only when its card is opened.
+     *
+     * GET /users/:id/achievements/:group — public; `:group` is the `group_slug`, or the id of an
+     * achievement without a group.
+     */
+    public function userAchievementGroup(string $userId, string $group): ResponseInterface
+    {
+        $steps = (new AchievementsModel())
             ->where('is_active', 1)
+            ->groupStart()
+                ->where('group_slug', $group)
+                ->orGroupStart()->where('id', $group)->groupStart()->where('group_slug', '')->orWhere('group_slug', null)->groupEnd()->groupEnd()
+            ->groupEnd()
             ->orderBy('sort_order', 'ASC')
             ->findAll();
 
-        $userAchievementsModel = new UsersAchievementsModel();
-        $earned = $userAchievementsModel
-            ->where('user_id', $userId)
-            ->findAll();
+        $earned = $this->earnedMap($userId);
+        $now    = date('Y-m-d H:i:s');
+        $steps  = array_values(array_filter($steps, fn ($step) => !$this->isHidden($step, isset($earned[$step->id]), $now)));
 
-        $earnedMap = [];
-        foreach ($earned as $e) {
-            $earnedMap[$e->achievement_id] = $e->earned_at;
+        if ($steps === []) {
+            return $this->failNotFound();
         }
 
-        $achievementsLib = new AchievementsLibrary();
-        $progressMap     = $achievementsLib->getProgress($userId);
+        $locale   = $this->request->getLocale();
+        $progress = (new AchievementsLibrary())->progressOf($userId, $steps);
+        $result   = [];
 
-        $result = [];
+        foreach ($steps as $step) {
+            $item = $this->userItem($step, $locale, $earned[$step->id] ?? null);
 
-        $now = date('Y-m-d H:i:s');
-
-        foreach ($achievements as $achievement) {
-            if ($this->isHidden($achievement, isset($earnedMap[$achievement->id]), $now)) {
-                continue;
-            }
-
-            $item = (object) [
-                'id'           => $achievement->id,
-                'group_slug'   => $achievement->group_slug,
-                'type'         => $achievement->type,
-                'tier'         => $achievement->tier,
-                'category'     => $achievement->category,
-                'title'        => $achievement->{"title_$locale"} ?? $achievement->title_en,
-                'description'  => $achievement->{"description_$locale"} ?? $achievement->description_en,
-                'image'        => $achievement->image,
-                'xp_bonus'     => (int) $achievement->xp_bonus,
-                'sort_order'   => (int) $achievement->sort_order,
-                'season_start' => $achievement->season_start,
-                'season_end'   => $achievement->season_end,
-                'earned_at'    => $earnedMap[$achievement->id] ?? null,
-            ];
-
-            if (isset($progressMap[$achievement->id])) {
-                $item->progress = $progressMap[$achievement->id];
+            if (isset($progress[$step->id])) {
+                $item->progress = $progress[$step->id];
             }
 
             $result[] = $item;
         }
 
         return $this->respond(['data' => $result]);
+    }
+
+    /** @return array<string, mixed> achievement id => the day it was earned */
+    private function earnedMap(string $userId): array
+    {
+        $map = [];
+
+        foreach ((new UsersAchievementsModel())->select('achievement_id, earned_at')->where('user_id', $userId)->findAll() as $row) {
+            $map[$row->achievement_id] = $row->earned_at;
+        }
+
+        return $map;
+    }
+
+    /** An achievement as a profile shows it */
+    private function userItem(object $achievement, string $locale, mixed $earnedAt): object
+    {
+        return (object) [
+            'id'           => $achievement->id,
+            'group_slug'   => $achievement->group_slug,
+            'type'         => $achievement->type,
+            'tier'         => $achievement->tier,
+            'title'        => $achievement->{"title_$locale"} ?? $achievement->title_en,
+            'description'  => $achievement->{"description_$locale"} ?? $achievement->description_en,
+            'image'        => $achievement->image,
+            'xp_bonus'     => (int) $achievement->xp_bonus,
+            'sort_order'   => (int) $achievement->sort_order,
+            'season_start' => $achievement->season_start,
+            'season_end'   => $achievement->season_end,
+            'earned_at'    => $earnedAt,
+        ];
     }
 
     /**
@@ -298,7 +323,6 @@ class Achievements extends ResourceController
                 'group_slug'     => $achievement->group_slug,
                 'type'           => $achievement->type,
                 'tier'           => $achievement->tier,
-                'category'       => $achievement->category,
                 'title'          => $achievement->{"title_$locale"} ?? $achievement->title_en,
                 'title_en'       => $achievement->title_en,
                 'title_ru'       => $achievement->title_ru,
@@ -339,7 +363,7 @@ class Achievements extends ResourceController
         $limit  = max(1, min(20, (int) ($this->request->getGet('limit') ?? 5) ?: 5));
 
         $rows = Database::connect()->table('users_achievements ua')
-            ->select('ua.id, ua.earned_at, a.id AS achievement_id, a.title_en, a.title_ru, a.image, a.tier, a.category, a.group_slug, '
+            ->select('ua.id, ua.earned_at, a.id AS achievement_id, a.title_en, a.title_ru, a.image, a.tier, a.group_slug, '
                 . 'u.id AS user_id, u.name, u.avatar, u.level')
             ->join('achievements a', 'a.id = ua.achievement_id')
             ->join('users u', 'u.id = ua.user_id AND u.deleted_at IS NULL')
@@ -362,7 +386,6 @@ class Achievements extends ResourceController
                     'title'      => $title,
                     'image'      => $row['image'],
                     'tier'       => $row['tier'],
-                    'category'   => $row['category'],
                     'group_slug' => $row['group_slug'],
                 ],
                 'user'        => [
@@ -414,7 +437,6 @@ class Achievements extends ResourceController
         $entity->group_slug     = $fields['group_slug'];
         $entity->type           = $fields['type'];
         $entity->tier           = $fields['tier'];
-        $entity->category       = $fields['category'];
         $entity->title_en       = $fields['title_en'] ?? '';
         $entity->title_ru       = $fields['title_ru'];
         $entity->description_en = $fields['description_en'] ?? null;

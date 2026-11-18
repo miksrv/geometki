@@ -206,8 +206,10 @@ class Notifications extends ResourceController
         }
 
         if ($collectionsIds) {
+            helper('slug');
+
             $collections = (new CollectionsModel())
-                ->select('id, slug, title')
+                ->select('id, title')
                 ->whereIn('id', array_values(array_unique($collectionsIds)))
                 ->findAll();
 
@@ -227,7 +229,7 @@ class Notifications extends ResourceController
                 $title = $locale === 'en' ? ($meta->title_en ?? '') : ($meta->title_ru ?? $meta->title_en ?? '');
 
                 $meta = $notify->type === 'achievements'
-                    ? ['title' => $title, 'image' => $meta->image ?? null, 'tier' => $meta->tier ?? null, 'category' => $meta->category ?? null, 'group' => $meta->group ?? null]
+                    ? ['title' => $title, 'image' => $meta->image ?? null, 'tier' => $meta->tier ?? null, 'group' => $meta->group ?? null]
                     : ['title' => $title, 'level' => $meta->level ?? null];
             }
 
@@ -257,7 +259,7 @@ class Notifications extends ResourceController
             if ($collectionData) {
                 $tempData['collection'] = [
                     'id'    => $collectionData->id,
-                    'slug'  => $collectionData->slug,
+                    'slug'  => generateCollectionSlug($collectionData->title),
                     'title' => $collectionData->title,
                 ];
             }

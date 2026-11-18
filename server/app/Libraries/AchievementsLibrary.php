@@ -12,15 +12,11 @@ class AchievementsLibrary
     public const GAME_METRICS = ['places_confirmed', 'quests_walked'];
 
     /**
-     * Whether an award belongs to the game: of its category, or counting its metrics (a limited
-     * award made for a season).
+     * Whether an award belongs to the game: it counts one of the game's metrics (a limited award
+     * made for a season, a walked quest).
      */
     public static function isOfGame(object $achievement): bool
     {
-        if ($achievement->category === 'game') {
-            return true;
-        }
-
         $rules = is_string($achievement->rules) ? json_decode($achievement->rules, true) : $achievement->rules;
 
         foreach ((array) $rules as $rule) {
@@ -32,10 +28,9 @@ class AchievementsLibrary
         return false;
     }
 
-    /** What an award can be: its kind, tier, and the shelves it is put on (the ones the seeds use) */
+    /** What an award can be: its kind and tier */
     public const TYPES      = ['base', 'seasonal'];
     public const TIERS      = ['none', 'bronze', 'silver', 'gold'];
-    public const CATEGORIES = ['content', 'exploration', 'social', 'reputation', 'consistency', 'seasonal', 'game'];
 
     /** The metrics resolveMetric() counts: what a rule may name */
     public const METRICS = [
@@ -80,7 +75,7 @@ class AchievementsLibrary
      */
     private const PROGRESS_TTL = 600;
 
-    private const PROGRESS_CACHE_PREFIX = 'achievements_progress_';
+    private const PROGRESS_CACHE_PREFIX = 'achievements_progress_v2_';
 
     /** Drop the user's cached progress: their metrics have changed */
     public static function forgetProgress(string $userId): void
@@ -331,6 +326,31 @@ class AchievementsLibrary
         return $revoked;
     }
 
+    /**
+     * The awards a person holds that `reconcile()` would take back now: their terms are no
+     * longer met (the titles, for `achievements:rebuild --dry-run`). Changes nothing.
+     *
+     * @return string[]
+     */
+    public function unmet(string $userId): array
+    {
+        $held = \Config\Database::connect()->table('users_achievements ua')
+            ->select('a.*')
+            ->join('achievements a', 'a.id = ua.achievement_id')
+            ->where('ua.user_id', $userId)
+            ->get()->getResult();
+
+        $titles = [];
+
+        foreach ($held as $achievement) {
+            if ($this->isRevocable($achievement) && !$this->isMet($userId, $achievement)) {
+                $titles[] = $achievement->title_ru . ' (' . $achievement->tier . ')';
+            }
+        }
+
+        return $titles;
+    }
+
     /** Whether an award counts only what its holder can take back themselves */
     private function isRevocable(object $achievement): bool
     {
@@ -371,7 +391,11 @@ class AchievementsLibrary
     /**
      * Return progress info for all active achievements for a user (cached, PROGRESS_TTL).
      *
-     * @return array [achievementId => ['current' => int, 'required' => int, 'pct' => float]]
+     * `current` / `required` sum the rules (each capped at its threshold) for one bar; `rules` keeps
+     * each rule apart — an achievement of two rules is not read from their sum
+     *
+     * @return array [achievementId => ['current' => int, 'required' => int, 'pct' => float,
+     *               'rules' => list<array{metric: string, current: int, required: int}>]]
      */
     public function getProgress(string $userId): array
     {
@@ -389,27 +413,26 @@ class AchievementsLibrary
         return $progress;
     }
 
-    /**
-     * @return array [achievementId => ['current' => int, 'required' => int, 'pct' => float]]
-     */
     private function countProgress(string $userId): array
     {
-        $achievementsModel     = new AchievementsModel();
-        $userAchievementsModel = new UsersAchievementsModel();
+        return $this->progressOf($userId, (new AchievementsModel())->where('is_active', 1)->findAll());
+    }
 
-        $now          = date('Y-m-d H:i:s');
-        $achievements = $achievementsModel->where('is_active', 1)->findAll();
-
-        $earned = $userAchievementsModel
-            ->select('achievement_id, earned_at')
-            ->where('user_id', $userId)
-            ->findAll();
-
-        $earnedMap = [];
-        foreach ($earned as $e) {
-            $earnedMap[$e->achievement_id] = $e->earned_at;
-        }
-
+    /**
+     * The progress of a person with some achievements, counted now (no cache): each rule's metric
+     * is read anew — the costly part, asked for one achievement's card at a time
+     * (`GET /users/:id/achievements/:group`) or for all of them by `getProgress()`.
+     *
+     * `current` / `required` sum the rules (each capped at its threshold) for one bar; `rules` keeps
+     * each rule apart — an achievement of two rules is not read from their sum
+     *
+     * @param list<object> $achievements
+     *
+     * @return array [achievementId => ['current' => int, 'required' => int, 'pct' => float,
+     *               'rules' => list<array{metric: string, current: int, required: int}>]]
+     */
+    public function progressOf(string $userId, array $achievements): array
+    {
         $result = [];
 
         foreach ($achievements as $achievement) {
@@ -426,6 +449,7 @@ class AchievementsLibrary
 
             $current  = 0;
             $required = 0;
+            $parts    = [];
 
             foreach ($rules as $rule) {
                 $threshold = (int) $rule['value'];
@@ -433,6 +457,7 @@ class AchievementsLibrary
 
                 $required += $threshold;
                 $current  += min($actual, $threshold);
+                $parts[]   = ['metric' => (string) $rule['metric'], 'current' => (int) $actual, 'required' => $threshold];
             }
 
             $pct = $required > 0 ? min(100.0, round(($current / $required) * 100, 1)) : 100.0;
@@ -441,6 +466,7 @@ class AchievementsLibrary
                 'current'  => $current,
                 'required' => $required,
                 'pct'      => $pct,
+                'rules'    => $parts,
             ];
         }
 
@@ -784,7 +810,6 @@ class AchievementsLibrary
             'image'    => $achievement->image,
             // An award without a picture is drawn from these (the client's AwardBadge)
             'tier'     => $achievement->tier,
-            'category' => $achievement->category,
             'group'    => $achievement->group_slug,
         ]);
     }
@@ -858,20 +883,6 @@ class AchievementsLibrary
                 } else {
                     $fields[$key] = $value;
                 }
-            }
-        }
-
-        if ($new || $has('category')) {
-            $category = $input['category'] ?? null;
-            $known    = array_merge(
-                self::CATEGORIES,
-                array_column(\Config\Database::connect()->table('achievements')->select('category')->distinct()->get()->getResultArray(), 'category')
-            );
-
-            if (!is_string($category) || !in_array($category, $known, true)) {
-                $errors['category'] = lang('Achievements.badEnum', [implode(', ', array_unique($known))]);
-            } else {
-                $fields['category'] = $category;
             }
         }
 

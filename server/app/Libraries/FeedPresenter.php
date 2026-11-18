@@ -25,7 +25,7 @@ use Config\Database;
  *   places?, placesCount?         — rating, visit, collection_place: the places, a rating
  *                                   story with the author's `value` for each;
  *   collection?                   — collection, collection_place;
- *   achievement?                  — achievement: {id, title, image, tier, category, group};
+ *   achievement?                  — achievement: {id, title, image, tier, group};
  *   level?                        — level: the level reached.
  * A story whose subject is gone (a deleted photo, comment or place) is left out.
  */
@@ -463,16 +463,17 @@ class FeedPresenter
         }
 
         $rows = Database::connect()->table('collections')
-            ->select('id, slug, title, title_en, places_count')
+            ->select('id, title, title_en, places_count')
             ->whereIn('id', $ids)
             ->where('deleted_at', null)
-            ->where('hidden', 0)
             ->get()
             ->getResult();
 
         $coverPlaceIds = (new CollectionsPlacesModel())->getCoverPlaceIds(array_column($rows, 'id'), self::COVERS_LIMIT);
         $formatter     = new PlaceFormatterLibrary();
         $collections   = [];
+
+        helper('slug');
 
         foreach ($rows as $row) {
             $covers = [];
@@ -487,7 +488,7 @@ class FeedPresenter
 
             $collections[$row->id] = [
                 'id'          => $row->id,
-                'slug'        => $row->slug,
+                'slug'        => generateCollectionSlug($row->title),
                 'title'       => $this->locale === 'en' && !empty($row->title_en) ? $row->title_en : $row->title,
                 'placesCount' => (int) $row->places_count,
                 'covers'      => $covers,
@@ -510,7 +511,7 @@ class FeedPresenter
         }
 
         $rows = Database::connect()->table('achievements')
-            ->select('id, title_en, title_ru, image, tier, category, group_slug')
+            ->select('id, title_en, title_ru, image, tier, group_slug')
             ->whereIn('id', $ids)
             ->get()
             ->getResult();
@@ -522,10 +523,9 @@ class FeedPresenter
                 'id'    => $row->id,
                 'title' => $this->locale === 'en' ? $row->title_en : $row->title_ru,
                 'image' => $row->image,
-                'tier'  => $row->tier,
                 // An award without a picture is drawn from these (the client's AwardBadge)
-                'category' => $row->category,
-                'group'    => $row->group_slug,
+                'tier'  => $row->tier,
+                'group' => $row->group_slug,
             ];
         }
 
