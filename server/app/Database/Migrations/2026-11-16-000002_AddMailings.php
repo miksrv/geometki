@@ -26,6 +26,11 @@ class AddMailings extends Migration
                 'image'           => ['type' => 'VARCHAR', 'constraint' => 255, 'null' => true],
                 'status'          => ['type' => 'ENUM', 'constraint' => ['draft', 'sending', 'completed', 'canceled'], 'null' => false, 'default' => 'draft'],
                 'recipients'      => ['type' => 'INT', 'unsigned' => true, 'null' => false, 'default' => 0],
+                // The delivery numbers kept once the mailing is finished: its queue rows are deleted
+                // after `Notifications::$retentionDays` (MailingsModel::freezeDelivery()); null before
+                'delivered'       => ['type' => 'INT', 'unsigned' => true, 'null' => true],
+                'failed'          => ['type' => 'INT', 'unsigned' => true, 'null' => true],
+                'rejected'        => ['type' => 'INT', 'unsigned' => true, 'null' => true],
                 'author_id'       => ['type' => 'VARCHAR', 'constraint' => 15, 'null' => true],
                 'sent_at'         => ['type' => 'DATETIME', 'null' => true],
                 'completed_at'    => ['type' => 'DATETIME', 'null' => true],
