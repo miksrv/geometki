@@ -2,13 +2,22 @@ import { DateTime } from '@/api/types/index'
 
 export type AchievementTier = 'none' | 'bronze' | 'silver' | 'gold'
 export type AchievementType = 'base' | 'seasonal'
-export type AchievementCategory =
-    'exploration' | 'content' | 'social' | 'reputation' | 'consistency' | 'seasonal' | 'game'
+
+/** One rule of an achievement: the person's real count of its metric and the threshold */
+export interface AchievementRuleProgress {
+    /** `achievements-metric-<metric>` names it */
+    metric: string
+    current: number
+    required: number
+}
 
 export interface AchievementProgress {
+    /** The rules summed, each capped at its threshold: one bar, never read for several rules */
     current: number
     required: number
     pct: number
+    /** Each rule apart (absent in an answer cached before it came) */
+    rules?: AchievementRuleProgress[]
 }
 
 export interface Achievement {
@@ -16,7 +25,6 @@ export interface Achievement {
     group_slug: string
     type: AchievementType
     tier: AchievementTier
-    category: AchievementCategory
     title: string
     description: string
     image?: string | null
@@ -24,7 +32,8 @@ export interface Achievement {
     season_start: string | null
     season_end: string | null
     earned_at: DateTime
-    progress: AchievementProgress | null
+    /** Only in one achievement's answer (`users/:id/achievements/:group`) and the own list: the list of a profile counts nothing */
+    progress?: AchievementProgress | null
     sort_order: number
     is_active: boolean
 }
@@ -41,7 +50,6 @@ export interface AchievementInput {
     group_slug?: string
     type: AchievementType
     tier: AchievementTier
-    category: string
     title_en: string
     title_ru: string
     description_en?: string
@@ -71,6 +79,6 @@ export interface AchievementAdmin extends Achievement {
 export interface AchievementRecent {
     id: string
     earned_at: string
-    achievement: Pick<Achievement, 'id' | 'title' | 'image' | 'tier' | 'category' | 'group_slug'>
+    achievement: Pick<Achievement, 'id' | 'title' | 'image' | 'tier' | 'group_slug'>
     user: { id: string; name: string; avatar: string | null; levelData?: { level: number } }
 }

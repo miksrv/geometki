@@ -14,9 +14,8 @@ export type Notification = {
         title?: string
         level?: number
         image?: string
-        /** An achievement: its tier, category and group — an award without a picture is drawn from them */
+        /** An achievement: its tier and group — an award without a picture is drawn from them */
         tier?: string | null
-        category?: string | null
         group?: string | null
         experience?: number
         levelExperience?: number

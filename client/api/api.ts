@@ -76,6 +76,14 @@ export const API = createApi({
             providesTags: ['UserAchievements'],
             query: (userId) => `users/${userId}/achievements`
         }),
+        /** One achievement of a profile, every step with the progress counted now: the card of the award */
+        getUserAchievementGroup: builder.query<
+            { data: ApiType.Achievements.Achievement[] },
+            { userId: string; group: string }
+        >({
+            providesTags: ['UserAchievements'],
+            query: ({ userId, group }) => `users/${userId}/achievements/${encodeURIComponent(group)}`
+        }),
         getAchievementsManage: builder.query<{ data: ApiType.Achievements.AchievementAdmin[] }, void>({
             providesTags: ['AchievementsManage'],
             query: () => 'achievements/manage'
@@ -348,31 +356,20 @@ export const API = createApi({
             transformErrorResponse: extractErrorData
         }),
         mailingsPostSend: builder.mutation<ApiType.Mailings.MailingAdmin, string>({
-            invalidatesTags: ['Mailings', 'SendingMail'],
+            invalidatesTags: ['Mailings'],
             query: (id) => ({ method: 'POST', url: `mailings/${id}/send` }),
             transformErrorResponse: extractErrorData
         }),
         mailingsPostCancel: builder.mutation<ApiType.Mailings.MailingAdmin, string>({
-            invalidatesTags: ['Mailings', 'SendingMail'],
+            invalidatesTags: ['Mailings'],
             query: (id) => ({ method: 'POST', url: `mailings/${id}/cancel` }),
             transformErrorResponse: extractErrorData
         }),
 
-        /** Controller: Sending Mail **/
-        getSendingMailList: builder.query<
-            ApiType.SendingMail.SendingMailListResponse,
-            Maybe<ApiType.SendingMail.SendingMailListRequest>
-        >({
-            providesTags: ['SendingMail'],
-            query: (params) => `sending-mail/manage${encodeQueryData(params)}`
-        }),
-
-        getSendingMailItem: builder.query<ApiType.SendingMail.SendingMailDetailResponse, string>({
-            providesTags: (result, error, id) => [{ id, type: 'SendingMail' }],
-            query: (id) => `sending-mail/manage/${id}`
-        }),
-
         /** Controller: Mail **/
+        mailGetQueue: builder.query<ApiType.Mail.MailQueueResponse, void>({
+            query: () => 'mail/queue'
+        }),
         mailGetUnsubscribe: builder.query<
             ApiType.Mail.UnsubscribeStatusResponse,
             ApiType.Mail.UnsubscribeStatusRequest
@@ -436,31 +433,23 @@ export const API = createApi({
             providesTags: ['Game'],
             query: (params) => `game/places${encodeQueryData(params)}`
         }),
-        gameGetSeasonsManage: builder.query<{ items: ApiType.Game.SeasonAdmin[] }, void>({
-            providesTags: [{ id: 'LIST', type: 'GameSeasons' }],
-            query: () => 'game/seasons/manage'
-        }),
         gameGetSeasonManage: builder.query<ApiType.Game.SeasonAdmin, string>({
             providesTags: (_result, _error, id) => [{ id, type: 'GameSeasons' }],
             query: (id) => `game/seasons/manage/${id}`
         }),
         gamePostSeason: builder.mutation<ApiType.Game.SeasonAdmin, ApiType.Game.SeasonInput>({
-            invalidatesTags: [{ id: 'LIST', type: 'GameSeasons' }, 'Game'],
+            invalidatesTags: ['Game'],
             query: (body) => ({ body, method: 'POST', url: 'game/seasons' }),
             transformErrorResponse: extractErrorData
         }),
         gamePatchSeason: builder.mutation<ApiType.Game.SeasonAdmin, { id: string; body: ApiType.Game.SeasonInput }>({
-            invalidatesTags: (_result, _error, { id }) => [
-                { id: 'LIST', type: 'GameSeasons' },
-                { id, type: 'GameSeasons' },
-                'Game'
-            ],
+            invalidatesTags: (_result, _error, { id }) => [{ id, type: 'GameSeasons' }, 'Game'],
             query: ({ id, body }) => ({ body, method: 'PATCH', url: `game/seasons/${id}` }),
             transformErrorResponse: extractErrorData
         }),
-        // Only the list: the deleted season's own query would refetch into a 404 while its page is being left
+        // Not its own tag: the deleted season's query would refetch into a 404 while its page is being left
         gameDeleteSeason: builder.mutation<void, string>({
-            invalidatesTags: [{ id: 'LIST', type: 'GameSeasons' }, 'Game'],
+            invalidatesTags: ['Game'],
             query: (id) => ({ method: 'DELETE', url: `game/seasons/${id}` }),
             transformErrorResponse: extractErrorData
         }),
@@ -468,11 +457,7 @@ export const API = createApi({
             ApiType.Game.SeasonAdmin,
             { id: string; kind: ApiType.Game.SeasonImageKind; file: File }
         >({
-            invalidatesTags: (_result, _error, { id }) => [
-                { id: 'LIST', type: 'GameSeasons' },
-                { id, type: 'GameSeasons' },
-                'Game'
-            ],
+            invalidatesTags: (_result, _error, { id }) => [{ id, type: 'GameSeasons' }, 'Game'],
             query: ({ id, kind, file }) => {
                 const formData = new FormData()
                 formData.append('image', file)
@@ -485,11 +470,7 @@ export const API = createApi({
             ApiType.Game.SeasonAdmin,
             { id: string; kind: ApiType.Game.SeasonImageKind }
         >({
-            invalidatesTags: (_result, _error, { id }) => [
-                { id: 'LIST', type: 'GameSeasons' },
-                { id, type: 'GameSeasons' },
-                'Game'
-            ],
+            invalidatesTags: (_result, _error, { id }) => [{ id, type: 'GameSeasons' }, 'Game'],
             query: ({ id, kind }) => ({ method: 'DELETE', url: `game/seasons/${id}/image?kind=${kind}` }),
             transformErrorResponse: extractErrorData
         }),
@@ -500,6 +481,11 @@ export const API = createApi({
         gameGetUser: builder.query<ApiType.Game.UserResponse, string>({
             providesTags: ['Game'],
             query: (id) => `game/users/${id}`
+        }),
+        /** A person's tasks: the limited awards running now, with their progress */
+        gameGetUserTasks: builder.query<{ data: ApiType.Game.LimitedAward[] }, string>({
+            providesTags: ['Game', 'UserAchievements'],
+            query: (id) => `game/users/${id}/tasks`
         }),
 
         /** Controller: Quests (the quests of the game) **/
@@ -520,12 +506,12 @@ export const API = createApi({
             providesTags: ['Quests'],
             query: (params) => `game/quests${encodeQueryData(params)}`
         }),
-        questsPatch: builder.mutation<{ id: string }, ApiType.Game.QuestInput & { id: string }>({
+        questsPatch: builder.mutation<{ id: string; slug: string | null }, ApiType.Game.QuestInput & { id: string }>({
             invalidatesTags: ['Quests', 'Game'],
             query: ({ id, ...body }) => ({ body, method: 'PATCH', url: `game/quests/${id}` }),
             transformErrorResponse: extractErrorData
         }),
-        questsPost: builder.mutation<{ id: string }, ApiType.Game.QuestInput>({
+        questsPost: builder.mutation<{ id: string; slug: string | null }, ApiType.Game.QuestInput>({
             invalidatesTags: ['Quests', 'Game'],
             query: (body) => ({ body, method: 'POST', url: 'game/quests' }),
             transformErrorResponse: extractErrorData
@@ -1053,7 +1039,6 @@ export const API = createApi({
         'PushStatus',
         'Rating',
         'Quests',
-        'SendingMail',
         'UserAchievements',
         'Users',
         'Visits'

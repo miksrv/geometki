@@ -38,8 +38,7 @@ export type FeedAchievement = {
     title: string
     image?: string | null
     tier: AchievementTier
-    /** The award's category and group: an award without a picture is drawn from them */
-    category?: string
+    /** The award's group: an award without a picture is drawn from it */
     group?: string
 }
 

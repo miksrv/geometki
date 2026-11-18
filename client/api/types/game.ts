@@ -8,8 +8,10 @@ export type SeasonMedals = Record<MedalKind, string | null>
 
 /** A season: made by hand by an administrator, with its own dates */
 export interface Season {
-    /** A slug set on creation (`2027-04`) */
+    /** A random id given on creation */
     id: string
+    /** The slug of the Russian title (made on the fly): the page is `/game/seasons/{id}-{slug}` */
+    slug: string | null
     title: string
     description: string | null
     /** The first and the last day, `YYYY-MM-DD` */
@@ -33,6 +35,7 @@ export interface Season {
 /** A season for the administrator: both locales of the texts, the numbers that say if it can go */
 export interface SeasonAdmin {
     id: string
+    slug: string | null
     title_ru: string
     title_en: string | null
     description_ru: string | null
@@ -55,9 +58,8 @@ export interface SeasonAdmin {
     startLocked: boolean
 }
 
-/** `POST game/seasons` (with `id`), `PATCH game/seasons/:id` */
+/** `POST game/seasons`, `PATCH game/seasons/:id` */
 export interface SeasonInput {
-    id?: string
     title_ru: string
     title_en?: string
     description_ru?: string
@@ -95,15 +97,15 @@ export interface LimitedAward {
     description: string | null
     image: string | null
     tier: string
-    category: string
     group: string
     /** The first and the last day it can be earned, `YYYY-MM-DD` */
     from: string
     to: string
     experience: number
-    /** Signed-in visitor only: when they earned it, and how far they are */
+    /** The person's (the signed-in visitor's on a season, the profile's on its tasks): when they earned it, and how far they are */
     earned: string | null
-    progress: { current: number; required: number; pct: number } | null
+    /** Each rule apart in `rules`: an award of several rules is never read from the sum */
+    progress: ApiType.Achievements.AchievementProgress | null
 }
 
 /** A person's line of a table; `place` is null while they have no points there */
@@ -195,6 +197,8 @@ export type ValuablePlace = ApiModel.PlaceListItem & {
 export interface PlacesRequest {
     lat?: number
     lon?: number
+    /** With a point, km: only the places within it; none there — the nearest ones */
+    radius?: number
     limit?: number
 }
 
@@ -241,8 +245,12 @@ export interface ExplorationResponse {
 /** A season a person took part in: has a counted place in */
 export interface Participation {
     id: string
+    slug: string | null
     title: string
     image: string | null
+    /** The first and the last day, `YYYY-MM-DD` */
+    from: string
+    to: string
     closed: boolean
     points: number
     places: number
@@ -301,6 +309,8 @@ export interface QuestZone {
 
 export interface Quest {
     id: string
+    /** The slug of the Russian title (made on the fly): the page is `/quests/{id}-{slug}` */
+    slug: string | null
     title: string
     description: string | null
     mode: QuestMode
@@ -374,6 +384,7 @@ export interface QuestResponse extends Quest {
 /** A quest on a map (`GET /game/quests/marks`): its start, or a riddle quest's zone centre */
 export interface QuestMark {
     id: string
+    slug: string | null
     title: string
     mode: QuestMode
     lat: number
