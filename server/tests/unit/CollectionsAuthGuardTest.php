@@ -5,7 +5,7 @@ use CodeIgniter\Test\CIUnitTestCase;
 /**
  * Unit tests for the authentication/ownership-guard logic used throughout
  * the Collections controller: create/update/delete/addPlaces/removePlace/
- * updatePlaces/membership/moderation all gate on session state the same way
+ * updatePlaces/membership all gate on session state the same way
  * Bookmarks/Visited/Places do.
  *
  * We test the branching conditions as pure PHP — no HTTP, no DB — mirroring
@@ -73,69 +73,6 @@ final class CollectionsAuthGuardTest extends CIUnitTestCase
     public function testUnauthenticatedIsNeverOwnerOrAdmin(): void
     {
         $this->assertFalse($this->isOwnerOrAdmin(false, 'admin', null, 'user-1'));
-    }
-
-    // =========================================================================
-    // canView() — mirrors Collections::canView(): hidden collections 404 for
-    // everyone except the owner and admins.
-    // =========================================================================
-
-    private function canView(bool $hidden, bool $isAuth, ?string $role, ?string $sessionUserId, ?string $ownerId): bool
-    {
-        if (!$hidden) {
-            return true;
-        }
-
-        return $this->isOwnerOrAdmin($isAuth, $role, $sessionUserId, $ownerId);
-    }
-
-    public function testVisibleCollectionIsAlwaysViewable(): void
-    {
-        $this->assertTrue($this->canView(false, false, null, null, 'user-1'));
-    }
-
-    public function testHiddenCollectionIsNotViewableByStranger(): void
-    {
-        $this->assertFalse($this->canView(true, true, 'user', 'user-2', 'user-1'));
-    }
-
-    public function testHiddenCollectionIsViewableByOwner(): void
-    {
-        $this->assertTrue($this->canView(true, true, 'user', 'user-1', 'user-1'));
-    }
-
-    public function testHiddenCollectionIsViewableByAdmin(): void
-    {
-        $this->assertTrue($this->canView(true, true, 'admin', 'admin-1', 'user-1'));
-    }
-
-    public function testHiddenCollectionIsNotViewableByGuest(): void
-    {
-        $this->assertFalse($this->canView(true, false, null, null, 'user-1'));
-    }
-
-    // =========================================================================
-    // moderation() — admin-only guard: if (!isAuth || role !== 'admin')
-    // =========================================================================
-
-    private function moderationGuard(bool $isAuth, ?string $role): bool
-    {
-        return !$isAuth || $role !== 'admin';
-    }
-
-    public function testModerationBlocksNonAdmin(): void
-    {
-        $this->assertTrue($this->moderationGuard(true, 'user'));
-    }
-
-    public function testModerationBlocksUnauthenticated(): void
-    {
-        $this->assertTrue($this->moderationGuard(false, 'admin'));
-    }
-
-    public function testModerationAllowsAuthenticatedAdmin(): void
-    {
-        $this->assertFalse($this->moderationGuard(true, 'admin'));
     }
 
     // =========================================================================

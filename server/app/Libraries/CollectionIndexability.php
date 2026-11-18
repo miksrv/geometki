@@ -15,15 +15,10 @@ class CollectionIndexability
     /**
      * @param string|null $description Raw markdown description.
      * @param int $placesCount Non-deleted places currently in the collection.
-     * @param bool $hidden Admin "hidden" switch.
      * @return bool
      */
-    public static function isIndexable(?string $description, int $placesCount, bool $hidden): bool
+    public static function isIndexable(?string $description, int $placesCount): bool
     {
-        if ($hidden) {
-            return false;
-        }
-
         if ($placesCount < COLLECTION_INDEX_MIN_PLACES) {
             return false;
         }

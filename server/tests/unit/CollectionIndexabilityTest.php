@@ -7,8 +7,8 @@ use CodeIgniter\Test\CIUnitTestCase;
  * Unit tests for App\Libraries\CollectionIndexability — the silent SEO gate
  * for collections: a collection is index,follow only
  * when it has at least COLLECTION_INDEX_MIN_PLACES places, a plain-text
- * description of at least COLLECTION_INDEX_MIN_DESCRIPTION characters, and
- * is not hidden. Pure PHP, no DB.
+ * description of at least COLLECTION_INDEX_MIN_DESCRIPTION characters.
+ * Pure PHP, no DB.
  *
  * @internal
  */
@@ -20,42 +20,35 @@ final class CollectionIndexabilityTest extends CIUnitTestCase
         return str_repeat('Это длинное описание коллекции мест для проверки порога индексации. ', 10);
     }
 
-    public function testHiddenCollectionIsNeverIndexableRegardlessOfContent(): void
-    {
-        $description = $this->longEnoughDescription();
-
-        $this->assertFalse(CollectionIndexability::isIndexable($description, 10, true));
-    }
-
     public function testTooFewPlacesIsNotIndexable(): void
     {
         $description = $this->longEnoughDescription();
 
-        $this->assertFalse(CollectionIndexability::isIndexable($description, COLLECTION_INDEX_MIN_PLACES - 1, false));
+        $this->assertFalse(CollectionIndexability::isIndexable($description, COLLECTION_INDEX_MIN_PLACES - 1));
     }
 
     public function testExactlyMinPlacesCountsAsEnough(): void
     {
         $description = $this->longEnoughDescription();
 
-        $this->assertTrue(CollectionIndexability::isIndexable($description, COLLECTION_INDEX_MIN_PLACES, false));
+        $this->assertTrue(CollectionIndexability::isIndexable($description, COLLECTION_INDEX_MIN_PLACES));
     }
 
     public function testShortDescriptionIsNotIndexableEvenWithEnoughPlaces(): void
     {
-        $this->assertFalse(CollectionIndexability::isIndexable('Коротко.', COLLECTION_INDEX_MIN_PLACES + 5, false));
+        $this->assertFalse(CollectionIndexability::isIndexable('Коротко.', COLLECTION_INDEX_MIN_PLACES + 5));
     }
 
     public function testNullDescriptionIsNotIndexable(): void
     {
-        $this->assertFalse(CollectionIndexability::isIndexable(null, COLLECTION_INDEX_MIN_PLACES + 5, false));
+        $this->assertFalse(CollectionIndexability::isIndexable(null, COLLECTION_INDEX_MIN_PLACES + 5));
     }
 
     public function testAllThresholdsMetMakesItIndexable(): void
     {
         $description = $this->longEnoughDescription();
 
-        $this->assertTrue(CollectionIndexability::isIndexable($description, COLLECTION_INDEX_MIN_PLACES + 2, false));
+        $this->assertTrue(CollectionIndexability::isIndexable($description, COLLECTION_INDEX_MIN_PLACES + 2));
     }
 
     public function testMarkdownSyntaxDoesNotCountTowardsPlainTextLength(): void
@@ -64,7 +57,7 @@ final class CollectionIndexabilityTest extends CIUnitTestCase
         // but whose actual visible text is short, must not be indexable.
         $noise = str_repeat('**_[a](http://example.com/very/long/path/that/is/mostly/markup)_** ', 40);
 
-        $this->assertFalse(CollectionIndexability::isIndexable($noise, COLLECTION_INDEX_MIN_PLACES + 1, false));
+        $this->assertFalse(CollectionIndexability::isIndexable($noise, COLLECTION_INDEX_MIN_PLACES + 1));
     }
 
     public function testStripMarkdownRemovesHeadingsEmphasisLinksAndCode(): void

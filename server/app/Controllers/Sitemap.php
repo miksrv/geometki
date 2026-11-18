@@ -54,9 +54,18 @@ class Sitemap extends ResourceController
             )
             ->findAll();
         $collections = $collectionsModel
-            ->select('id, slug, updated_at as updated')
-            ->where(['hidden' => 0, 'indexable' => 1])
+            ->asObject()
+            ->select('id, title, updated_at as updated')
+            ->where('indexable', 1)
             ->findAll();
+
+        helper('slug');
+
+        // The slug is made from the title on the fly
+        foreach ($collections as $collection) {
+            $collection->slug = generateCollectionSlug($collection->title);
+            unset($collection->title);
+        }
 
         foreach ($places as $place) {
             $place->locales = $place->locales ? explode(',', $place->locales) : [];

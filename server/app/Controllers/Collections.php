@@ -72,8 +72,6 @@ class Collections extends ResourceController
         $countModel->applyListSelect();
 
         $apply = function (CollectionsModel $model) use ($region, $author, $placeId) {
-            $model->where('collections.hidden', 0);
-
             if ($region) {
                 $model->where('collections.region_id', $region);
             }
@@ -104,7 +102,7 @@ class Collections extends ResourceController
 
         foreach ($items as $item) {
             $this->decorate($item, $locale);
-            unset($item->description, $item->indexable, $item->hidden);
+            unset($item->description, $item->indexable);
         }
 
         $this->attachCovers($items);
@@ -137,10 +135,6 @@ class Collections extends ResourceController
         $collection = $model->asObject()->find($id);
 
         if (!$collection) {
-            return $this->failNotFound();
-        }
-
-        if (!$this->canView($collection)) {
             return $this->failNotFound();
         }
 
@@ -252,11 +246,10 @@ class Collections extends ResourceController
             $collection = new CollectionEntity();
             $collection->user_id      = $userId;
             $collection->title        = $title;
-            $collection->slug         = generateCollectionSlug($title);
             $collection->description  = isset($input->description) ? strip_tags(html_entity_decode($input->description)) : null;
             $collection->region_id    = $input->region ?? null;
             $collection->places_count = 0;
-            $collection->indexable    = (int) CollectionIndexability::isIndexable($collection->description, 0, false);
+            $collection->indexable    = (int) CollectionIndexability::isIndexable($collection->description, 0);
 
             $insertResult = $this->model->insert($collection);
 
@@ -266,7 +259,7 @@ class Collections extends ResourceController
 
             $newId = $this->model->getInsertID();
 
-            return $this->respondCreated(['id' => $newId, 'slug' => $collection->slug]);
+            return $this->respondCreated(['id' => $newId, 'slug' => generateCollectionSlug($title)]);
         } catch (Throwable $e) {
             log_message('error', '{exception}', ['exception' => $e]);
             return $this->failServerError(lang('Collections.createError'));
@@ -294,7 +287,8 @@ class Collections extends ResourceController
         SitePages::collection($id);
 
         if ($collection) {
-            SitePages::path(SitePages::collectionPath($id, $collection->slug));
+            helper('slug');
+            SitePages::path(SitePages::collectionPath($id, generateCollectionSlug($collection->title)));
         }
 
         if (!$collection) {
@@ -317,8 +311,6 @@ class Collections extends ResourceController
             return $this->failValidationErrors($this->validator->getErrors());
         }
 
-        helper('slug');
-
         try {
             $update = new CollectionEntity();
             $descriptionChanged = false;
@@ -326,7 +318,6 @@ class Collections extends ResourceController
             if (isset($input->title)) {
                 $title = strip_tags(html_entity_decode($input->title));
                 $update->title = $title;
-                $update->slug  = generateCollectionSlug($title);
             }
 
             if (property_exists($input, 'description')) {
@@ -343,7 +334,7 @@ class Collections extends ResourceController
             $this->model->update($id, $update);
 
             $effectiveDescription = $descriptionChanged ? $update->description : $collection->description;
-            $this->recalcIndexable($id, $effectiveDescription, $collection->places_count, $collection->hidden);
+            $this->recalcIndexable($id, $effectiveDescription, $collection->places_count);
             $this->markPlacePages($id);
 
             return $this->respondUpdated();
@@ -470,7 +461,7 @@ class Collections extends ResourceController
             $this->model->autofillTheme($id);
 
             $fresh = $this->model->find($id);
-            $this->recalcIndexable($id, $fresh->description, $newCount, $fresh->hidden);
+            $this->recalcIndexable($id, $fresh->description, $newCount);
 
             if ($newCount >= COLLECTION_ACTIVITY_MIN_PLACES) {
                 $activityModel = new ActivityModel();
@@ -529,7 +520,7 @@ class Collections extends ResourceController
         $newCount = $this->model->recalcPlacesCount($id);
 
         $fresh = $this->model->find($id);
-        $this->recalcIndexable($id, $fresh->description, $newCount, $fresh->hidden);
+        $this->recalcIndexable($id, $fresh->description, $newCount);
 
         return $this->respondDeleted();
     }
@@ -680,10 +671,6 @@ class Collections extends ResourceController
             return $this->failNotFound();
         }
 
-        if (!$this->canView($collection)) {
-            return $this->failNotFound();
-        }
-
         if (empty($collection->region_id)) {
             return $this->respond(['items' => [], 'count' => 0]);
         }
@@ -731,70 +718,9 @@ class Collections extends ResourceController
         ]);
     }
 
-    /**
-     * Admin moderation: hide or feature a collection.
-     *
-     * PATCH /collections/:id/moderation — body: { hidden?, featured? }
-     *
-     * @param string|null $id
-     * @return ResponseInterface
-     */
-    public function moderation($id = null): ResponseInterface
-    {
-        if (!$this->session->isAuth || $this->session->user->role !== 'admin') {
-            return $this->failUnauthorized();
-        }
-
-        $collection = $this->model->find($id);
-        SitePages::collection($id);
-
-        if (!$collection) {
-            return $this->failNotFound();
-        }
-
-        $input = $this->request->getJSON();
-        $update = [];
-
-        if (isset($input->hidden)) {
-            $update['hidden'] = $input->hidden ? 1 : 0;
-        }
-
-        if (isset($input->featured)) {
-            $update['featured'] = $input->featured ? 1 : 0;
-        }
-
-        if (empty($update)) {
-            return $this->failValidationErrors(lang('Collections.missingInput'));
-        }
-
-        $this->model->update($id, $update);
-
-        $fresh = $this->model->find($id);
-        $this->recalcIndexable($id, $fresh->description, $fresh->places_count, $fresh->hidden);
-        $this->markPlacePages($id);
-
-        return $this->respondUpdated();
-    }
-
     // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
-
-    /**
-     * Whether the current session may view a (possibly hidden) collection:
-     * anyone when not hidden, otherwise only the owner or an admin.
-     *
-     * @param object $collection Must expose user_id (or owner_id) and hidden.
-     * @return bool
-     */
-    protected function canView(object $collection): bool
-    {
-        if (empty($collection->hidden)) {
-            return true;
-        }
-
-        return $this->isOwnerOrAdmin($collection);
-    }
 
     /**
      * Whether the current session is the collection's owner or an admin.
@@ -823,12 +749,11 @@ class Collections extends ResourceController
      * @param string $id
      * @param string|null $description
      * @param int $placesCount
-     * @param bool|int $hidden
      * @return void
      */
-    protected function recalcIndexable(string $id, ?string $description, int $placesCount, $hidden): void
+    protected function recalcIndexable(string $id, ?string $description, int $placesCount): void
     {
-        $indexable = CollectionIndexability::isIndexable($description, $placesCount, (bool) $hidden);
+        $indexable = CollectionIndexability::isIndexable($description, $placesCount);
         $this->model->skipValidation(true)->update($id, ['indexable' => (int) $indexable]);
     }
 
@@ -880,7 +805,11 @@ class Collections extends ResourceController
     {
         $formatter = new PlaceFormatterLibrary();
 
+        helper('slug');
+
         $row->author = $formatter->formatAuthor($row);
+        // The address of its page is `{id}-{slug}`: the slug of the title, made on the fly
+        $row->slug   = generateCollectionSlug($row->title);
 
         $row->region = !empty($row->region_id)
             ? ['id' => (int) $row->region_id, 'name' => $row->{"region_$locale"} ?? null]
@@ -889,7 +818,6 @@ class Collections extends ResourceController
         $row->placesCount = (int) $row->places_count;
         $row->views       = (int) $row->views;
         $row->saves       = (int) $row->saves;
-        $row->featured    = (bool) $row->featured;
 
         if (!empty($row->updated)) {
             $row->updated = new \DateTime((string) $row->updated);
@@ -908,7 +836,7 @@ class Collections extends ResourceController
         );
     }
 
-    /** The place pages list the collection in "In collections": renamed, hidden or deleted, they render anew */
+    /** The place pages list the collection in "In collections": renamed or deleted, they render anew */
     private function markPlacePages(string $collectionId): void
     {
         foreach ((new CollectionsPlacesModel())->getOrderedPlaceIds($collectionId) as $placeId) {
