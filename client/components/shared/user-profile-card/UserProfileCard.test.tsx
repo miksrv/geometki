@@ -190,15 +190,11 @@ describe('UserProfileCard', () => {
         const sections = screen.getByRole('navigation', { name: /user-card-sections/ })
         const links = Array.from(sections.querySelectorAll('a'))
 
-        expect(links.map((link) => link.getAttribute('href'))).toStrictEqual([
-            '/users/u1',
-            '/users/u1/places',
-            '/users/u1/achievements'
-        ])
-        expect(links.map((link) => link.getAttribute('aria-current'))).toStrictEqual([null, 'page', null])
+        expect(links.map((link) => link.getAttribute('href'))).toStrictEqual(['/users/u1', '/users/u1/places'])
+        expect(links.map((link) => link.getAttribute('aria-current'))).toStrictEqual([null, 'page'])
     })
 
-    it("gives the home card no links to the pages of the profile: they are the profile's tabs", () => {
+    it('gives the home card no links to the pages of the profile: they are the profile\'s tabs', () => {
         render(
             <UserProfileCard
                 user={user}

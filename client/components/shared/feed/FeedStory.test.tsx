@@ -333,7 +333,7 @@ describe('FeedStory', () => {
             expect(screen.getByTestId('collection-card')).toHaveAttribute('data-show-author', 'false')
         })
 
-        it('shows an achievement with its tier and a link to the achievements', () => {
+        it('shows an achievement with its tier and a link to the profile, where the awards are', () => {
             render(
                 <FeedStory
                     story={story({
@@ -346,10 +346,7 @@ describe('FeedStory', () => {
 
             expect(screen.getByText('Первооткрыватель')).toBeInTheDocument()
             expect(screen.getByText('achievements-tier-gold')).toBeInTheDocument()
-            expect(screen.getByRole('link', { name: /Первооткрыватель/ })).toHaveAttribute(
-                'href',
-                '/users/u1/achievements'
-            )
+            expect(screen.getByRole('link', { name: /Первооткрыватель/ })).toHaveAttribute('href', '/users/u1')
         })
 
         it('shows the level reached', () => {

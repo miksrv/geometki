@@ -106,7 +106,7 @@ export const QuestCard: React.FC<QuestCardProps> = ({
     const title = (
         <Heading className={styles.title}>
             <Link
-                href={questHref(quest.id)}
+                href={questHref(quest.id, quest.slug)}
                 title={quest.title}
                 className={styles.link}
             >

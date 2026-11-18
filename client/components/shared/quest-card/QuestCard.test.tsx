@@ -52,6 +52,7 @@ const quest: ApiType.Game.Quest = {
     cover: { preview: 'uploads/places/p1/cover_preview.jpg' },
     description: null,
     id: 'r1',
+    slug: 'kosmicheskiy-orenburg',
     length: 1440,
     location: 'Оренбург',
     mode: 'steps',
@@ -76,7 +77,10 @@ describe('QuestCard', () => {
         )
 
         expect(screen.getAllByRole('link')).toHaveLength(1)
-        expect(screen.getByRole('link', { name: 'Космический Оренбург' })).toHaveAttribute('href', '/quests/r1')
+        expect(screen.getByRole('link', { name: 'Космический Оренбург' })).toHaveAttribute(
+            'href',
+            '/quests/r1-kosmicheskiy-orenburg'
+        )
         expect(screen.getByRole('heading', { level: 2, name: 'Космический Оренбург' })).toBeInTheDocument()
         // A wide card takes the full cover; the picture is decorative
         expect(container.querySelector('img')).toHaveAttribute('src', 'https://img.test/uploads/places/p1/cover.jpg')
@@ -174,7 +178,10 @@ describe('QuestCard', () => {
 
         expect(screen.getByText('home-quest-overline')).toBeInTheDocument()
         expect(screen.queryByText('game-quest-mode-steps')).not.toBeInTheDocument()
-        expect(screen.getByRole('link', { name: 'Космический Оренбург' })).toHaveAttribute('href', '/quests/r1')
+        expect(screen.getByRole('link', { name: 'Космический Оренбург' })).toHaveAttribute(
+            'href',
+            '/quests/r1-kosmicheskiy-orenburg'
+        )
         // A narrow cover: the preview is enough
         expect(container.querySelector('img')).toHaveAttribute(
             'src',

@@ -220,7 +220,7 @@ export const FeedStory: React.FC<FeedStoryProps> = ({ story, density = 'full', h
             case ApiModel.FeedStoryTypes.Achievement:
                 return story.achievement && story.author ? (
                     <Link
-                        href={`/users/${story.author.id}/achievements`}
+                        href={`/users/${story.author.id}`}
                         className={styles.award}
                     >
                         <AchievementIcon
@@ -228,7 +228,6 @@ export const FeedStory: React.FC<FeedStoryProps> = ({ story, density = 'full', h
                             alt={story.achievement.title}
                             size={48}
                             tier={story.achievement.tier}
-                            category={story.achievement.category}
                             group={story.achievement.group}
                         />
                         <span className={styles.awardText}>

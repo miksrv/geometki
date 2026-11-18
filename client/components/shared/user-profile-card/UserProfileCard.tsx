@@ -19,13 +19,12 @@ import styles from './styles.module.sass'
 
 export type UserProfileCardVariant = 'home' | 'profile'
 
-/** The pages of a profile, the links at the foot of the card: the overview, the lists of places, the achievements */
-export type UserProfileSection = 'overview' | 'places' | 'achievements'
+/** The pages of a profile, the links at the foot of the card: the overview, the lists of places */
+export type UserProfileSection = 'overview' | 'places'
 
 const SECTIONS: Array<{ key: UserProfileSection; icon: IconTypes; label: string; path: string }> = [
     { icon: 'User', key: 'overview', label: 'user-tab-overview', path: '' },
-    { icon: 'Point', key: 'places', label: 'user-tab-places', path: '/places' },
-    { icon: 'Award', key: 'achievements', label: 'achievements-title', path: '/achievements' }
+    { icon: 'Point', key: 'places', label: 'user-tab-places', path: '/places' }
 ]
 
 export interface UserProfileCardProps {
@@ -47,6 +46,8 @@ export interface UserProfileCardProps {
     avatarSrc?: string
     /** `profile`: the page of the profile shown, underlined at the foot of the card */
     activeSection?: UserProfileSection
+    /** `profile`: the awards under the counters, in the room the tall avatar leaves there */
+    awards?: React.ReactNode
 }
 
 /**
@@ -61,7 +62,8 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({
     actions,
     facts,
     avatarSrc,
-    activeSection
+    activeSection,
+    awards
 }) => {
     const { t, i18n } = useTranslation()
     // Both pages are cached: "online" and "5 minutes ago" are the browser's
@@ -195,33 +197,36 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({
             </div>
 
             {/* No statistic (the profile did not load): no counters, rather than zeros that lie */}
-            {user.statistic && (
-                <StatTiles
-                    aria-label={t('user-hero-counters', { name: user.name })}
-                    items={[
-                        ...counters.map(({ key, count, link }) => ({
-                            href: link,
-                            key,
-                            label: t(`user-hero-${key}`, { count }),
-                            value: formatThousands(count)
-                        })),
-                        // The history of the reputation: every score that moved it, and what it is made of
-                        {
-                            ariaLabel: `${t('reputation')}: ${reputation}`,
-                            href: `${profileHref}/reputation`,
-                            key: 'reputation',
-                            label: t('user-hero-reputation'),
-                            tone:
-                                reputation > 0
-                                    ? ('positive' as const)
-                                    : reputation < 0
-                                      ? ('negative' as const)
-                                      : undefined,
-                            value: reputation > 0 ? `+${formatThousands(reputation)}` : formatThousands(reputation)
-                        }
-                    ]}
-                />
-            )}
+            <div className={styles.side}>
+                {user.statistic && (
+                    <StatTiles
+                        aria-label={t('user-hero-counters', { name: user.name })}
+                        items={[
+                            ...counters.map(({ key, count, link }) => ({
+                                href: link,
+                                key,
+                                label: t(`user-hero-${key}`, { count }),
+                                value: formatThousands(count)
+                            })),
+                            // The history of the reputation: every score that moved it, and what it is made of
+                            {
+                                ariaLabel: `${t('reputation')}: ${reputation}`,
+                                href: `${profileHref}/reputation`,
+                                key: 'reputation',
+                                label: t('user-hero-reputation'),
+                                tone:
+                                    reputation > 0
+                                        ? ('positive' as const)
+                                        : reputation < 0
+                                          ? ('negative' as const)
+                                          : undefined,
+                                value: reputation > 0 ? `+${formatThousands(reputation)}` : formatThousands(reputation)
+                            }
+                        ]}
+                    />
+                )}
+                {awards}
+            </div>
 
             {/* The pages of the profile, attached to the foot of the card: the profile's tabs. The home
                 card has none: the avatar and the counters already lead into the own profile */}

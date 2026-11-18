@@ -165,12 +165,12 @@ export const currentVisitOf = (
 
 /**
  * "Я здесь был(а)", the one check-in of the site: one tap, no form, and a toast tells the number
- * of the visit. Within a season (`game` of `GET /visits/me`) the tap also asks the
- * browser where the visitor is, without waiting for the answer: the visit is made and the
- * questions are asked at once, and when the position comes the same check-in is sent again with
- * it — on the spot the visit counts the place in the season (a second toast, "+30 геопоинтов");
- * far away, refused or not found in a few seconds it stays a plain visit — never an error,
- * nothing is said. Cancelling a visit that
+ * of the visit. The tap also asks the browser where the visitor is, without waiting for the
+ * answer: the visit is made and the questions are asked at once, and when the position comes the
+ * same check-in is sent again with it — on the spot the visit is confirmed (the same toast, its
+ * line extended: "Визит №3 в это место. Визит подтверждён: +30 геопоинтов"); far
+ * away, refused or not found in a few seconds it stays a plain visit — never an error, nothing
+ * is said. Cancelling a visit that
  * brought geopoints asks first: they go with it. A visit is a log entry, one a week (`repeatDays` of `GET /visits/me`): for a week
  * after the visit the button is green (success tint, the same in every place it is shown) and
  * reads "Вы здесь отметились", a tap then cancels the visit (`DELETE`); after the week it reads
@@ -204,7 +204,7 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
     const { data: myVisits } = API.useVisitsGetMeQuery({ place: placeId! }, { skip: !placeId || !isAuth })
     const { request: requestPosition } = usePreciseLocation()
 
-    // The game within a season: the check-in brings the position along
+    // The place in the season (`GET /visits/me`): a visit that brought geopoints is cancelled after a question
     const game = myVisits?.game
     // A visit that brought geopoints is cancelled after a question
     const [confirmCancel, setConfirmCancel] = useState<string>()
@@ -281,9 +281,11 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
 
         inFlight.add(placeId)
 
-        // The game: the browser is asked for the position at once, but nobody waits for it — the
+        // The position confirms the visit (and, in a season, counts it): the browser is asked at once, but nobody waits for it — the
         // visit is made and the questions are asked meanwhile
-        const position = game ? requestPosition({ quiet: true }) : undefined
+        const position = requestPosition({ quiet: true })
+        // The check-in's toast: the confirmation is added to it, one toast for one tap
+        let checkedIn: string | undefined
 
         try {
             // The same day answers that day's visit (`isNew: false`)
@@ -294,9 +296,8 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
             } else {
                 const { title, note } = checkInMessage(visit, t)
 
-                void dispatch(
-                    NotifyReplace({ id: 'visited', message: [title, note].filter(Boolean).join('. '), type: 'success' })
-                )
+                checkedIn = [title, note].filter(Boolean).join('. ')
+                void dispatch(NotifyReplace({ id: 'visited', message: checkedIn, type: 'success' }))
             }
         } catch (error) {
             notifyError(error)
@@ -304,10 +305,6 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
             return
         } finally {
             inFlight.delete(placeId)
-        }
-
-        if (!position) {
-            return
         }
 
         awaitingPosition.add(placeId)
@@ -324,11 +321,16 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
             // The same check-in again, with the position: on the spot the visit counts in the season
             const counted = await postVisit({ ...found, place: placeId, visitedAt }).unwrap()
 
-            if (counted.game?.confirmed && counted.game.points > 0) {
+            if (counted.game?.confirmed) {
+                const confirmed =
+                    counted.game.points > 0
+                        ? `${t('game-place-confirmed')}: ${t('game-points-plus', { count: counted.game.points })}`
+                        : t('visit-confirmed')
+
                 void dispatch(
                     NotifyReplace({
-                        id: 'visited-game',
-                        message: `${t('game-place-confirmed')}: ${t('game-points-plus', { count: counted.game.points })}`,
+                        id: 'visited',
+                        message: [checkedIn, confirmed].filter(Boolean).join('. '),
                         type: 'success'
                     })
                 )
@@ -338,7 +340,7 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
         } finally {
             awaitingPosition.delete(placeId)
         }
-    }, [dispatch, game, notifyError, onCheckedIn, placeId, postVisit, requestPosition, savePendingVisit, t])
+    }, [dispatch, notifyError, onCheckedIn, placeId, postVisit, requestPosition, savePendingVisit, t])
 
     // The visits saved offline: a day's visit is one, a resend cannot duplicate it
     const flushPendingVisits = useCallback(async () => {

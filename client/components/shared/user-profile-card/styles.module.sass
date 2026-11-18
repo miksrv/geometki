@@ -33,6 +33,22 @@
     .home, .profile
         --card-padding: var(--space-4)
 
+// The counters and, on a profile, the awards close under them (UserAwardsShowcase); below
+// 1024px they go under the rest, across the card. The column is centred in the row: as far
+// from the card's top edge as from the rule of the tabs (the card's padding and its gap are the same)
+.side
+    display: flex
+    flex-direction: column
+    gap: var(--space-2)
+    align-self: center
+    min-width: 0
+
+    &:empty
+        display: none
+
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        grid-column: 1 / -1
+
 // The one square avatar of the site, with the `--border-radius` corners
 .avatar
     display: block

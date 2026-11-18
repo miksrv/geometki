@@ -208,14 +208,26 @@ describe('WasHereButton', () => {
         expect(store.getState().notification.list[0].message).toBe('Визит отменён')
     })
 
-    it('asks nothing of the browser while the game is closed to the visitor', async () => {
-        mockPost.mockReturnValue({ unwrap: () => Promise.resolve({ id: 'v1', isNew: true, ordinal: 1 }) })
-        renderButton(true)
+    it('without a season asks for the position too: on the spot the visit is confirmed, without geopoints', async () => {
+        mockPosition.mockResolvedValue({ accuracy: 10, lat: 51.77, lon: 55.1 })
+        mockPost
+            .mockReturnValueOnce({ unwrap: () => Promise.resolve({ id: 'v1', isNew: true, ordinal: 1 }) })
+            .mockReturnValueOnce({
+                unwrap: () =>
+                    Promise.resolve({ game: { confirmed: true, points: 0 }, id: 'v1', isNew: false, ordinal: 1 })
+            })
+        const store = renderButton(true)
 
         fireEvent.click(screen.getByRole('button'))
 
-        await waitFor(() => expect(mockPost).toHaveBeenCalledTimes(1))
-        expect(mockPosition).not.toHaveBeenCalled()
+        await waitFor(() => expect(mockPost).toHaveBeenCalledTimes(2))
+        expect(mockPosition).toHaveBeenCalledWith({ quiet: true })
+        expect(mockPost).toHaveBeenLastCalledWith(expect.objectContaining({ lat: 51.77, lon: 55.1, place: 'p1' }))
+        await waitFor(() =>
+            expect(store.getState().notification.list.map((item) => item.message)).toStrictEqual([
+                'Визит №{{count}} в это место. visit-confirmed'
+            ])
+        )
     })
 
     it('in the game checks in at once and does not wait for the position: it comes later and counts the visit', async () => {
@@ -244,7 +256,9 @@ describe('WasHereButton', () => {
 
         await act(async () => found({ accuracy: 12, lat: 51.75, lon: 55.1 }))
 
-        await waitFor(() => expect(store.getState().notification.list).toHaveLength(2))
+        // One tap, one toast: the confirmation extends the check-in's line
+        await waitFor(() => expect(store.getState().notification.list[0].message).toContain('game-points-plus'))
+        expect(store.getState().notification.list).toHaveLength(1)
         expect(mockPost).toHaveBeenLastCalledWith({
             accuracy: 12,
             lat: 51.75,
@@ -252,7 +266,7 @@ describe('WasHereButton', () => {
             place: 'p1',
             visitedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/)
         })
-        expect(store.getState().notification.list[1].message).toContain('game-points-plus')
+        expect(store.getState().notification.list[0].message).toMatch(/^Визит.*game-place-confirmed: game-points-plus$/)
     })
 
     it('in the game is a plain visit without a position: no error', async () => {

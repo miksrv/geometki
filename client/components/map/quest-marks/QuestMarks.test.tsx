@@ -53,8 +53,8 @@ jest.mock('leaflet', () => ({
 }))
 
 const marks: ApiType.Game.QuestMark[] = [
-    { id: 'q1', lat: 51.75, lon: 55.1, mode: 'steps', title: 'Космический Оренбург' },
-    { id: 'q2', lat: 51.76, lon: 55.1, mode: 'riddles', title: 'Загадки старого центра' }
+    { id: 'q1', lat: 51.75, lon: 55.1, mode: 'steps', slug: null, title: 'Космический Оренбург' },
+    { id: 'q2', lat: 51.76, lon: 55.1, mode: 'riddles', slug: null, title: 'Загадки старого центра' }
 ]
 
 describe('QuestMarks', () => {
