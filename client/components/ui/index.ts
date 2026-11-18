@@ -3,6 +3,7 @@ export { type BreadcrumbLink, Breadcrumbs, type BreadcrumbsProps } from './bread
 export { Chip, type ChipProps } from './chip'
 export { ContentEditor } from './content-editor'
 export { Counter } from './counter'
+export { DateField, type DateFieldProps } from './date-field'
 export { ExpandableText } from './expandable-text'
 export { FieldHint, type FieldHintProps, HintedField, type HintedFieldProps } from './field-hint'
 export { FieldTrigger, type FieldTriggerProps } from './field-trigger'

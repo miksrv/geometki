@@ -22,6 +22,14 @@
     --space-8: 32px;
     --space-10: 40px;
 
+    /* The two gaps between blocks (DESIGN.md → Layout → Gaps). A list (places, collections,
+       quests, people, a rail of tiles) keeps more air: its tiles carry their text under the cover,
+       so rows get more than columns. Widgets (the columns of a page, the blocks of a side
+       column, cards side by side) sit closer: they are framed by their own surfaces. */
+    --gap-list-row: var(--space-6);
+    --gap-list-column: var(--space-5);
+    --gap-widgets: var(--space-4);
+
     /* Type scale (DESIGN.md → Type scale). The kit gives 12 / 14 / 16px (--font-size-small /
        --font-size / --font-size-large); the project adds the rest. Components take a role
        from styles/typography.sass rather than a bare size:
@@ -45,23 +53,49 @@
     --color-tier-gold: #ffd700;
     --color-tier-none: var(--icon-color-secondary);
 
-    /* The game (DESIGN.md → The game). Awards are enamel pins (features/26 → "Award pictures"):
-       the rim is the tier — dark steel for an award without one —, the field is the group's
-       colour, the symbol is cream with navy details; a season's field is its time of year.
-       The same in both themes, as the drawn pictures are */
-    --color-award-rim-none: #4a5563;
+    /* The game (DESIGN.md → The game). The colours of the groups: the field and the emblem of
+       an award without a tier (AwardBadge, the medals below), a season's — its time of year.
+       The cream and the navy are the levels' ink. The same in both themes, as the drawn
+       pictures are */
     --color-award-symbol: #f6ead0;
     --color-award-detail: #12284a;
-    --color-award-exploration: #1f5a9e;
-    --color-award-content: #1b8a8f;
-    --color-award-social: #b83260;
-    --color-award-reputation: #6a4aa5;
-    --color-award-consistency: #2f7d4f;
     --color-award-game: #1f5a9e;
     --color-award-quest: #d9822b;
     --color-award-seasonal: #d99a2b;
     --color-season-cold: #6aa9dc;
     --color-season-warm: #ea7a5a;
+
+    /* Medals (features/26 → "Award pictures", tools/medals/medal.py): the drawn award without a
+       picture of its own (AwardBadge) takes the same metals and fields as the generated ones —
+       the rim lit from above (light, middle, dark), the thin inner line, the field (centre,
+       edge) and the light emblem. The same in both themes */
+    --color-medal-gap: #0a0b0d;
+    --color-medal-bronze-rim-light: #e6b48e;
+    --color-medal-bronze-rim: #a86a40;
+    --color-medal-bronze-rim-dark: #4f2f1a;
+    --color-medal-bronze-line: #b07a52;
+    --color-medal-bronze-field: #6e4c33;
+    --color-medal-bronze-field-edge: #3a281b;
+    --color-medal-bronze-art: #f0dcc6;
+    --color-medal-silver-rim-light: #ffffff;
+    --color-medal-silver-rim: #c3cad2;
+    --color-medal-silver-rim-dark: #5f6770;
+    --color-medal-silver-line: #d6dde4;
+    --color-medal-silver-field: #5f6a76;
+    --color-medal-silver-field-edge: #2c333b;
+    --color-medal-silver-art: #ffffff;
+    --color-medal-gold-rim-light: #fff4bf;
+    --color-medal-gold-rim: #e8b23a;
+    --color-medal-gold-rim-dark: #7a4c0c;
+    --color-medal-gold-line: #f2c75a;
+    --color-medal-gold-field: #8f6d2c;
+    --color-medal-gold-field-edge: #4a3613;
+    --color-medal-gold-art: #fffaf0;
+    --color-medal-steel-rim-light: #c9d0d8;
+    --color-medal-steel-rim: #6f7882;
+    --color-medal-steel-rim-dark: #262a30;
+    --color-medal-steel-line: #8a939c;
+    --color-medal-steel-field-edge: #0e1013;
 
     /* Levels (DESIGN.md → Marks): a hexagon like an award's — the rim, the flat field and the
        number, by the tier of the level (three levels share one). The fields are deep enough
