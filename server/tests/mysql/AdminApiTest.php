@@ -50,34 +50,29 @@ final class AdminApiTest extends MySqlTestCase
 
     // ------------------------------------------------------------------ seasons
 
-    public function testASeasonCannotBeCalledManage(): void
+    public function testANewSeasonGetsARandomIdAndASlugOfItsTitle(): void
     {
         $this->signIn('admin1');
 
-        foreach (['manage', 'leaders', 'new'] as $id) {
-            $answer = $this->createSeasonRequest(['id' => $id]);
+        // An id sent by the client is not taken
+        $created = $this->createSeasonRequest(['id' => 'manage', 'title_ru' => 'Холодный сезон 2031']);
 
-            $this->assertSame(400, $answer['status'], $id);
-            $this->assertArrayHasKey('id', $answer['body']['messages']);
-        }
+        $this->assertSame(201, $created['status']);
+        $this->assertMatchesRegularExpression('/^[0-9a-f]{13}$/', $created['body']['id']);
+        $this->assertSame('kholodnyy-sezon-2031', $created['body']['slug']);
 
-        $this->assertSame(0, $this->db->table('game_seasons')->countAllResults());
+        $id = $created['body']['id'];
 
-        // The list stays where it was
-        $this->get('game/seasons/manage')->assertStatus(200);
-    }
+        $this->assertSame('kholodnyy-sezon-2031', json_decode($this->get('game/seasons/' . $id)->getJSON(), true)['season']['slug']);
 
-    public function testTheSameIdTwiceIsA400OnTheId(): void
-    {
-        $this->signIn('admin1');
+        // The slug follows the title: it is not stored
+        $this->withBodyFormat('json')->patch('game/seasons/' . $id, ['title_ru' => 'Зимний сезон'])->assertStatus(200);
+        $this->assertSame('zimniy-sezon', json_decode($this->get('game/seasons/manage/' . $id)->getJSON(), true)['slug']);
 
-        $this->assertSame(201, $this->createSeasonRequest(['id' => 'one-one'])['status']);
+        $second = $this->createSeasonRequest(['starts_on' => '2032-01-01', 'ends_on' => '2032-02-01']);
 
-        $second = $this->createSeasonRequest(['id' => 'one-one', 'starts_on' => '2032-01-01', 'ends_on' => '2032-02-01']);
-
-        $this->assertSame(400, $second['status']);
-        $this->assertArrayHasKey('id', $second['body']['messages']);
-        $this->assertSame(1, $this->db->table('game_seasons')->countAllResults());
+        $this->assertSame(201, $second['status']);
+        $this->assertNotSame($id, $second['body']['id']);
     }
 
     public function testASeasonChangeWaitsForTheLockAndAsksToRetry(): void
@@ -89,7 +84,7 @@ final class AdminApiTest extends MySqlTestCase
         $this->assertSame(1, (int) $other->query("SELECT GET_LOCK('game_seasons', 1) AS l")->getRow()->l);
 
         try {
-            $answer = $this->createSeasonRequest(['id' => 'locked']);
+            $answer = $this->createSeasonRequest([]);
         } finally {
             $other->query("SELECT RELEASE_LOCK('game_seasons')");
             $other->close();
@@ -98,7 +93,7 @@ final class AdminApiTest extends MySqlTestCase
         $this->assertSame(400, $answer['status']);
         $this->assertArrayHasKey('error', $answer['body']['messages']);
         $this->assertSame(0, $this->db->table('game_seasons')->countAllResults());
-        $this->assertSame(201, $this->createSeasonRequest(['id' => 'locked'])['status']);
+        $this->assertSame(201, $this->createSeasonRequest([])['status']);
     }
 
     public function testABusyLockOnAChangeOrADeleteIsA400NotA404(): void
@@ -171,17 +166,21 @@ final class AdminApiTest extends MySqlTestCase
         $this->assertNull((new GameLibrary())->find('stale')['closed_at']);
     }
 
-    public function testASeasonWithPointsIsNotDeletedAndOneWithoutIs(): void
+    public function testOnlyASeasonStillToComeIsDeleted(): void
     {
-        $this->season('played', GameLibrary::today(null, '-10 days'), GameLibrary::today(null, '+10 days'));
-        $this->points('played', 'user1', 'place1', GameLibrary::today() . ' 12:00:00');
-        $this->season('unplayed', GameLibrary::today(null, '+20 days'), GameLibrary::today(null, '+30 days'));
+        $this->season('played', GameLibrary::today(null, '-10 days'), GameLibrary::today(null, '-5 days'));
+        $this->points('played', 'user1', 'place1', GameLibrary::today(null, '-7 days') . ' 12:00:00');
+        // Begun today, nothing counted yet: still a part of the history
+        $this->season('begun', GameLibrary::today(), GameLibrary::today(null, '+10 days'));
+        $this->season('later', GameLibrary::today(null, '+20 days'), GameLibrary::today(null, '+30 days'));
         $this->signIn('admin1');
 
         $this->delete('game/seasons/played')->assertStatus(400);
         $this->assertNotNull((new GameLibrary())->find('played'));
-        $this->delete('game/seasons/unplayed')->assertStatus(200);
-        $this->assertNull((new GameLibrary())->find('unplayed'));
+        $this->delete('game/seasons/begun')->assertStatus(400);
+        $this->assertNotNull((new GameLibrary())->find('begun'));
+        $this->delete('game/seasons/later')->assertStatus(200);
+        $this->assertNull((new GameLibrary())->find('later'));
     }
 
     public function testTheOptionalTextsOfASeasonAreStringsOrNull(): void
@@ -189,13 +188,13 @@ final class AdminApiTest extends MySqlTestCase
         $this->signIn('admin1');
 
         foreach (['title_en', 'description_ru', 'description_en'] as $field) {
-            $answer = $this->createSeasonRequest(['id' => 'texts', $field => ['no']]);
+            $answer = $this->createSeasonRequest([$field => ['no']]);
 
             $this->assertSame(400, $answer['status'], $field);
             $this->assertArrayHasKey($field, $answer['body']['messages']);
         }
 
-        $this->assertSame(201, $this->createSeasonRequest(['id' => 'texts', 'title_en' => null, 'description_ru' => ''])['status']);
+        $this->assertSame(201, $this->createSeasonRequest(['title_en' => null, 'description_ru' => ''])['status']);
         $this->season('has-text', GameLibrary::today(null, '+400 days'), GameLibrary::today(null, '+410 days'), ['description_ru' => 'Описание']);
         // A number does not clear the text
         $this->withBodyFormat('json')->patch('game/seasons/has-text', ['description_ru' => 5])->assertStatus(400);
@@ -465,7 +464,7 @@ final class AdminApiTest extends MySqlTestCase
         $this->assertSame('places_confirmed', $manage['rules'][0]['metric']);
 
         // Defaults: a base award with no rules is an empty list
-        $this->json('post', 'achievements', ['group_slug' => 'plain', 'category' => 'social', 'title_ru' => 'Простая'])->assertStatus(201);
+        $this->json('post', 'achievements', ['group_slug' => 'plain', 'title_ru' => 'Простая'])->assertStatus(201);
         $this->assertSame('ARRAY', $this->db->query("SELECT JSON_TYPE(rules) AS t FROM achievements WHERE group_slug = 'plain'")->getRow()->t);
     }
 
@@ -476,7 +475,6 @@ final class AdminApiTest extends MySqlTestCase
         $bad = [
             'type'         => ['type' => 'weekly'],
             'tier'         => ['tier' => 'platinum'],
-            'category'     => ['category' => 'nonsense'],
             'title_ru'     => ['title_ru' => '  '],
             'group_slug'   => ['group_slug' => 'a b'],
             'rules'        => ['rules' => [['metric' => 'made_up', 'value' => 1]]],
@@ -596,65 +594,43 @@ final class AdminApiTest extends MySqlTestCase
         $this->assertEquals(json_decode($rules, true), json_decode($row->rules, true));
     }
 
-    // ------------------------------------------------------------------ sending mail
+    // ------------------------------------------------------------------ mail queue
 
     public function testTheMailQueueGuardAnswers401ToAGuestAnd403ToAMember(): void
     {
-        $this->get('sending-mail/manage')->assertStatus(401);
-        $this->get('sending-mail/manage/any')->assertStatus(401);
+        $this->get('mail/queue')->assertStatus(401);
         $this->signIn('user1');
-        $this->get('sending-mail/manage')->assertStatus(403);
-        $this->get('sending-mail/manage/any')->assertStatus(403);
+        $this->get('mail/queue')->assertStatus(403);
         $this->signIn('admin1');
-        $this->get('sending-mail/manage')->assertStatus(200);
+        $this->get('mail/queue')->assertStatus(200);
     }
 
-    public function testTheDateToOfTheMailListIncludesTheWholeDay(): void
+    public function testTheMailQueueTellsWhetherTheLettersGoOut(): void
     {
-        $this->mail('m1', 'completed', '2027-03-10 00:00:01');
-        $this->mail('m2', 'completed', '2027-03-10 23:59:58');
-        $this->mail('m3', 'error', '2027-03-11 00:00:00');
-        $this->mail('m4', 'completed', '2027-03-09 12:00:00');
+        $ago = static fn (string $time) => date('Y-m-d H:i:s', strtotime($time));
+
+        $this->mail('m1', 'completed', $ago('-2 hours'), ['sent_at' => $ago('-2 hours')]);
+        $this->mail('m2', 'grouped', $ago('-2 hours'), ['sent_at' => $ago('-2 hours')]);
+        $this->mail('m3', 'completed', $ago('-3 days'), ['sent_at' => $ago('-3 days')]);
+        // An activity email due an hour ago is overdue; one held back till later, and the bulk mail, are not
+        $this->mail('m4', 'created', $ago('-1 hour'), ['type' => 'comment']);
+        $this->mail('m5', 'created', $ago('-2 hours'), ['type' => 'comment', 'next_attempt_at' => $ago('+1 hour')]);
+        $this->mail('m6', 'created', $ago('-2 days'));
+        $this->mail('m7', 'error', $ago('-1 day'));
+        $this->mail('m8', 'error', $ago('-10 days'));
+
+        cache()->save(\App\Libraries\Mail\MailQueue::LAST_RUN_CACHE_KEY, strtotime('2027-03-10 10:00:00 UTC'), 60);
         $this->signIn('admin1');
 
-        $ids = fn (string $query) => array_column(json_decode($this->get('sending-mail/manage?sort=created&order=asc&' . $query)->getJSON(), true)['items'], 'id');
+        $answer = json_decode($this->get('mail/queue')->getJSON(), true);
 
-        $this->assertSame(['m1', 'm2'], $ids('date_from=2027-03-10&date_to=2027-03-10'));
-        $this->assertSame(['m4', 'm1', 'm2'], $ids('date_to=2027-03-10'));
-        $this->assertSame(['m1', 'm2', 'm3'], $ids('date_from=2027-03-10'));
-        $this->assertSame(['m1', 'm2'], $ids('date_from=2027-03-10+00:00:00&date_to=2027-03-10+23:59:59'));
+        $this->assertSame(
+            ['last_run_at' => '2027-03-10 10:00:00', 'sent_day' => 2, 'pending' => 3, 'overdue' => 1, 'errors_week' => 1],
+            $answer
+        );
 
-        // A filter that is not valid is ignored, a valid status narrows
-        $this->assertSame(['m4', 'm1', 'm2', 'm3'], $ids('status=nonsense&date_from=yesterday&date_to=2027-02-30'));
-        $this->assertSame(['m3'], $ids('status=error'));
-    }
-
-    public function testThePendingFilterIsTheQueueOfTheStats(): void
-    {
-        $this->mail('m1', 'created', '2027-03-10 10:00:00');
-        $this->mail('m2', 'process', '2027-03-10 11:00:00');
-        $this->mail('m3', 'completed', '2027-03-10 12:00:00');
-        $this->signIn('admin1');
-
-        $answer = json_decode($this->get('sending-mail/manage?sort=created&order=asc&status=pending')->getJSON(), true);
-
-        // The "in the queue" chip lists exactly what its counter counts
-        $this->assertSame(['m1', 'm2'], array_column($answer['items'], 'id'));
-        $this->assertSame(2, $answer['stats']['pending']);
-    }
-
-    public function testTheMailDetailKeepsItsShape(): void
-    {
-        $this->mail('m1', 'completed', '2027-03-10 10:00:00');
-        $this->signIn('admin1');
-
-        $data = json_decode($this->get('sending-mail/manage/m1')->getJSON(), true)['data'];
-
-        foreach (['id', 'status', 'email', 'subject', 'message', 'error', 'type', 'attempts', 'groupId', 'created', 'updated', 'sent', 'user', 'activity'] as $key) {
-            $this->assertArrayHasKey($key, $data);
-        }
-
-        $this->get('sending-mail/manage/none')->assertStatus(404);
+        cache()->delete(\App\Libraries\Mail\MailQueue::LAST_RUN_CACHE_KEY);
+        $this->assertNull(json_decode($this->get('mail/queue')->getJSON(), true)['last_run_at']);
     }
 
     // ------------------------------------------------------------------ helpers
@@ -662,7 +638,7 @@ final class AdminApiTest extends MySqlTestCase
     /** @return array{status: int, body: array<string, mixed>} */
     private function createSeasonRequest(array $change): array
     {
-        $body     = $change + ['id' => 'fresh', 'title_ru' => 'Новый', 'starts_on' => '2031-01-01', 'ends_on' => '2031-02-01'];
+        $body     = $change + ['title_ru' => 'Новый', 'starts_on' => '2031-01-01', 'ends_on' => '2031-02-01'];
         $response = $this->withBodyFormat('json')->post('game/seasons', $body);
 
         return ['status' => $response->response()->getStatusCode(), 'body' => json_decode($response->getJSON(), true) ?? []];
@@ -672,7 +648,7 @@ final class AdminApiTest extends MySqlTestCase
     private function achievementBody(): array
     {
         return [
-            'group_slug' => 'my_award', 'type' => 'base', 'tier' => 'gold', 'category' => 'game',
+            'group_slug' => 'my_award', 'type' => 'base', 'tier' => 'gold',
             'title_ru' => 'Награда', 'title_en' => 'Award', 'xp_bonus' => 10, 'sort_order' => 5, 'is_active' => true,
             'rules' => [['metric' => 'places_confirmed', 'value' => 3]],
         ];
@@ -724,7 +700,7 @@ final class AdminApiTest extends MySqlTestCase
         $this->assertSame(['2027-01-03 10:00:00', '2027-01-02 10:00:00', '2027-01-01 10:00:00'], array_column($answer['items'], 'earned_at'));
         $first = $answer['items'][0];
         $this->assertSame('ach2', $first['achievement']['id']);
-        $this->assertSame(['id', 'title', 'image', 'tier', 'category', 'group_slug'], array_keys($first['achievement']));
+        $this->assertSame(['id', 'title', 'image', 'tier', 'group_slug'], array_keys($first['achievement']));
         $this->assertSame('user1', $first['user']['id']);
         $this->assertArrayHasKey('level', $first['user']['levelData']);
         $this->assertArrayHasKey('avatar', $first['user']);
@@ -750,15 +726,15 @@ final class AdminApiTest extends MySqlTestCase
     private function award(string $id): void
     {
         $this->db->table('achievements')->insert([
-            'id' => $id, 'group_slug' => $id, 'type' => 'base', 'tier' => 'none', 'category' => 'game',
+            'id' => $id, 'group_slug' => $id, 'type' => 'base', 'tier' => 'none',
             'title_en' => 'Award', 'title_ru' => 'Награда', 'rules' => '[]', 'xp_bonus' => 0, 'sort_order' => 1, 'is_active' => 1,
             'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
         ]);
     }
 
-    private function mail(string $id, string $status, string $createdAt): void
+    private function mail(string $id, string $status, string $createdAt, array $fields = []): void
     {
-        $this->db->table('sending_mail')->insert([
+        $this->db->table('sending_mail')->insert($fields + [
             'id' => $id, 'user_id' => 'user1', 'type' => 'digest', 'status' => $status, 'email' => 'user1@example.com',
             'locale' => 'ru', 'subject' => 'Subject ' . $id, 'message' => '<p>Body</p>', 'created_at' => $createdAt, 'updated_at' => $createdAt,
         ]);

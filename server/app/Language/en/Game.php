@@ -20,8 +20,6 @@ return [
     'badStatus'     => 'Unknown quest status',
     'titleRequired' => 'Give the quest a title',
     'titleLong'     => 'The title is at most {0} characters long',
-    'seasonBadId' => 'The id: 2 to 16 characters, Latin letters, digits and hyphens, not starting with a hyphen',
-    'seasonIdTaken' => 'A season with this id exists already',
     'seasonTitleRequired' => 'Give the season a title',
     'seasonTitleLong' => 'The title is at most {0} characters long',
     'seasonTextLong' => 'The text is at most {0} characters long',
@@ -35,7 +33,7 @@ return [
     'seasonBusy' => 'The seasons are being changed right now, try again in a moment',
     'badBody' => 'The request body must be a JSON object',
     'seasonOverlap' => 'The dates overlap the season «{0}»',
-    'seasonHasPoints' => 'The season has points: it is a part of the history and cannot be deleted',
+    'seasonStarted' => 'The season has begun: it cannot be deleted',
     'seasonBadKind' => 'The picture is one of: participant, gold, silver, bronze',
     'seasonError'   => 'The season could not be saved, please try again',
 ];

@@ -82,6 +82,27 @@ final class GameRulesTest extends CIUnitTestCase
         $this->assertEqualsWithDelta(333, $game->isNear($memorial, 53.103, 57.2)[1], 2);
     }
 
+    public function testANeighbourCutsTheRadiusAndTheAccuracy(): void
+    {
+        $config = new Game();
+
+        // Nobody near: the category's
+        $this->assertSame(['radius' => 200, 'slack' => 150], GameLibrary::zone(200, null, $config));
+        // A place 192 m away: 60% of the way, half of it for the accuracy — 172 m, short of the neighbour
+        $this->assertSame(['radius' => 115, 'slack' => 57], GameLibrary::zone(200, 192, $config));
+        // Far enough not to matter
+        $this->assertSame(['radius' => 200, 'slack' => 150], GameLibrary::zone(200, 400, $config));
+        // Never below the floor
+        $this->assertSame(['radius' => 75, 'slack' => 37], GameLibrary::zone(200, 20, $config));
+
+        $memorial = (object) ['lat' => 53.1, 'lon' => 57.2, 'category' => 'memorial'];
+        $zone     = GameLibrary::zone(200, 192, $config);
+        // 111 m: near; 167 m with a poor fix: 115 + 57; at the neighbour (192 m): never
+        $this->assertTrue(GameLibrary::near($memorial, $zone, null, 53.101, 57.2, null, $config)[0]);
+        $this->assertTrue(GameLibrary::near($memorial, $zone, null, 53.1015, 57.2, 500.0, $config)[0]);
+        $this->assertFalse(GameLibrary::near($memorial, $zone, null, 53.10173, 57.2, 500.0, $config)[0]);
+    }
+
     public function testTheShotMomentOfAPhotoIsReadOnlyFromARealDate(): void
     {
         helper('exif');

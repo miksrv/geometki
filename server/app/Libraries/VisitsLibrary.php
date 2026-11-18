@@ -85,10 +85,8 @@ class VisitsLibrary
      * Checks a person in at a place on a day: the visit of that week when there is one (one per
      * user and place in VisitsModel::REPEAT_DAYS days), a new one otherwise — with its `visit`
      * event (the place's author hears of it, the page shows it) and the photos uploaded that day
-     * before it. A hidden visit (VisitsModel::HIDDEN_RIDDLE: a point of a riddle quest,
-     * HIDDEN_PHOTO: made by a photo shot at the place) gets no event until it is shown: a
-     * riddle's by reveal(), a photo's here — by the person's own check-in in its week, which
-     * then counts as a new one (the tap is new, the questions are asked).
+     * before it. A hidden visit (VisitsModel::HIDDEN_RIDDLE: a point of a riddle quest) gets no
+     * event until reveal() shows it.
      *
      * @param object   $place  `id`, `user_id`
      * @param string   $day    `Y-m-d`
@@ -102,16 +100,6 @@ class VisitsLibrary
         $visit  = $model->findWithinWindow($userId, $place->id, $day);
 
         if ($visit) {
-            // The photo made the visit quietly; now the person says it themselves
-            if (!$hidden && (int) $visit->hidden === VisitsModel::HIDDEN_PHOTO) {
-                $model->update($visit->id, ['hidden' => 0]);
-                $visit->hidden = 0;
-
-                $this->logVisit($place->id, $visit->id, $place->user_id ?? null);
-
-                return [$visit, true];
-            }
-
             return [$visit, false];
         }
 

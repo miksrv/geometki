@@ -23,14 +23,6 @@ class VisitsModel extends ApplicationBaseModel
     /** `hidden`: a point of a riddle quest — nobody sees the visit until the walk is over */
     public const HIDDEN_RIDDLE = 1;
 
-    /**
-     * `hidden`: a visit made by a photo shot at the place, not by the person's own "I was here".
-     * It carries the score of the season and nothing else: no `visit` event, not among the
-     * visitors, the button is not pressed and asks no questions — until the person taps it
-     * (VisitsLibrary::checkIn() then shows the visit).
-     */
-    public const HIDDEN_PHOTO = 2;
-
     protected $table            = 'users_visited_places';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = false;

@@ -46,6 +46,9 @@ class Game extends ResourceController
     /** Without a point: how many of the most viewed places are weighed */
     private const EVERYWHERE_POOL = 300;
 
+    /** The widest `radius` of `GET /game/places`, km */
+    private const RADIUS_MAX = 500;
+
     protected SessionLibrary $session;
 
     protected GameLibrary $game;
@@ -184,7 +187,7 @@ class Game extends ResourceController
      *
      * GET /game/seasons/:id → { season, awards, totals, winners, me? }
      *
-     * @param string|null $id e.g. `2026-cold`
+     * @param string|null $id the season's id, without the slug of its page's address
      *
      * @return ResponseInterface
      */
@@ -273,7 +276,7 @@ class Game extends ResourceController
     /**
      * A new season: the dates, the title and the texts; the pictures come after, one by one.
      *
-     * POST /game/seasons { id, title_ru, title_en?, description_ru?, description_en?, starts_on, ends_on } → 201 SeasonAdmin
+     * POST /game/seasons { title_ru, title_en?, description_ru?, description_en?, starts_on, ends_on } → 201 SeasonAdmin
      *
      * @return ResponseInterface
      */
@@ -301,7 +304,7 @@ class Game extends ResourceController
     /**
      * Changes a season; only what is sent. The dates of a closed season stay: its table is frozen.
      *
-     * PATCH /game/seasons/:id (the fields of create, without id) → SeasonAdmin
+     * PATCH /game/seasons/:id (the fields of create) → SeasonAdmin
      *
      * @param string|null $id
      *
@@ -465,9 +468,10 @@ class Game extends ResourceController
 
     /**
      * The valuable places: what the visitor has not confirmed in the season yet, the most
-     * points first. With `lat` / `lon` — of the places nearest to that point, with the distance.
+     * points first. With `lat` / `lon` — of the places nearest to that point, with the distance;
+     * with a `radius` (km) too — of the places within it, and when none is there, the nearest ones.
      *
-     * GET /game/places?lat=&lon=&limit= → { items: [PlaceListItem + { game: { points, position } }], count }
+     * GET /game/places?lat=&lon=&radius=&limit= → { items: [PlaceListItem + { game: { points, position } }], count }
      *
      * @return ResponseInterface
      */
@@ -509,13 +513,26 @@ class Game extends ResourceController
         }
 
         $rows   = $model->get()->getResult();
+        $radius  = $distance ? min((float) $this->request->getGet('radius'), self::RADIUS_MAX) : 0;
+        $nearest = false;
+
+        // Within the radius only: where it is worth going is somewhere one can get to. Nothing
+        // there — the nearest places, as they come, the rows being ordered by distance already
+        if ($radius > 0) {
+            $within  = array_values(array_filter($rows, static fn ($row) => (float) $row->distance <= $radius));
+            $nearest = !$within;
+            $rows    = $within ?: $rows;
+        }
+
         $values = $this->game->values($rows, $season, $userId);
 
         // The most points first; then the nearest, or the most viewed
-        usort($rows, static function ($a, $b) use ($values, $distance) {
-            return $values[$b->id]['points'] <=> $values[$a->id]['points']
-                ?: ($distance ? (float) $a->distance <=> (float) $b->distance : (int) $b->views <=> (int) $a->views);
-        });
+        if (!$nearest) {
+            usort($rows, static function ($a, $b) use ($values, $distance) {
+                return $values[$b->id]['points'] <=> $values[$a->id]['points']
+                    ?: ($distance ? (float) $a->distance <=> (float) $b->distance : (int) $b->views <=> (int) $a->views);
+            });
+        }
 
         $rows      = array_slice($rows, 0, $limit);
         $formatter = new PlaceFormatterLibrary();
@@ -662,6 +679,7 @@ class Game extends ResourceController
 
                 $item['quest'] = [
                     'id'    => $row['quest_id'],
+                    'slug'  => QuestsLibrary::slugOf($row),
                     'title' => $locale === 'ru' ? ($row['title_ru'] ?: $row['title_en']) : ($row['title_en'] ?: $row['title_ru']),
                 ];
             } elseif (isset($places[$row['place_id']])) {
@@ -808,6 +826,21 @@ class Game extends ResourceController
         ]);
     }
 
+    /**
+     * A person's tasks: the limited awards running now (begun, not over), whatever season is on,
+     * each with their `earned` and `progress` — "Задания" of the profile's side column.
+     *
+     * GET /game/users/:id/tasks → { data: LimitedAward[] }
+     */
+    public function tasks($id = null): ResponseInterface
+    {
+        if (!$id) {
+            return $this->failNotFound();
+        }
+
+        return $this->respond(['data' => $this->game->runningAwards((string) $id, $this->request->getLocale())]);
+    }
+
     /** The pictures of a season, by column */
     private const IMAGE_COLUMNS = ['medal_participant', 'medal_gold', 'medal_silver', 'medal_bronze'];
 
@@ -833,6 +866,7 @@ class Game extends ResourceController
 
         return [
             'id'          => $season['id'],
+            'slug'        => $season['slug'],
             'title'       => GameLibrary::localized($season, 'title', $locale) ?? $season['id'],
             'description' => GameLibrary::localized($season, 'description', $locale),
             'from'        => $season['from'],
@@ -869,6 +903,7 @@ class Game extends ResourceController
 
         return [
             'id'             => $season['id'],
+            'slug'           => $season['slug'],
             'title_ru'       => $season['title_ru'],
             'title_en'       => $season['title_en'],
             'description_ru' => $season['description_ru'],

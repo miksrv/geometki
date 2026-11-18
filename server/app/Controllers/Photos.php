@@ -253,7 +253,7 @@ class Photos extends ResourceController
                 (new VisitsLibrary())->afterChange($visit->user_id, $visit->place_id);
             }
 
-            // The game: a photo shot at the place within the season confirms the visit of its day
+            // A photo shot at the place confirms the visit of its day (in a season it counts there too)
             $game = (new GameLibrary())->photoUploaded($this->session->user, $placesData, $photoId, $processed->coordinates, $processed->takenAt);
 
             if ($game) {

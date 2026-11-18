@@ -72,10 +72,4 @@ final class AdminImageLibraryTest extends CIUnitTestCase
         $this->assertSame('2026-11-14', GameLibrary::today(strtotime('2026-11-15 21:00:00 UTC'), '-2 days'));
         $this->assertSame('2026-11-16', GameLibrary::today(strtotime('2026-11-15 21:00:00 UTC'), 0));
     }
-
-    public function testASeasonCannotTakeTheWordOfARoute(): void
-    {
-        $this->assertContains('manage', GameLibrary::RESERVED_IDS);
-        $this->assertContains('leaders', GameLibrary::RESERVED_IDS);
-    }
 }

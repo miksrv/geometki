@@ -74,9 +74,6 @@ class Visits extends ResourceController
         // A visit of a riddle quest's point is its author's secret until the walk is over
         if (!$userId || $userId !== $this->session->user?->id) {
             $model->where('users_visited_places.hidden', 0);
-        } else {
-            // A visit a photo made is no check-in of theirs yet
-            $model->where('users_visited_places.hidden !=', VisitsModel::HIDDEN_PHOTO);
         }
 
         // No reset: a clone of the model shares its builder, the count must leave the filters for the page
@@ -191,10 +188,8 @@ class Visits extends ResourceController
             return $this->respond(['items' => [], 'count' => 0, 'questions' => [], 'repeatDays' => VisitsModel::REPEAT_DAYS]);
         }
 
-        $place = (new PlacesModel())->select('id, category')->find($placeId);
+        $place = (new PlacesModel())->select('id, category, lat, lon')->find($placeId);
         $rows  = $this->listQuery($placeId, $this->session->user->id)
-            // A visit a photo made is not the visitor's check-in: the button is not pressed, nothing is asked
-            ->where('users_visited_places.hidden !=', VisitsModel::HIDDEN_PHOTO)
             ->orderBy('users_visited_places.visited_at', 'DESC')
             ->orderBy('users_visited_places.created_at', 'DESC')
             ->findAll();
@@ -241,7 +236,7 @@ class Visits extends ResourceController
             'points'     => $value['points'],
             'position'   => $value['position'],
             'photoBonus' => $config->photoBonus,
-            'radius'     => $config->radiusOf($place->category),
+            'radius'     => $game->zoneOf($place)['radius'],
             // The visitor's score of the season at this place: counted once
             'earned'     => $value['earned'],
             'way'        => $value['way'],

@@ -251,7 +251,7 @@ final class VisitsTest extends MySqlTestCase
     {
         foreach ([['bronze', 1, 30], ['silver', 2, 70]] as [$tier, $value, $xp]) {
             $this->db->table('achievements')->insert([
-                'id' => 'visitor-' . $tier, 'group_slug' => 'visitor', 'type' => 'base', 'tier' => $tier, 'category' => 'exploration',
+                'id' => 'visitor-' . $tier, 'group_slug' => 'visitor', 'type' => 'base', 'tier' => $tier,
                 'title_en' => 'Visitor', 'title_ru' => 'Гость', 'rules' => json_encode([['metric' => 'places_visited', 'operator' => '>=', 'value' => $value]]),
                 'xp_bonus' => $xp, 'sort_order' => $value, 'is_active' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
             ]);

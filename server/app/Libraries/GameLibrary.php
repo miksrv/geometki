@@ -39,13 +39,16 @@ class GameLibrary
         'bronze'      => 'medal_bronze',
     ];
 
-    /** Ids a season cannot have: the words of the game's routes (`game/seasons/manage`, …) */
-    public const RESERVED_IDS = ['manage', 'new', 'create', 'image', 'seasons', 'leaders', 'places', 'mine', 'recent', 'exploration', 'confirm', 'users', 'quests'];
-
     /** The time zone of the game's days: without the visitor's own (`tz` cookie) days are Moscow days */
     public const TIMEZONE = 'Europe/Moscow';
 
     private Game $config;
+
+    /** @var array<string, array{radius: int, slack: int}> zoneOf() by place id, for this request */
+    private array $zones = [];
+
+    /** @var array<string, array|false> the outline of a place by its id, for this request */
+    private array $outlines = [];
 
     /**
      * The game's day: `Y-m-d` in Moscow, whatever the server's time zone (UTC) says. The only
@@ -74,12 +77,16 @@ class GameLibrary
      */
     public static function fromRow(object $row): array
     {
+        helper('slug');
+
         return [
             'id'                => $row->id,
             'from'              => (string) $row->starts_on,
             'to'                => (string) $row->ends_on,
             'title_ru'          => (string) $row->title_ru,
             'title_en'          => $row->title_en,
+            // The address of its page is `{id}-{slug}`: the slug of the Russian title, made on the fly
+            'slug'              => transliterateToSlug((string) $row->title_ru),
             'description_ru'    => $row->description_ru,
             'description_en'    => $row->description_en,
             // The season's picture is the medal of every participant
@@ -218,18 +225,6 @@ class GameLibrary
         $db     = Database::connect();
         $fields = [];
         $errors = [];
-
-        if (!$existing) {
-            $id = $input['id'] ?? null;
-
-            if (!is_string($id) || !preg_match('/^[a-z0-9][a-z0-9-]{1,15}$/D', $id) || in_array($id, self::RESERVED_IDS, true)) {
-                $errors['id'] = lang('Game.seasonBadId');
-            } elseif ($this->find($id)) {
-                $errors['id'] = lang('Game.seasonIdTaken');
-            } else {
-                $fields['id'] = $id;
-            }
-        }
 
         if (!$existing || array_key_exists('title_ru', $input)) {
             $title = is_string($input['title_ru'] ?? null) ? trim($input['title_ru']) : '';
@@ -392,8 +387,11 @@ class GameLibrary
 
             $db->transBegin();
 
+            // A random id, like any other entity's: the address of the season's page is `{id}-{slug}`
+            $id = substr(bin2hex(random_bytes(7)), 0, 13);
+
             try {
-                $saved = $db->table('game_seasons')->insert($fields + ['created_at' => date('Y-m-d H:i:s')]);
+                $saved = $db->table('game_seasons')->insert(['id' => $id] + $fields + ['created_at' => date('Y-m-d H:i:s')]);
             } catch (DatabaseException $e) {
                 $saved = false;
             }
@@ -401,17 +399,12 @@ class GameLibrary
             if (!$saved) {
                 $db->transRollback();
 
-                // Another process took the id between the check and the write (MySQL error 1062)
-                if ($this->find($fields['id'])) {
-                    return [null, ['id' => lang('Game.seasonIdTaken')]];
-                }
-
                 return [null, ['error' => lang('Game.seasonError')]];
             }
 
             $db->transCommit();
 
-            return [$this->find($fields['id']), []];
+            return [$this->find($id), []];
         });
     }
 
@@ -471,10 +464,11 @@ class GameLibrary
 
             $season = self::fromRow($row);
 
-            if ($this->hasPoints($id)) {
+            // A season that has begun is a part of the history: only one still to come can go
+            if ($season['from'] <= self::today() || $this->hasPoints($id)) {
                 $db->transRollback();
 
-                return [$season, ['error' => lang('Game.seasonHasPoints')]];
+                return [$season, ['error' => lang('Game.seasonStarted')]];
             }
 
             $db->table('game_seasons')->where('id', $id)->delete();
@@ -507,18 +501,124 @@ class GameLibrary
     }
 
     /**
-     * Whether a point is near a place: within the radius of its category, plus the reported
-     * accuracy of the position (capped).
+     * Whether a point is near a place: within its radius (zoneOf()) plus the reported accuracy
+     * of the position (capped), or within `$outlineBuffer` of its OSM outline (PlaceOutlines)
      *
-     * @param object $place `lat`, `lon`, `category`
-     * @return array{0: bool, 1: int} near, metres to the place
+     * @param object $place `id` (or `place_id` when `id` is another row's), `lat`, `lon`, `category`
+     * @return array{0: bool, 1: int} near, metres to the place (to its outline when that is nearer)
      */
     public function isNear(object $place, float $lat, float $lon, ?float $accuracy = null): array
     {
-        $distance = self::distance((float) $place->lat, (float) $place->lon, $lat, $lon);
-        $slack    = $accuracy !== null ? (int) min(max($accuracy, 0), $this->config->accuracySlack) : 0;
+        $id = $place->place_id ?? $place->id ?? null;
 
-        return [$distance <= $this->config->radiusOf($place->category ?? null) + $slack, $distance];
+        return self::near($place, $this->zoneOf($place), $id ? $this->outlineOf($id) : null, $lat, $lon, $accuracy, $this->config);
+    }
+
+    /**
+     * isNear() on what is already known: no queries
+     *
+     * @param array{radius: int, slack: int} $zone
+     * @param array|null                     $outline the geometry of PlaceOutlines
+     * @return array{0: bool, 1: int}
+     */
+    public static function near(object $place, array $zone, ?array $outline, float $lat, float $lon, ?float $accuracy, Game $config): array
+    {
+        $distance = self::distance((float) $place->lat, (float) $place->lon, $lat, $lon);
+        $accuracy = $accuracy !== null ? max($accuracy, 0) : 0;
+
+        if ($distance <= $zone['radius'] + (int) min($accuracy, $zone['slack'])) {
+            return [true, $distance];
+        }
+
+        if (!$outline) {
+            return [false, $distance];
+        }
+
+        $edge = PlaceOutlines::distanceTo($outline, $lat, $lon);
+
+        return [$edge <= $config->outlineBuffer + (int) min($accuracy, $config->accuracySlack), min($distance, $edge)];
+    }
+
+    /**
+     * "Near" a place: the radius of its category, cut to a share of the way to the nearest
+     * other place (never below the floor), so standing at one place never confirms its
+     * neighbour; and the most of the reported accuracy added to it (half the radius when it
+     * was cut: still short of the neighbour)
+     *
+     * @param object $place `id` (or `place_id`), `lat`, `lon`, `category`; without an id — the category's
+     * @return array{radius: int, slack: int}
+     */
+    public function zoneOf(object $place): array
+    {
+        $radius = $this->config->radiusOf($place->category ?? null);
+        $id     = $place->place_id ?? $place->id ?? null;
+
+        if (!$id || !isset($place->lat, $place->lon)) {
+            return self::zone($radius, null, $this->config);
+        }
+
+        return $this->zones[$id] ??= self::zone(
+            $radius,
+            $this->neighbourDistance($id, (float) $place->lat, (float) $place->lon, $radius / $this->config->neighbourShare),
+            $this->config
+        );
+    }
+
+    /**
+     * @param int|null $neighbour metres to the nearest other place, null when it is too far to matter
+     * @return array{radius: int, slack: int}
+     */
+    public static function zone(int $radius, ?int $neighbour, Game $config): array
+    {
+        $cut = $neighbour === null ? $radius : (int) max($config->radiusFloor, round($neighbour * $config->neighbourShare));
+
+        if ($cut >= $radius) {
+            return ['radius' => $radius, 'slack' => $config->accuracySlack];
+        }
+
+        return ['radius' => $cut, 'slack' => (int) min($config->accuracySlack, intdiv($cut, 2))];
+    }
+
+    /** Metres to the nearest other place within `$within`, null when there is none */
+    private function neighbourDistance(string $placeId, float $lat, float $lon, float $within): ?int
+    {
+        $dLat = $within / 110574;
+        $dLon = $within / (111320 * max(cos(deg2rad($lat)), 0.01));
+        $rows = Database::connect()->table('places')
+            ->select('lat, lon')
+            ->where('id !=', $placeId)
+            ->where('deleted_at', null)
+            ->where('lat >=', $lat - $dLat)->where('lat <=', $lat + $dLat)
+            ->where('lon >=', $lon - $dLon)->where('lon <=', $lon + $dLon)
+            ->get()->getResult();
+
+        $nearest = null;
+
+        foreach ($rows as $row) {
+            $distance = self::distance($lat, $lon, (float) $row->lat, (float) $row->lon);
+
+            if ($distance <= $within && ($nearest === null || $distance < $nearest)) {
+                $nearest = $distance;
+            }
+        }
+
+        return $nearest;
+    }
+
+    /** The geometry of the OSM outline of a place, null when it has none */
+    private function outlineOf(string $placeId): ?array
+    {
+        if (!isset($this->outlines[$placeId])) {
+            $row = Database::connect()->table('places_outlines')
+                ->select('geometry')
+                ->where('place_id', $placeId)
+                ->where('geometry IS NOT NULL')
+                ->get()->getRow();
+
+            $this->outlines[$placeId] = $row ? (json_decode($row->geometry, true) ?: false) : false;
+        }
+
+        return $this->outlines[$placeId] ?: null;
     }
 
     /**
@@ -589,7 +689,7 @@ class GameLibrary
      * @param string      $day     `Y-m-d`: the shot day of the photo, the visitor's day of "I am here"
      * @param string|null $photoId The photo that proves it
      * @param bool|int    $hidden  A VisitsModel::HIDDEN_* value for a visit this confirmation makes: a point of a
-     *                             riddle quest (true), a photo (HIDDEN_PHOTO); a visit that exists keeps its own
+     *                             riddle quest (true); a visit that exists keeps its own
      *
      * @return array{visit: VisitEntity, isNew: bool, season: ?array, points: int, total: ?int, detail: ?array}
      *         `points` is what this confirmation added (0 when the place was counted already)
@@ -652,7 +752,7 @@ class GameLibrary
         $db->transBegin();
 
         try {
-            $row = $db->query('SELECT closed_at, starts_on, ends_on FROM game_seasons WHERE id = ? FOR SHARE', [$season['id']])->getRow();
+            $row = $db->query('SELECT closed_at, starts_on, ends_on FROM game_seasons WHERE id = ? LOCK IN SHARE MODE', [$season['id']])->getRow();
 
             // Closed, or its dates changed under the check-in so that they no longer hold the day
             if (!$row || $row->closed_at !== null || $day < $row->starts_on || $day > $row->ends_on) {
@@ -770,11 +870,12 @@ class GameLibrary
     }
 
     /**
-     * A photo was uploaded to a place: when it was shot near the place within a season that
-     * still takes confirmations, it counts the place in the season for the uploader. Their
-     * visit of that week is confirmed by it; without one the photo makes a quiet visit of its
-     * shot day (VisitsModel::HIDDEN_PHOTO) that only carries the score — the person has not
-     * said "I was here": the button stays as it was and asks nothing until they tap it.
+     * A photo was uploaded to a place: when it was shot near the place, it confirms the
+     * uploader's visit of that week, with or without a season — within a season that still takes
+     * confirmations it also counts the place there (confirm()). Without a visit of that week
+     * the photo makes one of its shot day, a visit like any other (the button is pressed, the
+     * visit is in the lists and the feed): a photo shot here proves it better than a tap. No
+     * questions are asked — only the button asks them, and a photo is often uploaded later.
      *
      * @param object      $place   `id`, `user_id`, `category`, `lat`, `lon`, `created_at`
      * @param object|null $gps     `lat`, `lon` from the EXIF
@@ -790,7 +891,8 @@ class GameLibrary
 
         $day = substr($takenAt, 0, 10);
 
-        if (!$this->openSeason($day)) {
+        // A shot day ahead of the visitor's time zone is not a visit
+        if ($day > self::today(null, 1)) {
             return null;
         }
 
@@ -801,14 +903,14 @@ class GameLibrary
         }
 
         try {
-            $result = $this->confirm($user->id, $place, self::WAY_PHOTO, $day, $photoId, VisitsModel::HIDDEN_PHOTO);
+            $result = $this->confirm($user->id, $place, self::WAY_PHOTO, $day, $photoId);
 
             // The photo is the visit's, whenever it was uploaded
             Database::connect()->table('photos')
                 ->where(['id' => $photoId, 'visit_id' => null])
                 ->update(['visit_id' => $result['visit']->id]);
 
-            (new QuestsLibrary())->placeConfirmed($user->id, $place->id, $result['visit']->id);
+            (new QuestsLibrary())->placeConfirmed($user->id, $place->id, $result['visit']->id, $day);
 
             return $result;
         } catch (Throwable $e) {
@@ -1157,22 +1259,51 @@ class GameLibrary
 
     /**
      * The awards that can be earned only within a season: the limited ones (`type` = `seasonal`)
-     * whose window lies inside the season's dates. Nothing ties them to the season but the
-     * dates — they are ordinary achievements made in the admin page —; the season's page lists
-     * them, with the person's own progress.
+     * whose window lies inside the season's dates and is running now — one that has not begun
+     * (made ahead, from next week) is not shown, nor one that is over. Nothing ties them to the
+     * season but the dates — they are ordinary achievements made in the admin page —; the
+     * season's page lists them, with the person's own progress.
      *
      * @return array<int, array<string, mixed>>
      */
     public function seasonAwards(array $season, ?string $userId, string $locale): array
     {
-        $db   = Database::connect();
-        $rows = $db->table('achievements')
+        return $this->limitedAwards($userId, $locale, $season);
+    }
+
+    /**
+     * A person's tasks: every limited award running now (begun, not over), whatever season is
+     * on — or none —, with that person's progress: "Задания" of a profile. The same awards the
+     * season's page calls "Награды сезона".
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function runningAwards(?string $userId, string $locale): array
+    {
+        return $this->limitedAwards($userId, $locale);
+    }
+
+    /**
+     * The limited awards running now, within a season's dates when one is given, each with the
+     * person's `earned` and `progress` (each rule apart) — counted for these awards only.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function limitedAwards(?string $userId, string $locale, ?array $season = null): array
+    {
+        $db    = Database::connect();
+        $now   = date('Y-m-d H:i:s');
+        $query = $db->table('achievements')
             ->where(['type' => 'seasonal', 'is_active' => 1])
-            ->where('season_start >=', $season['from'] . ' 00:00:00')
-            ->where('season_end <=', $season['to'] . ' 23:59:59')
-            ->orderBy('season_start', 'ASC')
-            ->orderBy('sort_order', 'ASC')
-            ->get()->getResult();
+            ->where('season_start <=', $now)
+            ->where('season_end >=', $now);
+
+        if ($season) {
+            $query->where('season_start >=', $season['from'] . ' 00:00:00')
+                ->where('season_end <=', $season['to'] . ' 23:59:59');
+        }
+
+        $rows = $query->orderBy('season_start', 'ASC')->orderBy('sort_order', 'ASC')->get()->getResult();
 
         if (!$rows) {
             return [];
@@ -1189,7 +1320,7 @@ class GameLibrary
                 'earned_at',
                 'achievement_id'
             );
-            $progress = (new AchievementsLibrary())->getProgress($userId);
+            $progress = (new AchievementsLibrary())->progressOf($userId, $rows);
         }
 
         return array_map(static fn ($row) => [
@@ -1198,7 +1329,6 @@ class GameLibrary
             'description' => $row->{"description_$locale"} ?: $row->description_ru,
             'image'       => $row->image,
             'tier'        => $row->tier,
-            'category'    => $row->category,
             'group'       => $row->group_slug,
             'from'        => substr((string) $row->season_start, 0, 10),
             'to'          => substr((string) $row->season_end, 0, 10),
@@ -1214,7 +1344,7 @@ class GameLibrary
      * table and gives its medal (by the place: gold, silver, bronze, or the grey one), an open
      * one the live table and no medal yet.
      *
-     * @return array<int, array{id: string, title: string, image: ?string, closed: bool, points: int, places: int, place: ?int, medal: ?string, medalImage: ?string}>
+     * @return array<int, array{id: string, slug: ?string, title: string, image: ?string, from: string, to: string, closed: bool, points: int, places: int, place: ?int, medal: ?string, medalImage: ?string}>
      */
     public function participations(string $userId, string $locale = 'ru'): array
     {
@@ -1260,6 +1390,7 @@ class GameLibrary
 
             $items[$season['id']] = [
                 'id'         => $season['id'],
+                'slug'       => $season['slug'],
                 'title'      => self::localized($season, 'title', $locale) ?? $season['id'],
                 'image'      => $season['image'],
                 'closed'     => $closed,
@@ -1269,18 +1400,16 @@ class GameLibrary
                 'medal'      => $medal,
                 // A place without its own variant wears the participant's medal
                 'medalImage' => $medal ? ($season['medal_' . $medal] ?? $season['image']) : null,
+                // The days of the season: the card of its medal on a profile
                 'from'       => $season['from'],
+                'to'         => $season['to'],
             ];
         }
 
         // The latest first
         uasort($items, static fn (array $a, array $b) => strcmp($b['from'], $a['from']));
 
-        return array_values(array_map(static function (array $item) {
-            unset($item['from']);
-
-            return $item;
-        }, $items));
+        return array_values($items);
     }
 
     /**

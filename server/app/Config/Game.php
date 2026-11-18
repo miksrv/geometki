@@ -108,8 +108,58 @@ class Game extends BaseConfig
         'mountain'     => 3000,
     ];
 
-    /** Metres of the reported accuracy of "I am here" added to the radius, at most */
+    /**
+     * Metres of the reported accuracy of "I am here" added to the radius, at most (and never
+     * more than half the radius of the place)
+     */
     public int $accuracySlack = 150;
+
+    /**
+     * Places close together: the radius of a place is cut to this share of the way to the
+     * nearest other place, so standing at one never confirms its neighbour…
+     */
+    public float $neighbourShare = 0.6;
+
+    /** …but never below this, metres */
+    public int $radiusFloor = 75;
+
+    /**
+     * A place with an outline from OSM (`places_outlines`, `php spark places:outlines`) is near
+     * within this many metres of its outline too: a lake from its shore, a park at its gate
+     */
+    public int $outlineBuffer = 250;
+
+    /** An OSM outline larger than this (the diagonal of its box, metres) is never taken */
+    public int $outlineMaxSize = 300000;
+
+    /** Metres around the point of a place an outline is looked for when the point is outside it */
+    public int $outlineSearch = 300;
+
+    /**
+     * The OSM tags of an outline that fits a category (key => regex of the value); the categories
+     * missing here are small, their radius is enough. An outline is taken only when its name
+     * is like the title of the place too (PlaceOutlines::sameName())
+     *
+     * @var array<string, array<string, string>>
+     */
+    public array $outlineTags = [
+        'water'      => ['natural' => 'water|bay|wetland', 'landuse' => 'reservoir|basin', 'water' => '.+'],
+        'landscape'  => [
+            'boundary' => 'protected_area|national_park',
+            'leisure'  => 'nature_reserve|park',
+            'natural'  => 'water|wood|scrub|heath|grassland|valley|cliff|ridge|wetland|sand|bare_rock|beach|gorge',
+            'landuse'  => 'forest|meadow',
+        ],
+        'mountain'   => ['natural' => 'ridge|massif|mountain_range|hill|cliff|bare_rock|valley|gorge'],
+        'manor'      => ['historic' => 'manor|estate|castle|building', 'building' => 'manor|palace|house', 'leisure' => 'park|garden'],
+        'castle'     => ['historic' => 'castle|fort|citywalls|fortress|archaeological_site|manor', 'building' => 'castle|fortress'],
+        'military'   => ['historic' => 'fort|castle|battlefield', 'military' => '.+', 'landuse' => 'military'],
+        'archeology' => ['historic' => 'archaeological_site'],
+        'industrial' => ['landuse' => 'industrial|quarry', 'man_made' => 'works|mineshaft', 'historic' => 'mine|industrial'],
+        'religious'  => ['amenity' => 'monastery', 'landuse' => 'religious', 'historic' => 'monastery'],
+        'camping'    => ['tourism' => 'camp_site', 'leisure' => 'park'],
+        'abandoned'  => ['abandoned:landuse' => '.+', 'landuse' => 'brownfield|industrial|military', 'historic' => 'ruins|manor'],
+    ];
 
     public function categoryFactor(?string $category): float
     {
