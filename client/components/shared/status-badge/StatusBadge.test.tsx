@@ -3,7 +3,7 @@ import React from 'react'
 import { render, screen } from '@testing-library/react'
 
 import { StatusBadge } from './StatusBadge'
-import { MAIL_STATUS_TONES, SEASON_STATUS_TONES } from './tones'
+import { MAILING_STATUS_TONES } from './tones'
 
 jest.mock('simple-react-ui-kit', () => ({
     Badge: ({ label, className }: { label: string; className?: string }) => (
@@ -36,16 +36,11 @@ describe('StatusBadge', () => {
     })
 
     it('keeps one tone per status of every domain', () => {
-        expect(SEASON_STATUS_TONES).toEqual({
-            closed: 'neutral',
-            current: 'success',
-            ending: 'warning',
-            upcoming: 'info'
+        expect(MAILING_STATUS_TONES).toEqual({
+            canceled: 'neutral',
+            completed: 'success',
+            draft: 'warning',
+            sending: 'info'
         })
-        expect(MAIL_STATUS_TONES.error).toBe('danger')
-        expect(MAIL_STATUS_TONES.completed).toBe('success')
-        expect(Object.keys(MAIL_STATUS_TONES).sort()).toEqual(
-            ['completed', 'created', 'error', 'expired', 'grouped', 'process', 'rejected'].sort()
-        )
     })
 })

@@ -20,8 +20,8 @@ export interface AdminWidgetProps {
     /** The section's icon in front of the title */
     icon: IconTypes
     title: string
-    /** The section's page: the title leads there */
-    href: string
+    /** The section's page: the title leads there; a card with no page of its own (the mail) has a plain title */
+    href?: string
     /** The state of the section in a few lines, each leading to the list behind its number */
     facts?: AdminFact[]
     /** The facts are loading: skeleton lines stand in their place */
@@ -70,7 +70,7 @@ export const AdminWidget: React.FC<AdminWidgetProps> = ({
                     id={titleId}
                     className={styles.title}
                 >
-                    <Link href={href}>{title}</Link>
+                    {href ? <Link href={href}>{title}</Link> : title}
                 </h2>
             </header>
 

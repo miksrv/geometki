@@ -11,7 +11,7 @@ jest.mock('simple-react-ui-kit', () => ({
 }))
 
 const facts = [
-    { href: '/admin/sending-mail?status=error', key: 'errors', label: 'Errors', tone: 'danger' as const, value: 3 },
+    { href: '/admin/mailings?status=draft', key: 'errors', label: 'Errors', tone: 'danger' as const, value: 3 },
     { key: 'sent', label: 'Sent', value: 120 }
 ]
 
@@ -20,17 +20,17 @@ describe('AdminWidget', () => {
         render(
             <AdminWidget
                 icon={'Feed'}
-                title={'Mail'}
-                href={'/admin/sending-mail'}
+                title={'Mailings'}
+                href={'/admin/mailings'}
                 facts={facts}
                 footer={<button type={'button'}>Create</button>}
             />
         )
 
-        expect(screen.getByRole('region', { name: 'Mail' })).toBeInTheDocument()
-        expect(screen.getByRole('link', { name: 'Mail' })).toHaveAttribute('href', '/admin/sending-mail')
+        expect(screen.getByRole('region', { name: 'Mailings' })).toBeInTheDocument()
+        expect(screen.getByRole('link', { name: 'Mailings' })).toHaveAttribute('href', '/admin/mailings')
         // A fact with a link leads into the filtered list; one without is plain text
-        expect(screen.getByRole('link', { name: '3' })).toHaveAttribute('href', '/admin/sending-mail?status=error')
+        expect(screen.getByRole('link', { name: '3' })).toHaveAttribute('href', '/admin/mailings?status=draft')
         expect(screen.getByText('120').closest('a')).toBeNull()
         expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument()
     })
@@ -39,8 +39,8 @@ describe('AdminWidget', () => {
         const { rerender } = render(
             <AdminWidget
                 icon={'Feed'}
-                title={'Mail'}
-                href={'/admin/sending-mail'}
+                title={'Mailings'}
+                href={'/admin/mailings'}
                 facts={facts}
                 loading={true}
             />
@@ -52,8 +52,8 @@ describe('AdminWidget', () => {
         rerender(
             <AdminWidget
                 icon={'Feed'}
-                title={'Mail'}
-                href={'/admin/sending-mail'}
+                title={'Mailings'}
+                href={'/admin/mailings'}
                 facts={facts}
                 error={'Failed to load'}
             />
@@ -61,5 +61,18 @@ describe('AdminWidget', () => {
 
         expect(screen.getByText('Failed to load')).toBeInTheDocument()
         expect(screen.queryByText('Errors')).not.toBeInTheDocument()
+    })
+
+    it('has a plain title without a page of its own', () => {
+        render(
+            <AdminWidget
+                icon={'Feed'}
+                title={'Mail'}
+                facts={facts}
+            />
+        )
+
+        expect(screen.getByRole('heading', { name: 'Mail' })).toBeInTheDocument()
+        expect(screen.queryByRole('link', { name: 'Mail' })).not.toBeInTheDocument()
     })
 })
