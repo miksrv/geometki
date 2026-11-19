@@ -7,8 +7,7 @@
  *   cd server
  *   php spark trending:refresh
  *
- * Для автоматического запуска добавьте в cron:
- *   0 * * * * cd /path/to/server && php spark trending:refresh >> /dev/null 2>&1
+ * Запускается из `php spark cron:run` (Config\Cron::$trending, раз в час).
  */
 
 namespace App\Commands;

@@ -50,6 +50,7 @@ Vagrantfile
 # Temporary Files
 #-------------------------
 writable/cache/*
+writable/cron/
 !writable/cache/index.html
 
 writable/logs/*

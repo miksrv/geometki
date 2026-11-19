@@ -7,8 +7,7 @@
  *   cd server
  *   php spark osm:collect [--limit 5]
  *
- * Для автоматического запуска добавьте в cron (раз в минуту):
- *   * * * * * cd /path/to/server && php spark osm:collect >> /dev/null 2>&1
+ * Запускается из `php spark cron:run` (Config\Cron::$osm, раз в 20 минут).
  */
 
 namespace App\Commands;

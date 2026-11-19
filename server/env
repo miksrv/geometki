@@ -203,3 +203,15 @@ smtp.pass = ''
 #--------------------------------------------------------------------
 
 # curlrequest.shareOptions = true
+
+#--------------------------------------------------------------------
+# CRON (one hosting job: */5 * * * * php spark cron:run; app/Config/Cron.php)
+# An interval (5m, 20m, 1h, 12h, 1d), a Moscow time (09:00), a day and a time ("mon 09:00", in quotes) or off
+#--------------------------------------------------------------------
+
+# cron.notifications = 5m
+# cron.game = 00:05
+# cron.trending = 1h
+# cron.digest = "mon 09:00"
+# cron.osm = 20m
+# cron.outlines = 20m

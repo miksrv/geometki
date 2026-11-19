@@ -8,7 +8,7 @@
  *
  * Запуск из командной строки:
  *   cd server
- *   php spark places:outlines                    # up to 30 places (cron, hourly)
+ *   php spark places:outlines                    # up to 30 places (cron:run, every 20 minutes)
  *   php spark places:outlines --limit 0          # every place left (the first fill)
  *   php spark places:outlines --place <id>       # one place, again
  *   php spark places:outlines --dry-run          # print, save nothing
