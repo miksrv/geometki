@@ -5,15 +5,28 @@ namespace App\Database\Migrations;
 use CodeIgniter\Database\Migration;
 
 /**
- * A collection either is or is not: the admin's "hidden" and "featured" switches go. A hidden
- * collection was seen by its author and the administrators only, so it is deleted (soft, like
- * any deleted collection) rather than shown to everyone. The index over `hidden` becomes one
- * over `indexable` and `updated_at`, what the sitemap and the lists still read.
+ * Collections made simpler:
+ *
+ *  - `collections.slug` goes: the slug is made from the title on the fly
+ *    (`generateCollectionSlug()`), like a season's and a quest's. Every stored slug matched its
+ *    title, so no address changes;
+ *  - the admin's "hidden" and "featured" switches go: a collection either is or is not. A
+ *    hidden collection was seen by its author and the administrators only, so it is deleted
+ *    (soft, like any deleted collection) rather than shown to everyone. The index over
+ *    `hidden` becomes one over `indexable` and `updated_at`, what the sitemap and the lists
+ *    still read.
+ *
+ * MySQL commits every DDL statement on its own: each step checks whether it is still needed,
+ * so running the migration again finishes a run that failed halfway.
  */
-class DropCollectionsModeration extends Migration
+class SimplifyCollections extends Migration
 {
     public function up()
     {
+        if ($this->db->fieldExists('slug', 'collections')) {
+            $this->forge->dropColumn('collections', 'slug');
+        }
+
         if ($this->db->fieldExists('hidden', 'collections')) {
             $this->db->query('UPDATE collections SET deleted_at = NOW() WHERE hidden = 1 AND deleted_at IS NULL');
 
@@ -45,6 +58,12 @@ class DropCollectionsModeration extends Migration
 
         if ($columns) {
             $this->forge->addColumn('collections', $columns);
+        }
+
+        if (!$this->db->fieldExists('slug', 'collections')) {
+            $this->forge->addColumn('collections', [
+                'slug' => ['type' => 'VARCHAR', 'constraint' => 120, 'null' => true, 'after' => 'id'],
+            ]);
         }
     }
 

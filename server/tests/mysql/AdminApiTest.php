@@ -586,8 +586,8 @@ final class AdminApiTest extends MySqlTestCase
         $this->db->table('achievements')->where('id', 'legacy')->update(['rules' => json_encode($rules)]);
         $this->assertSame('STRING', $this->db->query("SELECT JSON_TYPE(rules) AS t FROM achievements WHERE id = 'legacy'")->getRow()->t);
 
-        require_once APPPATH . 'Database/Migrations/2026-11-15-000002_FixDoubleEncodedAchievementRules.php';
-        (new \App\Database\Migrations\FixDoubleEncodedAchievementRules())->up();
+        require_once APPPATH . 'Database/Migrations/2026-11-11-000002_ReworkAchievements.php';
+        (new \App\Database\Migrations\ReworkAchievements())->up();
 
         $row = $this->db->query("SELECT rules, JSON_TYPE(rules) AS t FROM achievements WHERE id = 'legacy'")->getRow();
         $this->assertSame('ARRAY', $row->t);
@@ -625,7 +625,7 @@ final class AdminApiTest extends MySqlTestCase
         $answer = json_decode($this->get('mail/queue')->getJSON(), true);
 
         $this->assertSame(
-            ['last_run_at' => '2027-03-10 10:00:00', 'sent_day' => 2, 'pending' => 3, 'overdue' => 1, 'errors_week' => 1],
+            ['last_run_at' => '2027-03-10 10:00:00', 'late_after' => 15, 'sent_day' => 2, 'pending' => 3, 'overdue' => 1, 'errors_week' => 1],
             $answer
         );
 

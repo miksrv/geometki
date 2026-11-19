@@ -5,14 +5,17 @@ namespace App\Database\Migrations;
 use CodeIgniter\Database\Migration;
 
 /**
- * An award made on the admin page used to store its rules encoded twice (a JSON string holding
- * JSON). The code reads them either way; this makes the rows what they should be: a JSON array.
- * Only a string that is itself valid JSON holding an array is unwrapped.
+ * The awards (achievements) for the admin's own section:
  *
- * It also drops `achievements.category`: the shelf an award was put on was only informational
- * and nothing reads it any more.
+ *  - the rules of an award made on the old admin page were stored encoded twice (a JSON string
+ *    holding JSON). The code reads them either way; this makes the rows what they should be: a
+ *    JSON array. Only a string that is itself valid JSON holding an array is unwrapped;
+ *  - `achievements.category` goes: the shelf an award was put on was only informational and
+ *    nothing reads it any more (a medal is drawn by its group).
+ *
+ * No award is made here: those are made by hand in the admin.
  */
-class FixDoubleEncodedAchievementRules extends Migration
+class ReworkAchievements extends Migration
 {
     public function up()
     {
