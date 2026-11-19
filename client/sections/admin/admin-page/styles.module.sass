@@ -1,0 +1,70 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+
+// A card per section: as many in a row as fit, one column on phones
+.grid
+    display: grid
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))
+    align-items: start
+    gap: var(--space-4)
+
+// "Требует внимания": one card, a line per thing to do
+.attention
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+    padding: var(--space-5)
+    border-radius: var(--container-radius)
+    background: var(--surface-1)
+    box-shadow: var(--container-shadow)
+    color: var(--text-color-primary)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        padding: var(--space-4)
+
+.attentionTitle
+    +type.titleBlock
+    margin: 0
+
+.attentionList
+    display: flex
+    flex-direction: column
+    margin: 0
+    padding: 0
+    list-style: none
+
+.attentionItem
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    padding: var(--space-2) 0
+
+    & + &
+        border-top: 1px solid var(--border)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-wrap: wrap
+
+.attentionText
+    flex: 1
+    min-width: 0
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-basis: 100%
+
+// Nothing to do: one calm line
+.calm
+    +type.secondary
+    display: flex
+    align-items: center
+    gap: var(--space-2)
+    margin: 0
+
+    svg
+        flex-shrink: 0
+        width: 20px
+        height: 20px
+        fill: var(--color-green)
+
+.skeleton
+    height: 36px
