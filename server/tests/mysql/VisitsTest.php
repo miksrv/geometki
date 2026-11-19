@@ -293,6 +293,26 @@ final class VisitsTest extends MySqlTestCase
         $this->assertSame(['visitor-bronze'], $held());
     }
 
+    public function testTheQuietRecountGivesAnAwardWithoutAStoryOrANotification(): void
+    {
+        $this->signIn('user1');
+        $this->withBodyFormat('json')->post('visits', ['place' => 'place1'])->assertStatus(201);
+
+        // An award made after the visit: achievements:rebuild gives it quietly
+        $this->db->table('achievements')->insert([
+            'id' => 'visitor-bronze', 'group_slug' => 'visitor', 'type' => 'base', 'tier' => 'bronze',
+            'title_en' => 'Visitor', 'title_ru' => 'Гость', 'rules' => json_encode([['metric' => 'places_visited', 'operator' => '>=', 'value' => 1]]),
+            'xp_bonus' => 30, 'sort_order' => 1, 'is_active' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        $given = (new \App\Libraries\AchievementsLibrary())->evaluate('user1', false, false);
+
+        $this->assertSame(['visitor-bronze'], $given);
+        $this->assertSame(1, $this->db->table('users_achievements')->where('user_id', 'user1')->countAllResults());
+        $this->assertSame(0, $this->db->table('feed')->where(['user_id' => 'user1', 'type' => 'achievement'])->countAllResults());
+        $this->assertSame(0, $this->db->table('users_notifications')->where(['user_id' => 'user1', 'type' => 'achievements'])->countAllResults());
+    }
+
     public function testAnOldVisitIsAskedTheQuestionsItHasNoAnswerTo(): void
     {
         // Checked in before the questions came

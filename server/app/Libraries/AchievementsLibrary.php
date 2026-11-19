@@ -183,10 +183,11 @@ class AchievementsLibrary
      * Full evaluation for one user. Returns newly earned achievement IDs.
      *
      * @param bool $notify false: award silently, without a notification (and its push / email)
+     * @param bool $story  false: no story in the feed either (a quiet recount, achievements:rebuild)
      * @return array
      * @throws ReflectionException
      */
-    public function evaluate(string $userId, bool $notify = true): array
+    public function evaluate(string $userId, bool $notify = true, bool $story = true): array
     {
         $achievementsModel     = new AchievementsModel();
         $userAchievementsModel = new UsersAchievementsModel();
@@ -236,7 +237,7 @@ class AchievementsLibrary
                     ];
                 }
 
-                $this->awardAchievement($userId, $achievement, $progressSnapshot, $earnedGroupMap, $notify);
+                $this->awardAchievement($userId, $achievement, $progressSnapshot, $earnedGroupMap, $notify, $story);
                 $awarded[] = $achievement->id;
                 $earnedGroupMap[$achievement->group_slug] = [
                     'achievement_id' => $achievement->id,
@@ -741,7 +742,8 @@ class AchievementsLibrary
         object $achievement,
         array  $progressSnapshot,
         array  $earnedGroupMap,
-        bool   $notify = true
+        bool   $notify = true,
+        bool   $story = true
     ): void {
         $userAchievementsModel = new UsersAchievementsModel();
         $isUpgrade             = isset($earnedGroupMap[$achievement->group_slug]);
@@ -794,10 +796,12 @@ class AchievementsLibrary
             );
         }
 
-        try {
-            (new FeedLibrary())->achievement($userId, $achievement->id);
-        } catch (\Throwable $e) {
-            log_message('error', '{exception}', ['exception' => $e]);
+        if ($story) {
+            try {
+                (new FeedLibrary())->achievement($userId, $achievement->id);
+            } catch (\Throwable $e) {
+                log_message('error', '{exception}', ['exception' => $e]);
+            }
         }
 
         if (!$notify) {

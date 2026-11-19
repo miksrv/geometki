@@ -13,8 +13,10 @@ use Throwable;
  * Brings everyone's awards in line with the achievements as they are now, quietly: the awards
  * whose terms are no longer met are taken back (`AchievementsLibrary::reconcile()`: down to the
  * highest tier still met, or away, the stories leave the feed), the ones met but missing are
- * given (`evaluate()` without notifications), then the experience and the level are recounted
- * (they sum the awards held) — no notification, no push, no email at any step.
+ * given (`evaluate()` without notifications and without feed stories), then the experience and
+ * the level are recounted (they sum the awards held) — no notification, no push, no email, no
+ * story in the feed at any step. An award given here has no story until `php spark
+ * feed:rebuild`, which adds one for every award held without it (at its `earned_at`).
  *
  * Run once after the thresholds of achievements changed (an award given by an old, lower
  * threshold stays otherwise), and whenever the awards look out of step. Safe to repeat. Back up
@@ -79,7 +81,7 @@ class RebuildAchievements extends BaseCommand
 
                 // First taken back, then given: an award met again by its lower tier comes back as that tier
                 $taken = $library->reconcile($user->id);
-                $given = $library->evaluate($user->id, false);
+                $given = $library->evaluate($user->id, false, false);
 
                 $revoked += count($taken);
                 $awarded += count($given);
