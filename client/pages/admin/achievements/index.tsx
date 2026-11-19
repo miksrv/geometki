@@ -1,208 +1,194 @@
 import React from 'react'
-import { Badge, Button, cn, Container, Table, TableColumnProps } from 'simple-react-ui-kit'
+import { Button, cn } from 'simple-react-ui-kit'
 
-import { GetServerSidePropsResult } from 'next'
-import dynamic from 'next/dynamic'
-import Head from 'next/head'
-import Link from 'next/link'
 import { useTranslation } from 'next-i18next/pages'
-import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiType } from '@/api'
-import { setLocale } from '@/app/applicationSlice'
-import { useAppSelector, wrapper } from '@/app/store'
-import { AppLayout, PageHeader } from '@/components/shared'
-import { AchievementTierBadge } from '@/components/shared/achievement-card/AchievementTierBadge'
-import { AchievementIcon } from '@/components/shared/achievement-icon'
-import { formatDate } from '@/utils/helpers'
-import { hydrateAuthFromCookies, isAdminRequest } from '@/utils/serverSideAuth'
-import { loadPageTranslations } from '@/utils/translations.server'
+import { useAppSelector } from '@/app/store'
+import {
+    ACHIEVEMENT_TYPE_TONES,
+    AchievementIcon,
+    AdminPageShell,
+    AdminTable,
+    AdminTableColumn,
+    AdminTitleCell,
+    AdminViews,
+    StatusBadge
+} from '@/components/shared'
+import { AchievementTierBadge } from '@/components/shared/achievement-tier-badge'
+import { useQueryFilters } from '@/hooks/useQueryFilters'
+import { AchievementFilter, AchievementFilterPanel, filterAchievements } from '@/sections/admin/achievement-filter'
+import { ACHIEVEMENTS_ADMIN_HREF } from '@/sections/admin/achievement-form'
+import { getAdminServerSideProps } from '@/utils/adminPage'
+import { formatDate, formatThousands } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
 
-const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
-    ssr: false
-})
+type Achievement = ApiType.Achievements.AchievementAdmin
 
-interface AdminAchievementsPageProps {
-    locale: ApiType.Locale
-}
+const ACHIEVEMENTS_CREATE_HREF = `${ACHIEVEMENTS_ADMIN_HREF}/create`
 
-const AdminAchievementsPage: React.FC<AdminAchievementsPageProps> = () => {
-    const { t, i18n } = useTranslation()
+/** The filters live in the URL: a filtered list survives a reload, "back" from a form and a shared link */
+const FILTER_KEYS = ['state', 'type', 'query'] as const
+
+type StateView = 'on' | 'off'
+
+const AdminAchievementsPage: React.FC = () => {
+    const { t } = useTranslation()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
-    const { data, isLoading } = API.useGetAchievementsManageQuery(undefined, { skip: !isAuth })
-    const [deleteAchievement] = API.useDeleteAchievementMutation()
+    const { data, isError, isLoading } = API.useGetAchievementsManageQuery(undefined, { skip: !isAuth })
 
-    const achievements = data?.data ?? []
+    const [filter, setFilter] = useQueryFilters(FILTER_KEYS)
+    const rows = React.useMemo(() => filterAchievements(data?.data, filter), [data, filter])
+    const filtered = !!(filter.state || filter.type || filter.query)
 
-    const [deleteTarget, setDeleteTarget] = React.useState<ApiType.Achievements.AchievementAdmin | null>(null)
+    const handleFilterChange = React.useCallback(
+        (key: keyof AchievementFilter, value: string | undefined) => setFilter({ [key]: value }),
+        [setFilter]
+    )
 
-    const handleDelete = async () => {
-        if (!deleteTarget) {
-            return
-        }
-        await deleteAchievement(deleteTarget.id)
-            .unwrap()
-            .catch(() => undefined)
-        setDeleteTarget(null)
-    }
+    // The counts of the views are of the list narrowed by the other filters: a view never promises rows it has not
+    const countOf = (state?: StateView) => filterAchievements(data?.data, { ...filter, state })?.length
 
-    const pageTitle = t('achievements-admin-title')
+    // A switched-off award is muted in every cell; the "Выключено" badge says why
+    const cell = (achievement: Achievement, content: React.ReactNode) => (
+        <span className={cn(!achievement.is_active && styles.muted)}>{content}</span>
+    )
 
-    const columns: Array<TableColumnProps<ApiType.Achievements.AchievementAdmin>> = [
+    const createButton = () => (
+        <Button
+            mode={'primary'}
+            size={'medium'}
+            link={ACHIEVEMENTS_CREATE_HREF}
+            label={t('achievements-admin-add')}
+        />
+    )
+
+    const columns: Array<AdminTableColumn<Achievement>> = [
         {
-            accessor: 'image',
             header: '',
-            className: styles.imageCell,
-            formatter: (_, sortedData, rowIndex) => {
-                const achievement = sortedData[rowIndex]
-                return (
+            key: 'image',
+            render: (achievement) =>
+                cell(
+                    achievement,
                     <AchievementIcon
                         image={achievement.image}
-                        alt={achievement.title}
+                        alt={''}
                         size={24}
                         tier={achievement.tier}
-                        category={achievement.category}
+                        category={achievement.type === 'seasonal' ? 'seasonal' : undefined}
                         group={achievement.group_slug}
                     />
-                )
-            }
+                ),
+            variant: 'image'
         },
         {
-            accessor: 'title',
             header: t('achievements-admin-name'),
-            formatter: (_, sortedData, rowIndex) => {
-                const achievement = sortedData[rowIndex]
-                return (
-                    <div className={styles.titleCell}>
-                        <Link href={`/admin/achievements/${String(achievement.id)}`}>{achievement.title}</Link>
-                        {achievement.description && (
-                            <span className={styles.titleDescription}>{achievement.description}</span>
-                        )}
-                        {achievement.season_start && achievement.season_end && (
-                            <span className={cn(styles.titleDescription, styles.titleDate)}>
-                                {formatDate(achievement.season_start, 'D MMM YYYY')}
-                                {' – '}
-                                {formatDate(achievement.season_end, 'D MMM YYYY')}
-                            </span>
-                        )}
-                    </div>
-                )
-            }
+            key: 'title',
+            // The title stays readable beside its "Выключено" badge; the other cells step back
+            render: (achievement) => (
+                <AdminTitleCell
+                    href={`${ACHIEVEMENTS_ADMIN_HREF}/${achievement.id}`}
+                    title={achievement.title}
+                    badge={
+                        achievement.is_active ? undefined : (
+                            <StatusBadge
+                                label={t('achievements-admin-inactive')}
+                                tone={'warning'}
+                            />
+                        )
+                    }
+                >
+                    {[
+                        achievement.description,
+                        achievement.season_start &&
+                            achievement.season_end &&
+                            `${formatDate(achievement.season_start, 'D MMM YYYY')} – ${formatDate(achievement.season_end, 'D MMM YYYY')}`
+                    ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                </AdminTitleCell>
+            )
         },
         {
-            accessor: 'tier',
             header: t('achievements-admin-tier'),
-            formatter: (_, sortedData, rowIndex) => (
+            key: 'tier',
+            render: (achievement) => (
                 <AchievementTierBadge
-                    tier={sortedData[rowIndex].tier}
+                    tier={achievement.tier}
                     t={t}
                 />
             )
         },
         {
-            accessor: 'type',
             header: t('achievements-admin-type'),
-            formatter: (_, sortedData, rowIndex) => (
-                <Badge
-                    size={'small'}
-                    label={t(`achievements-${String(sortedData[rowIndex].type)}`)}
-                    className={styles.typeBadge}
+            key: 'type',
+            render: (achievement) => (
+                <StatusBadge
+                    label={t(`achievements-${achievement.type}`)}
+                    tone={ACHIEVEMENT_TYPE_TONES[achievement.type]}
                 />
             )
         },
         {
-            accessor: 'category',
-            header: t('achievements-admin-category'),
-            formatter: (_, sortedData, rowIndex) => t(`achievements-category-${String(sortedData[rowIndex].category)}`)
-        },
-        {
-            accessor: 'id',
-            header: '',
-            formatter: (_, sortedData, rowIndex) => (
-                <Button
-                    icon={'Close'}
-                    variant={'negative'}
-                    size={'small'}
-                    className={`${styles.actionBtn} ${styles.danger}`}
-                    tooltip={t('delete', { defaultValue: 'Удалить' })}
-                    onClick={() => setDeleteTarget(sortedData[rowIndex])}
-                />
-            )
+            header: t('achievements-admin-holders'),
+            key: 'holders',
+            render: (achievement) => cell(achievement, formatThousands(achievement.holders ?? 0)),
+            variant: 'number'
         }
     ]
 
     return (
-        <AppLayout>
-            <Head>
-                {generateNextSeo({
-                    title: pageTitle,
-                    noindex: true,
-                    openGraph: {
-                        locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US',
-                        title: pageTitle
-                    }
-                })}
-            </Head>
+        <AdminPageShell
+            title={t('achievements-admin-title')}
+            count={data?.data.length ? String(data.data.length) : undefined}
+            actions={createButton()}
+            fit={true}
+        >
+            <AdminViews<StateView>
+                aria-label={t('achievements-admin-view-label')}
+                views={[
+                    { count: countOf(), key: undefined, label: t('achievements-admin-view-all') },
+                    { count: countOf('on'), key: 'on', label: t('admin-widget-achievements-active') },
+                    { count: countOf('off'), key: 'off', label: t('admin-widget-achievements-off') }
+                ]}
+                active={filter.state === 'on' || filter.state === 'off' ? filter.state : undefined}
+                onChange={(state) => setFilter({ state })}
+            />
 
-            <PageHeader
-                title={pageTitle}
-                actions={
-                    <Button
-                        mode={'primary'}
-                        size={'small'}
-                        link={'/admin/achievements/create'}
-                    >
-                        {t('achievements-admin-add')}
-                    </Button>
+            <AchievementFilterPanel
+                filter={filter}
+                onChange={handleFilterChange}
+            />
+
+            <AdminTable<Achievement>
+                rows={rows}
+                columns={columns}
+                loading={isLoading}
+                error={isError ? t('admin-widget-error') : undefined}
+                emptyTitle={filtered ? t('achievements-admin-filter-empty') : t('achievements-noAchievements')}
+                emptyDescription={
+                    filtered ? t('admin-filter-empty-description') : t('achievements-admin-empty-description')
+                }
+                emptyAction={
+                    filtered ? (
+                        <Button
+                            mode={'secondary'}
+                            size={'medium'}
+                            label={t('admin-filter-reset')}
+                            onClick={() => setFilter({ query: undefined, state: undefined, type: undefined })}
+                        />
+                    ) : (
+                        createButton()
+                    )
                 }
             />
-
-            <Container style={{ padding: '2px' }}>
-                <Table<ApiType.Achievements.AchievementAdmin>
-                    data={achievements}
-                    columns={columns}
-                    loading={isLoading}
-                    noDataCaption={t('achievements-noAchievements')}
-                    stickyHeader
-                />
-            </Container>
-
-            <ConfirmationDialog
-                open={!!deleteTarget}
-                message={t('achievements-admin-delete-confirm')}
-                onConfirm={handleDelete}
-                onCancel={() => setDeleteTarget(null)}
-            />
-        </AppLayout>
+        </AdminPageShell>
     )
 }
 
-export const getServerSideProps = wrapper.getServerSideProps(
-    (store) =>
-        async (context): Promise<GetServerSidePropsResult<AdminAchievementsPageProps>> => {
-            const locale = (context.locale ?? 'ru') as ApiType.Locale
-            const translations = await loadPageTranslations()
-
-            store.dispatch(setLocale(locale))
-            hydrateAuthFromCookies(store, context.req.cookies)
-
-            if (!(await isAdminRequest(store))) {
-                return { notFound: true }
-            }
-
-            await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
-
-            return {
-                props: {
-                    ...translations,
-                    locale
-                }
-            }
-        }
-)
+export const getServerSideProps = getAdminServerSideProps
 
 export default AdminAchievementsPage
