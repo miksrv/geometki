@@ -45,7 +45,7 @@ class Mail extends ResourceController
      *
      * GET /mail/queue — admin only, never cached.
      *
-     * @return ResponseInterface {last_run_at, sent_day, pending, overdue, errors_week}
+     * @return ResponseInterface {last_run_at, late_after, sent_day, pending, overdue, errors_week}
      */
     public function queue(): ResponseInterface
     {
@@ -60,6 +60,7 @@ class Mail extends ResourceController
 
             return $this->respond([
                 'last_run_at' => is_int($lastRun) ? gmdate('Y-m-d H:i:s', $lastRun) : null,
+                'late_after'  => SendingMail::thresholds()['late'],
                 ...(new SendingMail())->health(),
             ]);
         } catch (Throwable $e) {

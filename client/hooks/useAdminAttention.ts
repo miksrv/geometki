@@ -20,12 +20,12 @@ export interface AdminAttentionItem {
     count?: number
 }
 
-/** The sending job runs every minute: a last run longer ago than this means it stopped */
+/** A last run of the sending job longer ago than this means it stopped, unless the server says longer (`late_after`) */
 export const MAIL_JOB_LATE_MINUTES = 15
 
 /** The job has not got through the queue for too long, or never did (or its mark was lost) */
 export const isMailJobLate = (queue?: ApiType.Mail.MailQueueResponse): boolean =>
-    !!queue && (!queue.last_run_at || minutesAgo(queue.last_run_at) > MAIL_JOB_LATE_MINUTES)
+    !!queue && (!queue.last_run_at || minutesAgo(queue.last_run_at) > Math.max(MAIL_JOB_LATE_MINUTES, queue.late_after ?? 0))
 
 /**
  * What an administrator has to do something about, across the sections of the admin: the one

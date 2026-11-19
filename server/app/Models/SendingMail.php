@@ -29,6 +29,25 @@ class SendingMail extends ApplicationBaseModel
     /** A letter whose time to go came longer ago than this and is still waiting: the sending job is not running */
     public const OVERDUE_MINUTES = 30;
 
+    /** The sending job has not run for longer than this: it stopped (with it every minute) */
+    public const LATE_MINUTES = 15;
+
+    /**
+     * How long the sending job may be quiet before it counts as stopped, and a letter as
+     * overdue: the minimums above, longer when `cron:run` starts `notifications:send` rarer
+     * (Config\Cron::$notifications) — two of its intervals and a tick.
+     *
+     * @return array{late: int, overdue: int}
+     */
+    public static function thresholds(): array
+    {
+        $cron     = config(\Config\Cron::class);
+        $interval = \App\Libraries\CronSchedule::minutes($cron->notifications) ?? 0;
+        $quiet    = $interval > 0 ? 2 * max($interval, $cron->tick) + $cron->tick : 0;
+
+        return ['late' => max(self::LATE_MINUTES, $quiet), 'overdue' => max(self::OVERDUE_MINUTES, $quiet)];
+    }
+
     protected $table            = 'sending_mail';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = false;
@@ -72,7 +91,7 @@ class SendingMail extends ApplicationBaseModel
     /**
      * The state of the queue for the admin dashboard (GET /mail/queue), by the DB clock: letters
      * sent during the last day, letters waiting, the ones of them overdue (their time to go came
-     * over OVERDUE_MINUTES ago; the bulk mail is left out, it waits for the hosting limits on
+     * over the `overdue` of thresholds() ago; the bulk mail is left out, it waits for the hosting limits on
      * purpose) and the letters that failed during the last week.
      *
      * @return array{sent_day: int, pending: int, overdue: int, errors_week: int}
@@ -89,7 +108,7 @@ class SendingMail extends ApplicationBaseModel
                  SUM(`status` = 'error' AND `updated_at` >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS errors_week
              FROM `sending_mail`
              WHERE `deleted_at` IS NULL",
-            [self::OVERDUE_MINUTES]
+            [self::thresholds()['overdue']]
         )->getRow();
 
         return [

@@ -33,11 +33,13 @@ export interface UnsubscribeResponse {
 export interface MailQueueResponse {
     /** When the sending job last got through the queue (UTC); null when unknown — it never ran */
     last_run_at: string | null
+    /** Minutes: a last run longer ago means the job stopped (15, longer when the server's cron starts it rarer) */
+    late_after?: number
     /** Letters sent during the last 24 hours */
     sent_day: number
     /** Letters waiting or being sent */
     pending: number
-    /** Waiting letters whose time to go came over 30 minutes ago: the job is not running (the bulk mail is left out) */
+    /** Waiting letters whose time to go came over 30 minutes (or `late_after`) ago: the job is not running (the bulk mail is left out) */
     overdue: number
     /** Letters failed during the last 7 days */
     errors_week: number

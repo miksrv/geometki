@@ -1511,10 +1511,10 @@ Whether the emails go out, for the admin dashboard. Admin only (`401` for a gues
 **Response:**
 
 ```json
-{ "last_run_at": "2026-11-16 10:05:00", "sent_day": 42, "pending": 3, "overdue": 0, "errors_week": 1 }
+{ "last_run_at": "2026-11-16 10:05:00", "late_after": 15, "sent_day": 42, "pending": 3, "overdue": 0, "errors_week": 1 }
 ```
 
-`last_run_at` — when a `notifications:send` run last got through the email queue (UTC; `null` when unknown: the job never ran or the cache was cleared); with the job every minute an older time means it stopped. `sent_day` — letters sent during the last 24 hours (`completed`, `grouped`); `pending` — letters waiting or being sent; `overdue` — the waiting ones whose time to go came over 30 minutes ago (the bulk mail — digests and mailings — is left out: over the hosting limits it waits on purpose); `errors_week` — letters failed (`error`) during the last 7 days. The done rows are deleted after 7 days, so there is no longer history.
+`last_run_at` — when a `notifications:send` run last got through the email queue (UTC; `null` when unknown: the job never ran or the cache was cleared); `late_after` — minutes: a last run longer ago means the job stopped (15, or longer when `cron:run` starts it rarer: two of its intervals and a tick, `Config\Cron`). `sent_day` — letters sent during the last 24 hours (`completed`, `grouped`); `pending` — letters waiting or being sent; `overdue` — the waiting ones whose time to go came over 30 minutes ago, or `late_after` when that is longer (the bulk mail — digests and mailings — is left out: over the hosting limits it waits on purpose); `errors_week` — letters failed (`error`) during the last 7 days. The done rows are deleted after 7 days, so there is no longer history.
 
 ### Push
 
@@ -2936,24 +2936,25 @@ Spark commands (`php spark <command>`), not accessible over HTTP:
 
 | Command | Description |
 |---------|-------------|
-| `notifications:send` | Send a batch of queued pushes, then of emails (an email skips an event a push already told about), and, once a day, delete the done queue rows older than 7 days (`retentionDays`; waiting ones stay) and push devices that keep failing (`--cleanup` — now). Cron, every minute; overlapping runs are safe |
+| `cron:run` | The one cron job (every 5 minutes): starts the jobs of `Config\Cron` that are due — an interval, a time of day or a weekday and a time each, set in `.env` (`cron.<job>`); a job still running is skipped. `--list` — the schedule with the last and next start of each job. See `README.md` → Cron |
+| `notifications:send` | Send a batch of queued pushes, then of emails (an email skips an event a push already told about), and, once a day, delete the done queue rows older than 7 days (`retentionDays`; waiting ones stay) and push devices that keep failing (`--cleanup` — now). By `cron:run` (`cron.notifications`, 5 min); overlapping runs are safe |
 | `push:vapid` | Generate the VAPID keys for web push (paste into `.env`; once — new keys invalidate every subscription) |
 | `system:test-email` | Send every kind of email with sample data to an address (`--locale`, `--kind`) |
 | `email:preview` | Render every kind of email with sample data into `writable/email-preview/` |
 | `content:revert` | Roll a place text back to an earlier revision |
 | `feed:rebuild` | Regroup the activity log into feed stories (after changing the grouping rules) |
 | `locations:rebuild` | Re-geocode every place, merge duplicate locations, assign slugs |
-| `osm:collect` | Collect OSM candidates for the queued tiles (cron, every minute) |
+| `osm:collect` | Collect OSM candidates for the queued tiles (by `cron:run`, `cron.osm`, 20 min) |
 | `osm:rescore` | Recalculate OSM candidate scores from the stored tags |
 | `achievements:evaluate` | Evaluate and award achievements (by hand, `--all` after adding or changing an achievement; not scheduled) |
 | `achievements:rebuild` | Quietly bring everyone's awards in line with the achievements as they are now: take back the ones no longer met (only those counting what a person can take back), give the missing ones, recount experience and levels; no notifications. `--dry-run` lists what would be taken back, `--user=<id>` one person. By hand, after raising a threshold; back up first |
-| `trending:refresh` | Refresh place trending scores |
+| `trending:refresh` | Refresh place trending scores (by `cron:run`, `cron.trending`, hourly) |
 | `interests:refresh` | Refresh user interest profiles |
-| `digest:weekly` | Queue weekly digest emails (cron, weekly; skips users who got one in the last 6 days unless `--force`). `notifications:send` sends them within the hosting limits — 500 an hour, 2000 a day, shared with the mailings' letters; the rest wait in the queue (up to 6 days) |
+| `digest:weekly` | Queue weekly digest emails (by `cron:run`, `cron.digest`, Monday 09:00 Moscow; skips users who got one in the last 6 days unless `--force`). `notifications:send` sends them within the hosting limits — 500 an hour, 2000 a day, shared with the mailings' letters; the rest wait in the queue (up to 6 days) |
 | `notifications:prune` | Delete toast-only and old read notifications (by hand, not scheduled) |
 | `sessions:prune` | Delete stale anonymous sessions that left nothing behind (by hand, not scheduled) |
-| `places:outlines` | Look up the OSM outlines of large places for "near the place" (`places_outlines`): the categories of `Game::$outlineTags`, the places never checked or checked without luck 90 days ago; an outline is taken only when its name is like the title of the place. `--limit N` (30, 0 — all: the first fill), `--place <id>` (one, again), `--dry-run`. Stops when Overpass fails, the next run goes on. Cron, hourly |
-| `game:tick` | The game's clock: close the seasons whose grace days are over (their table is frozen in `game_results`; seasons are never created here). Cron, once a day |
+| `places:outlines` | Look up the OSM outlines of large places for "near the place" (`places_outlines`): the categories of `Game::$outlineTags`, the places never checked or checked without luck 90 days ago; an outline is taken only when its name is like the title of the place. `--limit N` (30, 0 — all: the first fill), `--place <id>` (one, again), `--dry-run`. Stops when Overpass fails, the next run goes on. By `cron:run` (`cron.outlines`, 20 min) |
+| `game:tick` | The game's clock: close the seasons whose grace days are over (their table is frozen in `game_results`; seasons are never created here). By `cron:run` (`cron.game`, 00:05 Moscow) |
 
 ---
 
