@@ -41,11 +41,15 @@ const season: ApiType.Game.Season = {
     current: true,
     daysLeft: 20,
     from: '2026-10-01',
-    id: '2026-cold',
-    key: 'cold',
+    id: '2026-10',
+    image: null,
+    slug: null,
     lastDay: '2027-04-07',
+    medals: { bronze: null, gold: null, participant: null, silver: null },
+    title: 'Cold season 2026/27',
     to: '2027-03-31',
-    year: 2026
+    upcoming: false,
+    description: null
 }
 
 const totals = { places: 31, players: 10, quests: 1 }
@@ -79,8 +83,8 @@ describe('GameSeason', () => {
             { store: signedIn() }
         )
 
-        expect(screen.getByRole('heading', { level: 1, name: 'game-season-cold:2026/27' })).toBeInTheDocument()
-        expect(screen.getByTestId('badge')).toHaveTextContent('season-2026-cold')
+        expect(screen.getByRole('heading', { level: 1, name: 'Cold season 2026/27' })).toBeInTheDocument()
+        expect(screen.getByTestId('badge')).toHaveTextContent('season-2026-10')
         expect(screen.getByText('game-season-days-left:20')).toBeInTheDocument()
         // The page's card ends with the head: the rating and the places are the page's own blocks
         expect(screen.queryByRole('link', { name: 'Alice' })).not.toBeInTheDocument()
@@ -145,7 +149,7 @@ describe('GameSeason', () => {
 
         expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument()
         expect(screen.getByRole('heading', { level: 2 })).toBeInTheDocument()
-        expect(screen.getByRole('link', { name: /game-season-cold/ })).toHaveAttribute('href', '/game')
+        expect(screen.getByRole('link', { name: /Cold season 2026\/27/ })).toHaveAttribute('href', '/game')
         // The same counters as on the game page
         expect(screen.getByText('game-season-counter-place')).toBeInTheDocument()
         expect(screen.getByText('game-season-counter-players:10')).toBeInTheDocument()
@@ -216,40 +220,32 @@ describe('GameSeason', () => {
         expect(screen.queryByText('Waterfall')).not.toBeInTheDocument()
     })
 
-    it('lets an administrator replace the picture by a tap on it, on the page only', () => {
-        const admin = () => makeTestStore({ auth: { isAuth: true, user: { id: 'u1', name: 'Alice', role: 'admin' } } })
-        const { unmount } = renderWithStore(
-            <GameSeason
-                season={season}
-                totals={totals}
-            />,
-            { store: admin() }
-        )
-
-        expect(screen.getByRole('button', { name: 'game-season-image' })).toContainElement(screen.getByTestId('badge'))
-        unmount()
-
+    it('shows the description as a paragraph on the page', () => {
         renderWithStore(
             <GameSeason
-                variant={'home'}
-                season={season}
-                totals={totals}
-            />,
-            { store: admin() }
-        )
-
-        expect(screen.queryByRole('button', { name: 'game-season-image' })).not.toBeInTheDocument()
-        unmount()
-
-        renderWithStore(
-            <GameSeason
-                season={season}
+                season={{ ...season, description: 'A season of caves' }}
                 totals={totals}
             />,
             { store: signedIn() }
         )
 
-        expect(screen.queryByRole('button', { name: 'game-season-image' })).not.toBeInTheDocument()
+        expect(screen.getByText('A season of caves')).toBeInTheDocument()
+    })
+
+    it('says when an upcoming season starts instead of the bar of time, and does not invite to play', () => {
+        renderWithStore(
+            <GameSeason
+                season={{ ...season, current: false, daysLeft: 0, from: '2026-12-01', upcoming: true }}
+                totals={totals}
+            />,
+            { store: makeTestStore({ auth: { isAuth: false, user: undefined } }) }
+        )
+
+        expect(screen.getByText('game-season-upcoming')).toBeInTheDocument()
+        expect(screen.getByText(/game-season-starts/)).toBeInTheDocument()
+        expect(screen.queryByText(/game-season-days-left/)).not.toBeInTheDocument()
+        expect(screen.queryByText('game-season-sign-in')).not.toBeInTheDocument()
+        expect(screen.queryByRole('group', { name: 'game-season-counters' })).not.toBeInTheDocument()
     })
 
     it('offers the next place with what a check-in there gives, and says when it is enough to go up', () => {

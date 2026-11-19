@@ -7,7 +7,7 @@ import { useTranslation } from 'next-i18next/pages'
 import { ApiType } from '@/api'
 import { AchievementIcon, UserAvatarGroup } from '@/components/shared'
 import { formatPlainDate } from '@/utils/date'
-import { seasonHref, seasonTitle } from '@/utils/game'
+import { seasonHref } from '@/utils/game'
 
 import styles from './styles.module.sass'
 
@@ -47,10 +47,10 @@ export const GamePastSeasons: React.FC<GamePastSeasonsProps> = ({ seasons, class
                 <div className={styles.who}>
                     <h3 className={styles.title}>
                         <Link
-                            href={seasonHref(season.id)}
+                            href={seasonHref(season.id, season.slug)}
                             className={styles.link}
                         >
-                            {seasonTitle(t, season)}
+                            {season.title}
                         </Link>
                     </h3>
                     <p className={styles.meta}>

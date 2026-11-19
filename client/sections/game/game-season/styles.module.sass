@@ -4,7 +4,7 @@
 
 // The season card (DESIGN.md → The game): badge | name, dates, the bar of time | the score —
 // and under a rule what to do next: whom to catch up with | the next place.
-// The same card as the profile's head; the season, warm or cold, colours its accents
+// The same card as the profile's head
 .card
     --season: var(--color-main)
 
@@ -13,7 +13,7 @@
     gap: var(--card-padding)
     padding: var(--card-padding)
     border-radius: var(--container-radius)
-    // The season, warm or cold, tints the left edge of the card, wherever it stands
+    // The season's colour tints the left edge of the card, wherever it stands
     background: linear-gradient(100deg, color-mix(in srgb, var(--season) 14%, var(--surface-1)) 0%, var(--surface-1) 38%)
     box-shadow: var(--container-shadow)
 
@@ -62,12 +62,6 @@
 @media only screen and (max-width: variables.$mobileMaxWidth)
     .block, .head
         --card-padding: var(--space-4)
-
-.cold
-    --season: var(--color-season-cold)
-
-.warm
-    --season: var(--color-season-warm)
 
 .badge
     display: flex
@@ -128,6 +122,11 @@
     +type.secondary
     margin: 0
 
+// The season's description: a paragraph on the full width of the card, the reading size
+.description
+    margin: 0
+    +type.reading
+
 // How much of the season has passed: a thin bar in the season's colour and the days left
 .time
     display: flex
@@ -177,7 +176,7 @@
         color: var(--text-color-secondary)
         opacity: .7
 
-// "Войти и играть", "Как играть", the administrator's picture button: one wrapping line
+// "Войти и играть", the administrator's link to the edit page: one wrapping line
 .actions
     display: flex
     flex-wrap: wrap

@@ -63,6 +63,31 @@
     border-radius: inherit
     background: var(--color-main)
 
+// Several rules: the metric | "3 из 10", green once met
+.rules
+    display: flex
+    flex-direction: column
+    gap: 2px
+    margin: var(--space-1) 0 0
+    padding: 0
+    list-style: none
+    font-size: var(--font-size-secondary)
+
+    li
+        display: flex
+        justify-content: space-between
+        gap: var(--space-2)
+        color: var(--text-color-secondary)
+
+    b
+        flex-shrink: 0
+        color: var(--text-color-primary)
+        font-weight: var(--font-weight-semibold)
+        font-variant-numeric: tabular-nums
+
+.ruleDone b
+    color: var(--color-green)
+
 .until
     +type.caption
     margin: 0

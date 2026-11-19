@@ -12,11 +12,9 @@ import { AchievementIcon, GamePoints, UserAvatar } from '@/components/shared'
 import { StatTiles } from '@/components/ui'
 import { IMG_HOST } from '@/config/env'
 import { formatPlainDate } from '@/utils/date'
-import { GAME_HREF, seasonTitle } from '@/utils/game'
+import { GAME_HREF } from '@/utils/game'
 import { dateToUnixTime, formatThousands, numberFormatter } from '@/utils/helpers'
 import { buildPlaceUrl } from '@/utils/place'
-
-import { SeasonImageUpload } from './SeasonImageUpload'
 
 import styles from './styles.module.sass'
 
@@ -27,9 +25,9 @@ interface GameSeasonProps {
     totals: { players: number; places: number; quests?: number }
     /**
      * `page` (default) — the head of the game page and of a past season's page: the season's
-     * name is the h1, the profile card's size, the dates; the card ends there — the rating and
-     * the places are the page's own blocks. An administrator replaces the picture by a tap on
-     * it. `home` — the same card on the signed-in home page: smaller, the name a section title
+     * name is the h1, the profile card's size, the dates, the description as a paragraph; the card
+     * ends there — the rating and the places are the page's own blocks (the administrator's
+     * buttons stand above the card, the page's own). `home` — the same card on the signed-in home page: smaller, the name a section title
      * that leads to the game, no dates, the head no taller than the picture, and under it the
      * visitor in the table and the next place
      */
@@ -90,7 +88,6 @@ export const GameSeason: React.FC<GameSeasonProps> = ({
     const dispatch = useAppDispatch()
     const isAuth = useAppSelector((state) => state.auth.isAuth)
     const viewer = useAppSelector((state) => state.auth.user)
-    const isAdmin = viewer?.role === 'admin'
 
     const isHome = variant === 'home'
     const Heading = isHome ? 'h2' : 'h1'
@@ -165,46 +162,52 @@ export const GameSeason: React.FC<GameSeasonProps> = ({
         </li>
     )
 
-    const badge = (
-        <AchievementIcon
-            image={season.image}
-            alt={''}
-            size={isHome ? 96 : 112}
-            category={'seasonal'}
-            group={`season-${season.id}`}
-        />
-    )
-
+    const upcoming = season.upcoming
     const showMe = !!me && !!viewer
     // What to do next is the home page's: the game page has the rating and the places under the card
     const showNow = isHome && season.current && !season.closed && (showMe || !!next)
 
     return (
         <section
-            className={cn(styles.card, isHome ? styles.block : styles.head, styles[season.key], className)}
+            className={cn(styles.card, isHome ? styles.block : styles.head, className)}
             aria-label={isHome ? t('game-title') : undefined}
         >
             <div className={styles.top}>
                 <div className={styles.badge}>
-                    {/* An administrator replaces the picture by a tap on it, on the season's page */}
-                    {isAdmin && !isHome ? <SeasonImageUpload seasonId={season.id}>{badge}</SeasonImageUpload> : badge}
+                    <AchievementIcon
+                        image={season.image}
+                        alt={''}
+                        size={isHome ? 96 : 112}
+                        category={'seasonal'}
+                        group={`season-${season.id}`}
+                    />
                 </div>
 
                 <div className={styles.main}>
                     <span className={styles.overline}>
                         {season.closed
                             ? t('game-season-closed')
-                            : season.current
-                              ? t('game-season-current')
-                              : t('game-season-over')}
+                            : upcoming
+                              ? t('game-season-upcoming')
+                              : season.current
+                                ? t('game-season-current')
+                                : t('game-season-over')}
                     </span>
                     <Heading className={styles.title}>
-                        {isHome ? <Link href={GAME_HREF}>{seasonTitle(t, season)}</Link> : seasonTitle(t, season)}
+                        {isHome ? <Link href={GAME_HREF}>{season.title}</Link> : season.title}
                     </Heading>
 
                     {!isHome && <p className={styles.dates}>{dates}</p>}
 
                     {/* How much of the season has passed: time, not a goal — the words say it */}
+                    {upcoming && (
+                        <p className={styles.time}>
+                            <span className={styles.timeLeft}>
+                                {t('game-season-starts', { date: formatPlainDate(season.from, 'D MMMM') })}
+                            </span>
+                        </p>
+                    )}
+
                     {season.current && (
                         <div className={cn(styles.time, season.daysLeft <= LAST_DAYS && styles.lastDays)}>
                             <span
@@ -232,9 +235,9 @@ export const GameSeason: React.FC<GameSeasonProps> = ({
                         </p>
                     )}
 
-                    {((isAuth === false && !season.closed) || children) && (
+                    {((isAuth === false && !season.closed && !upcoming) || children) && (
                         <div className={styles.actions}>
-                            {isAuth === false && !season.closed && (
+                            {isAuth === false && !season.closed && !upcoming && (
                                 <Button
                                     mode={'primary'}
                                     size={'medium'}
@@ -248,12 +251,16 @@ export const GameSeason: React.FC<GameSeasonProps> = ({
                     )}
                 </div>
 
-                <StatTiles
-                    className={styles.stats}
-                    aria-label={t('game-season-counters')}
-                    items={stats}
-                />
+                {!upcoming && (
+                    <StatTiles
+                        className={styles.stats}
+                        aria-label={t('game-season-counters')}
+                        items={stats}
+                    />
+                )}
             </div>
+
+            {!isHome && !!season.description && <p className={styles.description}>{season.description}</p>}
 
             {showNow && (
                 <div className={cn(styles.now, showMe && !!next && styles.nowBoth)}>
