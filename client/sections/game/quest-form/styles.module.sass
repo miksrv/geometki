@@ -1,0 +1,112 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+@use '../../../styles/mixins' as *
+
+// The texts in the site's language: the title, then the description, each the full width
+.fields
+    display: grid
+    grid-template-columns: minmax(0, 1fr)
+    gap: var(--space-4)
+
+.modes
+    margin: 0 calc(-1 * var(--space-2))
+
+// `button.`: over the row variant's own bottom padding, which doubled the section's at the end
+button.publish
+    margin-top: var(--space-3)
+    padding-top: var(--space-3)
+    padding-bottom: 0
+    border-top: var(--container-border-separator)
+
+// --- The points ------------------------------------------------------------------------------
+.points
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+
+.pointList
+    display: flex
+    flex-direction: column
+    gap: var(--space-2)
+    margin: 0
+    padding: 0
+    list-style: none
+
+.point
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+    padding: var(--space-3)
+    border-radius: var(--border-radius)
+    background: var(--surface-2)
+
+.pointHead
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    min-width: 0
+
+// The number of the point: the mark of the quest's timeline
+.number
+    display: flex
+    flex-shrink: 0
+    align-items: center
+    justify-content: center
+    width: 28px
+    height: 28px
+    border-radius: 50%
+    background: var(--color-main)
+    color: #fff
+    font-size: var(--font-size-secondary)
+    font-weight: var(--font-weight-semibold)
+    font-variant-numeric: tabular-nums
+
+// Compact icon buttons grouped on the right (DESIGN.md → Edit mode)
+.pointActions
+    display: flex
+    flex-shrink: 0
+    gap: var(--space-1)
+
+// The point's hint, in the site's language: one field the width of the row
+.hints
+    display: grid
+    gap: var(--space-2)
+
+.total
+    +type.secondary
+    margin: 0
+
+.error
+    margin: 0
+    color: var(--color-red)
+    font-size: var(--font-size-small)
+
+.search
+    display: flex
+    flex-direction: column
+    gap: var(--space-2)
+
+.empty
+    +type.secondary
+    margin: 0
+
+// The point's title: a link to its place, in a new tab (the form stays); one line, as the
+// picker's title it stands for
+.pointTitle
+    +truncate
+    display: block
+    color: inherit
+    font-weight: var(--font-weight-semibold)
+    text-decoration: none
+
+    &:hover
+        color: var(--link-color)
+        text-decoration: underline
+
+// The medal of a saved quest: one picture slot, as in the admin forms
+.medal
+    display: grid
+    grid-template-columns: minmax(0, 220px)
+    margin: 0
+    padding: 0
+    list-style: none
