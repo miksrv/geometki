@@ -15,11 +15,11 @@
     @media only screen and (max-width: variables.$mobileMaxWidth)
         gap: var(--space-5)
 
-// Signed-in user: the feed wide, the "unexplored" and the people on the side
+// Signed-in user: the feed wide, the white spots near them and the people on the side
 .userColumns
     display: grid
     grid-template-columns: minmax(0, 1fr) 360px
-    gap: var(--space-4)
+    gap: var(--gap-widgets)
     align-items: start
 
     @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
@@ -28,21 +28,8 @@
 .sideColumn
     display: flex
     flex-direction: column
-    gap: var(--space-4)
+    gap: var(--gap-widgets)
     min-width: 0
-
-.twoColumns
-    display: grid
-    // minmax(0, 1fr): columns never grow past the screen because of long content
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)
-    gap: 8px
-    align-items: start
-
-    & > *
-        min-width: 0
-
-    @media only screen and (max-width: variables.$mobileMaxWidth)
-        grid-template-columns: minmax(0, 1fr)
 
 .feedWidget
     display: flex
@@ -52,7 +39,10 @@
 
 // The people: a scrolling column next to the feed on desktop, the whole list on phones
 .usersWidget
-    margin-top: var(--space-2)
+    // The tint of a line under the pointer reaches past the text, as in the season's rating;
+    // the same room is given back at the foot, so the last line sits as far from the block's
+    // edge as the text does from its sides
+    margin: var(--space-2) calc(-1 * var(--space-2)) calc(-1 * var(--space-2))
 
     @media only screen and (min-width: #{variables.$mobileMaxWidth + 1})
         max-height: 460px
@@ -63,3 +53,26 @@
 .usersEmpty
     +type.secondary
     margin: var(--space-2) 0 0
+
+// The feed and the people, two columns: the feed sets the height of the row. The side column stretches
+// to it, and the people take what is left under the white spots — the list scrolls inside, the
+// block ends where the feed ends. With a short feed the block keeps its least height and goes
+// no further: its content is never what makes the row taller
+@media only screen and (min-width: #{variables.$feedSideColumnMaxWidth + 1})
+    .sideColumn
+        align-self: stretch
+
+        & > *
+            flex-shrink: 0
+
+    .sideColumn > .usersFill
+        display: flex
+        flex: 1 1 0
+        flex-direction: column
+        // About four people: the least the block is worth showing
+        min-height: 280px
+
+    .usersFillList
+        flex: 1 1 0
+        min-height: 0
+        max-height: none

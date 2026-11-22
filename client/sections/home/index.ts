@@ -1,5 +1,7 @@
 export { HomeCategories } from './home-categories/HomeCategories'
 export { HOME_COLLECTIONS_COUNT, HomeCollections } from './home-collections/HomeCollections'
+export { HomeFirstSteps, isNewcomer } from './home-first-steps'
+export { HomeGame, HomeGameIntro } from './home-game'
 export { HomeHero } from './home-hero/HomeHero'
 export { HomeHowItWorks } from './home-how-it-works/HomeHowItWorks'
 export { HomeJoin } from './home-join/HomeJoin'
