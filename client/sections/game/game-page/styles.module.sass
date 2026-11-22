@@ -1,0 +1,40 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+
+// The blocks are sections, `--space-6` apart (`--space-5` on phones) like on every page
+.page
+    display: flex
+    flex-direction: column
+    gap: var(--space-6)
+    // The season card is the head of the page: no `PageHeader` above it to give the gap
+    margin-top: var(--space-4)
+
+    & > *
+        min-width: 0
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        gap: var(--space-5)
+
+// The administrator's buttons over the season card, close to it
+.head
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+
+// The memo under the head: a paragraph of text on the page background, on the full width, at
+// the reading size of every long text of the site
+.intro
+    margin: 0
+    +type.reading
+
+// Between the rating's blocks: the awards and the last season side by side, one column on phones
+.aside
+    display: grid
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+    // Two widgets side by side (DESIGN.md → Layout → Gaps); stacked on phones they are sections
+    gap: var(--gap-widgets)
+    align-items: start
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+        gap: var(--space-5)
