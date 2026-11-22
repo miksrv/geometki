@@ -1,0 +1,59 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+@use '../../../styles/mixins' as *
+
+// The text | a 360px side column, `--space-8` apart: a page to read keeps more air between its
+// columns than a page of blocks. Below 1024px one column, the side blocks after the text
+.columns
+    display: grid
+    grid-template-columns: minmax(0, 1fr) 360px
+    gap: var(--space-8)
+    align-items: start
+
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+        gap: var(--space-6)
+
+// The text of the page: the article prose of a place and a collection, one size from the first
+// paragraph on; `##` are the sections of the page
+.prose
+    +prose
+
+    h2
+        margin-top: 1.8em
+        scroll-margin-top: 64px
+
+    li + li
+        margin-top: 0.3em
+
+.side
+    display: flex
+    flex-direction: column
+    gap: var(--space-6)
+    min-width: 0
+
+    // The column runs the text's height: the way into the game and the table scroll away, the
+    // contents under them stay under the app bar
+    align-self: stretch
+
+.contents
+    position: sticky
+    top: 64px
+
+.lede
+    +type.secondary
+    margin: 0 0 var(--space-3)
+
+// The way into the game: a tinted plate, one button
+.start
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+    padding: var(--space-5)
+    border-radius: var(--container-radius)
+    background: var(--color-main-background)
+
+    p
+        margin: 0
+        font-size: var(--font-size-large)
+        font-weight: var(--font-weight-medium)
