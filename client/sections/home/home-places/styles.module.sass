@@ -20,10 +20,11 @@
     @media (max-width: variables.$mobileMaxWidth)
         padding: var(--space-4)
 
+// The rail's columns while it loads: the list column gap, so the tiles do not jump
 .loaders
     display: grid
     grid-template-columns: repeat(3, minmax(0, 1fr))
-    gap: 10px
+    gap: var(--gap-list-column)
 
     @media (max-width: variables.$mobileMaxWidth)
         grid-template-columns: minmax(0, 1fr)
@@ -34,6 +35,7 @@
     & > *
         margin: 0
 
+// Nothing in the tab: the dashed plate with the words in the middle, no button
 .empty
-    margin: 0
-    color: var(--text-color-secondary)
+    justify-content: center
+    text-align: center

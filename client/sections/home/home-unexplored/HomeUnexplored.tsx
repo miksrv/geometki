@@ -100,6 +100,7 @@ export const HomeUnexplored: React.FC<HomeUnexploredProps> = ({ total }) => {
                         mode={'secondary'}
                         size={'medium'}
                         icon={'Position'}
+                        stretched={true}
                         loading={locating}
                         label={t('home-unexplored-button')}
                         onClick={() => void requestLocation()}
