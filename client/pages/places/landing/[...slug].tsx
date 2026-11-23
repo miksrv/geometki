@@ -418,7 +418,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                 actions={
                     kind === 'category' ? (
                         <Button
-                            size={'small'}
+                            size={'medium'}
                             mode={'secondary'}
                             icon={'Map'}
                             noIndex={true}
