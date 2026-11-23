@@ -15,7 +15,7 @@ import { openAuthDialog, setLocale } from '@/app/applicationSlice'
 import { useAppDispatch, useAppSelector, wrapper } from '@/app/store'
 import { HEX_MAX_ZOOM } from '@/components/map/hex-layer/constants'
 import { getMapSettings, saveMapSettings } from '@/components/map/mapSettings'
-import { AppLayout, MapObjectsTypeEnum } from '@/components/shared'
+import { AppLayout, MapObjectLayersEnum, MapObjectsTypeEnum } from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import { getLandingFlags, round } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
@@ -53,6 +53,8 @@ const MapPage: NextPage<object> = () => {
     const [categories, setCategories] = useState<ApiModel.Categories[]>()
     const [mapCategories, setMapCategories] = useState<ApiModel.Categories[]>()
     const [mapType, setMapType] = useState<MapObjectsTypeEnum>()
+    // "Неоткрытые", "Геометки", "Геоквесты" of the layers panel, as the map reports them on the mount
+    const [objectLayers, setObjectLayers] = useState<MapObjectLayersEnum[]>()
     const [mapBounds, setMapBounds] = useState<string>()
     const [mapZoom, setMapZoom] = useState<number>()
     // The zoom as the map reports it, not debounced: the hexagons and the markers swap at once
@@ -64,7 +66,9 @@ const MapPage: NextPage<object> = () => {
 
     // Below HEX_MAX_ZOOM the hexagons replace the markers: the points are not asked for until the map
     // is zoomed in (its first report comes on the mount)
-    const hexesShown = mapType === 'Places' && (liveZoom === undefined || liveZoom < HEX_MAX_ZOOM)
+    const placesOn = mapType === 'Places' && !!objectLayers?.includes(MapObjectLayersEnum.PLACES)
+    const unexploredOn = mapType === 'Places' && !!objectLayers?.includes(MapObjectLayersEnum.UNEXPLORED)
+    const hexesShown = (placesOn || unexploredOn) && (liveZoom === undefined || liveZoom < HEX_MAX_ZOOM)
 
     // Without clusters every point is loaded once, all categories, and the chosen ones are
     // filtered here: a category toggle costs no request, and every visitor asks the same URL,
@@ -76,7 +80,7 @@ const MapPage: NextPage<object> = () => {
             categories: ENABLE_POI_CLUSTERIZATION ? (mapCategories ?? []) : undefined,
             zoom: ENABLE_POI_CLUSTERIZATION ? mapZoom : undefined
         },
-        { skip: (ENABLE_POI_CLUSTERIZATION && !mapBounds) || mapType !== 'Places' || hexesShown }
+        { skip: (ENABLE_POI_CLUSTERIZATION && !mapBounds) || !placesOn || hexesShown }
     )
 
     const shownPlaces = useMemo(() => {
@@ -298,16 +302,18 @@ const MapPage: NextPage<object> = () => {
                     enableCoordsControl={true}
                     enableLayersSwitcher={true}
                     enableOsmCandidates={true}
-                    enableHexes={mapType === 'Places'}
+                    enableObjectLayers={true}
+                    enableHexes={placesOn || unexploredOn}
                     enableContextMenu={true}
-                    enableCategoryControl={mapType === 'Places'}
+                    enableCategoryControl={placesOn || unexploredOn}
                     loading={placesLoading || photosLoading}
-                    places={mapType === 'Places' ? shownPlaces : []}
+                    places={placesOn ? shownPlaces : []}
                     photos={mapType === 'Photos' ? photoListData?.items : []}
                     onPhotoClick={handlePhotoClick}
                     onChangeCategories={handleChangeCategories}
                     onClickCreatePlace={handleCreatePlace}
                     onChangeMapType={setMapType}
+                    onChangeObjectLayers={setObjectLayers}
                     onChangeBounds={handleChangeBounds}
                     enableUserLocation={true}
                 />
