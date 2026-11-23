@@ -6,9 +6,9 @@
 .layout
     display: grid
     grid-template-columns: minmax(0, 1fr) 320px
-    gap: var(--space-4)
+    gap: var(--gap-widgets)
     align-items: start
-    // With the 15px gap of the layout: the content starts after a pause under the tabs
+    // With the page's gap (`--space-4`): the content starts after a pause under the tabs
     margin-top: var(--space-2)
 
     @media only screen and (max-width: variables.$feedSideColumnMaxWidth)

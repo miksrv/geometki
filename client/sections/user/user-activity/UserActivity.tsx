@@ -34,6 +34,10 @@ export const UserActivity: React.FC<UserActivityProps> = ({ userId, beforeFeed, 
     const nextPageFailed = isError && !!data?.pages.length
     const { data: calendar } = API.useFeedGetCalendarQuery({ author: userId, tz: timeZone })
 
+    const stories = flattenFeedPages(data?.pages)
+    // A person who has done nothing yet: no feed and no words about it, the calendar says enough
+    const hasFeed = isLoading || !!stories.length
+
     const sentinelRef = useInfiniteScroll({
         hasMore: hasNextPage,
         loading: isFetching,
@@ -53,27 +57,28 @@ export const UserActivity: React.FC<UserActivityProps> = ({ userId, beforeFeed, 
 
                 {beforeFeed}
 
-                <section aria-label={t('activity-feed')}>
-                    <FeedList
-                        stories={flattenFeedPages(data?.pages)}
-                        loading={isLoading || isFetchingNextPage}
-                        groupByDay={true}
-                        timeZone={timeZone}
-                        emptyText={t('feed-empty-user', { defaultValue: 'Пока ничего не сделано' })}
-                        footer={
-                            nextPageFailed ? (
-                                <Button
-                                    mode={'secondary'}
-                                    stretched={true}
-                                    onClick={() => fetchNextPage()}
-                                >
-                                    {t('feed-retry', { defaultValue: 'Не удалось загрузить. Повторить' })}
-                                </Button>
-                            ) : undefined
-                        }
-                    />
-                    <div ref={sentinelRef} />
-                </section>
+                {hasFeed && (
+                    <section aria-label={t('activity-feed')}>
+                        <FeedList
+                            stories={stories}
+                            loading={isLoading || isFetchingNextPage}
+                            groupByDay={true}
+                            timeZone={timeZone}
+                            footer={
+                                nextPageFailed ? (
+                                    <Button
+                                        mode={'secondary'}
+                                        stretched={true}
+                                        onClick={() => fetchNextPage()}
+                                    >
+                                        {t('feed-retry', { defaultValue: 'Не удалось загрузить. Повторить' })}
+                                    </Button>
+                                ) : undefined
+                            }
+                        />
+                        <div ref={sentinelRef} />
+                    </section>
+                )}
             </div>
         </div>
     )
