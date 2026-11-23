@@ -2,7 +2,7 @@ import React from 'react'
 import { Provider } from 'react-redux'
 
 import { configureStore } from '@reduxjs/toolkit'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { ApiType } from '@/api'
 import applicationReducer from '@/app/applicationSlice'
@@ -19,7 +19,7 @@ jest.mock('cookies-next', () => ({ deleteCookie: jest.fn(), getCookie: jest.fn()
 const mockPost = jest.fn()
 const mockPosition = jest.fn()
 let mockGame: ApiType.Game.PlaceGame | null | undefined
-let mockItems: Array<{ id: string; visitedAt: string }> = []
+let mockItems: Array<{ id: string; visitedAt: string; confirmed?: 'geo' | 'photo' }> = []
 
 jest.mock('@/api', () => ({
     API: {
@@ -125,6 +125,32 @@ describe('PlaceGame', () => {
         renderGame()
 
         expect(screen.queryByText('game-place-offer')).not.toBeInTheDocument()
+    })
+
+    it('without a season tells whether the visit of this week is confirmed and offers "Я сейчас здесь"', async () => {
+        mockGame = null
+        mockItems = [{ id: 'v1', visitedAt: localPlainDate(0) }]
+        mockPosition.mockResolvedValue({ accuracy: 10, lat: 51.77, lon: 55.1 })
+        mockPost.mockReturnValue({
+            unwrap: () => Promise.resolve({ game: { confirmed: true, points: 0 }, id: 'v1', isNew: false })
+        })
+        renderGame()
+
+        expect(screen.getByText('visit-not-confirmed')).toBeInTheDocument()
+
+        fireEvent.click(screen.getByRole('button', { name: 'game-place-here-now' }))
+
+        await waitFor(() =>
+            expect(mockPost).toHaveBeenCalledWith(expect.objectContaining({ lat: 51.77, lon: 55.1, place: 'p1' }))
+        )
+        cleanup()
+
+        // Confirmed: said so, nothing to press
+        mockItems = [{ confirmed: 'geo', id: 'v1', visitedAt: localPlainDate(0) }]
+        renderGame()
+
+        expect(screen.getByText('visit-confirmed')).toBeInTheDocument()
+        expect(screen.queryByRole('button')).not.toBeInTheDocument()
     })
 
     it('says what a check-in on the spot gives, and has no button of its own', () => {
