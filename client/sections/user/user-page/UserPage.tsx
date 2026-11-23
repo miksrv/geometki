@@ -8,14 +8,7 @@ import { generateNextSeo } from 'next-seo/pages'
 import { ApiModel } from '@/api'
 import { AppLayout, PhotoGallery } from '@/components/shared'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
-import {
-    UserAchievementsBlock,
-    UserActivity,
-    UserContribution,
-    UserGame,
-    UserHero,
-    UserPlacesMap
-} from '@/sections/user'
+import { UserActivity, UserContribution, UserGame, UserHero, UserPlacesMap, UserTasks } from '@/sections/user'
 import { formatDateISO } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 
@@ -140,7 +133,7 @@ export const UserPage: React.FC<UserPageProps> = ({ id, user, photosList, photos
                 aside={
                     <>
                         <UserGame userId={id} />
-                        <UserAchievementsBlock userId={id} />
+                        <UserTasks userId={id} />
                         <UserContribution statistic={user?.statistic} />
                     </>
                 }
