@@ -10,12 +10,12 @@ import { API, ApiModel, ApiType } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { Notify, NotifyReplace } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
-import { checkInMessage, MapLinks, useBookmark, WasHereButton } from '@/components/shared'
+import { checkInMessage, MapLinks, useBookmark } from '@/components/shared'
 import { BottomSheet, ScreenSpinner } from '@/components/ui'
 
 import { PlaceVisitQuestions } from '../place-visit-questions'
 
-import { listenVisitSheet, openVisitSheet } from './visitSheet'
+import { listenVisitSheet } from './visitSheet'
 
 import styles from './styles.module.sass'
 
@@ -104,9 +104,10 @@ interface PlaceActionsProps {
 
 /**
  * The actions of the place, one main path: "Маршрут" is the only primary button (the map of
- * the site and the navigators are its menu), then "Я здесь был(а)", "Сохранить" (bookmarks
- * and collections in one menu), "Поделиться" and "⋯" with the contributor actions (photos,
- * cover, edit, delete). The same set on desktop (`toolbar`) and phones (`bar`).
+ * the site and the navigators are its menu), then "Сохранить" (bookmarks and collections in
+ * one menu), "Поделиться" and "⋯" with the contributor actions (photos, cover, edit, delete).
+ * The same set on desktop (`toolbar`) and phones (`bar`). "Я здесь был(а)" is only in the
+ * "Где это" card; on a phone its check-in opens the bar's sheet with the visit's questions.
  */
 export const PlaceActions: React.FC<PlaceActionsProps> = ({
     place,
@@ -138,7 +139,7 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
 
     const isBar = variant === 'bar'
 
-    // A check-in from any button of the page on a phone (`openVisitSheet`): the questions sheet
+    // A check-in from the "Где это" card on a phone (`openVisitSheet`): the questions sheet
     useEffect(() => {
         if (!isBar) {
             return
@@ -372,13 +373,6 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
                         onClick={() => setSheet('route')}
                     />
 
-                    <WasHereButton
-                        size={'large'}
-                        hideLabel={true}
-                        placeId={place?.id}
-                        onCheckedIn={openVisitSheet}
-                    />
-
                     <Button
                         mode={bookmarked ? 'primary' : 'secondary'}
                         size={'large'}
@@ -458,11 +452,6 @@ export const PlaceActions: React.FC<PlaceActionsProps> = ({
                 >
                     {routeItems}
                 </Popout>
-
-                <WasHereButton
-                    size={'medium'}
-                    placeId={place?.id}
-                />
 
                 <Popout
                     closeOnChildrenClick={true}
