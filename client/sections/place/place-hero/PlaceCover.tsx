@@ -108,8 +108,8 @@ interface PlaceCoverProps {
 /**
  * The picture of the place. Desktop: the clean cover, 3:1 like the file, nothing over it but
  * a small credit. Phones: a swipeable carousel of the cover and every photo (4:3, edge to edge)
- * with a "1 / N" counter, ending with an invitation to add photos — the photos section is not
- * shown there. A tap opens the photo viewer of the page. Without a cover desktop shows nothing; phones still
+ * with a "1 / N" counter and an "Добавить фото" pill in the other corner (the same pill), ending
+ * with an invitation to add photos — the photos section is not shown there. A tap opens the photo viewer of the page. Without a cover desktop shows nothing; phones still
  * get the photos.
  */
 export const PlaceCover: React.FC<PlaceCoverProps> = ({
@@ -127,11 +127,14 @@ export const PlaceCover: React.FC<PlaceCoverProps> = ({
 
     const cover = place?.cover
     const photoList = photos ?? []
-    // The cover counts as the first picture: "1 / 6" for a cover and five photos
     const mediaCount = (cover ? 1 : 0) + photoList.length
     // Only the first photos get a slide: a place with hundreds would bloat the HTML and the hydration
     const slidePhotos = photoList.slice(0, MAX_CAROUSEL_PHOTOS)
     const slideCount = (cover ? 1 : 0) + slidePhotos.length
+    // The counter counts the photos: the cover is a crop of the first one, so its slide and the
+    // first photo's are both "1" — "1 / 1" for a cover and one photo, not "1 / 2"
+    const photoTotal = photoList.length || (cover ? 1 : 0)
+    const photoNumber = cover ? Math.max(current, 1) : current + 1
 
     useEffect(() => {
         const track = trackRef.current
@@ -241,7 +244,19 @@ export const PlaceCover: React.FC<PlaceCoverProps> = ({
 
             {cover?.credit && <CoverCredit credit={cover.credit} />}
 
-            {mediaCount > 1 && current < slideCount && (
+            {/* Phones: adding a photo without swiping to the last slide or opening the viewer */}
+            {onPhotoUploadClick && !!mediaCount && current < slideCount && (
+                <button
+                    type={'button'}
+                    className={cn(styles.counter, styles.addPhoto)}
+                    onClick={onPhotoUploadClick}
+                >
+                    <Icon name={'Camera'} />
+                    {t('add-photo', { defaultValue: 'Добавить фото' })}
+                </button>
+            )}
+
+            {slideCount > 1 && current < slideCount && (
                 <button
                     type={'button'}
                     className={styles.counter}
@@ -252,7 +267,7 @@ export const PlaceCover: React.FC<PlaceCoverProps> = ({
                     onClick={onAllPhotosClick}
                 >
                     <Icon name={'Photo'} />
-                    {`${current + 1} / ${mediaCount}`}
+                    {`${photoNumber} / ${photoTotal}`}
                 </button>
             )}
         </div>

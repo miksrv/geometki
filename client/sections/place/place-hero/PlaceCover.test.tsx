@@ -79,4 +79,63 @@ describe('PlaceCover', () => {
 
         expect(onPhotoClick).toHaveBeenCalledWith(0)
     })
+
+    it('offers adding a photo over the cover, besides the last slide', () => {
+        const onPhotoUploadClick = jest.fn()
+
+        render(
+            <PlaceCover
+                place={place}
+                coverHash={1}
+                onPhotoUploadClick={onPhotoUploadClick}
+            />
+        )
+
+        // The pill over the cover and the button of the invitation slide
+        const buttons = screen.getAllByRole('button', { name: 'Добавить фото' })
+
+        expect(buttons).toHaveLength(2)
+
+        fireEvent.click(buttons[0])
+
+        expect(onPhotoUploadClick).toHaveBeenCalledTimes(1)
+    })
+
+    it('has no pill without pictures: the invitation is the only slide', () => {
+        render(
+            <PlaceCover
+                place={{ ...place, cover: undefined }}
+                onPhotoUploadClick={jest.fn()}
+            />
+        )
+
+        expect(screen.getAllByRole('button', { name: 'Добавить фото' })).toHaveLength(1)
+    })
+
+    it('counts the photos, not the cover: it is a crop of the first one', () => {
+        const photos = [
+            { id: 'a', full: 'a.jpg', preview: 'a_p.jpg', title: 'A', width: 4, height: 3 },
+            { id: 'b', full: 'b.jpg', preview: 'b_p.jpg', title: 'B', width: 4, height: 3 }
+        ]
+
+        const { rerender } = render(
+            <PlaceCover
+                place={place}
+                photos={photos.slice(0, 1) as ApiModel.Photo[]}
+                coverHash={1}
+            />
+        )
+
+        expect(screen.getByText('1 / 1')).toBeInTheDocument()
+
+        rerender(
+            <PlaceCover
+                place={place}
+                photos={photos as ApiModel.Photo[]}
+                coverHash={1}
+            />
+        )
+
+        expect(screen.getByText('1 / 2')).toBeInTheDocument()
+    })
 })
