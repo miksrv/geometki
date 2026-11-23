@@ -26,7 +26,7 @@ interface PlaceHeroProps {
     place?: ApiModel.Place
     photos?: ApiModel.Photo[]
     coverHash?: number
-    /** The desktop actions toolbar on the facts' line under the title (`PlaceActions`); phones have the bottom bar */
+    /** The desktop actions toolbar on the right of the title and the facts (`PlaceActions`); phones have the bottom bar */
     actions?: React.ReactNode
     onPhotoUploadClick?: (event?: React.MouseEvent) => void
     onAllPhotosClick?: () => void
@@ -46,7 +46,7 @@ const addressTypes: ApiType.LocationTypes[] = ['country', 'region', 'district', 
  * (`PlaceCover`: the clean cover, a carousel of every photo on phones), then on the page
  * background the h1 and one line of facts — the category (a link to its places), the rating
  * and the reviews (links to the reviews block), the distance — with the actions on the
- * title's line. The address and the coordinates live in the "Где это" card, the views in
+ * right, centred on both lines. The address and the coordinates live in the "Где это" card, the views in
  * "О месте".
  */
 export const PlaceHero: React.FC<PlaceHeroProps> = ({
@@ -159,7 +159,7 @@ export const PlaceHero: React.FC<PlaceHeroProps> = ({
                 onPhotoClick={onPhotoClick}
             />
 
-            {/* The title on the full width, then the facts and the actions on one line under it */}
+            {/* The title and the facts on the left, the actions on the right centred on both lines */}
             <div className={styles.head}>
                 <h1>{place?.title}</h1>
 
