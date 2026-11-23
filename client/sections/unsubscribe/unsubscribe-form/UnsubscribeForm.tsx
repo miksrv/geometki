@@ -18,14 +18,10 @@ export const UnsubscribeForm: React.FC = () => {
     const router = useRouter()
 
     const token = typeof router.query.token === 'string' ? router.query.token : undefined
-    // Links in emails sent before tokens carry the email id
-    const mail = typeof router.query.mail === 'string' ? router.query.mail : undefined
+    // No token: a link of an old email (`?mail=<id>`, before tokens) or the page opened by hand
+    const noToken = router.isReady && !token
 
-    const {
-        data: status,
-        error: statusError,
-        isLoading
-    } = API.useMailGetUnsubscribeQuery({ mail, token }, { skip: !token && !mail })
+    const { data: status, error: statusError, isLoading } = API.useMailGetUnsubscribeQuery({ token }, { skip: !token })
 
     const [unsubscribe, { data: result, error: unsubscribeError, isLoading: isUnsubscribing, reset }] =
         API.useMailPostUnsubscribeMutation()
@@ -33,13 +29,7 @@ export const UnsubscribeForm: React.FC = () => {
     // Another link opened in the same tab starts over
     useEffect(() => {
         reset()
-    }, [token, mail])
-
-    useEffect(() => {
-        if (router.isReady && !token && !mail) {
-            void router.push('/')
-        }
-    }, [router.isReady])
+    }, [token])
 
     const scopeText = (scope: ApiType.Mail.UnsubscribeScope) => t(`unsubscribe-scope_${scope}`)
 
@@ -63,6 +53,15 @@ export const UnsubscribeForm: React.FC = () => {
                             title={t('error')}
                         >
                             {getErrorMessage(error)}
+                        </Message>
+                    )}
+
+                    {noToken && (
+                        <Message
+                            type={'error'}
+                            title={t('error')}
+                        >
+                            {t('unsubscribe-invalid-link')}
                         </Message>
                     )}
 
@@ -116,7 +115,7 @@ export const UnsubscribeForm: React.FC = () => {
                         </>
                     )}
 
-                    {(status || error) && !isLoading && (
+                    {(status || error || noToken) && !isLoading && (
                         <div className={'actions'}>
                             <Button
                                 link={'/users/settings'}
