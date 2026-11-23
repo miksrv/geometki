@@ -1,10 +1,5 @@
 // The blocks of the profile overview's side column (sections/user/user-page)
 
-.badges
-    display: flex
-    flex-wrap: wrap
-    gap: var(--space-2)
-
 // Icon, label, the number on the right: one row per kind of contribution
 .rows
     margin: 0
@@ -35,42 +30,6 @@
     flex: 1
     min-width: 0
     color: var(--text-color-secondary)
-
-// The seasons a person took part in: the seasons' pictures in a row, each a link to its season
-.seasons
-    display: flex
-    flex-wrap: wrap
-    gap: var(--space-2)
-    margin: var(--space-3) 0 0
-    padding: 0
-    list-style: none
-
-    a
-        display: flex
-        border-radius: var(--radius-md)
-        transition: transform var(--duration-fast) var(--ease)
-
-        &:hover
-            transform: translateY(-2px)
-
-// A row that is a link: a walked quest
-.link
-    flex: 1
-    min-width: 0
-    overflow: hidden
-    text-overflow: ellipsis
-    white-space: nowrap
-    color: var(--text-color-primary)
-    text-decoration: none
-
-    &:hover
-        color: var(--link-color-hover)
-        text-decoration: none
-
-.count
-    color: var(--text-color-secondary)
-    font-size: var(--font-size-secondary)
-    font-variant-numeric: tabular-nums
 
 // Under a card's title: the gap every `Container` of a side column keeps
 .body
