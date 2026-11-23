@@ -101,7 +101,6 @@ const collection: ApiModel.Collection = {
     placesCount: 2,
     views: 0,
     saves: 0,
-    featured: false,
     updated: { date: '2026-10-06T12:00:00+00:00', timezone_type: 3, timezone: 'UTC' },
     created: { date: '2026-10-06T12:00:00+00:00', timezone_type: 3, timezone: 'UTC' },
     places: [

@@ -60,7 +60,7 @@
 
 // Map in a Container with a thin 3px frame between the container edge and the map.
 // Vertical spacing between the header, the map, the description and the grid comes from
-// the AppLayout column gap (15px), the same as on every list page — no own margins here.
+// the AppLayout column gap (`--space-4`), the same as on every list page — no own margins here.
 // Byline under the title: avatar + name, places count, region, update time
 .byline
     display: flex
@@ -88,11 +88,10 @@
 .placeItemRemove
     color: var(--color-negative, #e64646)
 
-// "Add places" after the list for the owner
-// Matches the layout gap minus the tile grid's 5px outer margin, so the button sits as
-// far from the tiles as the pagination does on /places
+// "Add places" after the list for the owner: as far from the tiles as the pagination on /places
+// (the page's gap, `--space-4`)
 .placesFooter
-    margin-top: 15px
+    margin-top: var(--space-4)
 
 // --- Dialog helpers shared by AddPlacesDialog / CollectionSettingsDialog ---
 // (picker rows themselves come from `collectionPickerStyles` in components/shared/add-to-collection)

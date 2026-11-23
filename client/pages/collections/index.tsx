@@ -61,7 +61,7 @@ const CollectionsPage: NextPage<CollectionsPageProps> = ({ region, currentPage, 
                 title={title}
                 count={t('collections_count', { count })}
                 lede={currentPage === 1 ? t('collections_index-lede', { defaultValue: description }) : undefined}
-                actions={<CreateCollectionButton size={'small'} />}
+                actions={<CreateCollectionButton />}
             />
 
             {items.length ? (
