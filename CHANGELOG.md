@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.0.0
+
+The game: seasons with geopoints for explored places, confirmed visits, quests and medals.
+
+### Major Changes
+
+- Game: seasons with geopoints — explore places, climb the table, earn the season's medal
+- Visits: "I was here" near the place confirms the visit; a photo shot there confirms it too
+- Near the place: lakes and parks count from their shore, places close together need you closer
+- Quests: walks from place to place, with steps, riddles or photos, and a medal at the end
+- Awards: medals in the profile head, the progress of each in its card
+- Profile: the game card — explored share, seasons taken part in, walked quests
+- Map: layers of unexplored spots, places and quests
+- Home: where to go next in the season, the nearest valuable place
+- Feed: a "Visits" filter, geopoints in visit stories
+- People are explorers now; "Game" and "Quests" in the navigation
+- Pages "About" and "Rules"
+
 ## 1.19.3
 
 A "Visited" sort for your own places and small polish.
