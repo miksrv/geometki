@@ -16,9 +16,8 @@ Positioning: **a map of unusual and wild places in Russia with GPS coordinates â
 3. Photos do not become places: the server stores EXIF GPS in `photos.lat/lon`, the client never uses it. HEIC is rejected; no client-side compression.
 4. Passive empty states: no "Be the first, +10 XP"; empty search / list have no "Didn't find it? Add it".
 5. No onboarding after registration.
-6. No About, Rules, Privacy Policy or content licence pages; no consent checkbox at registration.
-7. Logged-in users see "Delete / Rotate" on other people's photos (`PhotoGallery` checks only `isAuth`); the server rejects it.
-8. "Create geotag" in the map context menu is hidden from anonymous users with no hint it exists.
+6. No Privacy Policy or content licence page (About and Rules exist); no consent checkbox at registration.
+7. "Create geotag" in the map context menu is hidden from anonymous users with no hint it exists.
 
 ## Technical gaps
 
@@ -39,7 +38,7 @@ Positioning: **a map of unusual and wild places in Russia with GPS coordinates â
 3. Form map: address search, manual coordinates, start from geolocation.
 4. Active empty states with XP and an action link; "Didn't find it? Add the place" on empty search.
 5. Photo upload and edit suggestions without login, finished with a magic-link login.
-6. About, Rules, Privacy Policy, Content Licence (CC BY-SA); consent checkbox at registration.
+6. Privacy Policy, Content Licence (CC BY-SA); consent checkbox at registration.
 7. Metrika goals: registration, first place, first photo, first edit.
 
 **Stage 2 â€” slots and traffic**

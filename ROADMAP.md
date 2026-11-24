@@ -3,76 +3,53 @@
 > Product strategy, not a backlog: every item is a reason for a user to come back. Only open items are listed.
 > Order of work: see `GROWTH-ANALYSIS.md` — activation and acquisition come first; most of this assumes an active community.
 
-## Why users don't return
+The game (2.0.0, `features/26`) answers "toward what": seasons of confirmed visits, quests, the explored share of every region and town. What follows builds around it.
 
-- **The world is static.** Nothing changes between visits: no streak ticks, no challenge resets, no territory shifts.
-- **No goal.** XP and levels answer "how do I progress", not "toward what".
-- **No trigger to return.** Only passive notifications about other people's actions on your places.
-- **Contributions have no ongoing value.** A place pays off once, at creation.
-- **No continuity between sessions** and no answer for the second visit.
-- **No social gravity.** No follow system; the feed is a global firehose.
+## Between sessions
 
-Target definition: *a field game for curious people — an ever-incomplete map of the real world that you explore, claim and defend, one physical visit at a time.*
+- **Activity streaks + XP multiplier.** Consecutive active days, multiplier tiers, a flame counter next to the level, a "streak ends tonight" email. Today a streak is only an achievement condition (`login_streak`). Spec: feature 03 — decide first whether it competes with the season's geopoints.
+- **Level-up ceremony.** A full-screen moment on level-up with the next level preview; driven by the existing `level` notification and `GET /levels`. Frontend only.
 
-## Phase 1 — thread between sessions
+## Around the game
 
-- **Activity streaks + XP multiplier.** Consecutive active days (`current_streak`, `longest_streak` on `users`, updated in `ActivityLibrary::push()`), multiplier tiers ×1.0 / ×1.1 / ×1.25 / ×1.5 / ×2.0, flame counter in the AppBar, stats on the profile. Today a streak exists only as an achievement condition (`login_streak`). Spec: feature 03.
-- **"Streak ends tonight" email** at ~20:00 local time for users with a streak of 3+ days and no activity today.
-- **Personal dashboard on the home page** for logged-in users: streak, XP to next level, daily challenges, "near you, not yet rated / visited" places (`GET /users/me/dashboard`).
-- **Daily and weekly challenges.** Three daily tasks, one weekly; progress driven by activity events; `challenges` / `users_challenges` tables and a rotation cron. Spec: feature 02.
-- **Level-up ceremony.** Full-screen modal on level-up with the next level preview; driven by the existing `level` notification and `GET /levels`. Frontend only.
-
-## Phase 2 — the ongoing game
-
-- **Exploration per location.** The undiscovered places and the pioneer bonus are live (1.18.0); still missing: the explored share of a region or district (places against the undiscovered ones), "N places wait to be discovered" there, and its top explorers. Spec: feature 25, step 5.
-- **Regional leaderboards and champions.** Rankings per location on the score of feature 25 step 5 (all time / this year), the #1 of a locality or region is its champion (a badge, no passive XP), notification on being overtaken. Spec: feature 13.
-- **Place quality tiers with decay, curator rank.** Stub / Draft / Complete / Verified / Exemplary on place cards, degrading without updates; a one-time bonus to those who brought a place up a tier, curator rank by the average tier; "your place dropped a tier" notification and a "needs attention" list. Spec: feature 15.
-- **Seasonal events and community goals.** Themed 1–4 week events by category with tiered badges and a shared progress bar. Seasonal achievement windows already exist; events, banner and lifecycle do not. Spec: feature 06.
-- **Follow system and personal feed.** Follow users, "Following / Global" toggle on the feed, new-follower notification, follower counts. Spec: feature 12.
-
-## Phase 3 — only after Phases 1–2 are live
-
-- **Social kudos** — peer endorsements ("Accurate mapper", "Local expert"), one per type per recipient per month. Spec: feature 07.
-- **Photo contests and community albums** with voting. Spec: feature 14.
-- **Streak freeze** — consumable that protects a streak for one missed day.
+- **Place quality tiers with decay, curator rank.** Stub … Exemplary on place cards, degrading without updates; a one-time bonus to those who brought a place up a tier. Spec: feature 15.
+- **Follow system and personal feed.** Follow users, "Following / Global" on the feed, new-follower notification. Spec: feature 12.
+- **Champions of a location.** The #1 of a season in a town or a region named on its places page and the profile; "you have been overtaken" in-app notification. The rating by location exists (`GameLibrary::table()`).
+- **Place outlines in the admin.** See the OSM outline of a place (`places_outlines`, `php spark places:outlines`) on its map, draw or correct it, take another OSM object or none; a list of the large places without one (`source` null).
+- **Social kudos** — peer endorsements, one per type per recipient per month. Spec: feature 07.
 
 ## Map as a tool
 
-`/map` should be where users plan trips, not just browse markers. nakarte-style tools (panoramas, elevation profile, azimuth, GPX) are in feature 23; these build on our own content and personal data instead.
+`/map` should be where users plan trips, not just browse markers. nakarte-style tools (panoramas, elevation profile, azimuth, GPX) are in feature 23.
 
-- **Personal layers.** "All / Visited / Bookmarked / Mine" toggle on the map, a check mark on visited markers. `ListRequest` already takes `visited`, `bookmarks`, `author`; `pages/map.tsx` passes only categories. "Not visited yet" needs a negative filter on the server.
-- **Collection as a map layer.** `/map?collection=<id>` shows only its places and fits the bounds; "Show on map" button on the collection page.
+- **Personal layers.** "All / Visited / Bookmarked / Mine" on the map, a check mark on visited markers. `ListRequest` already takes `visited`, `bookmarks`, `author`; `pages/map.tsx` passes only categories.
+- **Collection as a map layer.** `/map?collection=<id>` shows only its places and fits the bounds.
 - **More filters:** photos only, minimum rating, new this month.
-- **Viewport list panel.** Places in the current view as cards (side panel on desktop, bottom sheet on mobile), sorted by rating or distance, hover highlights the marker.
-- **Map search.** Jump to a city or address via the server geocoder (Nominatim + Yandex), with our places in the results.
-- **"What's here?" in the context menu.** Reverse-geocoded address, nearest places, Wikipedia articles and Commons photos for a clicked point in one card.
-- **Trip planner.** Pick several places, build a road route (OSRM / GraphHopper / OpenRouteService) with order, distance and travel time; save as a collection, export GPX, open in Yandex Navigator.
-- **Personal exploration map.** The hex layer of `/map` (1.18.0) and one map of a person's added, visited and bookmarked places on their profile (1.19.0) are live; still missing: the hexes and the opened white spots on that map, their share of each region. Spec: feature 25, step 7.
+- **Viewport list panel.** Places in the current view as cards (side panel / bottom sheet), hover highlights the marker.
+- **Map search.** Jump to a city or address via the server geocoder, with our places in the results.
+- **"What's here?" in the context menu.** Address, nearest places, Wikipedia and Commons for a clicked point.
+- **Trip planner** (the word «маршрут» is kept for it). Pick places, build a road route (OSRM / GraphHopper / ORS), save as a collection, export GPX.
+- **Personal exploration map.** On the profile map: the browser-side hexes of `/map` below zoom ~11 (darker the more of a cell's places the person explored), the white spots they opened as a fourth set. `users.last_lat/last_lon` are stored for it.
+- **Admin linking tool.** A page under `/admin` for OSM candidates that look like an existing place (`status = duplicate`): the pair side by side, link / unlink / reject (the endpoints exist), filters by region and tier.
 
 ## Quick wins
 
-- **"Your place was viewed N times this week"** notification when a place gets 20+ views in a week (views are already logged).
-- **First-session onboarding:** pin your home area → create your first place → "come back tomorrow".
-- **Category completion progress** for logged-in users: "You've added 3 of 47" in the category filter or on the profile.
-- **Top explorers in your city this week** on the home page, by XP earned, grouped by the place locality.
-- **Weekly digest sections** still missing: streak, freshness alerts, rank changes, new followers, undiscovered places nearby — each blocked on its feature above.
+- **"Your place was viewed N times this week"** notification at 20+ views a week (views are logged).
+- **Category completion progress:** "You've explored 3 of 47" in the category filter or on the profile.
+- **Weekly digest sections** still missing: feature 16.
 
 ## Profile ideas
 
-Collected 2026-11-08 after the profile redesign (1.19.0); not specced yet. Suggested order: privacy → about and region → follows → reviews.
+Collected 2026-11-08; not specced. Suggested order: privacy → about and region → follows → reviews.
 
-- **Privacy of bookmarks and visits.** Today anyone sees a person's bookmarks and check-ins (places and days). A setting "Show bookmarks / visits: everyone or only me".
-- **"About" and home region.** One or two lines of text and a region in the card's facts line; the region later feeds "people nearby" and the regional leaderboards (feature 13).
-- **Follows on the profile.** "Follow" in the card, follower / following counts, a new-follower notification. Spec: feature 12.
-- **The person's reviews.** Their comments on places gathered in one place: a fifth set of "Места" or a block on the overview.
-- **Share a profile** like the place page's "Поделиться", and an `og:image` of the profile (avatar, name, level, numbers) instead of their photos.
-- **The author's best places.** 3–6 of their places with the highest rating or views on the overview.
-- **In common with you.** On someone else's profile: "you have both been to 4 places", "12 of their places you have not seen yet" (visits and `notVisited` are there).
-- **First steps for a new owner.** A checklist with the experience for each step (profile photo, first place, first check-in, first rating), gone once done.
-- **Streak in the card.** The run of days and the record next to the level. Spec: feature 03.
-- **Kudos on the profile** after follows: "Most thanked for photos". Spec: feature 07.
-- **Report / hide a user** in a "⋯" menu of the profile, before follows and reviews make it needed.
+- **Privacy of bookmarks and visits.** A setting "Show bookmarks / visits: everyone or only me".
+- **"About" and home region** in the card's facts line; the region later feeds "people nearby" and the default scope of the season's rating.
+- **The person's reviews** gathered in one place: a fifth set of "Места" or a block on the overview.
+- **Share a profile** and an `og:image` of it (avatar, name, level, numbers).
+- **The author's best places:** 3–6 by rating or views on the overview.
+- **In common with you:** "you have both been to 4 places", "12 of their places you have not seen yet".
+- **Report / hide a user** in a "⋯" menu, before follows and reviews make it needed.
 
 ## Metrics
 
-D1 and D7 retention, 30-day active rate, sessions per active user per week, streak distribution.
+D1 and D7 retention, 30-day active rate, sessions per active user per week, players with a counted place per season.
