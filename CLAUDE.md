@@ -1,114 +1,61 @@
 # CLAUDE.md
 
-**Geometki** — a geospatial POI sharing platform with collaborative mapping. Monorepo: `client/` (Next.js web app) and `server/` (CodeIgniter 4 PHP API).
+**Geometki** — a map of interesting places, made by its users, with a game on top. Monorepo: `client/` (Next.js 16, React 19, TypeScript, Redux Toolkit + RTK Query, Leaflet, SASS, Jest, Yarn 4) and `server/` (PHP 8.2+, CodeIgniter 4, MySQL). API reference: `server/API.md`; client design system: `client/DESIGN.md`; open problems: `ISSUES.md`; plans: `ROADMAP.md`, `features/`.
 
 ## Commands
 
-### Client (`cd client`)
-
 ```bash
-yarn dev              # Dev server on :3000
-yarn build            # Production build
-yarn test             # Jest; one file: yarn test utils/helpers.test.ts
-yarn eslint:check     # / eslint:fix
-yarn prettier:check   # / prettier:fix
+# client/
+yarn dev | yarn build | yarn test [file] | yarn eslint:check | yarn prettier:check
+# server/
+composer install | php spark serve | composer test | composer run migration:run | php spark routes
 ```
 
-If almost every suite fails with `React.act is not a function`, the shell has `NODE_ENV=production`; run `NODE_ENV=test yarn test`.
+If almost every Jest suite fails with `React.act is not a function`, run `NODE_ENV=test yarn test`.
 
-### Server (`cd server`)
+## Client
 
-```bash
-composer install
-php spark serve             # Dev server on :8080
-composer test               # PHPUnit
-composer run migration:run  # Pending migrations
-php spark routes            # All API routes
-```
+**Pages Router** (not App Router). `pages/` routes, `sections/<area>/` page compositions, `components/{layout,map,shared,ui}`, `utils/` (co-located `*.test.ts`), `hooks/`, `content/` (long static-page texts as `<page>.<locale>.md`, `loadContent()`; a new page goes into `ContentPage` and `outputFileTracingIncludes` in `next.config.js`), `proxy.ts` (route guards, landing rewrites, live-page routing).
 
-## Architecture
+- **Read `DESIGN.md` before any user-facing change**; one component per entity, variants for layout; check `simple-react-ui-kit` before building a primitive.
+- **Admin** (`/admin/*`) is a workspace of its own (`AdminLayout`, side navigation), not a page of the site: read `client/ADMIN-UI.md` before any admin change — action-first dashboard, lists with views and filters in the URL, sections in `utils/admin.ts`.
+- **API calls** only through RTK Query in `api/api.ts`, never `fetch`/`axios`. Types: `api/types` (`ApiType`), `api/models` (`ApiModel`).
+- **i18n:** `next-i18next` (import from `next-i18next/pages`), RU default (`/`) and EN (`/en`), one file `public/locales/<lang>/common.json`. Every new key goes to both locales (real English); delete unused keys, minding keys built from templates (`categoryCatalogue.<name>.*`). Data functions call `loadPageTranslations()`.
+- **Map** components load with `next/dynamic`, `ssr: false`.
+- **Categories** live on the client: enum `api/models/category.ts`, icon `public/images/poi/<key>.png`, colour `utils/categories.ts`, texts `categoryCatalogue.<name>`; the server only whitelists keys (`Config/Categories.php`). Never put category titles into the DB/API.
+- **Page cache:** place, home, activity, collection and user pages are ISR, rendered without cookies — nothing visitor-specific in them (distance, own score, online marks come in the browser). `proxy.ts` (`CACHED_PAGES`) sends visitors the cache does not fit (signed-in, a `location` cookie, a non-Moscow `tz`, a query the page reads) to `pages/live/...` (same component and `load<X>Page.ts`). The API re-renders place and collection pages after writes (`SitePages::place()` / `::collection()`); a write that changes a place page without a place activity must call `SitePages::place()`.
+- **Visitor location** is asked only on the visitor's action (`hooks/useUserLocation.ts`), kept in the `location` cookie and sent as explicit `lat`/`lon`; never on page load. **Time zone:** the `tz` cookie; without it days are Moscow days.
 
-### Client
+## Server
 
-**Next.js Pages Router** (not App Router) with **Redux Toolkit + RTK Query**.
+`app/Controllers` (one per resource), `Models`, `Entities`, `Libraries`, `Config/Routes.php`, `Commands` (spark jobs). **Never edit a migration that is already in production (on `main`) — add a new one;** one that exists only in the release branch may be edited. Migrations never create awards (achievements, medals): those are made by hand in the admin.
 
-- `pages/` — routes; data is fetched in `getServerSideProps` with RTK Query
-- `api/api.ts` — all project API endpoints (one RTK Query slice); `apiPastvu.ts`, `apiWikimediaCommons.ts`, `apiWikipedia.ts` — external map layers; `api/types/`, `api/models/` — request/response (`ApiType`) and entity (`ApiModel`) shapes
-- `app/store.ts` — store with `next-redux-wrapper` for SSR hydration; slices `authSlice`, `applicationSlice`, `notificationSlice`
-- `components/` — `layout/` (app bar, bottom nav, footer), `map/` (Leaflet), `shared/` (domain components), `ui/` (generic primitives), `pages/` (page-specific leftovers); `sections/<area>` — page-specific compositions
-- `utils/` — pure utilities with co-located `*.test.ts`; `hooks/`; `config/env.ts` — env constants
-- `proxy.ts` — Next.js proxy (formerly middleware): guards `/places/create`, `/places/:id/edit`, `/users/settings`; rewrites landing URLs to `pages/places/landing/[...slug].tsx` when the `NEXT_PUBLIC_LANDING_*` flags are on
-- `styles/theme.css` — project token overrides on top of `simple-react-ui-kit/theme.css` (imported first in `pages/_app.tsx`)
-- `DESIGN.md` — the client design system. Read it before adding or changing any user-facing component; one component per entity, variants for layout.
+- **Auth:** JWT in `Authorization`; the `Session` header identifies a guest, created only by their first rating. A guest's `Session` goes only with writes and `GET rating/:id`, so their other GETs hit the guest cache.
+- **Errors:** `{ messages: { error?: string, [field]: string } }`.
+- **Guest cache** (`GuestCacheFilter`, `Config/GuestCache.php`): public GETs without `Authorization`/`Session` are cached for a day, any write clears it. A GET whose answer depends on more than locale, path and query stays out of `$groups`; one that changes without a write needs a `$ttls` entry.
+- **Activity is the log of everything:** `ActivityLibrary` writes each action and attaches it to a feed story (`FeedLibrary`, `FeedAggregator`; `php spark feed:rebuild` after changing grouping). Experience is counted from the log (`LevelsLibrary::experience()`, `MODIFIER_*`), never pushed alone and never recounted on a read; reputation is rebuilt from votes (`ReputationLibrary`). **Every removal goes through `ActivityRemoval`** (collect before delete, `apply()` after); `->by($userId)` on one's own removal also takes back revocable awards. Full recount: `php spark reputation:rebuild`.
+- **Notifications:** `Config/Notifications.php`; email (`Libraries/Mail`, views in `Views/emails/`, texts in `Language/*/Emails.php`) and push (`Libraries/Push`) queues, sent by `notifications:send`. **Cron:** the hosting runs only `php spark cron:run` every 5 minutes; it starts the jobs by `Config/Cron.php` (intervals or times, `.env` `cron.<job>`); a new periodic job is added there, not to the hosting. Service accounts (`$serviceEmailDomains`) get nothing.
+- **Visits:** "Я здесь был(а)" is a log, one visit per user and place a week, one tap, no form; a tap within the week cancels it. After a check-in come one-tap questions (`Config/VisitQuestions.php`, texts `visitQuestions.<key>`), summarised in `places_now`. A bare visit gives no experience. **White spots** are open OSM candidates (`osm_candidates`); the author of a place made from one is its pioneer.
 
-**i18n:** `next-i18next` (import from `next-i18next/pages`), Russian (default, `/`) and English (`/en`), one namespace: `public/locales/<lang>/common.json`. The texts are not in the page props: every data function calls `loadPageTranslations()` (`utils/translations.server.ts`, server only), `_app` passes them to `appWithTranslation` as `resources`, and the browser loads its locale once as a script cached for a year (`/api/i18n/<locale>?v=<hash>`, added by `_document`). No extraction script: keep both locale files in sync by hand — every new key goes to `ru` and `en` (real English), unused keys are deleted, minding keys built from template strings, e.g. `categoryCatalogue.<name>.*` (`utils/categories.ts`).
+## The game (2.0.0)
 
-### Server
+Details: `server/API.md` → "Game", `DESIGN.md` → "The game", numbers in `server/app/Config/Game.php`.
 
-CodeIgniter 4 REST API, MVC:
-
-- `app/Controllers/` (one per resource), `app/Models/` (CI4 ORM), `app/Entities/`
-- `app/Config/Routes.php` — all routes; `app/Filters/CorsFilter.php` — CORS
-- `app/Commands/` — spark CLI jobs (`php spark list`)
-- `app/Database/Migrations/` — always create new migrations, never edit existing ones
-
-**Auth:** JWT in the `Authorization` header (`app/Libraries/SessionLibrary.php`); the `Session` header identifies anonymous sessions. Sessions hold no coordinates. A guest gets no session on a visit (no `auth/me` for guests): their first score (`PUT rating`) starts it and answers it. A guest's `Session` goes only with writes and `GET rating/:id` (`prepareHeaders` in `api/api.ts`), so their other GETs hit the guest cache.
-
-**Visitor location:** asked from the browser only on the visitor's action (`client/hooks/useUserLocation.ts`: "My location" on the map, sorting by distance), never on page load. Kept in the client's `location` cookie and sent to the API as explicit `lat`/`lon` (SSR reads the cookie, `client/utils/userLocation.ts`). Only a signed-in user's last point is stored (`users.last_lat/last_lon`, `PUT /location`), shown nowhere.
-
-**Visitor time zone:** calendar days (feed day headings, the contribution calendar) are the visitor's days. The browser keeps its IANA zone in the `tz` cookie (`client/utils/timeZone.ts`); pages with days read it in `getServerSideProps` into `application.timeZone` and pass it to `GET /feed/calendar?tz=`. Without the cookie days are Moscow days (`SITE_TIMEZONE`).
-
-**Visits:** "I was here" is a log (`users_visited_places`, `VisitsModel`, controller `Visits`): repeatable, one visit per user and place a week (`VisitsModel::REPEAT_DAYS`: `POST /visits` answers the visit within it; the unique key is per day), no location asked or stored, one tap and a toast (no form: words go to the comments); within the week the button reads "Вы здесь отметились" and a tap cancels the visit (`DELETE /visits/:id`, the only way to delete one), `visited_at` is the visitor's day sent as `YYYY-MM-DD` and shown as is. The photos a person uploads to the place within a day of their visit belong to it (`VisitsLibrary::photoVisit()` → `photos.visit_id`); its `visit` activity is linked by `activity.visit_id`, a deleted visit goes through `ActivityRemoval::forVisit()`. After a check-in the visitor answers three one-tap questions out of the pool of the place's category, the ones the place has no answer to first (`VisitsLibrary::questionsFor()`; `PATCH /visits/:id { answers }`, table `visit_answers`): keys, values and the pools per category in `server/app/Config/VisitQuestions.php`, the texts on the client (`common.json` → `visitQuestions.<key>`, catalogue `client/api/models/visitQuestion.ts`), like categories; the last step is the features, "what can you do here" (`can_<feature>` → `yes`/`no`, `Config\VisitQuestions::$features`). Their summary per place is the table `places_now` (`VisitsLibrary::rebuildNow()` after every answer and deleted visit; `GET /visits?place=` sends it as `now`, "How it is now"); it also feeds the recommendations: `users_interest_profiles` holds `category` and `feature` interests (`UserInterestProfilesModel`, `php spark interests:refresh`), `PlacesModel::applyRecommendationSort()` weighs them. Tags are gone since 1.18.0 (the `DropTags` migration, run on production; the one-off `tags:export` is removed, a database still holding tags cannot pass that migration). **White spots**: an open OSM candidate (`osm_candidates`, `OsmCandidatesModel`) is a spot nobody added; candidates that duplicate our places are linked to them automatically (`linkDuplicatesIn()` after a tile is collected, after a place is created or moved, `reopenFarFrom()` first for a moved one; `reopenOfPlace()` before a delete), the author of a place created from a candidate is its pioneer (`spotsOpened()` → `MODIFIER_SPOT` in the experience recount, metric `spots_opened`). A bare visit gives no experience; a visit with photos or an answer is worth `MODIFIER_VISIT` once per place and calendar month, counted from the log in `LevelsLibrary::experience()` (`VisitsLibrary::contributions()`), never pushed. The place page shows the visitors in the "Где это" card and the visits in its activity log (the feed); it is cached without a visitor: the own visits come from `GET /visits/me` in the browser.
-
-**Notifications:** types, channels and defaults in `app/Config/Notifications.php` (`users.settings` keys `{channel}{Type}`, `NotificationSettings`). Service accounts (`Notifications::$serviceEmailDomains`, e.g. `user2@geometki.com`) get no notifications at all, while their actions still notify real owners. One cron job, `notifications:send`, sends queued emails then pushes and cleans old queue rows; queues share the `QueueRows` mechanics (atomic claims, back-off retries).
-- **Email** (`app/Libraries/Mail/`): `MailQueue` (table `sending_mail`), `Mailer` is the SMTP transport (`smtp.*` in `.env`). Every email is a view in `Views/emails/` inside `emails/layout.php`, texts in `Language/{ru,en}/Emails.php`. Weekly digests are throttled (`digestHourLimit`, `digestDayLimit`); settings are re-checked at send time. Unsubscribe links carry a signed `UnsubscribeToken`; `GET /mail/unsubscribe` only reads, `POST` turns off. Preview: `php spark email:preview`; real send: `php spark system:test-email you@example.com`.
-- **Push** (`minishlink/web-push`, VAPID keys `push.*` in `.env`, `php spark push:vapid`): `NotifyLibrary::push()` queues to `push_messages` (`app/Libraries/Push/PushQueue`) when the type is pushable, the user wants it and has a device (`push_subscriptions`). A push is dropped if the notification was seen on the site, grouped and held in quiet hours; an email about an event a push delivered is not sent. Client: `public/sw.js`, `utils/push.ts`, `hooks/usePushSubscription.ts`, the `PushPrompt` card.
-
-**Activity and the feed:** `ActivityLibrary` writes every user action to `activity` (the log behind XP, achievements, notifications, the digest and place history) and attaches it to a story in `feed` (`FeedLibrary`, grouping rules in `FeedAggregator`), so `GET /feed` is one indexed query. After changing the grouping rules run `php spark feed:rebuild`.
-
-**Experience, reputation, removals:** kept up to date by the actions, never recounted on a read (a profile view only reads). Experience grows by `LevelsLibrary::push()`; reputation is rebuilt from the votes after each vote (`ReputationLibrary`: half of a vote to the place's author, half to those who made the card by then, by the weight of their photos and edits). Its history (`GET /users/:id/reputation`, the profile's reputation sub-page) is computed from the same votes on a read (`ReputationLibrary::history()`, `voteShares()`), the shares add up to the stored number. Any removal of activity goes through `ActivityRemoval` (collect before the delete, `apply()` after): it refreshes the stories, the experience and the reputation of those concerned. Full recount: `php spark reputation:rebuild`.
-
-### Key Patterns
-
-- **API calls:** only through RTK Query in `api/api.ts`, never `fetch`/`axios` directly.
-- **Error format:** `{ messages: { error?: string, [field]: string } }`.
-- **Guest cache:** public GET answers to requests with neither `Authorization` nor `Session` are cached whole for a day (`GuestCacheFilter`, `Config/GuestCache.php`: the groups, `$ttls` for answers that go stale without a write — users' activity, the pulse, the stats —, the writes that do not clear it); any other successful write clears all of it (a folder rename, swept by `notifications:send`), a deploy too; `$browserTtls` adds `Cache-Control: public, max-age` for a few big answers that change by time only (the hex layer's points). A new public GET whose answer depends on something besides the locale, the path and the query must stay out of `$groups`; one that changes without a write needs a `$ttls` entry.
-- **Page cache:** the place, home, activity, collection and user pages are `getStaticProps` (ISR): rendered once without cookies, served by Next with no API calls. `proxy.ts` (`CACHED_PAGES`) sends a visitor the cached render does not fit to the per-request copy in `pages/live/...` (getServerSideProps, same component and loader from `sections/<area>/<x>-page/`, `load<X>Page.ts`): a signed-in user always; a guest with the `location` cookie (home: distances), a `tz` other than Moscow (activity, user: days), a query the page reads (activity `?type`). `/live/...` itself 301s to the page. Place and collection pages are re-rendered at once after a write on them: the API calls `POST /api/revalidate` (server `SitePages::place()` / `::collection()`, sent by `SitePagesFilter`; `ActivityLibrary` marks every place activity but bookmarks; secret `sitepages.secret` = client `REVALIDATE_SECRET`, on the VPS in `.env.local` next to `server.js`); the others by time (home 5 min, activity 2, user 10, place and collection a day). Nothing visitor-specific in a cached render: the distance, the own score, the online marks come in the browser; the place page's only API request is `POST /places/:id/views`. A write that changes a place page without a place activity must call `SitePages::place()`. Answers a page passes as props are dropped from the hydrated store (`dropFromHydration`), unless a hook asks for them.
-- **Image uploads:** temp upload → attach to entity; files in `server/public/uploads/`.
-- **Map:** `react-leaflet`; map components are imported with `next/dynamic` and `ssr: false`.
-- **Categories:** no `category` table and no categories endpoint/page. The server whitelists keys (`server/app/Config/Categories.php`, `in_list`) and returns the key (`category: "waterfall"`). The catalogue is on the client: keys in `client/api/models/category.ts` (`ApiModel.Categories`), icons `client/public/images/poi/<key>.png`, colours in `client/utils/categories.ts`, texts in `common.json` under `categoryCatalogue.<name>` (`title`, `short`, `landing`, `content`). A new category touches the enum, an icon, a colour, both locales and the server config.
+- **Words in texts:** геометки — places; геопоинты — season points; исследование — visiting a place, so people are исследователи; открытие — adding a place; квесты — hand-made walks. **«Маршрут» / `route` is reserved** for a future route planner — never use it for quests.
+- **Confirmed visit:** the one check-in button always sends the position (asked on the tap); near the place the visit is confirmed, otherwise plain — never an error. A photo with EXIF shot near the place confirms too (`PhotoLibrary`, `GameLibrary::photoUploaded()`), and "Я сейчас здесь" confirms the visit of the week later. Near is the category's radius cut by the nearest other place, or near the place's OSM outline (`places_outlines`, `php spark places:outlines`): never a radius per place by hand. Confirmation works with or without a season; a season only adds geopoints. A place counts once a season per person (`game_points`).
+- **Seasons** are made by hand on the site (`/game/seasons/create`, `/game/seasons/:id/edit`, admins only; buttons on `/game` and on a season's page — no admin section, no reminders) (`game_seasons`): own dates (never overlapping), title, description and one picture — the medal of every participant, with gold/silver/bronze variants for places 1–3; nothing is created automatically, and without a current season the game shows the next one or waits. `php spark game:tick` closes a season after its grace days and freezes its table; the medal follows the frozen place (1–3 gold/silver/bronze, the rest the grey one). Limited awards are separate, listed on a season by their dates.
+- **Exploration** (`explored()`) is the share of a location's places a person has visited, for all time; geopoints live only in a season.
+- **Quests** (`QuestsLibrary`, API `game/quests/*`, client `/quests`) are no part of a season: walked once, started only by «Начать квест», experience only at the end. Modes `open` / `steps` / `riddles` / `photos`; for the secret ones (`SECRET_MODES`) the next point never leaves the server and their visits stay hidden until the walk ends. Never cached.
+- **Client:** `/game` is the current season, or the next one (only past seasons have pages); admins create and edit seasons there (`SeasonForm` in `sections/game`), `/game/help` is «Как играть» (`content/game-help.*.md`), `sections/game`, `PlaceGame`, hrefs in `utils/game.ts`. Quests never mention a timer.
 
 ## Environment
 
-**Client** (`client/.env`): `NEXT_PUBLIC_API_HOST`, `NEXT_PUBLIC_SITE_LINK`, optional `NEXT_PUBLIC_IMG_HOST` (defaults to the API host), `NEXT_PUBLIC_MAPBOX_TOKEN`, `NEXT_PUBLIC_CYCLEMAP_TOKEN`, and the landing flags (`"true"` = on, anything else = off):
-- `NEXT_PUBLIC_LANDING_CATEGORIES` — `/places/{category}`
-- `NEXT_PUBLIC_LANDING_LOCATIONS` — `/places/{location}`
-- `NEXT_PUBLIC_LANDING_COMBINATIONS` — `/places/{location}/{category}`, only together with `LOCATIONS`
+- **Client** `client/.env`: `NEXT_PUBLIC_API_HOST`, `NEXT_PUBLIC_SITE_LINK`, `NEXT_PUBLIC_IMG_HOST`, map tokens, and the landing flags `NEXT_PUBLIC_LANDING_{CATEGORIES,LOCATIONS,COMBINATIONS}` (`"true"` = on; baked in at build; `utils/placesLanding.ts`, spec `features/20`).
+- **Server** `server/.env` (`cp env .env`): database, `app.baseURL`, `auth.token.secret`, `cors.allowedOrigins`. On the production DB locally set `uploads.verifyFiles = false`.
 
-Each flag switches canonical URLs, 301s, site links and sitemap entries for its page type; with all three off the site is as before the feature. Source of truth: `client/utils/placesLanding.ts` (`getLandingFlags`, `buildPlacesHref`); spec: `features/20-location-seo-pages.md`.
+## Pull requests and releases
 
-**Server** (`server/.env`, start from `cp env .env`): database credentials, `app.baseURL`, `auth.token.secret` (JWT), `cors.allowedOrigins` (comma-separated; unset allows `*`). For a local stand on the production database with images from production (client `NEXT_PUBLIC_IMG_HOST=https://api.geometki.com/`) set `uploads.verifyFiles = false`, otherwise the API drops covers missing on the local disk.
-
-## Tech Stack
-
-- **Client:** Next.js 16 / React 19 / TypeScript 6 / Redux Toolkit / RTK Query / Leaflet / SASS / next-i18next / next-seo / Jest / Yarn 4
-- **Server:** PHP 8.2+ / CodeIgniter 4 / MySQL / JWT / Guzzle / Geocoder-PHP (Nominatim + Yandex)
-- **CI:** GitHub Actions (`ui-checks`, `api-checks` on PR; `ui-deploy`, `api-deploy`; SonarCloud)
-
-## Pull Request Checklist
-
-Branches are named after the release they ship in: `release/X.Y.Z` (e.g. `release/1.17.4`). Work for an upcoming release goes into its branch; another PR meant for that release is merged into it, not into `main`.
-
-Before opening a PR:
-
-1. Bump `"version"` in `client/package.json`: almost always **patch**; **minor** only for noticeable new features or UX changes; **major** practically never.
-2. Add a section for that version to the top of `CHANGELOG.md` in the existing format: `## X.Y.Z`, a one-sentence summary for a release with several changes, then `### Patch Changes` or `### Minor Changes`, then short one-line bullets (under ~100 characters), e.g. `- Layout: removed the site sidebar, widened the content area`. It is written for users: only what they can see, the most important first, no endpoints, components or internals; small fixes of the same release are not listed. English only, UI labels translated ("Add to collection", not "В коллекцию").
-
-## Release
-
-Only after the version-bump PR is merged into `main`: tag the merge commit `v<version>` and create the GitHub release (title = tag, body = that version's `CHANGELOG.md` section without the `## X.Y.Z` heading, marked latest) in one command:
-`gh release create v1.9.0 --target main --title v1.9.0 --notes-file <section.md> --latest`.
-
-## MCP Tools
-
-When writing code or config that uses a library, fetch its current docs with context7 (`resolve-library-id`, then `get-library-docs`) without waiting to be asked.
+- Branch per release: `release/X.Y.Z`; work for a release goes into its branch.
+- Before a PR: bump `client/package.json` (patch by default, minor for noticeable features) and add `## X.Y.Z` to the top of `CHANGELOG.md`: a one-sentence summary, `### Patch Changes` / `### Minor Changes`, one-line bullets under ~100 chars, user-visible only, English, UI labels translated.
+- Release, after the PR is merged: `gh release create vX.Y.Z --target main --title vX.Y.Z --notes-file <section.md> --latest`.
+- Library code or config: fetch current docs with context7 first.
