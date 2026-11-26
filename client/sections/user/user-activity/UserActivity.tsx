@@ -28,15 +28,16 @@ export const UserActivity: React.FC<UserActivityProps> = ({ userId, beforeFeed, 
     const { t } = useTranslation()
     const timeZone = useAppSelector((state) => state.application.timeZone)
 
-    const { data, isFetching, isFetchingNextPage, isError, isLoading, hasNextPage, fetchNextPage } =
+    const { data, isFetching, isFetchingNextPage, isError, isLoading, hasNextPage, fetchNextPage, refetch } =
         API.useFeedGetListInfiniteQuery({ author: userId })
-    // A page after the first failed (the first failing leaves the feed empty)
+    // A page after the first failed
     const nextPageFailed = isError && !!data?.pages.length
     const { data: calendar } = API.useFeedGetCalendarQuery({ author: userId, tz: timeZone })
 
     const stories = flattenFeedPages(data?.pages)
     // A person who has done nothing yet: no feed and no words about it, the calendar says enough
-    const hasFeed = isLoading || !!stories.length
+    // (a feed that failed to load is not that: it says so and can be asked again)
+    const hasFeed = isLoading || isError || !!stories.length
 
     const sentinelRef = useInfiniteScroll({
         hasMore: hasNextPage,
@@ -65,11 +66,11 @@ export const UserActivity: React.FC<UserActivityProps> = ({ userId, beforeFeed, 
                             groupByDay={true}
                             timeZone={timeZone}
                             footer={
-                                nextPageFailed ? (
+                                isError ? (
                                     <Button
                                         mode={'secondary'}
                                         stretched={true}
-                                        onClick={() => fetchNextPage()}
+                                        onClick={() => (nextPageFailed ? fetchNextPage() : refetch())}
                                     >
                                         {t('feed-retry', { defaultValue: 'Не удалось загрузить. Повторить' })}
                                     </Button>

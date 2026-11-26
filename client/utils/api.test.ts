@@ -28,6 +28,14 @@ describe('isApiValidationErrors', () => {
 })
 
 describe('getErrorMessage', () => {
+    it('takes the HTML page of a gateway for no message', () => {
+        const page = '<html><head><title>502 Bad Gateway</title></head><body></body></html>'
+
+        expect(getErrorMessage(page)).toBeUndefined()
+        expect(getErrorMessage({ data: page, status: 'PARSING_ERROR' })).toBeUndefined()
+        expect(getErrorMessage('Too far from the place')).toBe('Too far from the place')
+    })
+
     it('returns undefined when error is falsy (null)', () => {
         expect(getErrorMessage(null)).toBeUndefined()
     })

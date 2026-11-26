@@ -28,7 +28,9 @@ const nextConfig = {
             // Temporary: a person's collections may come back to the profile at this address
             { destination: '/users/:id', permanent: false, source: '/users/:id/collections' },
             // 2.0.0: the awards moved into the head of the profile, the progress into the card of each
-            { destination: '/users/:id', permanent: true, source: '/users/:id/achievements' }
+            { destination: '/users/:id', permanent: true, source: '/users/:id/achievements' },
+            // 2.0.0: the queue of letters is a part of the mailings
+            { destination: '/admin/mailings', permanent: true, source: '/admin/sending-mail' }
         ]
     },
     // robots.txt and search consoles point to /sitemap.xml; the page is pages/sitemap.tsx.

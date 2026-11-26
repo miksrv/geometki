@@ -10,6 +10,13 @@ export const isApiValidationErrors = <T>(response: unknown): response is ApiResp
     'messages' in response &&
     typeof (response as ApiResponseError<string>).messages === 'object'
 
+/** A longer string is a page, not a message */
+const ERROR_MESSAGE_MAX = 500
+
+/** The body of an answer that is no JSON (a gateway's HTML page of a 502) is no message for a person */
+const plainMessage = (text: string): string | undefined =>
+    text.length <= ERROR_MESSAGE_MAX && !/<[a-z!/]/i.test(text) ? text : undefined
+
 /**
  * Safely extracts error message string from RTK Query error.
  * Handles various error formats: string, {data: string}, {data: {messages: {error: string}}},
@@ -21,7 +28,7 @@ export const getErrorMessage = (error: unknown): string | undefined => {
     }
 
     if (typeof error === 'string') {
-        return error
+        return plainMessage(error)
     }
 
     if (typeof error === 'object') {
@@ -45,7 +52,7 @@ export const getErrorMessage = (error: unknown): string | undefined => {
             const data = (error as { data: unknown }).data
 
             if (typeof data === 'string') {
-                return data
+                return plainMessage(data)
             }
 
             if (data && typeof data === 'object') {

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import debounce from 'lodash-es/debounce'
 import { Input, Select, SelectOptionType } from 'simple-react-ui-kit'
 
@@ -21,9 +21,17 @@ export const AchievementFilterPanel: React.FC<AchievementFilterPanelProps> = ({ 
 
     // The text is typed here and reaches the filter (the page's URL) a moment after the last key
     const [query, setQuery] = useState<string>(filter.query ?? '')
+    // `onChange` changes with every change of the URL: the timer is made once and calls the last
+    // one, else a key typed while the URL is being replaced would be dropped with the old timer
+    const onChangeRef = useRef(onChange)
+
+    useEffect(() => {
+        onChangeRef.current = onChange
+    }, [onChange])
+
     const applyQuery = useMemo(
-        () => debounce((value: string) => onChange('query', value || undefined), 250),
-        [onChange]
+        () => debounce((value: string) => onChangeRef.current('query', value || undefined), 250),
+        []
     )
 
     useEffect(() => () => applyQuery.cancel(), [applyQuery])

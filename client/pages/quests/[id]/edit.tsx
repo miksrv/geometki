@@ -19,9 +19,15 @@ interface EditQuestPageProps {
     quest: ApiType.Game.QuestResponse
 }
 
-/** The editor of a quest: every point with both languages of its texts, for the administrators */
-const EditQuestPage: NextPage<EditQuestPageProps> = ({ quest }) => {
+/**
+ * The editor of a quest: every point with both languages of its texts, for the administrators.
+ * The quest comes with the page; the query keeps it fresh, so a medal uploaded in the form shows at once.
+ */
+const EditQuestPage: NextPage<EditQuestPageProps> = (props) => {
     const { t } = useTranslation()
+
+    const { data } = API.useQuestsGetItemQuery({ edit: true, id: props.quest.id })
+    const quest = data ?? props.quest
 
     return (
         <AppLayout>

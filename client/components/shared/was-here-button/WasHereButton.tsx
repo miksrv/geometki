@@ -314,12 +314,18 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
 
             // No position (far from a window, refused, not found in time): the visit stays a plain
             // one, nothing is said. Cancelled meanwhile: the position is dropped
-            if (!found || !awaitingPosition.has(placeId)) {
+            if (!found || !awaitingPosition.has(placeId) || inFlight.has(placeId)) {
                 return
             }
 
+            // Held while the request is on its way: a tap that cancels the visit now would race
+            // with it, and the visit would come back after "Визит отменён"
+            inFlight.add(placeId)
+
             // The same check-in again, with the position: on the spot the visit counts in the season
-            const counted = await postVisit({ ...found, place: placeId, visitedAt }).unwrap()
+            const counted = await postVisit({ ...found, place: placeId, visitedAt })
+                .unwrap()
+                .finally(() => inFlight.delete(placeId))
 
             if (counted.game?.confirmed) {
                 const confirmed =
