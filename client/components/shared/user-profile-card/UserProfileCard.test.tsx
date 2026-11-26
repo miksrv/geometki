@@ -194,7 +194,7 @@ describe('UserProfileCard', () => {
         expect(links.map((link) => link.getAttribute('aria-current'))).toStrictEqual([null, 'page'])
     })
 
-    it('gives the home card no links to the pages of the profile: they are the profile\'s tabs', () => {
+    it('gives the home card no links to the pages of the profile: they are the tabs of the profile', () => {
         render(
             <UserProfileCard
                 user={user}
