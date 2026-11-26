@@ -1,0 +1,115 @@
+import React from 'react'
+
+import { render } from '@testing-library/react'
+
+import { AchievementIcon } from './AchievementIcon'
+import { AwardBadge, awardSymbol } from './AwardBadge'
+
+jest.mock('next/image', () => {
+    const Image = ({ src, alt }: { src: string; alt: string }) => (
+        <img
+            src={src}
+            alt={alt}
+        />
+    )
+    Image.displayName = 'Image'
+    return Image
+})
+
+jest.mock('@/config/env', () => ({
+    IMG_HOST: 'https://img.test/'
+}))
+
+describe('AwardBadge', () => {
+    it('picks the symbol by the group', () => {
+        expect(awardSymbol('season-2027-warm')).toBe('warm')
+        expect(awardSymbol('season-2026-cold')).toBe('cold')
+        expect(awardSymbol('quest-space-orenburg')).toBe('quest')
+        expect(awardSymbol('pathfinder')).toBe('star')
+        expect(awardSymbol(undefined)).toBe('star')
+    })
+
+    it('draws the rim by the tier and the field by the group', () => {
+        const { container, rerender } = render(
+            <AwardBadge
+                size={48}
+                tier={'gold'}
+                group={'pathfinder'}
+            />
+        )
+        const badge = container.querySelector('svg')
+
+        expect(badge).toHaveClass('tier-gold', 'field-game')
+        expect(badge).toHaveAttribute('height', '48')
+        expect(badge).toHaveAttribute('aria-hidden', 'true')
+
+        // A season's field is warm or cold, its rim dark steel: a season has no tiers
+        rerender(
+            <AwardBadge
+                size={48}
+                category={'seasonal'}
+                group={'season-2026-cold'}
+            />
+        )
+
+        expect(container.querySelector('svg')).toHaveClass('tier-none', 'field-cold')
+
+        // Every quest award is orange, whatever its field
+        rerender(
+            <AwardBadge
+                size={48}
+                tier={'bronze'}
+                group={'quest-space-orenburg'}
+            />
+        )
+
+        expect(container.querySelector('svg')).toHaveClass('tier-bronze', 'field-quest')
+    })
+})
+
+describe('AwardBadge with a photo', () => {
+    it('cuts the photo to the hexagon in place of the field symbol, inside the same rim', () => {
+        const { container } = render(
+            <AwardBadge
+                size={58}
+                photo={'https://img.test/cover.jpg'}
+            />
+        )
+
+        const image = container.querySelector('image')
+        const clip = container.querySelector('clipPath')
+
+        expect(image).toHaveAttribute('href', 'https://img.test/cover.jpg')
+        expect(clip).not.toBeNull()
+        expect(image?.getAttribute('clip-path')).toBe(`url(#${clip?.getAttribute('id')})`)
+        expect(container.querySelector('svg')).toHaveClass('tier-none')
+    })
+})
+
+describe('AchievementIcon', () => {
+    it('shows the drawn picture of an award when it has one', () => {
+        const { container } = render(
+            <AchievementIcon
+                image={'uploads/achievements/a.png'}
+                alt={'Следопыт'}
+                size={48}
+            />
+        )
+
+        expect(container.querySelector('img')).toHaveAttribute('src', 'https://img.test/uploads/achievements/a.png')
+        expect(container.querySelector('svg')).not.toBeInTheDocument()
+    })
+
+    it('draws a badge for an award without a picture', () => {
+        const { container } = render(
+            <AchievementIcon
+                size={48}
+                tier={'silver'}
+                group={'pathfinder'}
+            />
+        )
+
+        expect(container.querySelector('img')).not.toBeInTheDocument()
+        expect(container.querySelector('svg')).toHaveClass('award', 'tier-silver')
+    })
+})

@@ -113,7 +113,7 @@ describe('CollectionHeader', () => {
         render(
             <CollectionHeader
                 collection={collection}
-                isOwner
+                canManage
                 onEdit={onEdit}
                 onOpenSettings={onOpenSettings}
                 onDelete={onDelete}
@@ -141,7 +141,7 @@ describe('CollectionHeader', () => {
         render(
             <CollectionHeader
                 collection={collection}
-                isOwner
+                canManage
                 editMode
                 onDone={onDone}
                 onCancel={onCancel}

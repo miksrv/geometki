@@ -9,6 +9,8 @@ import { openAuthDialog } from '@/app/applicationSlice'
 import { logoutUser, turnOffPushOnThisDevice } from '@/app/logoutUser'
 import { useAppDispatch, useAppSelector } from '@/app/store'
 import useRequireAuth from '@/hooks/useRequireAuth'
+import { GAME_HREF, QUESTS_HREF } from '@/utils/game'
+import { sitePathname } from '@/utils/sitePathname'
 
 import { AppAuthChecker } from './AppAuthChecker'
 import { Logo } from './Logo'
@@ -27,8 +29,12 @@ interface AppBarProps {
     fullSize?: boolean
 }
 
-export const isNavItemActive = (pathname: string, href: string): boolean =>
-    pathname === href || pathname.startsWith(`${href}/`)
+/** The section of the page: its own route and everything under it; a live page counts as its cached one */
+export const isNavItemActive = (pathname: string, href: string): boolean => {
+    const path = sitePathname(pathname)
+
+    return path === href || path.startsWith(`${href}/`)
+}
 
 export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
     const { t } = useTranslation()
@@ -38,11 +44,15 @@ export const AppBar: React.FC<AppBarProps> = ({ fullSize }) => {
 
     const appAuth = useAppSelector((state) => state.auth)
 
+    // The map is always first: the one page with a template of its own (the full width). Then
+    // the places, then the game, which is the current season, and the quests, a section apart from it
     const navItems: NavItem[] = [
         { href: '/map', label: t('nav-map', { defaultValue: 'Карта' }) },
         { href: '/places', label: t('nav-places', { defaultValue: 'Места' }) },
+        { href: GAME_HREF, label: t('nav-game', { defaultValue: 'Игра' }) },
+        { href: QUESTS_HREF, label: t('nav-quests', { defaultValue: 'Квесты' }) },
         { href: '/collections', label: t('nav-collections', { defaultValue: 'Коллекции' }) },
-        { href: '/users', label: t('nav-users', { defaultValue: 'Люди' }) }
+        { href: '/users', label: t('nav-users', { defaultValue: 'Исследователи' }) }
     ]
 
     const handleLoginClick = (event: React.MouseEvent) => {

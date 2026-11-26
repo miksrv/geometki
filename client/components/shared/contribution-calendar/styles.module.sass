@@ -57,14 +57,26 @@
     &.outside
         visibility: hidden
 
-.legend
+// Under the squares: the busiest day on the left, the legend on the right
+.foot
     display: flex
+    flex-wrap: wrap
     align-items: center
-    justify-content: flex-end
-    gap: 3px
+    justify-content: space-between
+    gap: var(--space-1) var(--space-3)
     margin-top: var(--space-2)
     font-size: var(--font-size-small)
     color: var(--text-color-secondary)
+
+.busiest
+    margin: 0
+
+.legend
+    display: flex
+    align-items: center
+    gap: 3px
+    // Stays on the right when it stands alone, and when the line wraps on a phone
+    margin-left: auto
 
 .legendCell
     width: 10px
@@ -75,43 +87,3 @@
 
     &:last-of-type
         margin-right: var(--space-1)
-
-// Summary card: the same look as the feed pulse (a card with big numbers)
-
-.summary
-    display: flex
-    flex-direction: column
-    gap: var(--space-3)
-    padding: var(--space-4)
-    background: var(--container-background)
-    border-radius: var(--container-radius)
-    box-shadow: var(--container-shadow)
-
-.summaryTitle
-    margin: 0
-    font-size: var(--font-size-large)
-    font-weight: var(--font-weight-semibold)
-
-.summaryStats
-    display: grid
-    grid-template-columns: 1fr 1fr
-    gap: var(--space-3)
-    margin: 0
-
-.summaryStat
-    display: flex
-    flex-direction: column-reverse
-
-.summaryValue
-    margin: 0
-    +type.stat
-    color: var(--text-color-primary)
-
-.summaryLabel
-    font-size: var(--font-size-small)
-    color: var(--text-color-secondary)
-
-.summaryNote
-    margin: 0
-    font-size: var(--font-size-secondary)
-    color: var(--text-color-secondary)

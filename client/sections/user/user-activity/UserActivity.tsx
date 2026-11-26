@@ -5,7 +5,7 @@ import { useTranslation } from 'next-i18next/pages'
 
 import { API } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { ContributionCalendar, ContributionSummary, FeedList } from '@/components/shared'
+import { ContributionCalendar, FeedList } from '@/components/shared'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { flattenFeedPages } from '@/utils/feed'
 
@@ -28,11 +28,16 @@ export const UserActivity: React.FC<UserActivityProps> = ({ userId, beforeFeed, 
     const { t } = useTranslation()
     const timeZone = useAppSelector((state) => state.application.timeZone)
 
-    const { data, isFetching, isFetchingNextPage, isError, isLoading, hasNextPage, fetchNextPage } =
+    const { data, isFetching, isFetchingNextPage, isError, isLoading, hasNextPage, fetchNextPage, refetch } =
         API.useFeedGetListInfiniteQuery({ author: userId })
-    // A page after the first failed (the first failing leaves the feed empty)
+    // A page after the first failed
     const nextPageFailed = isError && !!data?.pages.length
     const { data: calendar } = API.useFeedGetCalendarQuery({ author: userId, tz: timeZone })
+
+    const stories = flattenFeedPages(data?.pages)
+    // A person who has done nothing yet: no feed and no words about it, the calendar says enough
+    // (a feed that failed to load is not that: it says so and can be asked again)
+    const hasFeed = isLoading || isError || !!stories.length
 
     const sentinelRef = useInfiniteScroll({
         hasMore: hasNextPage,
@@ -43,37 +48,38 @@ export const UserActivity: React.FC<UserActivityProps> = ({ userId, beforeFeed, 
 
     return (
         <div className={styles.layout}>
-            <aside className={styles.aside}>
-                <ContributionSummary calendar={calendar} />
-                {aside}
-            </aside>
+            <aside className={styles.aside}>{aside}</aside>
 
             <div className={styles.main}>
-                <ContributionCalendar calendar={calendar} />
+                <ContributionCalendar
+                    calendar={calendar}
+                    className={styles.calendar}
+                />
 
                 {beforeFeed}
 
-                <section aria-label={t('activity-feed')}>
-                    <FeedList
-                        stories={flattenFeedPages(data?.pages)}
-                        loading={isLoading || isFetchingNextPage}
-                        groupByDay={true}
-                        timeZone={timeZone}
-                        emptyText={t('feed-empty-user', { defaultValue: 'Пока ничего не сделано' })}
-                        footer={
-                            nextPageFailed ? (
-                                <Button
-                                    mode={'secondary'}
-                                    stretched={true}
-                                    onClick={() => fetchNextPage()}
-                                >
-                                    {t('feed-retry', { defaultValue: 'Не удалось загрузить. Повторить' })}
-                                </Button>
-                            ) : undefined
-                        }
-                    />
-                    <div ref={sentinelRef} />
-                </section>
+                {hasFeed && (
+                    <section aria-label={t('activity-feed')}>
+                        <FeedList
+                            stories={stories}
+                            loading={isLoading || isFetchingNextPage}
+                            groupByDay={true}
+                            timeZone={timeZone}
+                            footer={
+                                isError ? (
+                                    <Button
+                                        mode={'secondary'}
+                                        stretched={true}
+                                        onClick={() => (nextPageFailed ? fetchNextPage() : refetch())}
+                                    >
+                                        {t('feed-retry', { defaultValue: 'Не удалось загрузить. Повторить' })}
+                                    </Button>
+                                ) : undefined
+                            }
+                        />
+                        <div ref={sentinelRef} />
+                    </section>
+                )}
             </div>
         </div>
     )

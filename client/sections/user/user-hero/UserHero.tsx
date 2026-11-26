@@ -9,6 +9,8 @@ import { useAppSelector } from '@/app/store'
 import { UserProfileCard, UserProfileSection } from '@/components/shared'
 import { Breadcrumbs } from '@/components/ui'
 
+import { UserAwardsShowcase } from '../user-awards'
+
 import styles from './styles.module.sass'
 
 const UserAvatarEditor = dynamic(() => import('../user-avatar-editor').then((m) => ({ default: m.UserAvatarEditor })), {
@@ -51,6 +53,7 @@ export const UserHero: React.FC<UserHeroProps> = ({ user, currentPage, isSetting
                     variant={'profile'}
                     avatarSrc={newAvatar}
                     activeSection={currentPage}
+                    awards={<UserAwardsShowcase userId={user.id} />}
                     actions={
                         isOwner && (
                             <>

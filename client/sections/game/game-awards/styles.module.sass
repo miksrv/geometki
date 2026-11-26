@@ -1,0 +1,108 @@
+@use '../../../styles/typography' as type
+@use '../../../styles/mixins' as *
+
+// The limited awards of a season: picture | title, what it asks, the progress and until when
+.list
+    display: flex
+    flex-direction: column
+    margin: var(--space-2) 0 0
+    padding: 0
+    list-style: none
+
+.item
+    display: flex
+    gap: var(--space-3)
+    min-width: 0
+    padding: var(--space-3) 0
+
+    &:first-child
+        padding-top: 0
+
+    &:last-child
+        padding-bottom: 0
+
+    & + &
+        border-top: var(--container-border-separator)
+
+.icon
+    display: flex
+    flex-shrink: 0
+    align-items: flex-start
+    justify-content: center
+    width: 40px
+
+// Not earned yet: the picture faded, as in the achievements list
+.locked .icon
+    filter: grayscale(1)
+    opacity: .55
+
+.text
+    display: flex
+    flex: 1
+    flex-direction: column
+    gap: var(--space-1)
+    min-width: 0
+
+.title
+    +type.titleBlock
+    font-size: var(--font-size)
+
+.description
+    +type.secondary
+    margin: 0
+
+.bar
+    height: 6px
+    margin-top: var(--space-1)
+    border-radius: 3px
+    background: var(--surface-3)
+    overflow: hidden
+
+.fill
+    height: 100%
+    border-radius: inherit
+    background: var(--color-main)
+
+// Several rules: the metric | "3 из 10", green once met
+.rules
+    display: flex
+    flex-direction: column
+    gap: 2px
+    margin: var(--space-1) 0 0
+    padding: 0
+    list-style: none
+    font-size: var(--font-size-secondary)
+
+    li
+        display: flex
+        justify-content: space-between
+        gap: var(--space-2)
+        color: var(--text-color-secondary)
+
+    b
+        flex-shrink: 0
+        color: var(--text-color-primary)
+        font-weight: var(--font-weight-semibold)
+        font-variant-numeric: tabular-nums
+
+.ruleDone b
+    color: var(--color-green)
+
+.until
+    +type.caption
+    margin: 0
+    font-variant-numeric: tabular-nums
+
+.earned
+    display: inline-flex
+    align-items: center
+    gap: 6px
+    margin: 0
+    color: var(--color-green)
+    font-size: var(--font-size-secondary)
+    font-weight: var(--font-weight-medium)
+
+    svg
+        width: 16px
+        height: 16px
+        fill: currentColor

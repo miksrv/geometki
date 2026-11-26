@@ -243,6 +243,36 @@ describe('PhotoGallery', () => {
             expect(hidden.querySelectorAll('img')).toHaveLength(2)
         })
 
+        it('puts "+N" on the last tile when the photos are only the first of many: a link to all of them', () => {
+            renderWithStore(
+                <PhotoGallery
+                    photos={mockPhotos}
+                    total={mockPhotos.length + 390}
+                    moreHref={'/users/u1/photos'}
+                />
+            )
+
+            const links = screen.getAllByRole('link')
+            const last = links[links.length - 1]
+
+            expect(screen.getByText('+390')).toBeInTheDocument()
+            expect(last).toHaveAttribute('href', '/users/u1/photos')
+            // The other tiles still open the photo
+            expect(links[0]).not.toHaveAttribute('href', '/users/u1/photos')
+        })
+
+        it('has no "+N" when the photos given are all there are', () => {
+            renderWithStore(
+                <PhotoGallery
+                    photos={mockPhotos}
+                    total={mockPhotos.length}
+                    moreHref={'/users/u1/photos'}
+                />
+            )
+
+            expect(screen.queryByText(/^\+\d/)).not.toBeInTheDocument()
+        })
+
         it('shows every photo in one list with showAll', () => {
             const { container } = renderWithStore(
                 <PhotoGallery

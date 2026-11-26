@@ -6,7 +6,13 @@ import { useTranslation } from 'next-i18next/pages'
 import { RadioButton } from '@/components/ui'
 
 import { AVAILABLE_MAP_LAYERS } from '../layers'
-import { MapAdditionalLayersEnum, MapLayersEnum, MapObjectsTypeEnum, MapTrailsLayerEnum } from '../types'
+import {
+    MapAdditionalLayersEnum,
+    MapLayersEnum,
+    MapObjectLayersEnum,
+    MapObjectsTypeEnum,
+    MapTrailsLayerEnum
+} from '../types'
 
 import styles from '../styles.module.sass'
 
@@ -14,6 +20,9 @@ interface LayerSwitcherControlProps {
     currentLayer?: MapLayersEnum
     currentType?: MapObjectsTypeEnum
     hideAdditionalLayers?: boolean
+    /** The site's own objects ("Неоткрытые", "Геометки", "Геоквесты"); the group is shown when it is passed */
+    objectLayers?: MapObjectLayersEnum[]
+    onSwitchObjectLayers?: (layers: MapObjectLayersEnum[]) => void
     additionalLayers?: MapAdditionalLayersEnum[]
     onSwitchMapLayer?: (layer: MapLayersEnum) => void
     onSwitchMapType?: (type: MapObjectsTypeEnum) => void
@@ -28,11 +37,14 @@ interface LayerSwitcherControlProps {
 
 export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
     currentLayer,
-    currentType,
+    // The "Геометки / Фотографии" switch is hidden for now (see below): its props are not read
+    // currentType,
     hideAdditionalLayers,
+    objectLayers,
+    onSwitchObjectLayers,
     additionalLayers,
     onSwitchMapLayer,
-    onSwitchMapType,
+    // onSwitchMapType,
     onSwitchAdditionalLayers,
     hillshade,
     hillshadeOpacity = 1,
@@ -60,9 +72,10 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
         onSwitchMapLayer?.(event.target.id as MapLayersEnum)
     }
 
-    const handleSwitchMapType = (event: React.ChangeEvent<HTMLInputElement>) => {
-        onSwitchMapType?.(event.target.id as MapObjectsTypeEnum)
-    }
+    // The "Геометки / Фотографии" switch is hidden for now, see below
+    // const handleSwitchMapType = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //     onSwitchMapType?.(event.target.id as MapObjectsTypeEnum)
+    // }
 
     const titleMapLayer: Record<MapLayersEnum, string> = {
         [MapLayersEnum.CARTO_DARK]: t('map-layer_CartoDark', {
@@ -100,14 +113,20 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
         })
     }
 
-    const titleMapType: Record<MapObjectsTypeEnum, string> = {
-        [MapObjectsTypeEnum.PHOTOS]: t('map-type_Photos', {
-            defaultValue: 'Photos'
-        }),
-        [MapObjectsTypeEnum.PLACES]: t('map-type_Places', {
-            defaultValue: 'Places'
-        })
+    const titleObjectLayer: Record<MapObjectLayersEnum, string> = {
+        [MapObjectLayersEnum.UNEXPLORED]: t('map-objects_Unexplored', { defaultValue: 'Неоткрытые' }),
+        [MapObjectLayersEnum.PLACES]: t('map-objects_Places', { defaultValue: 'Геометки' }),
+        [MapObjectLayersEnum.QUESTS]: t('map-objects_Quests', { defaultValue: 'Геоквесты' })
     }
+
+    // const titleMapType: Record<MapObjectsTypeEnum, string> = {
+    //     [MapObjectsTypeEnum.PHOTOS]: t('map-type_Photos', {
+    //         defaultValue: 'Photos'
+    //     }),
+    //     [MapObjectsTypeEnum.PLACES]: t('map-type_Places', {
+    //         defaultValue: 'Places'
+    //     })
+    // }
 
     const titleAdditionalMapType: Record<MapAdditionalLayersEnum, string> = {
         [MapAdditionalLayersEnum.HISTORICAL_PHOTOS]: t('map-type_HistoricalPhotos', {
@@ -203,6 +222,31 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
                     ))}
                 </ul>
 
+                {!hideAdditionalLayers && objectLayers && (
+                    <ul className={styles.mapPointsTypeList}>
+                        {Object.values(MapObjectLayersEnum).map((type) => (
+                            <li key={type}>
+                                <Checkbox
+                                    id={`objects-${type}`}
+                                    label={titleObjectLayer[type]}
+                                    checked={objectLayers.includes(type)}
+                                    onChange={() =>
+                                        onSwitchObjectLayers?.(
+                                            objectLayers.includes(type)
+                                                ? objectLayers.filter((layer) => layer !== type)
+                                                : // In the panel's order, whatever the order of the clicks
+                                                  Object.values(MapObjectLayersEnum).filter(
+                                                      (layer) => layer === type || objectLayers.includes(layer)
+                                                  )
+                                        )
+                                    }
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                )}
+
+                {/* "Геометки / Фотографии" is hidden for now: the map shows the places (InteractiveMap)
                 {!hideAdditionalLayers && (
                     <ul className={styles.mapPointsTypeList}>
                         {Object.values(MapObjectsTypeEnum).map((type) => (
@@ -217,6 +261,7 @@ export const LayerSwitcherControl: React.FC<LayerSwitcherControlProps> = ({
                         ))}
                     </ul>
                 )}
+                */}
 
                 {!hideAdditionalLayers && (
                     <ul className={styles.mapAdditionalList}>

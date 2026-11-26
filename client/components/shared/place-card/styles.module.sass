@@ -152,7 +152,8 @@
     // almost all of the picture and does not upscale it far
     aspect-ratio: 2 / 1
     overflow: hidden
-    border-radius: var(--radius-xl)
+    // The corners of every photo and container on the site
+    border-radius: var(--border-radius)
     background: var(--surface-3)
     background-image: url('/images/no-image.svg')
     background-position: center
@@ -195,38 +196,6 @@
     display: flex
     gap: 4px
 
-.tileBookmark
-    +buttonReset
-    display: grid
-    place-items: center
-    width: 32px
-    height: 32px
-    border-radius: var(--radius-full)
-    // Over a photo in both themes; no backdrop blur (a paint cost on every tile), so a bit darker
-    background: rgba(20, 22, 26, 0.55)
-    transition: background-color var(--duration-fast) var(--ease)
-
-    svg
-        width: 18px
-        height: 18px
-        fill: #fff
-
-    &:hover
-        background: rgba(20, 22, 26, 0.75)
-
-    &:focus-visible
-        outline: none
-        box-shadow: var(--focus-ring)
-
-    &:disabled
-        cursor: default
-
-.tileBookmarkOn
-    background: var(--color-main)
-
-    &:hover
-        background: var(--color-main-hover)
-
 // "Вы были здесь": the visitor's own mark, green as the "I was here" button
 .tileVisited
     position: absolute
@@ -249,6 +218,14 @@
         width: 14px
         height: 14px
         fill: currentColor
+
+// A mark of the list the tile is in, over the bottom-right corner of the cover (the game's points)
+.tileBadge
+    position: absolute
+    right: 10px
+    bottom: 10px
+    display: flex
+    pointer-events: none
 
 .tileTitle
     +type.titleBlock

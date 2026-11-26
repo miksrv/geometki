@@ -27,6 +27,8 @@ export const NotificationIcon: React.FC<ApiModel.Notification> = ({ ...props }):
             image={props.meta?.image}
             alt={props.meta?.title ?? ''}
             size={26}
+            tier={props.meta?.tier ?? undefined}
+            group={props.meta?.group ?? undefined}
         />
     ) : props.place?.cover?.preview ? (
         <Image

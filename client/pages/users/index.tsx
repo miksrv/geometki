@@ -22,7 +22,7 @@ const USERS_PER_PAGE = 30
 const DEFAULT_ORDER = 'DESC'
 
 /** Sorts that make the list a ranking: the cards are numbered */
-const RANKED_SORTS: string[] = [UserSortFields.Experience, UserSortFields.Reputation]
+const RANKED_SORTS: string[] = [UserSortFields.Experience, UserSortFields.Reputation, UserSortFields.Season]
 
 interface UsersPageProps {
     usersList: ApiModel.User[]

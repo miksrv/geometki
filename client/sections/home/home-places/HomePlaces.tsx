@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Button } from 'simple-react-ui-kit'
+import { Button, cn } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
@@ -10,7 +10,7 @@ import useUserLocation from '@/hooks/useUserLocation'
 
 import styles from './styles.module.sass'
 
-type PlacesTab = 'popular' | 'new' | 'nearby'
+type PlacesTab = 'recommended' | 'popular' | 'new' | 'nearby'
 
 /** As many as the server sends for the other two tabs */
 const NEARBY_LIMIT = 8
@@ -18,22 +18,36 @@ const NEARBY_LIMIT = 8
 interface HomePlacesProps {
     popular?: ApiModel.Place[]
     latest?: ApiModel.Place[]
+    /**
+     * A signed-in user's own list (the home page's "for you"): the places picked by their
+     * interests that they have not explored. With it the first tab is "Для вас" instead of the
+     * week's popular ones, the nearby ones come second and leave out the explored places too.
+     */
+    recommended?: ApiModel.Place[]
 }
 
 /**
  * "Куда поехать": places as a row of tiles that scrolls sideways, with tabs that say how they were picked —
- * the most viewed this week, the newest, the closest. The closest ask for the location only
- * when the visitor presses the button.
+ * the most viewed this week, the newest, the closest; for a signed-in user (`recommended`) —
+ * picked for them, the closest, the newest, without the places they explored. The closest ask
+ * for the location only when the visitor presses the button.
  */
-export const HomePlaces: React.FC<HomePlacesProps> = ({ popular, latest }) => {
+export const HomePlaces: React.FC<HomePlacesProps> = ({ popular, latest, recommended }) => {
     const { t } = useTranslation()
-    const [tab, setTab] = useState<PlacesTab>('popular')
+    const personal = !!recommended
+    const [tab, setTab] = useState<PlacesTab>(personal ? 'recommended' : 'popular')
 
-    const tabs: Array<{ key: PlacesTab; label: string }> = [
-        { key: 'popular', label: t('home-places-tab-popular') },
-        { key: 'new', label: t('home-places-tab-new') },
-        { key: 'nearby', label: t('home-places-tab-nearby') }
-    ]
+    const tabs: Array<{ key: PlacesTab; label: string }> = personal
+        ? [
+              { key: 'recommended', label: t('home-places-tab-recommended') },
+              { key: 'nearby', label: t('home-places-tab-nearby') },
+              { key: 'new', label: t('home-places-tab-new') }
+          ]
+        : [
+              { key: 'popular', label: t('home-places-tab-popular') },
+              { key: 'new', label: t('home-places-tab-new') },
+              { key: 'nearby', label: t('home-places-tab-nearby') }
+          ]
     const { location, loading: locating, request: requestLocation } = useUserLocation()
 
     const { data: nearbyData, isFetching: nearbyLoading } = API.usePlacesGetListQuery(
@@ -41,13 +55,16 @@ export const HomePlaces: React.FC<HomePlacesProps> = ({ popular, latest }) => {
             lat: location?.lat,
             limit: NEARBY_LIMIT,
             lon: location?.lon,
+            // A signed-in user's nearby places are the ones still to explore
+            notVisited: personal ? 1 : undefined,
             order: ApiType.SortOrders.ASC,
             sort: ApiType.SortFields.Distance
         },
         { skip: tab !== 'nearby' || !location }
     )
 
-    const places = tab === 'popular' ? popular : tab === 'new' ? latest : nearbyData?.items
+    const places =
+        tab === 'recommended' ? recommended : tab === 'popular' ? popular : tab === 'new' ? latest : nearbyData?.items
 
     const allLink =
         tab === 'nearby' && location
@@ -56,7 +73,9 @@ export const HomePlaces: React.FC<HomePlacesProps> = ({ popular, latest }) => {
               '/places?sort=distance&order=ASC'
             : tab === 'new'
               ? '/places?sort=created_at'
-              : '/places?sort=views_week'
+              : tab === 'recommended'
+                ? '/places?sort=recommended'
+                : '/places?sort=views_week'
 
     return (
         <Section
@@ -64,7 +83,7 @@ export const HomePlaces: React.FC<HomePlacesProps> = ({ popular, latest }) => {
             action={
                 <Button
                     mode={'link'}
-                    noIndex={tab === 'nearby'}
+                    noIndex={tab === 'nearby' || tab === 'recommended'}
                     link={allLink}
                     label={t('home-places-all')}
                 />
@@ -115,7 +134,10 @@ export const HomePlaces: React.FC<HomePlacesProps> = ({ popular, latest }) => {
                     ))}
                 </ScrollRail>
             ) : (
-                <p className={styles.empty}>{t('nothing-here-yet')}</p>
+                // The same dashed plate as the invitation to share the location, the words in the middle
+                <div className={cn(styles.locate, styles.empty)}>
+                    <p>{tab === 'recommended' ? t('home-places-recommended-empty') : t('nothing-here-yet')}</p>
+                </div>
             )}
         </Section>
     )

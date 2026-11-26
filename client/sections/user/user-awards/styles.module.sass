@@ -1,0 +1,286 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+
+// The awards of a profile (DESIGN.md → Person): the showcase in the head, the dialog of every
+// award, the card of one
+
+// --- Honeycomb (AwardHoneycomb) ------------------------------------------------------------
+.honeycomb
+    position: relative
+    margin: 0
+    padding: 0
+    list-style: none
+
+.cell
+    position: absolute
+    display: flex
+    align-items: center
+    justify-content: center
+
+// --- One row from edge to edge (AwardRow): the profile's head, under the counters -------
+.row
+    display: flex
+    width: 100%
+    margin: 0
+    padding: 0
+    list-style: none
+
+.full
+    justify-content: space-between
+
+.rowCell
+    display: flex
+    flex-shrink: 0
+    align-items: center
+    justify-content: center
+
+// A hexagon that opens its card: no button chrome, the focus ring around it
+.award
+    display: flex
+    padding: 0
+    border: 0
+    border-radius: var(--border-radius)
+    background: none
+    cursor: pointer
+    transition: transform .15s ease
+
+    &:hover
+        transform: scale(1.08)
+
+    &:focus-visible
+        outline: none
+        box-shadow: var(--focus-ring)
+
+    @media (prefers-reduced-motion: reduce)
+        transition: none
+
+        &:hover
+            transform: none
+
+// Not earned yet (AwardPicture): the medal of the first step grey and faint, a lock in the
+// middle of the hexagon, without a plate, under a third of its height — the one look of a locked award
+.lockedPicture
+    position: relative
+    display: inline-flex
+    align-items: center
+    justify-content: center
+
+.lockedMedal
+    display: flex
+    filter: grayscale(1)
+    opacity: .35
+
+.lock
+    position: absolute
+    display: flex
+    align-items: center
+    justify-content: center
+    width: calc(var(--award-size) * .3)
+    height: calc(var(--award-size) * .3)
+
+    // No plate: the lock alone over the faint medal
+    svg
+        width: 100%
+        height: 100%
+        fill: var(--text-color-primary)
+
+// "+N": the next award with a grey hexagon over it, the number on the plate
+.more
+    position: relative
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 100%
+    height: 100%
+    padding: 0
+    border: 0
+    background: none
+    cursor: pointer
+
+    &:focus-visible
+        outline: none
+
+// The award under the plate: a picture only, the button is the plate
+.moreUnder
+    display: flex
+    pointer-events: none
+
+.morePlate
+    position: absolute
+    inset: 0
+    display: flex
+    align-items: center
+    justify-content: center
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)
+    background: color-mix(in srgb, var(--surface-3) 82%, transparent)
+    color: var(--text-color-primary)
+    font-size: var(--font-size-large)
+    font-weight: var(--font-weight-semibold)
+    font-variant-numeric: tabular-nums
+    transition: background .15s ease
+
+    .more:hover &, .more:focus-visible &
+        background: color-mix(in srgb, var(--color-main-background) 88%, transparent)
+        color: var(--color-main)
+
+// --- The dialog of every award (AwardsDialog) ----------------------------------------------
+// No header: one honeycomb, scrolling inside; the card of one award opens over it. As wide as
+// the dialog's `maxWidth` on its own: the kit's dialog is the whole screen wide until its effect
+// sets the width, and the honeycomb measured then would flash with giant hexagons
+.dialogList
+    box-sizing: border-box
+    width: 100%
+    max-width: 640px
+    max-height: 95vh
+    overflow-y: auto
+    padding: var(--space-6)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        padding: var(--space-6) var(--space-4) var(--space-4)
+
+// Closes the dialog without a header: a round button in its corner, over the empty corner of a hexagon
+.dialogClose
+    position: absolute
+    top: var(--space-2)
+    right: var(--space-2)
+    z-index: 1
+    display: flex
+    align-items: center
+    justify-content: center
+    width: 32px
+    height: 32px
+    padding: 0
+    border: 0
+    border-radius: 50%
+    background: var(--surface-2)
+    color: var(--text-color-secondary)
+    cursor: pointer
+
+    svg
+        width: 18px
+        height: 18px
+        fill: currentColor
+
+    &:hover
+        color: var(--text-color-primary)
+
+    &:focus-visible
+        outline: none
+        box-shadow: var(--focus-ring)
+
+// Under the card of one award: dimmed as by an overlay of its own
+:global(dialog[data-dimmed])::after
+    content: ''
+    position: absolute
+    inset: 0
+    z-index: 2
+    background: var(--overlay-background)
+
+// --- The card of one award (AwardDialog) ---------------------------------------------------
+.dialogBody
+    padding: var(--space-5)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        padding: var(--space-4)
+
+.card
+    display: flex
+    flex-direction: column
+    align-items: center
+    gap: var(--space-3)
+    text-align: center
+
+.cardPicture
+    display: flex
+    margin-bottom: var(--space-1)
+
+// the kind of a season or a quest · when it came
+.cardKind
+    margin: 0
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
+
+.cardDescription
+    margin: 0
+
+.cardMeta
+    margin: 0
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
+
+// A season: its numbers as the counters of a card (StatTiles), equal tiles across the card (the
+// card's class outweighs the kit-wide grid of StatTiles, whichever stylesheet comes later)
+.card .cardFacts
+    width: 100%
+    grid-template-columns: repeat(var(--stat-tiles, 3), minmax(0, 1fr))
+
+.countLoader
+    width: 120px
+    height: 36px
+    border-radius: var(--border-radius)
+
+// What the person has: the number every step below is measured by
+.cardCount
+    +type.stat
+    margin: calc(-1 * var(--space-1)) 0 0
+
+// Several rules: the metric | the count against the next step, green once that rule is met
+.rules
+    display: flex
+    flex-direction: column
+    gap: var(--space-1)
+    width: 100%
+    margin: 0
+    padding: 0
+    list-style: none
+
+    li
+        display: flex
+        justify-content: space-between
+        gap: var(--space-3)
+        padding: var(--space-2) var(--space-3)
+        border-radius: var(--border-radius)
+        background: var(--surface-2)
+        text-align: left
+
+    strong
+        flex-shrink: 0
+        font-weight: var(--font-weight-semibold)
+        font-variant-numeric: tabular-nums
+
+.ruleName
+    min-width: 0
+    color: var(--text-color-secondary)
+
+.ruleDone strong
+    color: var(--color-green)
+
+// The steps side by side: the medal (a lock until passed) | what it asks over when it came
+.steps
+    display: flex
+    flex-wrap: wrap
+    justify-content: center
+    gap: var(--space-3) var(--space-4)
+    width: 100%
+    margin: var(--space-1) 0 0
+    padding: 0
+    list-style: none
+
+.step
+    display: flex
+    align-items: center
+    gap: var(--space-2)
+    text-align: left
+
+.stepText
+    display: flex
+    flex-direction: column
+
+.stepRequired
+    font-weight: var(--font-weight-semibold)
+    font-variant-numeric: tabular-nums
+
+.stepDate
+    color: var(--text-color-secondary)
+    font-size: variables.$fontSizeCaption
+    white-space: nowrap

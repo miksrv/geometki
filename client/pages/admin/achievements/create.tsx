@@ -1,126 +1,24 @@
-import React, { useState } from 'react'
-import { Container } from 'simple-react-ui-kit'
+import React from 'react'
 
-import { GetServerSidePropsResult } from 'next'
-import dynamic from 'next/dynamic'
-import Head from 'next/head'
-import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
-import { generateNextSeo } from 'next-seo/pages'
 
-import { API, ApiType } from '@/api'
-import { setLocale } from '@/app/applicationSlice'
-import { useAppSelector, wrapper } from '@/app/store'
-import { AchievementForm } from '@/components/pages/achievement-form'
-import { AppLayout, PageHeader } from '@/components/shared'
-import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard'
-import { hydrateAuthFromCookies, isAdminRequest } from '@/utils/serverSideAuth'
-import { loadPageTranslations } from '@/utils/translations.server'
+import { AdminPageShell } from '@/components/shared'
+import { AchievementForm, ACHIEVEMENTS_ADMIN_HREF } from '@/sections/admin/achievement-form'
+import { getAdminServerSideProps } from '@/utils/adminPage'
 
-type AchievementInput = ApiType.Achievements.AchievementInput
-
-const defaultForm: AchievementInput = {
-    category: 'exploration',
-    description_en: '',
-    description_ru: '',
-    group_slug: '',
-    is_active: true,
-    rules: [{ metric: 'places_created', operator: '>=', value: 1 }],
-    season_end: null,
-    season_start: null,
-    sort_order: 0,
-    tier: 'none',
-    title_en: '',
-    title_ru: '',
-    type: 'base',
-    xp_bonus: 0
-}
-
-const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
-    ssr: false
-})
-
-interface AdminAchievementsCreateProps {
-    locale: ApiType.Locale
-}
-
-const AdminAchievementsCreate: React.FC<AdminAchievementsCreateProps> = () => {
-    const { t, i18n } = useTranslation()
-    const router = useRouter()
-
-    const userRole = useAppSelector((state) => state.auth.user?.role)
-    const isAuth = useAppSelector((state) => state.auth.isAuth)
-
-    const [isDirty, setIsDirty] = useState(false)
-    const { allowNavigation, dialogProps: leaveDialogProps } = useUnsavedChangesGuard(isDirty)
-
-    const [createAchievement, { isLoading }] = API.useCreateAchievementMutation()
-
-    const pageTitle = t('achievements-admin-add', { defaultValue: 'Добавить достижение' })
-
-    const handleSubmit = async (values: AchievementInput) => {
-        try {
-            await createAchievement(values).unwrap()
-            allowNavigation()
-            void router.push('/admin/achievements')
-        } catch {
-            // errors handled by error middleware
-        }
-    }
-
-    if (isAuth && userRole && userRole !== 'admin') {
-        void router.push('/')
-        return null
-    }
+const AdminAchievementsCreate: React.FC = () => {
+    const { t } = useTranslation()
 
     return (
-        <AppLayout>
-            <Head>
-                {generateNextSeo({
-                    title: pageTitle,
-                    noindex: true,
-                    openGraph: { locale: i18n.language === 'ru' ? 'ru_RU' : 'en_US', title: pageTitle }
-                })}
-            </Head>
-
-            <PageHeader
-                title={pageTitle}
-                breadcrumbs={[
-                    { link: '/admin/achievements', text: t('achievements-admin-title', { defaultValue: 'Достижения' }) }
-                ]}
-            />
-
-            <Container>
-                <AchievementForm
-                    defaultValues={defaultForm}
-                    isLoading={isLoading}
-                    onSubmit={handleSubmit}
-                    onDirtyChange={setIsDirty}
-                />
-
-                <ConfirmationDialog {...leaveDialogProps} />
-            </Container>
-        </AppLayout>
+        <AdminPageShell
+            title={t('achievements-admin-add')}
+            section={{ href: ACHIEVEMENTS_ADMIN_HREF, title: t('achievements-admin-title') }}
+        >
+            <AchievementForm />
+        </AdminPageShell>
     )
 }
 
-export const getServerSideProps = wrapper.getServerSideProps(
-    (store) =>
-        async (context): Promise<GetServerSidePropsResult<AdminAchievementsCreateProps>> => {
-            const locale = (context.locale ?? 'ru') as ApiType.Locale
-            const translations = await loadPageTranslations()
-
-            store.dispatch(setLocale(locale))
-            hydrateAuthFromCookies(store, context.req.cookies)
-
-            if (!(await isAdminRequest(store))) {
-                return { notFound: true }
-            }
-
-            await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
-
-            return { props: { ...translations, locale } }
-        }
-)
+export const getServerSideProps = getAdminServerSideProps
 
 export default AdminAchievementsCreate

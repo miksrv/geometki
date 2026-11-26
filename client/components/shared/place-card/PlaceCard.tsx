@@ -19,8 +19,6 @@ import {
     removeMarkdown
 } from '@/utils/helpers'
 
-import { PlaceCardBookmark } from './PlaceCardBookmark'
-
 import styles from './styles.module.sass'
 
 export type PlaceCardVariant = 'tile' | 'row'
@@ -43,10 +41,12 @@ export interface PlaceCardProps {
     sizes?: string
     /** Row only: element before the thumbnail, e.g. a position number */
     leading?: React.ReactNode
-    /** Controls: on the right of a row, or in the top-right corner over a tile's cover instead of the bookmark (owner actions) */
+    /** Controls: on the right of a row, or in the top-right corner over a tile's cover (owner actions) */
     actions?: React.ReactNode
     /** Row only: block under the meta, e.g. an author's note */
     footer?: React.ReactNode
+    /** Tile only: a mark over the bottom-right corner of the cover, e.g. the game's points for the place (`GamePoints variant="cover"`) */
+    badge?: React.ReactNode
     className?: string
 }
 
@@ -56,8 +56,8 @@ export interface PlaceCardProps {
  * views, photos). The category is shown as its icon only (top-left over a tile's cover,
  * before the title in a row); its name is in the tooltip. Only the geometry changes between
  * `tile` and `row`: a tile is a 2:1 cover with the text under it on the page background, the
- * bookmark toggle over the top-right corner (or the owner `actions` in its place) and a
- * "you were here" badge for the visitor's visited places. A card is about the place, so it
+ * owner `actions`, when given, over the top-right corner and a "you were here" badge for the
+ * visitor's visited places. A card has no bookmark: one is made on the place page. A card is about the place, so it
  * never shows who added it or when.
  */
 export const PlaceCard: React.FC<PlaceCardProps> = ({
@@ -72,6 +72,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
     leading,
     actions,
     footer,
+    badge,
     className
 }) => {
     const { t } = useTranslation()
@@ -232,14 +233,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                     </span>
                 )}
 
-                <div className={styles.tileActions}>
-                    {actions ?? (
-                        <PlaceCardBookmark
-                            placeId={place.id}
-                            known={place.bookmarked}
-                        />
-                    )}
-                </div>
+                {actions && <div className={styles.tileActions}>{actions}</div>}
 
                 {place.visited && (
                     <span className={styles.tileVisited}>
@@ -247,6 +241,8 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                         {t('place-card-visited', { defaultValue: 'Вы были здесь' })}
                     </span>
                 )}
+
+                {badge && <span className={styles.tileBadge}>{badge}</span>}
             </div>
 
             <Heading className={styles.tileTitle}>

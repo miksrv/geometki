@@ -68,7 +68,7 @@ describe('UserAvatarGroup', () => {
 
         it('renders Trans component for counts over 99', () => {
             render(<UserAvatarGroup totalCount={150} />)
-            expect(screen.getByText(/more-count-travelers/)).toBeInTheDocument()
+            expect(screen.getByText(/more-count-explorers/)).toBeInTheDocument()
         })
 
         it('does not render +N badge when totalCount is undefined', () => {

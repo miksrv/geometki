@@ -1,0 +1,51 @@
+@use '../../../styles/mixins' as *
+
+// Season points (DESIGN.md → The game): the pin-with-a-check mark and a number, one look
+// wherever points are shown
+.points
+    display: inline-flex
+    align-items: center
+    gap: var(--space-1)
+    height: 24px
+    padding: 0 var(--space-2) 0 6px
+    border-radius: var(--border-radius)
+    font-size: var(--font-size-secondary)
+    font-weight: var(--font-weight-semibold)
+    font-variant-numeric: tabular-nums
+    line-height: 1
+    white-space: nowrap
+
+.icon
+    flex-shrink: 0
+    width: 16px
+    height: 16px
+    fill: currentColor
+
+.small
+    height: 20px
+    padding: 0 6px 0 var(--space-1)
+    font-size: var(--font-size-small)
+
+    .icon
+        width: 14px
+        height: 14px
+
+.tint
+    background: var(--color-main-background)
+    color: var(--color-main)
+
+// Over a photo: the same fixed dark pill as the counters over covers
+.cover
+    background: rgba(0, 0, 0, .62)
+    color: #fff
+
+// In a line of text or a table: no pill
+.plain
+    height: auto
+    padding: 0
+    border-radius: 0
+    color: var(--color-main)
+    font-size: inherit
+
+.srOnly
+    +visuallyHidden

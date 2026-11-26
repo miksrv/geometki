@@ -4,9 +4,10 @@ use CodeIgniter\Test\FeatureTestTrait;
 use Tests\Support\MySqlTestCase;
 
 /**
- * Place lists carry `bookmarked` and `visited` for a signed-in visitor, not only
- * GET /places: the place cards of search and collections show the bookmark and the
- * "You've been here" badge from them (PlaceFormatterLibrary::markVisitorState()).
+ * Place lists carry `visited` for a signed-in visitor, not only GET /places: the place cards
+ * of search and collections show the "You've been here" badge from it
+ * (PlaceFormatterLibrary::markVisitorState()). No `bookmarked`: a bookmark is made and seen on
+ * the place page, the cards have none.
  *
  * @internal
  */
@@ -52,9 +53,9 @@ final class VisitorPlaceStateTest extends MySqlTestCase
     }
 
     private const SIGNED_IN = [
-        'place1' => ['bookmarked' => true, 'visited' => false],
-        'place2' => ['bookmarked' => false, 'visited' => true],
-        'place3' => ['bookmarked' => false, 'visited' => false],
+        'place1' => ['bookmarked' => null, 'visited' => false],
+        'place2' => ['bookmarked' => null, 'visited' => true],
+        'place3' => ['bookmarked' => null, 'visited' => false],
     ];
 
     private const GUEST = [

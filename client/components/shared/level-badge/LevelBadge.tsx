@@ -1,4 +1,4 @@
-import React, { useId } from 'react'
+import React from 'react'
 import { useTooltip } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
@@ -17,8 +17,6 @@ interface LevelBadgeProps {
 // A pointy-top hexagon in a 100-wide box: height = width × 2/√3
 const VIEW_WIDTH = 100
 const VIEW_HEIGHT = 115.47
-const STROKE = 6
-const CORNER_RADIUS = 12
 
 /** The level in pixels never gets smaller than this, however small the badge */
 const MIN_FONT_PX = 9
@@ -53,19 +51,21 @@ export const hexagonPath = (inset: number, radius: number): string => {
     )
 }
 
-const OUTLINE = hexagonPath(STROKE / 2, CORNER_RADIUS)
+// The geometry of an award (`AwardBadge`): the rim is the whole hexagon, the field sits inside it
+const RIM = hexagonPath(0, 12)
+const FIELD = hexagonPath(9, 9)
 
 /**
- * A user's level as a hexagon in the colour of its tier: a soft vertical gradient, a darker
- * rim and the number with a rim-coloured outline, so it reads on the light tiers (grey, gold)
- * as well as on the dark ones. Drawn in SVG, so it is crisp and proportional at any size.
+ * A user's level: a hexagon of the same make as an award and a season (DESIGN.md → Marks) —
+ * the rim, a flat field in the colour of the level's tier and the number on it, no gloss and no
+ * outline. A hexagon is what a person has become or earned; what is counted (geopoints,
+ * reputation) is a pill. Drawn in SVG, so it is crisp and proportional at any size.
  */
 export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, size = 32, showTooltip }) => {
     const { t } = useTranslation()
-    const gradientId = `level-badge-${useId().replace(/[^a-zA-Z0-9-]/g, '')}`
 
     const value = level ?? 1
-    const { fill, border } = levelColors(level)
+    const { fill, border, ink } = levelColors(level)
     const label = t('level_num', { defaultValue: 'Уровень {{level}}', level: value })
     // The tooltip says what the badge is already named: not linked as a description, or a
     // screen reader would read the level twice
@@ -90,36 +90,13 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, size = 32, showTo
                 role={'img'}
                 aria-label={label}
             >
-                <defs>
-                    <linearGradient
-                        id={gradientId}
-                        x1={'0'}
-                        y1={'0'}
-                        x2={'0'}
-                        y2={'1'}
-                    >
-                        <stop
-                            offset={'0'}
-                            stopColor={'#ffffff'}
-                            stopOpacity={0.35}
-                        />
-                        <stop
-                            offset={'0.55'}
-                            stopColor={'#ffffff'}
-                            stopOpacity={0}
-                        />
-                    </linearGradient>
-                </defs>
                 <path
-                    d={OUTLINE}
-                    fill={fill}
-                    stroke={border}
-                    strokeWidth={STROKE}
-                    strokeLinejoin={'round'}
+                    d={RIM}
+                    style={{ fill: border }}
                 />
                 <path
-                    d={OUTLINE}
-                    fill={`url(#${gradientId})`}
+                    d={FIELD}
+                    style={{ fill }}
                 />
                 <text
                     className={styles.level}
@@ -128,8 +105,7 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({ level, size = 32, showTo
                     dy={'0.36em'}
                     textAnchor={'middle'}
                     fontSize={fontSize}
-                    stroke={border}
-                    strokeWidth={fontSize * 0.14}
+                    style={{ fill: ink }}
                 >
                     {value}
                 </text>

@@ -6,20 +6,20 @@ import { ApiModel } from '@/api'
 
 import { UserContribution } from './UserContribution'
 
-jest.mock('simple-react-ui-kit', () => ({ Icon: () => null }))
-
-jest.mock('next-i18next/pages', () => ({
-    useTranslation: () => ({ t: (key: string) => key })
-}))
-
-jest.mock('@/components/shared', () => ({
+jest.mock('simple-react-ui-kit', () => ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Section: ({ title, children }: any) => (
+    Container: ({ title, children }: any) => (
         <section>
             <h3>{title}</h3>
             {children}
         </section>
-    )
+    ),
+    Icon: () => null,
+    cn: (...args: unknown[]) => args.filter(Boolean).join(' ')
+}))
+
+jest.mock('next-i18next/pages', () => ({
+    useTranslation: () => ({ t: (key: string) => key })
 }))
 
 const statistic = {

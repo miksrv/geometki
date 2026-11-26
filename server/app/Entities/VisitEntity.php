@@ -9,6 +9,8 @@ class VisitEntity extends Entity {
         'user_id'    => null,
         'place_id'   => null,
         'visited_at' => null,
+        'confirmed'  => null,
+        'hidden'     => 0,
     ];
 
     protected $dates = [

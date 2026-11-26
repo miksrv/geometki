@@ -78,6 +78,18 @@ class SessionLibrary {
     }
 
     /**
+     * What an administrator's endpoint answers the visitor: 401 for a guest, 403 for a member,
+     * null for an administrator.
+     */
+    public function adminStatus(): ?int {
+        if (!$this->isAuth || !$this->user) {
+            return 401;
+        }
+
+        return $this->user->role === 'admin' ? null : 403;
+    }
+
+    /**
      * @throws ReflectionException
      */
     public function authorization(UserEntity $user): static {

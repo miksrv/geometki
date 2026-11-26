@@ -17,7 +17,32 @@ jest.mock('cookies-next', () => ({ deleteCookie: jest.fn(), getCookie: jest.fn()
 
 const mockPost = jest.fn()
 const mockDelete = jest.fn()
-let mockMe: { count: number; items: Array<{ id: string; visitedAt: string }>; repeatDays?: number } | undefined
+const mockPosition = jest.fn()
+let mockMe:
+    | {
+          count: number
+          items: Array<{ id: string; visitedAt: string; confirmed?: string }>
+          repeatDays?: number
+          game?: { earned: number | null; points: number }
+      }
+    | undefined
+
+jest.mock('@/hooks/usePreciseLocation', () => ({
+    __esModule: true,
+    default: () => ({ loading: false, request: mockPosition })
+}))
+
+// Opened by a state change only: no need for the kit's dialog here
+jest.mock('next/dynamic', () => () => {
+    const Dialog = ({ message, confirmLabel, onConfirm }: any) => (
+        <div role={'dialog'}>
+            {message}
+            <button onClick={onConfirm}>{confirmLabel}</button>
+        </div>
+    )
+    Dialog.displayName = 'ConfirmationDialog'
+    return Dialog
+})
 
 jest.mock('@/api', () => ({
     API: {
@@ -53,6 +78,7 @@ describe('WasHereButton', () => {
     beforeEach(() => {
         mockPost.mockReset()
         mockDelete.mockReset()
+        mockPosition.mockReset()
         mockMe = undefined
         localStorage.clear()
         sessionStorage.clear()
@@ -182,6 +208,105 @@ describe('WasHereButton', () => {
         expect(store.getState().notification.list[0].message).toBe('Визит отменён')
     })
 
+    it('without a season asks for the position too: on the spot the visit is confirmed, without geopoints', async () => {
+        mockPosition.mockResolvedValue({ accuracy: 10, lat: 51.77, lon: 55.1 })
+        mockPost
+            .mockReturnValueOnce({ unwrap: () => Promise.resolve({ id: 'v1', isNew: true, ordinal: 1 }) })
+            .mockReturnValueOnce({
+                unwrap: () =>
+                    Promise.resolve({ game: { confirmed: true, points: 0 }, id: 'v1', isNew: false, ordinal: 1 })
+            })
+        const store = renderButton(true)
+
+        fireEvent.click(screen.getByRole('button'))
+
+        await waitFor(() => expect(mockPost).toHaveBeenCalledTimes(2))
+        expect(mockPosition).toHaveBeenCalledWith({ quiet: true })
+        expect(mockPost).toHaveBeenLastCalledWith(expect.objectContaining({ lat: 51.77, lon: 55.1, place: 'p1' }))
+        await waitFor(() =>
+            expect(store.getState().notification.list.map((item) => item.message)).toStrictEqual([
+                'Визит №{{count}} в это место. visit-confirmed'
+            ])
+        )
+    })
+
+    it('in the game checks in at once and does not wait for the position: it comes later and counts the visit', async () => {
+        mockMe = { count: 0, game: { earned: null, points: 30 }, items: [] }
+
+        let found: (position: unknown) => void = () => undefined
+        mockPosition.mockReturnValue(new Promise((resolve) => (found = resolve)))
+        mockPost
+            .mockReturnValueOnce({
+                unwrap: () =>
+                    Promise.resolve({ game: { confirmed: false, points: 0 }, id: 'v1', isNew: true, ordinal: 1 })
+            })
+            .mockReturnValueOnce({
+                unwrap: () =>
+                    Promise.resolve({ game: { confirmed: true, points: 30 }, id: 'v1', isNew: false, ordinal: 1 })
+            })
+        const store = renderButton(true)
+
+        fireEvent.click(screen.getByRole('button'))
+
+        // The visit is made (and its questions asked) while the browser still looks for the position
+        await waitFor(() => expect(store.getState().notification.list).toHaveLength(1))
+        expect(mockPosition).toHaveBeenCalledWith({ quiet: true })
+        expect(mockPost).toHaveBeenCalledTimes(1)
+        expect(mockPost).toHaveBeenCalledWith({ place: 'p1', visitedAt: expect.any(String) })
+
+        await act(async () => found({ accuracy: 12, lat: 51.75, lon: 55.1 }))
+
+        // One tap, one toast: the confirmation extends the check-in's line
+        await waitFor(() => expect(store.getState().notification.list[0].message).toContain('game-points-plus'))
+        expect(store.getState().notification.list).toHaveLength(1)
+        expect(mockPost).toHaveBeenLastCalledWith({
+            accuracy: 12,
+            lat: 51.75,
+            lon: 55.1,
+            place: 'p1',
+            visitedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/)
+        })
+        expect(store.getState().notification.list[0].message).toMatch(/^Визит.*game-place-confirmed: game-points-plus$/)
+    })
+
+    it('in the game is a plain visit without a position: no error', async () => {
+        mockMe = { count: 0, game: { earned: null, points: 30 }, items: [] }
+        mockPosition.mockResolvedValue(undefined)
+        mockPost.mockReturnValue({
+            unwrap: () => Promise.resolve({ game: { confirmed: false, points: 0 }, id: 'v1', isNew: true, ordinal: 1 })
+        })
+        const store = renderButton(true)
+
+        fireEvent.click(screen.getByRole('button'))
+
+        await waitFor(() => expect(store.getState().notification.list).toHaveLength(1))
+        expect(mockPost).toHaveBeenCalledTimes(1)
+        expect(mockPost).toHaveBeenCalledTimes(1)
+        expect(mockPost).toHaveBeenCalledWith({ place: 'p1', visitedAt: expect.any(String) })
+        expect(store.getState().notification.list[0]).toMatchObject({ type: 'success' })
+        expect(store.getState().notification.list[0].message).not.toContain('game-points-plus')
+    })
+
+    it('asks before cancelling a visit that brought geopoints', async () => {
+        mockMe = {
+            count: 1,
+            game: { earned: 30, points: 30 },
+            items: [{ confirmed: 'geo', id: 'v1', visitedAt: localPlainDate(0) }],
+            repeatDays: 7
+        }
+        mockDelete.mockReturnValue({ unwrap: () => Promise.resolve() })
+        renderButton(true)
+
+        fireEvent.click(screen.getByRole('button'))
+
+        expect(mockDelete).not.toHaveBeenCalled()
+        expect(screen.getByRole('dialog')).toHaveTextContent('visit-cancel-game-confirm')
+
+        fireEvent.click(screen.getByRole('button', { name: 'visit-cancel-game-button' }))
+
+        await waitFor(() => expect(mockDelete).toHaveBeenCalledWith({ id: 'v1', place: 'p1' }))
+    })
+
     it('sends one request when the place has two buttons tapped in a row', async () => {
         let resolve: (value: unknown) => void = () => undefined
         mockPost.mockReturnValue({ unwrap: () => new Promise((done) => (resolve = done)) })
@@ -238,6 +363,13 @@ describe('WasHereButton', () => {
             note: undefined,
             title: 'visit-already-this-week'
         })
+        // The game: a check-in on the spot tells the geopoints; the visit of the week it counted says so
+        expect(
+            checkInMessage({ firstThisYear: false, game: { confirmed: true, points: 30 }, isNew: true, ordinal: 3 }, t)
+        ).toStrictEqual({ note: 'game-points-plus:30', title: 'visit-result-title:3' })
+        expect(
+            checkInMessage({ firstThisYear: false, game: { confirmed: true, points: 30 }, isNew: false, ordinal: 1 }, t)
+        ).toStrictEqual({ note: 'game-points-plus:30', title: 'game-place-confirmed' })
     })
 
     it('has no pressed state: it is an action, not a toggle', () => {

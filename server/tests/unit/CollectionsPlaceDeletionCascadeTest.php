@@ -73,14 +73,14 @@ final class CollectionsPlaceDeletionCascadeTest extends CIUnitTestCase
      * minimum place count after a deletion must turn an indexable collection
      * non-indexable again, exactly like App\Libraries\CollectionIndexability.
      */
-    private function isIndexable(int $placesCount, bool $hidden): bool
+    private function isIndexable(int $placesCount): bool
     {
-        return !$hidden && $placesCount >= COLLECTION_INDEX_MIN_PLACES;
+        return $placesCount >= COLLECTION_INDEX_MIN_PLACES;
     }
 
     public function testDroppingBelowMinPlacesTurnsCollectionNonIndexable(): void
     {
-        $this->assertTrue($this->isIndexable(COLLECTION_INDEX_MIN_PLACES, false));
-        $this->assertFalse($this->isIndexable(COLLECTION_INDEX_MIN_PLACES - 1, false));
+        $this->assertTrue($this->isIndexable(COLLECTION_INDEX_MIN_PLACES));
+        $this->assertFalse($this->isIndexable(COLLECTION_INDEX_MIN_PLACES - 1));
     }
 }

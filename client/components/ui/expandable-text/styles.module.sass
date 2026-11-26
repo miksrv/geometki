@@ -4,8 +4,10 @@
     position: relative
     min-width: 0
 
+// The type comes from the parent: the global `p` size (14px) must not override it
 .text
     margin: 0
+    font-size: inherit
 
 // Before the first measurement (and without JS): plain CSS clamp, no control
 .clamped

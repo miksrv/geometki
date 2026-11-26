@@ -108,14 +108,14 @@ describe('UserCard', () => {
     it('says so when the person has no places', () => {
         render(<UserCard user={user({ places: [], statistic: { ...user().statistic!, place: 0 } })} />)
 
-        expect(screen.getByText('Пока без мест')).toBeInTheDocument()
+        expect(screen.getByText('Открытий пока нет')).toBeInTheDocument()
     })
 
     it('shows no strip when the list did not ask for the places', () => {
         render(<UserCard user={user()} />)
 
         expect(screen.queryByRole('list')).not.toBeInTheDocument()
-        expect(screen.queryByText('Пока без мест')).not.toBeInTheDocument()
+        expect(screen.queryByText('Открытий пока нет')).not.toBeInTheDocument()
     })
 
     it('says the person is online after a request in the last minutes', () => {

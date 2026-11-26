@@ -117,11 +117,13 @@ trait QueueRows
 
     /**
      * Messages sent in the last $minutes plus the ones runs hold right now (for
-     * the hosting limits); only of $type when given.
+     * the hosting limits); only of $type (one type, or a list of them) when given.
+     *
+     * @param string|string[]|null $type
      */
-    public function countSentSince(int $minutes, ?string $type = null): int
+    public function countSentSince(int $minutes, string|array|null $type = null): int
     {
-        $types = $type !== null ? $this->typeCondition([$type], false) : '';
+        $types = $type !== null ? $this->typeCondition((array) $type, false) : '';
 
         return (int) $this->db->query(
             "SELECT COUNT(*) AS cnt FROM `{$this->table}`

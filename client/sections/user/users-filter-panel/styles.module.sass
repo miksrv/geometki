@@ -16,5 +16,10 @@
     @media only screen and (max-width: variables.$mobileMaxWidth)
         flex-basis: auto
 
-.tabs
-    min-width: 0
+// Phones: the sort field under the search, across the row
+.sort
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        width: 100%
+
+        & > span
+            width: 100% !important

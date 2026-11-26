@@ -1,0 +1,1 @@
+export { GamePastSeasons } from './GamePastSeasons'

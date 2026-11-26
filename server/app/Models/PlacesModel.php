@@ -189,7 +189,8 @@ class PlacesModel extends ApplicationBaseModel
 
     /**
      * Constrain the query to places visited by the given user: a place once, however many
-     * times they checked in (visits are a log).
+     * times they checked in (visits are a log). The hidden visits — the points of a riddle
+     * quest not walked to the end yet, its answers — are left out.
      *
      * @param string $userId
      * @return static
@@ -197,7 +198,7 @@ class PlacesModel extends ApplicationBaseModel
     public function filterByVisitedUser(string $userId): static
     {
         return $this->where(
-            'EXISTS (SELECT 1 FROM users_visited_places uvp WHERE uvp.place_id = places.id AND uvp.user_id = '
+            'EXISTS (SELECT 1 FROM users_visited_places uvp WHERE uvp.place_id = places.id AND uvp.hidden = 0 AND uvp.user_id = '
             . $this->db->escape($userId) . ')',
             null,
             false

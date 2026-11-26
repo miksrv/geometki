@@ -51,6 +51,7 @@ export const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: 
     const { data: liveCollection } = API.useCollectionsGetItemQuery(id, { skip: !id })
     const collection = liveCollection ?? initialCollection
     const userId = useAppSelector((state) => state.auth.user?.id)
+    const isAdmin = useAppSelector((state) => state.auth.user?.role === 'admin')
 
     const [reorderPlaces] = API.useCollectionsReorderPlacesMutation()
     const [removePlace] = API.useCollectionsRemovePlaceMutation()
@@ -73,7 +74,8 @@ export const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: 
     // no hreflang pair.
     const ruPageUrl = `${siteBase}${path}`
     const canonicalPageUrl = i18n.language === 'en' ? ruPageUrl : pageUrl
-    const isOwner = !!userId && userId === collection?.author.id
+    // The author and any administrator manage the collection: the API lets both
+    const canManage = (!!userId && userId === collection?.author.id) || isAdmin
 
     // Place edits (order, removal) are saved as they happen; only the description draft can be lost
     const descriptionChanged = editMode && descriptionDraft.trim() !== (collection?.description ?? '').trim()
@@ -83,10 +85,10 @@ export const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: 
         dialogProps: leaveDialogProps
     } = useUnsavedChangesGuard(descriptionChanged)
 
-    // Leaving the collection (or losing ownership) always leaves edit mode
+    // Leaving the collection (or losing the right to manage it) always leaves edit mode
     useEffect(() => {
         setEditMode(false)
-    }, [collection?.id, isOwner])
+    }, [collection?.id, canManage])
 
     const notifyIfError = (result: { error?: unknown }) => {
         if ('error' in result && result.error) {
@@ -271,7 +273,7 @@ export const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: 
 
             <CollectionHeader
                 collection={collection}
-                isOwner={isOwner}
+                canManage={canManage}
                 editMode={editMode}
                 saving={descriptionSaving}
                 onEdit={handleEdit}
@@ -297,14 +299,14 @@ export const CollectionPage: NextPage<CollectionPageProps> = ({ id, collection: 
                 <CollectionPlacesList
                     places={collection?.places ?? []}
                     editable={editMode}
-                    canAdd={isOwner}
+                    canAdd={canManage}
                     onReorder={handleReorder}
                     onRemove={handleRemove}
                     onAddPlaces={() => setAddOpen(true)}
                 />
             </div>
 
-            {isOwner && collection && (
+            {canManage && collection && (
                 <>
                     <AddPlacesDialog
                         collection={collection}

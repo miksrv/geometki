@@ -379,7 +379,9 @@ final class FeedAggregatorTest extends CIUnitTestCase
     public function testCalendarTakesTheViewersTimeZone(): void
     {
         $this->assertSame('America/Los_Angeles', Feed::timeZone('America/Los_Angeles')->getName());
-        $this->assertSame('Europe/Kiev', Feed::timeZone('Europe/Kiev')->getName());
+        // The old name of a renamed zone, which browsers still report: itself where the host's
+        // time zone database keeps the old names, the new one where it does not
+        $this->assertContains(Feed::timeZone('Europe/Kiev')->getName(), ['Europe/Kiev', 'Europe/Kyiv']);
     }
 
     public function testCalendarFallsBackToTheSiteTimeZone(): void

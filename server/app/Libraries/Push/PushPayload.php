@@ -87,7 +87,8 @@ class PushPayload
         return self::payload($locale, [
             'title' => MailText::get($locale, 'achievementTitle', [], 'Push'),
             'body'  => MailText::get($locale, 'achievementBody', ['title' => $title], 'Push'),
-            'url'   => MailUrls::user($locale, $userId, 'achievements'),
+            // The awards are in the head of the profile
+            'url'   => MailUrls::user($locale, $userId),
             'icon'  => !empty($meta['image']) ? MailUrls::upload($meta['image']) : null,
             // Two achievements at once are two notifications, not one replacing the other
             'tag'   => 'achievement-' . substr(md5($title), 0, 8),

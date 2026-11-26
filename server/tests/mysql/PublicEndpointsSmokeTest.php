@@ -74,7 +74,7 @@ final class PublicEndpointsSmokeTest extends MySqlTestCase
             'locations/resolve?slug=bashkortostan&type=region',
             'locations/region/1/categories', 'locations/region/1/children', 'locations/region/1/summary',
             'achievements', 'achievements/progress',
-            'bookmarks?place=place1', 'bookmarks/places',
+            'bookmarks?place=place1',
             'visits?place=place1', 'visits?user=user1', 'visits/places?user=user1', 'visits/me?place=place1',
             'collections', 'collections?user=user1', 'collections/coll1', 'collections/coll1/recommended', 'collections/membership?placeId=place1',
             'sitemap',

@@ -64,6 +64,8 @@ final class MailUnsubscribeTest extends MySqlTestCase
     public function testABrokenOrForgedTokenIsRefused(): void
     {
         $this->get('mail/unsubscribe', ['token' => 'broken'])->assertStatus(400);
+        // The links of emails sent before tokens (an email id) are not read any more
+        $this->get('mail/unsubscribe', ['mail' => 'anyMailId', 'token' => ''])->assertStatus(400);
 
         $forged = (new UnsubscribeToken('another-secret-another-secret-another'))->create('user1', 'digest');
         $this->withBodyFormat('json')->post('mail/unsubscribe', ['token' => $forged])->assertStatus(400);

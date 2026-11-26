@@ -9,3 +9,4 @@ export {
     FilterToolbarSpacer
 } from './FilterPanel'
 export { FiltersSheet } from './FiltersSheet'
+export { SortPopout, type SortPopoutPreset } from './SortPopout'

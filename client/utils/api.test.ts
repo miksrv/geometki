@@ -1,4 +1,4 @@
-import { getErrorMessage, isApiValidationErrors } from './api'
+import { getErrorMessage, isApiRefusal, isApiValidationErrors } from './api'
 
 describe('isApiValidationErrors', () => {
     it('returns true for an object with a messages field that is an object', () => {
@@ -28,6 +28,14 @@ describe('isApiValidationErrors', () => {
 })
 
 describe('getErrorMessage', () => {
+    it('takes the HTML page of a gateway for no message', () => {
+        const page = '<html><head><title>502 Bad Gateway</title></head><body></body></html>'
+
+        expect(getErrorMessage(page)).toBeUndefined()
+        expect(getErrorMessage({ data: page, status: 'PARSING_ERROR' })).toBeUndefined()
+        expect(getErrorMessage('Too far from the place')).toBe('Too far from the place')
+    })
+
     it('returns undefined when error is falsy (null)', () => {
         expect(getErrorMessage(null)).toBeUndefined()
     })
@@ -69,5 +77,23 @@ describe('getErrorMessage', () => {
 
     it('handles empty object gracefully', () => {
         expect(getErrorMessage({})).toBeUndefined()
+    })
+
+    it('extracts error from an answer already unwrapped by transformErrorResponse', () => {
+        expect(getErrorMessage({ error: 400, messages: { error: 'До точки квеста 350 м' }, status: 400 })).toBe(
+            'До точки квеста 350 м'
+        )
+    })
+})
+
+describe('isApiRefusal', () => {
+    it('is a 4xx answer with words', () => {
+        expect(isApiRefusal({ error: 400, messages: { error: 'До точки квеста 350 м' }, status: 400 })).toBe(true)
+    })
+
+    it('is not a server error, a network error or an answer without words', () => {
+        expect(isApiRefusal({ error: 500, messages: { error: 'Ошибка' }, status: 500 })).toBe(false)
+        expect(isApiRefusal(undefined)).toBe(false)
+        expect(isApiRefusal({ messages: { lat: 'Неверно' }, status: 400 })).toBe(false)
     })
 })

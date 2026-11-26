@@ -1,0 +1,56 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+
+// The whole form at once, its cards one under another (ADMIN-UI.md → Forms: no menu of the parts)
+.form
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+    min-width: 0
+
+.fields
+    display: grid
+    grid-template-columns: minmax(0, 1fr)
+    gap: var(--space-4)
+
+.row
+    display: grid
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+    gap: var(--space-3)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+
+// One slot, as wide as a slot of the season's pictures
+.slot
+    width: 200px
+    max-width: 100%
+    margin: 0
+    padding: 0
+    list-style: none
+
+.rules
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+
+// A rule: the metric, the value, the category, remove; stacked on phones
+.rule
+    display: grid
+    grid-template-columns: minmax(0, 2fr) 120px minmax(0, 2fr) auto
+    align-items: end
+    gap: var(--space-3)
+    padding: var(--space-3)
+    border-radius: var(--border-radius)
+    background: var(--surface-2)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+
+.removeRule
+    justify-self: end
+
+.error
+    +type.secondary
+    margin: 0
+    color: var(--color-red)

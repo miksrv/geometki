@@ -1,24 +1,47 @@
 import React from 'react'
-import { Icon } from 'simple-react-ui-kit'
 
 import Image from 'next/image'
 
 import { IMG_HOST } from '@/config/env'
 
+import { AwardBadge, AwardField } from './AwardBadge'
+
 interface AchievementIconProps {
     image?: string | null
     alt?: string
     size?: number
+    /** For an award without a picture: its tier and group draw one (`AwardBadge`) */
+    tier?: string
+    category?: AwardField
+    group?: string
+    /** Without `image`: a photo cut to the hexagon in place of the drawn symbol (`AwardBadge`) */
+    photo?: string
     className?: string
 }
 
-export const AchievementIcon: React.FC<AchievementIconProps> = ({ image, alt = '', size = 36, className }) => {
+/**
+ * The picture of an award: its own drawn one, or — until it is ready — a badge in the same
+ * format drawn from the award's tier and group (a season's warm or cold).
+ */
+export const AchievementIcon: React.FC<AchievementIconProps> = ({
+    image,
+    alt = '',
+    size = 36,
+    tier,
+    category,
+    group,
+    photo,
+    className
+}) => {
     if (!image) {
         return (
-            <Icon
-                name={'Award'}
+            <AwardBadge
+                size={size}
+                tier={tier}
+                category={category}
+                group={group}
+                photo={photo}
                 className={className}
-                style={{ width: size, height: size }}
             />
         )
     }
@@ -32,7 +55,8 @@ export const AchievementIcon: React.FC<AchievementIconProps> = ({ image, alt = '
         <Image
             src={src}
             alt={alt}
-            width={size / 1.414}
+            // A hexagon, point up, as every award: as wide as the drawn badge
+            width={Math.round(size * 0.866)}
             height={size}
             unoptimized
             className={className}

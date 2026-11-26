@@ -1,3 +1,5 @@
+import { ApiModel } from '@/api'
+
 export enum MapObjectsTypeEnum {
     PHOTOS = 'Photos',
     PLACES = 'Places'
@@ -17,6 +19,14 @@ export enum MapLayersEnum {
     YANDEX_SAT = 'YandexSat'
 }
 
+// The site's own objects on the map page, all on by default; the order of the checkboxes in the layers panel
+export enum MapObjectLayersEnum {
+    UNEXPLORED = 'Unexplored',
+    PLACES = 'Places',
+    QUESTS = 'Quests'
+}
+
+// The order of the checkboxes in the layers panel
 export enum MapAdditionalLayersEnum {
     HISTORICAL_PHOTOS = 'HistoricalPhotos',
     WIKIMEDIA_COMMONS = 'WikimediaCommons',
@@ -43,4 +53,27 @@ export interface MarkerPinData {
     lon: number
     type: MarkerPinType
     label?: string
+}
+
+/** A point of a quest of the game on a map (`QuestLayer`): only the points the walker has opened */
+/** The search zone of a riddle quest on a map: a dashed circle */
+export interface QuestZoneMark {
+    id: string
+    lat: number
+    lon: number
+    /** Metres */
+    radius: number
+}
+
+export interface QuestPointMark {
+    id: string
+    lat: number
+    lon: number
+    /** The number of the point in the quest */
+    label: string
+    state: 'done' | 'current' | 'open'
+    /** The place's name, in the hint */
+    title?: string
+    /** The place's category: a confirmed point is drawn as the site's mark of it */
+    category?: ApiModel.Categories
 }

@@ -34,7 +34,8 @@ $appBarOffset: calc(#{$appBarHeight} + env(safe-area-inset-top, 0px))
         padding: $appBarOffset 16px 20px
         display: flex
         flex-direction: column
-        gap: 15px
+        // Between the page header and the content, the content and the pagination
+        gap: var(--space-4)
         flex: 1
 
         // The room for the bottom navigation is the footer's padding (it comes after main);

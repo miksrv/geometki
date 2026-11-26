@@ -69,12 +69,16 @@ class PhotosTemporary extends ResourceController
             $photoLibrary = new PhotoLibrary();
             $processed    = $photoLibrary->processFile(UPLOAD_TEMPORARY . $newName, UPLOAD_TEMPORARY);
 
-            // GD drops the EXIF data, so the photo's GPS position is kept next to the file
-            // until the place is created (see Places::savePhotos)
-            if ($processed->coordinates) {
+            // GD drops the EXIF data, so the photo's GPS position and shot moment are kept next
+            // to the file until the place is created (see Places::savePhotos)
+            if ($processed->coordinates || $processed->takenAt) {
                 file_put_contents(
                     UPLOAD_TEMPORARY . $processed->name . '.json',
-                    json_encode($processed->coordinates)
+                    json_encode([
+                        'lat'     => $processed->coordinates?->lat,
+                        'lon'     => $processed->coordinates?->lon,
+                        'takenAt' => $processed->takenAt,
+                    ])
                 );
             }
 

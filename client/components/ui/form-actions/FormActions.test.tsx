@@ -81,6 +81,22 @@ describe('FormActions', () => {
         expect(screen.getByRole('button', { name: 'save' })).toBeDisabled()
     })
 
+    it('turns every button off while the form is not ready, without a spinner', () => {
+        render(
+            <FormActions
+                dirty={true}
+                disabled={true}
+                saveDisabled={false}
+                onCancel={jest.fn()}
+                onDelete={jest.fn()}
+            />
+        )
+
+        expect(screen.getByRole('button', { name: 'save' })).toBeDisabled()
+        expect(screen.getByRole('button', { name: 'cancel' })).toBeDisabled()
+        expect(screen.getByRole('button', { name: 'delete' })).toBeDisabled()
+    })
+
     it('takes its own labels and reports the clicks', () => {
         const onSave = jest.fn()
         const onCancel = jest.fn()
@@ -101,6 +117,29 @@ describe('FormActions', () => {
         expect(screen.getByText('Место не сохранено')).toBeInTheDocument()
         expect(onSave).toHaveBeenCalledTimes(1)
         expect(onCancel).toHaveBeenCalledTimes(1)
+    })
+
+    it('offers the destructive action in its place, never on the floating bar', () => {
+        const onDelete = jest.fn()
+        const { rerender } = render(
+            <FormActions
+                deleteLabel={'Удалить квест'}
+                onDelete={onDelete}
+            />
+        )
+
+        fireEvent.click(screen.getByRole('button', { name: 'Удалить квест' }))
+        expect(onDelete).toHaveBeenCalledTimes(1)
+
+        placeBelow()
+        rerender(
+            <FormActions
+                dirty={true}
+                deleteLabel={'Удалить квест'}
+                onDelete={onDelete}
+            />
+        )
+        expect(screen.queryByRole('button', { name: 'Удалить квест' })).not.toBeInTheDocument()
     })
 
     it('floats while dirty and its place is below the screen', () => {

@@ -41,8 +41,7 @@ export const CreateCollectionButton: React.FC<CreateCollectionButtonProps> = ({
                 {...props}
                 mode={mode}
                 size={size}
-                icon={'Layers'}
-                label={t('collections_create-button', { defaultValue: 'Создать коллекцию' })}
+                label={t('create')}
                 onClick={handleClick}
             />
 

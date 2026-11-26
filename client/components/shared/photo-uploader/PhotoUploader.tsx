@@ -114,6 +114,18 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                 if (placeIdRef.current === itemPlaceId) {
                     onUploadPhoto?.(photo)
                 }
+
+                // The game: the photo was shot here within the season and confirmed a visit
+                if (photo.game && photo.game.points > 0) {
+                    void dispatch(
+                        Notify({
+                            id: 'uploadPhotoGame',
+                            title: '',
+                            message: `${t('game-photo-confirmed')}: ${t('game-points-plus', { count: photo.game.points })}`,
+                            type: 'success'
+                        })
+                    )
+                }
             })
             .catch((error) => notifyError(getErrorMessage(error) ?? ''))
             .finally(() => {

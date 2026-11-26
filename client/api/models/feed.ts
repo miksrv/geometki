@@ -27,6 +27,8 @@ export type FeedStoryType = (typeof FeedStoryTypes)[keyof typeof FeedStoryTypes]
 /** A place of a multi-place story; `value` is the author's score in a rating story */
 export type FeedPlace = PlaceListItem & {
     value?: number
+    /** A visit story, the game: the geopoints this visit brought — it counted the place in a season */
+    points?: number
 }
 
 export type FeedCollection = Pick<Collection, 'id' | 'slug' | 'title' | 'covers' | 'placesCount'>
@@ -36,6 +38,8 @@ export type FeedAchievement = {
     title: string
     image?: string | null
     tier: AchievementTier
+    /** The award's group: an award without a picture is drawn from it */
+    group?: string
 }
 
 /**

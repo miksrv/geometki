@@ -1,0 +1,1 @@
+export { GameAwards } from './GameAwards'

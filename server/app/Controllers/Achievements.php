@@ -2,11 +2,16 @@
 
 namespace App\Controllers;
 
+use App\Controllers\Concerns\AdminOnly;
 use App\Entities\AchievementEntity;
+use App\Libraries\AdminImageLibrary;
+use App\Libraries\AvatarLibrary;
 use App\Libraries\AchievementsLibrary;
 use App\Libraries\SessionLibrary;
 use App\Models\AchievementsModel;
 use App\Models\UsersAchievementsModel;
+use App\Models\UsersModel;
+use Config\Database;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use ReflectionException;
@@ -21,6 +26,8 @@ use ReflectionException;
  */
 class Achievements extends ResourceController
 {
+    use AdminOnly;
+
     private SessionLibrary $session;
 
     public function __construct()
@@ -32,23 +39,19 @@ class Achievements extends ResourceController
      * Return a filterable list of active achievements with optional auth context.
      *
      * GET /achievements
-     * Optional query params: category, tier, type.
+     * Optional query params: tier, type.
      *
      * @return ResponseInterface
      */
     public function index(): ResponseInterface
     {
         $locale   = $this->request->getLocale();
-        $category = $this->request->getGet('category');
         $tier     = $this->request->getGet('tier');
         $type     = $this->request->getGet('type');
 
         $achievementsModel = new AchievementsModel();
         $query             = $achievementsModel->where('is_active', 1)->orderBy('sort_order', 'ASC');
 
-        if ($category) {
-            $query->where('category', $category);
-        }
         if ($tier) {
             $query->where('tier', $tier);
         }
@@ -76,8 +79,13 @@ class Achievements extends ResourceController
         }
 
         $result = [];
+        $now    = date('Y-m-d H:i:s');
 
         foreach ($achievements as $achievement) {
+            if ($this->isHidden($achievement, isset($earnedMap[$achievement->id]), $now)) {
+                continue;
+            }
+
             $rules = is_string($achievement->rules)
                 ? json_decode($achievement->rules, true)
                 : $achievement->rules;
@@ -87,7 +95,6 @@ class Achievements extends ResourceController
                 'group_slug'   => $achievement->group_slug,
                 'type'         => $achievement->type,
                 'tier'         => $achievement->tier,
-                'category'     => $achievement->category,
                 'title'        => $achievement->{"title_$locale"} ?? $achievement->title_en,
                 'description'  => $achievement->{"description_$locale"} ?? $achievement->description_en,
                 'image'        => $achievement->image,
@@ -140,7 +147,6 @@ class Achievements extends ResourceController
             'group_slug'   => $achievement->group_slug,
             'type'         => $achievement->type,
             'tier'         => $achievement->tier,
-            'category'     => $achievement->category,
             'title'        => $achievement->{"title_$locale"} ?? $achievement->title_en,
             'description'  => $achievement->{"description_$locale"} ?? $achievement->description_en,
             'image'        => $achievement->image,
@@ -172,63 +178,115 @@ class Achievements extends ResourceController
     }
 
     /**
-     * Return all achievements annotated with a specific user's earned status and progress.
+     * Every achievement a profile shows with that user's `earned_at`: the cheap list of the
+     * hexagons — no progress, nothing is counted (one query of the earned ones). The progress of
+     * one achievement comes with its card: `userAchievementGroup()`.
      *
      * GET /users/:id/achievements — public endpoint.
-     *
-     * @param string $userId The target user's ID.
-     *
-     * @return ResponseInterface
      */
     public function userAchievements(string $userId): ResponseInterface
     {
-        $locale            = $this->request->getLocale();
-        $achievementsModel = new AchievementsModel();
+        $locale = $this->request->getLocale();
+        $earned = $this->earnedMap($userId);
+        $now    = date('Y-m-d H:i:s');
+        $result = [];
 
-        $achievements = $achievementsModel
+        foreach ((new AchievementsModel())->where('is_active', 1)->orderBy('sort_order', 'ASC')->findAll() as $achievement) {
+            if (!$this->isHidden($achievement, isset($earned[$achievement->id]), $now)) {
+                $result[] = $this->userItem($achievement, $locale, $earned[$achievement->id] ?? null);
+            }
+        }
+
+        return $this->respond(['data' => $result]);
+    }
+
+    /**
+     * One achievement of a profile with all its steps, each with that user's `earned_at` and
+     * `progress` counted now (each rule apart): the card of the award. The costly request — one
+     * achievement at a time, only when its card is opened.
+     *
+     * GET /users/:id/achievements/:group — public; `:group` is the `group_slug`, or the id of an
+     * achievement without a group.
+     */
+    public function userAchievementGroup(string $userId, string $group): ResponseInterface
+    {
+        // The progress is counted live, rule by rule: not for an id nobody has
+        if (!(new UsersModel())->select('id')->find($userId)) {
+            return $this->failNotFound();
+        }
+
+        $steps = (new AchievementsModel())
             ->where('is_active', 1)
+            ->groupStart()
+                ->where('group_slug', $group)
+                ->orGroupStart()->where('id', $group)->groupStart()->where('group_slug', '')->orWhere('group_slug', null)->groupEnd()->groupEnd()
+            ->groupEnd()
             ->orderBy('sort_order', 'ASC')
             ->findAll();
 
-        $userAchievementsModel = new UsersAchievementsModel();
-        $earned = $userAchievementsModel
-            ->where('user_id', $userId)
-            ->findAll();
+        $earned = $this->earnedMap($userId);
+        $now    = date('Y-m-d H:i:s');
+        $steps  = array_values(array_filter($steps, fn ($step) => !$this->isHidden($step, isset($earned[$step->id]), $now)));
 
-        $earnedMap = [];
-        foreach ($earned as $e) {
-            $earnedMap[$e->achievement_id] = $e->earned_at;
+        if ($steps === []) {
+            return $this->failNotFound();
         }
 
-        $achievementsLib = new AchievementsLibrary();
-        $progressMap     = $achievementsLib->getProgress($userId);
+        $locale   = $this->request->getLocale();
+        $progress = (new AchievementsLibrary())->progressOf($userId, $steps);
+        $result   = [];
 
-        $result = [];
+        foreach ($steps as $step) {
+            $item = $this->userItem($step, $locale, $earned[$step->id] ?? null);
 
-        foreach ($achievements as $achievement) {
-            $item = (object) [
-                'id'           => $achievement->id,
-                'group_slug'   => $achievement->group_slug,
-                'type'         => $achievement->type,
-                'tier'         => $achievement->tier,
-                'category'     => $achievement->category,
-                'title'        => $achievement->{"title_$locale"} ?? $achievement->title_en,
-                'description'  => $achievement->{"description_$locale"} ?? $achievement->description_en,
-                'image'        => $achievement->image,
-                'xp_bonus'     => (int) $achievement->xp_bonus,
-                'season_start' => $achievement->season_start,
-                'season_end'   => $achievement->season_end,
-                'earned_at'    => $earnedMap[$achievement->id] ?? null,
-            ];
-
-            if (isset($progressMap[$achievement->id])) {
-                $item->progress = $progressMap[$achievement->id];
+            if (isset($progress[$step->id])) {
+                $item->progress = $progress[$step->id];
             }
 
             $result[] = $item;
         }
 
         return $this->respond(['data' => $result]);
+    }
+
+    /** @return array<string, mixed> achievement id => the day it was earned */
+    private function earnedMap(string $userId): array
+    {
+        $map = [];
+
+        foreach ((new UsersAchievementsModel())->select('achievement_id, earned_at')->where('user_id', $userId)->findAll() as $row) {
+            $map[$row->achievement_id] = $row->earned_at;
+        }
+
+        return $map;
+    }
+
+    /** An achievement as a profile shows it */
+    private function userItem(object $achievement, string $locale, mixed $earnedAt): object
+    {
+        return (object) [
+            'id'           => $achievement->id,
+            'group_slug'   => $achievement->group_slug,
+            'type'         => $achievement->type,
+            'tier'         => $achievement->tier,
+            'title'        => $achievement->{"title_$locale"} ?? $achievement->title_en,
+            'description'  => $achievement->{"description_$locale"} ?? $achievement->description_en,
+            'image'        => $achievement->image,
+            'xp_bonus'     => (int) $achievement->xp_bonus,
+            'sort_order'   => (int) $achievement->sort_order,
+            'season_start' => $achievement->season_start,
+            'season_end'   => $achievement->season_end,
+            'earned_at'    => $earnedAt,
+        ];
+    }
+
+    /**
+     * An award a profile does not list: the award of a season that is over and was not
+     * earned — it cannot be earned any more.
+     */
+    private function isHidden(object $achievement, bool $earned, string $now): bool
+    {
+        return $achievement->type === 'seasonal' && !$earned && $achievement->season_end && $now > $achievement->season_end;
     }
 
     /**
@@ -240,13 +298,22 @@ class Achievements extends ResourceController
      */
     public function manage(): ResponseInterface
     {
-        if (!$this->session->isAuth || $this->session->user?->role !== 'admin') {
-            return $this->failForbidden();
+        if ($denied = $this->adminOnly()) {
+            return $denied;
         }
 
         $locale            = $this->request->getLocale();
         $achievementsModel = new AchievementsModel();
         $achievements      = $achievementsModel->orderBy('sort_order', 'ASC')->findAll();
+
+        $holders = [];
+
+        foreach (Database::connect()->table('users_achievements')
+            ->select('achievement_id, COUNT(*) AS holders')
+            ->groupBy('achievement_id')
+            ->get()->getResultArray() as $row) {
+            $holders[$row['achievement_id']] = (int) $row['holders'];
+        }
 
         $result = [];
 
@@ -255,12 +322,13 @@ class Achievements extends ResourceController
                 ? json_decode($achievement->rules, true)
                 : $achievement->rules;
 
+            $createdAt = $achievement->created_at ?? null;
+
             $result[] = (object) [
                 'id'             => $achievement->id,
                 'group_slug'     => $achievement->group_slug,
                 'type'           => $achievement->type,
                 'tier'           => $achievement->tier,
-                'category'       => $achievement->category,
                 'title'          => $achievement->{"title_$locale"} ?? $achievement->title_en,
                 'title_en'       => $achievement->title_en,
                 'title_ru'       => $achievement->title_ru,
@@ -274,10 +342,68 @@ class Achievements extends ResourceController
                 'season_end'     => $achievement->season_end,
                 'rules'          => $rules,
                 'is_active'      => (bool) $achievement->is_active,
+                'holders'        => $holders[$achievement->id] ?? 0,
+                'created_at'     => $createdAt === null
+                    ? null
+                    : ($createdAt instanceof \DateTimeInterface ? $createdAt->format('Y-m-d H:i:s') : (string) $createdAt),
             ];
         }
 
         return $this->respond(['data' => $result]);
+    }
+
+    /**
+     * The latest earned awards across the site, latest first.
+     *
+     * GET /achievements/manage/recent?limit=5 — admin only. Default 5, at most 20.
+     *
+     * @return ResponseInterface
+     */
+    public function recent(): ResponseInterface
+    {
+        if ($denied = $this->adminOnly()) {
+            return $denied;
+        }
+
+        $locale = $this->request->getLocale() === 'en' ? 'en' : 'ru';
+        $limit  = max(1, min(20, (int) ($this->request->getGet('limit') ?? 5) ?: 5));
+
+        $rows = Database::connect()->table('users_achievements ua')
+            ->select('ua.id, ua.earned_at, a.id AS achievement_id, a.title_en, a.title_ru, a.image, a.tier, a.group_slug, '
+                . 'u.id AS user_id, u.name, u.avatar, u.level')
+            ->join('achievements a', 'a.id = ua.achievement_id')
+            ->join('users u', 'u.id = ua.user_id AND u.deleted_at IS NULL')
+            ->orderBy('ua.earned_at', 'DESC')
+            ->orderBy('ua.id', 'DESC')
+            ->limit($limit)
+            ->get()->getResultArray();
+
+        $avatars = new AvatarLibrary();
+        $items   = [];
+
+        foreach ($rows as $row) {
+            $title = $row["title_$locale"] ?: ($row['title_ru'] ?: $row['title_en']);
+
+            $items[] = [
+                'id'          => $row['id'],
+                'earned_at'   => $row['earned_at'],
+                'achievement' => [
+                    'id'         => $row['achievement_id'],
+                    'title'      => $title,
+                    'image'      => $row['image'],
+                    'tier'       => $row['tier'],
+                    'group_slug' => $row['group_slug'],
+                ],
+                'user'        => [
+                    'id'        => $row['user_id'],
+                    'name'      => $row['name'],
+                    'avatar'    => $avatars->buildPath($row['user_id'], $row['avatar'], 'small'),
+                    'levelData' => ['level' => (int) $row['level']],
+                ],
+            ];
+        }
+
+        return $this->respond(['items' => $items]);
     }
 
     /**
@@ -291,34 +417,44 @@ class Achievements extends ResourceController
      */
     public function create(): ResponseInterface
     {
-        if (!$this->session->isAuth || $this->session->user?->role !== 'admin') {
-            return $this->failForbidden();
+        if ($denied = $this->adminOnly()) {
+            return $denied;
         }
 
-        $input = $this->request->getJSON(true) ?: $this->request->getPost();
+        $input = $this->adminInput(true);
+
+        if ($input === null) {
+            return $this->failValidationErrors(lang('Achievements.badBody'));
+        }
 
         if (empty($input)) {
             return $this->failValidationErrors(lang('Achievements.createError'));
         }
 
+        [$fields, $errors] = AchievementsLibrary::validateAchievement($input);
+
+        if ($errors) {
+            return $this->failValidationErrors($errors);
+        }
+
         $achievementsModel = new AchievementsModel();
         $entity            = new AchievementEntity();
 
-        $entity->group_slug     = $input['group_slug']     ?? null;
-        $entity->type           = $input['type']           ?? 'base';
-        $entity->tier           = $input['tier']           ?? 'none';
-        $entity->category       = $input['category']       ?? null;
-        $entity->title_en       = $input['title_en']       ?? '';
-        $entity->title_ru       = $input['title_ru']       ?? '';
-        $entity->description_en = $input['description_en'] ?? null;
-        $entity->description_ru = $input['description_ru'] ?? null;
-        $entity->image          = $input['image']          ?? null;
-        $entity->rules          = isset($input['rules']) ? json_encode($input['rules']) : '[]';
-        $entity->season_start   = $input['season_start']   ?? null;
-        $entity->season_end     = $input['season_end']     ?? null;
-        $entity->xp_bonus       = (int) ($input['xp_bonus']  ?? 0);
-        $entity->sort_order     = (int) ($input['sort_order'] ?? 0);
-        $entity->is_active      = (int) ($input['is_active']  ?? 1);
+        $entity->group_slug     = $fields['group_slug'];
+        $entity->type           = $fields['type'];
+        $entity->tier           = $fields['tier'];
+        $entity->title_en       = $fields['title_en'] ?? '';
+        $entity->title_ru       = $fields['title_ru'];
+        $entity->description_en = $fields['description_en'] ?? null;
+        $entity->description_ru = $fields['description_ru'] ?? null;
+        $entity->image          = $fields['image'] ?? null;
+        // A native array: the entity's `json-array` cast encodes it once
+        $entity->rules          = $fields['rules'] ?? [];
+        $entity->season_start   = $fields['season_start'] ?? null;
+        $entity->season_end     = $fields['season_end'] ?? null;
+        $entity->xp_bonus       = $fields['xp_bonus'] ?? 0;
+        $entity->sort_order     = $fields['sort_order'] ?? 0;
+        $entity->is_active      = $fields['is_active'] ?? 1;
 
         try {
             $achievementsModel->insert($entity);
@@ -348,8 +484,8 @@ class Achievements extends ResourceController
      */
     public function update($id = null): ResponseInterface
     {
-        if (!$this->session->isAuth || $this->session->user?->role !== 'admin') {
-            return $this->failForbidden();
+        if ($denied = $this->adminOnly()) {
+            return $denied;
         }
 
         if (!$id) {
@@ -363,26 +499,28 @@ class Achievements extends ResourceController
             return $this->failNotFound(lang('Achievements.notFound'));
         }
 
-        $input = $this->request->getJSON(true) ?: $this->request->getPost();
+        $input = $this->adminInput(true);
 
-        $updateData = [];
-
-        $fields = [
-            'group_slug', 'type', 'tier', 'category', 'title_en', 'title_ru',
-            'description_en', 'description_ru', 'image', 'season_start',
-            'season_end', 'xp_bonus', 'sort_order', 'is_active',
-        ];
-
-        foreach ($fields as $field) {
-            if (array_key_exists($field, $input)) {
-                $updateData[$field] = $input[$field];
-            }
+        if ($input === null) {
+            return $this->failValidationErrors(lang('Achievements.badBody'));
         }
 
-        if (array_key_exists('rules', $input)) {
-            $updateData['rules'] = is_array($input['rules'])
-                ? json_encode($input['rules'])
-                : $input['rules'];
+        [$updateData, $errors] = AchievementsLibrary::validateAchievement($input, [
+            'type'         => $achievement->type,
+            'season_start' => $achievement->season_start,
+            'season_end'   => $achievement->season_end,
+        ]);
+
+        if ($errors) {
+            return $this->failValidationErrors($errors);
+        }
+
+        if (!$updateData) {
+            return $this->failValidationErrors(lang('Achievements.nothingToUpdate'));
+        }
+
+        if (array_key_exists('rules', $updateData)) {
+            $updateData['rules'] = json_encode($updateData['rules']);
         }
 
         try {
@@ -390,6 +528,11 @@ class Achievements extends ResourceController
         } catch (\Throwable $e) {
             log_message('error', '{exception}', ['exception' => $e]);
             return $this->failServerError(lang('Achievements.updateError'));
+        }
+
+        // The picture was replaced or taken off: the old file goes
+        if (array_key_exists('image', $updateData) && $updateData['image'] !== $achievement->image) {
+            $this->dropImage($achievement->image, (string) $id);
         }
 
         $updated = $achievementsModel->find($id);
@@ -418,8 +561,8 @@ class Achievements extends ResourceController
      */
     public function delete($id = null): ResponseInterface
     {
-        if (!$this->session->isAuth || $this->session->user?->role !== 'admin') {
-            return $this->failForbidden();
+        if ($denied = $this->adminOnly()) {
+            return $denied;
         }
 
         if (!$id) {
@@ -442,6 +585,7 @@ class Achievements extends ResourceController
                 $achievementsModel->update($id, ['is_active' => 0]);
             } else {
                 $achievementsModel->delete($id);
+                $this->dropImage($achievement->image, (string) $id);
             }
         } catch (\Throwable $e) {
             log_message('error', '{exception}', ['exception' => $e]);
@@ -465,8 +609,8 @@ class Achievements extends ResourceController
      */
     public function uploadImage($id = null): ResponseInterface
     {
-        if (!$this->session->isAuth || $this->session->user?->role !== 'admin') {
-            return $this->failForbidden();
+        if ($denied = $this->adminOnly()) {
+            return $denied;
         }
 
         if (!$id) {
@@ -483,35 +627,42 @@ class Achievements extends ResourceController
         $file = $this->request->getFile('image');
 
         if (!$file || !$file->isValid()) {
-            return $this->failValidationErrors('No valid image file provided.');
+            return $this->failValidationErrors(lang('Achievements.noImage'));
         }
 
-        $allowedTypes = ['image/png', 'image/svg+xml'];
-        if (!in_array($file->getMimeType(), $allowedTypes)) {
-            return $this->failValidationErrors('Only PNG and SVG files are allowed.');
+        $type = AdminImageLibrary::kind($file);
+
+        if ($type === null) {
+            return $this->failValidationErrors(lang('Achievements.badImageFile'));
         }
 
-        if ($file->getSize() > 1024 * 1024) {
-            return $this->failValidationErrors('Image must be under 1 MB.');
+        $imagePath = AdminImageLibrary::store($file, $type, 'achievements', (string) $id);
+
+        if ($imagePath === null) {
+            log_message('error', 'Achievements: image of {id} not saved', ['id' => $id]);
+
+            return $this->failServerError(lang('Achievements.saveImageError'));
         }
 
-        $uploadPath = FCPATH . 'uploads/achievements/';
-
-        if (!is_dir($uploadPath)) {
-            mkdir($uploadPath, 0755, true);
-        }
-
-        $newName = $id . '_' . time() . '.' . $file->getExtension();
-
-        if (!$file->move($uploadPath, $newName)) {
-            log_message('error', 'Achievements: image {name} not saved to {path}', ['name' => $newName, 'path' => $uploadPath]);
-
-            return $this->failServerError('Failed to save the image.');
-        }
-
-        $imagePath = 'uploads/achievements/' . $newName;
         $achievementsModel->update($id, ['image' => $imagePath]);
+        $this->dropImage($achievement->image, (string) $id);
 
         return $this->respond(['id' => $id, 'image' => $imagePath]);
+    }
+
+    /**
+     * Deletes a badge file of the achievements' folder unless another achievement shows it too.
+     */
+    private function dropImage(?string $path, string $exceptId): void
+    {
+        if (!AdminImageLibrary::isOwnPath($path, 'achievements')) {
+            return;
+        }
+
+        $shared = (new AchievementsModel())->where('image', $path)->where('id !=', $exceptId)->countAllResults();
+
+        if (!$shared) {
+            AdminImageLibrary::remove($path, 'achievements');
+        }
     }
 }

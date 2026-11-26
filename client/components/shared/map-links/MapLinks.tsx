@@ -27,6 +27,11 @@ interface MapLinksProps extends ApiType.Coordinates {
     /** Side of the service logo, 14px by default */
     logoSize?: number
     linkClassName?: string
+    /**
+     * The route builders of the services to the point, not their maps (the place's "Маршрут"):
+     * where from and how is the service's to ask; Wikimapia has none and is left out
+     */
+    directions?: boolean
 }
 
 export const MapLinks: React.FC<MapLinksProps> = (props) =>
@@ -38,15 +43,17 @@ export const MapLinks: React.FC<MapLinksProps> = (props) =>
             <li>
                 <Google {...props} />
             </li>
-            <li>
-                <Wikimapia {...props} />
-            </li>
+            {!props.directions && (
+                <li>
+                    <Wikimapia {...props} />
+                </li>
+            )}
         </>
     ) : (
         <>
             <Yandex {...props} />
             <Google {...props} />
-            <Wikimapia {...props} />
+            {!props.directions && <Wikimapia {...props} />}
         </>
     )
 
@@ -62,7 +69,11 @@ const Yandex: React.FC<MapLinksProps> = (props) => {
                     ? t('map-service-yandex', { defaultValue: 'Яндекс Карты' })
                     : t('map-link-on-Yandex')
             }
-            link={`https://yandex.ru/maps/?pt=${props.lon},${props.lat}&spn=0.1,0.1&l=sat,skl&z=${props.zoom ?? DEFAULT_ZOOM}`}
+            link={
+                props.directions
+                    ? `https://yandex.ru/maps/?rtext=~${props.lat},${props.lon}`
+                    : `https://yandex.ru/maps/?pt=${props.lon},${props.lat}&spn=0.1,0.1&l=sat,skl&z=${props.zoom ?? DEFAULT_ZOOM}`
+            }
         />
     )
 }
@@ -75,7 +86,11 @@ const Google: React.FC<MapLinksProps> = (props) => {
             {...props}
             image={googleLogo}
             caption={props.label === 'brand' ? 'Google Maps' : t('map-link-on-Google')}
-            link={`https://maps.google.com/maps?ll=${props.lat},${props.lon}&q=${props.lat},${props.lon}&z=${props.zoom ?? DEFAULT_ZOOM}&spn=0.1,0.1&t=h&hl=${i18n.language}`}
+            link={
+                props.directions
+                    ? `https://www.google.com/maps/dir/?api=1&destination=${props.lat},${props.lon}&hl=${i18n.language}`
+                    : `https://maps.google.com/maps?ll=${props.lat},${props.lon}&q=${props.lat},${props.lon}&z=${props.zoom ?? DEFAULT_ZOOM}&spn=0.1,0.1&t=h&hl=${i18n.language}`
+            }
         />
     )
 }

@@ -9,7 +9,6 @@ const TIER_STEP: Record<ApiType.Achievements.AchievementTier, number> = { bronze
 export type AchievementGroup = {
     /** `group_slug`, or the id of an achievement without a group */
     key: string
-    category: ApiType.Achievements.AchievementCategory
     /** From the first step to the last */
     steps: Achievement[]
     /** How many steps are passed: a higher step counts the lower ones as passed, even when only it was awarded */
@@ -39,31 +38,10 @@ export const groupAchievements = (achievements: Achievement[]): AchievementGroup
 
         return {
             achieved: achievedIndex >= 0 ? steps[achievedIndex] : undefined,
-            category: steps[0].category,
             key,
             next: steps[achievedIndex + 1],
             passed: achievedIndex + 1,
             steps
         }
     })
-}
-
-/**
- * The order of the achievements tab: the earned ones first — the highest tier first, then the
- * newest — then the ones in progress, the closest to their next step first.
- */
-export const sortAchievementGroups = (groups: AchievementGroup[]): AchievementGroup[] => {
-    const earned = groups
-        .filter((group) => !!group.achieved)
-        .sort(
-            (a, b) =>
-                b.passed - a.passed ||
-                (b.achieved?.earned_at?.date ?? '').localeCompare(a.achieved?.earned_at?.date ?? '')
-        )
-
-    const inProgress = groups
-        .filter((group) => !group.achieved)
-        .sort((a, b) => (b.next?.progress?.pct ?? 0) - (a.next?.progress?.pct ?? 0))
-
-    return [...earned, ...inProgress]
 }

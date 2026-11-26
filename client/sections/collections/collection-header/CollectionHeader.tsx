@@ -13,8 +13,8 @@ import styles from '../styles.module.sass'
 
 interface CollectionHeaderProps {
     collection?: ApiModel.Collection
-    /** Owner controls: "Редактировать" (or "Готово" / "Отмена" in edit mode) and the settings/delete menu */
-    isOwner?: boolean
+    /** The author or an administrator: "Редактировать" (or "Готово" / "Отмена" in edit mode) and the settings/delete menu */
+    canManage?: boolean
     editMode?: boolean
     /** "Готово" is saving the page's pending edits */
     saving?: boolean
@@ -34,7 +34,7 @@ interface CollectionHeaderProps {
  */
 export const CollectionHeader: React.FC<CollectionHeaderProps> = ({
     collection,
-    isOwner,
+    canManage,
     editMode,
     saving,
     onEdit,
@@ -111,19 +111,19 @@ export const CollectionHeader: React.FC<CollectionHeaderProps> = ({
             breadcrumbs={[{ link: '/collections', text: t('nav-collections', { defaultValue: 'Коллекции' }) }]}
             description={byline}
             actions={
-                isOwner ? (
+                canManage ? (
                     <>
                         {editMode ? (
                             <>
                                 <Button
-                                    size={'small'}
+                                    size={'medium'}
                                     mode={'secondary'}
                                     disabled={saving}
                                     label={t('cancel')}
                                     onClick={onCancel}
                                 />
                                 <Button
-                                    size={'small'}
+                                    size={'medium'}
                                     mode={'primary'}
                                     icon={'CheckCircle'}
                                     loading={saving}
@@ -134,9 +134,8 @@ export const CollectionHeader: React.FC<CollectionHeaderProps> = ({
                             </>
                         ) : (
                             <Button
-                                size={'small'}
+                                size={'medium'}
                                 mode={'secondary'}
-                                icon={'Pencil'}
                                 label={t('collections_edit-button', { defaultValue: 'Редактировать' })}
                                 onClick={onEdit}
                             />
@@ -146,7 +145,7 @@ export const CollectionHeader: React.FC<CollectionHeaderProps> = ({
                             trigger={
                                 <Button
                                     icon={'VerticalDots'}
-                                    size={'small'}
+                                    size={'medium'}
                                     mode={'secondary'}
                                     tooltip={t('collections_menu', { defaultValue: 'Действия с коллекцией' })}
                                 />

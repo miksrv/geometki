@@ -14,9 +14,10 @@ import {
     FilterPopout,
     FiltersButton,
     FilterToolbar,
-    FilterToolbarSpacer
+    FilterToolbarSpacer,
+    SortPopout
 } from '@/components/shared/filter-panel'
-import { BottomSheet, OptionList, Switch, Tabs } from '@/components/ui'
+import { BottomSheet, Switch, Tabs } from '@/components/ui'
 import useUserLocation from '@/hooks/useUserLocation'
 
 import { AppliedFilters } from './AppliedFilters'
@@ -161,28 +162,12 @@ export const PlaceFilterPanel: React.FC<PlaceFilterPanelProps> = ({
                         {locationOptions}
                     </FilterPopout>
 
-                    <FilterPopout
-                        width={240}
-                        icon={'BarChart'}
-                        value={sortLabel}
-                    >
-                        {(close) => (
-                            <OptionList
-                                groups={[
-                                    {
-                                        items: getSortPresets(t, isAuth).map((preset) => ({
-                                            ...preset,
-                                            selected: preset.key === filter.sort
-                                        }))
-                                    }
-                                ]}
-                                onSelect={(key) => {
-                                    close()
-                                    void handlePickSort(key)
-                                }}
-                            />
-                        )}
-                    </FilterPopout>
+                    <SortPopout
+                        presets={getSortPresets(t, isAuth)}
+                        value={filter.sort}
+                        valueLabel={sortLabel}
+                        onSelect={(sort) => void handlePickSort(sort)}
+                    />
 
                     {isAuth && filter.sort !== ApiType.SortFields.Visited && (
                         <Switch

@@ -1,0 +1,43 @@
+// The kit's field label and error, around the kit DatePicker
+.field
+    display: flex
+    flex-direction: column
+    min-width: 0
+
+// The kit picker's trigger is a small button: here it is a field like an `Input` beside it —
+// the full width, the medium height, the day on the left. The calendar is in a portal, so only
+// the trigger is touched
+.picker
+    & > div, [role='button']
+        display: block
+        width: 100%
+
+    button
+        justify-content: flex-start
+        width: 100%
+        height: var(--size-control-medium, var(--size-medium))
+        padding: 0 var(--space-3)
+        font-size: var(--font-size)
+
+.label
+    display: block
+    padding-bottom: var(--input-label-gap)
+    color: var(--input-label-color)
+    font-size: var(--input-label-font-size)
+    font-weight: var(--input-label-font-weight)
+    line-height: var(--line-height)
+
+.required .label::after
+    content: '*'
+    margin-left: 3px
+    color: var(--color-red)
+
+.disabled .label
+    opacity: 0.6
+
+.error
+    display: block
+    margin-top: var(--space-1)
+    color: var(--color-red)
+    font-size: var(--input-hint-font-size)
+    line-height: var(--line-height)

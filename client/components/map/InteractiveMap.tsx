@@ -32,15 +32,20 @@ import { MarkerPointCluster } from './marker-point-cluster'
 import { MarkerUser } from './marker-user'
 import { OsmCandidates } from './osm-candidates'
 import { PlaceMark } from './place-mark'
+import { QuestLayer } from './quest-layer'
+import { QuestMarks } from './quest-marks'
 import { Ruler } from './ruler'
 import { TrailsInfo, TrailsLayer } from './trails-layer'
 import {
     MapAdditionalLayersEnum,
     MapLayersEnum,
+    MapObjectLayersEnum,
     MapObjectsTypeEnum,
     MapPositionType,
     MapTrailsLayerEnum,
-    MarkerPinData
+    MarkerPinData,
+    QuestPointMark,
+    QuestZoneMark
 } from './types'
 import { Wayback } from './wayback'
 import { WikimediaCommons } from './wikimedia-commons'
@@ -54,6 +59,13 @@ type MapProps = {
     places?: ApiModel.PlaceMark[]
     photos?: ApiModel.PhotoMark[]
     pins?: MarkerPinData[]
+    /** A quest of the game: its opened points, numbered, with a dashed line through them */
+    quest?: QuestPointMark[]
+    /** The search zones of riddle quests: dashed circles */
+    questZones?: QuestZoneMark[]
+    /** Quests as pins with their card in a popup (`/quests`); the "Геоквесты" layer shows all of them */
+    quests?: ApiType.Game.QuestMark[]
+    onQuestPointClick?: (id: string) => void
     categories?: ApiModel.Categories[]
     layer?: MapLayersEnum
     loading?: boolean
@@ -72,6 +84,12 @@ type MapProps = {
     hideAdditionalLayers?: boolean
     /** New interesting places from OpenStreetMap and their panel "Места для исследования" */
     enableOsmCandidates?: boolean
+    /**
+     * "Неоткрытые", "Геометки", "Геоквесты" in the layers panel (the map page), all on by default:
+     * the undiscovered places (with `enableOsmCandidates`), the places (the page reads the choice
+     * from `onChangeObjectLayers`) and every quest
+     */
+    enableObjectLayers?: boolean
     /** Zoomed out, hexagons with the counts of places and undiscovered places replace the place markers */
     enableHexes?: boolean
     /** Keep the chosen map layer, objects type and additional layers between visits (see mapSettings) */
@@ -81,6 +99,7 @@ type MapProps = {
     enableUserLocation?: boolean
     onChangeCategories?: (categories?: ApiModel.Categories[]) => void
     onChangeMapType?: (type?: MapObjectsTypeEnum) => void
+    onChangeObjectLayers?: (layers: MapObjectLayersEnum[]) => void
     onChangeBounds?: (bounds: LatLngBounds, zoom: number) => void
     onPhotoClick?: (photos: ApiModel.PhotoMark[], index?: number) => void
     onClickCreatePlace?: () => void
@@ -133,11 +152,16 @@ const DEFAULT_MAP_ZOOM = 12
 const DEFAULT_MAP_CENTER: LatLngExpression = [51.765445, 55.099745]
 const DEFAULT_MAP_LAYER = MapLayersEnum.OSM
 const DEFAULT_MAP_TYPE = MapObjectsTypeEnum.PLACES
+const DEFAULT_OBJECT_LAYERS = Object.values(MapObjectLayersEnum)
 
 export const InteractiveMap: React.FC<MapProps> = ({
     places,
     photos,
     pins,
+    quest,
+    questZones,
+    quests,
+    onQuestPointClick,
     categories,
     // layer,
     loading,
@@ -153,12 +177,14 @@ export const InteractiveMap: React.FC<MapProps> = ({
     enableContextMenu,
     hideAdditionalLayers,
     enableOsmCandidates,
+    enableObjectLayers,
     enableHexes,
     storeMapSettings,
     fullMapLink,
     enableUserLocation,
     onChangeCategories,
     onChangeMapType,
+    onChangeObjectLayers,
     onChangeBounds,
     onPhotoClick,
     onClickCreatePlace,
@@ -190,8 +216,11 @@ export const InteractiveMap: React.FC<MapProps> = ({
     const [mapLayer, setMapLayer] = useState<MapLayersEnum>(
         (storeMapSettings && savedSettings.layer) || DEFAULT_MAP_LAYER
     )
-    const [mapType, setMapType] = useState<MapObjectsTypeEnum>(
-        (storeMapSettings && savedSettings.type) || DEFAULT_MAP_TYPE
+    // The "Геометки / Фотографии" switch is hidden for now (LayerSwitcherControl): the saved type is not
+    // read, a saved "Фотографии" would leave the map with no way back to the places
+    const [mapType, setMapType] = useState<MapObjectsTypeEnum>(DEFAULT_MAP_TYPE)
+    const [objectLayers, setObjectLayers] = useState<MapObjectLayersEnum[]>(
+        (storeMapSettings && savedSettings.objectLayers) || DEFAULT_OBJECT_LAYERS
     )
     const [additionalLayers, setAdditionalLayers] = useState<MapAdditionalLayersEnum[] | undefined>(
         storeMapSettings ? savedSettings.additionalLayers : undefined
@@ -273,6 +302,15 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
         if (storeMapSettings) {
             saveMapSettings({ type })
+        }
+    }
+
+    const handleSwitchObjectLayers = (layers: MapObjectLayersEnum[]) => {
+        setObjectLayers(layers)
+        onChangeObjectLayers?.(layers)
+
+        if (storeMapSettings) {
+            saveMapSettings({ objectLayers: layers })
         }
     }
 
@@ -399,6 +437,7 @@ export const InteractiveMap: React.FC<MapProps> = ({
 
     useEffect(() => {
         onChangeMapType?.(mapType)
+        onChangeObjectLayers?.(objectLayers)
     }, [])
 
     useEffect(() => {
@@ -477,9 +516,24 @@ export const InteractiveMap: React.FC<MapProps> = ({
                         <WikimediaCommons onPhotoClick={onPhotoClick} />
                     )}
 
-                    {enableOsmCandidates && <OsmCandidates categories={categories} />}
+                    {enableOsmCandidates &&
+                        (!enableObjectLayers || objectLayers.includes(MapObjectLayersEnum.UNEXPLORED)) && (
+                            <OsmCandidates categories={categories} />
+                        )}
 
-                    {hexMode && <HexLayer categories={categories} />}
+                    {hexMode && (
+                        <HexLayer
+                            categories={categories}
+                            places={!enableObjectLayers || objectLayers.includes(MapObjectLayersEnum.PLACES)}
+                            spots={!enableObjectLayers || objectLayers.includes(MapObjectLayersEnum.UNEXPLORED)}
+                        />
+                    )}
+
+                    {quests ? (
+                        <QuestMarks marks={quests} />
+                    ) : (
+                        enableObjectLayers && objectLayers.includes(MapObjectLayersEnum.QUESTS) && <QuestMarks />
+                    )}
 
                     {additionalLayers?.includes(MapAdditionalLayersEnum.WIKIPEDIA) && (
                         <Wikipedia onPhotoClick={onPhotoClick} />
@@ -612,6 +666,14 @@ export const InteractiveMap: React.FC<MapProps> = ({
                                 onPhotoClick={handlePhotoMarkerClick}
                             />
                         )
+                    )}
+
+                    {(!!quest?.length || !!questZones?.length) && (
+                        <QuestLayer
+                            points={quest ?? []}
+                            zones={questZones}
+                            onPointClick={onQuestPointClick}
+                        />
                     )}
 
                     {pins?.map((pin, i) => (
@@ -754,6 +816,8 @@ export const InteractiveMap: React.FC<MapProps> = ({
                                 currentLayer={enableWayback && wayback ? undefined : mapLayer}
                                 currentType={mapType}
                                 hideAdditionalLayers={hideAdditionalLayers}
+                                objectLayers={enableObjectLayers ? objectLayers : undefined}
+                                onSwitchObjectLayers={handleSwitchObjectLayers}
                                 additionalLayers={additionalLayers}
                                 onSwitchMapLayer={handleSwitchMapLayer}
                                 onSwitchMapType={handleSwitchMapType}

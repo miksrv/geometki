@@ -1,0 +1,241 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+@use '../../../styles/mixins' as *
+
+$sidebarWidth: 232px
+// The site's own side padding: the content takes the whole width beside the navigation
+$gutter: 16px
+$gutterPhone: 12px
+
+// The admin is a workspace of its own: the navigation on the side, the work on the rest.
+// The variables tell the fixed blocks of a page (the form's floating actions) where the
+// content is, so that they never lie over the navigation
+.adminLayout
+    --page-inset-left: #{$sidebarWidth}
+    --page-gutter: #{$gutter}
+    --page-bottom-bar: 0px
+    --width-max: none
+    display: grid
+    grid-template-columns: $sidebarWidth minmax(0, 1fr)
+    min-height: 100vh
+    min-height: 100dvh
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        --page-inset-left: 0px
+        --page-gutter: #{$gutterPhone}
+        display: block
+
+.skipLink
+    position: absolute
+    top: -40px
+    left: 0
+    z-index: 1000
+    padding: 8px 16px
+    border-radius: 0 0 var(--border-radius) 0
+    background: var(--surface-1)
+    color: var(--text-color-primary)
+
+    &:focus
+        top: 0
+
+.sidebar
+    position: sticky
+    top: 0
+    z-index: 450
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+    height: 100vh
+    height: 100dvh
+    padding: var(--space-4) var(--space-3)
+    padding-left: calc(var(--space-3) + env(safe-area-inset-left, 0px))
+    overflow-y: auto
+    background: var(--container-background)
+    box-shadow: 1px 0 0 var(--border)
+    color: var(--text-color-primary)
+
+    // Phones: a bar on top — the name and the way back in a line, the sections in a row that scrolls
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: grid
+        grid-template-columns: minmax(0, 1fr) auto
+        gap: var(--space-1) var(--space-2)
+        height: auto
+        padding: calc(var(--space-2) + env(safe-area-inset-top, 0px)) $gutterPhone 0
+        overflow: visible
+        box-shadow: 0 1px 0 var(--border)
+
+.brand
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    padding: 0 var(--space-2)
+    color: var(--text-color-primary)
+    text-decoration: none
+
+    &:hover, &:focus
+        color: var(--text-color-primary)
+        text-decoration: none
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        padding: 0
+
+.logoMark
+    flex-shrink: 0
+    width: 30px
+    height: 30px
+    background: url(/images/geometki-icon.png) center / contain no-repeat
+
+.brandText
+    display: flex
+    flex-direction: column
+    min-width: 0
+    line-height: 1.25
+
+    b
+        font-weight: var(--font-weight-medium, 600)
+
+    span
+        +type.caption
+
+.nav
+    display: flex
+    flex: 1
+    flex-direction: column
+    gap: 2px
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-column: 1 / -1
+        flex-direction: row
+        gap: var(--space-1)
+        margin: 0 (-$gutterPhone)
+        padding: var(--space-1) $gutterPhone var(--space-2)
+        overflow-x: auto
+        scrollbar-width: none
+
+.navItem
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    min-height: 36px
+    padding: 0 var(--space-3)
+    border-radius: var(--border-radius)
+    color: var(--text-color-primary)
+    text-decoration: none
+    white-space: nowrap
+    transition: background-color var(--duration-fast) var(--ease)
+
+    svg
+        flex-shrink: 0
+        width: 20px
+        height: 20px
+        fill: var(--icon-color-secondary)
+
+    &:focus
+        color: var(--text-color-primary)
+        text-decoration: none
+
+    &:hover
+        background: var(--surface-2)
+        color: var(--text-color-primary)
+        text-decoration: none
+
+    &:focus-visible
+        outline: 2px solid var(--color-main)
+        outline-offset: -2px
+
+    &.active
+        background: var(--color-main-background)
+        font-weight: var(--font-weight-medium, 600)
+
+        svg
+            fill: var(--color-main)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        flex-shrink: 0
+        gap: var(--space-2)
+        min-height: 32px
+
+.navLabel
+    flex: 1
+    min-width: 0
+    overflow: hidden
+    text-overflow: ellipsis
+
+// A section needs attention: a number when there is something to count, a dot otherwise
+.mark
+    flex-shrink: 0
+    min-width: 20px
+    padding: 0 6px
+    border-radius: 10px
+    color: #fff
+    font-size: var(--font-size-small)
+    font-variant-numeric: tabular-nums
+    font-weight: var(--font-weight-medium, 600)
+    line-height: 20px
+    text-align: center
+
+    &.danger
+        background: var(--color-red)
+
+    &.warning
+        background: var(--color-orange)
+
+    &.info
+        background: var(--color-main)
+
+    &.dot
+        width: 8px
+        min-width: 8px
+        height: 8px
+        padding: 0
+
+.foot
+    display: flex
+    flex-direction: column
+    gap: var(--space-2)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-column: 2
+        grid-row: 1
+        align-self: center
+
+.user
+    +type.caption
+    padding: 0 var(--space-3)
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: none
+
+.main
+    min-width: 0
+    padding: var(--space-2) $gutter var(--space-8)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        padding: 0 $gutterPhone calc(var(--space-6, 24px) + env(safe-area-inset-bottom, 0px))
+
+.content
+    display: flex
+    flex-direction: column
+    gap: var(--space-4)
+    width: 100%
+
+// A list page on desktop: one viewport high, the table inside scrolls (it shrinks to the room
+// left by the header, the views, the filters and the pagination)
+.fit
+    @media only screen and (min-width: variables.$mobileMaxWidth + 1px)
+        .main
+            height: 100vh
+            height: 100dvh
+            padding-bottom: $gutter
+            overflow: hidden
+
+        .content
+            height: 100%
+            min-height: 0
+
+// The words of a mark for a screen reader
+.hidden
+    +visuallyHidden

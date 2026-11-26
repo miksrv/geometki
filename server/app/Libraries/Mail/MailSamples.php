@@ -16,7 +16,7 @@ class MailSamples
         $token       = 'sample.comment.sample-signature';
         $unsubscribe = MailUrls::unsubscribePage($locale, $token);
         $oneClick    = MailUrls::oneClickUnsubscribe($token);
-        $name        = $locale === 'en' ? 'Traveller' : 'Путешественник';
+        $name        = $locale === 'en' ? 'Explorer' : 'Исследователь';
 
         switch ($kind) {
             case 'magic-link':

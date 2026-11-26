@@ -142,6 +142,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onClickRegistration, onSuc
         dispatch(login(authData))
 
         if (authData?.auth) {
+            // What the page showed a guest is the person's own now: the quest's walk, the season's own line
+            dispatch(API.util.invalidateTags(['Quests', 'Game']))
             onSuccessLogin?.()
             dispatch(closeAuthDialog())
         }

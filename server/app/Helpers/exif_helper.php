@@ -70,3 +70,48 @@ function getPhotoLocation(string $file): ?object
         return null;
     }
 }
+
+/**
+ * The moment a photo was shot, from its EXIF (`DateTimeOriginal`, then `DateTimeDigitized`):
+ * `Y-m-d H:i:s` in the camera's own clock (the EXIF keeps no time zone, and the day the person
+ * was at the place is the day on their phone), or null when the file has none or it is not a date.
+ * @param string $file
+ * @return string|null
+ */
+function getPhotoTakenAt(string $file): ?string
+{
+    if (!is_file($file)) {
+        return null;
+    }
+
+    $type = @exif_imagetype($file);
+
+    if (!in_array($type, [IMAGETYPE_JPEG, IMAGETYPE_TIFF_II, IMAGETYPE_TIFF_MM], true)) {
+        return null;
+    }
+
+    try {
+        $info = @exif_read_data($file);
+
+        foreach (['DateTimeOriginal', 'DateTimeDigitized'] as $key) {
+            $value = is_array($info) && isset($info[$key]) && is_string($info[$key]) ? trim($info[$key]) : '';
+
+            // "2026:11:02 14:05:33"; cameras without a clock write zeros
+            if (!preg_match('/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})$/', $value, $match)) {
+                continue;
+            }
+
+            [, $year, $month, $day, $hour, $minute, $second] = array_map('intval', $match);
+
+            if (!checkdate($month, $day, $year) || $year < 1990 || $hour > 23 || $minute > 59 || $second > 59) {
+                continue;
+            }
+
+            return sprintf('%04d-%02d-%02d %02d:%02d:%02d', $year, $month, $day, $hour, $minute, $second);
+        }
+    } catch (Throwable $e) {
+        log_message('error', '{exception}', ['exception' => $e]);
+    }
+
+    return null;
+}

@@ -19,9 +19,7 @@ Each needs its feature first:
 
 - Streak section and streak-expiry prompt (`03-activity-streaks.md`).
 - Freshness alerts (`15-dynamic-place-freshness-badges.md`).
-- Rank changes (`13-regional-leaderboards.md`).
 - New followers (`12-follow-system-personalized-feed.md`).
-- Active challenge progress (`02-daily-weekly-challenges.md`).
 
 ## More push triggers
 
@@ -29,6 +27,6 @@ Each needs its feature first:
 |---|---|
 | Undiscovered place nearby | `osm:collect` adds a candidate within ~1 km of the user's last location (open question, see below) |
 | Place trending | your place gets 20+ views in a week |
-| Streak expiry, rank overtaken, new follower, freshness drop | once features 03 / 13 / 12 / 15 exist |
+| Streak expiry, new follower, freshness drop | once features 03 / 12 / 15 exist |
 
 **Open question:** "near the user" here means `users.last_lat/last_lon` (`PUT /location`), which today is stored only for the user page map and used nowhere else. Using it for a digest or a push is a privacy decision of its own: decide it (and say so in the settings) before building these.

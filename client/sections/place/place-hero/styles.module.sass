@@ -23,7 +23,8 @@
 
 .cover
     position: relative
-    border-radius: var(--radius-xl)
+    // The corners of every photo and container on the site
+    border-radius: var(--border-radius)
     overflow: hidden
     background: var(--surface-2)
 
@@ -168,6 +169,11 @@
     @media only screen and (max-width: variables.$mobileMaxWidth)
         display: inline-flex
 
+// "Добавить фото" (phones): the counter's pill in the other bottom corner
+.counter.addPhoto
+    right: auto
+    left: var(--space-3)
+
 // --- The title and the facts --------------------------------------------------------------
 
 // The title on the full width (a long one is not squeezed by the buttons); under it the facts
@@ -180,12 +186,14 @@
     // Close to the picture: the head belongs to it
     padding-top: var(--space-3)
 
-    // No margin under the title: the facts' line is as tall as the buttons, its text is
-    // centred in it, which already makes the pause
+    // Two lines on the left (the title, the facts), the actions on the right centred on both
     h1
-        grid-column: 1 / -1
+        grid-column: 1
         +type.titlePage
-        margin-bottom: 0
+        margin-bottom: var(--space-1)
+
+    .facts
+        grid-column: 1
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
         display: block
@@ -255,14 +263,16 @@
 .fact > svg.star
     fill: var(--color-star)
 
-// Desktop actions on the title's line; phones have the bottom bar instead
+// Desktop actions on the right of the title and the facts, centred on both lines; phones
+// have the bottom bar instead
 .actions
+    grid-column: 2
+    grid-row: 1 / span 2
     flex-shrink: 0
     display: flex
     align-items: center
     gap: var(--space-2)
-    // Compact 32px buttons, as in the app bar: the facts' line stays close to the height of
-    // its text, and the buttons do not reach the title above
+    // The buttons beside a page title: kit `medium` at 32px, as in `PageHeader`
     --size-control-medium: 32px
 
     @media only screen and (max-width: variables.$mobileMaxWidth)

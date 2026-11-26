@@ -1,0 +1,92 @@
+// The award without a picture of its own (AwardBadge): the medal of the drawn ones
+// (tools/medals/medal.py) in SVG — a metal rim lit from above, a dark gap, a thin inner line and
+// the field; the tier gives the metal and the field, the group the colour of an award without
+// a tier. The colours are tokens of styles/theme.css, the same in both themes
+.award
+    display: block
+    flex-shrink: 0
+
+.gap
+    fill: var(--color-medal-gap)
+
+.line
+    fill: var(--medal-line)
+
+.photoField
+    fill: var(--medal-field-edge)
+
+// The emblem: light on the field, its details in the field's dark
+.symbol
+    fill: var(--medal-art)
+
+// A symbol made of lines alone: a snowflake, the rays of a sun, waves
+.rays
+    fill: none
+    stroke: var(--medal-art)
+    stroke-width: 6
+    stroke-linecap: round
+    stroke-linejoin: round
+
+.dotted
+    fill: none
+    stroke: var(--medal-art)
+    stroke-width: 5
+    stroke-linecap: round
+    stroke-dasharray: 1 10
+
+// The stops of the gradients take the colours of the tier
+.rimLight
+    stop-color: var(--medal-rim-light)
+
+.rimMiddle
+    stop-color: var(--medal-rim)
+
+.rimDark
+    stop-color: var(--medal-rim-dark)
+
+.fieldCentre
+    stop-color: var(--medal-field)
+
+.fieldEdge
+    stop-color: var(--medal-field-edge)
+
+@mixin metal($name)
+    --medal-rim-light: var(--color-medal-#{$name}-rim-light)
+    --medal-rim: var(--color-medal-#{$name}-rim)
+    --medal-rim-dark: var(--color-medal-#{$name}-rim-dark)
+    --medal-line: var(--color-medal-#{$name}-line)
+
+// A tier: its metal, its field and the light emblem, as the standard badges of Ingress
+@each $tier in 'bronze', 'silver', 'gold'
+    .tier-#{$tier}
+        +metal($tier)
+        --medal-field: var(--color-medal-#{$tier}-field)
+        --medal-field-edge: var(--color-medal-#{$tier}-field-edge)
+        --medal-art: var(--color-medal-#{$tier}-art)
+
+// Without a tier (a season, a quest, a limited award): dark steel, the field dark in the group's
+// colour and the emblem in it
+.tier-none
+    +metal(steel)
+    --medal-field: color-mix(in srgb, var(--award-colour, var(--color-award-game)) 30%, var(--color-medal-steel-field-edge))
+    --medal-field-edge: var(--color-medal-steel-field-edge)
+    --medal-art: color-mix(in srgb, var(--award-colour, var(--color-award-game)) 65%, #fff)
+
+.field-game
+    --award-colour: var(--color-award-game)
+
+.field-quest
+    --award-colour: var(--color-award-quest)
+
+.field-seasonal
+    --award-colour: var(--color-award-seasonal)
+
+.field-cold
+    --award-colour: var(--color-season-cold)
+
+.field-warm
+    --award-colour: var(--color-season-warm)
+
+// The participant's medal of a season: neutral grey
+.field-neutral
+    --award-colour: color-mix(in srgb, var(--color-medal-steel-rim) 55%, #fff)

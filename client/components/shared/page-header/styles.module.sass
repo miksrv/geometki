@@ -68,12 +68,10 @@
     color: var(--text-color-secondary)
     line-height: 1.5
 
-// The lede reads as body text: primary colour, on the full width of the text column
+// The lede is text on the page background: the reading size, on the full width of the text column
 .lede
     margin-top: 6px
-    font-size: variables.$fontSizeParagraph
-    line-height: 1.55
-    color: var(--text-color-primary)
+    +type.reading
 
 .actions
     display: flex
@@ -81,9 +79,12 @@
     gap: 8px
     flex-shrink: 0
     margin-left: auto
+    // The buttons beside a page title: kit `medium` (14px text, 18px icons) at 32px, as on the
+    // place page (`PlaceHero`); DESIGN.md → Page header
+    --size-control-medium: 32px
     // Fold the control height into the title's line box so the title line stays exactly
-    // as tall as on pages without actions (a kit `small` control is 28px, the h1 line ~35px)
-    margin-block: calc((var(--font-size-title-page) * 1.15 - var(--size-control-small, var(--size-small))) / 2)
+    // as tall as on pages without actions (the h1 line is ~35px)
+    margin-block: calc((var(--font-size-title-page) * 1.15 - var(--size-control-medium)) / 2)
 
     @media (max-width: variables.$mobileMaxWidth)
         // Under the title instead of squeezing it

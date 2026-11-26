@@ -15,6 +15,8 @@ export interface FormActionsProps {
     dirty?: boolean
     /** Saving: Save spins, both buttons are disabled */
     loading?: boolean
+    /** The form is not ready (its data is loading): every button is off, nothing spins */
+    disabled?: boolean
     /** The note on the left while there are changes; "Есть несохранённые изменения" by default */
     message?: string
     /** Save is off: by default while there are no changes; a new entity passes its own rule */
@@ -26,10 +28,18 @@ export interface FormActionsProps {
     onSave?: () => void
     /** No Cancel button without it */
     onCancel?: () => void
+    /**
+     * A destructive action of the edited entity ("Удалить квест"), a red secondary button at the
+     * start of the row; in the row's place only, never on the floating bar
+     */
+    deleteLabel?: string
+    deleteDisabled?: boolean
+    onDelete?: () => void
 }
 
 /**
- * The Cancel / Save row at the end of a page form (DESIGN.md → Patterns → Page form actions).
+ * The Cancel / Save row at the end of a page form (DESIGN.md → Patterns → Page form actions),
+ * with an optional destructive action of the entity at its start ("Удалить квест").
  * In its place under the form; while there are changes and the place is below the screen, the
  * same row is a bar fixed to the bottom of the screen on its full width, dressed as the app
  * bar (over the bottom navigation on phones), and lands back in its place as it scrolls in.
@@ -37,12 +47,16 @@ export interface FormActionsProps {
 export const FormActions: React.FC<FormActionsProps> = ({
     dirty,
     loading,
+    disabled,
     message,
     saveDisabled,
     saveLabel,
     cancelLabel,
     onSave,
-    onCancel
+    onCancel,
+    deleteLabel,
+    deleteDisabled,
+    onDelete
 }) => {
     const { t } = useTranslation()
     const isPhone = useIsPhone()
@@ -95,6 +109,18 @@ export const FormActions: React.FC<FormActionsProps> = ({
                 className={cn(styles.formActions, floating && styles.floating)}
             >
                 <div className={styles.wrapper}>
+                    {onDelete && !floating && (
+                        <Button
+                            size={'medium'}
+                            mode={'secondary'}
+                            variant={'negative'}
+                            label={deleteLabel ?? t('delete')}
+                            disabled={loading || disabled || deleteDisabled}
+                            className={styles.delete}
+                            onClick={onDelete}
+                        />
+                    )}
+
                     {dirty && <span className={styles.message}>{message ?? t('form-unsaved')}</span>}
 
                     <div className={styles.buttons}>
@@ -103,7 +129,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
                                 size={'medium'}
                                 mode={'secondary'}
                                 label={cancelLabel ?? t('cancel')}
-                                disabled={loading}
+                                disabled={loading || disabled}
                                 onClick={onCancel}
                             />
                         )}
@@ -113,7 +139,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
                             mode={'primary'}
                             loading={loading}
                             label={saveLabel ?? t('save')}
-                            disabled={loading || (saveDisabled ?? !dirty)}
+                            disabled={loading || disabled || (saveDisabled ?? !dirty)}
                             onClick={onSave}
                         />
                     </div>

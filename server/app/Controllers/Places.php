@@ -5,7 +5,9 @@ namespace App\Controllers;
 use App\Entities\PhotoEntity;
 use App\Entities\PlaceEntity;
 use App\Libraries\AvatarLibrary;
+use App\Libraries\GameLibrary;
 use App\Libraries\Geocoder;
+use App\Libraries\PlaceOutlines;
 use App\Libraries\LevelsLibrary;
 use App\Libraries\PhotoLibrary;
 use App\Libraries\PlaceCoverLibrary;
@@ -52,6 +54,14 @@ class Places extends ResourceController
     protected SessionLibrary $session;
 
     protected $model;
+
+    /**
+     * The photos of a new place that carry their position and shot moment: checked by the
+     * game once the place is saved.
+     *
+     * @var array<int, array{0: string, 1: object, 2: string}> photo id, coordinates, shot moment
+     */
+    protected array $gamePhotos = [];
 
     public function __construct()
     {
@@ -469,6 +479,26 @@ class Places extends ResourceController
                 (new AchievementsLibrary())->check($this->session->user->id, 'place');
             }
 
+            // The game: the author's own photos shot at the new place confirm their visit of it
+            // (after the candidate's link: a white spot opened this season adds its bonus)
+            if ($this->gamePhotos) {
+                $game  = new GameLibrary();
+                $proof = (object) [
+                    'id'         => $newPlaceId,
+                    'user_id'    => $this->session->user?->id,
+                    'category'   => $place->category,
+                    'lat'        => $lat,
+                    'lon'        => $lon,
+                    'created_at' => date('Y-m-d H:i:s'),
+                ];
+
+                foreach ($this->gamePhotos as [$photoId, $coordinates, $takenAt]) {
+                    $game->photoUploaded($this->session->user, $proof, $photoId, $coordinates, $takenAt);
+                }
+
+                $this->gamePhotos = [];
+            }
+
             return $this->respondCreated(['id' => $newPlaceId, 'spotOpened' => $spotOpened]);
         } catch (Throwable $e) {
             log_message('error', '{exception}', ['exception' => $e]);
@@ -631,6 +661,11 @@ class Places extends ResourceController
             // where nothing substantive changed but we still need to record the edit time
             if ($hasChanges) {
                 $this->model->update($id, $place);
+
+                // Another point or category may have another outline: looked up again by the cron
+                if ($moved || (isset($input['category']) && $input['category'] !== $placeData->category)) {
+                    PlaceOutlines::forget($id);
+                }
             } elseif (!$isBot) {
                 $this->model->touch($id);
             }
@@ -696,7 +731,7 @@ class Places extends ResourceController
 
         // Everyone whose activity goes with the place: collected while it is still there, before the
         // photos below are deleted (their activity rows cascade away with them)
-        $removal = ActivityRemoval::forPlace($id);
+        $removal = ActivityRemoval::forPlace($id)->by($this->session->user?->id);
 
         // The OSM candidates linked to it are white spots again (the pioneer's credit goes with the place)
         (new OsmCandidatesModel())->reopenOfPlace($id);
@@ -902,9 +937,11 @@ class Places extends ResourceController
 
             [$width, $height] = getimagesize(UPLOAD_TEMPORARY . $photoFile);
 
-            // GPS position read from the EXIF at upload time (the processed file has none)
+            // GPS position and shot moment read from the EXIF at upload time (the processed file has none)
             $coordinatesFile = UPLOAD_TEMPORARY . $name . '.json';
-            $coordinates     = is_file($coordinatesFile) ? json_decode(file_get_contents($coordinatesFile)) : null;
+            $exif            = is_file($coordinatesFile) ? json_decode(file_get_contents($coordinatesFile)) : null;
+            $coordinates     = isset($exif->lat, $exif->lon) ? $exif : null;
+            $takenAt         = is_string($exif->takenAt ?? null) ? $exif->takenAt : null;
             PhotoLibrary::removeFile($coordinatesFile);
 
             $photosModel = new PhotosModel();
@@ -913,6 +950,8 @@ class Places extends ResourceController
             $photo = new PhotoEntity();
             $photo->lat       = $coordinates?->lat ?? $place->lat;
             $photo->lon       = $coordinates?->lon ?? $place->lon;
+            $photo->gps       = $coordinates ? 1 : 0;
+            $photo->taken_at  = $takenAt;
             $photo->place_id  = $placeId;
             $photo->user_id   = $this->session->user?->id;
             $photo->title_en  = $content->title;
@@ -928,6 +967,11 @@ class Places extends ResourceController
 
             $activity = new ActivityLibrary();
             $activity->photo($photoId, $placeId);
+
+            // Checked once the place is saved (create()): a photo with its position and shot moment may prove a visit
+            if ($coordinates && $takenAt) {
+                $this->gamePhotos[] = [$photoId, $coordinates, $takenAt];
+            }
 
             // If this first uploaded photo - we automated make place cover image
             if ($photoCount === 0) {

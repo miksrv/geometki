@@ -13,6 +13,7 @@ import { wrapper } from '@/app/store'
 import { AppLayout, EmptyState, PageHeader } from '@/components/shared'
 import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
+import { LocationLeaders } from '@/sections/game/location-leaders'
 import type { PlacesFilterPatch, PlacesFilterState, PlacesFilterType } from '@/sections/place/places-filter-panel'
 // eslint-disable-next-line no-duplicate-imports
 import { buildFilterHref, getRequestOrder, PlaceFilterPanel } from '@/sections/place/places-filter-panel'
@@ -290,7 +291,7 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                 title={title}
                 count={t('places-count', '{{count}} мест', { count: placesCount })}
                 breadcrumbs={breadcrumbsLinks}
-                lede={currentPage === 1 && !currentCategory && !locationType ? t('places-seo-description') : undefined}
+                lede={currentPage === 1 && !currentCategory && !locationType ? t('places-lede') : undefined}
             />
 
             <PlaceFilterPanel
@@ -316,6 +317,17 @@ const PlacesPage: NextPage<PlacesPageProps> = ({
                 <Container>
                     <EmptyState />
                 </Container>
+            )}
+
+            {/* The game: who leads the season in this location */}
+            {currentPage === 1 && locationType && locationData?.id && (
+                <LocationLeaders
+                    // A new block per location: the rating keeps its scope in its state
+                    key={`${locationType}-${locationData.id}`}
+                    type={locationType}
+                    id={locationData.id}
+                    title={locationData.name}
+                />
             )}
         </AppLayout>
     )

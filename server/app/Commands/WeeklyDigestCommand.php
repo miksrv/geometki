@@ -6,8 +6,7 @@
  *   php spark digest:weekly --user <user_id>
  *   php spark digest:weekly --user <user_id> --dry-run
  *
- * Add to cron (once a week, e.g. every Monday at 09:00):
- *   0 9 * * 1 cd /path/to/server && php spark digest:weekly >> /dev/null 2>&1
+ * Started by `php spark cron:run` (Config\Cron::$digest, Monday 09:00 Moscow).
  */
 
 namespace App\Commands;

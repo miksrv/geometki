@@ -28,7 +28,6 @@ class CollectionsModel extends ApplicationBaseModel
 
     /** @var array<int, string> */
     protected $allowedFields = [
-        'slug',
         'user_id',
         'title',
         'description',
@@ -38,8 +37,6 @@ class CollectionsModel extends ApplicationBaseModel
         'country_id',
         'cover_place_id',
         'cover_photo_id',
-        'hidden',
-        'featured',
         'indexable',
         'places_count',
         'views',
@@ -54,7 +51,6 @@ class CollectionsModel extends ApplicationBaseModel
 
     protected $validationRules = [
         'title'    => 'required|string|max_length[120]',
-        'slug'     => 'permit_empty|string|max_length[120]',
         'user_id'  => 'required|string|min_length[3]|max_length[40]',
     ];
 
@@ -145,7 +141,7 @@ class CollectionsModel extends ApplicationBaseModel
 
     /**
      * Recompute and persist the indexable flag from the collection's own
-     * current description, places_count, and hidden state. Self-contained
+     * current description and places_count. Self-contained
      * counterpart to Collections::recalcIndexable() (which takes explicit
      * values mid-request); used where only the collection ID is known, e.g.
      * after a place it contains is hard-deleted elsewhere (Places::delete()).
@@ -163,8 +159,7 @@ class CollectionsModel extends ApplicationBaseModel
 
         $indexable = CollectionIndexability::isIndexable(
             $collection->description,
-            (int) $collection->places_count,
-            (bool) $collection->hidden
+            (int) $collection->places_count
         );
 
         $this->skipValidation(true)->update($collectionId, ['indexable' => (int) $indexable]);
@@ -179,9 +174,9 @@ class CollectionsModel extends ApplicationBaseModel
     public function applyListSelect(): static
     {
         $this->select(
-            'collections.id, collections.slug, collections.user_id as owner_id, collections.title,
+            'collections.id, collections.user_id as owner_id, collections.title,
             collections.description, collections.region_id,
-            collections.cover_place_id, collections.cover_photo_id, collections.hidden, collections.featured,
+            collections.cover_place_id, collections.cover_photo_id,
             collections.indexable, collections.places_count, collections.views, collections.saves,
             collections.updated_at as updated, collections.created_at as created,
             users.id as user_id, users.name as user_name, users.avatar as user_avatar,

@@ -17,6 +17,10 @@ jest.mock('next/image', () => {
     return Image
 })
 
+jest.mock('next-i18next/pages', () => ({
+    useTranslation: () => ({ t: (key: string) => key })
+}))
+
 jest.mock('../theme-switcher', () => ({
     ThemeSwitcher: () => <div data-testid={'theme-switcher'} />
 }))
@@ -29,7 +33,7 @@ jest.mock('@/utils/helpers', () => ({
     formatDate: () => '2026'
 }))
 
-jest.mock('@/package.json', () => ({ version: '1.5.0' }), { virtual: true })
+jest.mock('@/config/env', () => ({ APP_VERSION: '1.5.0' }))
 
 describe('Footer', () => {
     describe('rendering', () => {
@@ -57,6 +61,12 @@ describe('Footer', () => {
         it('renders the current year', () => {
             render(<Footer />)
             expect(screen.getByText(/2026/)).toBeInTheDocument()
+        })
+
+        it('links to the about and the rules pages', () => {
+            render(<Footer />)
+            expect(screen.getByRole('link', { name: 'about-title' })).toHaveAttribute('href', '/about')
+            expect(screen.getByRole('link', { name: 'rules-title' })).toHaveAttribute('href', '/rules')
         })
 
         it('renders the version number', () => {

@@ -5,6 +5,8 @@ Disallow: /auth
 Disallow: /unsubscribe
 Disallow: /places/create
 Disallow: /places/*/edit
+Disallow: /quests/create
+Disallow: /quests/*/edit
 Disallow: /places/landing
 Disallow: /users/settings
 Disallow: /admin
@@ -13,6 +15,8 @@ Disallow: /en/auth
 Disallow: /en/unsubscribe
 Disallow: /en/places/create
 Disallow: /en/places/*/edit
+Disallow: /en/quests/create
+Disallow: /en/quests/*/edit
 Disallow: /en/places/landing
 Disallow: /en/users/settings
 Disallow: /en/admin

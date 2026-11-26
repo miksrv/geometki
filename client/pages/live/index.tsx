@@ -9,7 +9,7 @@ import { getTimeZoneFromCookies } from '@/utils/timeZone'
 import { getUserLocationFromCookies } from '@/utils/userLocation'
 
 /**
- * The home page rendered on every request: a signed-in user's (the welcome panel, their feed)
+ * The home page rendered on every request: a signed-in user's (the welcome panel, their next step)
  * or a guest's with their point (distances on the cards). proxy.ts rewrites `/` here.
  */
 export const getServerSideProps = wrapper.getServerSideProps(

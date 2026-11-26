@@ -10,9 +10,17 @@ export const isApiValidationErrors = <T>(response: unknown): response is ApiResp
     'messages' in response &&
     typeof (response as ApiResponseError<string>).messages === 'object'
 
+/** A longer string is a page, not a message */
+const ERROR_MESSAGE_MAX = 500
+
+/** The body of an answer that is no JSON (a gateway's HTML page of a 502) is no message for a person */
+const plainMessage = (text: string): string | undefined =>
+    text.length <= ERROR_MESSAGE_MAX && !/<[a-z!/]/i.test(text) ? text : undefined
+
 /**
  * Safely extracts error message string from RTK Query error.
- * Handles various error formats: string, {data: string}, {data: {messages: {error: string}}}, {message: string}
+ * Handles various error formats: string, {data: string}, {data: {messages: {error: string}}},
+ * {messages: {error: string}} (an answer already unwrapped by `transformErrorResponse`), {message: string}
  */
 export const getErrorMessage = (error: unknown): string | undefined => {
     if (!error) {
@@ -20,7 +28,7 @@ export const getErrorMessage = (error: unknown): string | undefined => {
     }
 
     if (typeof error === 'string') {
-        return error
+        return plainMessage(error)
     }
 
     if (typeof error === 'object') {
@@ -29,12 +37,22 @@ export const getErrorMessage = (error: unknown): string | undefined => {
             return (error as { message: string }).message
         }
 
+        // Handle {messages: {error: string}}: the API's own answer, as `transformErrorResponse`
+        // (`extractErrorData` in api.ts) leaves it
+        if ('messages' in error) {
+            const messages = (error as { messages: unknown }).messages
+
+            return messages && typeof messages === 'object' && 'error' in messages
+                ? String((messages as { error: unknown }).error)
+                : undefined
+        }
+
         // Handle {data: ...} format (FetchBaseQueryError after transformErrorResponse)
         if ('data' in error) {
             const data = (error as { data: unknown }).data
 
             if (typeof data === 'string') {
-                return data
+                return plainMessage(data)
             }
 
             if (data && typeof data === 'object') {
@@ -53,4 +71,16 @@ export const getErrorMessage = (error: unknown): string | undefined => {
     }
 
     return undefined
+}
+
+/**
+ * A refusal of the API, not a failure: a 4xx answer with a message of its own (too far from the
+ * point, a walk not begun). Shown as a plain notice; a 5xx, a network error or an answer without
+ * words is an error
+ */
+export const isApiRefusal = (error: unknown): boolean => {
+    const status =
+        error && typeof error === 'object' && 'status' in error ? Number((error as { status: unknown }).status) : NaN
+
+    return status >= 400 && status < 500 && !!getErrorMessage(error)
 }

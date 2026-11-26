@@ -7,7 +7,9 @@ export const UserSortFields = {
     Created: 'created_at',
     Activity: 'activity_at',
     Reputation: 'reputation',
-    Experience: 'experience'
+    Experience: 'experience',
+    /** The game: the geopoints of the current season, the most first; for those the game is open to */
+    Season: 'season'
 } as const
 
 export type UserSortFields = (typeof UserSortFields)[keyof typeof UserSortFields]

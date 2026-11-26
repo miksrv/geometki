@@ -5,7 +5,7 @@ import { cn, Container } from 'simple-react-ui-kit'
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiType } from '@/api'
-import { buildCalendarWeeks } from '@/utils/feed'
+import { buildCalendarWeeks, calendarSummary } from '@/utils/feed'
 
 import styles from './styles.module.sass'
 
@@ -18,8 +18,10 @@ export interface ContributionCalendarProps {
  * A year of a person's activity, a square per day coloured by how much they did, weeks as
  * columns (the GitHub contribution graph). The squares stretch to the full width of the page;
  * below their minimum size (phones) the year scrolls sideways, opened at its end — the latest
- * weeks. Weeks start on Monday in Russian and on Sunday in English. It is a card (`Container`):
- * on the page background the empty squares would merge with it.
+ * weeks. Weeks start on Monday in Russian and on Sunday in English. Under the squares: the
+ * busiest day of the year on the left — the one fact the squares do not say by themselves; the
+ * number of actions is in the title, the active days are the squares —, the legend on the
+ * right. It is a card (`Container`): on the page background the empty squares would merge with it.
  */
 export const ContributionCalendar: React.FC<ContributionCalendarProps> = ({ calendar, className }) => {
     const { t, i18n } = useTranslation()
@@ -43,6 +45,12 @@ export const ContributionCalendar: React.FC<ContributionCalendarProps> = ({ cale
                 return index === 0 || month !== previous ? dayjs(firstDay.date).locale(i18n.language).format('MMM') : ''
             }),
         [weeks, i18n.language]
+    )
+
+    // The busiest day of the year, said under the squares
+    const busiestDay = useMemo(
+        () => (calendar ? calendarSummary(calendar.items, calendar.to).busiestDay : undefined),
+        [calendar]
     )
 
     useEffect(() => {
@@ -131,19 +139,32 @@ export const ContributionCalendar: React.FC<ContributionCalendarProps> = ({ cale
                 </div>
             </div>
 
-            <div
-                className={styles.legend}
-                aria-hidden={true}
-            >
-                {t('calendar-less', { defaultValue: 'Меньше' })}
-                {[0, 1, 2, 3, 4].map((level) => (
-                    <span
-                        key={level}
-                        className={cn(styles.cell, styles.legendCell)}
-                        data-level={level}
-                    />
-                ))}
-                {t('calendar-more', { defaultValue: 'Больше' })}
+            <div className={styles.foot}>
+                {/* The one fact of the year the squares do not say by themselves */}
+                {busiestDay && (
+                    <p className={styles.busiest}>
+                        {t('calendar-summary-busiest', {
+                            actions: t('calendar-actions', { count: busiestDay.count }),
+                            date: dayjs(busiestDay.date).locale(i18n.language).format('D MMMM'),
+                            defaultValue: 'Самый активный день — {{date}}: {{actions}}'
+                        })}
+                    </p>
+                )}
+
+                <div
+                    className={styles.legend}
+                    aria-hidden={true}
+                >
+                    {t('calendar-less', { defaultValue: 'Меньше' })}
+                    {[0, 1, 2, 3, 4].map((level) => (
+                        <span
+                            key={level}
+                            className={cn(styles.cell, styles.legendCell)}
+                            data-level={level}
+                        />
+                    ))}
+                    {t('calendar-more', { defaultValue: 'Больше' })}
+                </div>
             </div>
         </Container>
     )

@@ -22,12 +22,13 @@ class Notifications extends BaseConfig
     public array $channels = ['email', 'push'];
 
     /**
-     * Notification types: activity on a user's place, the weekly digest
-     * (email only), a new achievement and a new level (push only).
+     * Notification types: activity on a user's place, the weekly digest and
+     * the news mailings of the site (email only), a new achievement and a new
+     * level (push only).
      *
      * @var string[]
      */
-    public array $types = ['comment', 'photo', 'rating', 'edit', 'cover', 'bookmark', 'visit', 'digest', 'achievement', 'level'];
+    public array $types = ['comment', 'photo', 'rating', 'edit', 'cover', 'bookmark', 'visit', 'digest', 'news', 'achievement', 'level'];
 
     /**
      * Activity types that notify the place owner (a subset of $types).
@@ -42,7 +43,7 @@ class Notifications extends BaseConfig
      * @var array<string, string[]>
      */
     public array $channelTypes = [
-        'email' => ['comment', 'photo', 'rating', 'edit', 'cover', 'bookmark', 'visit', 'digest'],
+        'email' => ['comment', 'photo', 'rating', 'edit', 'cover', 'bookmark', 'visit', 'digest', 'news'],
         'push'  => ['comment', 'photo', 'rating', 'edit', 'cover', 'bookmark', 'visit', 'achievement', 'level'],
     ];
 
@@ -73,10 +74,10 @@ class Notifications extends BaseConfig
     public int $activityEmailIntervalHours = 5;
 
     /**
-     * The hosting's limits, applied to weekly digests only (the bulk mail): at
-     * most this many per hour and per day. Over a limit the digests wait in the
-     * queue and go when the window frees up. Activity notifications and sign-in
-     * links are not counted.
+     * The hosting's limits, applied to the bulk mail (weekly digests and the
+     * news mailings, counted together): at most this many per hour and per day.
+     * Over a limit they wait in the queue and go when the window frees up.
+     * Activity notifications and sign-in links are not counted.
      */
     public int $digestHourLimit = 500;
     public int $digestDayLimit  = 2000;
@@ -109,8 +110,16 @@ class Notifications extends BaseConfig
      */
     public int $digestExpireAfterDays = 6;
 
-    /** `notifications:send` deletes queue rows older than this, once a day. */
-    public int $retentionDays = 90;
+    /** The same for the letters of a news mailing: it may take days at the daily limit. */
+    public int $newsExpireAfterDays = 6;
+
+    /**
+     * `notifications:send` deletes the done queue rows (sent, failed, dropped) older than this,
+     * once a day; waiting ones stay. Longer than the expiry of the bulk mail and than what the
+     * queue reads back (the hosting limits: a day; the interval of activity emails); a finished
+     * mailing keeps its delivery numbers in `mailings`.
+     */
+    public int $retentionDays = 7;
 
     /** `digest:weekly` skips users who got a digest less than this many days ago. */
     public int $digestMinIntervalDays = 6;

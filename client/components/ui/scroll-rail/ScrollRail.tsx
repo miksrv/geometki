@@ -6,7 +6,7 @@ import styles from './styles.module.sass'
 export interface ScrollRailProps {
     /**
      * `chips` (default) — items of their own width, faded edges, small arrows (the category
-     * rail); `cards` — three equal items in a row (one and a peek of the next on phones),
+     * rail); `cards` — three equal items in a row (one the full width on phones),
      * snapping to an item, big arrows at the height of the covers (place tiles)
      */
     variant?: 'chips' | 'cards'

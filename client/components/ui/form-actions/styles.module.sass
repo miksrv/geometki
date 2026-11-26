@@ -22,6 +22,18 @@ $barHeight: 50px
     @media only screen and (max-width: variables.$mobileMaxWidth)
         flex-basis: 100%
 
+// The entity's destructive action, at the start of the row; the note then sits by the buttons.
+// On phones under the buttons, on its own line
+.delete
+    margin-right: auto
+
+    & ~ .message
+        margin-right: 0
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        order: 3
+        flex-basis: 100%
+
 .buttons
     display: flex
     gap: var(--space-3)
@@ -40,7 +52,8 @@ $barHeight: 50px
     z-index: 440
     right: 0
     bottom: 0
-    left: 0
+    // A layout with a side navigation (the admin) moves the bar off it
+    left: var(--page-inset-left, 0px)
     --size-control-medium: 32px
     color: var(--text-color-primary)
     background-color: var(--container-background)
@@ -51,15 +64,16 @@ $barHeight: 50px
         max-width: var(--width-max)
         min-height: $barHeight
         margin: 0 auto
-        padding: 0 16px
+        padding: 0 var(--page-gutter, 16px)
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
-        bottom: calc(#{variables.$bottomNavHeight} + env(safe-area-inset-bottom, 0px))
+        // Over the bottom navigation; a layout without one (the admin) sets its height to 0
+        bottom: calc(var(--page-bottom-bar, #{variables.$bottomNavHeight}) + env(safe-area-inset-bottom, 0px))
         padding-bottom: 0
 
         .wrapper
             flex-wrap: nowrap
-            padding: var(--space-2) 10px
+            padding: var(--space-2) var(--page-gutter, 10px)
 
         // The bar itself tells there are changes; the buttons take the row
         .message

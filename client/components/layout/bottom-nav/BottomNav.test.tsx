@@ -82,8 +82,8 @@ describe('BottomNav', () => {
         renderWithStore(<BottomNav />)
         expect(screen.getByRole('link', { name: 'Карта' })).toHaveAttribute('href', '/map')
         expect(screen.getByRole('link', { name: 'Места' })).toHaveAttribute('href', '/places')
+        expect(screen.getByRole('link', { name: 'Игра' })).toHaveAttribute('href', '/game')
         expect(screen.getByRole('link', { name: 'Коллекции' })).toHaveAttribute('href', '/collections')
-        expect(screen.getByRole('link', { name: 'Люди' })).toHaveAttribute('href', '/users')
         expect(screen.getByRole('link', { name: 'Добавить' })).toHaveAttribute('href', '/places/create')
     })
 
@@ -99,7 +99,24 @@ describe('BottomNav', () => {
         expect(links).toHaveLength(5)
         expect(links[2]).toHaveAttribute('href', '/places/create')
         expect(links.slice(0, 2).map((link) => link.getAttribute('href'))).toEqual(['/map', '/places'])
-        expect(links.slice(3).map((link) => link.getAttribute('href'))).toEqual(['/collections', '/users'])
+        expect(links.slice(3).map((link) => link.getAttribute('href'))).toEqual(['/game', '/collections'])
+    })
+
+    it('keeps the map and the places first, the game after the centre: the explorers give theirs up', () => {
+        renderWithStore(<BottomNav />)
+
+        const nav = screen.getByRole('navigation', { name: 'Основная навигация' })
+        const links = Array.from(nav.querySelectorAll('a'))
+
+        expect(links.map((link) => link.getAttribute('href'))).toEqual([
+            '/map',
+            '/places',
+            '/places/create',
+            '/game',
+            '/collections'
+        ])
+        expect(screen.getByRole('link', { name: 'Игра' })).toBeInTheDocument()
+        expect(screen.queryByRole('link', { name: 'Исследователи' })).not.toBeInTheDocument()
     })
 
     it('marks the current section with aria-current', () => {
@@ -121,10 +138,10 @@ describe('BottomNav', () => {
         expect(store.getState().application.showAuthDialog).toBe(true)
     })
 
-    it('lets a guest open the users section without the auth dialog', () => {
+    it('lets a guest open the game without the auth dialog', () => {
         const { store } = renderWithStore(<BottomNav />, { store: guestStore() })
 
-        fireEvent.click(screen.getByRole('link', { name: 'Люди' }))
+        fireEvent.click(screen.getByRole('link', { name: 'Игра' }))
         expect(store.getState().application.showAuthDialog).toBe(false)
     })
 
@@ -150,12 +167,12 @@ describe('BottomNav', () => {
     })
 
     it('navigates as usual from a nested page of the section', () => {
-        mockRouter.pathname = '/users/[id]'
+        mockRouter.pathname = '/collections/[id]'
         const scrollTo = jest.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
         Object.defineProperty(window, 'scrollY', { configurable: true, value: 400 })
         renderWithStore(<BottomNav />)
 
-        const notCancelled = fireEvent.click(screen.getByRole('link', { name: 'Люди' }))
+        const notCancelled = fireEvent.click(screen.getByRole('link', { name: 'Коллекции' }))
 
         expect(notCancelled).toBe(true)
         expect(scrollTo).not.toHaveBeenCalled()

@@ -1,11 +1,12 @@
 @use '../../../styles/variables' as variables
 @use '../../../styles/typography' as type
 
-// Three columns of person cards, one on phones, where the cards turn into lines
+// Three columns of person cards with the list gaps of every page; one on phones, where the
+// cards turn into lines a short step apart
 .grid
     display: grid
     grid-template-columns: repeat(3, minmax(0, 1fr))
-    gap: var(--space-5)
+    gap: var(--gap-list-row) var(--gap-list-column)
 
     @media only screen and (max-width: variables.$mobileMaxWidth)
         grid-template-columns: minmax(0, 1fr)

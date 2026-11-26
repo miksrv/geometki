@@ -74,6 +74,22 @@ describe('MapLinks', () => {
         })
     })
 
+    describe('directions', () => {
+        it('leads to the route builders, without Wikimapia', () => {
+            render(
+                <MapLinks
+                    {...coords}
+                    directions={true}
+                />
+            )
+            const hrefs = screen.getAllByRole('link').map((l) => (l as HTMLAnchorElement).href)
+
+            expect(hrefs).toHaveLength(2)
+            expect(hrefs[0]).toContain('rtext=~55.75,37.62')
+            expect(hrefs[1]).toContain('/maps/dir/?api=1&destination=55.75,37.62')
+        })
+    })
+
     describe('asListItem rendering', () => {
         it('wraps each link inside a list item when asListItem is true', () => {
             const { container } = render(

@@ -1,16 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, cn } from 'simple-react-ui-kit'
 
+import dynamic from 'next/dynamic'
 import { useTranslation } from 'next-i18next/pages'
 
 import { API, ApiType } from '@/api'
 import { openAuthDialog } from '@/app/applicationSlice'
 import { Notify, NotifyReplace } from '@/app/notificationSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store'
+import usePreciseLocation from '@/hooks/usePreciseLocation'
 import { getErrorMessage } from '@/utils/api'
 import { daysBetweenPlainDates, localPlainDate } from '@/utils/date'
 
 import styles from './styles.module.sass'
+
+const ConfirmationDialog = dynamic(() => import('@/components/shared/confirmation-dialog/ConfirmationDialog'), {
+    ssr: false
+})
 
 const PENDING_VISITS_KEY = 'pending_visits'
 const VISIT_TTL_MS = 86400000 // 24 hours
@@ -93,6 +99,12 @@ const writePending = (items: PendingVisit[]) => {
 /** Places with a check-in on its way: the buttons of one place share it, so a double tap sends one request */
 const inFlight = new Set<string>()
 
+/**
+ * Places whose check-in is made and still waits for the browser's position (the game). A visit
+ * cancelled meanwhile is taken off: the position that comes later must not check in again.
+ */
+const awaitingPosition = new Set<string>()
+
 interface WasHereButtonProps {
     placeId?: string
     size?: 'small' | 'medium' | 'large'
@@ -113,21 +125,53 @@ interface WasHereButtonProps {
  * and a line under it.
  */
 export const checkInMessage = (
-    visit: Pick<ApiType.Visits.CreateResponse, 'isNew' | 'ordinal' | 'firstThisYear'>,
+    visit: Pick<ApiType.Visits.CreateResponse, 'isNew' | 'ordinal' | 'firstThisYear' | 'game'>,
     t: (key: string, options?: Record<string, unknown>) => string
-): { title: string; note?: string } => ({
-    note:
-        visit.isNew && visit.firstThisYear
-            ? t('visit-result-first-this-year', { defaultValue: 'Вы первый, кто побывал здесь в этом году' })
-            : undefined,
-    title: visit.isNew
-        ? t('visit-result-title', { defaultValue: 'Визит №{{count}} в это место', count: visit.ordinal })
-        : t('visit-already-this-week', { defaultValue: 'Вы уже отмечались здесь на этой неделе' })
-})
+): { title: string; note?: string } => {
+    // The game: the check-in was made on the spot and counted the place in the season
+    const points = visit.game?.confirmed && visit.game.points > 0 ? visit.game.points : 0
+
+    return {
+        note:
+            [
+                points > 0 && t('game-points-plus', { count: points }),
+                visit.isNew &&
+                    visit.firstThisYear &&
+                    t('visit-result-first-this-year', { defaultValue: 'Вы первый, кто побывал здесь в этом году' })
+            ]
+                .filter(Boolean)
+                .join('. ') || undefined,
+        title: visit.isNew
+            ? t('visit-result-title', { defaultValue: 'Визит №{{count}} в это место', count: visit.ordinal })
+            : points > 0
+              ? t('game-place-confirmed')
+              : t('visit-already-this-week', { defaultValue: 'Вы уже отмечались здесь на этой неделе' })
+    }
+}
 
 /**
- * "Я здесь был(а)": one tap checks in, with no location and no form, and a toast tells the number
- * of the visit. A visit is a log entry, one a week (`repeatDays` of `GET /visits/me`): for a week
+ * The visitor's visit of this week at a place, the one a tap on the button cancels: the latest
+ * one, younger than `repeatDays`. Days are the visitor's (`visitedAt` is the day they sent).
+ */
+export const currentVisitOf = (
+    myVisits: Pick<ApiType.Visits.MeResponse, 'items' | 'repeatDays'> | undefined,
+    today: string
+): ApiType.Visits.MeResponse['items'][number] | undefined => {
+    const latest = [...(myVisits?.items ?? [])].sort((a, b) => b.visitedAt.localeCompare(a.visitedAt))[0]
+    const days = latest ? daysBetweenPlainDates(latest.visitedAt.slice(0, 10), today) : undefined
+
+    return latest && days !== undefined && days < (myVisits?.repeatDays ?? 1) ? latest : undefined
+}
+
+/**
+ * "Я здесь был(а)", the one check-in of the site: one tap, no form, and a toast tells the number
+ * of the visit. The tap also asks the browser where the visitor is, without waiting for the
+ * answer: the visit is made and the questions are asked at once, and when the position comes the
+ * same check-in is sent again with it — on the spot the visit is confirmed (the same toast, its
+ * line extended: "Визит №3 в это место. Визит подтверждён: +30 геопоинтов"); far
+ * away, refused or not found in a few seconds it stays a plain visit — never an error, nothing
+ * is said. Cancelling a visit that
+ * brought geopoints asks first: they go with it. A visit is a log entry, one a week (`repeatDays` of `GET /visits/me`): for a week
  * after the visit the button is green (success tint, the same in every place it is shown) and
  * reads "Вы здесь отметились", a tap then cancels the visit (`DELETE`); after the week it reads
  * "Вы были здесь · 3 раза" and a tap checks in again. A guest signs in first and is checked in
@@ -158,6 +202,12 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
     })
 
     const { data: myVisits } = API.useVisitsGetMeQuery({ place: placeId! }, { skip: !placeId || !isAuth })
+    const { request: requestPosition } = usePreciseLocation()
+
+    // The place in the season (`GET /visits/me`): a visit that brought geopoints is cancelled after a question
+    const game = myVisits?.game
+    // A visit that brought geopoints is cancelled after a question
+    const [confirmCancel, setConfirmCancel] = useState<string>()
 
     const count = myVisits?.count ?? 0
 
@@ -176,13 +226,8 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
         return () => document.removeEventListener('visibilitychange', refresh)
     }, [])
 
-    // The visit of this week: a tap cancels it. Days are the visitor's (`visitedAt` is the day they sent)
-    const currentVisit = useMemo(() => {
-        const latest = [...(myVisits?.items ?? [])].sort((a, b) => b.visitedAt.localeCompare(a.visitedAt))[0]
-        const days = latest ? daysBetweenPlainDates(latest.visitedAt.slice(0, 10), today) : undefined
-
-        return latest && days !== undefined && days < (myVisits?.repeatDays ?? 1) ? latest : undefined
-    }, [myVisits, today])
+    // The visit of this week: a tap cancels it
+    const currentVisit = useMemo(() => currentVisitOf(myVisits, today), [myVisits, today])
 
     const notifyError = useCallback(
         (error: unknown) =>
@@ -236,6 +281,12 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
 
         inFlight.add(placeId)
 
+        // The position confirms the visit (and, in a season, counts it): the browser is asked at once, but nobody waits for it — the
+        // visit is made and the questions are asked meanwhile
+        const position = requestPosition({ quiet: true })
+        // The check-in's toast: the confirmation is added to it, one toast for one tap
+        let checkedIn: string | undefined
+
         try {
             // The same day answers that day's visit (`isNew: false`)
             const visit = await postVisit({ place: placeId, visitedAt }).unwrap()
@@ -245,16 +296,57 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
             } else {
                 const { title, note } = checkInMessage(visit, t)
 
-                void dispatch(
-                    NotifyReplace({ id: 'visited', message: [title, note].filter(Boolean).join('. '), type: 'success' })
-                )
+                checkedIn = [title, note].filter(Boolean).join('. ')
+                void dispatch(NotifyReplace({ id: 'visited', message: checkedIn, type: 'success' }))
             }
         } catch (error) {
             notifyError(error)
+
+            return
         } finally {
             inFlight.delete(placeId)
         }
-    }, [dispatch, notifyError, onCheckedIn, placeId, postVisit, savePendingVisit, t])
+
+        awaitingPosition.add(placeId)
+
+        try {
+            const found = await position
+
+            // No position (far from a window, refused, not found in time): the visit stays a plain
+            // one, nothing is said. Cancelled meanwhile: the position is dropped
+            if (!found || !awaitingPosition.has(placeId) || inFlight.has(placeId)) {
+                return
+            }
+
+            // Held while the request is on its way: a tap that cancels the visit now would race
+            // with it, and the visit would come back after "Визит отменён"
+            inFlight.add(placeId)
+
+            // The same check-in again, with the position: on the spot the visit counts in the season
+            const counted = await postVisit({ ...found, place: placeId, visitedAt })
+                .unwrap()
+                .finally(() => inFlight.delete(placeId))
+
+            if (counted.game?.confirmed) {
+                const confirmed =
+                    counted.game.points > 0
+                        ? `${t('game-place-confirmed')}: ${t('game-points-plus', { count: counted.game.points })}`
+                        : t('visit-confirmed')
+
+                void dispatch(
+                    NotifyReplace({
+                        id: 'visited',
+                        message: [checkedIn, confirmed].filter(Boolean).join('. '),
+                        type: 'success'
+                    })
+                )
+            }
+        } catch {
+            // The visit is made: the season can still be reached by "Я сейчас здесь" under the button
+        } finally {
+            awaitingPosition.delete(placeId)
+        }
+    }, [dispatch, notifyError, onCheckedIn, placeId, postVisit, requestPosition, savePendingVisit, t])
 
     // The visits saved offline: a day's visit is one, a resend cannot duplicate it
     const flushPendingVisits = useCallback(async () => {
@@ -355,6 +447,8 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
         }
 
         inFlight.add(placeId)
+        // A position still on its way has nothing to count any more
+        awaitingPosition.delete(placeId)
 
         try {
             await removeVisit({ id: visitId, place: placeId }).unwrap()
@@ -384,7 +478,13 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
 
     const handleClick = () => {
         if (currentVisit) {
-            void cancelVisit(currentVisit.id)
+            // The visit of the week is the one that counted the place: its geopoints go with it
+            if (game?.earned != null && currentVisit.confirmed) {
+                setConfirmCancel(currentVisit.id)
+            } else {
+                void cancelVisit(currentVisit.id)
+            }
+
             return
         }
 
@@ -425,6 +525,19 @@ export const WasHereButton: React.FC<WasHereButtonProps> = ({
                 tooltip={hideLabel ? [label, cancelHint].filter(Boolean).join('. ') : cancelHint}
                 onClick={handleClick}
             />
+
+            {confirmCancel && (
+                <ConfirmationDialog
+                    open={true}
+                    message={t('visit-cancel-game-confirm')}
+                    confirmLabel={t('visit-cancel-game-button')}
+                    onCancel={() => setConfirmCancel(undefined)}
+                    onConfirm={() => {
+                        void cancelVisit(confirmCancel)
+                        setConfirmCancel(undefined)
+                    }}
+                />
+            )}
         </>
     )
 }

@@ -2,20 +2,20 @@
 
 /**
  * Delivers notifications outside the site and keeps their queues small: the
- * one notification job for cron.
+ * one notification job of the cron.
  *   - sends a batch of the email queue (activity notifications, weekly digests;
  *     an email skips the events a push already told about and waits for a queued one);
  *   - sends a batch of the push queue;
  *   - deletes the guest cache folders cleared since the last run (Config\GuestCache);
- *   - once a day deletes queue rows older than Config\Notifications::$retentionDays,
+ *   - once a day deletes the done queue rows older than Config\Notifications::$retentionDays (7),
  *     push devices that keep failing and stale guest cache answers.
  *
  * Run from CLI:
  *   php spark notifications:send
  *   php spark notifications:send --cleanup   # clean up now, not only once a day
  *
- * Add to cron (every minute; overlapping runs are safe):
- *   * * * * * cd /path/to/server && php spark notifications:send >> /dev/null 2>&1
+ * Started by `php spark cron:run` (Config\Cron::$notifications, every 5 minutes); overlapping
+ * runs are safe.
  */
 
 namespace App\Commands;

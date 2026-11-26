@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Container } from 'simple-react-ui-kit'
+import { Button, cn, Container } from 'simple-react-ui-kit'
 
 import type { NextPage } from 'next'
 import Head from 'next/head'
@@ -10,20 +10,33 @@ import { generateNextSeo } from 'next-seo/pages'
 
 import { API, ApiModel, ApiType } from '@/api'
 import { useAppSelector } from '@/app/store'
-import { AppLayout, FeedList, FeedPulse, LocationLinkList, UserCard, UserProfileCard } from '@/components/shared'
+import {
+    AppLayout,
+    FeedList,
+    FeedPulse,
+    LocationLinkList,
+    QuestCard,
+    QuestsPromo,
+    UserCard,
+    UserProfileCard
+} from '@/components/shared'
 import { SITE_LINK } from '@/config/env'
 import {
     HomeCategories,
     HomeCollections,
+    HomeFirstSteps,
+    HomeGame,
+    HomeGameIntro,
     HomeHero,
     HomeHowItWorks,
     HomeJoin,
     HomePlaces,
-    HomeUnexplored
+    HomeUnexplored,
+    isNewcomer
 } from '@/sections/home'
-import { getCategoryShortTitle } from '@/utils/categories'
 import { calendarSummary, calendarWeekActions } from '@/utils/feed'
-import { buildCategoryHref, buildLocationHref, buildPlaceUrl, getLandingFlags } from '@/utils/helpers'
+import { questHref } from '@/utils/game'
+import { buildLocationHref, buildPlaceUrl, getLandingFlags } from '@/utils/helpers'
 import { buildHreflangTags } from '@/utils/seo'
 
 import styles from './styles.module.sass'
@@ -31,8 +44,11 @@ import styles from './styles.module.sass'
 /** Stories in the home page widget: the latest big events, the small ones are on /activity */
 export const HOME_FEED_LIMIT = 5
 
-/** A guest's feed sits next to the people list: about as tall with fewer stories */
-export const HOME_GUEST_FEED_LIMIT = 3
+/** People in the widget: the last ones seen on the site — who is online, who was here and when */
+export const HOME_USERS_LIMIT = 10
+
+/** Quests asked for a signed-in user: the walk to go on with, or a cover for the invitation */
+export const HOME_QUESTS_LIMIT = 3
 
 /** Places per tab of "Куда поехать" */
 export const HOME_PLACES_LIMIT = 8
@@ -45,7 +61,15 @@ export const HOME_REGIONS_LIMIT = 12
 export const HOME_COLLECTION_MIN_PLACES = 3
 
 export interface HomePageProps {
+    /** The week's popular places: a guest's first tab of "Куда поехать" */
     popularPlaces: ApiModel.Place[]
+    /** A signed-in user's first tab instead: picked by their interests, not explored yet; null for a guest */
+    recommendedPlaces?: ApiModel.Place[] | null
+    /** The quest the signed-in user is walking, if any */
+    questWalk?: ApiType.Game.Quest | null
+    /** The quests the signed-in user has not walked to the end, and a cover of one of them */
+    questsCount?: number
+    questsCover?: string | null
     latestPlaces: ApiModel.Place[]
     usersList: ApiModel.User[]
     feedStories: ApiModel.FeedStory[]
@@ -53,12 +77,19 @@ export interface HomePageProps {
     regions: ApiType.Locations.LocationChildItem[]
     feedPulse?: ApiType.Feed.PulseResponse | null
     stats?: ApiType.Stats.GetResponse | null
+    /** The guest page's game block (`GET /game` without a visitor); null on the signed-in page */
+    game?: ApiType.Game.GetResponse | null
     /** The signed-in user with the statistic, for the welcome panel; undefined for a guest */
     currentUser?: ApiModel.User | null
 }
 
 export const HomePage: NextPage<HomePageProps> = ({
+    game,
     popularPlaces,
+    recommendedPlaces,
+    questWalk,
+    questsCount,
+    questsCover,
     latestPlaces,
     usersList,
     feedStories,
@@ -119,14 +150,8 @@ export const HomePage: NextPage<HomePageProps> = ({
         key: `${region.type}-${region.id}`,
         title: region.title
     }))
-    const categoryLinks = (stats?.categories ?? []).map(({ name, count }) => ({
-        count,
-        href: buildCategoryHref(name, flags),
-        key: name,
-        title: getCategoryShortTitle(t, name)
-    }))
 
-    const renderFeedWidget = (limit: number) => (
+    const renderFeedWidget = () => (
         <Container
             title={t('activity-feed')}
             action={
@@ -144,15 +169,18 @@ export const HomePage: NextPage<HomePageProps> = ({
                     compact={true}
                 />
                 <FeedList
-                    stories={feedStories.slice(0, limit)}
+                    stories={feedStories.slice(0, HOME_FEED_LIMIT)}
                     density={'compact'}
                 />
             </div>
         </Container>
     )
 
-    const usersWidget = (
+    // In the side column the block is as tall as the feed lets it be and the list scrolls
+    // inside; it never makes the feed's row taller than its own least height
+    const renderUsersWidget = () => (
         <Container
+            className={styles.usersFill}
             title={t('active-users')}
             action={
                 <Link
@@ -164,7 +192,7 @@ export const HomePage: NextPage<HomePageProps> = ({
             }
         >
             {usersList.length ? (
-                <div className={styles.usersWidget}>
+                <div className={cn(styles.usersWidget, styles.usersFillList)}>
                     {usersList.map((user) => (
                         <UserCard
                             key={user.id}
@@ -226,20 +254,23 @@ export const HomePage: NextPage<HomePageProps> = ({
                     url: SITE_LINK
                 }}
             />
-            <JsonLdScript
-                scriptKey={'popular-places'}
-                data={{
-                    '@context': 'https://schema.org',
-                    '@type': 'ItemList',
-                    itemListElement: popularPlaces.map((place, index) => ({
-                        '@type': 'ListItem',
-                        name: place.title,
-                        position: index + 1,
-                        // The same place URL every list of the site names, in both locales (utils/schema.ts)
-                        url: `${SITE_LINK}${buildPlaceUrl(place.id, place.slug).replace(/^\//, '')}`
-                    }))
-                }}
-            />
+            {/* A signed-in user's page lists the places picked for them, not the popular ones */}
+            {popularPlaces.length > 0 && (
+                <JsonLdScript
+                    scriptKey={'popular-places'}
+                    data={{
+                        '@context': 'https://schema.org',
+                        '@type': 'ItemList',
+                        itemListElement: popularPlaces.map((place, index) => ({
+                            '@type': 'ListItem',
+                            name: place.title,
+                            position: index + 1,
+                            // The same place URL every list of the site names, in both locales (utils/schema.ts)
+                            url: `${SITE_LINK}${buildPlaceUrl(place.id, place.slug).replace(/^\//, '')}`
+                        }))
+                    }}
+                />
+            )}
 
             {user ? (
                 <div className={styles.home}>
@@ -249,23 +280,51 @@ export const HomePage: NextPage<HomePageProps> = ({
                         facts={welcomeFacts}
                     />
 
-                    <div className={styles.userColumns}>
-                        {renderFeedWidget(HOME_FEED_LIMIT)}
-                        <div className={styles.sideColumn}>
-                            <HomeUnexplored total={stats?.unexplored} />
-                            {usersWidget}
-                        </div>
-                    </div>
+                    {/* The next step, by what the person is in the middle of: a quest they began,
+                        the first steps of a newcomer, and the season — the main thing of the site */}
+                    {questWalk && (
+                        <QuestCard
+                            quest={questWalk}
+                            size={'small'}
+                            overline={t('home-quest-overline')}
+                            action={
+                                <Button
+                                    mode={'primary'}
+                                    size={'medium'}
+                                    link={questHref(questWalk.id, questWalk.slug)}
+                                    label={t('home-quest-continue')}
+                                />
+                            }
+                        />
+                    )}
 
-                    <LocationLinkList
-                        title={t('home-categories-links-title')}
-                        items={categoryLinks}
-                    />
+                    {isNewcomer(user.statistic) && <HomeFirstSteps statistic={user.statistic} />}
 
+                    <HomeGame />
+
+                    {/* Where to go: picked for them, near them, new — without the explored places */}
                     <HomePlaces
+                        // A guest's cached page signed in without a reload has no picks: the popular ones stay
+                        recommended={recommendedPlaces ?? undefined}
                         popular={popularPlaces}
                         latest={latestPlaces}
                     />
+
+                    <div className={styles.userColumns}>
+                        {renderFeedWidget()}
+                        <div className={styles.sideColumn}>
+                            <HomeUnexplored total={stats?.unexplored} />
+                            {renderUsersWidget()}
+                        </div>
+                    </div>
+
+                    {/* Nobody is invited to the quests while they are walking one */}
+                    {!questWalk && !!questsCount && (
+                        <QuestsPromo
+                            count={questsCount}
+                            cover={questsCover ?? undefined}
+                        />
+                    )}
 
                     <HomeCollections collections={collections} />
                 </div>
@@ -283,6 +342,8 @@ export const HomePage: NextPage<HomePageProps> = ({
                         latest={latestPlaces}
                     />
 
+                    <HomeGameIntro game={game} />
+
                     <HomeHowItWorks categories={stats?.categories} />
 
                     <HomeCollections collections={collections} />
@@ -292,9 +353,11 @@ export const HomePage: NextPage<HomePageProps> = ({
                         items={regionLinks}
                     />
 
-                    <div className={styles.twoColumns}>
-                        {renderFeedWidget(HOME_GUEST_FEED_LIMIT)}
-                        {usersWidget}
+                    {/* The same feed and people as on the signed-in page: the feed wide, the people
+                        a narrow side column as tall as the feed */}
+                    <div className={styles.userColumns}>
+                        {renderFeedWidget()}
+                        <div className={styles.sideColumn}>{renderUsersWidget()}</div>
                     </div>
 
                     <HomeJoin />

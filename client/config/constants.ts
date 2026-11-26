@@ -1,19 +1,8 @@
 export const LOCAL_STORAGE_KEY = 'geometki'
 
-// Level badge colors — 3 levels per group, 10 groups for levels 1-30
-// Each entry: { fill: background color, border: darker outline color }
-export const LEVEL_COLORS: Array<{ fill: string; border: string }> = [
-    { fill: '#B0BEC5', border: '#546E7A' }, // 1–3   newcomer
-    { fill: '#78909C', border: '#37474F' }, // 4–6   beginner
-    { fill: '#26C6DA', border: '#00838F' }, // 7–9   active
-    { fill: '#26A69A', border: '#00695C' }, // 10–12 explorer
-    { fill: '#42A5F5', border: '#1565C0' }, // 13–15 experienced
-    { fill: '#5C6BC0', border: '#283593' }, // 16–18 advanced
-    { fill: '#7E57C2', border: '#4527A0' }, // 19–21 expert
-    { fill: '#EF5350', border: '#B71C1C' }, // 22–24 master
-    { fill: '#FF7043', border: '#BF360C' }, // 25–27 legend
-    { fill: '#FFD700', border: '#B8860B' } // 28–30 grand legend
-]
+// The tiers of the levels: three levels share a tier — a colour (`--color-level-<tier>` and its
+// `-rim` and `-ink` in styles/theme.css) and a name (`levelTier.<tier>` in common.json)
+export const LEVEL_TIERS = 10
 
 // Request header the proxy sets to the request's locale: App Router pages (app/not-found.tsx)
 // have no Pages Router i18n and read the locale from it

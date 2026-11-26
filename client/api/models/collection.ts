@@ -45,7 +45,6 @@ export type Collection = {
     placesCount: number
     views: number
     saves: number
-    featured: boolean
     /** Drives the robots meta tag only — never render this in the UI. */
     indexable?: boolean
     updated: DateTime

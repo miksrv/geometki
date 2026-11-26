@@ -1,0 +1,16 @@
+// Breadcrumbs on the left, the buttons on the right — the line of `PageHeader`'s actions
+.line
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    justify-content: space-between
+    gap: var(--space-3)
+
+.actions
+    // The buttons of a page head are 32px (DESIGN.md → Buttons beside a page title)
+    --size-control-medium: 32px
+
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-2)
+    margin-left: auto

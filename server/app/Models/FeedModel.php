@@ -9,8 +9,8 @@ use CodeIgniter\Database\BaseBuilder;
  * activity rows (`activity.feed_id`) or, for achievements and levels, a row of its own.
  * Stories are written by App\Libraries\FeedLibrary and read newest-updated first.
  *
- * A story is shown only while something in it is: its place and collection exist (a
- * hidden collection is private), its author's account exists, and — unless it is an
+ * A story is shown only while something in it is: its place and collection exist, its
+ * author's account exists, and — unless it is an
  * achievement or a level — at least one of its activity rows is not deleted.
  *
  * @package App\Models
@@ -115,7 +115,7 @@ class FeedModel extends ApplicationBaseModel
         return $this->db->query(
             "SELECT e.*
                FROM (
-                    SELECT a.id, a.feed_id, a.type, a.place_id, a.collection_id, a.created_at,
+                    SELECT a.id, a.feed_id, a.type, a.place_id, a.collection_id, a.visit_id, a.created_at,
                            ph.id AS photo_id, ph.filename, ph.extension, ph.width, ph.height,
                            ep.id AS ep_id, ep.source AS ep_source, ep.external_id AS ep_external_id,
                            ep.title AS ep_title, ep.author AS ep_author, ep.license AS ep_license,
@@ -247,7 +247,7 @@ class FeedModel extends ApplicationBaseModel
             ->join('collections fc', 'fc.id = feed.collection_id', 'left')
             ->where('(feed.user_id IS NULL OR fu.deleted_at IS NULL)', null, false)
             ->where('(feed.place_id IS NULL OR fp.deleted_at IS NULL)', null, false)
-            ->where('(feed.collection_id IS NULL OR (fc.deleted_at IS NULL AND fc.hidden = 0))', null, false);
+            ->where('(feed.collection_id IS NULL OR fc.deleted_at IS NULL)', null, false);
 
         $place = $filters['place'] ?? null;
 

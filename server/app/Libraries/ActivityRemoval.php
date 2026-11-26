@@ -21,7 +21,12 @@ use Throwable;
  * - the reputation of the author and the contributors of the places concerned
  *   (ReputationLibrary: votes and contributions both move it);
  * - the stories the activity was in (FeedLibrary::refresh());
- * - their cached achievement progress (AchievementsLibrary::forgetProgress()).
+ * - their cached achievement progress (AchievementsLibrary::forgetProgress());
+ * - when the one who removes it is told (`by()`) and the activity is their own: the awards it
+ *   had earned them (AchievementsLibrary::reconcile()) — a visit cancelled, a photo deleted
+ *   takes back the award it brought, with its story and its experience, and a level story
+ *   above the level they are left with. Someone else's removal (an administrator deleting a
+ *   place) takes no award from anyone.
  */
 class ActivityRemoval
 {
@@ -30,6 +35,9 @@ class ActivityRemoval
      * @param string[] $placeIds The places it was about
      * @param string[] $feedIds  The stories it was in
      */
+    /** The one who removes the activity: their own awards are brought in line with what is left */
+    private ?string $actorId = null;
+
     private function __construct(
         private array $userIds,
         private array $placeIds,
@@ -77,6 +85,14 @@ class ActivityRemoval
         return self::collect('user_id = ? AND place_id = ? AND type = ?', [$userId, $placeId, $type]);
     }
 
+    /** Who removes the activity: when it is their own, the awards it earned them go with it */
+    public function by(?string $userId): self
+    {
+        $this->actorId = $userId;
+
+        return $this;
+    }
+
     private static function collect(string $where, array $binds): self
     {
         $rows = Database::connect()->query(
@@ -110,6 +126,15 @@ class ActivityRemoval
             log_message('error', '{exception}', ['exception' => $e]);
         }
 
+        // Before the experience is recounted: it sums the awards held
+        if ($this->actorId && in_array($this->actorId, $this->userIds, true)) {
+            try {
+                (new AchievementsLibrary())->reconcile($this->actorId);
+            } catch (Throwable $e) {
+                log_message('error', '{exception}', ['exception' => $e]);
+            }
+        }
+
         try {
             $levels     = new LevelsLibrary();
             $usersModel = new UsersModel();
@@ -119,6 +144,18 @@ class ActivityRemoval
 
                 if ($user) {
                     $levels->calculate($user, false);
+                }
+            }
+
+            // A "new level" story above the level the actor is left with is no longer true
+            if ($this->actorId && in_array($this->actorId, $this->userIds, true)) {
+                $actor = $usersModel->select('id, level')->find($this->actorId);
+
+                if ($actor) {
+                    Database::connect()->table('feed')
+                        ->where(['user_id' => $actor->id, 'type' => 'level'])
+                        ->where('level >', (int) $actor->level)
+                        ->delete();
                 }
             }
 

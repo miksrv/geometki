@@ -10,7 +10,6 @@ class AchievementEntity extends Entity {
         'group_slug'     => null,
         'type'           => 'base',
         'tier'           => 'none',
-        'category'       => null,
         'title_en'       => null,
         'title_ru'       => null,
         'description_en' => null,

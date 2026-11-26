@@ -1,0 +1,65 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+
+// Big numbers over captions in equal tiles (DESIGN.md → StatTiles). Below 1024px the row goes
+// under the rest of its card (a grid of three columns: avatar or picture | text | tiles)
+.tiles
+    display: grid
+    grid-template-columns: repeat(var(--stat-tiles, 4), minmax(88px, auto))
+    gap: var(--space-2)
+    align-self: center
+    margin: 0
+
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        grid-column: 1 / -1
+        grid-template-columns: repeat(var(--stat-tiles, 4), minmax(0, 1fr))
+
+.tiles > *
+    min-width: 0
+
+.tile
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+    height: 100%
+    text-align: center
+    padding: var(--space-3) var(--space-4)
+    border-radius: var(--border-radius)
+    background: var(--surface-2)
+    color: var(--text-color-primary)
+
+    b
+        +type.stat
+
+    span
+        font-size: variables.$fontSizeCaption
+        color: var(--text-color-secondary)
+        white-space: nowrap
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        padding: var(--space-2)
+
+// A tile that leads to what it counts
+.link
+    // The global `a:focus` (link colour, underline) is more specific than a class: a clicked
+    // tile keeps the focus
+    &:focus
+        color: var(--text-color-primary)
+        text-decoration: none
+
+    &:hover
+        background: var(--color-main-background)
+        color: var(--color-main)
+        text-decoration: none
+
+    &:focus-visible
+        outline: 2px solid var(--color-main)
+        outline-offset: 2px
+
+// The reputation keeps the colour of its sign
+.positive
+    color: var(--color-green)
+
+.negative
+    color: var(--color-red)

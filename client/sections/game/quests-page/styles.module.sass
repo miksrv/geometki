@@ -1,0 +1,78 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+
+// --- "Вы проходите": the begun walks, low cards the width of the page ------------------------
+.shelf
+    margin-bottom: var(--space-6)
+
+.shelfTitle
+    +type.titleSection
+    margin: 0 0 var(--space-3)
+
+// One under another: one walk at a time is the common case
+.shelfList
+    display: flex
+    flex-direction: column
+    gap: var(--space-3)
+
+// --- The modes on the left, "Список / Карта" on the right (below 1024px only) -----------------
+.toolbar
+    // The mode tabs lead here (`#quests-list`): it stops under the sticky app bar
+    scroll-margin-top: 64px
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    justify-content: space-between
+    gap: var(--space-3)
+
+.modes
+    min-width: 0
+
+.views
+    flex-shrink: 0
+
+    @media only screen and (min-width: #{variables.$feedSideColumnMaxWidth + 1})
+        display: none
+
+// --- The map: a low band on the full width between the modes and the tiles ------------------
+// No margins of its own: the page's gap (`AppLayout`, `--space-4`) is the distance above and below
+.mapBand
+    height: 280px
+
+    // Below 1024px the map is shown by the tab "Карта" only, in place of the tiles
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        display: none
+
+        &.mapShown
+            display: block
+            height: 65vh
+
+// --- The tiles: three a row, two below 1024px, one on phones; the list gaps of every page ------
+// No margins of its own: the pagination is the page's gap under it, as on /places
+.grid
+    display: grid
+    grid-template-columns: repeat(3, minmax(0, 1fr))
+    gap: var(--gap-list-row) var(--gap-list-column)
+
+    @media only screen and (max-width: variables.$feedSideColumnMaxWidth)
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+
+        &.gridHidden
+            display: none
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+
+// --- The map: a card with a 3px frame, as `PlacesMap`, filling its box -----------------------
+.map
+    height: 100%
+    padding: 3px !important
+
+.mapInner
+    position: relative
+    height: 100%
+    border-radius: calc(var(--border-radius) - 3px)
+    overflow: hidden
+
+    & > div
+        height: 100%

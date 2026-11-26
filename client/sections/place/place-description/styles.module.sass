@@ -1,5 +1,4 @@
 @use '../../../styles/variables' as variables
-@use '../../../styles/typography' as type
 @use '../../../styles/mixins' as *
 
 .placeDescription
@@ -19,13 +18,10 @@
     margin-bottom: var(--space-3)
     color: var(--text-color-secondary)
 
-// Rendered markdown: the same reading typography as the collection article, and a lead — the
-// first paragraph carries the gist of the place, everyone reads it, so it is larger
+// Rendered markdown: the same reading typography as the collection article, one size from
+// the first paragraph on
 .content
     +prose
-
-    & > p:first-child
-        +type.lead
 
     // Collapsed: a fixed height (CLAMP_HEIGHT in the component) with the last lines fading
     // out, the full text stays in the DOM

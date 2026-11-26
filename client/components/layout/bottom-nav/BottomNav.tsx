@@ -6,6 +6,8 @@ import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next/pages'
 
 import useRequireAuth from '@/hooks/useRequireAuth'
+import { GAME_HREF } from '@/utils/game'
+import { sitePathname } from '@/utils/sitePathname'
 
 import styles from './styles.module.sass'
 
@@ -21,8 +23,11 @@ type BottomNavItem = {
     primary?: boolean
 }
 
-export const isBottomNavItemActive = (pathname: string, match: string): boolean =>
-    pathname === match || pathname.startsWith(`${match}/`)
+export const isBottomNavItemActive = (pathname: string, match: string): boolean => {
+    const path = sitePathname(pathname)
+
+    return path === match || path.startsWith(`${match}/`)
+}
 
 /**
  * Mobile-only bottom navigation: the same four sections as the desktop app bar with
@@ -37,20 +42,25 @@ export const BottomNav: React.FC = () => {
     const router = useRouter()
     const requireAuth = useRequireAuth()
 
+    const add: BottomNavItem = {
+        auth: true,
+        href: '/places/create',
+        icon: 'PlusCircle',
+        label: t('nav-add', { defaultValue: 'Добавить' }),
+        primary: true
+    }
+
     // Kept strictly symmetric: 2 items, the primary "add place" action in the
-    // center, 2 items — so the center button is visually centered on all widths.
+    // center, 2 items — so the center button is visually centered on all widths. The map is
+    // always first, then the places. The game comes right after the centre and the explorers
+    // give theirs up: the game has its own rating of them, and their list is a tap away from
+    // the home page. The quests are a tap away from the game page.
     const items: BottomNavItem[] = [
         { href: '/map', icon: 'Map', label: t('nav-map', { defaultValue: 'Карта' }) },
         { href: '/places', icon: 'Point', label: t('nav-places', { defaultValue: 'Места' }) },
-        {
-            auth: true,
-            href: '/places/create',
-            icon: 'PlusCircle',
-            label: t('nav-add', { defaultValue: 'Добавить' }),
-            primary: true
-        },
-        { href: '/collections', icon: 'Layers', label: t('nav-collections', { defaultValue: 'Коллекции' }) },
-        { href: '/users', icon: 'Users', label: t('nav-users', { defaultValue: 'Люди' }) }
+        add,
+        { href: GAME_HREF, icon: 'Award', label: t('nav-game', { defaultValue: 'Игра' }) },
+        { href: '/collections', icon: 'Layers', label: t('nav-collections', { defaultValue: 'Коллекции' }) }
     ]
 
     const handleClick = (event: React.MouseEvent, item: BottomNavItem) => {
@@ -60,7 +70,7 @@ export const BottomNav: React.FC = () => {
         }
 
         // Already at the root of this section: back to the top instead of reloading it
-        if (router.pathname === item.href && window.scrollY > 0) {
+        if (sitePathname(router.pathname) === item.href && window.scrollY > 0) {
             event.preventDefault()
             window.scrollTo({ behavior: 'smooth', top: 0 })
         }

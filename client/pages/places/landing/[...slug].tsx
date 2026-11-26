@@ -15,6 +15,7 @@ import type { LocationLinkListItem } from '@/components/shared/location-link-lis
 import { AUTH_COOKIES } from '@/config/constants'
 import { IMG_HOST, SITE_LINK } from '@/config/env'
 import useRequireAuth from '@/hooks/useRequireAuth'
+import { LocationLeaders } from '@/sections/game/location-leaders'
 import type { PlacesFilterPatch, PlacesFilterState } from '@/sections/place/places-filter-panel'
 // eslint-disable-next-line no-duplicate-imports
 import { buildFilterHref, getRequestOrder, PlaceFilterPanel } from '@/sections/place/places-filter-panel'
@@ -417,7 +418,7 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                 actions={
                     kind === 'category' ? (
                         <Button
-                            size={'small'}
+                            size={'medium'}
                             mode={'secondary'}
                             icon={'Map'}
                             noIndex={true}
@@ -485,6 +486,17 @@ const PlacesLandingPage: NextPage<PlacesLandingPageProps> = ({
                 <Container>
                     <EmptyState />
                 </Container>
+            )}
+
+            {/* The game: who leads the season in this location */}
+            {currentPage === 1 && kind === 'location' && locationRef && (
+                <LocationLeaders
+                    // A new block per location: the rating keeps its scope in its state
+                    key={`${locationRef.type}-${locationRef.id}`}
+                    type={locationRef.type}
+                    id={locationRef.id}
+                    title={locationTitle ?? undefined}
+                />
             )}
 
             {currentPage === 1 && (

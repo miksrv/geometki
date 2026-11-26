@@ -3,6 +3,7 @@
 use App\Libraries\VisitsLibrary;
 use App\Models\UserInterestProfilesModel;
 use CodeIgniter\Test\FeatureTestTrait;
+use App\Libraries\GameLibrary;
 use Tests\Support\MySqlTestCase;
 
 /**
@@ -52,7 +53,7 @@ final class VisitsTest extends MySqlTestCase
         $this->assertTrue($first['isNew']);
         $this->assertSame(1, $first['ordinal']);
         $this->assertTrue($first['firstThisYear']);
-        $this->assertSame(date('Y-m-d'), $first['visitedAt']);
+        $this->assertSame(GameLibrary::today(), $first['visitedAt']);
         $this->assertArrayNotHasKey('note', $first);
 
         $again = json_decode($this->withBodyFormat('json')->post('visits', ['place' => 'place1'])->getJSON(), true);
@@ -62,7 +63,7 @@ final class VisitsTest extends MySqlTestCase
 
         // Yesterday (a resend of the offline queue, the visitor's day behind the server's): the
         // same week, the same visit
-        $yesterday = date('Y-m-d', strtotime('-1 day'));
+        $yesterday = GameLibrary::today(null, '-1 day');
         $past      = json_decode(
             $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => $yesterday])->getJSON(),
             true
@@ -72,7 +73,7 @@ final class VisitsTest extends MySqlTestCase
         $this->assertSame($first['id'], $past['id']);
 
         // A week after the last visit: a new one
-        $weekAgo = date('Y-m-d', strtotime('-' . \App\Models\VisitsModel::REPEAT_DAYS . ' days'));
+        $weekAgo = GameLibrary::today(null, '-' . \App\Models\VisitsModel::REPEAT_DAYS . ' days');
         $this->db->table('users_visited_places')->insert([
             'id' => 'old', 'user_id' => 'user1', 'place_id' => 'place2', 'visited_at' => $weekAgo . ' 12:00:00', 'created_at' => $weekAgo . ' 12:00:00',
         ]);
@@ -86,7 +87,7 @@ final class VisitsTest extends MySqlTestCase
         // Two taps at once: the unique key lets one visit of a day through
         $this->expectException(\CodeIgniter\Database\Exceptions\DatabaseException::class);
         $this->db->table('users_visited_places')->insert([
-            'id' => 'twin', 'user_id' => 'user1', 'place_id' => 'place1', 'visited_at' => date('Y-m-d') . ' 12:00:00', 'created_at' => date('Y-m-d') . ' 12:00:00',
+            'id' => 'twin', 'user_id' => 'user1', 'place_id' => 'place1', 'visited_at' => GameLibrary::today() . ' 12:00:00', 'created_at' => GameLibrary::today() . ' 12:00:00',
         ]);
     }
 
@@ -96,7 +97,7 @@ final class VisitsTest extends MySqlTestCase
 
         $this->withBodyFormat('json')->post('visits', ['place' => 'place1'])->assertStatus(201);
         // The same week: no second visit
-        $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => date('Y-m-d', strtotime('-1 day'))])->assertStatus(200);
+        $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => GameLibrary::today(null, '-1 day')])->assertStatus(200);
         // An earlier visit, months ago
         $this->db->table('users_visited_places')->insert([
             'id' => 'visit5', 'user_id' => 'user1', 'place_id' => 'place1', 'visited_at' => '2025-06-01 12:00:00', 'created_at' => '2025-06-01 12:00:00',
@@ -114,7 +115,7 @@ final class VisitsTest extends MySqlTestCase
 
         $this->assertSame(2, $list['count']);
         $this->assertSame(1, $list['people']);
-        $this->assertSame(date('Y-m-d'), $list['last']);
+        $this->assertSame(GameLibrary::today(), $list['last']);
         $this->assertSame('user1', $list['items'][0]['author']['id']);
         $this->assertSame('User user1', $list['items'][0]['author']['name']);
         $this->assertCount(2, $list['items']);
@@ -143,14 +144,14 @@ final class VisitsTest extends MySqlTestCase
         $this->signIn('user1');
 
         $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => '2024-02-30'])->assertStatus(400);
-        $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => date('Y-m-d', strtotime('+10 days'))])->assertStatus(400);
+        $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => GameLibrary::today(null, '+10 days')])->assertStatus(400);
         $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => 'yesterday'])->assertStatus(400);
         // Not back-dated either: a visit with a contribution is worth experience once per place and month
-        $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => date('Y-m-d', strtotime('-10 days'))])->assertStatus(400);
+        $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => GameLibrary::today(null, '-10 days')])->assertStatus(400);
         $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => '2024-07-01'])->assertStatus(400);
         // A day of slack either way for the visitor's time zone
-        $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => date('Y-m-d', strtotime('-2 days'))])->assertStatus(201);
-        $this->withBodyFormat('json')->post('visits', ['place' => 'place2', 'visitedAt' => date('Y-m-d', strtotime('+1 day'))])->assertStatus(201);
+        $this->withBodyFormat('json')->post('visits', ['place' => 'place1', 'visitedAt' => GameLibrary::today(null, '-2 days')])->assertStatus(201);
+        $this->withBodyFormat('json')->post('visits', ['place' => 'place2', 'visitedAt' => GameLibrary::today(null, '+1 day')])->assertStatus(201);
     }
 
     public function testThePhotosUploadedBeforeTheTapThatDayAreTheVisits(): void
@@ -160,8 +161,8 @@ final class VisitsTest extends MySqlTestCase
         // Uploaded today and yesterday without a visit; an old one and another person's are not of the trip
         $this->db->table('photos')->insertBatch([
             $this->photoRow('photo1', 'user1', date('Y-m-d H:i:s')),
-            $this->photoRow('photo2', 'user1', date('Y-m-d H:i:s', strtotime('-1 day'))),
-            $this->photoRow('photo3', 'user1', date('Y-m-d H:i:s', strtotime('-10 days'))),
+            $this->photoRow('photo2', 'user1', GameLibrary::today(null, '-1 day') . ' 12:00:00'),
+            $this->photoRow('photo3', 'user1', GameLibrary::today(null, '-10 days') . ' 12:00:00'),
             $this->photoRow('photo4', 'user2', date('Y-m-d H:i:s')),
         ]);
 
@@ -200,7 +201,7 @@ final class VisitsTest extends MySqlTestCase
         $this->assertSame(['photo1'], array_column($me['items'][0]['photos'], 'id'));
 
         // An earlier visit with a photo the same month: nothing more
-        $earlier = date('Y-m-d', strtotime('-' . \App\Models\VisitsModel::REPEAT_DAYS . ' days'));
+        $earlier = GameLibrary::today(null, '-' . \App\Models\VisitsModel::REPEAT_DAYS . ' days');
         $this->db->table('users_visited_places')->insert([
             'id' => 'visit8', 'user_id' => 'user1', 'place_id' => 'place1', 'visited_at' => $earlier . ' 12:00:00', 'created_at' => $earlier . ' 12:00:00',
         ]);
@@ -244,6 +245,72 @@ final class VisitsTest extends MySqlTestCase
 
         $this->delete('visits/' . $visit['id'])->assertStatus(404);
         $this->get('visits/me', ['place' => 'place1'])->assertJSONFragment(['count' => 0]);
+    }
+
+    public function testACancelledVisitTakesBackTheAwardItEarned(): void
+    {
+        foreach ([['bronze', 1, 30], ['silver', 2, 70]] as [$tier, $value, $xp]) {
+            $this->db->table('achievements')->insert([
+                'id' => 'visitor-' . $tier, 'group_slug' => 'visitor', 'type' => 'base', 'tier' => $tier,
+                'title_en' => 'Visitor', 'title_ru' => 'Гость', 'rules' => json_encode([['metric' => 'places_visited', 'operator' => '>=', 'value' => $value]]),
+                'xp_bonus' => $xp, 'sort_order' => $value, 'is_active' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        $held = fn () => array_column($this->db->table('users_achievements')->where('user_id', 'user1')->get()->getResultArray(), 'achievement_id');
+        $told = fn () => array_column($this->db->table('feed')->where(['user_id' => 'user1', 'type' => 'achievement'])->get()->getResultArray(), 'achievement_id');
+
+        $this->signIn('user1');
+
+        $first  = json_decode($this->withBodyFormat('json')->post('visits', ['place' => 'place1'])->getJSON(), true);
+        $second = json_decode($this->withBodyFormat('json')->post('visits', ['place' => 'place2'])->getJSON(), true);
+
+        $this->assertSame(['visitor-silver'], $held());
+        $this->assertSame(70, $this->experience('user1'));
+
+        // The second visit is taken back: the award goes down a tier, its story leaves the feed
+        $this->delete('visits/' . $second['id'])->assertOK();
+
+        $this->assertSame(['visitor-bronze'], $held());
+        $this->assertNotContains('visitor-silver', $told());
+        $this->assertSame(30, $this->experience('user1'));
+
+        // The last one too: no award, no story, no experience of it
+        $this->delete('visits/' . $first['id'])->assertOK();
+
+        $this->assertSame([], $held());
+        $this->assertSame([], $told());
+        $this->assertSame(0, $this->experience('user1'));
+
+        // Someone else's removal takes no award: an administrator deletes a visit of the person
+        $again = json_decode($this->withBodyFormat('json')->post('visits', ['place' => 'place1'])->getJSON(), true);
+        $this->assertSame(['visitor-bronze'], $held());
+
+        $this->createUser('admin1', ['role' => 'admin']);
+        $this->signIn('admin1');
+        $this->delete('visits/' . $again['id'])->assertOK();
+
+        $this->assertSame(['visitor-bronze'], $held());
+    }
+
+    public function testTheQuietRecountGivesAnAwardWithoutAStoryOrANotification(): void
+    {
+        $this->signIn('user1');
+        $this->withBodyFormat('json')->post('visits', ['place' => 'place1'])->assertStatus(201);
+
+        // An award made after the visit: achievements:rebuild gives it quietly
+        $this->db->table('achievements')->insert([
+            'id' => 'visitor-bronze', 'group_slug' => 'visitor', 'type' => 'base', 'tier' => 'bronze',
+            'title_en' => 'Visitor', 'title_ru' => 'Гость', 'rules' => json_encode([['metric' => 'places_visited', 'operator' => '>=', 'value' => 1]]),
+            'xp_bonus' => 30, 'sort_order' => 1, 'is_active' => 1, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        $given = (new \App\Libraries\AchievementsLibrary())->evaluate('user1', false, false);
+
+        $this->assertSame(['visitor-bronze'], $given);
+        $this->assertSame(1, $this->db->table('users_achievements')->where('user_id', 'user1')->countAllResults());
+        $this->assertSame(0, $this->db->table('feed')->where(['user_id' => 'user1', 'type' => 'achievement'])->countAllResults());
+        $this->assertSame(0, $this->db->table('users_notifications')->where(['user_id' => 'user1', 'type' => 'achievements'])->countAllResults());
     }
 
     public function testAnOldVisitIsAskedTheQuestionsItHasNoAnswerTo(): void
@@ -332,7 +399,7 @@ final class VisitsTest extends MySqlTestCase
         $now = $list['now'][0];
         $this->assertSame('road', $now['question']);
         $this->assertSame('offroad', $now['value']);
-        $this->assertSame(date('Y-m-d'), $now['visitedAt']);
+        $this->assertSame(GameLibrary::today(), $now['visitedAt']);
         // The agreement is counted over the three years up to the latest answer (today's), one
         // person once, by their latest answer: user1 today, user2 in 2025 (their 2024 one does not count)
         $this->assertSame(2, $now['total']);
@@ -376,14 +443,14 @@ final class VisitsTest extends MySqlTestCase
         $this->assertSame(['entry', 'parking', 'access', 'can'], array_column($library->questionsFor('museum', 'place1', null), 'key'));
 
         // All of the pool known: the stale and the contested first, the oldest of them first, then the rest by age
-        $fresh = date('Y-m-d', strtotime('-2 months'));
+        $fresh = GameLibrary::today(null, '-2 months');
         $rows  = [
-            ['road', 1, 1, date('Y-m-d', strtotime('-3 years'))],   // stale
+            ['road', 1, 1, GameLibrary::today(null, '-3 years')],   // stale
             ['walk', 1, 1, $fresh],
             ['trail', 2, 4, $fresh],                                 // contested: half agree
-            ['time', 3, 3, date('Y-m-d', strtotime('-2 years'))],   // stale, newer than the road
-            ['crowd', 1, 1, date('Y-m-d', strtotime('-1 month'))],
-            ['entry', 1, 1, date('Y-m-d', strtotime('-6 months'))],
+            ['time', 3, 3, GameLibrary::today(null, '-2 years')],   // stale, newer than the road
+            ['crowd', 1, 1, GameLibrary::today(null, '-1 month')],
+            ['entry', 1, 1, GameLibrary::today(null, '-6 months')],
             ['cell', 1, 1, $fresh],
             ['facilities', 3, 4, $fresh],
         ];
@@ -398,7 +465,7 @@ final class VisitsTest extends MySqlTestCase
 
         // The visit answered two of its share: one is left, the stale ones are gone, so the oldest fresh one
         $this->db->table('users_visited_places')->insert([
-            'id' => 'visit5', 'user_id' => 'user1', 'place_id' => 'place1', 'visited_at' => date('Y-m-d') . ' 12:00:00', 'created_at' => date('Y-m-d H:i:s'),
+            'id' => 'visit5', 'user_id' => 'user1', 'place_id' => 'place1', 'visited_at' => GameLibrary::today() . ' 12:00:00', 'created_at' => date('Y-m-d H:i:s'),
         ]);
         $this->db->table('visit_answers')->insertBatch([
             ['visit_id' => 'visit5', 'question' => 'time', 'value' => 'hour', 'created_at' => date('Y-m-d H:i:s')],

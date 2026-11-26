@@ -6,6 +6,7 @@ import { isMapLayerAvailable } from './layers'
 import {
     MapAdditionalLayersEnum,
     MapLayersEnum,
+    MapObjectLayersEnum,
     MapObjectsTypeEnum,
     MapPositionType,
     MapTrailsLayerEnum
@@ -16,6 +17,8 @@ export type MapSettings = {
     position?: MapPositionType
     layer?: MapLayersEnum
     type?: MapObjectsTypeEnum
+    /** The site's own objects shown: an empty list is a choice too (everything off) */
+    objectLayers?: MapObjectLayersEnum[]
     additionalLayers?: MapAdditionalLayersEnum[]
     categories?: ApiModel.Categories[]
     hillshade?: boolean
@@ -76,12 +79,16 @@ const readMapSettings = (): MapSettings => {
         return { position: legacyPosition }
     }
 
-    const { position, layer, type, additionalLayers, categories, hillshade, hillshadeOpacity, trails } =
+    const { position, layer, type, objectLayers, additionalLayers, categories, hillshade, hillshadeOpacity, trails } =
         stored as Record<string, unknown>
 
     return {
         position: toPosition(position) ?? legacyPosition,
         additionalLayers: onlyKnown(MapAdditionalLayersEnum, additionalLayers),
+        // Unlike the other lists, an empty one is kept: the visitor turned every object off
+        objectLayers: Array.isArray(objectLayers)
+            ? [...new Set(objectLayers.filter((value) => isOneOf(MapObjectLayersEnum, value)))]
+            : undefined,
         categories: onlyKnown(ApiModel.Categories, categories),
         hillshade: typeof hillshade === 'boolean' ? hillshade : undefined,
         hillshadeOpacity:

@@ -11,6 +11,8 @@ class PhotoEntity extends Entity {
         'user_id'   => null,
         'lat'       => 0,
         'lon'       => 0,
+        'taken_at'  => null,
+        'gps'       => 0,
         'title_en'  => null,
         'title_ru'  => null,
         'filename'  => null,

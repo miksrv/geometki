@@ -1,8 +1,10 @@
 @use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
 
+// Text on the page background under the section's heading: the reading size of every page text
 .lede
-    margin: calc(var(--space-2) * -1) 0 var(--space-4)
-    color: var(--text-color-secondary)
+    margin: 0 0 var(--space-4)
+    +type.reading
 
 .steps
     display: grid

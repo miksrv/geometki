@@ -19,7 +19,7 @@ interface PageHeaderProps {
     breadcrumbs?: BreadcrumbLink[]
     /** Element before the text, e.g. the avatar on a user's sub-page */
     leading?: React.ReactNode
-    /** Page-level actions: `small` buttons on the title line, right-aligned; under the title on phones */
+    /** Page-level actions: `medium` buttons (32px here) on the title line, right-aligned; under the title on phones */
     actions?: React.ReactNode
     /** A block beside the text (the map preview of a location landing); stacks under it on phones */
     aside?: React.ReactNode

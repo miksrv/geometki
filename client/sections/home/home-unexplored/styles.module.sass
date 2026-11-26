@@ -13,8 +13,10 @@
     margin: var(--space-2) 0 0
     color: var(--text-color-secondary)
 
+// The rows carry their own room for the tint under the pointer: the list gives it back at the
+// sides and at the foot, so the last row is as far from the block's edge as the text is
 .rows
-    margin: var(--space-2) -8px 0
+    margin: var(--space-2) -8px -8px
     padding: 0
     list-style: none
 

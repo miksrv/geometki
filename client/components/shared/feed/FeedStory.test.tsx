@@ -60,6 +60,10 @@ jest.mock('@/components/shared/place-card', () => ({
     )
 }))
 
+jest.mock('@/components/shared/game-points', () => ({
+    GamePoints: ({ value }: { value: number }) => <span>{`+${value}`}</span>
+}))
+
 jest.mock('@/components/shared/collection-card', () => ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     CollectionCard: ({ collection, showAuthor }: any) => (
@@ -183,6 +187,23 @@ describe('FeedStory', () => {
                 />
             )
             expect(screen.getByText('feed-action-visit:5')).toBeInTheDocument()
+        })
+
+        it('shows the geopoints the visits brought in the head, not in the place cards: the game', () => {
+            render(
+                <FeedStory
+                    story={story({
+                        places: [{ ...place('p1', 'A'), points: 30 }, place('p2', 'B')],
+                        placesCount: 2,
+                        type: 'visit',
+                        weight: 1
+                    })}
+                />
+            )
+
+            expect(screen.getByRole('banner')).toHaveTextContent('+30')
+            // The cards keep their height: nothing is added under a place
+            screen.getAllByTestId('place-card').forEach((card) => expect(card).not.toHaveTextContent('+'))
         })
 
         it('links the collection a place was added to', () => {
@@ -312,7 +333,7 @@ describe('FeedStory', () => {
             expect(screen.getByTestId('collection-card')).toHaveAttribute('data-show-author', 'false')
         })
 
-        it('shows an achievement with its tier and a link to the achievements', () => {
+        it('shows an achievement with its tier and a link to the profile, where the awards are', () => {
             render(
                 <FeedStory
                     story={story({
@@ -325,10 +346,7 @@ describe('FeedStory', () => {
 
             expect(screen.getByText('Первооткрыватель')).toBeInTheDocument()
             expect(screen.getByText('achievements-tier-gold')).toBeInTheDocument()
-            expect(screen.getByRole('link', { name: /Первооткрыватель/ })).toHaveAttribute(
-                'href',
-                '/users/u1/achievements'
-            )
+            expect(screen.getByRole('link', { name: /Первооткрыватель/ })).toHaveAttribute('href', '/users/u1')
         })
 
         it('shows the level reached', () => {

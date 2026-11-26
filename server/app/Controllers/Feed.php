@@ -88,7 +88,7 @@ class Feed extends ResourceController
 
         $last     = end($rows);
         $response = [
-            'items' => (new FeedPresenter($this->request->getLocale(), (new SessionLibrary())->user?->id))->present($rows, $place),
+            'items' => $this->presenter()->present($rows, $place),
             'next'  => $hasMore && $last ? self::makeCursor($last->updated_at, $last->id) : null,
         ];
 
@@ -209,13 +209,41 @@ class Feed extends ResourceController
     }
 
     /**
+     * Zones renamed in the time zone database under the names browsers still report. A host
+     * whose tzdata comes without the "backward" links (Ubuntu 24.04+) knows only the new ones.
+     */
+    private const RENAMED_TIMEZONES = [
+        'Europe/Kiev'          => 'Europe/Kyiv',
+        'Asia/Calcutta'        => 'Asia/Kolkata',
+        'Asia/Katmandu'        => 'Asia/Kathmandu',
+        'Asia/Rangoon'         => 'Asia/Yangon',
+        'Asia/Saigon'          => 'Asia/Ho_Chi_Minh',
+        'Atlantic/Faeroe'      => 'Atlantic/Faroe',
+        'America/Godthab'      => 'America/Nuuk',
+        'America/Buenos_Aires' => 'America/Argentina/Buenos_Aires',
+    ];
+
+    /**
      * The viewer's time zone by its IANA name (old names such as Europe/Kiev, which
      * browsers still report, too), else the site's one.
      */
     public static function timeZone(mixed $name): \DateTimeZone
     {
-        if (is_string($name) && in_array($name, \DateTimeZone::listIdentifiers(\DateTimeZone::ALL_WITH_BC), true)) {
-            return new \DateTimeZone($name);
+        // "Area/Location" only: offsets ("+03:00") and abbreviations ("EST") are no time zones of a person
+        if (!is_string($name) || !preg_match('#^(UTC|[A-Za-z_]+(/[A-Za-z0-9_+-]+){1,2})$#', $name)) {
+            return new \DateTimeZone(SITE_TIMEZONE);
+        }
+
+        foreach ([$name, self::RENAMED_TIMEZONES[$name] ?? null] as $candidate) {
+            if ($candidate === null) {
+                continue;
+            }
+
+            try {
+                return new \DateTimeZone($candidate);
+            } catch (\Throwable) {
+                // Unknown to this host's time zone database
+            }
         }
 
         return new \DateTimeZone(SITE_TIMEZONE);
@@ -239,5 +267,13 @@ class Feed extends ResourceController
         }
 
         return ['at' => date('Y-m-d H:i:s', (int) $match[1]), 'id' => $match[2]];
+    }
+
+    /** The presenter for this request: the visitor's place marks and the season points of the visits */
+    private function presenter(): FeedPresenter
+    {
+        $user = (new SessionLibrary())->user;
+
+        return new FeedPresenter($this->request->getLocale(), $user?->id, true);
     }
 }

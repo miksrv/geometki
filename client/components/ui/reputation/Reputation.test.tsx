@@ -4,6 +4,12 @@ import { render, screen } from '@testing-library/react'
 
 import { Reputation } from './Reputation'
 
+jest.mock('simple-react-ui-kit', () => ({
+    Icon: ({ name }: { name: string }) => <i data-testid={`icon-${name}`} />,
+    Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    cn: (...args: unknown[]) => args.filter(Boolean).join(' ')
+}))
+
 jest.mock('next-i18next/pages', () => ({
     useTranslation: () => ({
         t: (key: string, opts?: { defaultValue?: string }) => opts?.defaultValue ?? key
@@ -12,9 +18,10 @@ jest.mock('next-i18next/pages', () => ({
 
 describe('Reputation', () => {
     describe('rendering', () => {
-        it('renders the reputation value', () => {
+        it('renders the value with its sign and the star: a pill like the geopoints', () => {
             render(<Reputation value={42} />)
-            expect(screen.getByText('42')).toBeInTheDocument()
+            expect(screen.getByText('+42')).toBeInTheDocument()
+            expect(screen.getByTestId('icon-StarFilled')).toBeInTheDocument()
         })
 
         it('renders zero value', () => {
@@ -24,7 +31,7 @@ describe('Reputation', () => {
 
         it('renders negative value', () => {
             render(<Reputation value={-5} />)
-            expect(screen.getByText('-5')).toBeInTheDocument()
+            expect(screen.getByText('−5')).toBeInTheDocument()
         })
     })
 
@@ -36,7 +43,7 @@ describe('Reputation', () => {
 
         it('is reachable from the keyboard, where its tooltip opens', () => {
             render(<Reputation value={7} />)
-            expect(screen.getByText('7')).toHaveAttribute('tabindex', '0')
+            expect(screen.getByText('+7')).toHaveAttribute('tabindex', '0')
         })
     })
 

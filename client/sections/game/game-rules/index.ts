@@ -1,0 +1,1 @@
+export { GamePointsTable } from './GameRules'

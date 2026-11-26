@@ -1,9 +1,15 @@
 const { i18n } = require('./next-i18next.config.js')
+const { version } = require('./package.json')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     // `next dev` would otherwise write AGENTS.md / CLAUDE.md here; the root CLAUDE.md covers the client
     agentRules: false,
+    // Inlined as a plain string at build time: importing package.json from a component
+    // would ship the whole file (every dependency and script) in the client chunks
+    env: {
+        NEXT_PUBLIC_APP_VERSION: version
+    },
     // The categories page is gone (the catalogue lives in the client, see CLAUDE.md →
     // Categories): its indexed URL goes to the places listing instead of a 404
     async redirects() {
@@ -20,7 +26,11 @@ const nextConfig = {
             { destination: '/users/:id/places?show=visited', permanent: true, source: '/users/:id/visited' },
             { destination: '/users/:id/places?show=bookmarks', permanent: true, source: '/users/:id/bookmarks' },
             // Temporary: a person's collections may come back to the profile at this address
-            { destination: '/users/:id', permanent: false, source: '/users/:id/collections' }
+            { destination: '/users/:id', permanent: false, source: '/users/:id/collections' },
+            // 2.0.0: the awards moved into the head of the profile, the progress into the card of each
+            { destination: '/users/:id', permanent: true, source: '/users/:id/achievements' },
+            // 2.0.0: the queue of letters is a part of the mailings
+            { destination: '/admin/mailings', permanent: true, source: '/admin/sending-mail' }
         ]
     },
     // robots.txt and search consoles point to /sitemap.xml; the page is pages/sitemap.tsx.
@@ -73,6 +83,13 @@ const nextConfig = {
         unoptimized: false
     },
     output: 'standalone',
+    // The Markdown texts of static pages (client/content, read at run time by
+    // utils/content.server.tsx) go into the standalone bundle with the pages that read them
+    outputFileTracingIncludes: {
+        '/about': ['./content/about.*.md'],
+        '/game/help': ['./content/game-help.*.md'],
+        '/rules': ['./content/rules.*.md']
+    },
     trailingSlash: false,
 
     transpilePackages: ['@uiw/react-md-editor', 'leaflet'],

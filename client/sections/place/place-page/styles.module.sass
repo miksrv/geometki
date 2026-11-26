@@ -6,10 +6,10 @@
 .pageLayout
     display: grid
     grid-template-columns: minmax(0, 1fr) 360px
-    // The gap of every side column (DESIGN.md → Layout): the signed-in home, the profile
-    gap: 0 var(--space-4)
+    // The widgets' gap (DESIGN.md → Layout → Gaps): the signed-in home, the profile
+    gap: 0 var(--gap-widgets)
     align-items: flex-start
-    // On top of the page's 15px gap: the content starts after a short pause under the head
+    // On top of the page's gap (`--space-4`): the content starts after a short pause under the head
     margin-top: var(--space-3)
 
     @media only screen and (max-width: variables.$mobileMaxWidth)

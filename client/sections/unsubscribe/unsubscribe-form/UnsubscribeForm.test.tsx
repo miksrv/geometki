@@ -77,7 +77,7 @@ describe('UnsubscribeForm', () => {
 
         render(<UnsubscribeForm />)
 
-        expect(useStatus).toHaveBeenCalledWith({ mail: undefined, token: 'u1.comment.sig' }, { skip: false })
+        expect(useStatus).toHaveBeenCalledWith({ token: 'u1.comment.sig' }, { skip: false })
         expect(mockUnsubscribe).not.toHaveBeenCalled()
         expect(screen.getByText('unsubscribe-question:unsubscribe-scope_comment')).toBeInTheDocument()
     })
@@ -98,17 +98,6 @@ describe('UnsubscribeForm', () => {
         fireEvent.click(screen.getByText('unsubscribe-all-button'))
 
         expect(mockUnsubscribe).toHaveBeenCalledWith({ scope: 'all', token: 'u1.activity.sig' })
-    })
-
-    it('uses the token from the server for a legacy mail-id link', () => {
-        mockRouter.query = { mail: 'ff6f2ef33d3d1' }
-        mockStatus({ data: { scope: 'cover', subscribed: true, token: 'u1.cover.sig' } })
-
-        render(<UnsubscribeForm />)
-        fireEvent.click(screen.getByText('unsubscribe-button'))
-
-        expect(useStatus).toHaveBeenCalledWith({ mail: 'ff6f2ef33d3d1', token: undefined }, { skip: false })
-        expect(mockUnsubscribe).toHaveBeenCalledWith({ scope: undefined, token: 'u1.cover.sig' })
     })
 
     it('says so when already unsubscribed, without buttons', () => {
@@ -139,14 +128,16 @@ describe('UnsubscribeForm', () => {
         expect(screen.getByTestId('message-error')).toHaveTextContent('server error')
     })
 
-    it('goes home when the link has no token', () => {
-        mockRouter.query = {}
+    it('says the link is not valid without a token: the link of an old email or the page opened by hand', () => {
+        mockRouter.query = { mail: 'ff6f2ef33d3d1' }
         mockStatus({})
 
         render(<UnsubscribeForm />)
 
-        expect(useStatus).toHaveBeenCalledWith({ mail: undefined, token: undefined }, { skip: true })
-        expect(mockRouter.push).toHaveBeenCalledWith('/')
+        expect(useStatus).toHaveBeenCalledWith({ token: undefined }, { skip: true })
+        expect(screen.getByTestId('message-error')).toHaveTextContent('unsubscribe-invalid-link')
+        expect(screen.getByText('unsubscribe-settings-link')).toHaveAttribute('href', '/users/settings')
+        expect(mockRouter.push).not.toHaveBeenCalled()
     })
 
     it('waits for the router before going home', () => {

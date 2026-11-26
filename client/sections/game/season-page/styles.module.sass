@@ -1,0 +1,91 @@
+@use '../../../styles/variables' as variables
+@use '../../../styles/typography' as type
+@use '../../../styles/mixins' as *
+
+.page
+    display: flex
+    flex-direction: column
+    gap: var(--space-6)
+    margin-top: var(--space-4)
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        gap: var(--space-5)
+
+.top
+    margin-bottom: var(--space-2)
+
+    // Phones have no breadcrumbs: the line stays only for an administrator's buttons
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        &:not(:has([data-season-actions]))
+            display: none
+
+.breadcrumbs
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        display: none
+
+// The first three as cards of people: place | avatar | name over the places | points
+.podium
+    display: grid
+    grid-template-columns: repeat(3, minmax(0, 1fr))
+    gap: var(--space-4)
+    margin: 0
+    padding: 0
+    list-style: none
+
+    @media only screen and (max-width: variables.$mobileMaxWidth)
+        grid-template-columns: minmax(0, 1fr)
+        gap: var(--space-2)
+
+.winner
+    position: relative
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    min-width: 0
+    padding: var(--space-4)
+    border-radius: var(--container-radius)
+    background: var(--surface-1)
+    box-shadow: var(--container-shadow)
+    transition: box-shadow var(--duration-fast) var(--ease)
+
+    &:hover
+        box-shadow: var(--shadow-md)
+
+.place
+    flex-shrink: 0
+    min-width: 28px
+    padding: 2px var(--space-2)
+    border-radius: var(--border-radius)
+    background: var(--color-orange-background)
+    color: var(--color-orange)
+    font-weight: var(--font-weight-semibold)
+    font-variant-numeric: tabular-nums
+    text-align: center
+
+.who
+    flex: 1
+    min-width: 0
+
+.name
+    +type.titleBlock
+    +truncate
+
+    // The whole card opens the profile
+    a
+        color: var(--text-color-primary)
+        text-decoration: none
+
+        &:after
+            content: ''
+            position: absolute
+            inset: 0
+
+        &:hover
+            color: var(--text-color-primary)
+            text-decoration: none
+
+.facts
+    +type.secondary
+
+.leaders
+    margin-top: var(--space-2)

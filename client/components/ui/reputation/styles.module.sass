@@ -1,15 +1,40 @@
+// The reputation (DESIGN.md → Marks): a pill of the same make as the geopoints — a mark and a
+// number on a tint; green above zero, red below, grey at zero
 .reputation
-    display: flex
-    justify-content: space-between
-    border-radius: var(--border-radius)
-    background-color: var(--icon-color-secondary)
+    display: inline-flex
+    align-items: center
+    gap: var(--space-1)
     width: fit-content
-    padding: 1px 6px
-    color: #FFF
-    font-size: var(--font-size-small)
+    height: 24px
+    padding: 0 var(--space-2) 0 6px
+    border-radius: var(--border-radius)
+    background: var(--surface-3)
+    color: var(--text-color-secondary)
+    font-size: var(--font-size-secondary)
+    font-weight: var(--font-weight-semibold)
+    font-variant-numeric: tabular-nums
+    line-height: 1
+    white-space: nowrap
 
     &.red
-        background-color: var(--color-red)
+        background: var(--color-red-background)
+        color: var(--color-red)
 
     &.green
-        background-color: var(--color-green)
+        background: var(--color-green-background)
+        color: var(--color-green)
+
+.icon
+    flex-shrink: 0
+    width: 16px
+    height: 16px
+    fill: currentColor
+
+.small
+    height: 20px
+    padding: 0 6px 0 var(--space-1)
+    font-size: var(--font-size-small)
+
+    .icon
+        width: 14px
+        height: 14px

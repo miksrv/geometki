@@ -1,0 +1,43 @@
+// A quest's mark: the place markers' 20px square — the rounded corners of their PNGs and the
+// thin white frame drawn by a shadow (`marker-point`) — in the brand blue of the quest marks.
+// Leaflet's white box of a div icon is not used (a className of our own)
+.questMark
+    border-radius: 3px
+    background: #3770b1
+    box-shadow: 0 0 0 1px #fff
+
+    svg
+        display: block
+
+// The popup is the quest's card itself, edge to edge
+.questPopup
+    :global(.leaflet-popup-content-wrapper)
+        padding: 0
+        overflow: hidden
+        border-radius: var(--container-radius)
+
+    :global(.leaflet-popup-content)
+        width: 280px !important
+        margin: 0
+        font-size: var(--font-size)
+        line-height: var(--line-height)
+        color: var(--text-color-primary)
+
+    :global(.leaflet-popup-tip)
+        background: var(--surface-1)
+
+// The card without its own shadow: the popup is the frame. `.card a` beats Leaflet's
+// `.leaflet-container a` colour on the title
+.card
+    border-radius: 0
+    box-shadow: none
+
+    &:hover
+        box-shadow: none
+
+    a,
+    a:hover
+        color: var(--text-color-primary)
+
+.loading
+    padding: var(--space-4)

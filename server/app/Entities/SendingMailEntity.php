@@ -8,6 +8,7 @@ class SendingMailEntity extends Entity {
     protected $attributes = [
         'user_id'     => null,
         'activity_id' => null,
+        'mailing_id'  => null,
         'type'        => null,
         'status'      => 'created',
         'email'       => null,
@@ -26,6 +27,7 @@ class SendingMailEntity extends Entity {
     protected $casts = [
         'user_id'     => '?string',
         'activity_id' => '?string',
+        'mailing_id'  => '?string',
         'type'        => '?string',
         'status'      => 'string',
         'email'       => '?string',

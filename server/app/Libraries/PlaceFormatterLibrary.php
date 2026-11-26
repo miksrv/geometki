@@ -3,7 +3,6 @@
 namespace App\Libraries;
 
 use App\Models\PlacesModel;
-use App\Models\UsersBookmarksModel;
 use App\Models\VisitsModel;
 
 class PlaceFormatterLibrary
@@ -16,8 +15,9 @@ class PlaceFormatterLibrary
     }
 
     /**
-     * Set `bookmarked` and `visited` on list rows for a signed-in visitor: two queries for
-     * the whole list instead of one check per card. Guests ($userId null) get neither field.
+     * Set `visited` on list rows for a signed-in visitor (the card's "you were here"): one query
+     * for the whole list instead of a check per card. Guests ($userId null) get no such field.
+     * A bookmark is not told here: it is made and seen on the place page.
      *
      * @param array<int, object> $places Formatted list rows
      */
@@ -29,18 +29,13 @@ class PlaceFormatterLibrary
             return;
         }
 
-        $bookmarked = array_flip(array_column(
-            (new UsersBookmarksModel())->asArray()->select('place_id')->where('user_id', $userId)->whereIn('place_id', $ids)->findAll(),
-            'place_id'
-        ));
-        $visited    = array_flip(array_column(
+        $visited = array_flip(array_column(
             (new VisitsModel())->asArray()->select('place_id')->where('user_id', $userId)->whereIn('place_id', $ids)->findAll(),
             'place_id'
         ));
 
         foreach ($places as $place) {
-            $place->bookmarked = isset($bookmarked[$place->id]);
-            $place->visited    = isset($visited[$place->id]);
+            $place->visited = isset($visited[$place->id]);
         }
     }
 

@@ -10,9 +10,10 @@ import {
     HOME_COLLECTION_MIN_PLACES,
     HOME_COUNTRY_ID,
     HOME_FEED_LIMIT,
-    HOME_GUEST_FEED_LIMIT,
     HOME_PLACES_LIMIT,
-    HOME_REGIONS_LIMIT
+    HOME_QUESTS_LIMIT,
+    HOME_REGIONS_LIMIT,
+    HOME_USERS_LIMIT
 } from './HomePage'
 
 interface LoadHomePageOptions {
@@ -70,7 +71,7 @@ export const loadHomePage = async (
         collections: store.dispatch(API.endpoints.collectionsGetList.initiate({ limit: 12, sort: 'popular' })),
         feed: store.dispatch(
             API.endpoints.feedGetStories.initiate({
-                limit: signedIn ? HOME_FEED_LIMIT : HOME_GUEST_FEED_LIMIT,
+                limit: HOME_FEED_LIMIT,
                 weight: 2
             })
         ),
@@ -83,20 +84,50 @@ export const loadHomePage = async (
                 sort: ApiType.SortFields.Created
             })
         ),
-        popular: store.dispatch(
-            API.endpoints.placesGetList.initiate({
-                ...visitorLocation,
-                limit: HOME_PLACES_LIMIT,
-                order: ApiType.SortOrders.DESC,
-                sort: ApiType.SortFields.ViewsWeek
-            })
-        ),
+        // The first tab of "Куда поехать": the week's popular places for a guest, the ones
+        // picked by the interests and not explored yet for a signed-in user
+        popular: signedIn
+            ? undefined
+            : store.dispatch(
+                  API.endpoints.placesGetList.initiate({
+                      ...visitorLocation,
+                      limit: HOME_PLACES_LIMIT,
+                      order: ApiType.SortOrders.DESC,
+                      sort: ApiType.SortFields.ViewsWeek
+                  })
+              ),
+        recommended: signedIn
+            ? store.dispatch(
+                  API.endpoints.placesGetList.initiate({
+                      ...visitorLocation,
+                      limit: HOME_PLACES_LIMIT,
+                      notVisited: 1,
+                      sort: ApiType.SortFields.Recommended
+                  })
+              )
+            : undefined,
         // Only the guest page has the regions block
         regions: signedIn
             ? undefined
             : store.dispatch(API.endpoints.locationsGetChildren.initiate({ id: HOME_COUNTRY_ID, type: 'country' })),
+        // The quests the signed-in user has not walked to the end, the ones being walked first:
+        // the walk to go on with, or how many quests wait
+        quests: signedIn
+            ? store.dispatch(
+                  API.endpoints.questsGetList.initiate({ ...visitorLocation, limit: HOME_QUESTS_LIMIT, walk: 'todo' })
+              )
+            : undefined,
+        // The guest page's game block: the season and how many play, the same for every guest
+        // (the signed-in page asks for its own `rivals` answer, kept for the hook)
+        game: signedIn ? undefined : store.dispatch(API.endpoints.gameGet.initiate()),
         stats: store.dispatch(API.endpoints.statsGetSummary.initiate()),
-        users: store.dispatch(API.endpoints.usersGetList.initiate({ limit: 15 }))
+        users: store.dispatch(API.endpoints.usersGetList.initiate({ limit: HOME_USERS_LIMIT }))
+    }
+
+    // The season card of the signed-in page asks for it by its hook: kept in the hydrated store,
+    // so the card is in the server's HTML and does not push the page down when it comes
+    if (signedIn) {
+        void store.dispatch(API.endpoints.gameGet.initiate({ rivals: true }))
     }
 
     const answers = await Promise.all([
@@ -108,23 +139,31 @@ export const loadHomePage = async (
         requests.feed,
         requests.feedPulse,
         requests.collections,
-        requests.regions
+        requests.regions,
+        requests.recommended,
+        requests.quests,
+        requests.game
     ])
     const [
         currentUser,
-        { data: popular },
+        popular,
         { data: latest },
         { data: usersList },
         { data: stats },
         { data: feed },
         { data: feedPulse },
         { data: collections },
-        regions
+        regions,
+        recommended,
+        quests,
+        game
     ] = answers
     // Any block without its answer: a cached page with a hole should not take a full one's place
     const failed = answers.slice(1).some((answer) => !!answer && 'isError' in answer && answer.isError)
 
     await Promise.all(store.dispatch(API.util.getRunningQueriesThunk()))
+
+    const questItems = quests?.data?.items ?? []
 
     dropFromHydration(store, ...Object.values(requests))
 
@@ -138,9 +177,14 @@ export const loadHomePage = async (
             currentUser: currentUser ?? null,
             feedPulse: feedPulse ?? null,
             feedStories: feed?.items || [],
+            game: game?.data ?? null,
             latestPlaces: latest?.items || [],
-            popularPlaces: popular?.items || [],
+            popularPlaces: popular?.data?.items || [],
+            recommendedPlaces: recommended ? (recommended.data?.items ?? []) : null,
             regions: (regions?.data?.items ?? []).slice(0, HOME_REGIONS_LIMIT),
+            questWalk: questItems.find(({ walk }) => !!walk && !walk.finished) ?? null,
+            questsCount: quests?.data?.count ?? 0,
+            questsCover: questItems.find(({ cover }) => !!cover)?.cover?.full ?? null,
             stats: stats ?? null,
             usersList: usersList?.items || []
         }

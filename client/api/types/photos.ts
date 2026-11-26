@@ -16,7 +16,10 @@ export interface UploadRequest {
     count?: number
 }
 
-export type UploadResponse = ApiModel.Photo
+export type UploadResponse = ApiModel.Photo & {
+    /** The game: the photo was shot at the place within the season and confirmed a visit — the points it brought (0 when the place was counted already) and the season's total */
+    game?: { points: number; total: number | null } | null
+}
 
 export interface RotateRequest {
     id?: string

@@ -1,10 +1,9 @@
 import React from 'react'
-import { Icon, IconTypes } from 'simple-react-ui-kit'
+import { cn, Container, Icon, IconTypes } from 'simple-react-ui-kit'
 
 import { useTranslation } from 'next-i18next/pages'
 
 import { ApiModel } from '@/api'
-import { Section } from '@/components/shared'
 import { formatThousands } from '@/utils/helpers'
 
 import styles from './styles.module.sass'
@@ -33,11 +32,8 @@ export const UserContribution: React.FC<UserContributionProps> = ({ statistic })
     }
 
     return (
-        <Section
-            level={3}
-            title={t('user-side-contribution')}
-        >
-            <ul className={styles.rows}>
+        <Container title={t('user-side-contribution')}>
+            <ul className={cn(styles.rows, styles.body)}>
                 {rows.map(({ key, icon, count }) => (
                     <li key={key}>
                         <Icon name={icon} />
@@ -46,6 +42,6 @@ export const UserContribution: React.FC<UserContributionProps> = ({ statistic })
                     </li>
                 ))}
             </ul>
-        </Section>
+        </Container>
     )
 }

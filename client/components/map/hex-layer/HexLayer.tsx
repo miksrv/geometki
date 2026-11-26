@@ -32,6 +32,10 @@ const HEX_MIN_VISITED = 0.25
 interface HexLayerProps {
     /** Undefined or empty: all the categories */
     categories?: ApiModel.Categories[]
+    /** Count the places (and the visitor's visits), on by default: the "Геометки" layer of the map page */
+    places?: boolean
+    /** Count the undiscovered places, on by default: the "Неоткрытые" layer of the map page */
+    spots?: boolean
 }
 
 interface View {
@@ -156,7 +160,7 @@ export const hexFill = (places: number, spots: number, visited: number): string 
     return fromLab([0, 1, 2].map((i) => labs.reduce((sum, lab) => sum + lab[i], 0)) as Lab)
 }
 
-export const HexLayer: React.FC<HexLayerProps> = ({ categories }) => {
+export const HexLayer: React.FC<HexLayerProps> = ({ categories, places = true, spots = true }) => {
     const { t } = useTranslation()
     const map = useMap()
 
@@ -251,9 +255,14 @@ export const HexLayer: React.FC<HexLayerProps> = ({ categories }) => {
             }
         }
 
-        add(projected.places, 'places')
-        add(projected.spots, 'spots')
-        add(projectedVisited, 'visited')
+        if (places) {
+            add(projected.places, 'places')
+            add(projectedVisited, 'visited')
+        }
+
+        if (spots) {
+            add(projected.spots, 'spots')
+        }
 
         if (geometry.current.zoom !== zoom) {
             geometry.current = { items: new Map(), zoom }
@@ -276,7 +285,7 @@ export const HexLayer: React.FC<HexLayerProps> = ({ categories }) => {
 
             return { ...cell, ...shape }
         })
-    }, [active, projected, projectedVisited, categories, view, map])
+    }, [active, projected, projectedVisited, categories, places, spots, view, map])
 
     // One options object per fill, so a polygon does not restyle on every render. The edge: blue
     // where the visitor has been, dashed green while nothing in the cell is on the map

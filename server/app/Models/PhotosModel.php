@@ -30,6 +30,8 @@ class PhotosModel extends ApplicationBaseModel
         'user_id',
         'lat',
         'lon',
+        'taken_at',
+        'gps',
         'title_en',
         'title_ru',
         'filename',

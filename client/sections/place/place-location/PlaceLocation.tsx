@@ -11,6 +11,7 @@ import useIsPhone from '@/hooks/useIsPhone'
 import { buildLocationHref, formatThousands, getLandingFlags } from '@/utils/helpers'
 
 import { openVisitSheet } from '../place-actions/visitSheet'
+import { PlaceGame } from '../place-game'
 import { PlaceNow } from '../place-now'
 import { PlaceVisitQuestions } from '../place-visit-questions'
 
@@ -33,7 +34,7 @@ interface PlaceLocationProps {
  * "Где это": everything about getting there in one card — the map with the place and its
  * neighbours, the distance and the address (every level a link to its places), the
  * coordinates, the navigators, "Как сейчас" (the visitors' answers: road, entry, state…), then the
- * visitors (who was here) with "Я здесь был(а)", under the button the one-tap questions after a
+ * visitors (who was here) with "Я здесь был(а)", the place in the game (`PlaceGame`: the points of a confirmed visit and "Я здесь"), under them the one-tap questions after a
  * check-in (`PlaceVisitQuestions`; on a phone they are the bottom bar's sheet) and the collections with the place. Sticky in the right column on desktop, right after the text
  * on phones: read → see where → go. The author and the dates are in "О месте".
  */
@@ -194,6 +195,9 @@ export const PlaceLocation: React.FC<PlaceLocationProps> = ({ place, nearPlaces,
                     placeId={place.id}
                     onCheckedIn={isPhone ? openVisitSheet : undefined}
                 />
+
+                {/* The game: what a confirmed visit gives, "Я здесь" on the spot */}
+                <PlaceGame placeId={place.id} />
 
                 {!isPhone && <PlaceVisitQuestions placeId={place.id} />}
             </div>

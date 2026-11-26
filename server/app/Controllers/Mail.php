@@ -2,8 +2,11 @@
 
 namespace App\Controllers;
 
+use App\Controllers\Concerns\AdminOnly;
+use App\Libraries\Mail\MailQueue;
 use App\Libraries\Mail\UnsubscribeToken;
 use App\Libraries\NotificationSettings;
+use App\Libraries\SessionLibrary;
 use App\Models\SendingMail;
 use App\Models\UsersModel;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -23,17 +26,54 @@ use Throwable;
  * Opening a link changes nothing (GET only reads), so link scanners in mail
  * clients cannot unsubscribe anyone.
  *
+ * And the state of the email queue for the admin dashboard (GET /mail/queue).
+ *
  * @package App\Controllers
  */
 class Mail extends ResourceController
 {
+    use AdminOnly;
+
     private const CHANNEL = 'email';
+
+    /** Only for the admin endpoint: the unsubscribe links need no session */
+    private SessionLibrary $session;
+
+    /**
+     * Whether the emails go out: when the `notifications:send` job last got through the queue
+     * (UTC, null when unknown) and the numbers of SendingMail::health().
+     *
+     * GET /mail/queue — admin only, never cached.
+     *
+     * @return ResponseInterface {last_run_at, late_after, sent_day, pending, overdue, errors_week}
+     */
+    public function queue(): ResponseInterface
+    {
+        $this->session = new SessionLibrary();
+
+        if ($denied = $this->adminOnly()) {
+            return $denied;
+        }
+
+        try {
+            $lastRun = cache(MailQueue::LAST_RUN_CACHE_KEY);
+
+            return $this->respond([
+                'last_run_at' => is_int($lastRun) ? gmdate('Y-m-d H:i:s', $lastRun) : null,
+                'late_after'  => SendingMail::thresholds()['late'],
+                ...(new SendingMail())->health(),
+            ]);
+        } catch (Throwable $e) {
+            log_message('error', '[Mail] The queue state failed: {exception}', ['exception' => $e]);
+
+            return $this->failServerError();
+        }
+    }
 
     /**
      * What a link unsubscribes from, and whether it is still on.
      *
-     * GET /mail/unsubscribe?token=… — or ?mail=<sending_mail id> for links in
-     * emails sent before tokens; the response then carries a token to POST.
+     * GET /mail/unsubscribe?token=…
      *
      * @return ResponseInterface {token, scope, subscribed}
      */
@@ -80,7 +120,7 @@ class Mail extends ResourceController
     }
 
     /**
-     * The user and scope of the request's token (or legacy `mail` id).
+     * The user and scope of the request's token.
      *
      * @return array{user: object, scope: string, token: string}|null
      */
@@ -88,10 +128,6 @@ class Mail extends ResourceController
     {
         $tokens = new UnsubscribeToken();
         $parsed = $tokens->parse($this->input('token'));
-
-        if (!$parsed && ($mailId = $this->input('mail'))) {
-            $parsed = $this->resolveLegacy((string) $mailId);
-        }
 
         $settings = new NotificationSettings();
 
@@ -111,28 +147,6 @@ class Mail extends ResourceController
             'scope' => $parsed['type'],
             'token' => $tokens->create($parsed['userId'], $parsed['type']),
         ];
-    }
-
-    /**
-     * A `sending_mail` id from the links of emails sent before tokens.
-     *
-     * @return array{userId: string, type: string}|null
-     */
-    private function resolveLegacy(string $mailId): ?array
-    {
-        $row = (new SendingMail())
-            ->select('sending_mail.user_id, sending_mail.email, sending_mail.type, sending_mail.activity_id, activity.type AS activity_type')
-            ->join('activity', 'activity.id = sending_mail.activity_id', 'left')
-            ->find($mailId);
-
-        if (!$row) {
-            return null;
-        }
-
-        $userId = $row->user_id ?: (new UsersModel())->select('id')->where('email', $row->email)->first()?->id;
-        $type   = $row->type ?: ($row->activity_id ? $row->activity_type : 'digest');
-
-        return $userId && $type ? ['userId' => $userId, 'type' => $type] : null;
     }
 
     /**
