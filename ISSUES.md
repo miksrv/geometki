@@ -8,6 +8,13 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 - VPS: the Next.js process grows to 1 GB and PM2 restarts it every 15–30 minutes (`max_memory_restart: '1G'`, 141 restarts by 2026-10-17) on a 1-CPU, 1.5 GB VPS without swap; find the leak (heap snapshot under load) or lower the limit and add swap.
 
 - Migrations: rolling back all migrations on MySQL (`tests/database` run against the MySQL `tests` group) stops at `AddLocationDedupSlugsAndLegacyIds::down()`: `Cannot drop index 'idx_locality_category': needed in a foreign key constraint` (MySQL dropped the implicit foreign key index when the composite one covered it); a committed migration, so fix it with a new one or accept that it does not roll back. On SQLite the suite passes.
+- Quests: the riddle of a photo quest is sent as the photo's real path (`QuestsLibrary::photoOf()`: `uploads/places/<placeId>/…`), which names the place to find; serve it under an opaque address (a copy per point or a signed endpoint).
+- Quests: the hidden visits of a riddle walk are shown only when that walk ends (`VisitsLibrary::reveal()`); a walk left and begun again after a week, a quest deleted mid-walk or a point removed leave them hidden for good, and a plain check-in within the week does not show them either.
+- Quests: a deleted place takes its quest points with it (foreign key), but `quests.points`, `length_m` and the zone are not recounted, and a published quest may stay with fewer than two points.
+- Game: `GameLibrary::photoDeleted()` goes by `game_points`, so a visit confirmed by a photo outside a season stays confirmed (experience, awards) after the photo is deleted.
+- Game: a deleted place takes the `game_points` of closed seasons with it, and `GameLibrary::participations()` sums the live rows: a profile's points of a closed season can fall below its frozen table; read them from `game_results`.
+- Game: a photo confirms a visit of its EXIF day however old (`GameLibrary::photoUploaded()`), past the two-day window of a check-in, and each (place, month) of such visits gives experience; decide on a limit for old shots.
+- Cron: a timed job that failed is not started again until its next time (`CronRun` saves `started` before the run), so a failed `game:tick` closes a season a day late and `digest:weekly` skips a week; retry on error once the jobs are checked to be safe to repeat.
 
 ## Improvements
 
@@ -30,7 +37,6 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 - Mailings: the audience is not compared with what the hosting limits can send before the letters expire (`digestDayLimit` × `newsExpireAfterDays`, shared with the digests), so the tail of a big audience silently ends `expired`; return the estimated days from `GET /mailings/audience` and warn in the send confirmation.
 - Mailings: `MailingContent::inline` applies bold per part after splitting off the links, so `**[link](/x)**` keeps the asterisks.
 - Seasons: a picture replaced or a season deleted leaves the old file on disk when the DB write fails in between; a cleanup command for `uploads/seasons` would catch it.
-- Admin: `useQueryFilters` rebuilds `setFilters` on every route change, so the achievements search can cancel a pending debounced change typed while the URL updates; keep the callback in a ref.
 - Game: `loadGamePage` asks for the leaders and the places even with no current season, and `loadSeasonPage` for the leaders of an upcoming one, which are not shown.
 - Home: the newcomer's step "take a photo on the spot" (`HomeFirstSteps`) links to `/game/help`, nothing there starts the action.
 - Tests: no tests for `AchievementForm`, `useQueryFilters`, `useAdminAttention`, `AdminLayout` marks, `getAdminServerSideProps`, or the page loaders `loadGamePage` / `loadSeasonPage` / `loadQuestPage`.
@@ -61,4 +67,12 @@ Open bugs and improvements only, one line each, in English. Delete an item's lin
 - Game: `seasonAwards()` lists only the limited awards running now, so a past season's page (`GET /game/seasons/:id`) never shows its awards, and the next season is never announced with its awards on `/game`; to decide: list them by the season's dates (and keep "running now" only for the profile's tasks). Found in the 2.0.0 review.
 - Game: `GET /game/users/:id/tasks` (the profile's "Задания") recounts the progress of every running limited award on each profile view, uncached and outside the guest cache; cheap while there are few such awards. Found in the 2.0.0 review.
 - Game: the price of a place is too flat (a remote mountain 40 geopoints, a city building 30), so a town walk out-earns a trip into the wild; to decide: a wider spread by difficulty and a "remoteness" factor from the places within 5 km (20+ → ×1, 5–19 → ×1.5, 1–4 → ×2.5, none → ×4; not agreed). Put off on 2026-11-11.
-
+- Game: any signed-in person can move a place or change its category (`Places::update()`), then confirm it from where they are; limit the position and category edits of visited places to the author and administrators, or add a cooldown.
+- Game: `visitedAt` a day ahead (the time zone slack of `VisitsLibrary::day()`) counts in a season a day before it starts for Moscow; use the server's day for "I am here".
+- Game: the public game GETs (`game`, `game/leaders`, `game/exploration`, `game/users/:id`) are outside the guest cache and count the season table and the exploration anew on each request, the home page asks for `game` for every guest; cache the visitor-independent ones for a few minutes (`$ttls`), keeping `game/quests*` out.
+- Game: the season points of a riddle walk's hidden visits are in the tables at once (`/game/leaders?type=locality`), which hints at the town of an answer; count them when the walk ends.
+- Game: two confirmations of one place at the same moment both take the same order bonus (`GameLibrary::score()` counts, then inserts).
+- Docs: `server/API.md` has no `GET /game/mine` and `GET /game/quests/marks`; `GET /game/recent` is documented and unused by the client.
+- Quests: "Проложить путь" (`QuestSteps`) is a `Button` inside a link, invalid HTML; needs a link button in `simple-react-ui-kit`.
+- Game: after a sign-in in the dialog the blocks of `/game` rendered on the server (own line, "Мой сезон") stay a guest's until a reload.
+- Deploy 2.0.0: the collections hidden before `SimplifyCollections` keep their cached pages until the ISR revalidation.

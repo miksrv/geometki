@@ -142,7 +142,7 @@ class Users extends ResourceController
         if (!empty($userIds)) {
             $placeholders = implode(',', array_fill(0, count($userIds), '?'));
             $visitedRows = $db->query(
-                "SELECT user_id, COUNT(DISTINCT place_id) AS visited FROM users_visited_places WHERE user_id IN ($placeholders) GROUP BY user_id",
+                "SELECT user_id, COUNT(DISTINCT place_id) AS visited FROM users_visited_places WHERE user_id IN ($placeholders) AND hidden = 0 GROUP BY user_id",
                 $userIds
             )->getResultObject();
             foreach ($visitedRows as $row) {
@@ -302,6 +302,8 @@ class Users extends ResourceController
         $visitsRow = (new VisitsModel())
             ->select('COUNT(DISTINCT place_id) AS visited, COUNT(*) AS visits', false)
             ->where('user_id', $id)
+            // The visits of a riddle quest being walked are its answers: not even counted
+            ->where('hidden', 0)
             ->first();
         $usersData->statistic->visited = (int) ($visitsRow->visited ?? 0);
         $usersData->statistic->visits  = (int) ($visitsRow->visits ?? 0);

@@ -599,11 +599,16 @@ class QuestsLibrary
         return $db->table('quests_walks')->where(['quest_id' => $questId, 'user_id' => $userId])->get()->getRow();
     }
 
-    /** How many quests the person has begun and not finished */
+    /**
+     * How many quests the person has begun and not finished. A quest that was deleted or taken
+     * back to a draft does not count: its walk cannot be gone on with or left
+     */
     public function activeCount(string $userId): int
     {
         return Database::connect()->table('quests_walks')
-            ->where(['user_id' => $userId, 'finished_at' => null])
+            ->join('quests', 'quests.id = quests_walks.quest_id')
+            ->where(['quests_walks.user_id' => $userId, 'quests_walks.finished_at' => null])
+            ->where(['quests.deleted_at' => null, 'quests.status' => QuestsModel::STATUS_PUBLISHED])
             ->countAllResults();
     }
 

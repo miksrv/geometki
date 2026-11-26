@@ -10,6 +10,7 @@ use App\Libraries\AchievementsLibrary;
 use App\Libraries\SessionLibrary;
 use App\Models\AchievementsModel;
 use App\Models\UsersAchievementsModel;
+use App\Models\UsersModel;
 use Config\Database;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -209,6 +210,11 @@ class Achievements extends ResourceController
      */
     public function userAchievementGroup(string $userId, string $group): ResponseInterface
     {
+        // The progress is counted live, rule by rule: not for an id nobody has
+        if (!(new UsersModel())->select('id')->find($userId)) {
+            return $this->failNotFound();
+        }
+
         $steps = (new AchievementsModel())
             ->where('is_active', 1)
             ->groupStart()

@@ -85,7 +85,11 @@ class Quests extends ResourceController
 
         // `todo` — not walked to the end yet (the game's lists: a walked quest moves to the
         // profile), `active` — being walked, `done` — walked
-        switch ($this->request->getGet('walk')) {
+        // Another person's walks are shown walked to the end only (their profile): a walk in
+        // progress, a riddle one above all, is nobody else's to see
+        $walk = $walker !== $userId ? 'done' : $this->request->getGet('walk');
+
+        switch ($walk) {
             case 'todo':
                 $builder->where('w.finished_at', null);
                 break;

@@ -359,6 +359,12 @@ class Visits extends ResourceController
         $userId = $this->session->user->id;
         // The position is the visitor's answer to the tap: used for this comparison and dropped
         $position = Game::position((array) $input);
+
+        // Too many positions in a row are a script, not a walk: the visit is made, a plain one
+        if ($position && !Game::confirmAllowed($userId)) {
+            $position = null;
+        }
+
         $game     = ['confirmed' => false, 'points' => 0];
         $near     = false;
 

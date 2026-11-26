@@ -16,6 +16,7 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 use Config\Database;
 use Config\Game as GameConfig;
+use Config\Services;
 use Throwable;
 
 /**
@@ -30,6 +31,14 @@ use Throwable;
 class Game extends ResourceController
 {
     use AdminOnly;
+
+    /**
+     * Confirmations by a position of a person, over all the places: far more than a day of
+     * walking gives, too few for a script that sends the coordinates of every place around
+     */
+    private const CONFIRMS_PER_MINUTE = 10;
+    private const CONFIRMS_PER_HOUR   = 100;
+    private const CONFIRMS_PER_DAY    = 300;
 
     private const LEADERS_DEFAULT = 10;
     private const LEADERS_MAX     = 50;
@@ -722,6 +731,12 @@ class Game extends ResourceController
             return $this->failValidationErrors(lang('Game.badPosition'));
         }
 
+        if (!self::confirmAllowed($this->session->user->id)) {
+            $this->response->setHeader('Retry-After', (string) max(1, Services::throttler()->getTokenTime()));
+
+            return $this->failTooManyRequests(lang('Game.questTooManyConfirms'));
+        }
+
         $day = VisitsLibrary::day($input['visitedAt'] ?? null);
 
         if ($day === false) {
@@ -985,6 +1000,16 @@ class Game extends ResourceController
         }
 
         return $items;
+    }
+
+    /** Whether one more confirmation by a position is taken from this person now (CONFIRMS_PER_*) */
+    public static function confirmAllowed(string $userId): bool
+    {
+        $throttler = Services::throttler();
+
+        return $throttler->check('game_confirm_m_' . $userId, self::CONFIRMS_PER_MINUTE, MINUTE)
+            && $throttler->check('game_confirm_h_' . $userId, self::CONFIRMS_PER_HOUR, HOUR)
+            && $throttler->check('game_confirm_d_' . $userId, self::CONFIRMS_PER_DAY, DAY);
     }
 
     /**

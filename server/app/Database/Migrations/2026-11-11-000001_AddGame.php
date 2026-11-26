@@ -181,6 +181,8 @@ class AddGame extends Migration
             $this->forge->addUniqueKey(['season', 'user_id', 'place_id'], 'game_points_place');
             $this->forge->addUniqueKey(['season', 'user_id', 'quest_id'], 'game_points_quest');
             $this->forge->addKey(['season', 'place_id']);
+            // The latest confirmations of a season (GET /game/recent)
+            $this->forge->addKey(['season', 'created_at']);
             $this->forge->addKey('user_id');
             $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
             $this->forge->addForeignKey('place_id', 'places', 'id', 'CASCADE', 'CASCADE');
